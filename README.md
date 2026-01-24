@@ -10,3 +10,11 @@ To manually update the index, run:
 ```bash
 python3 scripts/update_index.py
 ```
+
+## GitHub Pages Deployment
+This project is configured to deploy to GitHub Pages using GitHub Actions.
+
+**First-time Setup:**
+1. Go to your repository **Settings**.
+2. Click **Pages** in the left sidebar.
+3. Under **Build and deployment** > **Source**, select **GitHub Actions**.
