@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Reading Practice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        
+        .split-pane {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            scroll-behavior: smooth;
+        }
+
+        .pane-divider {
+            height: 6px;
+            background-color: #e2e8f0;
+            border-top: 1px solid #cbd5e1;
+            border-bottom: 1px solid #cbd5e1;
+            cursor: row-resize;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .pane-divider:hover {
+            background-color: #cbd5e1;
+        }
+
+        .pane-handle {
+            width: 40px;
+            height: 4px;
+            background-color: #94a3b8;
+            border-radius: 2px;
+        }
+
+        .blank-input {
+            border-bottom: 2px solid #cbd5e1;
+            padding: 0 0.5rem;
+            color: #2563eb;
+            font-weight: 600;
+            outline: none;
+            transition: all 0.2s;
+            display: inline-block;
+            text-align: center;
+            min-width: 30px;
+        }
+        .blank-input:focus {
+            border-bottom-color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .question-option {
+            transition: background-color 0.2s;
+        }
+        .question-option:hover {
+            background-color: #f8fafc;
+        }
+        input[type="radio"]:checked + span {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .cloze-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            background-color: #e2e8f0;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            margin: 0 4px;
+            color: #475569;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Navbar / Tab Switcher -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 flex-shrink-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-gray-800 mr-8">📚 Reading Practice</span>
+                    <div class="flex space-x-4">
+                        <button onclick="switchTab(1)" id="tab-1" class="px-3 py-2 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors">
+                            Unit 1: Polar Bears
+                        </button>
+                        <button onclick="switchTab(2)" id="tab-2" class="px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                            Unit 2: Swallows
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- UPPER PANE: ARTICLE -->
+    <div id="upper-pane" class="split-pane bg-white text-gray-800 text-lg leading-relaxed">
+        <div id="article-content" class="max-w-3xl mx-auto">
+            <!-- Content Injected via JS -->
+        </div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="pane-divider" title="Divider">
+        <div class="pane-handle"></div>
+    </div>
+
+    <!-- LOWER PANE: QUESTIONS -->
+    <div id="lower-pane" class="split-pane bg-gray-50 border-t">
+        <div id="questions-content" class="max-w-3xl mx-auto pb-10">
+            <!-- Content Injected via JS -->
+        </div>
+    </div>
+
+    <script>
+        // Data for the two units
+        const data = {
+            1: {
+                title: "为“来犯”的北极熊设“监狱” (A Prison for Polar Bears)",
+                intro: "Every summer, hundreds of polar bears pass through the small town of Churchill in Canada.",
+                content: `
+                    <h1 class="text-3xl font-bold mb-6 text-gray-900">为“来犯”的北极熊设“监狱”</h1>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-sm text-blue-800">
+                        <p class="font-bold">Word Bank:</p>
+                        <p>1. polar /'pəʊlə(r)/ adj. 南极(或北极)的</p>
+                        <p>2. prison /'prɪzn/ n. 监狱</p>
+                        <p>3. tranquillize /'træŋkwəlaɪz/ v. (尤指用镇定剂)使平静,使安定</p>
+                    </div>
+
+                    <p class="mb-4">
+                        Every summer, hundreds of polar bears pass through the small town of Churchill in Canada. They travel to the <span class="cloze-number">1</span>________ after the sea ice starts to break up and become water. To keep any <span class="cloze-number">2</span>________ "event" away from the town people, the town has opened a "prison". If any polar bear comes into the town <span class="cloze-number">3</span>________ food, the town will put it into prison. The polar bear has to <span class="cloze-number">4</span>________ in a small room for up to a month.
+                    </p>
+                    <p class="mb-4">
+                        During their time there, the workers don't <span class="cloze-number">5</span>________ any food to the polar bears. They only give them some water to stop them from coming back. If there aren't enough <span class="cloze-number">6</span>________ left at the polar bear prison, the workers will tranquillize them and carry them to the far north. There are no <span class="cloze-number">7</span>________ there. "We try not to make their stay <span class="cloze-number">8</span>________" said Bob Windsor. He works for the animals at the prison.
+                    </p>
+                    <p class="mb-4">
+                        Sound unkind? Maybe, <span class="cloze-number">9</span>________ many think that the prison stops the town from having to kill polar bears. Bob Windsor told the reporters, "The polar bears surely want <span class="cloze-number">10</span>________ to eat, but the town people don't want to show kindness through giving food. If they do, their <span class="cloze-number">11</span>________ would cause a problem for the town. It's not unkind but a need when there are <span class="cloze-number">12</span>________ animals living next to humans. The prison helps town people live in safety and <span class="cloze-number">13</span>________.
+                    </p>
+                    <p class="mb-4">
+                        Sea ice becomes water in summer; there isn't enough food for polar bears. They have to <span class="cloze-number">14</span>________ eating food during the summer months, and they live off the <span class="cloze-number">15</span>________ in their bodies. This shows why food isn't given to the bears in the prison.
+                    </p>
+                `,
+                questions: `
+                    <div class="mb-8">
+                        <h2 class="text-xl font-bold mb-4 border-b pb-2">一、好词句深练 (Vocabulary & Sentences)</h2>
+                        
+                        <div class="mb-4">
+                            <h3 class="font-semibold text-gray-700 mb-2">(一) Fill in the blanks with the correct forms:</h3>
+                            <ol class="list-decimal list-inside space-y-2 ml-2">
+                                <li>It's <input class="blank-input w-24" placeholder="kind"> to laugh at others' mistakes. (kind)</li>
+                                <li>The <input class="blank-input w-24" placeholder="report"> is interviewing the famous singer. (report)</li>
+                                <li>We should always put <input class="blank-input w-24" placeholder="safe"> first when playing outside. (safe)</li>
+                            </ol>
+                        </div>
+
+                        <div class="mb-4">
+                            <h3 class="font-semibold text-gray-700 mb-2">(二) Replace the bold words with: [ have, stop, cause ]</h3>
+                            <ol class="list-decimal list-inside space-y-2 ml-2">
+                                <li>We need to <strong>keep</strong> them from entering the dangerous area. <input class="blank-input w-24"></li>
+                                <li>Littering in public places can <strong>bring about</strong> environmental pollution for everyone. <input class="blank-input w-24"></li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="text-xl font-bold mb-4 border-b pb-2">二、根据短文内容, 选择正确答案 (Multiple Choice)</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${generateMCQ(1, ['house', 'town', 'city', 'county'])}
+                            ${generateMCQ(2, ['great', 'sad', 'common', 'important'])}
+                            ${generateMCQ(3, ['taking care of', 'making use of', 'pointing out', 'looking for'])}
+                            ${generateMCQ(4, ['play', 'eat', 'stay', 'sleep'])}
+                            ${generateMCQ(5, ['keep', 'give', 'order', 'leave'])}
+                            ${generateMCQ(6, ['rooms', 'halls', 'food', 'water'])}
+                            ${generateMCQ(7, ['trees', 'rivers', 'humans', 'animals'])}
+                            ${generateMCQ(8, ['sorry', 'cold', 'terrible', 'happy'])}
+                            ${generateMCQ(9, ['and', 'but', 'so', 'or'])}
+                            ${generateMCQ(10, ['something', 'nothing', 'anything', 'everything'])}
+                            ${generateMCQ(11, ['story', 'example', 'action', 'result'])}
+                            ${generateMCQ(12, ['handsome', 'crowded', 'thirsty', 'dangerous'])}
+                            ${generateMCQ(13, ['challenge', 'change', 'peace', 'wonder'])}
+                            ${generateMCQ(14, ['stop', 'start', 'practice', 'keep'])}
+                            ${generateMCQ(15, ['water', 'fat', 'meat', 'grass'])}
+                        </div>
+                    </div>
+                `
+            },
+            2: {
+                title: "时文阅读——讲好中国故事 (Swallows vs Water Project)",
+                intro: "People stopped the building of a water project in June, 2024.",
+                content: `
+                    <h1 class="text-3xl font-bold mb-6 text-gray-900">水利工程让位于燕巢</h1>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-sm text-blue-800">
+                        <p class="font-bold">Word Bank:</p>
+                        <p>1. swallow /'swɒləʊ/ n. 燕子</p>
+                        <p>2. decision /dɪ'sɪʒn/ n. 决定</p>
+                        <p>3. bright /braɪt/ adj. 明亮的</p>
+                        <p>4. sunlight /'sʌnlaɪt/ n. 阳光</p>
+                        <p>5. route /ru:t/ n. 路线</p>
+                    </div>
+
+                    <p class="mb-4">
+                        People stopped the building of a water project in June, 2024. They did so to protect a group of swallows. These swallows live on the earthen cliff (土质悬崖) along the Yongding River, and they would like to live somewhere quiet. Bird lovers were happy with the decision.
+                    </p>
+                    <p class="mb-4">
+                        The cliff faces west. It is over 30 meters long and nearly 20 meters high. It looks bright under the sunlight, making a beautiful picture. From around 100 meters away, people can see about 200 caves in the cliff, each about the size of an apple, with brown swallows flying in and out.
+                    </p>
+                    <p class="mb-4">
+                        "I visited this group of swallows some weeks ago. In recent years, around late April to early May, they come here to build their homes, and then fly away by early July," said an official. "The water project started in June, but it already stopped its activities last week."
+                    </p>
+                    <p class="mb-4">
+                        "I have met bird lovers during my work. I understand their feelings. The water project is important to the city, but we will still do something to save the birds. We are thinking about changing the project's route to make sure the swallows can keep living in the cliff in the future," said the official.
+                    </p>
+                `,
+                questions: `
+                    <div class="mb-8">
+                        <h2 class="text-xl font-bold mb-4 border-b pb-2">一、好词句深练 (Vocabulary & Sentences)</h2>
+                        
+                        <div class="mb-4">
+                            <h3 class="font-semibold text-gray-700 mb-2">(一) Fill in the blanks with correct forms:</h3>
+                            <ol class="list-decimal list-inside space-y-2 ml-2">
+                                <li>Her <input class="blank-input w-24" placeholder="decide"> surprised all of us. (decide)</li>
+                                <li>He tried to hide his true <input class="blank-input w-24" placeholder="feel">. (feel)</li>
+                                <li>The artist drew many <input class="blank-input w-24" placeholder="beauty"> pictures. (beauty)</li>
+                            </ol>
+                        </div>
+
+                        <div class="mb-4">
+                            <h3 class="font-semibold text-gray-700 mb-2">(二) Replace the bold words with: [ activity, happy, personal ]</h3>
+                            <ol class="list-decimal list-inside space-y-2 ml-2">
+                                <li>The children were <strong>pleased</strong> with their new toys. <input class="blank-input w-24"></li>
+                                <li>The factory stopped lots of <strong>work</strong> for safety checks. <input class="blank-input w-24"></li>
+                            </ol>
+                        </div>
+
+                        <div class="mb-4">
+                            <h3 class="font-semibold text-gray-700 mb-2">(四) Imitate Sentences:</h3>
+                            <div class="mb-2 p-3 bg-gray-100 rounded">
+                                <p class="text-sm italic text-gray-600 mb-1">Example: It is over 30 meters long and nearly 20 meters high.</p>
+                                <p>仿写: 这根绳子大约三米长。</p>
+                                <input class="w-full mt-1 p-2 border rounded" placeholder="Type your translation here...">
+                            </div>
+                            <div class="mb-2 p-3 bg-gray-100 rounded">
+                                <p class="text-sm italic text-gray-600 mb-1">Example: "We are thinking about changing the project's route..." (动名词短语作介词的宾语)</p>
+                                <p>仿写: 我正考虑晚饭后去散步。</p>
+                                <input class="w-full mt-1 p-2 border rounded" placeholder="Type your translation here...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="text-xl font-bold mb-4 border-b pb-2">二、阅读短文, 选择正确答案 (Comprehension)</h2>
+                        <div class="space-y-6">
+                            <div class="bg-white p-4 rounded-lg shadow-sm border">
+                                <p class="font-semibold mb-2">1. Why do the birds live on the earthen cliff?</p>
+                                <div class="space-y-1 ml-2">
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q1" class="text-blue-600"><span>A. Because it's quiet there.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q1" class="text-blue-600"><span>B. Because it's full of food.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q1" class="text-blue-600"><span>C. Because the cliff faces the sun.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q1" class="text-blue-600"><span>D. Because the cliff looks like a picture.</span></label>
+                                </div>
+                            </div>
+
+                             <div class="bg-white p-4 rounded-lg shadow-sm border">
+                                <p class="font-semibold mb-2">2. How does the writer start Paragraph 2?</p>
+                                <div class="space-y-1 ml-2">
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q2" class="text-blue-600"><span>A. By introducing the cliff.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q2" class="text-blue-600"><span>B. By describing the swallows.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q2" class="text-blue-600"><span>C. By showing a beautiful picture.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q2" class="text-blue-600"><span>D. By talking about the water project.</span></label>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg shadow-sm border">
+                                <p class="font-semibold mb-2">3. How long do the swallows stay in the cliff in a year?</p>
+                                <div class="space-y-1 ml-2">
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q3" class="text-blue-600"><span>A. About one month.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q3" class="text-blue-600"><span>B. About two months.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q3" class="text-blue-600"><span>C. About three months.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q3" class="text-blue-600"><span>D. About four months.</span></label>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-lg shadow-sm border">
+                                <p class="font-semibold mb-2">4. What may people do to save the swallows according to the official?</p>
+                                <div class="space-y-1 ml-2">
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q4" class="text-blue-600"><span>A. Let them live in parks.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q4" class="text-blue-600"><span>B. Stop the water project forever.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q4" class="text-blue-600"><span>C. Build the water project in another place.</span></label>
+                                    <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="p2q4" class="text-blue-600"><span>D. Make new homes for them near the cliff.</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        };
+
+        function generateMCQ(index, options) {
+            return `
+                <div class="bg-white p-3 rounded shadow-sm border hover:border-blue-300">
+                    <span class="font-bold text-gray-500 mr-2">${index}.</span>
+                    <div class="mt-2 space-y-1">
+                        <label class="flex items-center space-x-2 cursor-pointer question-option rounded p-1">
+                            <input type="radio" name="q${index}" class="text-blue-600">
+                            <span>A. ${options[0]}</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer question-option rounded p-1">
+                            <input type="radio" name="q${index}" class="text-blue-600">
+                            <span>B. ${options[1]}</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer question-option rounded p-1">
+                            <input type="radio" name="q${index}" class="text-blue-600">
+                            <span>C. ${options[2]}</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer question-option rounded p-1">
+                            <input type="radio" name="q${index}" class="text-blue-600">
+                            <span>D. ${options[3]}</span>
+                        </label>
+                    </div>
+                </div>
+            `;
+        }
+
+        function switchTab(tabId) {
+            // Update Tab Styles
+            if (tabId === 1) {
+                document.getElementById('tab-1').classList.replace('text-gray-500', 'text-blue-700');
+                document.getElementById('tab-1').classList.replace('bg-white', 'bg-blue-100');
+                document.getElementById('tab-1').classList.remove('hover:bg-gray-100');
+                
+                document.getElementById('tab-2').classList.replace('text-blue-700', 'text-gray-500');
+                document.getElementById('tab-2').classList.replace('bg-blue-100', 'bg-white');
+                document.getElementById('tab-2').classList.add('hover:bg-gray-100');
+            } else {
+                document.getElementById('tab-2').classList.replace('text-gray-500', 'text-blue-700');
+                document.getElementById('tab-2').classList.replace('bg-white', 'bg-blue-100');
+                document.getElementById('tab-2').classList.remove('hover:bg-gray-100');
+
+                document.getElementById('tab-1').classList.replace('text-blue-700', 'text-gray-500');
+                document.getElementById('tab-1').classList.replace('bg-blue-100', 'bg-white');
+                document.getElementById('tab-1').classList.add('hover:bg-gray-100');
+            }
+
+            // Inject Content
+            const selectedData = data[tabId];
+            document.getElementById('article-content').innerHTML = selectedData.content;
+            document.getElementById('questions-content').innerHTML = selectedData.questions;
+
+            // Reset Scroll
+            document.getElementById('upper-pane').scrollTop = 0;
+            document.getElementById('lower-pane').scrollTop = 0;
+        }
+
+        // Initialize
+        switchTab(1);
+
+    </script>
+</body>
+</html>
