@@ -1,5 +1,32 @@
 import os
 import datetime
+import subprocess
+
+def clean_redundant_pdfs():
+    """
+    Scans for HTML files and removes corresponding PDF files if they exist.
+    Also removes them from git staging to ensure they aren't committed.
+    """
+    for root, dirs, files in os.walk('.'):
+        if '.git' in dirs:
+            dirs.remove('.git')
+        
+        for file in files:
+            if file.endswith('.html'):
+                base_name = os.path.splitext(file)[0]
+                pdf_name = base_name + '.pdf'
+                pdf_path = os.path.join(root, pdf_name)
+                
+                if os.path.exists(pdf_path):
+                    print(f"Removing redundant PDF: {pdf_path}")
+                    try:
+                        os.remove(pdf_path)
+                        # Attempt to remove from git index just in case it was staged
+                        subprocess.run(['git', 'rm', '--cached', pdf_path], 
+                                     stdout=subprocess.DEVNULL, 
+                                     stderr=subprocess.DEVNULL)
+                    except OSError as e:
+                        print(f"Error removing {pdf_path}: {e}")
 
 def get_html_files():
     html_files = []
@@ -71,6 +98,7 @@ def generate_tree_section(files):
     return '\n'.join(lines)
 
 def main():
+    clean_redundant_pdfs()
     files = get_html_files()
     latest_html = generate_latest_section(files)
     tree_html = generate_tree_section(files)
