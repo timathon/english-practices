@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit3自主检测</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            color: #333;
+            background-color: #f5f7fa;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* Navigation Styles */
+        .nav-container {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            z-index: 100;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-link {
+            padding: 8px 15px;
+            background-color: #34495e;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: #3498db;
+        }
+        
+        
+        /* Main Content Area */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        /* Article Area */
+        .article-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #fafafa;
+            border-right: none;
+        }
+        
+        .section-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .section-content.active {
+            display: flex;
+        }
+        
+        .article-content {
+            flex: 0 1 auto;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #e0e0e0;
+            max-height: calc((100vh - 180px) / 2); /* Max half of available space minus header/footer */
+        }
+        
+        .options-area {
+            flex: 0 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .matching-container {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .options-column {
+            flex: 1;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            min-width: 300px;
+        }
+        
+        .option-pool {
+            min-height: 200px;
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            border: 2px dashed #bbdefb;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .option-pool.drag-over {
+            background-color: #bbdefb;
+            border: 2px solid #64b5f6;
+        }
+        
+        .slot {
+            min-height: 40px;
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+        }
+        
+        #slot-Q19, #slot-Q20, #slot-Q21, #slot-Q22, #slot-Q23 {
+            min-height: 60px;
+            min-width: 300px;
+        }
+        
+        .slot.drag-over {
+            background-color: #e8f5e8;
+            border: 2px solid #4caf50;
+        }
+        
+        .slot.empty {
+            background-color: #f9f9f9;
+        }
+        
+        .questions-column {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .draggable-option {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            cursor: move;
+            user-select: none;
+        }
+        
+        .draggable-option:hover {
+            background-color: #bbdefb;
+        }
+        
+        .draggable-option.dragging {
+            opacity: 0.5;
+        }
+        
+        .match-question {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .drop-zone {
+            flex: 1;
+            min-height: 30px;
+            margin-left: 15px;
+            padding: 5px;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+        
+        .drop-zone.drag-over {
+            border-style: solid;
+            background-color: #e8f5e8;
+        }
+        
+        .matched-option {
+            padding: 5px 10px;
+            background-color: #c8e6c9;
+            border: 1px solid #a5d6a7;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .remove-match {
+            margin-left: 10px;
+            color: #f44336;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .questions-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #ffffff;
+        }
+        
+        
+        /* Hide answer area */
+        .answer-area {
+            display: none;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0 0 20px 0;
+            color: #3498db;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .question {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: flex-start;
+            min-height: 40px;
+        }
+        
+        .question.focused {
+            background-color: #e3f2fd;
+            border: 2px solid #2196f3;
+        }
+        
+        .question > div:first-child {
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .options {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .option-item {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .option-item:hover {
+            background-color: #bbdefb;
+        }
+
+        .option-item.selected-for-assignment {
+            background-color: #ffeb3b; /* Amber to indicate it's staged */
+            border: 1px solid #ffc107;
+            box-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+        }
+
+        .option-item.assigned {
+            background-color: #c8e6c9; /* Light green to indicate it's assigned and unavailable */
+            border: 1px solid #a5d6a7;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .question-slot {
+            flex: 1;
+            min-height: 40px;
+            margin-left: 15px;
+            padding: 5px 10px;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            background-color: #fafafa;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .question-slot:hover {
+            background-color: #e8f5e8;
+            border-color: #4caf50;
+        }
+
+        
+        .answer-info {
+            margin-left: 15px;
+            min-width: 150px;
+        }
+        
+        .option {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .option {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .option:hover {
+            background-color: #d6dbdf;
+        }
+        
+        .option.selected {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .cloze-text {
+            line-height: 1.8;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .cloze-blank {
+            display: inline-block;
+            width: 60px;
+            height: 24px;
+            border-bottom: 2px solid #3498db;
+            text-align: center;
+            margin: 0 5px;
+            vertical-align: middle;
+        }
+        
+        .reading-text {
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            line-height: 1.8;
+        }
+        
+        .writing-text {
+            margin-bottom: 20px;
+        }
+        
+        .writing-tip {
+            margin: 8px 0;
+            padding: 8px;
+            background-color: #fff8dc;
+            border-left: 4px solid #f39c12;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        
+        .answer-section {
+            display: block;
+        }
+        
+        .answer-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .correct-answer {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .incorrect-answer {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .explanation {
+            margin-top: 10px;
+            padding: 12px;
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+            color: #2c3e50;
+            line-height: 1.5;
+        }
+        
+        .mind-map, .example-article {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+        }
+        
+        .mind-map {
+            background-color: #fff8dc;
+        }
+        
+        .exam-info {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <div class="nav-container">
+            <div class="navigation">
+                <div class="nav-title">Unit3自主检测</div>
+                <div class="nav-links">
+                    <div class="nav-link active" onclick="switchSection('cloze')" data-short="完形填空" data-full="完形填空(每小题1分,共10分)">完形填空(每小题1分,共10分)</div>
+                    <div class="nav-link" onclick="switchSection('reading-a')" data-short="阅读理解A" data-full="阅读理解A(每小题2分,共8分)">阅读理解A</div>
+                    <div class="nav-link" onclick="switchSection('reading-b')" data-short="阅读理解B" data-full="阅读理解B(每小题2分,共8分)">阅读理解B</div>
+                    <div class="nav-link" onclick="switchSection('sentence-restoration')" data-short="句子还原" data-full="句子还原(每小题2分,共10分)">句子还原</div>
+                    <div class="nav-link" onclick="switchSection('writing')" data-short="书面表达" data-full="书面表达">书面表达</div>
+                </div>
+            </div>
+            <div class="exam-info">草稿 满分46分 限时40分钟</div>
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Article Area (Scrollable) -->
+            <div class="article-area">
+                <!-- Cloze Section -->
+                <div class="section-content active" id="cloze-content">
+                    <div class="article-content">
+                        <div class="cloze-text">
+                            Li Ming is a Grade 7 student at Dalu Middle School He loves <span class="cloze-blank" id="blank-1"></span> and everyone in his class knows that.<br>
+                            Sports Day is coming. Li Ming wants to run the 400-metre race, but he is afraid. He thinks his classmates wil laugh at him<span class="cloze-blank" id="blank-2"></span> he doesn't win. Knowing this, his<span class="cloze-blank" id="blank-3"></span>says to him, "Li Ming, don't care about what others think. Sports Day is about trying, not just about winning."<br>
+                            Hearing the teacher's words, Li Ming<span class="cloze-blank" id="blank-4"></span>to join in the 400-metre race. He starts training for the<span class="cloze-blank" id="blank-5"></span>every day. He runs in the morning sun and under the evening stars. He feels<span class="cloze-blank" id="blank-6"></span>sometimes, but he keeps going. As he trains more, he becomes more confident.<br>
+                            On Sports Day, all the students come to the playground. When the <span class="cloze-blank" id="blank-7"></span> for the 400-metre race arrives, Li Ming is nervous but ready. At first, he falls behind, but he doesn't give up. He<span class="cloze-blank" id="blank-8"></span>his teacher's words and keeps running. To his surprise, he finishes in second place!<br>
+                            Li Ming is<span class="cloze-blank" id="blank-9"></span> and he says, "I made it" His classmates say, "Good job!" And Li Ming<span class="cloze-blank" id="blank-10"></span>that Sports Day is about enjoying the games and that doing your best is what really matters.
+                        </div>
+                    </div>
+                    <div class="questions-content">
+                        <div class="question">
+                            <div>1. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 1, 'A')">A. running</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 1, 'B')">B. jumping</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 1, 'C')">C. swimming</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 1, 'D')">D. playing</span>
+                            </div>
+                            <input type="hidden" id="cloze-1-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>2. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 2, 'A')">A. so</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 2, 'B')">B. if</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 2, 'C')">C. before</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 2, 'D')">D. or</span>
+                            </div>
+                            <input type="hidden" id="cloze-2-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>3. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 3, 'A')">A. friend</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 3, 'B')">B. teacher</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 3, 'C')">C. mother</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 3, 'D')">D. classmate</span>
+                            </div>
+                            <input type="hidden" id="cloze-3-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>4. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 4, 'A')">A. starts</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 4, 'B')">B. refuses</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 4, 'C')">C. decides</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 4, 'D')">D. forgets</span>
+                            </div>
+                            <input type="hidden" id="cloze-4-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>5. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 5, 'A')">A. race</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 5, 'B')">B. job</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 5, 'C')">C. tradition</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 5, 'D')">D. rescue</span>
+                            </div>
+                            <input type="hidden" id="cloze-5-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>6. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 6, 'A')">A. smart</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 6, 'B')">B. polite</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 6, 'C')">C. popular</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 6, 'D')">D. tired</span>
+                            </div>
+                            <input type="hidden" id="cloze-6-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>7. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 7, 'A')">A. time</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 7, 'B')">B. day</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 7, 'C')">C. rule</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 7, 'D')">D. choice</span>
+                            </div>
+                            <input type="hidden" id="cloze-7-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>8. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 8, 'A')">A. explains</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 8, 'B')">B. remembers</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 8, 'C')">C. introduces</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 8, 'D')">D. improves</span>
+                            </div>
+                            <input type="hidden" id="cloze-8-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>9. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 9, 'A')">A. lonely</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 9, 'B')">B. angry</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 9, 'C')">C. excited</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 9, 'D')">D. safe</span>
+                            </div>
+                            <input type="hidden" id="cloze-9-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>10. ()</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'cloze', 10, 'A')">A. hopes</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 10, 'B')">B. regrets</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 10, 'C')">C. wonders</span>
+                                <span class="option" onclick="selectOption(this, 'cloze', 10, 'D')">D. understands</span>
+                            </div>
+                            <input type="hidden" id="cloze-10-answer" value="">
+                        </div>
+                        
+                        <button class="btn" id="show-cloze-answers" onclick="showClozeAnswers()" disabled>显示答案</button>
+                    </div>
+                </div>
+
+                <!-- Reading Comprehension Section A -->
+                <div class="section-content" id="reading-a-content">
+                    <div class="article-content">
+                        <div class="reading-text">
+                            Hi, I'm Mia. Snorkeling is one of my favourite outdoor sports.<br>
+                            On sunny weekends, I take a bus to a beach on the other side of the island with friends. We put on snorkels (呼吸管),flippers (脚蹼),and masks(面罩).Then our teacher tells us the safety rules before we jump into the clear blue water.<br>
+                            The sunlight shines through the water and we swim around looking at the fish. Some are very brightly colored,and some have special markings like lines and dots (点). The coral (珊瑚)is beautiful too. Lots of little fish swim among it. I'm excited to see this magical underwater world. Every time I snorkel, I feel like a hunter searching for new and exciting things underwater.<br>
+                            I love snorkeling. On the one hand, it is my way to explore nature. On the other hand, this fun sport makes my body stronger, especially my heart and lungs(肺).
+                        </div>
+                    </div>
+                    <div class="questions-content">
+                        <div class="question">
+                            <div>11. Put the following statements in the right order.<br>
+                            a.Our teacher tells us safety rules.<br>
+                            b.We jump into the clear blue water.<br>
+                            c.We put on snorkels, flippers, and masks.<br>
+                            d.l see colorful fish and coral in the clear blue water.</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'reading-a', 11, 'A')">A. a→c→b→d</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 11, 'B')">B. b→a→d→c</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 11, 'C')">C. c→a→b→d</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 11, 'D')">D. c→b→d→a</span>
+                            </div>
+                            <input type="hidden" id="reading-a-11-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>12. What is the main idea of Paragraph 3?</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'reading-a', 12, 'A')">A. To tell us how to snorkel.</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 12, 'B')">B. To tell us to find a favourite sport.</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 12, 'C')">C. To tell us the reasons why Mia likes snorkeling.</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 12, 'D')">D. To tell us what Mia sees and how she feels when snorkeling.</span>
+                            </div>
+                            <input type="hidden" id="reading-a-12-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>13. According to the passage, why does Mia love snorkeling?<br>
+                            1 She can be stronger.<br>
+                            2 She can wear cool masks.<br>
+                            3 She can explore nature.<br>
+                            4 She likes beach sports.</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'reading-a', 13, 'A')">A. 1,2</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 13, 'B')">B. 3,4</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 13, 'C')">C. 1,3</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 13, 'D')">D. 2,4</span>
+                            </div>
+                            <input type="hidden" id="reading-a-13-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>14. Which option correctly groups the numbers?</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'reading-a', 14, 'A')">A. 1/2/3/4</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 14, 'B')">B. 1,2/3/4</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 14, 'C')">C. 1,2/3,4</span>
+                                <span class="option" onclick="selectOption(this, 'reading-a', 14, 'D')">D. 1/2/3,4</span>
+                            </div>
+                            <input type="hidden" id="reading-a-14-answer" value="">
+                        </div>
+                        
+                        <button class="btn" id="show-reading-a-answers" onclick="showReadingAAnswers()" disabled>显示答案</button>
+                    </div>
+                </div>
+
+                <!-- Reading Comprehension Section B -->
+                <div class="section-content" id="reading-b-content">
+                    <div class="article-content">
+                        <div class="reading-text">
+                            Playing sports plays an important role in our daily life. However, some parents say their children don't like sports. Why?<br>
+                            Some children don't like sports because they don't know how to play them. If the children know the rules of a new sport, maybe they will like it. Taking PE classes at school is a good way to learn new sports. Another way is to watch TV programs about sports. Children can also read some books to learn new sports. But some other children don't like playing sports because when they are on a team, they don't have fun. For those children, it's a good idea to talk with their teachers or parents. With their help, maybe the children will like playing sports again.<br>
+                            There are many different kinds of sports, so a child should find the sports that suit (适合)him or her. If a child doesn't like team sports, parents can ask him or her to try individual (一个人的) sports, such as swimming and running.<br>
+                            Playing sports is a good way of keeping fit, and it can make children full of energy. Of course, many non-sport activities can also keep children active, walking a dog, cleaning the room and watering the garden. What about you? Do you like playing sports?
+                        </div>
+                    </div>
+                    <div class="questions-content">
+                        <div class="question">
+                            <div>15. If children don't have fun on a team, what should they do?</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'reading-b', 15, 'A')">A. They should play sports with their parents.</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 15, 'B')">B. They should like studying.</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 15, 'C')">C. They should talk with their teachers or parents.</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 15, 'D')">D. They should play sports again.</span>
+                            </div>
+                            <input type="hidden" id="reading-b-15-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>16. Which of the following sports CANNOT be called an individual sport?</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'reading-b', 16, 'A')">A. Swimming</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 16, 'B')">B. Running</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 16, 'C')">C. Basketball</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 16, 'D')">D. Cycling</span>
+                            </div>
+                            <input type="hidden" id="reading-b-16-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>17. The missing part in the last paragraph is "______"</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'reading-b', 17, 'A')">A. such as</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 17, 'B')">B. for example</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 17, 'C')">C. instead of</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 17, 'D')">D. because of</span>
+                            </div>
+                            <input type="hidden" id="reading-b-17-answer" value="">
+                        </div>
+                        
+                        <div class="question">
+                            <div>18. What's the theme of the passage?</div>
+                            <div class="options">
+                                <span class="option" onclick="selectOption(this, 'reading-b', 18, 'A')">A. Habits.</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 18, 'B')">B. Sports.</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 18, 'C')">C. Health.</span>
+                                <span class="option" onclick="selectOption(this, 'reading-b', 18, 'D')">D. Schools.</span>
+                            </div>
+                            <input type="hidden" id="reading-b-18-answer" value="">
+                        </div>
+                        
+                        <button class="btn" id="show-reading-b-answers" onclick="showReadingBAnswers()" disabled>显示答案</button>
+                    </div>
+                </div>
+
+                <!-- Sentence Restoration Section -->
+                <div class="section-content" id="sentence-restoration-content">
+                    <div class="article-content">
+                        <div class="reading-text">
+                            阅读下面短文,从短文后的选项中选出可以填入空白处的最佳选项。选项中有两项为多余选项。<br>
+                            Shutlecock kicking (踢毽子) is a traditional sport in China.<span class="cloze-blank" id="sr-blank-19"></span><br>
+                            In these years, many countries in Europe and Asia organize shuttlecock kicking games.<br>
+                            Zac is a student from the UK. He didn't exercise before because he didn't like sports at all. But after watching a video about shuttlecock kicking, he took a great interest in it.<span class="cloze-blank" id="sr-blank-20"></span><br>
+                            Why does the game become so popular? Firstly, shutlecock kicking is a good way to relax for people It helps to move almost all the parts of the body and improve the health.<span class="cloze-blank" id="sr-blank-21"></span>They can have great fun practicing, and at the same time it helps to develop the skills in working well in a group. Thirdly, people can play it both indoors and outdoors. It doesn't need a large sports ground like football.<br>
+                            Making a shutlecock is quite simple.<span class="cloze-blank" id="sr-blank-22"></span>Then you put several feathers (羽毛)through the holes. Of course, there are shuttlecocks sold in stores.<br>
+                            <span class="cloze-blank" id="sr-blank-23"></span> Players should keep the shuttlecock in the air by using any part of the body, except their hands. Everyone can take part in it. So, next time if you want to exercise, choose shuttlecock kicking.
+                        </div>
+                    </div>
+                    <div class="questions-content">
+                        <div class="matching-container">
+                            <div class="options-column">
+                                <div><strong>选项池:</strong></div>
+                                <div class="option-pool" id="option-pool">
+                                    <span class="option-item" id="opt-A" data-value="A" onclick="handleOptionClick('A')">A. Even now, shuttlecock kicking is still one of the most popular activities.</span>
+                                    <span class="option-item" id="opt-B" data-value="B" onclick="handleOptionClick('B')">B. Now, he is a big fan of shuttlecock kicking.</span>
+                                    <span class="option-item" id="opt-C" data-value="C" onclick="handleOptionClick('C')">C. The rule of shuttlecock kicking is also easy.</span>
+                                    <span class="option-item" id="opt-D" data-value="D" onclick="handleOptionClick('D')">D. You just need to find some coins with holes.</span>
+                                    <span class="option-item" id="opt-E" data-value="E" onclick="handleOptionClick('E')">E. Secondly, people can play alone or in a group.</span>
+                                    <span class="option-item" id="opt-F" data-value="F" onclick="handleOptionClick('F')">F. The shuttlecock is very cheap.</span>
+                                    <span class="option-item" id="opt-G" data-value="G" onclick="handleOptionClick('G')">G. It is difficult to remember the rules of shuttlecock kicking.</span>
+                                </div>
+                            </div>
+                            <div class="questions-column">
+                                <div class="match-question">
+                                    <div class="question-number">19.</div>
+                                    <div class="question-slot" id="slot-19" data-question="19" onclick="handleSlotClick(19)"></div>
+                                </div>
+                                <div class="match-question">
+                                    <div class="question-number">20.</div>
+                                    <div class="question-slot" id="slot-20" data-question="20" onclick="handleSlotClick(20)"></div>
+                                </div>
+                                <div class="match-question">
+                                    <div class="question-number">21.</div>
+                                    <div class="question-slot" id="slot-21" data-question="21" onclick="handleSlotClick(21)"></div>
+                                </div>
+                                <div class="match-question">
+                                    <div class="question-number">22.</div>
+                                    <div class="question-slot" id="slot-22" data-question="22" onclick="handleSlotClick(22)"></div>
+                                </div>
+                                <div class="match-question">
+                                    <div class="question-number">23.</div>
+                                    <div class="question-slot" id="slot-23" data-question="23" onclick="handleSlotClick(23)"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn" id="show-sentence-restoration-answers" onclick="showSentenceRestorationAnswers()" disabled>显示答案</button>
+                    </div>
+                </div>
+
+                <!-- Writing Section -->
+                <div class="section-content" id="writing-content">
+                    <div class="article-content">
+                        <div class="writing-text">
+                            25.根据中文和英文提示,完成一篇不少于50词的文段写作。所给提示词语仅供选用。请不要写出你的真实校名和姓名。<br>
+                            生命在于运动,运动不但可以帮助我们增强自信,从而塑造更加健全的人格,还有助于我们实现体育强国之梦。某英文网站正在开展以"运动让生活更美好"为主题的征文活动,假如你是李华,请用英语写一篇短文投稿,谈谈你经常做什么运动,为什么喜欢做运动,以及运动给你带来的收获。<br>
+                            <div class="writing-tip"><strong>提示词语:</strong> basketball, keep healthy, relaxed, make friends, fun, healthy, learn, teamwork</div>
+                            <div class="writing-tip"><strong>提示问题:</strong><br>
+                                - What sports do you usually do? Why?<br>
+                                - What advantages can you get from doing sports?
+                            </div>
+                        </div>
+                    </div>
+                    <div class="questions-content">
+                        <textarea id="writing-response" rows="10" placeholder="在这里输入你的作文..."></textarea>
+                        
+                        <button class="btn" onclick="showWritingAnswer()">显示答案</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Track user answers
+        const userAnswers = {
+            cloze: {},
+            'reading-a': {},
+            'reading-b': {},
+            'sentence-restoration': {}
+        };
+        
+        // Correct answers
+        const correctAnswers = {
+            cloze: {
+                1: 'A',
+                2: 'B',
+                3: 'B',
+                4: 'C',
+                5: 'A',
+                6: 'D',
+                7: 'A',
+                8: 'B',
+                9: 'C',
+                10: 'D'
+            },
+            'reading-a': {
+                11: 'C',
+                12: 'D',
+                13: 'C',
+                14: 'C'
+            },
+            'reading-b': {
+                15: 'C',
+                16: 'C',
+                17: 'A',
+                18: 'B'
+            },
+            'sentence-restoration': {
+                19: 'A',
+                20: 'B',
+                21: 'E',
+                22: 'D',
+                23: 'C'
+            }
+        };
+
+        // Current section
+        let currentSection = 'cloze';
+
+        // Sentence Restoration specific state
+        let selectedOptionForAssignment = null; // Stores the option (A-G) clicked in the option-pool
+        let assignedOptions = { // Tracks current assignments for sentence restoration
+            19: null,
+            20: null,
+            21: null,
+            22: null,
+            23: null
+        };
+
+        // Function to switch sections
+        function switchSection(section) {
+            // Update navigation active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                
+                // Reset to short title for all inactive links
+                const shortTitle = link.getAttribute('data-short');
+                link.textContent = shortTitle;
+            });
+            
+            // Find and activate the correct nav link based on section
+            let navLink;
+            switch(section) {
+                case 'cloze':
+                    navLink = document.querySelector('.nav-link[onclick*="switchSection(\'cloze\')"]');
+                    break;
+                case 'reading-a':
+                    navLink = document.querySelector('.nav-link[onclick*="switchSection(\'reading-a\')"]');
+                    break;
+                case 'reading-b':
+                    navLink = document.querySelector('.nav-link[onclick*="switchSection(\'reading-b\')"]');
+                    break;
+                case 'sentence-restoration':
+                    navLink = document.querySelector('.nav-link[onclick*="switchSection(\'sentence-restoration\')"]');
+                    break;
+                case 'writing':
+                    navLink = document.querySelector('.nav-link[onclick*="switchSection(\'writing\')"]');
+                    break;
+            }
+            
+            if (navLink) {
+                navLink.classList.add('active');
+                
+                // Show full title for the active link
+                const fullTitle = navLink.getAttribute('data-full');
+                navLink.textContent = fullTitle;
+            }
+            
+            // Hide all content sections
+            document.querySelectorAll('.section-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Show selected content section
+            document.getElementById(`${section}-content`).classList.add('active');
+            
+            // Update current section
+            currentSection = section;
+        }
+
+        // Function to select an option for Cloze/Reading sections (not Sentence Restoration)
+        function selectOption(element, section, questionNum, optionValue) {
+            // Only allow selection if we're in the correct section
+            if (currentSection !== section) return;
+            
+            // Check if the clicked option is already selected (to handle deselection)
+            const isSelected = element.classList.contains('selected');
+            
+            // Remove selected class from siblings
+            const options = element.parentElement.querySelectorAll('.option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            
+            // Toggle selection: if it was selected, deselect it; otherwise, select it
+            if (!isSelected) {
+                element.classList.add('selected');
+                // Store the user's answer
+                userAnswers[section][questionNum] = optionValue;
+            } else {
+                // Deselect: remove the answer
+                element.classList.remove('selected');
+                delete userAnswers[section][questionNum];
+            }
+            
+            // Update hidden input (if applicable, though for new SR it's not used this way)
+            const hiddenInput = document.getElementById(`${section}-${questionNum}-answer`);
+            if (hiddenInput) {
+                hiddenInput.value = isSelected ? '' : optionValue;
+            }
+            
+            // Check if all questions in this section are answered
+            checkSectionCompletion(section);
+            
+            // Update progress
+            updateProgress();
+            
+            // Auto-scroll to bring the selected question to the top of the question area only if it's near the bottom
+            setTimeout(() => {
+                const questionContainer = element.closest('.questions-content');
+                if (questionContainer) {
+                    const questionElement = element.closest('.question');
+                    if (questionElement) {
+                        // Calculate if the question is near the bottom of the container
+                        const containerHeight = questionContainer.clientHeight;
+                        const containerScrollTop = questionContainer.scrollTop;
+                        const containerScrollBottom = containerScrollTop + containerHeight;
+                        const questionTop = questionElement.offsetTop - questionContainer.offsetTop;
+                        const questionBottom = questionTop + questionElement.offsetHeight;
+                        
+                        // Only scroll if the question is in the bottom portion of the container
+                        if (questionBottom > containerScrollBottom - 100) { // 100px threshold
+                            questionContainer.scrollTop = questionTop - 20; // Move to top with 20px offset
+                        }
+                    }
+                }
+            }, 10);
+        }
+
+        // Sentence Restoration handlers
+        function handleOptionClick(optionValue) {
+            // If the clicked option is already assigned to a question, unassign it first
+            for (const qNum in assignedOptions) {
+                if (assignedOptions[qNum] === optionValue) {
+                    // Unassign from question slot
+                    const slot = document.getElementById(`slot-${qNum}`);
+                    slot.textContent = '';
+                    slot.classList.remove('assigned');
+                    assignedOptions[qNum] = null;
+                    userAnswers['sentence-restoration'][qNum] = null;
+                }
+            }
+
+            // Clear any previously selected option for assignment
+            if (selectedOptionForAssignment) {
+                document.getElementById(`opt-${selectedOptionForAssignment}`).classList.remove('selected-for-assignment');
+            }
+
+            // Set the new selected option for assignment
+            selectedOptionForAssignment = optionValue;
+            document.getElementById(`opt-${optionValue}`).classList.add('selected-for-assignment');
+        }
+
+        function handleSlotClick(questionNum) {
+            const slot = document.getElementById(`slot-${questionNum}`);
+            const oldOptionValue = assignedOptions[questionNum];
+
+            if (selectedOptionForAssignment) {
+                // An option from the pool is staged
+                const newOptionElement = document.getElementById(`opt-${selectedOptionForAssignment}`);
+                const newOptionText = newOptionElement.textContent;
+
+                if (oldOptionValue) {
+                    // If slot already has an option, return it to the pool
+                    const oldOptionElement = document.getElementById(`opt-${oldOptionValue}`);
+                    oldOptionElement.classList.remove('assigned');
+                }
+
+                // Assign the new option to the slot
+                slot.textContent = newOptionText;
+                slot.classList.add('assigned');
+                assignedOptions[questionNum] = selectedOptionForAssignment;
+                userAnswers['sentence-restoration'][questionNum] = selectedOptionForAssignment; // Store in userAnswers
+
+                // Mark the new option as assigned in the pool
+                newOptionElement.classList.remove('selected-for-assignment');
+                newOptionElement.classList.add('assigned');
+
+                // Clear staged option
+                selectedOptionForAssignment = null;
+            } else if (oldOptionValue) {
+                // No option is staged, but user clicked an assigned slot to unassign it
+                const oldOptionElement = document.getElementById(`opt-${oldOptionValue}`);
+                oldOptionElement.classList.remove('assigned');
+                slot.textContent = '';
+                slot.classList.remove('assigned');
+                assignedOptions[questionNum] = null;
+                userAnswers['sentence-restoration'][questionNum] = null; // Remove from userAnswers
+            }
+            checkSectionCompletion('sentence-restoration');
+            updateProgress();
+        }
+
+        // Check if all questions in a section are answered
+        function checkSectionCompletion(section) {
+            let totalQuestions = 0;
+            let answeredQuestions = 0;
+            
+            // Count total questions in the section
+            switch(section) {
+                case 'cloze':
+                    totalQuestions = 10;
+                    break;
+                case 'reading-a':
+                    totalQuestions = 4;
+                    break;
+                case 'reading-b':
+                    totalQuestions = 4;
+                    break;
+                case 'sentence-restoration':
+                    totalQuestions = 5;
+                    // For sentence restoration, check `assignedOptions`
+                    for (let i = 19; i <= 23; i++) {
+                        if (assignedOptions[i] !== null) {
+                            answeredQuestions++;
+                        }
+                    }
+                    if (answeredQuestions === totalQuestions) {
+                        document.getElementById(`show-${section}-answers`).disabled = false;
+                    } else {
+                        document.getElementById(`show-${section}-answers`).disabled = true;
+                    }
+                    return; // Exit as SR handled differently
+            }
+            
+            // Count answered questions for other sections
+            for (let i = 1; i <= totalQuestions; i++) {
+                const questionNum = section === 'cloze' ? i : (section === 'reading-a' ? i + 10 : i + 14);
+                
+                if (userAnswers[section][questionNum]) {
+                    answeredQuestions++;
+                }
+            }
+            
+            // Enable the "Show Answers" button if all questions are answered
+            if (answeredQuestions === totalQuestions) {
+                document.getElementById(`show-${section}-answers`).disabled = false;
+            } else {
+                document.getElementById(`show-${section}-answers`).disabled = true;
+            }
+        }
+
+        // Show answers for cloze section
+        function showClozeAnswers() {
+            for (let i = 1; i <= 10; i++) {
+                const userAnswer = userAnswers.cloze[i] || '未回答';
+                const correctAnswer = correctAnswers.cloze[i];
+                
+                // Find the question element
+                const questionElement = document.querySelector(`#cloze-content .question:nth-child(${i})`);
+                if (!questionElement) continue;
+                
+                // Highlight correct option in green
+                const correctOption = questionElement.querySelector(`.option[onclick*="'${correctAnswer}'"]`);
+                if (correctOption) {
+                    correctOption.style.backgroundColor = '#27ae60';
+                    correctOption.style.color = 'white';
+                }
+                
+                // If user's answer is different from correct, highlight in red
+                if (userAnswer !== correctAnswer && userAnswer !== '未回答') {
+                    const userOption = questionElement.querySelector(`.option[onclick*="'${userAnswer}'"]`);
+                    if (userOption) {
+                        userOption.style.backgroundColor = '#e74c3c';
+                        userOption.style.color = 'white';
+                    }
+                }
+                
+                // Create answer info element with explanation
+                const answerInfo = document.createElement('div');
+                answerInfo.className = 'answer-info';
+                answerInfo.style.marginLeft = '15px';
+                answerInfo.style.minWidth = '200px';
+                
+                // Generate explanation based on the question
+                let explanation = '';
+                switch(i) {
+                    case 1:
+                        explanation = '根据上下文，Li Ming热爱跑步，这在后文中得到体现。';
+                        break;
+                    case 2:
+                        explanation = '此处表示条件关系，如果他没有获胜，同学们会嘲笑他。';
+                        break;
+                    case 3:
+                        explanation = '根据后文老师的话，可知是老师鼓励了他。';
+                        break;
+                    case 4:
+                        explanation = '听到老师的话后，他决定参加比赛。';
+                        break;
+                    case 5:
+                        explanation = '他每天为比赛进行训练。';
+                        break;
+                    case 6:
+                        explanation = '有时他会感到疲惫，但仍然坚持。';
+                        break;
+                    case 7:
+                        explanation = '当比赛时间到来时，他紧张但准备好了。';
+                        break;
+                    case 8:
+                        explanation = '他记起老师的话并继续跑下去。';
+                        break;
+                    case 9:
+                        explanation = '他很兴奋，因为他取得了好成绩。';
+                        break;
+                    case 10:
+                        explanation = '他明白了运动会的意义。';
+                        break;
+                    default:
+                        explanation = '根据文章内容选择最合适的答案。';
+                }
+                
+                answerInfo.innerHTML = `
+                    <div class="explanation" style="margin-top: 5px; font-size: 14px; color: #555;">解释: ${explanation}</div>
+                `;
+                
+                // Add the answer info to the question element
+                questionElement.appendChild(answerInfo);
+                
+                // Disable further interaction with options
+                const options = questionElement.querySelectorAll('.option');
+                options.forEach(option => {
+                    option.style.pointerEvents = 'none';
+                });
+            }
+            
+            // Disable the show answers button
+            document.getElementById('show-cloze-answers').disabled = true;
+            
+            // Scroll the question area to the top
+            const questionArea = document.querySelector('#cloze-content .questions-content');
+            if (questionArea) {
+                questionArea.scrollTop = 0;
+            }
+        }
+
+        // Show answers for reading A section
+        function showReadingAAnswers() {
+            for (let i = 11; i <= 14; i++) {
+                const userAnswer = userAnswers['reading-a'][i] || '未回答';
+                const correctAnswer = correctAnswers['reading-a'][i];
+                
+                // Find the question element
+                const questionElement = document.querySelector(`#reading-a-content .question:nth-child(${i - 10})`);
+                if (!questionElement) continue;
+                
+                // Highlight correct option in green
+                const correctOption = questionElement.querySelector(`.option[onclick*="'${correctAnswer}'"]`);
+                if (correctOption) {
+                    correctOption.style.backgroundColor = '#27ae60';
+                    correctOption.style.color = 'white';
+                }
+                
+                // If user's answer is different from correct, highlight in red
+                if (userAnswer !== correctAnswer && userAnswer !== '未回答') {
+                    const userOption = questionElement.querySelector(`.option[onclick*="'${userAnswer}'"]`);
+                    if (userOption) {
+                        userOption.style.backgroundColor = '#e74c3c';
+                        userOption.style.color = 'white';
+                    }
+                }
+                
+                // Create answer info element with explanation
+                const answerInfo = document.createElement('div');
+                answerInfo.className = 'answer-info';
+                answerInfo.style.marginLeft = '15px';
+                answerInfo.style.minWidth = '200px';
+                
+                // Generate explanation based on the question
+                let explanation = '';
+                switch(i) {
+                    case 11:
+                        explanation = '根据文中顺序：戴装备 → 听安全规则 → 跳入水中 → 观察鱼和珊瑚。';
+                        break;
+                    case 12:
+                        explanation = '第三段主要描述Mia在潜水时看到的景象和感受。';
+                        break;
+                    case 13:
+                        explanation = '文中提到运动使身体更强壮（make stronger）和探索自然（explore nature）。';
+                        break;
+                    case 14:
+                        explanation = '根据题目要求，1,2是一组，3,4是一组。';
+                        break;
+                    default:
+                        explanation = '根据文章内容选择最合适的答案。';
+                }
+                
+                answerInfo.innerHTML = `
+                    <div class="explanation" style="margin-top: 5px; font-size: 14px; color: #555;">解释: ${explanation}</div>
+                `;
+                
+                // Add the answer info to the question element
+                questionElement.appendChild(answerInfo);
+                
+                // Disable further interaction with options
+                const options = questionElement.querySelectorAll('.option');
+                options.forEach(option => {
+                    option.style.pointerEvents = 'none';
+                });
+            }
+            
+            // Disable the show answers button
+            document.getElementById('show-reading-a-answers').disabled = true;
+            
+            // Scroll the question area to the top
+            const questionArea = document.querySelector('#reading-a-content .questions-content');
+            if (questionArea) {
+                questionArea.scrollTop = 0;
+            }
+        }
+
+        // Show answers for reading B section
+        function showReadingBAnswers() {
+            for (let i = 15; i <= 18; i++) {
+                const userAnswer = userAnswers['reading-b'][i] || '未回答';
+                const correctAnswer = correctAnswers['reading-b'][i];
+                
+                // Find the question element
+                const questionElement = document.querySelector(`#reading-b-content .question:nth-child(${i - 14})`);
+                if (!questionElement) continue;
+                
+                // Highlight correct option in green
+                const correctOption = questionElement.querySelector(`.option[onclick*="'${correctAnswer}'"]`);
+                if (correctOption) {
+                    correctOption.style.backgroundColor = '#27ae60';
+                    correctOption.style.color = 'white';
+                }
+                
+                // If user's answer is different from correct, highlight in red
+                if (userAnswer !== correctAnswer && userAnswer !== '未回答') {
+                    const userOption = questionElement.querySelector(`.option[onclick*="'${userAnswer}'"]`);
+                    if (userOption) {
+                        userOption.style.backgroundColor = '#e74c3c';
+                        userOption.style.color = 'white';
+                    }
+                }
+                
+                // Create answer info element with explanation
+                const answerInfo = document.createElement('div');
+                answerInfo.className = 'answer-info';
+                answerInfo.style.marginLeft = '15px';
+                answerInfo.style.minWidth = '200px';
+                
+                // Generate explanation based on the question
+                let explanation = '';
+                switch(i) {
+                    case 15:
+                        explanation = '根据文中建议，应与老师或家长交谈寻求帮助。';
+                        break;
+                    case 16:
+                        explanation = '篮球是团体运动，而游泳、跑步、骑自行车都是个人运动。';
+                        break;
+                    case 17:
+                        explanation = '此处需要一个引出例子的短语，such as符合语境。';
+                        break;
+                    case 18:
+                        explanation = '整篇文章都在讨论运动的重要性，主题是Sports。';
+                        break;
+                    default:
+                        explanation = '根据文章内容选择最合适的答案。';
+                }
+                
+                answerInfo.innerHTML = `
+                    <div class="explanation" style="margin-top: 5px; font-size: 14px; color: #555;">解释: ${explanation}</div>
+                `;
+                
+                // Add the answer info to the question element
+                questionElement.appendChild(answerInfo);
+                
+                // Disable further interaction with options
+                const options = questionElement.querySelectorAll('.option');
+                options.forEach(option => {
+                    option.style.pointerEvents = 'none';
+                });
+            }
+            
+            // Disable the show answers button
+            document.getElementById('show-reading-b-answers').disabled = true;
+            
+            // Scroll the question area to the top
+            const questionArea = document.querySelector('#reading-b-content .questions-content');
+            if (questionArea) {
+                questionArea.scrollTop = 0;
+            }
+        }
+
+        // Show answers for sentence restoration section
+        function showSentenceRestorationAnswers() {
+            for (let i = 19; i <= 23; i++) {
+                const userAnswer = assignedOptions[i]; // Get user's assigned option
+                const correctAnswer = correctAnswers['sentence-restoration'][i];
+                
+                const slotElement = document.getElementById(`slot-${i}`);
+                if (!slotElement) continue;
+
+                // Create answer info element with explanation
+                const answerInfo = document.createElement('div');
+                answerInfo.className = 'answer-info';
+                answerInfo.style.marginLeft = '15px';
+                answerInfo.style.minWidth = '200px';
+                
+                // Generate explanation based on the question
+                let explanation = '';
+                switch(i) {
+                    case 19:
+                        explanation = '根据下文提到的许多国家组织毽球比赛，说明毽球至今仍是最受欢迎的活动之一。';
+                        break;
+                    case 20:
+                        explanation = '前文提到Zac对毽球产生了浓厚兴趣，所以现在他是毽球的忠实粉丝。';
+                        break;
+                    case 21:
+                        explanation = '下文提到人们可以一起玩，说明第二点是人们可以单独或成组玩。';
+                        break;
+                    case 22:
+                        explanation = '制作毽球很简单，只需要找一些有孔的硬币。';
+                        break;
+                    case 23:
+                        explanation = '下文描述了毽球的规则，说明规则也很简单。';
+                        break;
+                    default:
+                        explanation = '根据文章内容选择最合适的答案。';
+                }
+                
+                answerInfo.innerHTML = `
+                    <div class="explanation" style="margin-top: 5px; font-size: 14px; color: #555;">正确答案: ${correctAnswer}<br>解释: ${explanation}</div>
+                `;
+                
+                // Append the explanation to the slot's parent for better layout
+                const matchQuestionDiv = slotElement.closest('.match-question');
+                if (matchQuestionDiv) {
+                    matchQuestionDiv.appendChild(answerInfo);
+                }
+
+                // Visual feedback on selected options
+                const optionElement = document.getElementById(`opt-${userAnswer}`);
+                if (userAnswer === correctAnswer) {
+                    slotElement.style.backgroundColor = '#c8e6c9'; // Light green for correct slot
+                    if (optionElement) optionElement.style.backgroundColor = '#c8e6c9'; // Light green for correct option in pool
+                } else {
+                    slotElement.style.backgroundColor = '#ffcdd2'; // Light red for incorrect slot
+                    if (optionElement) optionElement.style.backgroundColor = '#ffcdd2'; // Light red for incorrect option in pool
+                    
+                    // Highlight correct answer in green in the pool if it wasn't selected
+                    const correctOptionElement = document.getElementById(`opt-${correctAnswer}`);
+                    if (correctOptionElement) {
+                        correctOptionElement.style.backgroundColor = '#a5d6a7'; // A shade of green for correct option
+                    }
+                }
+
+                // Disable further interaction with options and slots
+                const allOptions = document.querySelectorAll('#sentence-restoration-content .option-item');
+                allOptions.forEach(opt => {
+                    opt.style.pointerEvents = 'none';
+                    opt.classList.remove('selected-for-assignment'); // Remove any lingering selection highlight
+                });
+                const allSlots = document.querySelectorAll('#sentence-restoration-content .question-slot');
+                allSlots.forEach(slot => {
+                    slot.style.pointerEvents = 'none';
+                });
+            }
+            
+            // Disable the show answers button
+            document.getElementById('show-sentence-restoration-answers').disabled = true;
+            
+            // Scroll the question area to the top
+            const questionArea = document.querySelector('#sentence-restoration-content .questions-content');
+            if (questionArea) {
+                questionArea.scrollTop = 0;
+            }
+        }
+
+        // Show writing answer
+        function showWritingAnswer() {
+            // Create the writing answer content
+            const writingAnswerDiv = document.createElement('div');
+            writingAnswerDiv.id = 'writing-answer';
+            writingAnswerDiv.className = 'writing-answer';
+            writingAnswerDiv.style.marginTop = '20px';
+            writingAnswerDiv.style.padding = '15px';
+            writingAnswerDiv.style.backgroundColor = '#e8f5e9';
+            writingAnswerDiv.style.borderRadius = '5px';
+            
+            writingAnswerDiv.innerHTML = `
+                <div class="answer-header">书面表达 - 写作思路与范文</div>
+                
+                <div class="mind-map">
+                    <h4>写作思维导图:</h4>
+                    <p><strong>主题:</strong> 运动让生活更美好</p>
+                    <p><strong>结构:</strong></p>
+                    <ul>
+                        <li>开头: 简要介绍自己喜欢的运动</li>
+                        <li>主体: 
+                            <ul>
+                                <li>为什么喜欢这项运动</li>
+                                <li>运动带来的好处（健康、友谊、团队合作等）</li>
+                            </ul>
+                        </li>
+                        <li>结尾: 总结运动对生活的积极影响</li>
+                    </ul>
+                    <p><strong>关键词汇:</strong> basketball, keep healthy, relaxed, make friends, fun, healthy, learn, teamwork</p>
+                </div>
+                
+                <div class="example-article">
+                    <h4>参考范文:</h4>
+                    <p>Exercise Makes Life Better</p>
+                    <p>Sports play an important role in my life. My favorite sport is basketball because it is not only fun but also helps me stay healthy. Playing basketball regularly keeps me physically strong and mentally relaxed after busy days at school.</p>
+                    <p>Through basketball, I have made many good friends who share the same interest. Working as a team teaches me valuable lessons about cooperation and communication. I have learned that success comes from hard work and supporting each other.</p>
+                    <p>In conclusion, doing sports has brought me joy, health, and friendship. It has made my life more meaningful and colorful. I believe that regular exercise is essential for a better life.</p>
+                </div>
+            `;
+            
+            // Add the writing answer to the questions content area
+            const questionsContent = document.querySelector('#writing-content .questions-content');
+            questionsContent.appendChild(writingAnswerDiv);
+            
+            // Scroll the question area to the top
+            if (questionsContent) {
+                questionsContent.scrollTop = 0;
+            }
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            // Calculate total questions
+            const totalQuestions = 23; // 10 cloze + 4 reading A + 4 reading B + 5 sentence restoration
+            
+            // Count answered questions
+            let answeredCount = 0;
+            
+            // Count cloze answers
+            for (let i = 1; i <= 10; i++) {
+                if (userAnswers.cloze[i]) answeredCount++;
+            }
+            
+            // Count reading A answers
+            for (let i = 11; i <= 14; i++) {
+                if (userAnswers['reading-a'][i]) answeredCount++;
+            }
+            
+            // Count reading B answers
+            for (let i = 15; i <= 18; i++) {
+                if (userAnswers['reading-b'][i]) answeredCount++;
+            }
+            
+            // Count sentence restoration answers
+            for (let i = 19; i <= 23; i++) {
+                if (userAnswers['sentence-restoration'][i]) answeredCount++;
+            }
+            
+            // Calculate percentage and update progress bar
+            const percentage = (answeredCount / totalQuestions) * 100;
+            document.getElementById('progress').style.width = `${percentage}%`;
+        }
+        
+        // Update progress bar
+        function updateProgress() {
+            // Calculate total questions
+            const totalQuestions = 23; // 10 cloze + 4 reading A + 4 reading B + 5 sentence restoration
+            
+            // Count answered questions
+            let answeredCount = 0;
+            
+            // Count cloze answers
+            for (let i = 1; i <= 10; i++) {
+                if (userAnswers.cloze[i]) answeredCount++;
+            }
+            
+            // Count reading A answers
+            for (let i = 11; i <= 14; i++) {
+                if (userAnswers['reading-a'][i]) answeredCount++;
+            }
+            
+            // Count reading B answers
+            for (let i = 15; i <= 18; i++) {
+                if (userAnswers['reading-b'][i]) answeredCount++;
+            }
+            
+            // Count sentence restoration answers
+            for (let i = 19; i <= 23; i++) {
+                if (userAnswers['sentence-restoration'][i]) answeredCount++;
+            }
+            
+            // Calculate percentage and update progress bar
+            const percentage = (answeredCount / totalQuestions) * 100;
+            document.getElementById('progress').style.width = `${percentage}%`;
+        }
+    </script>
+</body>
+</html>
