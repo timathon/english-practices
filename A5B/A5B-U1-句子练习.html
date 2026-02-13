@@ -340,6 +340,17 @@
         .log-item span.score { font-weight: bold; color: var(--primary); }
         .danger-text { color: var(--danger); cursor: pointer; font-size: 0.8rem; text-decoration: underline;}
 
+        /* --- Mistakes Modal Specifics --- */
+        .mistake-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+        .mistake-date { font-size: 0.8rem; color: #999; margin-bottom: 6px; }
+        .mistake-cn { font-weight: bold; color: #333; margin-bottom: 4px; display:block; }
+        .mistake-wrong { color: var(--danger); text-decoration: line-through; font-size: 0.9rem; margin-bottom: 2px; display:block;}
+        .mistake-correct { color: var(--primary-dark); font-weight: bold; font-size: 0.9rem; display:block;}
+
         /* --- Animations --- */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -368,7 +379,8 @@
             <!-- Populated by JS -->
         </div>
 
-        <div style="margin-top: auto; text-align: center; padding-top: 10px;">
+        <div style="margin-top: auto; text-align: center; padding-top: 10px; display:flex; flex-direction:column; gap:10px;">
+            <button onclick="app.showMistakes()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; font-size:1rem;">View My Mistakes</button>
             <button onclick="app.showHistory()" style="background:none; border:none; color:#ccc; cursor:pointer;">Teacher Dashboard</button>
         </div>
     </div>
@@ -415,6 +427,20 @@
             <div class="log-list" id="log-list"></div>
             <div style="text-align: right;">
                 <span class="danger-text" onclick="app.clearHistory()">Clear History (Teacher Only)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mistakes Modal -->
+    <div id="mistakes-modal" style="display:none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="color:var(--danger)">My Mistakes</h2>
+                <button onclick="app.closeMistakes()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="mistakes-list"></div>
+            <div style="text-align: right;">
+                <span class="danger-text" onclick="app.clearMistakes()">Clear My Mistakes</span>
             </div>
         </div>
     </div>
@@ -536,10 +562,27 @@
             return JSON.parse(localStorage.getItem('sb_unit1_logs') || '[]');
         },
 
+        getMistakes: function() {
+            return JSON.parse(localStorage.getItem('sb_unit1_mistakes') || '[]');
+        },
+
         saveLog: function(log) {
             const logs = this.getLogs();
             logs.unshift(log); // Add to top
             localStorage.setItem('sb_unit1_logs', JSON.stringify(logs));
+        },
+
+        saveMistake: function(targetEn, targetCn, challengeTitle, userAnswer) {
+            const mistakes = this.getMistakes();
+            const newMistake = {
+                date: new Date().toLocaleString(),
+                challenge: challengeTitle,
+                en: targetEn,
+                cn: targetCn,
+                user: userAnswer
+            };
+            mistakes.unshift(newMistake);
+            localStorage.setItem('sb_unit1_mistakes', JSON.stringify(mistakes));
         },
 
         getChallengeStats: function(title) {
@@ -801,6 +844,9 @@
                 title.innerText = 'Correct Answer:';
                 msg.innerText = targetEn;
 
+                // Log Mistake
+                this.saveMistake(targetEn, this.state.currentTargetObj.cn, this.state.currentChallenge.title, userSentence);
+
                 // Logic
                 if(!this.state.isRedemption) {
                     this.state.attempts[this.state.currentIndex] = false;
@@ -879,6 +925,41 @@
 
         closeHistory: function() {
             document.getElementById('history-modal').style.display = 'none';
+        },
+
+        showMistakes: function() {
+            const modal = document.getElementById('mistakes-modal');
+            const list = document.getElementById('mistakes-list');
+            list.innerHTML = '';
+            const mistakes = this.getMistakes();
+
+            if(mistakes.length === 0) {
+                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No mistakes recorded yet. Keep it up!</p>';
+            } else {
+                mistakes.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = 'mistake-item';
+                    div.innerHTML = `
+                        <div class="mistake-date">${m.date} - ${m.challenge}</div>
+                        <div class="mistake-cn"><strong>Q:</strong> ${m.cn}</div>
+                        <div class="mistake-wrong"><strong>You said:</strong> ${m.user || '(No answer)'}</div>
+                        <div class="mistake-correct"><strong>Correct:</strong> ${m.en}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            }
+            modal.style.display = 'flex';
+        },
+
+        closeMistakes: function() {
+            document.getElementById('mistakes-modal').style.display = 'none';
+        },
+
+        clearMistakes: function() {
+            if(confirm("Are you sure you want to clear your mistake history?")) {
+                localStorage.removeItem('sb_unit1_mistakes');
+                this.showMistakes();
+            }
         },
 
         clearHistory: function() {
