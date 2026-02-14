@@ -47,6 +47,18 @@
         .folder {
             font-weight: bold;
             color: #444;
+            cursor: pointer;
+        }
+        .folder-toggle {
+            cursor: pointer;
+        }
+        .file-count {
+            font-weight: normal;
+            font-style: italic;
+            color: #888;
+        }
+        .collapsed {
+            display: none;
         }
     </style>
 </head>
@@ -56,15 +68,16 @@
     <div class="section">
         <h2>Latest Practices</h2>
         <ul id="latest-list">
+            <li><a href="A5A/A5A-U6-Sentence-Builder.html">A5A-U6-Sentence-Builder.html</a></li>
+            <li><a href="A5A/A5A-U5-Sentence-Builder.html">A5A-U5-Sentence-Builder.html</a></li>
+            <li><a href="A5A/A5A-U4-Sentence-Builder.html">A5A-U4-Sentence-Builder.html</a></li>
+            <li><a href="A5A/A5A-U3-Sentence-Builder.html">A5A-U3-Sentence-Builder.html</a></li>
+            <li><a href="A5A/A5A-U1-Sentence-Builder.html">A5A-U1-Sentence-Builder.html</a></li>
+            <li><a href="A5A/A5A-U2-Sentence-Builder.html">A5A-U2-Sentence-Builder.html</a></li>
             <li><a href="A6B/A6B-U1-Sentence-Builder.html">A6B-U1-Sentence-Builder.html</a></li>
             <li><a href="A7B/A7B-U1-Sentence-Builder.html">A7B-U1-Sentence-Builder.html</a></li>
             <li><a href="A5B/Sentence-Builder-example-v3.html">Sentence-Builder-example-v3.html</a></li>
             <li><a href="A5B/A5B-U1-句子练习.html">A5B-U1-句子练习.html</a></li>
-            <li><a href="A7B/A7B-U3-典中点.html">A7B-U3-典中点.html</a></li>
-            <li><a href="A7B/A7B-U3-典中点-raw.html">A7B-U3-典中点-raw.html</a></li>
-            <li><a href="A5B/A5B-U1-练习3-诊断-练习4-写作.html">A5B-U1-练习3-诊断-练习4-写作.html</a></li>
-            <li><a href="A7B/A7B-U1-Reading-Practices.html">A7B-U1-Reading-Practices.html</a></li>
-            <li><a href="A7B/A7B-U1-典中点-语法训练.html">A7B-U1-典中点-语法训练.html</a></li>
         </ul>
     </div>
 
@@ -72,29 +85,57 @@
         <h2>All Practices (Tree View)</h2>
         <div class="tree">
 <ul>
-    <li><span class="folder">A5B</span>
-<ul>
+    <li><span class="folder folder-toggle">A5A</span> <span class="file-count"></span>
+<ul class="collapsed">
+    <li><a href="A5A/A5A-U1-Sentence-Builder.html">A5A-U1-Sentence-Builder.html</a></li>
+    <li><a href="A5A/A5A-U2-Sentence-Builder.html">A5A-U2-Sentence-Builder.html</a></li>
+    <li><a href="A5A/A5A-U3-Sentence-Builder.html">A5A-U3-Sentence-Builder.html</a></li>
+    <li><a href="A5A/A5A-U4-Sentence-Builder.html">A5A-U4-Sentence-Builder.html</a></li>
+    <li><a href="A5A/A5A-U5-Sentence-Builder.html">A5A-U5-Sentence-Builder.html</a></li>
+    <li><a href="A5A/A5A-U6-Sentence-Builder.html">A5A-U6-Sentence-Builder.html</a></li>
+</ul>
+    </li>
+    <li><span class="folder folder-toggle">A5B</span> <span class="file-count"></span>
+<ul class="collapsed">
     <li><a href="A5B/A5B-U1-句子练习.html">A5B-U1-句子练习.html</a></li>
     <li><a href="A5B/A5B-U1-练习3-诊断-练习4-写作.html">A5B-U1-练习3-诊断-练习4-写作.html</a></li>
     <li><a href="A5B/Sentence-Builder-example-v3.html">Sentence-Builder-example-v3.html</a></li>
 </ul>
     </li>
-    <li><span class="folder">A6B</span>
-<ul>
+    <li><span class="folder folder-toggle">A6B</span> <span class="file-count"></span>
+<ul class="collapsed">
     <li><a href="A6B/A6B-U1-Sentence-Builder.html">A6B-U1-Sentence-Builder.html</a></li>
 </ul>
     </li>
-    <li><span class="folder">A7B</span>
-<ul>
+    <li><span class="folder folder-toggle">A7B</span> <span class="file-count"></span>
+<ul class="collapsed">
     <li><a href="A7B/A7B-U1-Reading-Practices.html">A7B-U1-Reading-Practices.html</a></li>
     <li><a href="A7B/A7B-U1-Sentence-Builder.html">A7B-U1-Sentence-Builder.html</a></li>
     <li><a href="A7B/A7B-U1-典中点-语法训练.html">A7B-U1-典中点-语法训练.html</a></li>
-    <li><a href="A7B/A7B-U3-典中点-raw.html">A7B-U3-典中点-raw.html</a></li>
     <li><a href="A7B/A7B-U3-典中点.html">A7B-U3-典中点.html</a></li>
 </ul>
     </li>
 </ul>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const folders = document.querySelectorAll('.folder-toggle');
+
+            folders.forEach(folder => {
+                const sublist = folder.nextElementSibling.nextElementSibling;
+                if (sublist && sublist.tagName === 'UL') {
+                    const fileCount = sublist.children.length;
+                    const fileCountSpan = folder.nextElementSibling;
+                    fileCountSpan.textContent = `(${fileCount} files)`;
+
+                    folder.addEventListener('click', () => {
+                        sublist.classList.toggle('collapsed');
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
