@@ -574,14 +574,33 @@
 
         saveMistake: function(targetEn, targetCn, challengeTitle, userAnswer) {
             const mistakes = this.getMistakes();
-            const newMistake = {
-                date: new Date().toLocaleString(),
-                challenge: challengeTitle,
-                en: targetEn,
-                cn: targetCn,
-                user: userAnswer
-            };
-            mistakes.unshift(newMistake);
+            
+            // Check if this specific sentence is already in the mistake list
+            const existingIndex = mistakes.findIndex(m => m.en === targetEn);
+
+            if (existingIndex > -1) {
+                // Update existing entry
+                const existing = mistakes[existingIndex];
+                existing.count = (existing.count || 1) + 1;
+                existing.date = new Date().toLocaleString(); // Update to latest date
+                existing.user = userAnswer; // Update to latest wrong answer
+                
+                // Move to top of list
+                mistakes.splice(existingIndex, 1);
+                mistakes.unshift(existing);
+            } else {
+                // Create new entry
+                const newMistake = {
+                    date: new Date().toLocaleString(),
+                    challenge: challengeTitle,
+                    en: targetEn,
+                    cn: targetCn,
+                    user: userAnswer,
+                    count: 1
+                };
+                mistakes.unshift(newMistake);
+            }
+            
             localStorage.setItem('sb_unit1_mistakes', JSON.stringify(mistakes));
         },
 
@@ -937,11 +956,14 @@
                 list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No mistakes recorded yet. Keep it up!</p>';
             } else {
                 mistakes.forEach(m => {
+                    const count = m.count || 1;
+                    const countBadge = count > 1 ? `<span style="background:var(--danger); color:white; padding:1px 6px; border-radius:10px; font-size:0.7rem; margin-left:5px; vertical-align: middle;">x${count}</span>` : '';
+
                     const div = document.createElement('div');
                     div.className = 'mistake-item';
                     div.innerHTML = `
                         <div class="mistake-date">${m.date} - ${m.challenge}</div>
-                        <div class="mistake-cn"><strong>Q:</strong> ${m.cn}</div>
+                        <div class="mistake-cn"><strong>Q:</strong> ${m.cn}${countBadge}</div>
                         <div class="mistake-wrong"><strong>You said:</strong> ${m.user || '(No answer)'}</div>
                         <div class="mistake-correct"><strong>Correct:</strong> ${m.en}</div>
                     `;
@@ -956,9 +978,14 @@
         },
 
         clearMistakes: function() {
-            if(confirm("Are you sure you want to clear your mistake history?")) {
+            // Passcode check required now
+            const input = prompt("Enter Teacher Passcode to Clear Mistakes:");
+            if(input && input.toUpperCase() === 'ABCLN') {
                 localStorage.removeItem('sb_unit1_mistakes');
-                this.showMistakes();
+                this.showMistakes(); // Refresh UI
+                alert("Mistake history cleared.");
+            } else if (input) {
+                alert("Incorrect passcode.");
             }
         },
 
