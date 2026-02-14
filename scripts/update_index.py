@@ -221,16 +221,12 @@ def main():
 def generate_folder_index(folder_path, title):
     files = get_html_files_in_directory(folder_path)
     
-    # For subfolder index, we only need a list of files in that folder
-    # No "latest practices" or "tree view" sections are needed
-    
     list_items = []
     for f in sorted(files, key=lambda x: x['name']):
-        list_items.append(f'            <li><a href="{{f["path"]}}">{{f["name"]}}</a></li>')
+        list_items.append(f'            <li><a href="{f["path"]}">{f["name"]}</a></li>')
     
     list_html = '\n'.join(list_items)
 
-    # Add a "Back to Main Index" link
     back_to_main_link = '    <p><a href="../index.html">Back to Main Index</a></p>'
 
     template = f"""<!DOCTYPE html>
@@ -238,7 +234,7 @@ def generate_folder_index(folder_path, title):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{title}} Index</title>
+    <title>{title} Index</title>
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -275,12 +271,12 @@ def generate_folder_index(folder_path, title):
     </style>
 </head>
 <body>
-    <h1>{{title}}</h1>
-    {{back_to_main_link}}
+    <h1>{title}</h1>
+    {back_to_main_link}
     <div class="section">
         <h2>Files in this folder</h2>
         <ul>
-{{list_html}}
+{list_html}
         </ul>
     </div>
 </body>
@@ -393,10 +389,9 @@ def main():
         f.write(template)
 
     # Generate index.html for subfolders
-    subfolders = ['A5A', 'A5B', 'A6B', 'A7B'] # Add other subfolders as needed
+    subfolders = [d for d in os.listdir('.') if os.path.isdir(d) and not d.startswith('.') and d != 'scripts']
     for folder in subfolders:
-        if os.path.isdir(folder):
-            generate_folder_index(folder, f"{{folder}} Practices")
+        generate_folder_index(folder, f"{folder} Practices")
 
 if __name__ == "__main__":
     main()
