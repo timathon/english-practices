@@ -1,6 +1,18 @@
 import os
 import datetime
 import subprocess
+import re
+
+def natural_sort_key(s):
+    """
+    Create a key for natural sorting.
+    
+    Splits the string into a list of strings and integers.
+    e.g., "A6B-M10-Sentence-Builder.html" -> ['A', 6, 'B-M', 10, '-Sentence-Builder.html']
+    """
+    if isinstance(s, dict):
+        s = s['name']
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
 
 def clean_redundant_pdfs():
     """
@@ -95,7 +107,7 @@ def render_tree(tree):
     
     # Render files in this folder
     if '__files__' in tree:
-        for f in sorted(tree['__files__'], key=lambda x: x['name']):
+        for f in sorted(tree['__files__'], key=natural_sort_key):
             lines.append(f'    <li><a href="{f["path"]}">{f["name"]}</a></li>')
             
     return lines
@@ -117,112 +129,11 @@ def generate_tree_section(files):
     ])
     return '\n'.join(lines)
 
-def main():
-    clean_redundant_pdfs()
-    files = get_html_files()
-    latest_html = generate_latest_section(files)
-    tree_html = generate_tree_section(files)
-    
-    template = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Practices Index</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            color: #333;
-        }}
-        h1, h2 {{
-            color: #2c3e50;
-        }}
-        .section {{
-            margin-bottom: 40px;
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #eee;
-        }}
-        ul {{
-            list-style-type: none;
-            padding-left: 0;
-        }}
-        li {{
-            margin-bottom: 8px;
-        }}
-        a {{
-            text-decoration: none;
-            color: #0366d6;
-        }}
-        a:hover {{
-            text-decoration: underline;
-        }}
-        /* Tree styles */
-        .tree ul {{
-            padding-left: 20px;
-        }}
-        .tree li {{
-            position: relative;
-        }}
-        .folder {{
-            font-weight: bold;
-            color: #444;
-            cursor: pointer;
-        }}
-        .folder-toggle {{
-            cursor: pointer;
-        }}
-        .file-count {{
-            font-weight: normal;
-            font-style: italic;
-            color: #888;
-        }}
-        .collapsed {{
-            display: none;
-        }}
-    </style>
-</head>
-<body>
-    <h1>English Practices</h1>
-
-{latest_html}
-
-{tree_html}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {{
-            const folders = document.querySelectorAll('.folder-toggle');
-
-            folders.forEach(folder => {{
-                const sublist = folder.nextElementSibling.nextElementSibling;
-                if (sublist && sublist.tagName === 'UL') {{
-                    const fileCount = sublist.children.length;
-                    const fileCountSpan = folder.nextElementSibling;
-                    fileCountSpan.textContent = `(${{fileCount}} files)`;
-
-                    folder.addEventListener('click', () => {{
-                        sublist.classList.toggle('collapsed');
-                    }});
-                }}
-            }});
-        }});
-    </script>
-</body>
-</html>
-"""
-    with open('index.html', 'w') as f:
-        f.write(template)
-
 def generate_folder_index(folder_path, title):
     files = get_html_files_in_directory(folder_path)
     
     list_items = []
-    for f in sorted(files, key=lambda x: x['name']):
+    for f in sorted(files, key=natural_sort_key):
         list_items.append(f'            <li><a href="{f["path"]}">{f["name"]}</a></li>')
     
     list_html = '\n'.join(list_items)
