@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unit 2: You can make a difference - Sentence Builder</title>
+    <title>Unit 2: You Can Make A Difference - Sentence Builder</title>
     <style>
         :root {
             --primary: #58cc02; /* Duolingo Green */
             --primary-dark: #46a302;
             --danger: #ff4b4b;
             --danger-dark: #d33131;
+            --warning: #ffc800;
+            --warning-dark: #e5b400;
             --secondary: #1cb0f6;
             --secondary-dark: #1185ba;
             --neutral: #e5e5e5;
@@ -70,13 +72,13 @@
         }
 
         h1 {
-            color: var(--primary);
+            color: var(--secondary);
             margin: 0;
-            font-size: 2rem;
+            font-size: 1.8rem;
         }
 
         h2 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: #777;
             margin-top: 5px;
         }
@@ -109,6 +111,7 @@
 
         .challenge-card:hover {
             background-color: #fafafa;
+            border-color: var(--secondary);
         }
 
         .challenge-icon {
@@ -159,6 +162,7 @@
         }
         .progress-segment:last-child { border-right: none; }
         .progress-segment.green { background-color: var(--primary); }
+        .progress-segment.yellow { background-color: var(--warning); } /* Partial credit */
         .progress-segment.red { background-color: var(--danger); }
 
         .question-area {
@@ -166,40 +170,52 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            position: relative;
         }
 
+        /* Target Sentence (Chinese) */
         .target-sentence {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             font-weight: bold;
-            display: block;
+            display: block; 
             text-align: center;
         }
 
         .prompt-text {
-            font-size: 1rem;
-            color: #777;
-            margin-bottom: 10px;
-            font-weight: normal;
+            font-size: 0.9rem;
+            color: #999;
+            margin-bottom: 5px;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
+        /* Answer Area (Droppable) */
         .answer-area {
-            min-height: 60px;
+            min-height: 70px;
+            background-color: #fff;
             border-top: 2px solid var(--neutral);
             border-bottom: 2px solid var(--neutral);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            padding: 10px 0;
+            padding: 15px 10px;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* Left align for sentence flow */
         }
 
+        .answer-placeholder {
+            color: #ccc;
+            font-style: italic;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        /* Word Pool */
         .word-pool {
             display: flex;
             flex-wrap: wrap;
@@ -208,16 +224,21 @@
             margin-bottom: 20px;
         }
 
+        /* Word Buttons */
         .word-btn {
             background: var(--white);
             border: 2px solid var(--neutral);
             border-bottom: 4px solid var(--neutral);
             border-radius: 12px;
-            padding: 10px 15px;
+            padding: 8px 12px;
             font-size: 1.1rem;
             cursor: pointer;
             color: var(--text);
             transition: all 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.1;
         }
 
         .word-btn:active {
@@ -230,27 +251,61 @@
             color: transparent;
             border-color: transparent;
             pointer-events: none;
+            box-shadow: none;
+        }
+        
+        /* IPA Style in Pool */
+        .ipa-text {
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 2px;
+            font-family: 'Arial Unicode MS', 'Lucida Sans Unicode', sans-serif;
         }
 
+        /* Answer Buttons (No IPA) */
         .word-btn-answer {
             background: var(--white);
             border: 2px solid var(--secondary);
             border-bottom: 4px solid var(--secondary-dark);
             border-radius: 12px;
             padding: 10px 15px;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             cursor: pointer;
             color: var(--secondary-dark);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
         /* --- Footer Actions --- */
         .footer-action {
             padding-top: 20px;
             border-top: 2px solid var(--neutral);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
+        .action-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .hint-btn {
+            flex: 1;
+            padding: 15px;
+            border-radius: 16px;
+            background: var(--white);
+            border: 2px solid var(--neutral);
+            border-bottom: 4px solid var(--neutral);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hint-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+
         .check-btn {
-            width: 100%;
+            flex: 4;
             padding: 15px;
             border-radius: 16px;
             font-size: 1.2rem;
@@ -299,10 +354,22 @@
         .feedback.correct { background-color: #d7ffb8; color: #58a700; }
         .feedback.wrong { background-color: #ffdfe0; color: #ea2b2b; }
 
+        .hint-display {
+            display: none;
+            background-color: #fff8e1;
+            border: 1px solid #ffecb3;
+            color: #8a6d3b;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
         .feedback h3 { margin: 0 0 5px 0; }
         
         /* --- History Modal --- */
-        #history-modal {
+        #history-modal, #mistakes-modal {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5);
@@ -341,17 +408,6 @@
         .log-item span.score { font-weight: bold; color: var(--primary); }
         .danger-text { color: var(--danger); cursor: pointer; font-size: 0.8rem; text-decoration: underline;}
 
-        /* --- Mistakes Modal Specifics --- */
-        .mistake-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            text-align: left;
-        }
-        .mistake-date { font-size: 0.8rem; color: #999; margin-bottom: 6px; }
-        .mistake-cn { font-weight: bold; color: #333; margin-bottom: 4px; display:block; }
-        .mistake-wrong { color: var(--danger); text-decoration: line-through; font-size: 0.9rem; margin-bottom: 2px; display:block;}
-        .mistake-correct { color: var(--primary-dark); font-weight: bold; font-size: 0.9rem; display:block;}
-
         /* --- Animations --- */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -372,7 +428,7 @@
     <!-- Home Screen -->
     <div id="home-screen" class="screen active">
         <header>
-            <h1>Make a Difference</h1>
+            <h1>You Can Make A Difference</h1>
             <h2>Unit 2 Sentence Builder</h2>
         </header>
 
@@ -399,8 +455,10 @@
             <h2 class="prompt-text">Translate this sentence</h2>
             <div class="target-sentence" id="display-text"></div>
             
+            <div id="hint-display" class="hint-display"></div>
+
             <div class="answer-area" id="answer-area">
-                <!-- Selected words go here -->
+                <div class="answer-placeholder">Tap words below to build sentence...</div>
             </div>
 
             <div class="word-pool" id="word-pool">
@@ -413,8 +471,12 @@
                 <h3 id="feedback-title"></h3>
                 <p id="feedback-msg"></p>
             </div>
-            <button id="check-btn" class="check-btn" onclick="app.checkAnswer()">Check</button>
-            <button id="next-btn" class="check-btn" onclick="app.nextQuestion()" style="display:none; background-color: var(--secondary); border-bottom-color: var(--secondary-dark);">Continue</button>
+            
+            <div class="action-row">
+                <button id="hint-btn" class="hint-btn" onclick="app.showHint()" title="Get a hint (Costs 50% points)">💡</button>
+                <button id="check-btn" class="check-btn" onclick="app.checkAnswer()" disabled>Check</button>
+                <button id="next-btn" class="check-btn" onclick="app.nextQuestion()" style="display:none; background-color: var(--secondary); border-bottom-color: var(--secondary-dark);">Continue</button>
+            </div>
         </div>
     </div>
 
@@ -433,7 +495,7 @@
     </div>
 
     <!-- Mistakes Modal -->
-    <div id="mistakes-modal" style="display:none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center;">
+    <div id="mistakes-modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 style="color:var(--danger)">My Mistakes</h2>
@@ -448,110 +510,165 @@
 </div>
 
 <script>
-    /* --- Data Content extracted from A5B-New-U2.pdf --- */
+    /* --- DATA: Unit 2 Content --- */
+    
+    // Simple IPA Dictionary for Unit 2 Vocabulary & Common Words
+    const ipaDict = {
+        "I": "aɪ", "can": "kæn", "help": "hɛlp", "the": "ðə", "lady": "ˈleɪdi", "cross": "krɒs", "street": "striːt",
+        "He": "hiː", "helps": "hɛlps", "woman": "ˈwʊmən", "go": "gəʊ", "up": "ʌp", "stairs": "steəz",
+        "We": "wiː", "push": "pʊʃ", "heavy": "ˈhɛvi", "cart": "kɑːt",
+        "Please": "pliːz", "me": "miː", "pick": "pɪk", "things": "θɪŋz",
+        "She": "ʃiː", "wants": "wɒnts", "to": "tuː", "be": "biː", "a": "ə", "volunteer": "ˌvɒlənˈtɪə", "today": "təˈdeɪ",
+        "It": "ɪt", "is": "ɪz", "important": "ɪmˈpɔːtənt", "others": "ˈʌðəz",
+        "picked": "pɪkt", "rubbish": "ˈrʌbɪʃ", "in": "ɪn", "playground": "ˈpleɪgraʊnd",
+        "Can": "kæn", "you": "juː", "get": "gɛt", "balloons": "bəˈluːnz",
+        "The": "ðə", "elderly": "ˈɛldəli", "man": "mæn", "needs": "niːdz", "our": "ˈaʊə",
+        "make": "meɪk", "difference": "ˈdɪfrəns", "together": "təˈgɛðə",
+        "four": "fɔː", "friends": "frɛndz", "went": "wɛnt", "hiking": "ˈhaɪkɪŋ", "yesterday": "ˈjɛstədeɪ",
+        "Let": "lɛt", "us": "ʌs", "have": "hæv", "race": "reɪs", "top": "tɒp",
+        "They": "ðeɪ", "all": "ɔːl", "hurried": "ˈhʌrɪd", "hill": "hɪl",
+        "Daming": "Daming", "was": "wɒz", "front": "frʌnt", "at": "æt", "first": "fɜːst",
+        "Then": "ðɛn", "he": "hiː", "slowed": "sləʊd", "down": "daʊn", "along": "əˈlɒŋ", "way": "weɪ",
+        "saw": "sɔː", "some": "sʌm", "cans": "kænz", "and": "ænd", "plastic": "ˈplæstɪk", "bottles": "ˈbɒtlz",
+        "them": "ðɛm", "put": "pʊt", "bag": "bæg",
+        "My": "maɪ", "waited": "ˈweɪtɪd", "for": "fɔː", "long": "lɒŋ", "time": "taɪm",
+        "You": "juː", "are": "ɑː", "real": "rɪəl", "winner": "ˈwɪnə",
+        "tired": "ˈtaɪəd", "but": "bʌt", "very": "ˈvɛri", "happy": "ˈhæpi",
+        "puppy": "ˈpʌpi", "small": "smɔːl", "playful": "ˈpleɪfʊl",
+        "will": "wɪl", "someone's": "ˈsʌmwʌnz", "eyes": "aɪz", "one": "wʌn", "day": "deɪ",
+        "had": "hæd", "no": "nəʊ", "family": "ˈfæmɪli", "eighty": "ˈeɪti",
+        "played": "pleɪd", "ukulele": "ˌjuːkəˈleɪli", "guitar": "gɪˈtɑː",
+        "sat": "sæt", "alone": "əˈləʊn", "lunchtime": "ˈlʌnʧtaɪm",
+        "gave": "geɪv", "her": "hɜː", "half": "hɑːf", "of": "ɒv", "my": "maɪ", "sandwich": "ˈsænwɪʤ",
+        "felt": "fɛlt", "full": "fʊl", "after": "ˈɑːftə", "ate": "ɛt",
+        "good": "gʊd", "share": "ʃeə", "with": "wɪð",
+        "not": "nɒt", "enough": "ɪˈnʌf", "band": "bænd",
+        "Making": "ˈmeɪkɪŋ", "new": "njuː", "friend": "frɛnd", "wonderful": "ˈwʌndəfʊl",
+        "Who": "huː", "hero": "ˈhɪərəʊ", "your": "jɔː", "heart": "hɑːt",
+        "magic": "ˈmæʤɪk", "wanted": "ˈwɒntɪd",
+        "like": "laɪk", "shining": "ˈʃaɪnɪŋ", "star": "stɑː",
+        "inspires": "ɪnˈspaɪəz", "do": "duː", "part": "pɑːt",
+        "Lei": "Lei", "Feng": "Feng", "forever": "fəˈrɛvə",
+        "should": "ʃʊd", "learn": "lɜːn", "from": "frɒm", "his": "hɪz", "spirit": "ˈspɪrɪt",
+        "stories": "ˈstɔːriz", "moved": "muːvd", "lot": "lɒt",
+        "shared": "ʃeəd", "son": "sʌn",
+        "Kindness": "ˈkaɪndnɪs", "gives": "gɪvz", "great": "greɪt", "power": "ˈpaʊə",
+        "clean": "kliːn", "park": "pɑːk", "on": "ɒn", "Sunday": "ˈsʌndeɪ",
+        "care": "keə", "home": "həʊm",
+        "give": "gɪv", "books": "bʊks", "children": "ˈʧɪldrən",
+        "tomorrow": "təˈmɒrəʊ",
+        "What": "wɒt", "did": "dɪd",
+        "Non-profit": "nɒn-ˈprɒfɪt", "organisations": "ˌɔːgənaɪˈzeɪʃənz", "people": "ˈpiːpl",
+        "They": "ðeɪ", "protect": "prəˈtɛkt", "animals": "ˈænɪməlz", "nature": "ˈneɪʧə",
+        "works": "wɜːks", "world": "wɜːld", "peace": "piːs", "education": "ˌɛdjʊˈkeɪʃən",
+        "How": "haʊ", "involved": "ɪnˈvɒlvd",
+        "organise": "ˈɔːgənaɪz", "activity": "ækˈtɪvɪti",
+        "please": "pliːz", "this": "ðɪs", "heavy": "ˈhɛvi"
+    };
+
+    const noiseWords = ["is", "are", "the", "a", "an", "to", "for", "my", "his", "was", "were", "can", "do", "did"];
+
     const challenges = [
         {
-            id: 'u2c1',
+            id: 'c1',
             title: 'Helping Hands',
             icon: '🤝',
             sentences: [
-                { en: "I can help push the cart.", cn: "我可以帮忙推车。" },
-                { en: "She helps the lady cross the street.", cn: "她帮助这位女士过马路。" },
-                { en: "We help the woman go up the stairs.", cn: "我们帮助这位妇女上楼梯。" },
-                { en: "Can you help pick the things up?", cn: "你能帮忙把东西捡起来吗？" },
-                { en: "I can help get the balloons.", cn: "我可以帮忙拿气球。" },
-                { en: "Do you think it is important to help others?", cn: "你认为帮助别人重要吗？" },
-                { en: "What else can you do to help others?", cn: "你还能做些什么来帮助别人？" },
-                { en: "He wants to give a helping hand.", cn: "他想伸出援手。" },
-                { en: "You can make a difference.", cn: "你可以做出改变。" },
-                { en: "They help the elderly man.", cn: "他们帮助那位老人。" }
+                { en: "I can help the lady cross the street.", cn: "我可以帮助那位女士过马路。", hint: "Use 'cross' for going to the other side." },
+                { en: "He helps the woman go up the stairs.", cn: "他帮助那位妇女上楼梯。", hint: "Action: go up." },
+                { en: "We can help push the heavy cart.", cn: "我们可以帮忙推这辆重的手推车。", hint: "Use 'push'." },
+                { en: "Please help me pick the things up.", cn: "请帮我把东西捡起来。", hint: "Phrase: pick ... up." },
+                { en: "She wants to be a volunteer today.", cn: "她今天想成为一名志愿者。", hint: "Role: volunteer." },
+                { en: "It is important to help others.", cn: "帮助别人是很重要的。", hint: "Start with 'It is important...'." },
+                { en: "I picked up rubbish in the playground.", cn: "我在操场上捡了垃圾。", hint: "Past tense of 'pick'." },
+                { en: "Can you help get the balloons?", cn: "你能帮忙拿气球吗？", hint: "Object: balloons." },
+                { en: "The elderly man needs our help.", cn: "那位老人需要我们的帮助。", hint: "Person: The elderly man." },
+                { en: "We can make a difference together.", cn: "我们可以一起做出改变。", hint: "Phrase: make a difference." }
             ]
         },
         {
-            id: 'u2c2',
-            title: 'The Hiking Race',
-            icon: '⛰️',
+            id: 'c2',
+            title: 'The Real Winner',
+            icon: '🏆',
             sentences: [
-                { en: "The four friends went hiking.", cn: "四个朋友去徒步旅行。" },
-                { en: "They all hurried up to the top of the hill.", cn: "他们都赶紧往山顶跑。" },
-                { en: "Daming was in the front at first.", cn: "起初大明在最前面。" },
-                { en: "One by one his friends went past him.", cn: "他的朋友们一个个超过了他。" },
-                { en: "They waited and waited for Daming.", cn: "他们等了又等大明。" },
-                { en: "Daming came with a big bag.", cn: "大明带着一个大袋子来了。" },
-                { en: "I saw some cans and plastic bottles.", cn: "我看到了一些易拉罐和塑料瓶。" },
-                { en: "I slowed down and picked them up.", cn: "我慢下来把它们捡了起来。" },
-                { en: "You are the real winner.", cn: "你是真正的赢家。" },
-                { en: "I was tired but happy.", cn: "我又累又开心。" }
+                { en: "The four friends went hiking yesterday.", cn: "昨天那四个朋友去徒步旅行了。", hint: "Past tense of 'go'." },
+                { en: "Let us have a race to the top.", cn: "让我们比赛爬到山顶吧。", hint: "Destination: to the top." },
+                { en: "They all hurried up the hill.", cn: "他们都赶紧往山上爬。", hint: "Action: hurried up." },
+                { en: "Daming was in the front at first.", cn: "大明起初在最前面。", hint: "Position: in the front." },
+                { en: "Then he slowed down along the way.", cn: "然后他在半路慢了下来。", hint: "Action: slowed down." },
+                { en: "He saw some cans and plastic bottles.", cn: "他看到了一些罐子和塑料瓶。", hint: "Items: cans and plastic bottles." },
+                { en: "I picked them up and put them in a bag.", cn: "我把它们捡起来放进袋子里。", hint: "Action sequence: picked... put..." },
+                { en: "My friends waited for me for a long time.", cn: "我的朋友们等了我很久。", hint: "Duration: for a long time." },
+                { en: "You are the real winner today.", cn: "你今天才是真正的赢家。", hint: "Person: real winner." },
+                { en: "I was tired but very happy.", cn: "我很累但是很开心。", hint: "Feeling: tired but happy." }
             ]
         },
         {
-            id: 'u2c3',
-            title: 'Past Actions',
-            icon: '🕰️',
+            id: 'c3',
+            title: 'Sharing & Caring',
+            icon: '🥪',
             sentences: [
-                { en: "I went to the care home yesterday.", cn: "我昨天去了养老院。" },
-                { en: "We visited the children's home last Sunday.", cn: "上周日我们去了儿童福利院。" },
-                { en: "I picked up rubbish in the playground.", cn: "我在操场上捡垃圾。" },
-                { en: "He read books to old people.", cn: "他给老人们读书。" },
-                { en: "She saw a new kid at lunchtime.", cn: "午餐时间她看到了一个新来的孩子。" },
-                { en: "I gave her half of my sandwich.", cn: "我给了她一半我的三明治。" },
-                { en: "We did not sound too bad at all.", cn: "我们要听起来一点也不差。" },
-                { en: "I made a new friend yesterday.", cn: "昨天我交了一个新朋友。" },
-                { en: "Did you enjoy your volunteer work?", cn: "你喜欢你的志愿工作吗？" },
-                { en: "Everyone hurried up the hill.", cn: "大家都赶紧上了山。" }
+                { en: "The puppy is small and playful.", cn: "这只小狗又小又爱玩。", hint: "Description: small and playful." },
+                { en: "He will be someone's eyes one day.", cn: "总有一天他会成为某人的眼睛。", hint: "Future tense: will be." },
+                { en: "He had no family and was eighty.", cn: "他八十岁了，没有家人。", hint: "Age: eighty." },
+                { en: "We played the ukulele and guitar together.", cn: "我们一起弹尤克里里和吉他。", hint: "Instruments: ukulele and guitar." },
+                { en: "She sat all alone at lunchtime.", cn: "午餐时间她独自坐着。", hint: "Time: at lunchtime." },
+                { en: "I gave her half of my sandwich.", cn: "我给了她一半我的三明治。", hint: "Quantity: half of..." },
+                { en: "I felt full after I ate it.", cn: "吃完后我觉得很饱。", hint: "Feeling: full." },
+                { en: "It is good to share with friends.", cn: "和朋友分享是很好的。", hint: "Action: share." },
+                { en: "We are not good enough for a band.", cn: "我们要组乐队还不够好。", hint: "Group: band." },
+                { en: "Making a new friend is wonderful.", cn: "结交新朋友真是太好了。", hint: "Subject: Making a new friend." }
             ]
         },
         {
-            id: 'u2c4',
-            title: 'Role Models',
-            icon: '⭐',
+            id: 'c4',
+            title: 'My Hero',
+            icon: '🦸',
             sentences: [
-                { en: "He was like a shining star.", cn: "他就像一颗闪亮的星星。" },
-                { en: "He inspires us to do our part.", cn: "他激励我们尽自己的一份力。" },
-                { en: "He wanted to help one and all.", cn: "他想帮助所有的人。" },
-                { en: "He always follows me.", cn: "他总是跟着我。" },
-                { en: "Lei Feng is my hero.", cn: "雷锋是我的英雄。" },
-                { en: "He was not strong but smart.", cn: "他不强壮但是很聪明。" },
-                { en: "We should learn from Lei Feng.", cn: "我们应该向雷锋学习。" },
-                { en: "His stories moved me a lot.", cn: "他的故事深深地感动了我。" },
-                { en: "I will share his spirit with people.", cn: "我要把他的精神分享给大家。" },
-                { en: "He had no magic at all.", cn: "他根本没有魔法。" }
+                { en: "Who is the hero in your heart?", cn: "谁是你心中的英雄？", hint: "Location: in your heart." },
+                { en: "He had no magic at all.", cn: "他根本没有魔法。", hint: "Possession: no magic." },
+                { en: "He wanted to help one and all.", cn: "他想帮助每一个人。", hint: "Phrase: one and all." },
+                { en: "He was like a shining star.", cn: "他像一颗闪亮的星星。", hint: "Description: shining star." },
+                { en: "He inspires us to do our part.", cn: "他激励我们尽自己的一份力。", hint: "Verb: inspires." },
+                { en: "Lei Feng is my hero forever.", cn: "雷锋永远是我的英雄。", hint: "Time: forever." },
+                { en: "We should learn from his spirit.", cn: "我们要学习他的精神。", hint: "Quality: spirit." },
+                { en: "His stories moved me a lot.", cn: "他的故事深深地感动了我。", hint: "Verb: moved." },
+                { en: "I shared the stories with my son.", cn: "我和我的儿子分享了这些故事。", hint: "Action: shared." },
+                { en: "Kindness gives us great power.", cn: "善良给了我们巨大的力量。", hint: "Subject: Kindness." }
             ]
         },
         {
-            id: 'u2c5',
-            title: 'Volunteer Plans',
-            icon: '📋',
+            id: 'c5',
+            title: 'Volunteer Spirit',
+            icon: '❤️',
             sentences: [
-                { en: "We can clean up a park.", cn: "我们可以打扫公园。" },
-                { en: "We can help at a care home.", cn: "我们可以去养老院帮忙。" },
-                { en: "We can give books to the children's home.", cn: "我们可以给儿童福利院送书。" },
-                { en: "What volunteer activities can you do?", cn: "你能做什么志愿活动？" },
-                { en: "Where will the activity take place?", cn: "活动在哪里举行？" },
-                { en: "Who will you go with?", cn: "你会和谁一起去？" },
-                { en: "Prepare a speech to share your experience.", cn: "准备一个演讲来分享你的经历。" },
-                { en: "UNESCO helps to protect children.", cn: "联合国教科文组织帮助保护儿童。" },
-                { en: "It gives support for people's health.", cn: "它为人们的健康提供支持。" },
-                { en: "It helps to protect endangered animals.", cn: "它帮助保护濒危动物。" }
+                { en: "We can clean up a park on Sunday.", cn: "我们可以在周日打扫公园。", hint: "Action: clean up." },
+                { en: "We can help at a care home.", cn: "我们可以在养老院帮忙。", hint: "Place: care home." },
+                { en: "We can give books to the children.", cn: "我们可以把书送给孩子们。", hint: "Object: books." },
+                { en: "Who will you go with tomorrow?", cn: "你明天要和谁一起去？", hint: "Question word: Who." },
+                { en: "What did you learn from it?", cn: "你从中学到了什么？", hint: "Past tense question." },
+                { en: "Non-profit organisations help people.", cn: "非营利组织帮助人们。", hint: "Subject: Non-profit organisations." },
+                { en: "They protect animals and nature.", cn: "他们保护动物和自然。", hint: "Objects: animals and nature." },
+                { en: "It works for world peace and education.", cn: "它致力于世界和平与教育。", hint: "Goal: peace and education." },
+                { en: "How can we get involved?", cn: "我们如何参与其中？", hint: "Phrase: get involved." },
+                { en: "Let us organise a volunteer activity.", cn: "让我们组织一次志愿者活动。", hint: "Action: organise." }
             ]
         }
     ];
 
-    const noiseWords = ["is", "are", "the", "a", "an", "to", "for", "my", "his", "was", "were", "can", "do", "did"];
-
-    /* --- Logic --- */
+    /* --- LOGIC: Application --- */
     const app = {
         state: {
             currentChallenge: null,
-            originalQueue: [], 
-            redemptionQueue: [], 
+            originalQueue: [],
+            redemptionQueue: [],
             currentIndex: 0,
             score: 0,
-            attempts: [], 
-            isRedemption: false, 
-            currentSentenceWords: [],
+            attempts: [], // {status: 'correct'|'hint'|'wrong'}
+            isRedemption: false,
             userSelection: [],
             locked: false,
+            hintUsed: false,
             currentTargetObj: null
         },
 
@@ -560,74 +677,58 @@
         },
 
         getLogs: function() {
-            return JSON.parse(localStorage.getItem('sb_unit2_logs') || '[]');
+            return JSON.parse(localStorage.getItem('sb_u2_logs') || '[]');
         },
 
         getMistakes: function() {
-            return JSON.parse(localStorage.getItem('sb_unit2_mistakes') || '[]');
+            return JSON.parse(localStorage.getItem('sb_u2_mistakes') || '[]');
         },
 
         saveLog: function(log) {
             const logs = this.getLogs();
-            logs.unshift(log); 
-            localStorage.setItem('sb_unit2_logs', JSON.stringify(logs));
+            logs.unshift(log);
+            localStorage.setItem('sb_u2_logs', JSON.stringify(logs));
         },
 
         saveMistake: function(targetEn, targetCn, challengeTitle, userAnswer) {
             const mistakes = this.getMistakes();
-            
             const existingIndex = mistakes.findIndex(m => m.en === targetEn);
-
             if (existingIndex > -1) {
                 const existing = mistakes[existingIndex];
                 existing.count = (existing.count || 1) + 1;
-                existing.date = new Date().toLocaleString(); 
-                existing.user = userAnswer; 
-                
+                existing.date = new Date().toLocaleString();
+                existing.user = userAnswer;
                 mistakes.splice(existingIndex, 1);
                 mistakes.unshift(existing);
             } else {
-                const newMistake = {
+                mistakes.unshift({
                     date: new Date().toLocaleString(),
                     challenge: challengeTitle,
                     en: targetEn,
                     cn: targetCn,
                     user: userAnswer,
                     count: 1
-                };
-                mistakes.unshift(newMistake);
+                });
             }
-            
-            localStorage.setItem('sb_unit2_mistakes', JSON.stringify(mistakes));
+            localStorage.setItem('sb_u2_mistakes', JSON.stringify(mistakes));
         },
 
         getChallengeStats: function(title) {
             const logs = this.getLogs();
             const now = new Date();
             const todayStr = now.toLocaleDateString();
-
             const todaysLogs = logs.filter(l => {
                 if (l.challenge !== title) return false;
-                const d = new Date(l.date);
-                return d.toLocaleDateString() === todayStr;
+                return new Date(l.date).toLocaleDateString() === todayStr;
             });
-
             const attempts = todaysLogs.length;
             let maxScore = 0;
-
             if (attempts > 0) {
-                maxScore = Math.max(...todaysLogs.map(l => {
-                    return parseInt(l.score.split(' / ')[0]);
-                }));
+                maxScore = Math.max(...todaysLogs.map(l => parseInt(l.score)));
             }
-
-            return { 
-                attempts: attempts, 
-                maxScore: attempts > 0 ? maxScore : '-' 
-            };
+            return { attempts, maxScore: attempts > 0 ? maxScore + '%' : '-' };
         },
 
-        /* --- Rendering --- */
         renderHome: function() {
             document.getElementById('home-screen').classList.add('active');
             document.getElementById('game-screen').classList.remove('active');
@@ -682,15 +783,15 @@
             for(let i=0; i<total; i++) {
                 const segment = document.createElement('div');
                 segment.className = 'progress-segment';
-                if(this.state.attempts[i] === true) segment.classList.add('green');
-                if(this.state.attempts[i] === false) segment.classList.add('red');
+                if(this.state.attempts[i] === 'correct') segment.classList.add('green');
+                if(this.state.attempts[i] === 'hint') segment.classList.add('yellow');
+                if(this.state.attempts[i] === 'wrong') segment.classList.add('red');
                 bar.appendChild(segment);
             }
         },
 
         loadQuestion: function() {
             let sentenceObj = null;
-            
             if (this.state.currentIndex < this.state.originalQueue.length) {
                 sentenceObj = this.state.originalQueue[this.state.currentIndex];
                 this.state.isRedemption = false;
@@ -703,53 +804,72 @@
             }
 
             this.state.currentTargetObj = sentenceObj;
-
             this.state.locked = false;
+            this.state.hintUsed = false;
             this.state.userSelection = [];
+
+            // UI Resets
             document.getElementById('check-btn').style.display = 'block';
-            document.getElementById('check-btn').innerText = 'CHECK';
+            document.getElementById('check-btn').disabled = true;
             document.getElementById('check-btn').className = 'check-btn';
+            document.getElementById('check-btn').innerText = 'CHECK';
+            
             document.getElementById('next-btn').style.display = 'none';
             document.getElementById('feedback-area').className = 'feedback';
-            document.getElementById('answer-area').innerHTML = '';
+            document.getElementById('hint-display').style.display = 'none';
+            document.getElementById('hint-btn').disabled = false;
             
+            // Sentence Setup
             document.getElementById('display-text').innerText = sentenceObj.cn;
-
-            const sentenceEn = sentenceObj.en;
-            const cleanSentence = sentenceEn.replace(/[.!?]$/, ''); 
-            const words = cleanSentence.split(' ');
             
-            // Smart Lowercase: Lowercase first word if it's not a proper noun or "I"
-            const properNouns = ["I", "Daming", "Amy", "Sam", "Lingling", "Lei", "Feng", "UNESCO", "WHO", "WWF", "UNICEF"];
+            const cleanSentence = sentenceObj.en.replace(/[.!?]$/, ''); 
+            let words = cleanSentence.split(' ');
+            
+            // Pool Generation: Lowercase first word if not "I" or name
             let poolWords = words.map((w, i) => {
-                if (i === 0 && !properNouns.includes(w)) {
+                if (i === 0 && w !== "I" && w !== "Lei" && w !== "Feng" && w !== "Daming" && w !== "Sunday" && w !== "June") {
                     return w.toLowerCase();
                 }
                 return w;
             });
-            
-            // Add noise
+
+            // Noise
             for(let k=0; k<3; k++) {
                 const r = noiseWords[Math.floor(Math.random() * noiseWords.length)];
                 if(!poolWords.includes(r)) poolWords.push(r);
             }
-
-            // Shuffle
             poolWords.sort(() => Math.random() - 0.5);
 
             const poolContainer = document.getElementById('word-pool');
             poolContainer.innerHTML = '';
+            
             poolWords.forEach((w, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'word-btn';
-                btn.innerText = w;
-                btn.dataset.word = w;
+                
+                // IPA Lookup
+                let displayWord = w;
+                let cleanW = w.replace(/[.,?!]/g, ""); 
+                // Handle cases where word might be Capitalized in dict (e.g., proper nouns) or lowercase
+                let ipa = ipaDict[cleanW] || ipaDict[cleanW.toLowerCase()] || ipaDict[cleanW.charAt(0).toUpperCase() + cleanW.slice(1)] || "";
+                
+                btn.innerHTML = `<span>${w}</span><span class="ipa-text">${ipa ? '/' + ipa + '/' : ''}</span>`;
+                
                 btn.dataset.id = idx;
                 btn.onclick = () => this.handleWordSelect(w, idx, btn);
                 poolContainer.appendChild(btn);
             });
 
-            this.updateCheckButton();
+            this.renderAnswerArea();
+        },
+
+        showHint: function() {
+            if(this.state.locked) return;
+            this.state.hintUsed = true;
+            const disp = document.getElementById('hint-display');
+            disp.innerText = "Hint: " + this.state.currentTargetObj.hint;
+            disp.style.display = 'block';
+            document.getElementById('hint-btn').disabled = true;
         },
 
         handleWordSelect: function(word, id, btnElement) {
@@ -758,14 +878,12 @@
 
             this.state.userSelection.push({word: word, id: id});
             btnElement.classList.add('selected');
-
             this.renderAnswerArea();
             this.updateCheckButton();
         },
 
         removeWord: function(index) {
             if(this.state.locked) return;
-            
             const removed = this.state.userSelection.splice(index, 1)[0];
             
             const poolBtns = document.querySelectorAll('.word-btn');
@@ -774,7 +892,6 @@
                     btn.classList.remove('selected');
                 }
             });
-
             this.renderAnswerArea();
             this.updateCheckButton();
         },
@@ -783,29 +900,29 @@
             const area = document.getElementById('answer-area');
             area.innerHTML = '';
 
+            if (this.state.userSelection.length === 0) {
+                area.innerHTML = '<div class="answer-placeholder">Tap words below to build sentence...</div>';
+                return;
+            }
+
             this.state.userSelection.forEach((item, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'word-btn-answer';
                 
-                // Logic: Auto Capitalize first word
+                // Auto Capitalize first word
                 let displayText = item.word;
                 if(idx === 0) {
                     displayText = displayText.charAt(0).toUpperCase() + displayText.slice(1);
                 }
 
-                btn.innerText = displayText;
+                btn.innerText = displayText; // No IPA in answer area
                 btn.onclick = () => this.removeWord(idx);
                 area.appendChild(btn);
             });
         },
 
         updateCheckButton: function() {
-            const btn = document.getElementById('check-btn');
-            if(this.state.userSelection.length > 0) {
-                btn.disabled = false;
-            } else {
-                btn.disabled = true;
-            }
+            document.getElementById('check-btn').disabled = this.state.userSelection.length === 0;
         },
 
         checkAnswer: function() {
@@ -826,18 +943,28 @@
             const targetEn = this.state.currentTargetObj.en;
             const cleanTarget = targetEn.replace(/[.!?]$/, '');
             
-            const isCorrect = userSentence === cleanTarget;
+            // Allow matching without punctuation strictness
+            const isCorrect = userSentence.replace(/[.!?]/g, "") === cleanTarget.replace(/[.!?]/g, "");
 
             if(isCorrect) {
-                btn.className = 'check-btn correct';
-                btn.innerText = 'Correct!';
-                feedback.className = 'feedback show correct';
-                title.innerText = 'Great Job!';
-                msg.innerText = '';
-                
-                if(!this.state.isRedemption) {
-                    this.state.attempts[this.state.currentIndex] = true;
-                    this.state.score += 10;
+                if(this.state.hintUsed) {
+                    btn.className = 'check-btn correct'; // Using correct style but score reflects partial
+                    feedback.className = 'feedback show correct';
+                    title.innerText = 'Good! (Hint used)';
+                    msg.innerText = '';
+                    if(!this.state.isRedemption) {
+                        this.state.attempts[this.state.currentIndex] = 'hint';
+                        this.state.score += 5;
+                    }
+                } else {
+                    btn.className = 'check-btn correct';
+                    feedback.className = 'feedback show correct';
+                    title.innerText = 'Perfect!';
+                    msg.innerText = '';
+                    if(!this.state.isRedemption) {
+                        this.state.attempts[this.state.currentIndex] = 'correct';
+                        this.state.score += 10;
+                    }
                 }
             } else {
                 btn.className = 'check-btn wrong';
@@ -849,7 +976,7 @@
                 this.saveMistake(targetEn, this.state.currentTargetObj.cn, this.state.currentChallenge.title, userSentence);
 
                 if(!this.state.isRedemption) {
-                    this.state.attempts[this.state.currentIndex] = false;
+                    this.state.attempts[this.state.currentIndex] = 'wrong';
                     this.state.redemptionQueue.push(this.state.currentTargetObj);
                 } else {
                     this.state.redemptionQueue.push(this.state.currentTargetObj);
@@ -857,32 +984,30 @@
             }
 
             this.renderProgressBar();
-            
             btn.style.display = 'none';
-            const nextBtn = document.getElementById('next-btn');
-            nextBtn.style.display = 'block';
+            document.getElementById('next-btn').style.display = 'block';
         },
 
         nextQuestion: function() {
             if (!this.state.isRedemption) {
                 this.state.currentIndex++;
             }
-            
             this.loadQuestion();
         },
 
         finishGame: function() {
+            const maxScore = this.state.originalQueue.length * 10;
             const log = {
                 date: new Date().toLocaleString(),
                 challenge: this.state.currentChallenge.title,
-                score: this.state.score + ' / ' + (this.state.originalQueue.length * 10)
+                score: this.state.score + ' / ' + maxScore
             };
             this.saveLog(log);
 
             document.getElementById('game-screen').innerHTML = `
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center;">
                     <h1 style="color:var(--primary); font-size:3rem;">Completed!</h1>
-                    <h2>Score: ${this.state.score}</h2>
+                    <h2>Score: ${this.state.score} / ${maxScore}</h2>
                     <div style="margin:20px 0;">
                         <button onclick="location.reload()" class="check-btn" style="width:200px;">Back to Home</button>
                     </div>
@@ -896,7 +1021,7 @@
             }
         },
 
-        /* --- History / Teacher Mode --- */
+        /* --- Admin --- */
         showHistory: function() {
             const modal = document.getElementById('history-modal');
             const list = document.getElementById('log-list');
@@ -904,7 +1029,7 @@
             const logs = this.getLogs();
 
             if(logs.length === 0) {
-                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No sessions recorded yet.</p>';
+                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No sessions recorded.</p>';
             } else {
                 logs.forEach(l => {
                     const div = document.createElement('div');
@@ -916,9 +1041,7 @@
             modal.style.display = 'flex';
         },
 
-        closeHistory: function() {
-            document.getElementById('history-modal').style.display = 'none';
-        },
+        closeHistory: function() { document.getElementById('history-modal').style.display = 'none'; },
 
         showMistakes: function() {
             const modal = document.getElementById('mistakes-modal');
@@ -927,19 +1050,18 @@
             const mistakes = this.getMistakes();
 
             if(mistakes.length === 0) {
-                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No mistakes recorded yet. Keep it up!</p>';
+                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No mistakes recorded yet.</p>';
             } else {
                 mistakes.forEach(m => {
                     const count = m.count || 1;
-                    const countBadge = count > 1 ? `<span style="background:var(--danger); color:white; padding:1px 6px; border-radius:10px; font-size:0.7rem; margin-left:5px; vertical-align: middle;">x${count}</span>` : '';
-
+                    const countBadge = count > 1 ? `<span style="background:var(--danger); color:white; padding:1px 6px; border-radius:10px; font-size:0.7rem; margin-left:5px;">x${count}</span>` : '';
                     const div = document.createElement('div');
-                    div.className = 'mistake-item';
+                    div.className = 'log-item';
                     div.innerHTML = `
-                        <div class="mistake-date">${m.date} - ${m.challenge}</div>
-                        <div class="mistake-cn"><strong>Q:</strong> ${m.cn}${countBadge}</div>
-                        <div class="mistake-wrong"><strong>You said:</strong> ${m.user || '(No answer)'}</div>
-                        <div class="mistake-correct"><strong>Correct:</strong> ${m.en}</div>
+                        <div style="font-size:0.8rem; color:#999;">${m.date} - ${m.challenge}</div>
+                        <div style="margin:5px 0;"><strong>Q:</strong> ${m.cn}${countBadge}</div>
+                        <div style="color:var(--danger); text-decoration:line-through; font-size:0.9rem;">${m.user || '(No answer)'}</div>
+                        <div style="color:var(--primary-dark); font-weight:bold; font-size:0.9rem;">${m.en}</div>
                     `;
                     list.appendChild(div);
                 });
@@ -947,38 +1069,32 @@
             modal.style.display = 'flex';
         },
 
-        closeMistakes: function() {
-            document.getElementById('mistakes-modal').style.display = 'none';
-        },
+        closeMistakes: function() { document.getElementById('mistakes-modal').style.display = 'none'; },
 
         clearMistakes: function() {
-            const input = prompt("Enter Teacher Passcode to Clear Mistakes (Hint: HTPRV):");
-            if(input && input.toUpperCase() === 'HTPRV') {
-                localStorage.removeItem('sb_unit2_mistakes');
-                this.showMistakes(); 
-                alert("Mistake history cleared.");
+            const input = prompt("Enter Teacher Passcode (Hint: First letters of the 5 Challenge Titles):");
+            // Titles: Helping, Real, Sharing, My, Volunteer -> HTSMV
+            if(input && input.toUpperCase() === 'HTSMV') {
+                localStorage.removeItem('sb_u2_mistakes');
+                this.showMistakes();
             } else if (input) {
                 alert("Incorrect passcode.");
             }
         },
 
         clearHistory: function() {
-            const input = prompt("Enter Teacher Passcode (Hint: HTPRV):");
-            if(input && input.toUpperCase() === 'HTPRV') {
-                localStorage.removeItem('sb_unit2_logs');
-                this.showHistory(); 
-                alert("History cleared.");
+            const input = prompt("Enter Teacher Passcode:");
+            if(input && input.toUpperCase() === 'HTSMV') {
+                localStorage.removeItem('sb_u2_logs');
+                this.showHistory();
             } else if (input) {
                 alert("Incorrect passcode.");
             }
         }
     };
 
-    window.onload = function() {
-        app.init();
-    };
+    window.onload = function() { app.init(); };
 
 </script>
-
 </body>
 </html>
