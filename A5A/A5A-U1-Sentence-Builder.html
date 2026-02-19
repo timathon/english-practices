@@ -65,7 +65,7 @@
             display: grid;
             gap: 15px;
             overflow-y: auto;
-            padding-bottom: 80px; /* Space for footer links */
+            padding-bottom: 80px;
         }
 
         .challenge-card {
@@ -87,7 +87,7 @@
             font-size: 0.8rem; 
             color: #777; 
             display: flex; 
-            justify-content: space-between; 
+            justify-content: space-between;
             align-items: center;
             margin-top: 10px; 
             background: #f8f9fa; 
@@ -95,15 +95,8 @@
             border-radius: 12px; 
             border: 1px solid #eee;
         }
-        .stat-row { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: flex-start;
-        }
-        .stat-row:last-child {
-            align-items: flex-end; 
-        }
-        
+        .stat-row { display: flex; flex-direction: column; align-items: flex-start; }
+        .stat-row:last-child { align-items: flex-end; }
         .stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
         .stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
 
@@ -146,7 +139,6 @@
 
         .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
 
-        /* Word Buttons */
         .word-btn {
             background: var(--white);
             border: 2px solid var(--neutral);
@@ -164,7 +156,7 @@
         }
         .word-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
         .word-btn.selected { background: var(--neutral); color: transparent; border-color: transparent; pointer-events: none; }
-        .word-btn.selected .ipa { display: none; } 
+        .word-btn.selected .ipa { display: none; }
 
         .word-btn-answer {
             background: var(--white);
@@ -193,7 +185,7 @@
         .check-btn.correct { background-color: var(--primary); animation: bounce 0.5s; }
 
         .feedback-area {
-            height: 110px;
+            height: 110px; 
             margin-bottom: 10px;
             padding: 10px;
             border-radius: 12px;
@@ -273,7 +265,6 @@
             <div class="word-pool" id="word-pool"></div>
         </div>
 
-        <!-- Feedback Area -->
         <div id="feedback-area" class="feedback-area">
             <h3 id="feedback-title" style="margin:0"></h3>
             <p id="feedback-msg" style="margin:5px 0 0"></p>
@@ -316,91 +307,88 @@
 
 <script>
     /* ---------------- DATA & CONTENT ---------------- */
-    // IPA for this Unit
     const ipaDict = {
-        "noodles": "ˈnuːdlz", "soup": "suːp", "salad": "ˈsæləd", "beef": "biːf",
-        "chicken": "ˈtʃɪkɪn", "vegetables": "ˈvedʒtəblz", "chocolate": "ˈtʃɒklət",
-        "stomach": "ˈstʌmək", "breakfast": "ˈbrekfəst", "enough": "ɪˈnʌf",
-        "biscuit": "ˈbɪskɪt", "hungry": "ˈhʌŋɡri", "healthy": "ˈhelθi",
-        "carrots": "ˈkærəts", "muscles": "ˈmʌslz", "bones": "bəʊnz",
-        "teaspoons": "ˈtiːspuːnz", "sugar": "ˈʃʊɡə", "delicious": "dɪˈlɪʃəs",
-        "restaurant": "ˈrest.rɒnt", "plate": "pleɪt", "choices": "ˈtʃɔɪsɪz"
+        "plate": "pleɪt", "stomach": "ˈstʌmək", "enough": "ɪˈnʌf", 
+        "biscuit": "ˈbɪskɪt", "healthy": "ˈhelθi", "muscle": "ˈmʌsl",
+        "muscles": "ˈmʌslz", "brain": "breɪn", "vegetable": "ˈvedʒtəbl", 
+        "vegetables": "ˈvedʒtəblz", "chocolate": "ˈtʃɒklət", "teaspoon": "ˈtiːspuːn",
+        "teaspoons": "ˈtiːspuːnz", "choice": "tʃɔɪs", "choices": "tʃɔɪsɪz"
     };
 
     const challenges = [
         {
-            id: 'c1', title: 'Menu Choices', icon: '🍽️',
+            id: 'c1', title: 'Food Basics', icon: '🍽️',
             data: [
-                { en: "What do you want to eat?", cn: "你想吃什么？", hint: "Question format: What + do + you...", noise: ["does", "eating"] },
-                { en: "I want noodles in soup.", cn: "我要汤面。", hint: "Noodles 'in' soup / 面条 'in' 汤里", noise: ["on", "soups"] },
-                { en: "I want an apple and milk.", cn: "我想要一个苹果和牛奶。", hint: "Use 'an' before apple", noise: ["a", "two"] },
-                { en: "I like cake and cola.", cn: "我喜欢蛋糕和可乐。", hint: "Simple present tense / 一般现在时", noise: ["likes", "a"] },
-                { en: "Wow there is so much food.", cn: "哇，有这么多食物。", hint: "Singular 'is' for uncountable 'food'", noise: ["are", "many"] },
-                { en: "I want chicken and beef.", cn: "我想要鸡肉和牛肉。", hint: "Meat names are uncountable here", noise: ["a", "chickens"] },
-                { en: "Do you like fish?", cn: "你喜欢鱼吗？", hint: "Question with 'Do'", noise: ["Does", "fishes"] },
-                { en: "Which food do you often eat?", cn: "你经常吃哪种食物？", hint: "Which + food + do...", noise: ["does", "eats"] },
-                { en: "What do you know about food groups?", cn: "你对食物类别了解多少？", hint: "Know about...", noise: ["knowing", "for"] },
-                { en: "I want salad and beef.", cn: "我想要沙拉和牛肉。", hint: "Use 'and' to connect items", noise: ["or", "beefs"] }
+                { en: "What is on your plate?", cn: "你的盘子里有什么？", hint: "Question word 'What' / 疑问词 'What'", noise: ["in", "plates"], accept: ["What's on your plate?"] },
+                { en: "Which food do you often eat?", cn: "你经常吃哪种食物？", hint: "Question word 'Which' / 疑问词 'Which'", noise: ["does", "eating"] },
+                { en: "What do you want to eat?", cn: "你想吃什么？", hint: "want to + verb / want to + 动词原形", noise: ["wants", "eating"] },
+                { en: "I want noodles in soup.", cn: "我想吃汤面。", hint: "Preposition 'in' / 介词 'in'", noise: ["on", "noodle"] },
+                { en: "I want an apple and milk.", cn: "我想要一个苹果和牛奶。", hint: "'an' before vowels / 元音前用 'an'", noise: ["a", "milks"] },
+                { en: "There is so much food.", cn: "有这么多食物。", hint: "'so much' for uncountable nouns / 'so much' 修饰不可数名词", noise: ["many", "foods"] },
+                { en: "What vegetables have you got now?", cn: "你现在拿了什么蔬菜？", hint: "Present perfect 'have got' / 现在完成时 'have got'", noise: ["has", "get"] },
+                { en: "I have a lot of potatoes.", cn: "我有很多土豆。", hint: "Plural '-es' / 复数加 '-es'", noise: ["potato", "lots"] },
+                { en: "Those are chips.", cn: "那些是炸薯条。", hint: "Plural 'Those are' / 复数 'Those are'", noise: ["That", "is"] },
+                { en: "Let me go and get some.", cn: "让我去拿一些。", hint: "Let + object + base verb / Let + 宾语 + 动词原形", noise: ["goes", "getting"] }
             ]
         },
         {
-            id: 'c2', title: "Sam's Plate", icon: '🥦',
+            id: 'c2', title: 'Healthy Advice', icon: '🥗',
             data: [
-                { en: "Sam look at your plate.", cn: "萨姆，看看你的盘子。", hint: "Imperative / 祈使句", noise: ["looking", "you"] },
-                { en: "You should have some vegetables.", cn: "你应该吃些蔬菜。", hint: "Should + verb / 情态动词 should + 动词原形", noise: ["has", "any"] },
-                { en: "Let me go and get some.", cn: "让我去拿一些。", hint: "Let me + verb", noise: ["gets", "go to"] },
-                { en: "Do not take too much.", cn: "别拿太多。", hint: "Negative imperative / 否定祈使句", noise: ["no", "many"] },
-                { en: "We should eat all the food.", cn: "我们应该吃光所有的食物。", hint: "Should + eat", noise: ["eating", "foods"] },
-                { en: "What vegetables have you got now?", cn: "你现在拿了什么蔬菜？", hint: "Have got structure", noise: ["has", "getting"] },
-                { en: "Potatoes a lot of potatoes.", cn: "土豆，很多土豆。", hint: "Plural of potato needs -es", noise: ["potato", "much"] },
-                { en: "Oh Sam those are chips.", cn: "哦萨姆，那些是薯条！", hint: "Plural 'those are'", noise: ["that", "is"] },
-                { en: "Do not eat too much meat.", cn: "不要吃太多的肉。", hint: "Meat is uncountable (too much)", noise: ["many", "meats"] },
-                { en: "Sam and Amy choose food.", cn: "萨姆和艾米选择食物。", hint: "Plural subject, base verb", noise: ["chooses", "foods"] }
+                { en: "Do not take too much.", cn: "别拿太多。", hint: "Negative imperative / 否定祈使句", noise: ["takes", "many"], accept: ["Don't take too much."] },
+                { en: "We should eat all the food.", cn: "我们应该吃光所有的食物。", hint: "Modal 'should' / 情态动词 'should'", noise: ["shoulds", "eating"] },
+                { en: "You should have some vegetables.", cn: "你应该吃些蔬菜。", hint: "'some' for positive sentences / 肯定句用 'some'", noise: ["any", "vegetable"] },
+                { en: "You eat too much meat.", cn: "你吃了太多肉。", hint: "'too much' + uncountable / 'too much' + 不可数名词", noise: ["many", "meats"] },
+                { en: "What do you eat for lunch?", cn: "你午饭吃什么？", hint: "Preposition 'for' / 介词 'for'", noise: ["in", "eats"] },
+                { en: "I eat noodles and vegetables for lunch.", cn: "我午餐吃面条和蔬菜。", hint: "'for lunch' means as lunch / 'for lunch' 表示作为午餐", noise: ["at", "noodle"], accept: ["For lunch I eat noodles and vegetables."] },
+                { en: "You should eat some meat and fruit.", cn: "你也应该吃一些肉和水果。", hint: "Uncountable nouns / 不可数名词", noise: ["fruits", "meats"] },
+                { en: "Make healthy choices next time.", cn: "下次做健康的选择。", hint: "Imperative verb / 祈使句动词", noise: ["makes", "choice"], accept: ["Next time make healthy choices."] },
+                { en: "Choose the right food to eat.", cn: "选择正确的食物来吃。", hint: "to + verb / to + 动词原形", noise: ["choosing", "eats"] },
+                { en: "Talk about healthy eating.", cn: "谈论健康饮食。", hint: "Preposition 'about' / 介词 'about'", noise: ["on", "eat"] }
             ]
         },
         {
-            id: 'c3', title: 'Dear Stomach', icon: '📝',
+            id: 'c3', title: "Stomach's Letter", icon: '💌',
             data: [
-                { en: "This is a bad day for me.", cn: "这对我来说是糟糕的一天。", hint: "This is...", noise: ["are", "an"] },
-                { en: "Every morning you need a good breakfast.", cn: "每天早上你需要一顿丰盛的早餐。", hint: "Time phrase first or last", noise: ["needs", "morning"], accept: ["You need a good breakfast every morning."] },
-                { en: "Just a few biscuits are not enough.", cn: "只有几块饼干是不够的。", hint: "A few + plural noun", noise: ["is", "much"] },
-                { en: "I often feel hungry all morning.", cn: "我整个上午经常感到饿。", hint: "Frequency adverb 'often' before verb", noise: ["feeling", "hungrys"] },
-                { en: "You often eat too much for lunch.", cn: "你午餐经常吃太多。", hint: "Too much (adverbial)", noise: ["many", "eat"] },
-                { en: "I get too heavy.", cn: "我变得太重了。", hint: "Get + adjective", noise: ["gets", "heavily"] },
-                { en: "This makes you sleepy in the afternoon.", cn: "这让你在下午犯困。", hint: "Makes + object + adjective", noise: ["make", "sleep"] },
-                { en: "You always eat dinner too fast.", cn: "你晚饭总是吃得太快。", hint: "Too fast (adverb)", noise: ["fasts", "eating"] },
-                { en: "I have to work hard.", cn: "我必须努力工作。", hint: "Have to + verb", noise: ["has", "hardly"] },
-                { en: "Please make some changes.", cn: "请做出一些改变。", hint: "Imperative 'Make'", noise: ["making", "change"] }
+                { en: "This is a bad day for me.", cn: "对我来说这是糟糕的一天。", hint: "Preposition 'for' / 介词 'for'", noise: ["to", "days"] },
+                { en: "Every morning you need a good breakfast.", cn: "每天早上你需要一顿好的早餐。", hint: "'need' + noun / 'need' + 名词", noise: ["needs", "in"], accept: ["You need a good breakfast every morning."] },
+                { en: "Just a few biscuits are not enough.", cn: "仅仅几块饼干是不够的。", hint: "'a few' + countable plural / 'a few' + 可数名词复数", noise: ["little", "biscuit"] },
+                { en: "I often feel hungry all morning.", cn: "我经常整个上午都觉得饿。", hint: "'feel' + adjective / 'feel' + 形容词", noise: ["feels", "hunger"] },
+                { en: "You have a lot of meat but no fruit.", cn: "你吃了很多肉但没有水果。", hint: "'a lot of' / 固定搭配 'a lot of'", noise: ["lots", "fruits"] },
+                { en: "I get too heavy.", cn: "我变得太重了。", hint: "'get' + adjective / 'get' + 形容词", noise: ["gets", "heavily"] },
+                { en: "This makes you sleepy in the afternoon.", cn: "这让你在下午感到困倦。", hint: "make + object + adj / make + 宾语 + 形容词", noise: ["make", "sleep"] },
+                { en: "You always eat dinner too fast.", cn: "你总是吃晚饭吃得太快。", hint: "Adverb 'fast' / 副词 'fast' 修饰动作", noise: ["fastly", "eats"] },
+                { en: "You should eat slowly.", cn: "你应该慢慢吃。", hint: "Adverb 'slowly' / 副词 'slowly' 修饰动作", noise: ["slow", "eats"] },
+                { en: "Help me stay healthy.", cn: "帮我保持健康。", hint: "Help + object + base verb / Help + 宾语 + 动词原形", noise: ["stays", "health"] }
             ]
         },
         {
-            id: 'c4', title: 'Healthy Body', icon: '💪',
+            id: 'c4', title: 'Snacks & Sugar', icon: '🍫',
             data: [
-                { en: "We should eat carrots.", cn: "我们应该吃胡萝卜。", hint: "Should + eat", noise: ["eating", "carrot"] },
-                { en: "They are good for our eyes.", cn: "它们对我们的眼睛有好处。", hint: "Be good for...", noise: ["is", "eye"] },
-                { en: "We should drink milk.", cn: "我们应该喝牛奶。", hint: "Should + drink", noise: ["drinks", "milks"] },
-                { en: "It is good for our bones.", cn: "它对我们的骨头有好处。", hint: "Singular 'It' for milk", noise: ["are", "bone"] },
-                { en: "What food should you eat?", cn: "你应该吃什么食物？", hint: "Question: Should + you...", noise: ["eating", "foods"] },
-                { en: "Help me stay healthy.", cn: "帮我保持健康。", hint: "Help + person + verb", noise: ["stays", "health"] },
-                { en: "Eat enough of this food.", cn: "这种食物要吃够。", hint: "Enough of...", noise: ["many", "foods"] },
-                { en: "Eat a little of this food.", cn: "这种食物要少吃。", hint: "A little of...", noise: ["few", "an"] },
-                { en: "This is a healthy meal.", cn: "这是一顿健康的饭。", hint: "Adjective + noun", noise: ["an", "health"] },
-                { en: "Then you are healthy too.", cn: "那样你也健康了。", hint: "Adjective after 'are'", noise: ["health", "is"] }
+                { en: "Want to eat right?", cn: "想吃得健康吗？", hint: "'eat right' means eat healthy / 'eat right' 表示吃得健康", noise: ["eats", "rights"] },
+                { en: "They help us to grow.", cn: "它们帮助我们成长。", hint: "help + object + to do / help + 宾语 + to do", noise: ["helps", "growing"] },
+                { en: "Biscuits juice and nuts.", cn: "饼干，果汁和坚果。", hint: "Plural nouns / 名词复数", noise: ["biscuit", "nut"] },
+                { en: "They make our body slow.", cn: "它们让我们的身体变得迟钝。", hint: "make + object + adj / make + 宾语 + 形容词", noise: ["makes", "slowly"] },
+                { en: "What snacks do you like?", cn: "你喜欢什么零食？", hint: "Question word order / 疑问句语序", noise: ["does", "snack"] },
+                { en: "Too many snacks are not good for us.", cn: "太多零食对我们没有好处。", hint: "'too many' + countable plural / 'too many' + 可数名词复数", noise: ["much", "is"] },
+                { en: "One bar of chocolate has sugar.", cn: "一块巧克力里有糖。", hint: "'has' for third person singular / 第三人称单数用 'has'", noise: ["have", "sugars"] },
+                { en: "A bag of chips is like drinking oil.", cn: "一袋薯片就像喝油一样。", hint: "'like' + -ing / 'like' 后面加动名词", noise: ["drink", "oils"] },
+                { en: "Say no to candies and cakes.", cn: "对糖果和蛋糕说不。", hint: "Preposition 'to' / 介词 'to'", noise: ["for", "candy"] },
+                { en: "Remember three words go slow whoa.", cn: "记住三个词：前进，减速，停下。", hint: "Plural 'words' / 复数 'words'", noise: ["word", "remembers"] }
             ]
         },
         {
-            id: 'c5', title: 'Snack Facts', icon: '🍫',
+            id: 'c5', title: 'Food & Body', icon: '💪',
             data: [
-                { en: "What snacks do you like?", cn: "你喜欢什么零食？", hint: "Plural snacks", noise: ["does", "snack"] },
-                { en: "Too many snacks are not good.", cn: "太多零食不好。", hint: "Too many + countable nouns", noise: ["much", "is"] },
-                { en: "One bar of chocolate has sugar.", cn: "一条巧克力含有糖。", hint: "Singular subject 'One bar'", noise: ["have", "sugars"] },
-                { en: "It has about ten teaspoons of sugar.", cn: "它大约含有10茶匙糖。", hint: "Plural teaspoons", noise: ["teaspoon", "have"] },
-                { en: "A bag of chips is like drinking oil.", cn: "一袋薯片就像喝油。", hint: "Is like + -ing", noise: ["are", "drink"] },
-                { en: "Make healthy choices next time.", cn: "下次要做出健康的选择。", hint: "Imperative", noise: ["making", "choice"], accept: ["Next time make healthy choices."] },
-                { en: "Do not eat too much fat.", cn: "不要吃太多的脂肪。", hint: "Fat is uncountable here", noise: ["many", "fats"] },
-                { en: "Seventeen students love chips.", cn: "17名学生爱吃薯片。", hint: "Plural verb 'love'", noise: ["loves", "student"] },
-                { en: "They help us to grow.", cn: "它们帮助我们成长。", hint: "Help us (to) do", noise: ["helps", "growing"] },
-                { en: "Remember three words.", cn: "记住三个词。", hint: "Imperative", noise: ["remembering", "word"] }
+                { en: "We should eat carrots.", cn: "我们应该吃胡萝卜。", hint: "Plural nouns / 名词复数", noise: ["carrot", "eating"] },
+                { en: "They are good for our eyes.", cn: "它们对我们的眼睛有好处。", hint: "'be good for' / 固定搭配 'be good for'", noise: ["is", "eye"] },
+                { en: "We should drink milk.", cn: "我们应该喝牛奶。", hint: "Uncountable noun / 不可数名词", noise: ["milks", "drinks"] },
+                { en: "It is good for our bones.", cn: "它对我们的骨骼有好处。", hint: "Plural 'bones' / 复数 'bones'", noise: ["are", "bone"] },
+                { en: "What food is good for your brain?", cn: "什么食物对你的大脑有好处？", hint: "'is' with uncountable 'food' / 不可数名词 'food' 用 'is'", noise: ["are", "brains"] },
+                { en: "Fish is good for the brain.", cn: "鱼肉对大脑有好处。", hint: "Uncountable 'Fish' as food / 作食物的 'Fish' 不可数", noise: ["are", "fishes"] },
+                { en: "Vegetables are good for our skin.", cn: "蔬菜对我们的皮肤有好处。", hint: "Plural subject 'Vegetables' / 复数主语 'Vegetables'", noise: ["is", "skins"] },
+                { en: "Meat helps to build muscles.", cn: "肉有助于长肌肉。", hint: "'helps' for third person singular / 第三人称单数用 'helps'", noise: ["help", "muscle"] },
+                { en: "Find out and tell the class.", cn: "找出答案并告诉全班同学。", hint: "Imperative / 祈使句", noise: ["finds", "tells"] },
+                { en: "What food is good for these parts?", cn: "什么食物对这些部位有好处？", hint: "Plural 'these parts' / 复数 'these parts'", noise: ["this", "part"] }
             ]
         }
     ];
@@ -410,12 +398,12 @@
         state: {
             currentChallenge: null,
             queue: [],
-            mistakeQueue: [], // For redemption
+            mistakeQueue: [], 
             currentIndex: 0,
             userSelection: [],
             currentObj: null,
             hintUsed: false,
-            scoreLog: [], // ['green', 'yellow', 'red', ...]
+            scoreLog: [],
             locked: false
         },
 
@@ -424,15 +412,15 @@
         },
 
         /* --- Storage Helpers --- */
-        getStats: function() { return JSON.parse(localStorage.getItem('sb_stats_unit1_plate') || '{}'); },
-        saveStats: function(stats) { localStorage.setItem('sb_stats_unit1_plate', JSON.stringify(stats)); },
-        getMistakes: function() { return JSON.parse(localStorage.getItem('sb_mistakes_unit1_plate') || '[]'); },
-        saveMistakes: function(list) { localStorage.setItem('sb_mistakes_unit1_plate', JSON.stringify(list)); },
-        getSessionLogs: function() { return JSON.parse(localStorage.getItem('sb_session_logs_plate') || '[]'); },
+        getStats: function() { return JSON.parse(localStorage.getItem('sb_stats_unit1_food') || '{}'); },
+        saveStats: function(stats) { localStorage.setItem('sb_stats_unit1_food', JSON.stringify(stats)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem('sb_mistakes_unit1_food') || '[]'); },
+        saveMistakes: function(list) { localStorage.setItem('sb_mistakes_unit1_food', JSON.stringify(list)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem('sb_session_logs_food') || '[]'); },
         saveSessionLog: function(log) { 
             const logs = this.getSessionLogs();
             logs.unshift(log); 
-            localStorage.setItem('sb_session_logs_plate', JSON.stringify(logs));
+            localStorage.setItem('sb_session_logs_food', JSON.stringify(logs));
         },
 
         /* --- Home Screen --- */
@@ -451,6 +439,7 @@
                 if(s.today.date !== todayStr) {
                     s.today = { date: todayStr, attempts: 0, best: 0 };
                 }
+
                 allStats[c.id] = s;
 
                 const div = document.createElement('div');
@@ -479,7 +468,7 @@
         startChallenge: function(id) {
             const c = challenges.find(x => x.id === id);
             this.state.currentChallenge = c;
-            this.state.queue = [...c.data]; 
+            this.state.queue = [...c.data];
             this.state.mistakeQueue = [];
             this.state.currentIndex = 0;
             this.state.scoreLog = new Array(c.data.length).fill(null);
@@ -539,7 +528,7 @@
                 btn.className = 'word-btn';
                 
                 let displayWord = word;
-                const alwaysCap = ["I", "Sam", "Amy", "Sam's", "Mr", "Mrs", "Miss"];
+                const alwaysCap = ["I", "Sam", "Amy"];
                 
                 if (!alwaysCap.includes(displayWord)) {
                     displayWord = displayWord.toLowerCase();
@@ -604,7 +593,6 @@
 
         checkAnswer: function() {
             if (this.state.locked) return;
-
             if (this.state.userSelection.length === 0) return;
             
             let userSent = this.state.userSelection.map((item, idx) => {
@@ -616,7 +604,6 @@
             this.state.locked = true;
 
             const target = this.state.currentObj.en.replace(/[.!?]$/, '');
-            
             let isCorrect = userSent === target; 
             
             if (!isCorrect && this.state.currentObj.accept) {
@@ -819,9 +806,8 @@
 
         clearMistakes: function() {
             const code = prompt("Enter Teacher Passcode:");
-            // Passcode: M (Menu) S (Sam) D (Dear) H (Healthy) S (Snack)
-            if(code && code.toUpperCase() === 'MSDHS') {
-                localStorage.removeItem('sb_mistakes_unit1_plate');
+            if(code && code.toUpperCase() === 'FHSFF') {
+                localStorage.removeItem('sb_mistakes_unit1_food');
                 this.showMistakes();
             } else {
                 alert("Incorrect Passcode");
@@ -839,7 +825,7 @@
             } else {
                 list.forEach(l => {
                     const div = document.createElement('div');
-                    div.className = 'mistake-item'; 
+                    div.className = 'mistake-item';
                     div.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <strong style="color:#333;">${l.challenge}</strong>
@@ -859,9 +845,8 @@
 
         clearHistory: function() {
             const code = prompt("Enter Teacher Passcode:");
-            if(code && code.toUpperCase() === 'MSDHS') {
-                localStorage.removeItem('sb_stats_unit1_plate');
-                localStorage.removeItem('sb_session_logs_plate');
+            if(code && code.toUpperCase() === 'FHSFF') {
+                localStorage.clear();
                 location.reload();
             } else {
                 alert("Incorrect Passcode");
