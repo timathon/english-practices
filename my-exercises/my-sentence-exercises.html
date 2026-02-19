@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Exercise Manager</title>
+    <style>
+        :root {
+            --primary: #58cc02;
+            --primary-dark: #46a302;
+            --secondary: #1cb0f6;
+            --secondary-dark: #1185ba;
+            --warning: #ffc800;
+            --warning-dark: #e5b400;
+            --danger: #ff4b4b;
+            --danger-dark: #d33131;
+            --neutral: #e5e5e5;
+            --text: #4b4b4b;
+            --white: #ffffff;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        #app {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .home-btn {
+            position: absolute;
+            left: 20px;
+            font-size: 1.3rem;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+
+        .home-btn:hover {
+            transform: scale(1.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 1.3rem;
+            white-space: nowrap;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border: 2px solid var(--neutral);
+            border-bottom: 4px solid var(--neutral);
+            border-radius: 12px;
+            background: var(--white);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--text);
+            transition: all 0.1s;
+        }
+
+        .nav-tab:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary-dark);
+            border-bottom-color: var(--primary-dark);
+        }
+
+        .panel {
+            display: none;
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        /* JSON Import Panel */
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid var(--neutral);
+            border-radius: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+            border-bottom: 4px solid var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--white);
+            border-bottom: 4px solid var(--secondary-dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--white);
+            border-bottom: 4px solid var(--danger-dark);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: var(--text);
+            border-bottom: 4px solid var(--warning-dark);
+        }
+
+        .btn:disabled {
+            background: var(--neutral);
+            border-bottom-color: #ccc;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Challenge Cards */
+        .challenge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .challenge-card {
+            background: var(--white);
+            border: 2px solid var(--neutral);
+            border-bottom: 4px solid var(--neutral);
+            border-radius: 16px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .challenge-card:hover {
+            background: #fafafa;
+            border-color: #ccc;
+        }
+
+        .challenge-card:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .challenge-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .challenge-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text);
+            flex-grow: 1;
+        }
+
+        .challenge-stats {
+            font-size: 0.85rem;
+            color: #666;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .challenge-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .challenge-actions .btn {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            margin: 0;
+            flex: 1;
+        }
+
+        /* Stats Panel */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #fafafa;
+            border: 2px solid var(--neutral);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .log-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--neutral);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .log-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-date {
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .log-score {
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .log-score.excellent {
+            background: #d7ffb8;
+            color: var(--primary-dark);
+        }
+
+        .log-score.good {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .log-score.needs-work {
+            background: #ffdfe0;
+            color: var(--danger-dark);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.visible {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .input-hint {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .challenge-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .challenge-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--neutral);
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+
+        .challenge-input input:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+
+        /* Immersive Practice Screen */
+        .practice-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .practice-screen.active {
+            display: block;
+        }
+
+        .practice-screen-content {
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--white);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 600px) {
+            .practice-screen-content {
+                min-height: 90vh;
+                margin: 5vh auto;
+                border-radius: 20px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+        }
+
+        .practice-screen-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            background: none;
+            border: none;
+            padding: 5px 10px;
+        }
+
+        .back-btn:hover {
+            color: var(--text);
+        }
+
+        .practice-screen-progress {
+            flex-grow: 1;
+            margin: 0 15px;
+            height: 16px;
+            background-color: var(--neutral);
+            border-radius: 8px;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .practice-screen-progress-segment {
+            flex-grow: 1;
+            border-right: 1px solid var(--white);
+            background-color: var(--neutral);
+        }
+
+        .practice-screen-progress-segment.completed {
+            background-color: var(--primary);
+        }
+
+        .practice-screen-progress-segment.current {
+            background-color: var(--warning);
+        }
+
+        .practice-screen-question {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .practice-screen-prompt {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .practice-screen-prompt-cn {
+            font-size: 1.3rem;
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .practice-screen-hint-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--warning);
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+            transition: transform 0.2s;
+        }
+
+        .practice-screen-hint-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .practice-screen-hint-text {
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+            min-height: 1.2em;
+            visibility: hidden;
+        }
+
+        .practice-screen-hint-text.visible {
+            visibility: visible;
+            animation: fadeIn 0.3s;
+        }
+
+        .practice-screen-answer-area {
+            min-height: 70px;
+            border-top: 2px solid var(--neutral);
+            border-bottom: 2px solid var(--neutral);
+            background: #fafafa;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 15px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .practice-screen-word-pool {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .practice-screen-word-pool .word-btn {
+            background: var(--white);
+            border: 2px solid var(--neutral);
+            border-bottom: 4px solid var(--neutral);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: var(--text);
+            position: relative;
+            transition: all 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 60px;
+        }
+
+        .practice-screen-word-pool .word-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
+        .practice-screen-word-pool .word-btn.selected {
+            background: var(--neutral);
+            color: transparent;
+            border-color: transparent;
+            pointer-events: none;
+        }
+
+        .practice-screen-answer-area .word-btn-answer {
+            background: var(--white);
+            border: 2px solid var(--secondary);
+            border-bottom: 4px solid var(--secondary-dark);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: var(--secondary-dark);
+        }
+
+        .practice-screen-feedback {
+            min-height: 80px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .practice-screen-feedback.visible {
+            display: flex;
+        }
+
+        .practice-screen-feedback.correct {
+            background: #d7ffb8;
+            border: 2px solid var(--primary);
+        }
+
+        .practice-screen-feedback.wrong {
+            background: #ffdfe0;
+            border: 2px solid var(--danger);
+        }
+
+        .practice-screen-footer {
+            padding-top: 20px;
+            border-top: 2px solid var(--neutral);
+        }
+
+        .practice-screen-check-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            background-color: var(--primary);
+            border: none;
+            border-bottom: 5px solid var(--primary-dark);
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .practice-screen-check-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 3px;
+        }
+
+        .practice-screen-check-btn:disabled {
+            background-color: var(--neutral);
+            border-bottom-color: #ccc;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .practice-screen-check-btn.wrong {
+            background-color: var(--danger);
+            border-bottom-color: var(--danger-dark);
+            animation: shake 0.5s;
+        }
+
+        .practice-screen-check-btn.correct {
+            background-color: var(--primary);
+            animation: bounce 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <a href="../index.html" class="home-btn" title="Back to Index">🏠</a>
+            <h1>Sentence Exercise Manager</h1>
+        </header>
+
+        <div class="nav-tabs">
+            <button class="nav-tab" onclick="app.showPanel('generate')">1. Generate Prompt</button>
+            <button class="nav-tab" onclick="app.showPanel('import')">2. Paste JSON</button>
+            <button class="nav-tab active" onclick="app.showPanel('challenges')">My Challenges</button>
+            <button class="nav-tab" onclick="app.showPanel('stats')">Statistics</button>
+            <button class="nav-tab" onclick="app.showPanel('export')">Export</button>
+            <button class="nav-tab" onclick="app.showPanel('import-data')">Import</button>
+        </div>
+
+        <!-- Generate Prompt Panel -->
+        <div id="generate-panel" class="panel">
+            <h3>Step 1: Generate AI Prompt</h3>
+            <p>Paste your English sentences below, and we'll create a prompt for an AI chatbot to generate the exercise JSON:</p>
+
+            <textarea id="sentences-input" placeholder="Paste your English sentences here, one per line. For example:
+What do you want to eat?
+I want noodles in soup.
+Make healthy choices next time.
+Do you like fish?"></textarea>
+
+            <div style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="app.generatePrompt()">Generate AI Prompt</button>
+                <button class="btn btn-secondary" onclick="app.copyPrompt()">Copy Prompt</button>
+            </div>
+
+            <div id="generated-prompt-area" style="margin-top: 20px; display: none;">
+                <h4>Generated Prompt for AI:</h4>
+                <textarea id="prompt-output" readonly style="min-height: 250px; background: #f8f9fa;"></textarea>
+                <p class="input-hint">Copy this prompt and paste it into an AI chatbot (like ChatGPT, Claude, etc.) to generate your exercise JSON.</p>
+            </div>
+        </div>
+
+        <!-- Import Panel -->
+        <div id="import-panel" class="panel">
+            <h3>Import a Challenge from JSON</h3>
+            <p>Paste your exercise JSON data below or upload a file. Each import creates a new challenge:</p>
+            
+            <div class="challenge-input">
+                <input type="text" id="challenge-title-input" placeholder="Challenge title (e.g., Unit 1: Healthy Food)">
+                <input type="text" id="challenge-icon-input" placeholder="Icon (e.g., 🍽️)">
+            </div>
+            
+            <textarea id="json-input" placeholder='Paste JSON array here. Format:
+[
+  {
+    "en": "Make healthy choices next time.",
+    "cn": "下次要做出健康的选择。",
+    "hint": "Imperative / 祈使句",
+    "noise": ["making", "choice"],
+    "accept": ["Next time make healthy choices."]
+  }
+]'></textarea>
+            
+            <button class="btn btn-primary" onclick="app.importJson()">Create Challenge</button>
+            <button class="btn btn-secondary" onclick="app.loadSample()">Load Sample Data</button>
+        </div>
+
+        <!-- Challenges Panel -->
+        <div id="challenges-panel" class="panel active">
+            <h3>Your Challenges</h3>
+            <div id="challenge-grid" class="challenge-grid">
+                <!-- Populated by JS -->
+            </div>
+            <div id="challenges-empty" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">📭</div>
+                <p>No challenges yet. Import some from the "Import JSON" tab!</p>
+            </div>
+        </div>
+
+        <!-- Stats Panel -->
+        <div id="stats-panel" class="panel">
+            <h3>Your Progress</h3>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Total Challenges</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-sessions">0</div>
+                    <div class="stat-label">Practice Sessions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-avg">0%</div>
+                    <div class="stat-label">Average Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-best">0%</div>
+                    <div class="stat-label">Best Score</div>
+                </div>
+            </div>
+            
+            <h4>Recent Sessions</h4>
+            <div id="session-logs" class="log-list">
+                <p style="text-align: center; color: #999;">No sessions yet</p>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="btn btn-danger" onclick="app.clearStats()">Clear Statistics</button>
+            </div>
+        </div>
+
+        <!-- Export Panel -->
+        <div id="export-panel" class="panel">
+            <h3>Export Your Data</h3>
+            <p>Copy your challenges as JSON:</p>
+
+            <div style="margin: 20px 0;">
+                <button class="btn btn-primary" onclick="app.copyContent()">📋 Copy Content</button>
+            </div>
+
+            <h4>Content:</h4>
+            <textarea id="export-preview" readonly style="min-height: 150px;"></textarea>
+        </div>
+
+        <!-- Import Data Panel -->
+        <div id="import-data-panel" class="panel">
+            <h3>Import Your Data</h3>
+            <p>Paste previously exported JSON content to restore your challenges:</p>
+
+            <textarea id="import-data-input" placeholder='Paste exported JSON here. Format:
+{
+  "challenges": [
+    {
+      "id": "challenge_xxx",
+      "title": "My Challenge",
+      "icon": "📝",
+      "exercises": [...],
+      "createdAt": "2026-02-20T..."
+    }
+  ]
+}'></textarea>
+
+            <div style="margin: 20px 0;">
+                <button class="btn btn-primary" onclick="app.importData()">📥 Import Data</button>
+            </div>
+
+            <p class="input-hint" style="color: var(--danger);">⚠️ Warning: This will replace all your existing challenges. Statistics will be preserved.</p>
+        </div>
+    </div>
+
+    <!-- Immersive Practice Screen -->
+    <div id="immersive-practice-screen" class="practice-screen">
+        <div class="practice-screen-content">
+            <div class="practice-screen-header">
+                <button class="back-btn" onclick="app.exitPractice()">←</button>
+                <div class="practice-screen-progress" id="immersive-progress-bar">
+                    <!-- Populated by JS -->
+                </div>
+                <div style="width: 40px;"></div>
+            </div>
+
+            <div class="practice-screen-question">
+                <div class="practice-screen-prompt">
+                    <div class="practice-screen-prompt-cn" id="immersive-prompt-cn"></div>
+                    <button class="practice-screen-hint-btn" onclick="app.showImmersiveHint()">💡</button>
+                    <div class="practice-screen-hint-text" id="immersive-hint-text"></div>
+                </div>
+
+                <div class="practice-screen-answer-area" id="immersive-answer-area"></div>
+                <div class="practice-screen-word-pool" id="immersive-word-pool"></div>
+            </div>
+
+            <div id="immersive-feedback-area" class="practice-screen-feedback">
+                <h3 id="immersive-feedback-title" style="margin:0"></h3>
+                <p id="immersive-feedback-msg" style="margin:5px 0 0"></p>
+            </div>
+
+            <div class="practice-screen-footer">
+                <button id="immersive-check-btn" class="practice-screen-check-btn" onclick="app.immersiveCheckAnswer()">Check</button>
+                <button id="immersive-next-btn" class="practice-screen-check-btn" onclick="app.immersiveNextQuestion()" style="display:none; background-color: var(--secondary); border-bottom-color: var(--secondary-dark);">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mistakes Modal -->
+    <div id="mistakes-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="color: var(--danger); margin: 0;">Review Mistakes</h2>
+                <button class="modal-close" onclick="app.closeMistakes()">✕</button>
+            </div>
+            <div id="mistakes-list" class="log-list"></div>
+            <div style="text-align: right; margin-top: 15px;">
+                <button class="btn btn-danger" onclick="app.clearMistakes()">Clear Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            data: {
+                challenges: [],  // [{ id, title, icon, exercises: [...], createdAt }]
+                stats: {
+                    sessions: [],  // [{ challengeId, challengeTitle, date, total, correct, percentage }]
+                    bestScores: {}  // { challengeId: bestPercentage }
+                },
+                mistakes: []  // [{ challengeId, exerciseIndex, exercise, userAnswer, correctAnswer, date }]
+            },
+            practice: {
+                challenge: null,
+                queue: [],
+                currentIndex: 0,
+                userAnswer: [],
+                usedWords: [],
+                score: 0,
+                mistakes: []
+            },
+
+            init() {
+                this.loadData();
+                this.updateExportPreview();
+                this.renderChallenges();
+                this.updateStats();
+            },
+
+            // --- Storage ---
+            loadData() {
+                const challenges = localStorage.getItem('sentence_exercises_challenges');
+                const stats = localStorage.getItem('sentence_exercises_stats');
+                const mistakes = localStorage.getItem('sentence_exercises_mistakes');
+                
+                if (challenges) this.data.challenges = JSON.parse(challenges);
+                if (stats) this.data.stats = JSON.parse(stats);
+                if (mistakes) this.data.mistakes = JSON.parse(mistakes);
+            },
+
+            saveData() {
+                localStorage.setItem('sentence_exercises_challenges', JSON.stringify(this.data.challenges));
+                localStorage.setItem('sentence_exercises_stats', JSON.stringify(this.data.stats));
+                localStorage.setItem('sentence_exercises_mistakes', JSON.stringify(this.data.mistakes));
+            },
+
+            // --- Panel Navigation ---
+            showPanel(panelId) {
+                document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+
+                // Find the tab button
+                const tabs = ['generate', 'import', 'challenges', 'stats', 'export', 'import-data'];
+                const index = tabs.indexOf(panelId);
+                if (index !== -1) {
+                    document.querySelectorAll('.nav-tab')[index].classList.add('active');
+                }
+                document.getElementById(`${panelId}-panel`).classList.add('active');
+
+                if (panelId === 'challenges') this.renderChallenges();
+                if (panelId === 'stats') this.updateStats();
+                if (panelId === 'export') this.updateExportPreview();
+            },
+
+            // --- Generate Prompt ---
+            generatePrompt() {
+                const sentencesInput = document.getElementById('sentences-input').value.trim();
+
+                if (!sentencesInput) {
+                    alert('Please enter at least one English sentence');
+                    return;
+                }
+
+                const sentences = sentencesInput.split('\n').filter(line => line.trim());
+
+                // Build the sentences data for the prompt
+                let sentencesData = '';
+                for (let i = 0; i < sentences.length; i++) {
+                    const en = sentences[i].trim();
+                    sentencesData += `${i + 1}. "${en}"\n`;
+                }
+
+                const prompt = `You are an expert English language teacher. I need you to create a JSON exercise array for a sentence-building practice app.
+
+**Task:**
+Convert the following English sentences into a JSON array. Each sentence should become an exercise object with the following structure:
+
+**JSON Format:**
+Each exercise object must have:
+- "en": The English sentence (exact)
+- "cn": Chinese translation
+- "hint": A grammar/structure hint (bilingual if possible)
+- "noise": Array of 2-3 distractor words (common mistakes or variations)
+- "accept": Array of alternative acceptable answers (if any)
+
+**Example Output:**
+[
+  {
+    "en": "What do you want to eat?",
+    "cn": "你想吃什么？",
+    "hint": "Question format: What + do + you... / 疑问句结构",
+    "noise": ["does", "eating", "wants"],
+    "accept": []
+  },
+  {
+    "en": "I want noodles in soup.",
+    "cn": "我要汤面。",
+    "hint": "Noodles 'in' soup / 面条'在'汤里",
+    "noise": ["on", "soups", "noodle"],
+    "accept": []
+  }
+]
+
+**Important Rules:**
+1. Keep the exact English sentence (including punctuation)
+2. Provide accurate Chinese translation
+3. Create helpful hints about grammar, word order, or key expressions
+4. Add 2-3 noise words that are common mistakes (wrong verb forms, wrong prepositions, singular/plural confusion)
+5. If there are alternative acceptable answers, add them to "accept"
+
+**Sentences to Convert:**
+${sentencesData}
+
+Please output ONLY the JSON array, no additional text or explanation.`;
+
+                document.getElementById('prompt-output').value = prompt;
+                document.getElementById('generated-prompt-area').style.display = 'block';
+            },
+
+            copyPrompt() {
+                const promptOutput = document.getElementById('prompt-output');
+                if (!promptOutput.value) {
+                    alert('No prompt generated yet. Please click "Generate AI Prompt" first.');
+                    return;
+                }
+
+                promptOutput.select();
+                document.execCommand('copy');
+
+                // Visual feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('btn-primary');
+                btn.classList.remove('btn-secondary');
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-secondary');
+                }, 2000);
+            },
+
+            // --- Import ---
+            loadSample() {
+                const sample = [
+                    {
+                        en: "What do you want to eat?",
+                        cn: "你想吃什么？",
+                        hint: "Question format: What + do + you... / 疑问句结构",
+                        noise: ["does", "eating"]
+                    },
+                    {
+                        en: "I want noodles in soup.",
+                        cn: "我要汤面。",
+                        hint: "Noodles 'in' soup / 面条'在'汤里",
+                        noise: ["on", "soups"]
+                    },
+                    {
+                        en: "Make healthy choices next time.",
+                        cn: "下次要做出健康的选择。",
+                        hint: "Imperative / 祈使句",
+                        noise: ["making", "choice"],
+                        accept: ["Next time make healthy choices."]
+                    },
+                    {
+                        en: "Do you like fish?",
+                        cn: "你喜欢鱼吗？",
+                        hint: "Question with 'Do' / 用'Do'的疑问句",
+                        noise: ["Does", "fishes"]
+                    }
+                ];
+                document.getElementById('json-input').value = JSON.stringify(sample, null, 2);
+            },
+
+            importJson() {
+                try {
+                    const input = document.getElementById('json-input').value.trim();
+                    if (!input) {
+                        alert('Please enter some JSON data');
+                        return;
+                    }
+                    
+                    const exercises = JSON.parse(input);
+                    
+                    if (!Array.isArray(exercises)) {
+                        alert('JSON must be an array of exercises');
+                        return;
+                    }
+                    
+                    if (exercises.length === 0) {
+                        alert('The exercise array is empty');
+                        return;
+                    }
+                    
+                    // Validate each exercise
+                    exercises.forEach((ex, i) => {
+                        if (!ex.en) throw new Error(`Exercise ${i + 1} missing 'en' (English sentence)`);
+                        if (!ex.cn) throw new Error(`Exercise ${i + 1} missing 'cn' (Chinese translation)`);
+                        if (!ex.hint) ex.hint = '';
+                        if (!ex.noise) ex.noise = [];
+                        if (!ex.accept) ex.accept = [];
+                    });
+                    
+                    const title = document.getElementById('challenge-title-input').value.trim();
+                    if (!title) {
+                        alert('Please enter a challenge title');
+                        document.getElementById('challenge-title-input').focus();
+                        return;
+                    }
+                    const icon = document.getElementById('challenge-icon-input').value.trim() || '📝';
+                    
+                    const challenge = {
+                        id: 'challenge_' + Date.now(),
+                        title: title,
+                        icon: icon,
+                        exercises: exercises,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    this.data.challenges.push(challenge);
+                    this.saveData();
+                    
+                    // Clear inputs
+                    document.getElementById('json-input').value = '';
+                    document.getElementById('challenge-title-input').value = '';
+                    document.getElementById('challenge-icon-input').value = '📝';
+                    
+                    alert(`Successfully created challenge "${title}" with ${exercises.length} exercises!`);
+                    this.renderChallenges();
+                    this.updateExportPreview();
+                    
+                } catch (e) {
+                    alert('Invalid JSON: ' + e.message);
+                }
+            },
+
+            // --- Challenges List ---
+            renderChallenges() {
+                const grid = document.getElementById('challenge-grid');
+                const empty = document.getElementById('challenges-empty');
+                
+                if (this.data.challenges.length === 0) {
+                    grid.innerHTML = '';
+                    empty.style.display = 'block';
+                    return;
+                }
+                
+                empty.style.display = 'none';
+
+                // Reverse to show latest challenges first
+                grid.innerHTML = this.data.challenges.slice().reverse().map((c, reverseIndex) => {
+                    // Calculate original index for delete/edit/startPractice
+                    const index = this.data.challenges.length - 1 - reverseIndex;
+                    const sessions = this.data.stats.sessions.filter(s => s.challengeId === c.id);
+                    const bestScore = this.data.stats.bestScores[c.id] || 0;
+                    const totalSessions = sessions.length;
+                    // Format date created
+                    const dateCreated = new Date(c.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' });
+
+                    return `
+                        <div class="challenge-card">
+                            <div class="challenge-header">
+                                <span class="challenge-icon">${c.icon}</span>
+                                <span class="challenge-title">${c.title} <span style="font-size: 0.85em; color: #999; font-weight: normal;">(${dateCreated})</span></span>
+                            </div>
+                            <div class="challenge-stats">
+                                <div>📝 ${c.exercises.length} sentences</div>
+                                <div>🎯 ${totalSessions} sessions</div>
+                                <div>⭐ Best: ${bestScore}%</div>
+                            </div>
+                            <div class="challenge-actions">
+                                <button class="btn btn-primary" onclick="app.startPractice(${index})">Practice</button>
+                                <button class="btn btn-secondary" onclick="app.editChallenge(${index})">Edit</button>
+                                <button class="btn btn-danger" onclick="app.deleteChallenge(${index})">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            editChallenge(index) {
+                const challenge = this.data.challenges[index];
+                const json = JSON.stringify(challenge.exercises, null, 2);
+                document.getElementById('json-input').value = json;
+                document.getElementById('challenge-title-input').value = challenge.title;
+                document.getElementById('challenge-icon-input').value = challenge.icon;
+                this.showPanel('import');
+                
+                // Override import to update existing
+                const originalImport = this.importJson;
+                this.importJson = () => {
+                    try {
+                        const newExercises = JSON.parse(document.getElementById('json-input').value.trim());
+                        if (!Array.isArray(newExercises)) throw new Error('Must be an array');
+                        
+                        newExercises.forEach((ex, i) => {
+                            if (!ex.en) throw new Error(`Exercise ${i + 1} missing 'en'`);
+                            if (!ex.cn) throw new Error(`Exercise ${i + 1} missing 'cn'`);
+                        });
+                        
+                        this.data.challenges[index].title = document.getElementById('challenge-title-input').value.trim() || challenge.title;
+                        this.data.challenges[index].icon = document.getElementById('challenge-icon-input').value.trim() || challenge.icon;
+                        this.data.challenges[index].exercises = newExercises;
+                        this.saveData();
+                        alert('Challenge updated!');
+                        this.importJson = originalImport;
+                        this.renderChallenges();
+                    } catch (e) {
+                        alert('Invalid JSON: ' + e.message);
+                    }
+                };
+            },
+
+            deleteChallenge(index) {
+                if (confirm('Delete this challenge? This will also remove its statistics.')) {
+                    const id = this.data.challenges[index].id;
+                    this.data.challenges.splice(index, 1);
+                    this.data.stats.sessions = this.data.stats.sessions.filter(s => s.challengeId !== id);
+                    delete this.data.stats.bestScores[id];
+                    this.data.mistakes = this.data.mistakes.filter(m => m.challengeId !== id);
+                    this.saveData();
+                    this.renderChallenges();
+                    this.updateExportPreview();
+                }
+            },
+
+            // --- Practice ---
+            startPractice(index) {
+                const challenge = this.data.challenges[index];
+                this.practice.challenge = challenge;
+                this.practice.queue = [...challenge.exercises];
+                this.practice.currentIndex = 0;
+                this.practice.userAnswer = [];
+                this.practice.usedWords = [];
+                this.practice.score = 0;
+                this.practice.mistakes = [];
+                this.practice.inImmersive = true; // Track that we're in immersive mode
+
+                // Show immersive screen
+                document.getElementById('immersive-practice-screen').classList.add('active');
+                this.loadImmersiveQuestion();
+            },
+
+            exitPractice() {
+                // Check if practice is complete (finished and showing Done button)
+                const isComplete = this.practice.currentIndex >= this.practice.queue.length - 1 &&
+                                   document.getElementById('immersive-check-btn').textContent === 'Done';
+
+                if (!isComplete) {
+                    // Practice not finished
+                    if (confirm('Exit practice? Your progress will be lost.')) {
+                        document.getElementById('immersive-practice-screen').classList.remove('active');
+                        this.practice.inImmersive = false;
+                        this.renderChallenges();
+                    }
+                } else {
+                    // Practice finished, just close
+                    document.getElementById('immersive-practice-screen').classList.remove('active');
+                    this.practice.inImmersive = false;
+                    this.renderChallenges();
+                }
+            },
+
+            loadImmersiveQuestion() {
+                const ex = this.practice.queue[this.practice.currentIndex];
+                const words = ex.en.split(' ').map(w => w.replace(/[.,!?;:]$/g, ''));
+                const allWords = [...words, ...ex.noise].sort(() => Math.random() - 0.5);
+
+                this.practice.userAnswer = [];
+                this.practice.usedWords = [];
+                this.practice.wordPool = allWords; // Store the shuffled word pool
+
+                // Update progress
+                const progress = document.getElementById('immersive-progress-bar');
+                progress.innerHTML = this.practice.queue.map((_, i) =>
+                    `<div class="practice-screen-progress-segment ${i < this.practice.currentIndex ? 'completed' : ''} ${i === this.practice.currentIndex ? 'current' : ''}"></div>`
+                ).join('');
+
+                // Update UI
+                document.getElementById('immersive-prompt-cn').textContent = ex.cn;
+                document.getElementById('immersive-hint-text').textContent = ex.hint || '';
+                document.getElementById('immersive-hint-text').classList.remove('visible');
+                document.getElementById('immersive-answer-area').innerHTML = '';
+                document.getElementById('immersive-feedback-area').className = 'practice-screen-feedback';
+                document.getElementById('immersive-check-btn').style.display = 'block';
+                document.getElementById('immersive-next-btn').style.display = 'none';
+
+                this.renderImmersiveWordPool();
+            },
+
+            showImmersiveHint() {
+                const hintEl = document.getElementById('immersive-hint-text');
+                if (hintEl.textContent) {
+                    hintEl.classList.add('visible');
+                }
+            },
+
+            renderImmersiveWordPool() {
+                const pool = document.getElementById('immersive-word-pool');
+                pool.innerHTML = this.practice.wordPool.map((word, i) => `
+                    <button class="word-btn ${this.practice.usedWords.includes(i) ? 'selected' : ''}"
+                            onclick="app.selectImmersiveWord(${i}, '${word.replace(/'/g, "\\'")}')">
+                        ${word}
+                    </button>
+                `).join('');
+            },
+
+            selectImmersiveWord(index, word) {
+                if (this.practice.usedWords.includes(index)) return;
+
+                this.practice.usedWords.push(index);
+                this.practice.userAnswer.push(word);
+
+                this.renderImmersiveWordPool();
+                this.renderImmersiveAnswer();
+            },
+
+            renderImmersiveAnswer() {
+                const answerArea = document.getElementById('immersive-answer-area');
+                answerArea.innerHTML = this.practice.userAnswer.map((word, i) => `
+                    <button class="word-btn-answer" onclick="app.removeImmersiveWord(${i})">
+                        ${word}
+                    </button>
+                `).join('');
+            },
+
+            removeImmersiveWord(index) {
+                const word = this.practice.userAnswer.splice(index, 1)[0];
+                const wordIndex = this.practice.wordPool.indexOf(word);
+                if (wordIndex !== -1) {
+                    const usedIndex = this.practice.usedWords.indexOf(wordIndex);
+                    if (usedIndex !== -1) {
+                        this.practice.usedWords.splice(usedIndex, 1);
+                    }
+                }
+                this.renderImmersiveAnswer();
+                this.renderImmersiveWordPool();
+            },
+
+            immersiveCheckAnswer() {
+                const ex = this.practice.queue[this.practice.currentIndex];
+                const userSentence = this.practice.userAnswer.join(' ');
+                const correctSentence = ex.en.replace(/[.,!?;:]$/g, '');
+                const isCorrect = userSentence === correctSentence ||
+                                  (ex.accept && (ex.accept.includes(userSentence + '.') || ex.accept.includes(userSentence)));
+
+                const feedback = document.getElementById('immersive-feedback-area');
+                const feedbackTitle = document.getElementById('immersive-feedback-title');
+                const feedbackMsg = document.getElementById('immersive-feedback-msg');
+
+                feedback.className = 'practice-screen-feedback visible ' + (isCorrect ? 'correct' : 'wrong');
+
+                if (isCorrect) {
+                    feedbackTitle.textContent = '✓ Correct!';
+                    feedbackMsg.textContent = 'Great job!';
+                    this.practice.score++;
+                } else {
+                    feedbackTitle.textContent = '✗ Not quite right';
+                    feedbackMsg.textContent = `Correct answer: ${ex.en}`;
+                    this.practice.mistakes.push({
+                        challengeId: this.practice.challenge.id,
+                        challengeTitle: this.practice.challenge.title,
+                        exerciseIndex: this.practice.currentIndex,
+                        exercise: ex,
+                        userAnswer: userSentence,
+                        correctAnswer: ex.en
+                    });
+                    this.data.mistakes.push({
+                        challengeId: this.practice.challenge.id,
+                        challengeTitle: this.practice.challenge.title,
+                        exerciseIndex: this.practice.currentIndex,
+                        exercise: ex,
+                        userAnswer: userSentence,
+                        correctAnswer: ex.en,
+                        date: new Date().toISOString()
+                    });
+                }
+
+                this.saveData();
+
+                document.getElementById('immersive-check-btn').style.display = 'none';
+                document.getElementById('immersive-next-btn').style.display = 'block';
+            },
+
+            immersiveNextQuestion() {
+                if (this.practice.currentIndex < this.practice.queue.length - 1) {
+                    this.practice.currentIndex++;
+                    this.loadImmersiveQuestion();
+                } else {
+                    this.finishImmersivePractice();
+                }
+            },
+
+            finishImmersivePractice() {
+                const percentage = Math.round((this.practice.score / this.practice.queue.length) * 100);
+                const challengeId = this.practice.challenge.id;
+
+                // Save session
+                this.data.stats.sessions.unshift({
+                    challengeId: challengeId,
+                    challengeTitle: this.practice.challenge.title,
+                    date: new Date().toISOString(),
+                    total: this.practice.queue.length,
+                    correct: this.practice.score,
+                    percentage: percentage
+                });
+
+                // Update best score
+                const currentBest = this.data.stats.bestScores[challengeId] || 0;
+                if (percentage > currentBest) {
+                    this.data.stats.bestScores[challengeId] = percentage;
+                }
+
+                // Keep only last 100 sessions
+                if (this.data.stats.sessions.length > 100) {
+                    this.data.stats.sessions = this.data.stats.sessions.slice(0, 100);
+                }
+
+                this.saveData();
+
+                const feedback = document.getElementById('immersive-feedback-area');
+                const feedbackTitle = document.getElementById('immersive-feedback-title');
+                const feedbackMsg = document.getElementById('immersive-feedback-msg');
+
+                feedback.className = 'practice-screen-feedback visible ' + (percentage >= 80 ? 'correct' : 'wrong');
+                feedbackTitle.textContent = `Practice Complete: ${percentage}%`;
+                feedbackMsg.textContent = `You got ${this.practice.score} out of ${this.practice.queue.length} correct.`;
+
+                document.getElementById('immersive-next-btn').style.display = 'none';
+
+                // Change check button to "Done" button
+                const doneBtn = document.getElementById('immersive-check-btn');
+                doneBtn.textContent = 'Done';
+                doneBtn.style.display = 'block';
+                doneBtn.onclick = () => {
+                    document.getElementById('immersive-practice-screen').classList.remove('active');
+                    doneBtn.textContent = 'Check';
+                    doneBtn.onclick = () => app.immersiveCheckAnswer();
+                    this.renderChallenges();
+                };
+            },
+
+            // --- Mistakes ---
+            showMistakes() {
+                const list = document.getElementById('mistakes-list');
+                if (this.data.mistakes.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #999;">No mistakes recorded</p>';
+                } else {
+                    list.innerHTML = this.data.mistakes.slice(-20).reverse().map(m => `
+                        <div class="log-item">
+                            <div>
+                                <div style="font-weight: bold;">${m.exercise.cn}</div>
+                                <div style="color: var(--danger);">Your answer: ${m.userAnswer}</div>
+                                <div style="color: var(--primary);">Correct: ${m.correctAnswer}</div>
+                                <div style="font-size: 0.8rem; color: #999;">${m.challengeTitle}</div>
+                            </div>
+                            <div class="log-date">${new Date(m.date).toLocaleDateString()}</div>
+                        </div>
+                    `).join('');
+                }
+                document.getElementById('mistakes-modal').classList.add('visible');
+            },
+
+            closeMistakes() {
+                document.getElementById('mistakes-modal').classList.remove('visible');
+            },
+
+            clearMistakes() {
+                if (confirm('Clear all mistake records?')) {
+                    this.data.mistakes = [];
+                    this.saveData();
+                    this.showMistakes();
+                }
+            },
+
+            // --- Stats ---
+            updateStats() {
+                document.getElementById('stat-total').textContent = this.data.challenges.length;
+                document.getElementById('stat-sessions').textContent = this.data.stats.sessions.length;
+                
+                const avg = this.data.stats.sessions.length > 0 
+                    ? Math.round(this.data.stats.sessions.reduce((sum, s) => sum + s.percentage, 0) / this.data.stats.sessions.length)
+                    : 0;
+                document.getElementById('stat-avg').textContent = avg + '%';
+                
+                const bestScores = Object.values(this.data.stats.bestScores);
+                const best = bestScores.length > 0 ? Math.max(...bestScores) : 0;
+                document.getElementById('stat-best').textContent = best + '%';
+                
+                const logs = document.getElementById('session-logs');
+                if (this.data.stats.sessions.length === 0) {
+                    logs.innerHTML = '<p style="text-align: center; color: #999;">No sessions yet</p>';
+                } else {
+                    logs.innerHTML = this.data.stats.sessions.slice(0, 20).map(s => {
+                        const scoreClass = s.percentage >= 80 ? 'excellent' : s.percentage >= 60 ? 'good' : 'needs-work';
+                        return `
+                            <div class="log-item">
+                                <div>
+                                    <div style="font-weight: bold;">${s.challengeTitle}</div>
+                                    <div>${s.correct}/${s.total} correct</div>
+                                    <div class="log-date">${new Date(s.date).toLocaleString()}</div>
+                                </div>
+                                <div class="log-score ${scoreClass}">${s.percentage}%</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            },
+
+            clearStats() {
+                if (confirm('Clear all statistics? This will not delete your challenges.')) {
+                    this.data.stats = { sessions: [], bestScores: {} };
+                    this.saveData();
+                    this.updateStats();
+                }
+            },
+
+            // --- Export ---
+            updateExportPreview() {
+                document.getElementById('export-preview').value = JSON.stringify({ challenges: this.data.challenges }, null, 2);
+            },
+
+            copyContent() {
+                const textarea = document.getElementById('export-preview');
+                textarea.select();
+                document.execCommand('copy');
+
+                // Visual feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            },
+
+            // --- Import Data ---
+            importData() {
+                const input = document.getElementById('import-data-input').value.trim();
+                if (!input) {
+                    alert('Please paste some JSON data to import');
+                    return;
+                }
+
+                try {
+                    const data = JSON.parse(input);
+
+                    if (!data.challenges || !Array.isArray(data.challenges)) {
+                        alert('Invalid format: JSON must contain a "challenges" array');
+                        return;
+                    }
+
+                    // Validate each challenge
+                    data.challenges.forEach((c, i) => {
+                        if (!c.id) throw new Error(`Challenge ${i + 1} missing "id"`);
+                        if (!c.title) throw new Error(`Challenge ${i + 1} missing "title"`);
+                        if (!c.exercises || !Array.isArray(c.exercises)) {
+                            throw new Error(`Challenge ${i + 1} missing "exercises" array`);
+                        }
+                    });
+
+                    // Import challenges (preserve stats and mistakes)
+                    this.data.challenges = data.challenges;
+                    this.saveData();
+
+                    // Clear input
+                    document.getElementById('import-data-input').value = '';
+
+                    alert(`Successfully imported ${data.challenges.length} challenge(s)!`);
+                    this.renderChallenges();
+                    this.updateExportPreview();
+
+                } catch (e) {
+                    alert('Invalid JSON: ' + e.message);
+                }
+            },
+        };
+
+        // Initialize app
+        app.init();
+    </script>
+</body>
+</html>
