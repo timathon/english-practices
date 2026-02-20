@@ -751,7 +751,7 @@ Do you like fish?"></textarea>
   }
 ]'></textarea>
 
-            <button class="btn btn-primary" onclick="app.importJson()">Create Challenge</button>
+            <button id="import-btn" class="btn btn-primary" onclick="app.importJson()">Create Challenge</button>
         </div>
 
         <!-- Challenges Panel -->
@@ -889,13 +889,14 @@ Do you like fish?"></textarea>
     <script>
         const app = {
             data: {
-                challenges: [],  // [{ id, title, icon, exercises: [...], createdAt }]
+                challenges: [],  // [{ id, title, icon, exercises: [...], createdAt, lastModified }]
                 stats: {
                     sessions: [],  // [{ challengeId, challengeTitle, date, total, correct, percentage }]
                     bestScores: {}  // { challengeId: bestPercentage }
                 },
                 mistakes: []  // [{ challengeId, exerciseIndex, exercise, userAnswer, correctAnswer, date }]
             },
+            lastViewed: null,  // Timestamp of last visit
             practice: {
                 challenge: null,
                 queue: [],
@@ -918,16 +919,19 @@ Do you like fish?"></textarea>
                 const challenges = localStorage.getItem('sentence_exercises_challenges');
                 const stats = localStorage.getItem('sentence_exercises_stats');
                 const mistakes = localStorage.getItem('sentence_exercises_mistakes');
-                
+                const lastViewed = localStorage.getItem('sentence_exercises_last_viewed');
+
                 if (challenges) this.data.challenges = JSON.parse(challenges);
                 if (stats) this.data.stats = JSON.parse(stats);
                 if (mistakes) this.data.mistakes = JSON.parse(mistakes);
+                if (lastViewed) this.lastViewed = JSON.parse(lastViewed);
             },
 
             saveData() {
                 localStorage.setItem('sentence_exercises_challenges', JSON.stringify(this.data.challenges));
                 localStorage.setItem('sentence_exercises_stats', JSON.stringify(this.data.stats));
                 localStorage.setItem('sentence_exercises_mistakes', JSON.stringify(this.data.mistakes));
+                localStorage.setItem('sentence_exercises_last_viewed', JSON.stringify(this.lastViewed));
             },
 
             // --- Panel Navigation ---
@@ -943,9 +947,18 @@ Do you like fish?"></textarea>
                 }
                 document.getElementById(`${panelId}-panel`).classList.add('active');
 
-                if (panelId === 'challenges') this.renderChallenges();
+                if (panelId === 'challenges') {
+                    // Update lastViewed before rendering
+                    this.lastViewed = Date.now();
+                    this.saveData();
+                    this.renderChallenges();
+                }
                 if (panelId === 'stats') this.updateStats();
                 if (panelId === 'export') this.updateExportPreview();
+                if (panelId === 'import') {
+                    // Reset button text when navigating to import panel normally
+                    document.getElementById('import-btn').textContent = 'Create Challenge';
+                }
             },
 
             // --- Generate Prompt ---
@@ -1117,25 +1130,27 @@ Please output ONLY the JSON array, no additional text or explanation.`;
                         return;
                     }
                     const icon = document.getElementById('challenge-icon-input').value.trim() || '📝';
-                    
+                    const now = new Date().toISOString();
+
                     const challenge = {
                         id: 'challenge_' + Date.now(),
                         title: title,
                         icon: icon,
                         exercises: exercises,
-                        createdAt: new Date().toISOString()
+                        createdAt: now,
+                        lastModified: now
                     };
-                    
+
                     this.data.challenges.push(challenge);
                     this.saveData();
-                    
+
                     // Clear inputs
                     document.getElementById('json-input').value = '';
                     document.getElementById('challenge-title-input').value = '';
                     document.getElementById('challenge-icon-input').value = '📝';
-                    
+
                     alert(`Successfully created challenge "${title}" with ${exercises.length} exercises!`);
-                    this.renderChallenges();
+                    this.showPanel('challenges');
                     this.updateExportPreview();
                     
                 } catch (e) {
@@ -1147,13 +1162,13 @@ Please output ONLY the JSON array, no additional text or explanation.`;
             renderChallenges() {
                 const grid = document.getElementById('challenge-grid');
                 const empty = document.getElementById('challenges-empty');
-                
+
                 if (this.data.challenges.length === 0) {
                     grid.innerHTML = '';
                     empty.style.display = 'block';
                     return;
                 }
-                
+
                 empty.style.display = 'none';
 
                 // Reverse to show latest challenges first
@@ -1165,12 +1180,17 @@ Please output ONLY the JSON array, no additional text or explanation.`;
                     const totalSessions = sessions.length;
                     // Format date created
                     const dateCreated = new Date(c.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' });
+                    
+                    // Check if challenge is new or updated (modified since last visit)
+                    const lastModified = c.lastModified ? new Date(c.lastModified).getTime() : 0;
+                    const isNewOrUpdated = this.lastViewed === null || (lastModified > this.lastViewed);
+                    const tagHtml = isNewOrUpdated ? '<span style="background: var(--warning); color: var(--text); padding: 2px 8px; border-radius: 8px; font-size: 0.75em; font-weight: bold; margin-left: 8px;">NEW</span>' : '';
 
                     return `
                         <div class="challenge-card">
                             <div class="challenge-header">
                                 <span class="challenge-icon">${c.icon}</span>
-                                <span class="challenge-title">${c.title} <span style="font-size: 0.85em; color: #999; font-weight: normal;">(${dateCreated})</span></span>
+                                <span class="challenge-title">${c.title} <span style="font-size: 0.85em; color: #999; font-weight: normal;">(${dateCreated})</span>${tagHtml}</span>
                             </div>
                             <div class="challenge-stats">
                                 <div>📝 ${c.exercises.length} sentences</div>
@@ -1193,27 +1213,30 @@ Please output ONLY the JSON array, no additional text or explanation.`;
                 document.getElementById('json-input').value = json;
                 document.getElementById('challenge-title-input').value = challenge.title;
                 document.getElementById('challenge-icon-input').value = challenge.icon;
+                document.getElementById('import-btn').textContent = 'Update Challenge';
                 this.showPanel('import');
-                
+
                 // Override import to update existing
                 const originalImport = this.importJson;
                 this.importJson = () => {
                     try {
                         const newExercises = JSON.parse(document.getElementById('json-input').value.trim());
                         if (!Array.isArray(newExercises)) throw new Error('Must be an array');
-                        
+
                         newExercises.forEach((ex, i) => {
                             if (!ex.en) throw new Error(`Exercise ${i + 1} missing 'en'`);
                             if (!ex.cn) throw new Error(`Exercise ${i + 1} missing 'cn'`);
                         });
-                        
+
                         this.data.challenges[index].title = document.getElementById('challenge-title-input').value.trim() || challenge.title;
                         this.data.challenges[index].icon = document.getElementById('challenge-icon-input').value.trim() || challenge.icon;
                         this.data.challenges[index].exercises = newExercises;
+                        this.data.challenges[index].lastModified = new Date().toISOString();
                         this.saveData();
                         alert('Challenge updated!');
+                        document.getElementById('import-btn').textContent = 'Create Challenge';
                         this.importJson = originalImport;
-                        this.renderChallenges();
+                        this.showPanel('challenges');
                     } catch (e) {
                         alert('Invalid JSON: ' + e.message);
                     }
@@ -1349,9 +1372,10 @@ Please output ONLY the JSON array, no additional text or explanation.`;
             immersiveCheckAnswer() {
                 const ex = this.practice.queue[this.practice.currentIndex];
                 const userSentence = this.practice.userAnswer.join(' ');
-                const correctSentence = ex.en.replace(/[.,!?;:]$/g, '');
-                const isCorrect = userSentence === correctSentence ||
-                                  (ex.accept && (ex.accept.includes(userSentence + '.') || ex.accept.includes(userSentence)));
+                // Remove all punctuation for comparison (not just trailing)
+                const normalize = (s) => s.replace(/[.,!?;:]/g, '').toLowerCase();
+                const isCorrect = normalize(userSentence) === normalize(ex.en) ||
+                                  (ex.accept && ex.accept.some(alt => normalize(alt) === normalize(userSentence)));
 
                 const feedback = document.getElementById('immersive-feedback-area');
                 const feedbackTitle = document.getElementById('immersive-feedback-title');
