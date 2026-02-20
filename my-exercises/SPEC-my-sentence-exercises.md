@@ -12,9 +12,13 @@ This app helps English learners practice sentence construction through interacti
 
 Create an AI-ready prompt from English sentences.
 
-- **Input**: Paste English sentences (one per line)
+- **Input**: Paste English sentences (one per line, or multiple sentences per line separated by punctuation)
+- **Sentence Splitting**: 
+  - Lines are split by newlines
+  - Each line is further split by sentence-ending punctuation (`.`, `!`, `?`) followed by a space
+  - Example: `"My favourite festival is the Spring Festival. It is the most important festival in China."` becomes two separate sentences
 - **Output**: A formatted prompt ready to paste into AI chatbots (ChatGPT, Claude, etc.)
-- **Process**: 
+- **Process**:
   1. Enter English sentences
   2. Click "Generate AI Prompt"
   3. Copy the generated prompt
@@ -42,7 +46,6 @@ Create a new challenge from JSON exercise data.
   ```
 - **Actions**:
   - "Create Challenge" - Save as new challenge
-  - "Load Sample Data" - Load example JSON for testing
 
 ### 3. My Challenges
 

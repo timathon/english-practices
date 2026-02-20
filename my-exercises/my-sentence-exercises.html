@@ -750,9 +750,8 @@ Do you like fish?"></textarea>
     "accept": ["Next time make healthy choices."]
   }
 ]'></textarea>
-            
+
             <button class="btn btn-primary" onclick="app.importJson()">Create Challenge</button>
-            <button class="btn btn-secondary" onclick="app.loadSample()">Load Sample Data</button>
         </div>
 
         <!-- Challenges Panel -->
@@ -958,7 +957,20 @@ Do you like fish?"></textarea>
                     return;
                 }
 
-                const sentences = sentencesInput.split('\n').filter(line => line.trim());
+                // Split by newlines first, then split each line by sentence-ending punctuation
+                const sentences = [];
+                const lines = sentencesInput.split('\n');
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) continue;
+                    // Split line by sentence-ending punctuation (. ! ?) followed by space or end of string
+                    const lineSentences = trimmedLine.split(/(?<=[.!?])\s+/);
+                    for (const sentence of lineSentences) {
+                        if (sentence.trim()) {
+                            sentences.push(sentence.trim());
+                        }
+                    }
+                }
 
                 // Build the sentences data for the prompt
                 let sentencesData = '';

@@ -6,16 +6,18 @@
     <title>Unit 5: Here and Now - Sentence Builder</title>
     <style>
         :root {
-            --primary: #8e44ad; /* Active Theme Purple */
-            --primary-dark: #732d91;
-            --danger: #ff4b4b;
-            --danger-dark: #d33131;
+            --primary: #58cc02;
+            --primary-dark: #46a302;
             --secondary: #1cb0f6;
             --secondary-dark: #1185ba;
+            --warning: #ffc800;
+            --warning-dark: #e5b400;
+            --danger: #ff4b4b;
+            --danger-dark: #d33131;
             --neutral: #e5e5e5;
             --text: #4b4b4b;
             --white: #ffffff;
-            --bg: #f5eef8;
+            --bg: #f0f2f5;
         }
 
         body {
@@ -37,7 +39,7 @@
             background: var(--white);
             min-height: 100vh;
             position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
         }
@@ -51,42 +53,19 @@
         }
 
         /* --- Screens --- */
-        .screen {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-            padding: 20px;
-            flex-grow: 1;
-        }
-
-        .screen.active {
-            display: flex;
-        }
+        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; flex-grow: 1; }
+        .screen.active { display: flex; }
 
         /* --- Home Screen --- */
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            color: var(--primary);
-            margin: 0;
-            font-size: 2rem;
-        }
-
-        h2 {
-            font-size: 1.2rem;
-            color: #777;
-            margin-top: 5px;
-        }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--primary); margin: 0; font-size: 2rem; }
+        h2 { font-size: 1.1rem; color: #999; margin-top: 5px; font-weight: normal; }
 
         .challenge-grid {
             display: grid;
-            grid-template-columns: 1fr;
             gap: 15px;
             overflow-y: auto;
-            padding-bottom: 20px;
+            padding-bottom: 80px;
         }
 
         .challenge-card {
@@ -94,275 +73,164 @@
             border: 2px solid var(--neutral);
             border-bottom: 4px solid var(--neutral);
             border-radius: 16px;
-            padding: 20px;
+            padding: 15px;
             cursor: pointer;
             transition: transform 0.1s, border-color 0.1s;
-            display: flex;
+        }
+        .challenge-card:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .challenge-card:hover { background-color: #fafafa; border-color: #ccc; }
+
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: bold; margin: 0; }
+        
+        .card-stats { 
+            font-size: 0.8rem; 
+            color: #777; 
+            display: flex; 
+            justify-content: space-between; 
             align-items: center;
-            justify-content: space-between;
+            margin-top: 10px; 
+            background: #f8f9fa; 
+            padding: 10px 12px; 
+            border-radius: 12px; 
+            border: 1px solid #eee;
         }
-
-        .challenge-card:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
+        .stat-row { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start;
         }
-
-        .challenge-card:hover {
-            background-color: #fafafa;
+        .stat-row:last-child {
+            align-items: flex-end; 
         }
-
-        .challenge-icon {
-            font-size: 2rem;
-            margin-right: 15px;
-        }
-
-        .challenge-info h3 {
-            margin: 0;
-            font-size: 1.1rem;
-        }
-
-        .challenge-info p {
-            margin: 5px 0 0;
-            font-size: 0.9rem;
-            color: #888;
-        }
+        
+        .stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+        .stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
 
         /* --- Game Screen --- */
-        .top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .close-btn {
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #ccc;
-            background: none;
-            border: none;
-        }
+        .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .close-btn { font-size: 1.5rem; cursor: pointer; color: #ccc; background: none; border: none; }
 
         .progress-container {
-            flex-grow: 1;
-            margin: 0 15px;
-            height: 16px;
-            background-color: var(--neutral);
-            border-radius: 8px;
-            display: flex;
-            overflow: hidden;
+            flex-grow: 1; margin: 0 15px; height: 16px; background-color: var(--neutral);
+            border-radius: 8px; display: flex; overflow: hidden;
         }
-
-        .progress-segment {
-            flex-grow: 1;
-            border-right: 1px solid var(--white);
-        }
-        .progress-segment:last-child { border-right: none; }
+        .progress-segment { flex-grow: 1; border-right: 1px solid var(--white); }
         .progress-segment.green { background-color: var(--primary); }
+        .progress-segment.yellow { background-color: var(--warning); }
         .progress-segment.red { background-color: var(--danger); }
 
-        .question-area {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .target-sentence {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 20px;
-            font-weight: bold;
-            display: block;
-            text-align: center;
-        }
-
-        .prompt-text {
-            font-size: 1rem;
-            color: #777;
-            margin-bottom: 10px;
-            font-weight: normal;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        
+        .prompt-container { text-align: center; margin-bottom: 20px; }
+        .prompt-cn { font-size: 1.3rem; color: #333; font-weight: bold; margin-bottom: 5px; }
+        .prompt-hint-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--warning); filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); transition: transform 0.2s; }
+        .prompt-hint-btn:hover { transform: scale(1.1); }
+        .hint-text { font-size: 0.9rem; color: #666; font-style: italic; margin-top: 5px; min-height: 1.2em; visibility: hidden; }
+        .hint-text.visible { visibility: visible; animation: fadeIn 0.3s; }
 
         .answer-area {
-            min-height: 60px;
+            min-height: 70px;
             border-top: 2px solid var(--neutral);
             border-bottom: 2px solid var(--neutral);
+            background: #fafafa;
             margin-bottom: 30px;
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            padding: 10px 0;
+            padding: 15px;
             align-items: center;
+            justify-content: center;
+            border-radius: 8px;
         }
 
-        .word-pool {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
 
         .word-btn {
             background: var(--white);
             border: 2px solid var(--neutral);
             border-bottom: 4px solid var(--neutral);
             border-radius: 12px;
-            padding: 10px 15px;
+            padding: 10px 14px;
             font-size: 1.1rem;
             cursor: pointer;
             color: var(--text);
+            position: relative;
             transition: all 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-
-        .word-btn:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
-        }
-
-        .word-btn.selected {
-            background: var(--neutral);
-            color: transparent;
-            border-color: transparent;
-            pointer-events: none;
-        }
+        .word-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .word-btn.selected { background: var(--neutral); color: transparent; border-color: transparent; pointer-events: none; }
+        .word-btn.selected .ipa { display: none; } 
 
         .word-btn-answer {
             background: var(--white);
             border: 2px solid var(--secondary);
             border-bottom: 4px solid var(--secondary-dark);
             border-radius: 12px;
-            padding: 10px 15px;
+            padding: 10px 14px;
             font-size: 1.1rem;
             cursor: pointer;
             color: var(--secondary-dark);
         }
-
-        /* --- Footer Actions --- */
-        .footer-action {
-            padding-top: 20px;
-            border-top: 2px solid var(--neutral);
-        }
-
-        .check-btn {
-            width: 100%;
-            padding: 15px;
-            border-radius: 16px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: white;
-            background-color: var(--primary);
-            border: none;
-            border-bottom: 5px solid var(--primary-dark);
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-
-        .check-btn:active {
-            transform: translateY(2px);
-            border-bottom-width: 3px;
-        }
-
-        .check-btn.wrong {
-            background-color: var(--danger);
-            border-bottom-color: var(--danger-dark);
-            animation: shake 0.5s;
-        }
-
-        .check-btn.correct {
-            background-color: var(--primary);
-            animation: bounce 0.5s;
-        }
-
-        .check-btn:disabled {
-            background-color: var(--neutral);
-            border-bottom-color: #ccc;
-            color: #999;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* --- Feedback Overlay --- */
-        .feedback {
-            display: none;
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: left;
-        }
-        .feedback.show { display: block; }
-        .feedback.correct { background-color: #d7ffb8; color: #58a700; }
-        .feedback.wrong { background-color: #ffdfe0; color: #ea2b2b; }
-
-        .feedback h3 { margin: 0 0 5px 0; }
         
-        /* --- History Modal --- */
-        #history-modal {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 100;
-            display: none;
-            justify-content: center;
-            align-items: center;
+        .ipa { font-size: 0.75rem; color: #999; font-weight: normal; margin-top: 2px; }
+
+        .footer-action { padding-top: 20px; border-top: 2px solid var(--neutral); }
+        
+        .check-btn {
+            width: 100%; padding: 15px; border-radius: 16px; font-size: 1.2rem; font-weight: bold;
+            color: white; background-color: var(--primary); border: none; border-bottom: 5px solid var(--primary-dark);
+            cursor: pointer; text-transform: uppercase;
         }
-        .modal-content {
-            background: white;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            border-radius: 20px;
-            padding: 20px;
+        .check-btn:active { transform: translateY(2px); border-bottom-width: 3px; }
+        .check-btn:disabled { background-color: var(--neutral); border-bottom-color: #ccc; color: #999; cursor: not-allowed; transform: none; }
+        .check-btn.wrong { background-color: var(--danger); border-bottom-color: var(--danger-dark); animation: shake 0.5s; }
+        .check-btn.correct { background-color: var(--primary); animation: bounce 0.5s; }
+
+        .feedback-area {
+            height: 110px; 
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+            visibility: hidden; 
             display: flex;
             flex-direction: column;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 15px;
+            box-sizing: border-box;
         }
-        .log-list {
-            overflow-y: auto;
-            flex-grow: 1;
-            border: 1px solid #eee;
-            margin-bottom: 15px;
+        .feedback-area.visible { visibility: visible; }
+        .feedback-area.correct { background: #d7ffb8; border: 2px solid #58cc02; }
+        .feedback-area.wrong { background: #ffdfe0; border: 2px solid #ff4b4b; }
+        
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 100;
+            display: none; justify-content: center; align-items: center;
         }
-        .log-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9rem;
+        .modal-content {
+            background: white; width: 90%; max-width: 500px; max-height: 80vh;
+            border-radius: 20px; padding: 20px; display: flex; flex-direction: column;
         }
-        .log-item span.score { font-weight: bold; color: var(--primary); }
-        .danger-text { color: var(--danger); cursor: pointer; font-size: 0.8rem; text-decoration: underline;}
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .log-list { overflow-y: auto; flex-grow: 1; border: 1px solid #eee; margin-bottom: 15px; padding: 5px; }
+        .mistake-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .mistake-item:last-child { border-bottom: none; }
+        .fail-count { background: var(--danger); color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; float: right;}
+        
+        .footer-links { text-align: center; margin-top: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .text-link { background: none; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: underline; }
+        .text-link.danger { color: var(--danger); }
+        .text-link.muted { color: #999; }
 
-        /* --- Mistakes Modal Specifics --- */
-        .mistake-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            text-align: left;
-        }
-        .mistake-date { font-size: 0.8rem; color: #999; margin-bottom: 6px; }
-        .mistake-cn { font-weight: bold; color: #333; margin-bottom: 4px; display:block; }
-        .mistake-wrong { color: var(--danger); text-decoration: line-through; font-size: 0.9rem; margin-bottom: 2px; display:block;}
-        .mistake-correct { color: var(--primary-dark); font-weight: bold; font-size: 0.9rem; display:block;}
-
-        /* --- Animations --- */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-            40% {transform: translateY(-10px);}
-            60% {transform: translateY(-5px);}
-        }
-
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -376,12 +244,12 @@
         </header>
 
         <div class="challenge-grid" id="challenge-list">
-            <!-- Populated by JS -->
+            <!-- Injected by JS -->
         </div>
 
-        <div style="margin-top: auto; text-align: center; padding-top: 10px; display:flex; flex-direction:column; gap:10px;">
-            <button onclick="app.showMistakes()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; font-size:1rem;">View My Mistakes</button>
-            <button onclick="app.showHistory()" style="background:none; border:none; color:#ccc; cursor:pointer;">Teacher Dashboard</button>
+        <div class="footer-links">
+            <button class="text-link danger" onclick="app.showMistakes()">⚠ Review My Mistakes</button>
+            <button class="text-link muted" onclick="app.showScoreHistory()">View score history</button>
         </div>
     </div>
 
@@ -389,561 +257,560 @@
     <div id="game-screen" class="screen">
         <div class="top-bar">
             <button class="close-btn" onclick="app.goHome()">✕</button>
-            <div class="progress-container" id="progress-bar">
-                <!-- Segments injected by JS -->
-            </div>
+            <div class="progress-container" id="progress-bar"></div>
         </div>
 
         <div class="question-area">
-            <h2 class="prompt-text">Translate this sentence</h2>
-            <div class="target-sentence" id="display-text"></div> <!-- Mostly hidden, used for visual reference if needed -->
-            
-            <div class="answer-area" id="answer-area">
-                <!-- Selected words go here -->
+            <div class="prompt-container">
+                <div class="prompt-cn" id="prompt-cn"></div>
+                <button class="prompt-hint-btn" onclick="app.showHint()">💡</button>
+                <div class="hint-text" id="hint-text"></div>
             </div>
 
-            <div class="word-pool" id="word-pool">
-                <!-- Word options go here -->
-            </div>
+            <div class="answer-area" id="answer-area"></div>
+            <div class="word-pool" id="word-pool"></div>
+        </div>
+
+        <div id="feedback-area" class="feedback-area">
+            <h3 id="feedback-title" style="margin:0"></h3>
+            <p id="feedback-msg" style="margin:5px 0 0"></p>
         </div>
 
         <div class="footer-action">
-            <div class="feedback" id="feedback-area">
-                <h3 id="feedback-title"></h3>
-                <p id="feedback-msg"></p>
-            </div>
             <button id="check-btn" class="check-btn" onclick="app.checkAnswer()">Check</button>
             <button id="next-btn" class="check-btn" onclick="app.nextQuestion()" style="display:none; background-color: var(--secondary); border-bottom-color: var(--secondary-dark);">Continue</button>
         </div>
     </div>
 
-    <!-- History Modal -->
-    <div id="history-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Session History</h2>
-                <button onclick="app.closeHistory()" class="close-btn" style="color:#333">✕</button>
-            </div>
-            <div class="log-list" id="log-list"></div>
-            <div style="text-align: right;">
-                <span class="danger-text" onclick="app.clearHistory()">Clear History (Teacher Only)</span>
-            </div>
-        </div>
-    </div>
-
     <!-- Mistakes Modal -->
-    <div id="mistakes-modal" style="display:none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center;">
+    <div id="mistakes-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 style="color:var(--danger)">My Mistakes</h2>
+                <h2 style="color:var(--danger)">Review Mistakes</h2>
                 <button onclick="app.closeMistakes()" class="close-btn" style="color:#333">✕</button>
             </div>
             <div class="log-list" id="mistakes-list"></div>
             <div style="text-align: right;">
-                <span class="danger-text" onclick="app.clearMistakes()">Clear My Mistakes</span>
+                <button class="text-link danger" onclick="app.clearMistakes()">Clear Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score History Modal -->
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Score History</h2>
+                <button onclick="app.closeScoreHistory()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="history-list"></div>
+            <div style="text-align: right; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                <button class="text-link danger" onclick="app.clearHistory()">Teacher: Clear All Data</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    /* --- Data Content for Unit 5 --- */
+    /* ---------------- DATA & CONTENT ---------------- */
+    const ipaDict = {
+        "moment": "ˈməʊmənt", "shopping": "ˈʃɒpɪŋ", "shuttlecock": "ˈʃʌtlkɒk", 
+        "voice": "vɔɪs", "message": "ˈmesɪdʒ", "brightly": "ˈbraɪtli",
+        "passenger": "ˈpæsɪndʒə", "passengers": "ˈpæsɪndʒəz", "tourist": "ˈtʊərɪst", 
+        "tourists": "ˈtʊərɪsts", "raincoat": "ˈreɪnkəʊt", "raincoats": "ˈreɪnkəʊts",
+        "sunbathe": "ˈsʌnbeɪð", "zongzi": "ˈzɒŋzi", "volleyball": "ˈvɒlibɔːl", 
+        "delicious": "dɪˈlɪʃəs", "festival": "ˈfestɪvl", "subway": "ˈsʌbweɪ",
+        "central": "ˈsentrəl", "explain": "ɪkˈspleɪn", "nairobi": "naɪˈrəʊbi",
+        "chongqing": "tʃɒŋˈtʃɪŋ", "shanghai": "ʃæŋˈhaɪ"
+    };
+
     const challenges = [
         {
-            id: 'u5_c1',
-            title: 'Activity Time',
-            icon: '🚲',
-            sentences: [
-                { en: "What are you doing right now?", cn: "你现在正在做什么？" },
-                { en: "I am reading a book at home.", cn: "我正在家里看书。" },
-                { en: "He is washing his car outside.", cn: "他正在外面洗车。" },
-                { en: "They are playing volleyball in the park.", cn: "他们正在公园里打排球。" },
-                { en: "She is riding a bike to school.", cn: "她正在骑自行车去学校。" },
-                { en: "We are making zongzi together.", cn: "我们正在一起包粽子。" },
-                { en: "My mum is gardening in the yard.", cn: "我妈妈正在院子里做园艺。" },
-                { en: "Are you doing your homework now?", cn: "你现在正在做作业吗？" },
-                { en: "The sun is shining brightly today.", cn: "今天阳光明媚。" },
-                { en: "They are shopping at the supermarket.", cn: "他们正在超市购物。" }
+            id: 'c1', title: 'Right Now', icon: '⏰',
+            data: [
+                { en: "What are you doing at the moment?", cn: "你此刻正在做什么？", hint: "Question word 'What' + be + subject + doing / 疑问词 'What' + be + 主语 + doing", noise: ["do", "is"] },
+                { en: "I am doing my homework.", cn: "我正在做作业。", hint: "Present continuous: am/is/are + doing / 现在进行时: am/is/are + doing", noise: ["does", "are"], accept: ["I am doing my homework now."] },
+                { en: "Is he exercising at the park?", cn: "他在公园锻炼吗？", hint: "Be verb 'Is' starts the question / Be动词 'Is' 开头", noise: ["Are", "exercise"] },
+                { en: "He is shopping at the supermarket.", cn: "他在超市购物。", hint: "Double 'p' in shopping / shopping 双写 p", noise: ["shoping", "am"] },
+                { en: "The boys are kicking a shuttlecock.", cn: "男孩们正在踢羽毛球（毽子）。", hint: "Plural subject 'boys' takes 'are' / 复数主语 'boys' 用 'are'", noise: ["is", "kick"] },
+                { en: "They look like they are having fun.", cn: "他们看起来玩得很开心。", hint: "Look like + clause / look like + 从句", noise: ["has", "looks"] },
+                { en: "She is taking an online class.", cn: "她正在上网课。", hint: "Take a class / 上课", noise: ["takes", "in"] },
+                { en: "I am painting a tree.", cn: "我正在画一棵树。", hint: "Present continuous for 'I' / 'I' 的现在进行时", noise: ["is", "paint"] },
+                { en: "What are the people next door doing?", cn: "隔壁的人在做什么？", hint: "'people' is plural / 'people' 是复数", noise: ["is", "does"] },
+                { en: "We are watching a film.", cn: "我们正在看电影。", hint: "Subject 'We' takes 'are' / 主语 'We' 搭配 'are'", noise: ["is", "watch"] }
             ]
         },
         {
-            id: 'u5_c2',
-            title: 'On The Phone',
-            icon: '📱',
-            sentences: [
-                { en: "Hello this is Peter speaking.", cn: "你好，我是彼得。" },
-                { en: "Can I speak to Tom please?", cn: "请问我可以和汤姆通话吗？" },
-                { en: "He is not at home right now.", cn: "他现在不在家。" },
-                { en: "Would you like to leave a message?", cn: "你想留个口信吗？" },
-                { en: "Please ask him to call me back.", cn: "请让他给我回电话。" },
-                { en: "I am afraid she is out.", cn: "恐怕她出去了。" },
-                { en: "Who is calling please?", cn: "请问是哪位？" },
-                { en: "Hold on a moment please.", cn: "请稍等片刻。" },
-                { en: "It is great to hear your voice.", cn: "很高兴听到你的声音。" },
-                { en: "Sorry I have to go now.", cn: "抱歉，我现在得走了。" }
+            id: 'c2', title: 'On the Phone', icon: '📱',
+            data: [
+                { en: "Hi, it is Peter.", cn: "你好，我是彼得。", hint: "Phone greeting: It is... / 电话问候：It is...", noise: ["I", "am", "He"], accept: ["Hi, this is Peter."] },
+                { en: "Could I speak to Adam, please?", cn: "请问我可以和亚当说话吗？", hint: "Polite request 'Could I' / 礼貌请求 'Could I'", noise: ["Can", "speaking"] },
+                { en: "Hold on, please.", cn: "请稍等。", hint: "Phone phrase 'Hold on' / 电话用语 'Hold on'", noise: ["in", "holding"] },
+                { en: "Sorry, he is out at the moment.", cn: "抱歉，他现在出去了。", hint: "Preposition 'out' / 介词 'out' 表示外出", noise: ["in", "are"] },
+                { en: "Can I take a message?", cn: "我能帮你留个口信吗？", hint: "Phrase: take a message / 词组: take a message", noise: ["leave", "takes"] },
+                { en: "Could you tell him to call me back?", cn: "你能叫他给我回电话吗？", hint: "tell someone to do something / 告诉某人做某事", noise: ["calls", "calling"] },
+                { en: "It is great to hear your voice.", cn: "很高兴听到你的声音。", hint: "It is great to... / 很高兴...", noise: ["hears", "voices"] },
+                { en: "I have to go now.", cn: "我现在得挂了（走了）。", hint: "have to + verb / 必须做...", noise: ["has", "going"] },
+                { en: "Let's talk later.", cn: "我们晚点再聊。", hint: "Let's + base verb / Let's + 动词原形", noise: ["talking", "late"] },
+                { en: "Do you want to play volleyball?", cn: "你想打排球吗？", hint: "want to + verb / 想要做...", noise: ["playing", "wants"] }
             ]
         },
         {
-            id: 'u5_c3',
-            title: 'World Clock',
-            icon: '🕰️',
-            sentences: [
-                { en: "It is morning in New York now.", cn: "现在纽约是早上。" },
-                { en: "People are rushing to work.", cn: "人们正赶着去上班。" },
-                { en: "It is night time in Beijing.", cn: "北京现在是晚上。" },
-                { en: "We are watching a film at home.", cn: "我们正在家里看电影。" },
-                { en: "Some people are sleeping now.", cn: "有些人现在正在睡觉。" },
-                { en: "The city lights are very bright.", cn: "城市的灯光很亮。" },
-                { en: "It is afternoon in London.", cn: "伦敦现在是下午。" },
-                { en: "They are having afternoon tea.", cn: "他们正在喝下午茶。" },
-                { en: "The world is a global village.", cn: "世界是一个地球村。" },
-                { en: "Time is different in different places.", cn: "不同地方的时间是不同的。" }
+            id: 'c3', title: 'World Tour', icon: '🌍',
+            data: [
+                { en: "People are eating delicious food.", cn: "人们正在吃美味的食物。", hint: "Plural subject 'People' takes 'are' / 'People' 搭配 'are'", noise: ["is", "eats"] },
+                { en: "They are enjoying the city at night.", cn: "他们正在享受城市的夜晚。", hint: "enjoy + -ing / enjoy 后面接名词或 -ing", noise: ["enjoys", "in"] },
+                { en: "Lights are shining brightly across the city.", cn: "灯光在整个城市明亮地闪耀着。", hint: "Adverb 'brightly' / 副词 'brightly'", noise: ["bright", "shine"] },
+                { en: "Many people are working hard in their offices.", cn: "许多人正在办公室里努力工作。", hint: "Work hard / 努力工作", noise: ["hardly", "works"] },
+                { en: "Some people are shopping for gifts.", cn: "一些人正在购买礼物。", hint: "Shop for / 购买...", noise: ["to", "shops"] },
+                { en: "They are walking in the park.", cn: "他们在公园里散步。", hint: "Present continuous 'are walking' / 现在进行时 'are walking'", noise: ["walks", "is"] },
+                { en: "The city is getting busy.", cn: "城市正在变得繁忙。", hint: "get + adj. / 变得...", noise: ["gets", "are"] },
+                { en: "Bright yellow taxis are picking up passengers.", cn: "明亮的黄色出租车正在接送乘客。", hint: "pick up / 接送", noise: ["picks", "in"] },
+                { en: "Others are drinking coffee and eating breakfast.", cn: "其他人正在喝咖啡吃早餐。", hint: "Parallel structure (-ing and -ing) / 平行结构 (-ing and -ing)", noise: ["drinks", "eat"] },
+                { en: "We can see the city well from here.", cn: "从这里我们可以很好地看到这座城市。", hint: "Adverb 'well' modifies 'see' / 副词 'well' 修饰 'see'", noise: ["good", "seeing"] }
             ]
         },
         {
-            id: 'u5_c4',
-            title: 'Park Life',
-            icon: '🌳',
-            sentences: [
-                { en: "The birds are singing in the trees.", cn: "鸟儿在树上歌唱。" },
-                { en: "Some kids are running on the grass.", cn: "一些孩子在草地上跑。" },
-                { en: "An old man is exercising there.", cn: "一位老人正在那里锻炼。" },
-                { en: "Are they playing football or basketball?", cn: "他们在踢足球还是打篮球？" },
-                { en: "She is taking photos of flowers.", cn: "她正在拍花。" },
-                { en: "We are having a picnic today.", cn: "我们今天正在野餐。" },
-                { en: "Look at that small boat.", cn: "看那艘小船。" },
-                { en: "They are walking their dog.", cn: "他们正在遛狗。" },
-                { en: "Everyone is having a good time.", cn: "大家都玩得很开心。" },
-                { en: "The weather is sunny and warm.", cn: "天气晴朗温暖。" }
+            id: 'c4', title: 'Holiday Fun', icon: '🛶',
+            data: [
+                { en: "We are having a holiday here.", cn: "我们正在这里度假。", hint: "have a holiday / 度假", noise: ["has", "holidays"] },
+                { en: "Are you making zongzi for the Dragon Boat Festival?", cn: "你们在为端午节包粽子吗？", hint: "Present continuous question / 现在进行时的疑问句", noise: ["Do", "makes"] },
+                { en: "We are watching dragon boat races on TV.", cn: "我们正在电视上看龙舟比赛。", hint: "on TV / 在电视上", noise: ["in", "watches"] },
+                { en: "My uncle is showing us all the sights.", cn: "我叔叔正在带我们参观所有的名胜。", hint: "show someone something / 给某人看某物", noise: ["shows", "sight"] },
+                { en: "We are staying near the city walls.", cn: "我们住在城墙附近。", hint: "stay near / 住在...附近", noise: ["stays", "in"] },
+                { en: "I am writing to you from Pingyao.", cn: "我正在平遥给你写信。", hint: "write to someone / 给某人写信", noise: ["writes", "in"] },
+                { en: "Are you studying today?", cn: "你今天在学习吗？", hint: "Be + subject + -ing / Be动词 + 主语 + -ing", noise: ["Do", "studies"] },
+                { en: "I am looking forward to seeing you soon.", cn: "我期待很快见到你。", hint: "look forward to + -ing / 期待做某事", noise: ["see", "looks"] },
+                { en: "I hope it all goes well.", cn: "我希望一切顺利。", hint: "go well / 顺利", noise: ["going", "good"] },
+                { en: "She is not feeling well at the moment.", cn: "她现在感觉不太舒服。", hint: "feel well / 感觉舒服", noise: ["feels", "good"] }
             ]
         },
         {
-            id: 'u5_c5',
-            title: 'Vacation Vibes',
-            icon: '✈️',
-            sentences: [
-                { en: "I am visiting my uncle in Paris.", cn: "我正在巴黎拜访我的叔叔。" },
-                { en: "We are taking a boat tour.", cn: "我们正在乘船游览。" },
-                { en: "Tourists are looking at the paintings.", cn: "游客们正在看画。" },
-                { en: "Water is pouring over the falls.", cn: "水正从瀑布倾泻而下。" },
-                { en: "He is learning to surf today.", cn: "他今天正在学冲浪。" },
-                { en: "I am waiting for the bus.", cn: "我正在等公共汽车。" },
-                { en: "Are you enjoying your holiday?", cn: "你享受你的假期吗？" },
-                { en: "We are buying gifts for friends.", cn: "我们正在给朋友买礼物。" },
-                { en: "She is writing a postcard now.", cn: "她现在正在写明信片。" },
-                { en: "They are swimming in the sea.", cn: "他们正在海里游泳。" }
+            id: 'c5', title: 'Nature Sights', icon: '🏖️',
+            data: [
+                { en: "There are lots of famous paintings in those buildings.", cn: "那些建筑里有很多著名的画作。", hint: "lots of + plural noun / lots of + 复数名词", noise: ["is", "painting"] },
+                { en: "Some tourists are taking a boat along the river.", cn: "一些游客正乘船沿着河游览。", hint: "take a boat / 乘船", noise: ["takes", "boats"] },
+                { en: "I am taking lots of photos to send to my family.", cn: "我正在拍很多照片发给我的家人。", hint: "take photos / 拍照", noise: ["takes", "photo"] },
+                { en: "We are all on a tour of the falls.", cn: "我们都在瀑布游览。", hint: "on a tour of / 在...游览", noise: ["in", "tours"] },
+                { en: "We are wearing raincoats but are still getting very wet.", cn: "我们穿着雨衣但还是淋得很湿。", hint: "get wet / 变湿", noise: ["gets", "wear"] },
+                { en: "The sun is shining and it is really hot.", cn: "阳光明媚，天气真的很热。", hint: "sun is shining / 阳光明媚", noise: ["shines", "are"] },
+                { en: "Some people are swimming and playing in the water.", cn: "一些人在水里游泳和玩耍。", hint: "Double 'm' in swimming / swimming 双写 m", noise: ["swim", "plays"] },
+                { en: "Others are sunbathing on the beach.", cn: "其他人正在海滩上做日光浴。", hint: "on the beach / 在海滩上", noise: ["in", "sunbathes"] },
+                { en: "My uncle is teaching me how to surf.", cn: "我叔叔正在教我如何冲浪。", hint: "teach someone how to do / 教某人如何做...", noise: ["teaches", "surfing"] },
+                { en: "It feels great to ride the waves.", cn: "乘风破浪的感觉很棒。", hint: "It feels adj to do... / 做某事感觉...", noise: ["feeling", "rides"] }
             ]
         }
     ];
 
-    const noiseWords = ["is", "are", "the", "a", "an", "to", "for", "my", "his", "was", "were", "can", "do", "did", "some", "any", "like", "have"];
-
-    /* --- Logic --- */
+    /* ---------------- APP LOGIC ---------------- */
     const app = {
         state: {
             currentChallenge: null,
-            originalQueue: [], 
-            redemptionQueue: [], 
+            queue: [],
+            mistakeQueue: [],
             currentIndex: 0,
-            score: 0,
-            attempts: [], 
-            isRedemption: false, 
-            currentSentenceWords: [],
             userSelection: [],
-            locked: false,
-            currentTargetObj: null
+            currentObj: null,
+            hintUsed: false,
+            scoreLog: [], 
+            locked: false
         },
 
         init: function() {
             this.renderHome();
         },
 
-        getLogs: function() {
-            return JSON.parse(localStorage.getItem('sb_unit5_logs') || '[]');
-        },
-
-        getMistakes: function() {
-            return JSON.parse(localStorage.getItem('sb_unit5_mistakes') || '[]');
-        },
-
-        saveLog: function(log) {
-            const logs = this.getLogs();
+        /* --- Storage Helpers --- */
+        getStats: function() { return JSON.parse(localStorage.getItem('sb_stats_unit5') || '{}'); },
+        saveStats: function(stats) { localStorage.setItem('sb_stats_unit5', JSON.stringify(stats)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem('sb_mistakes_unit5') || '[]'); },
+        saveMistakes: function(list) { localStorage.setItem('sb_mistakes_unit5', JSON.stringify(list)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem('sb_session_logs_u5') || '[]'); },
+        saveSessionLog: function(log) { 
+            const logs = this.getSessionLogs();
             logs.unshift(log); 
-            localStorage.setItem('sb_unit5_logs', JSON.stringify(logs));
+            localStorage.setItem('sb_session_logs_u5', JSON.stringify(logs));
         },
 
-        saveMistake: function(targetEn, targetCn, challengeTitle, userAnswer) {
-            const mistakes = this.getMistakes();
-            
-            const existingIndex = mistakes.findIndex(m => m.en === targetEn);
-
-            if (existingIndex > -1) {
-                const existing = mistakes[existingIndex];
-                existing.count = (existing.count || 1) + 1;
-                existing.date = new Date().toLocaleString();
-                existing.user = userAnswer;
-                
-                mistakes.splice(existingIndex, 1);
-                mistakes.unshift(existing);
-            } else {
-                const newMistake = {
-                    date: new Date().toLocaleString(),
-                    challenge: challengeTitle,
-                    en: targetEn,
-                    cn: targetCn,
-                    user: userAnswer,
-                    count: 1
-                };
-                mistakes.unshift(newMistake);
-            }
-            
-            localStorage.setItem('sb_unit5_mistakes', JSON.stringify(mistakes));
-        },
-
-        getChallengeStats: function(title) {
-            const logs = this.getLogs();
-            const now = new Date();
-            const todayStr = now.toLocaleDateString();
-
-            const todaysLogs = logs.filter(l => {
-                if (l.challenge !== title) return false;
-                const d = new Date(l.date);
-                return d.toLocaleDateString() === todayStr;
-            });
-
-            const attempts = todaysLogs.length;
-            let maxScore = 0;
-
-            if (attempts > 0) {
-                maxScore = Math.max(...todaysLogs.map(l => {
-                    return parseInt(l.score.split(' / ')[0]);
-                }));
-            }
-
-            return { 
-                attempts: attempts, 
-                maxScore: attempts > 0 ? maxScore : '-' 
-            };
-        },
-
-        /* --- Rendering --- */
+        /* --- Home Screen --- */
         renderHome: function() {
             document.getElementById('home-screen').classList.add('active');
             document.getElementById('game-screen').classList.remove('active');
             
             const list = document.getElementById('challenge-list');
             list.innerHTML = '';
+            const allStats = this.getStats();
+            const todayStr = new Date().toLocaleDateString();
 
             challenges.forEach(c => {
-                const stats = this.getChallengeStats(c.title);
-                const card = document.createElement('div');
-                card.className = 'challenge-card';
-                card.onclick = () => this.startChallenge(c.id);
-                card.innerHTML = `
-                    <div style="display:flex; align-items:center">
-                        <div class="challenge-icon">${c.icon}</div>
-                        <div class="challenge-info">
-                            <h3>${c.title}</h3>
-                            <p>${c.sentences.length} sentences</p>
-                            <p style="font-size:0.85rem; color:var(--primary-dark); font-weight:bold; margin-top:5px;">
-                                Today: ${stats.attempts} runs | Best: ${stats.maxScore}
-                            </p>
+                let s = allStats[c.id] || { today: {date: todayStr, attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+                
+                if(s.today.date !== todayStr) {
+                    s.today = { date: todayStr, attempts: 0, best: 0 };
+                }
+
+                allStats[c.id] = s;
+
+                const div = document.createElement('div');
+                div.className = 'challenge-card';
+                div.onclick = () => this.startChallenge(c.id);
+                div.innerHTML = `
+                    <div class="card-header">
+                        <div style="display:flex; align-items:center;">
+                            <span style="font-size:1.5rem; margin-right:10px;">${c.icon}</span>
+                            <h3 class="card-title">${c.title}</h3>
                         </div>
+                        <span style="color:var(--primary); font-weight:bold;">START</span>
                     </div>
-                    <div style="color:var(--secondary); font-weight:bold;">START</div>
+                    <div class="card-stats">
+                        <div class="stat-row"><span class="stat-label">TODAY</span> <span class="stat-val">${s.today.attempts} Runs | Best: ${s.today.best}%</span></div>
+                        <div class="stat-row"><span class="stat-label">LIFETIME</span> <span class="stat-val">${s.lifetime.attempts} Runs | Best: ${s.lifetime.best}%</span></div>
+                    </div>
                 `;
-                list.appendChild(card);
+                list.appendChild(div);
             });
+            
+            this.saveStats(allStats);
         },
 
+        /* --- Game Loop --- */
         startChallenge: function(id) {
-            const challenge = challenges.find(c => c.id === id);
-            this.state.currentChallenge = challenge;
-            this.state.originalQueue = JSON.parse(JSON.stringify(challenge.sentences)); 
-            this.state.redemptionQueue = [];
+            const c = challenges.find(x => x.id === id);
+            this.state.currentChallenge = c;
+            this.state.queue = [...c.data]; 
+            this.state.mistakeQueue = [];
             this.state.currentIndex = 0;
-            this.state.score = 0;
-            this.state.isRedemption = false;
-            this.state.attempts = new Array(challenge.sentences.length).fill(null);
+            this.state.scoreLog = new Array(c.data.length).fill(null);
             
             document.getElementById('home-screen').classList.remove('active');
             document.getElementById('game-screen').classList.add('active');
             
-            this.renderProgressBar();
+            this.renderProgress();
             this.loadQuestion();
         },
 
-        renderProgressBar: function() {
-            const bar = document.getElementById('progress-bar');
-            bar.innerHTML = '';
-            const total = this.state.originalQueue.length;
-            
-            for(let i=0; i<total; i++) {
-                const segment = document.createElement('div');
-                segment.className = 'progress-segment';
-                if(this.state.attempts[i] === true) segment.classList.add('green');
-                if(this.state.attempts[i] === false) segment.classList.add('red');
-                bar.appendChild(segment);
-            }
-        },
-
         loadQuestion: function() {
-            let sentenceObj = null;
-            
-            if (this.state.currentIndex < this.state.originalQueue.length) {
-                sentenceObj = this.state.originalQueue[this.state.currentIndex];
+            let q = null;
+            if (this.state.currentIndex < this.state.queue.length) {
+                q = this.state.queue[this.state.currentIndex];
                 this.state.isRedemption = false;
-            } else if (this.state.redemptionQueue.length > 0) {
-                sentenceObj = this.state.redemptionQueue.shift(); 
+            } else if (this.state.mistakeQueue.length > 0) {
+                q = this.state.mistakeQueue[0];
                 this.state.isRedemption = true;
             } else {
                 this.finishGame();
                 return;
             }
 
-            this.state.currentTargetObj = sentenceObj;
-
-            this.state.locked = false;
+            this.state.currentObj = q;
             this.state.userSelection = [];
+            this.state.hintUsed = false;
+            this.state.locked = false;
+
+            document.getElementById('prompt-cn').innerText = q.cn;
+            document.getElementById('hint-text').innerText = q.hint;
+            document.getElementById('hint-text').classList.remove('visible');
+            
+            const feedback = document.getElementById('feedback-area');
+            feedback.className = 'feedback-area'; 
+            
             document.getElementById('check-btn').style.display = 'block';
-            document.getElementById('check-btn').innerText = 'CHECK';
+            document.getElementById('check-btn').disabled = true;
             document.getElementById('check-btn').className = 'check-btn';
             document.getElementById('next-btn').style.display = 'none';
-            document.getElementById('feedback-area').className = 'feedback';
-            document.getElementById('answer-area').innerHTML = '';
             
-            document.getElementById('display-text').innerText = sentenceObj.cn;
+            this.renderAnswerArea();
+            this.generatePool(q);
+        },
 
-            const sentenceEn = sentenceObj.en;
-            const cleanSentence = sentenceEn.replace(/[.!?]$/, ''); 
-            const words = cleanSentence.split(' ');
+        generatePool: function(q) {
+            const cleanEn = q.en.replace(/[.!?]$/, '');
+            const correctWords = cleanEn.split(' ');
             
-            // "Smart" pool logic: lowercase first word if not proper noun
-            let poolWords = words.map((w, i) => {
-                // Heuristic check for proper nouns in this unit (Peter, Tom, London, New York)
-                if (i === 0 && !["I", "Peter", "Tom", "London", "New", "Beijing", "Paris"].includes(w)) {
-                    return w.toLowerCase();
-                }
-                return w;
-            });
+            let allWords = [...correctWords, ...q.noise];
             
-            // Add noise
-            for(let k=0; k<3; k++) {
-                const r = noiseWords[Math.floor(Math.random() * noiseWords.length)];
-                if(!poolWords.includes(r)) poolWords.push(r);
-            }
+            allWords.sort(() => Math.random() - 0.5);
 
-            // Shuffle
-            poolWords.sort(() => Math.random() - 0.5);
-
-            // Render Pool
-            const poolContainer = document.getElementById('word-pool');
-            poolContainer.innerHTML = '';
-            poolWords.forEach((w, idx) => {
+            const pool = document.getElementById('word-pool');
+            pool.innerHTML = '';
+            
+            allWords.forEach((word, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'word-btn';
-                btn.innerText = w;
-                btn.dataset.word = w;
-                btn.dataset.id = idx;
-                btn.onclick = () => this.handleWordSelect(w, idx, btn);
-                poolContainer.appendChild(btn);
-            });
-
-            this.updateCheckButton();
-        },
-
-        handleWordSelect: function(word, id, btnElement) {
-            if(this.state.locked) return;
-            if(btnElement.classList.contains('selected')) return;
-
-            this.state.userSelection.push({word: word, id: id});
-            btnElement.classList.add('selected');
-
-            this.renderAnswerArea();
-            this.updateCheckButton();
-        },
-
-        removeWord: function(index) {
-            if(this.state.locked) return;
-            
-            const removed = this.state.userSelection.splice(index, 1)[0];
-            
-            const poolBtns = document.querySelectorAll('.word-btn');
-            poolBtns.forEach(btn => {
-                if(btn.dataset.id == removed.id) {
-                    btn.classList.remove('selected');
+                
+                let displayWord = word;
+                const alwaysCap = ["I", "Peter", "Adam", "Dragon", "Boat", "Festival", "TV", "Pingyao", "Chongqing", "Nairobi", "New", "York", "Paris", "Shanghai", "Thailand"];
+                
+                if (!alwaysCap.includes(displayWord.replace(/[^A-Za-z]/g, ''))) {
+                    displayWord = displayWord.toLowerCase();
                 }
-            });
 
+                const cleanWord = displayWord.toLowerCase().replace(/[^a-z]/g, '');
+                const ipa = ipaDict[cleanWord];
+
+                btn.innerHTML = `<span>${displayWord}</span>${ipa ? `<span class="ipa">[${ipa}]</span>` : ''}`;
+                btn.onclick = () => this.selectWord(word, idx, btn); 
+                btn.dataset.val = displayWord;
+                pool.appendChild(btn);
+            });
+        },
+
+        selectWord: function(word, id, btn) {
+            if (this.state.locked) return;
+            if(btn.classList.contains('selected')) return;
+            
+            this.state.userSelection.push({ text: btn.dataset.val, srcBtn: btn });
+            btn.classList.add('selected');
+            
             this.renderAnswerArea();
-            this.updateCheckButton();
+            this.updateCheckBtn();
+        },
+
+        removeWord: function(idx) {
+            if (this.state.locked) return;
+            const item = this.state.userSelection.splice(idx, 1)[0];
+            item.srcBtn.classList.remove('selected');
+            this.renderAnswerArea();
+            this.updateCheckBtn();
         },
 
         renderAnswerArea: function() {
             const area = document.getElementById('answer-area');
             area.innerHTML = '';
-
+            
             this.state.userSelection.forEach((item, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'word-btn-answer';
                 
-                // Logic: Auto Capitalize first word
-                let displayText = item.word;
-                if(idx === 0) {
-                    displayText = displayText.charAt(0).toUpperCase() + displayText.slice(1);
+                let txt = item.text;
+                if (idx === 0) {
+                    txt = txt.charAt(0).toUpperCase() + txt.slice(1);
                 }
-
-                btn.innerText = displayText;
+                
+                btn.innerText = txt;
                 btn.onclick = () => this.removeWord(idx);
                 area.appendChild(btn);
             });
         },
 
-        updateCheckButton: function() {
-            const btn = document.getElementById('check-btn');
-            if(this.state.userSelection.length > 0) {
-                btn.disabled = false;
-            } else {
-                btn.disabled = true;
-            }
+        showHint: function() {
+            this.state.hintUsed = true;
+            document.getElementById('hint-text').classList.add('visible');
+        },
+
+        updateCheckBtn: function() {
+            document.getElementById('check-btn').disabled = this.state.userSelection.length === 0;
         },
 
         checkAnswer: function() {
+            if (this.state.locked) return;
+
+            if (this.state.userSelection.length === 0) return;
+            
+            let userSent = this.state.userSelection.map((item, idx) => {
+                let t = item.text;
+                if (idx === 0) t = t.charAt(0).toUpperCase() + t.slice(1);
+                return t;
+            }).join(' ');
+
             this.state.locked = true;
-            const btn = document.getElementById('check-btn');
+
+            const target = this.state.currentObj.en.replace(/[.!?]$/, '');
+            
+            let isCorrect = userSent === target; 
+            
+            if (!isCorrect && this.state.currentObj.accept) {
+                isCorrect = this.state.currentObj.accept.some(alt => alt.replace(/[.!?]$/, '') === userSent);
+            }
+            
             const feedback = document.getElementById('feedback-area');
             const title = document.getElementById('feedback-title');
             const msg = document.getElementById('feedback-msg');
+            const btn = document.getElementById('check-btn');
 
-            let userSentence = "";
-            this.state.userSelection.forEach((item, idx) => {
-                let w = item.word;
-                if(idx === 0) w = w.charAt(0).toUpperCase() + w.slice(1);
-                userSentence += w + " ";
-            });
-            userSentence = userSentence.trim();
-
-            const targetEn = this.state.currentTargetObj.en;
-            const cleanTarget = targetEn.replace(/[.!?]$/, '');
-            
-            const isCorrect = userSentence === cleanTarget;
-
-            if(isCorrect) {
-                btn.className = 'check-btn correct';
-                btn.innerText = 'Correct!';
-                feedback.className = 'feedback show correct';
-                title.innerText = 'Great Job!';
-                msg.innerText = '';
-                
-                if(!this.state.isRedemption) {
-                    this.state.attempts[this.state.currentIndex] = true;
-                    this.state.score += 10;
-                }
-            } else {
-                btn.className = 'check-btn wrong';
-                btn.innerText = 'Incorrect';
-                feedback.className = 'feedback show wrong';
-                title.innerText = 'Correct Answer:';
-                msg.innerText = targetEn;
-
-                this.saveMistake(targetEn, this.state.currentTargetObj.cn, this.state.currentChallenge.title, userSentence);
-
-                if(!this.state.isRedemption) {
-                    this.state.attempts[this.state.currentIndex] = false;
-                    this.state.redemptionQueue.push(this.state.currentTargetObj);
+            if (isCorrect) {
+                let scoreType = 'green';
+                if (this.state.isRedemption) {
+                    scoreType = 'redemption';
                 } else {
-                    this.state.redemptionQueue.push(this.state.currentTargetObj);
+                    if (this.state.hintUsed) scoreType = 'yellow';
+                    this.state.scoreLog[this.state.currentIndex] = scoreType;
+                }
+
+                feedback.className = 'feedback-area correct visible';
+                title.innerText = 'Excellent!';
+                title.style.color = '#58cc02';
+                msg.innerText = '';
+                btn.className = 'check-btn correct';
+
+                if(this.state.isRedemption) this.state.mistakeQueue.shift();
+
+            } else {
+                feedback.className = 'feedback-area wrong visible';
+                title.innerText = 'Correct Answer:';
+                title.style.color = '#ea2b2b';
+                msg.innerText = this.state.currentObj.en;
+                btn.className = 'check-btn wrong';
+
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = 'red';
+                    this.state.mistakeQueue.push(this.state.currentObj);
+                    this.logMistake(this.state.currentObj, userSent);
+                } else {
+                    this.state.mistakeQueue.push(this.state.mistakeQueue.shift());
                 }
             }
 
-            this.renderProgressBar();
-            
+            this.renderProgress();
             btn.style.display = 'none';
             const nextBtn = document.getElementById('next-btn');
             nextBtn.style.display = 'block';
+
+            let isLast = false;
+            if (this.state.isRedemption) {
+                if (this.state.mistakeQueue.length === 0) isLast = true;
+            } else {
+                if (this.state.currentIndex >= this.state.queue.length - 1 && this.state.mistakeQueue.length === 0) {
+                    isLast = true;
+                }
+            }
+
+            if(isLast) {
+                nextBtn.innerText = "Finish";
+                nextBtn.style.backgroundColor = "var(--primary)";
+                nextBtn.style.borderBottomColor = "var(--primary-dark)";
+            } else {
+                nextBtn.innerText = "Continue";
+                nextBtn.style.backgroundColor = "var(--secondary)";
+                nextBtn.style.borderBottomColor = "var(--secondary-dark)";
+            }
         },
 
         nextQuestion: function() {
-            if (!this.state.isRedemption) {
-                this.state.currentIndex++;
-            }
+            if (!this.state.isRedemption) this.state.currentIndex++;
             this.loadQuestion();
         },
 
+        renderProgress: function() {
+            const bar = document.getElementById('progress-bar');
+            bar.innerHTML = '';
+            for(let i=0; i<10; i++) {
+                const seg = document.createElement('div');
+                seg.className = 'progress-segment';
+                const s = this.state.scoreLog[i];
+                if(s) seg.classList.add(s);
+                bar.appendChild(seg);
+            }
+        },
+
         finishGame: function() {
-            const log = {
+            const total = this.state.scoreLog.reduce((acc, curr) => {
+                if (curr === 'green') return acc + 10;
+                if (curr === 'yellow') return acc + 5;
+                return acc;
+            }, 0);
+            
+            const wrongQuestions = [];
+            this.state.scoreLog.forEach((status, index) => {
+                if (status === 'red' && this.state.queue[index]) {
+                    wrongQuestions.push(this.state.queue[index]);
+                }
+            });
+
+            const allStats = this.getStats();
+            const cid = this.state.currentChallenge.id;
+            
+            if (!allStats[cid]) {
+                allStats[cid] = { today: {date: new Date().toLocaleDateString(), attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+            }
+            const s = allStats[cid];
+            
+            s.today.attempts++;
+            if (total > s.today.best) s.today.best = total;
+            
+            s.lifetime.attempts++;
+            if (total > s.lifetime.best) s.lifetime.best = total;
+            
+            allStats[cid] = s;
+            this.saveStats(allStats);
+
+            this.saveSessionLog({
                 date: new Date().toLocaleString(),
                 challenge: this.state.currentChallenge.title,
-                score: this.state.score + ' / ' + (this.state.originalQueue.length * 10)
-            };
-            this.saveLog(log);
+                score: total
+            });
+
+            let mistakeHtml = '';
+            if (wrongQuestions.length > 0) {
+                mistakeHtml = `<div style="width:100%; text-align:left; background:#fff; border-radius:12px; padding:15px; margin:20px 0; max-height:300px; overflow-y:auto; border:2px solid var(--neutral);">
+                    <h3 style="color:var(--danger); margin-top:0; border-bottom:1px solid #eee; padding-bottom:5px;">Review Mistakes:</h3>
+                    ${wrongQuestions.map(q => `
+                        <div style="margin-bottom:10px; border-bottom:1px solid #f0f0f0; padding-bottom:5px;">
+                            <div style="font-weight:bold; color:#555;">${q.cn}</div>
+                            <div style="color:var(--primary-dark); font-weight:bold;">${q.en}</div>
+                        </div>
+                    `).join('')}
+                </div>`;
+            } else {
+                mistakeHtml = `<div style="margin:20px 0; color:var(--primary); font-weight:bold; font-size:1.2rem;">🎉 Perfect Run! No mistakes.</div>`;
+            }
 
             document.getElementById('game-screen').innerHTML = `
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center;">
-                    <h1 style="color:var(--primary); font-size:3rem;">Completed!</h1>
-                    <h2>Score: ${this.state.score}</h2>
-                    <div style="margin:20px 0;">
-                        <button onclick="location.reload()" class="check-btn" style="width:200px;">Back to Home</button>
-                    </div>
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:20px;">
+                    <h1 style="color:var(--primary); font-size:3rem; margin:0;">${total}%</h1>
+                    <h2 style="margin:5px 0 20px 0; color:#555;">Challenge Complete!</h2>
+                    
+                    ${mistakeHtml}
+
+                    <button onclick="location.reload()" class="check-btn" style="width:100%; max-width:300px;">Back to Challenges</button>
                 </div>
             `;
         },
 
-        goHome: function() {
-            if(confirm("Exit this challenge? Progress will be lost.")) {
-                this.renderHome();
-            }
-        },
-
-        /* --- History / Teacher Mode --- */
-        showHistory: function() {
-            const modal = document.getElementById('history-modal');
-            const list = document.getElementById('log-list');
-            list.innerHTML = '';
-            const logs = this.getLogs();
-
-            if(logs.length === 0) {
-                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No sessions recorded yet.</p>';
+        /* --- Mistake Logic --- */
+        logMistake: function(qObj, userAns) {
+            const list = this.getMistakes();
+            const existing = list.find(m => m.en === qObj.en);
+            if(existing) {
+                existing.count++;
+                existing.wrong = userAns;
+                existing.timestamp = Date.now();
+                const idx = list.indexOf(existing);
+                list.splice(idx, 1);
+                list.unshift(existing);
             } else {
-                logs.forEach(l => {
-                    const div = document.createElement('div');
-                    div.className = 'log-item';
-                    div.innerHTML = `<strong>${l.challenge}</strong> <span class="score">${l.score}</span><br><span style="color:#999; font-size:0.8rem">${l.date}</span>`;
-                    list.appendChild(div);
+                list.unshift({
+                    en: qObj.en, cn: qObj.cn, wrong: userAns, count: 1, 
+                    timestamp: Date.now(), challenge: this.state.currentChallenge.title
                 });
             }
-            modal.style.display = 'flex';
-        },
-
-        closeHistory: function() {
-            document.getElementById('history-modal').style.display = 'none';
+            this.saveMistakes(list);
         },
 
         showMistakes: function() {
-            const modal = document.getElementById('mistakes-modal');
-            const list = document.getElementById('mistakes-list');
-            list.innerHTML = '';
-            const mistakes = this.getMistakes();
-
-            if(mistakes.length === 0) {
-                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No mistakes recorded yet. Keep it up!</p>';
+            const list = this.getMistakes();
+            const container = document.getElementById('mistakes-list');
+            container.innerHTML = '';
+            
+            if(list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No mistakes yet! Great job!</div>';
             } else {
-                mistakes.forEach(m => {
-                    const count = m.count || 1;
-                    const countBadge = count > 1 ? `<span style="background:var(--danger); color:white; padding:1px 6px; border-radius:10px; font-size:0.7rem; margin-left:5px; vertical-align: middle;">x${count}</span>` : '';
-
+                list.forEach(m => {
                     const div = document.createElement('div');
                     div.className = 'mistake-item';
                     div.innerHTML = `
-                        <div class="mistake-date">${m.date} - ${m.challenge}</div>
-                        <div class="mistake-cn"><strong>Q:</strong> ${m.cn}${countBadge}</div>
-                        <div class="mistake-wrong"><strong>You said:</strong> ${m.user || '(No answer)'}</div>
-                        <div class="mistake-correct"><strong>Correct:</strong> ${m.en}</div>
+                        <div style="font-size:0.8rem; color:#999; margin-bottom:5px;">
+                            ${new Date(m.timestamp).toLocaleDateString()} - ${m.challenge}
+                            <span class="fail-count">Failed ${m.count}x</span>
+                        </div>
+                        <div style="font-weight:bold; color:#333; margin-bottom:3px;">${m.cn}</div>
+                        <div style="color:var(--danger); text-decoration:line-through; font-size:0.9rem;">${m.wrong || '(No answer)'}</div>
+                        <div style="color:var(--primary-dark); font-weight:bold; font-size:0.9rem;">${m.en}</div>
                     `;
-                    list.appendChild(div);
+                    container.appendChild(div);
                 });
             }
-            modal.style.display = 'flex';
+            document.getElementById('mistakes-modal').style.display = 'flex';
         },
 
         closeMistakes: function() {
@@ -951,36 +818,62 @@
         },
 
         clearMistakes: function() {
-            // Passcode: First letter of challenge titles
-            // AOWPV (Activity, On, World, Park, Vacation)
-            const input = prompt("Enter Teacher Passcode to Clear Mistakes:");
-            if(input && input.toUpperCase() === 'AOWPV') {
-                localStorage.removeItem('sb_unit5_mistakes');
-                this.showMistakes(); 
-                alert("Mistake history cleared.");
-            } else if (input) {
-                alert("Incorrect passcode.");
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === 'ROWHN') {
+                localStorage.removeItem('sb_mistakes_unit5');
+                this.showMistakes();
+            } else {
+                alert("Incorrect Passcode");
             }
         },
 
-        clearHistory: function() {
-            // Passcode: AOWPV
-            const input = prompt("Enter Teacher Passcode:");
-            if(input && input.toUpperCase() === 'AOWPV') {
-                localStorage.removeItem('sb_unit5_logs');
-                this.showHistory(); 
-                alert("History cleared.");
-            } else if (input) {
-                alert("Incorrect passcode.");
+        /* --- Score History Logic --- */
+        showScoreHistory: function() {
+            const list = this.getSessionLogs();
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+
+            if(list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No games played yet.</div>';
+            } else {
+                list.forEach(l => {
+                    const div = document.createElement('div');
+                    div.className = 'mistake-item';
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="color:#333;">${l.challenge}</strong>
+                            <span style="font-weight:bold; color:var(--primary);">${l.score}%</span>
+                        </div>
+                        <div style="font-size:0.8rem; color:#999;">${l.date}</div>
+                    `;
+                    container.appendChild(div);
+                });
             }
+            document.getElementById('history-modal').style.display = 'flex';
+        },
+
+        closeScoreHistory: function() {
+            document.getElementById('history-modal').style.display = 'none';
+        },
+
+        clearHistory: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === 'ROWHN') {
+                localStorage.removeItem('sb_stats_unit5');
+                localStorage.removeItem('sb_session_logs_u5');
+                location.reload();
+            } else {
+                alert("Incorrect Passcode");
+            }
+        },
+        
+        goHome: function() {
+            if(confirm("Exit? Progress will be lost.")) location.reload();
         }
     };
 
-    window.onload = function() {
-        app.init();
-    };
+    window.onload = function() { app.init(); };
 
 </script>
-
 </body>
 </html>
