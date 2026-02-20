@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unit 5: Work it out - Sentence Builder</title>
+    <title>Unit 6: Then and now - Sentence Builder</title>
     <style>
         :root {
-            --primary: #00b4d8; /* Unit 5 Blue Theme */
-            --primary-dark: #0077b6;
-            --secondary: #ff9f1c;
-            --secondary-dark: #e8860b;
-            --warning: #ffc800;
-            --warning-dark: #e5b400;
-            --danger: #ff4b4b;
-            --danger-dark: #d33131;
+            --primary: #06d6a0; /* Unit 6 Green Theme */
+            --primary-dark: #05a87e;
+            --secondary: #118ab2;
+            --secondary-dark: #0e6d8c;
+            --warning: #ffd166;
+            --warning-dark: #dca82f;
+            --danger: #ef476f;
+            --danger-dark: #c23356;
             --neutral: #e5e5e5;
             --text: #4b4b4b;
             --white: #ffffff;
@@ -166,7 +166,7 @@
             padding: 10px 14px;
             font-size: 1.1rem;
             cursor: pointer;
-            color: var(--secondary-dark);
+            color: var(--white);
         }
         
         .ipa { font-size: 0.75rem; color: #999; font-weight: normal; margin-top: 2px; }
@@ -197,8 +197,8 @@
             box-sizing: border-box;
         }
         .feedback-area.visible { visibility: visible; }
-        .feedback-area.correct { background: #d6f4f8; border: 2px solid var(--primary); }
-        .feedback-area.wrong { background: #ffdfe0; border: 2px solid #ff4b4b; }
+        .feedback-area.correct { background: #dff6ef; border: 2px solid var(--primary); }
+        .feedback-area.wrong { background: #ffdfe0; border: 2px solid var(--danger); }
         
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -231,8 +231,8 @@
     <!-- Home Screen -->
     <div id="home-screen" class="screen active">
         <header>
-            <h1>Work it out</h1>
-            <h2>Unit 5 Sentence Builder</h2>
+            <h1>Then and Now</h1>
+            <h2>Unit 6 Sentence Builder</h2>
         </header>
 
         <div class="challenge-grid" id="challenge-list"></div>
@@ -304,90 +304,88 @@
 <script>
     /* ---------------- DATA & CONTENT ---------------- */
     const ipaDict = {
-        "voice": "vɔɪs", "thought": "θɔːt", "through": "θruː", 
-        "expert": "ˈekspɜːt", "space": "speɪs", "internet": "ˈɪntənet",
-        "digital": "ˈdɪdʒɪtl", "coin": "kɔɪn", "project": "ˈprɒdʒekt", 
-        "steal": "stiːl", "guide": "ɡaɪd", "strange": "streɪndʒ", 
-        "carefully": "ˈkeəfəli", "guard": "ɡɑːd", "wife": "waɪf",
-        "jewel": "ˈdʒuːəl", "shiny": "ˈʃaɪni", "message": "ˈmesɪdʒ",
-        "direction": "dəˈrekʃn", "clever": "ˈklevə", "scale": "skeɪl",
-        "elephant": "ˈelɪfənt"
+        "surprise": "səˈpraɪz", "journey": "ˈdʒɜːni", "shared": "ʃeəd", 
+        "teahouse": "ˈtiːhaʊs", "relax": "rɪˈlæks", "mountain": "ˈmaʊntən",
+        "ladder": "ˈlædə", "below": "bɪˈləʊ", "drop": "drɒp", 
+        "playground": "ˈpleɪɡraʊnd", "capsule": "ˈkæpsjuːl", "chip": "tʃɪp", 
+        "library": "ˈlaɪbrəri", "future": "ˈfjuːtʃə", "travelled": "ˈtrævld",
+        "hamburger": "ˈhæmbɜːɡə", "different": "ˈdɪfrənt"
     };
 
     const challenges = [
         {
-            id: 'c1', title: 'Lost and Found', icon: '🔍',
+            id: 'c1', title: 'Trip to China', icon: '🚄',
             data: [
-                { en: "What are you doing now?", cn: "你现在在做什么？", hint: "Present continuous / 现在进行时", noise: ["do", "is"] },
-                { en: "I am looking for my ring.", cn: "我正在找我的戒指。", hint: "Phrase: look for / 固定短语 look for", noise: ["look", "finding"] },
-                { en: "I can not find my car key.", cn: "我找不到我的车钥匙了。", hint: "Negative modal verb / 情态动词的否定", noise: ["finding", "keys"] },
-                { en: "Where did you put it?", cn: "你把它放在哪里了？", hint: "Past tense question / 一般过去时疑问句", noise: ["do", "putting"] },
-                { en: "I put it on the desk this morning.", cn: "我今天早上把它放在书桌上了。", hint: "Past tense of put / put 的一般过去式", noise: ["puts", "in"] },
-                { en: "I can not find my coins.", cn: "我找不到我的硬币了。", hint: "Plural noun 'coins' / 复数名词 coins", noise: ["coin", "finding"] },
-                { en: "Did you see them on the desk?", cn: "你在书桌上看到它们了吗？", hint: "Past tense 'did' / 过去时助动词 did", noise: ["do", "seeing"] },
-                { en: "What is going on here?", cn: "这里发生了什么事？", hint: "Phrase: going on / 固定表达 going on", noise: ["goes", "are"] },
-                { en: "The lost things are all here.", cn: "丢失的东西都在这里了。", hint: "Adjective 'lost' / 形容词 lost", noise: ["lose", "is"] },
-                { en: "Strange things happened at my home.", cn: "我家发生了奇怪的事情。", hint: "Regular past verb / 规则动词过去式", noise: ["happen", "in"] }
+                { en: "I had a good time yesterday.", cn: "我昨天玩得很开心。", hint: "Past tense of have / have 的一般过去式", noise: ["has", "having"] },
+                { en: "The high speed train was a big surprise.", cn: "高铁是一个大惊喜。", hint: "Past tense 'be' verb / be动词的过去式", noise: ["is", "were"] },
+                { en: "He had a long journey then.", cn: "那时他经历了一段漫长的旅程。", hint: "Time word 'then' / 表示过去的时间副词 then", noise: ["has", "now"] },
+                { en: "Now it takes only a little over four hours.", cn: "现在只需四个多小时。", hint: "Present tense for facts / 陈述事实用一般现在时", noise: ["took", "taking"] },
+                { en: "We left Beijing in the morning.", cn: "我们早上离开北京。", hint: "Past tense of leave / leave 的一般过去式", noise: ["leave", "on"] },
+                { en: "We got to the city in time for lunch.", cn: "我们及时赶到这座城市吃午饭。", hint: "Phrase: in time / 固定搭配 in time", noise: ["on", "getting"] },
+                { en: "The Chinese hamburger tasted very good.", cn: "中国汉堡味道非常好。", hint: "Past tense of taste / taste 的一般过去式", noise: ["taste", "tasting"] },
+                { en: "It is still the same taste.", cn: "依然是同样的味道。", hint: "Present tense 'is' / 现在时 be动词", noise: ["was", "same"] },
+                { en: "It was an old city in his photos.", cn: "在他的照片里，这是一座古老的城市。", hint: "Past state 'was' / 过去状态 was", noise: ["is", "a"] },
+                { en: "But now it is very different.", cn: "但现在它非常不同了。", hint: "Contrast present state / 现在的状态", noise: ["was", "differences"] }
             ]
         },
         {
-            id: 'c2', title: 'The Secret Letter', icon: '✉️',
+            id: 'c2', title: 'Shared Bikes', icon: '🚲',
             data: [
-                { en: "The prison guard showed him a letter.", cn: "监狱看守给他看了一封信。", hint: "Past tense of show / show 的一般过去式", noise: ["show", "showing"] },
-                { en: "He stole many jewels.", cn: "他偷了很多珠宝。", hint: "Past tense of steal / steal 的一般过去式", noise: ["steal", "jewel"] },
-                { en: "We did not find the jewels on him.", cn: "我们没有在他身上找到珠宝。", hint: "Negative past tense / 一般过去时否定句", noise: ["do", "found"] },
-                { en: "I hope you are happy today.", cn: "我希望你今天开心。", hint: "Present tense hope / 一般现在时 hope", noise: ["hopes", "was"] },
-                { en: "You look sweet in your green dress.", cn: "你穿绿裙子看起来很甜美。", hint: "Preposition 'in' for clothes / 穿着某件衣服用 in", noise: ["on", "looking"] },
-                { en: "The girls look happy in our garden.", cn: "女孩们在我们的花园里看起来很开心。", hint: "Plural subject + verb / 复数主语 + 原形动词", noise: ["looks", "on"] },
-                { en: "There is something wrong with the letter.", cn: "这封信有点不对劲。", hint: "Phrase: something wrong with / 固定句型 something wrong with", noise: ["are", "wronging"] },
-                { en: "I just do not know what it is.", cn: "我只是不知道它是什么。", hint: "Present negative / 一般现在时否定", noise: ["does", "knowing"] },
-                { en: "Do not give the letter to his wife.", cn: "不要把信交给他的妻子。", hint: "Imperative negative / 祈使句否定式", noise: ["giving", "does"] },
-                { en: "We can get the jewels back now.", cn: "我们现在可以拿回珠宝了。", hint: "Phrase: get back / 固定搭配 get back", noise: ["getting", "jewel"] }
+                { en: "We are in Chengdu now.", cn: "我们现在在成都。", hint: "Present continuous location / 当前所在位置用现在时", noise: ["were", "at"] },
+                { en: "The streets were full of bikes thirty years ago.", cn: "三十年前的街道上满是自行车。", hint: "Phrase: full of / 固定短语 full of", noise: ["are", "filling"] },
+                { en: "Now the streets are still full of bikes.", cn: "现在街上依然满是自行车。", hint: "Present tense 'are' / 现在时 be动词", noise: ["were", "bike"] },
+                { en: "But most are shared bikes.", cn: "但大多数是共享单车。", hint: "Adjective 'shared' / 形容词 shared", noise: ["share", "is"] },
+                { en: "We rode shared bikes today.", cn: "我们今天骑了共享单车。", hint: "Past tense of ride / ride 的一般过去式", noise: ["ride", "riding"] },
+                { en: "We travelled around the city happily.", cn: "我们开心地在城市里游览。", hint: "Adverb modifies verb / 副词修饰动词", noise: ["happy", "travels"] },
+                { en: "We stopped at a local teahouse.", cn: "我们在当地的一家茶馆停了下来。", hint: "Regular past verb / 规则动词过去式", noise: ["stop", "on"] },
+                { en: "There were many people in the teahouse.", cn: "茶馆里有很多人。", hint: "Plural past 'There were' / There be 句型的复数过去时", noise: ["was", "peoples"] },
+                { en: "They are very relaxed today.", cn: "他们今天非常放松。", hint: "Adjective describing feeling / 描述感觉的形容词", noise: ["relax", "was"] },
+                { en: "We had a really great time.", cn: "我们玩得真的很开心。", hint: "Past tense of have / have 的一般过去式", noise: ["have", "times"] }
             ]
         },
         {
-            id: 'c3', title: 'Nature Can Help', icon: '🍃',
+            id: 'c3', title: 'Planting Hope', icon: '🌳',
             data: [
-                { en: "Let us go for a short walk.", cn: "我们去散个短步吧。", hint: "Phrase: go for a walk / 固定搭配 go for a walk", noise: ["going", "walks"] },
-                { en: "We can find leaves for science class.", cn: "我们可以为科学课找些树叶。", hint: "Plural 'leaves' / leaf 的复数 leaves", noise: ["leaf", "finding"] },
-                { en: "There are bugs hiding in the grass.", cn: "草丛里藏着虫子。", hint: "Present participle / 现在分词作定语", noise: ["hide", "is"] },
-                { en: "Which way do we go here?", cn: "我们在这里走哪条路？", hint: "Question word 'Which' / 疑问词 Which", noise: ["what", "going"] },
-                { en: "Mother Nature will help us today.", cn: "大自然母亲今天会帮助我们。", hint: "Future tense 'will' / 将来时 will", noise: ["helping", "is"] },
-                { en: "She always shows us the way.", cn: "她总是为我们指路。", hint: "Adverb of frequency / 频度副词 always", noise: ["show", "showing"] },
-                { en: "What did the sisters use to find their way?", cn: "姐妹俩用什么来找路？", hint: "Past question format / 过去时疑问句式", noise: ["do", "finding"] },
-                { en: "They found the direction of north and south.", cn: "他们找到了南北的方向。", hint: "Past tense of find / find 的一般过去式", noise: ["find", "directions"] },
-                { en: "He hurt his finger in the forest.", cn: "他在森林里弄伤了手指。", hint: "Past tense of hurt (same) / hurt 的过去式同形", noise: ["hurts", "on"] },
-                { en: "He used some leaves to help.", cn: "他用了一些树叶来帮忙。", hint: "To + verb for purpose / 动词不定式表目的", noise: ["use", "helping"] }
+                { en: "Tall green trees grow in the mountains.", cn: "高大的绿树生长在山里。", hint: "Plural subject + base verb / 复数主语 + 动词原形", noise: ["grows", "on"] },
+                { en: "About forty years ago it was very different.", cn: "大约四十年前那里非常不同。", hint: "Past time expression / 过去的时间状语", noise: ["is", "agoes"] },
+                { en: "He gave up a good life in the city.", cn: "他放弃了城市里的好生活。", hint: "Phrase: gave up / 固定搭配 give up 的过去式", noise: ["give", "giving"] },
+                { en: "I want to do something for my home town.", cn: "我想为我的家乡做点什么。", hint: "Verb + infinitive / 动词 + to do", noise: ["doing", "wants"] },
+                { en: "He moved to the mountains and worked hard.", cn: "他搬到了山里并努力工作。", hint: "Compound past verbs / 过去时并列谓语", noise: ["move", "working"] },
+                { en: "Life was very hard but he never stopped working.", cn: "生活很艰难，但他从未停止工作。", hint: "Stop + -ing / 固定用法 stop doing", noise: ["is", "work"] },
+                { en: "He broke his left leg at the age of seventy.", cn: "他在七十岁时摔断了左腿。", hint: "Past tense of break / break 的一般过去式", noise: ["break", "on"] },
+                { en: "But he did not give up.", cn: "但他没有放弃。", hint: "Negative past tense / 一般过去时否定", noise: ["does", "gave"] },
+                { en: "The mountains became a green world.", cn: "这些山变成了一个绿色的世界。", hint: "Past tense of become / become 的一般过去式", noise: ["become", "worlds"] },
+                { en: "His hard work gave people a brighter life.", cn: "他的辛勤工作给了人们更光明的未来。", hint: "Comparative adjective / 形容词比较级", noise: ["bright", "give"] }
             ]
         },
         {
-            id: 'c4', title: 'Solving Problems', icon: '🧩',
+            id: 'c4', title: 'Road to School', icon: '🪜',
             data: [
-                { en: "What did you do last weekend?", cn: "你上周末做了什么？", hint: "Time expression 'last weekend' / 时间状语 last weekend", noise: ["do", "doing"] },
-                { en: "I went to the shopping centre with Mum.", cn: "我和妈妈去了购物中心。", hint: "Past tense of go / go 的一般过去式", noise: ["go", "centers"] },
-                { en: "We found a little lost girl.", cn: "我们发现了一个走失的小女孩。", hint: "Adjective order / 形容词顺序", noise: ["find", "loses"] },
-                { en: "Mum and I helped her find her way home.", cn: "妈妈和我帮助她找到了回家的路。", hint: "Verb + object + base verb / 动词 + 宾语 + 动词原形", noise: ["finding", "homes"] },
-                { en: "I helped Grandpa find his lost coin.", cn: "我帮助爷爷找到了他丢失的硬币。", hint: "Past tense 'helped' / 过去式 helped", noise: ["help", "coins"] },
-                { en: "When did the event happen?", cn: "事件是什么时候发生的？", hint: "Past question structure / 过去时疑问句", noise: ["do", "happens"] },
-                { en: "Where were you at that time?", cn: "那时你在哪里？", hint: "Past 'be' verb 'were' / 过去式 be 动词 were", noise: ["are", "was"] },
-                { en: "Who was there with you?", cn: "谁和你在一起？", hint: "Question word 'Who' / 疑问词 Who", noise: ["what", "were"] },
-                { en: "How did you work out the problem?", cn: "你是如何解决这个问题的？", hint: "Phrase: work out / 动词短语 work out", noise: ["working", "do"] },
-                { en: "I looked around the house carefully.", cn: "我仔细地环顾了房子四周。", hint: "Adverb modifies verb / 副词修饰动词", noise: ["careful", "look"] }
+                { en: "We go down on the sky ladder.", cn: "我们在天梯上往下走。", hint: "Preposition 'on' / 介词 on", noise: ["in", "going"] },
+                { en: "It is a very big drop to the town below.", cn: "到下面的镇子上落差非常大。", hint: "Noun 'drop' / 名词 drop", noise: ["drops", "are"] },
+                { en: "But we sing and laugh on our way to school.", cn: "但我们在上学的路上又唱又笑。", hint: "Phrase: on one's way to / 短语 on our way to", noise: ["in", "laughing"] },
+                { en: "We feel safe and strong.", cn: "我们感到安全和强壮。", hint: "Two adjectives / 两个形容词", noise: ["feels", "strongly"] },
+                { en: "There was only one tall building in my school.", cn: "我的学校里过去只有一栋高楼。", hint: "Singular past 'There was' / There be 句型的单数过去时", noise: ["were", "buildings"] },
+                { en: "Now there are three tall buildings.", cn: "现在有三栋高楼。", hint: "Plural present 'there are' / There be 句型的复数现在时", noise: ["is", "building"] },
+                { en: "There was a small playground in my school.", cn: "我的学校里过去有一个小操场。", hint: "Singular noun / 单数名词", noise: ["were", "playgrounds"] },
+                { en: "Now there is a big one.", cn: "现在有一个大的。", hint: "Pronoun 'one' / 代词 one", noise: ["are", "ones"] },
+                { en: "Students had to climb ladders made of wood.", cn: "学生们过去不得不爬木头做的梯子。", hint: "Past of 'have to' / have to 的过去式", noise: ["has", "climbs"] },
+                { en: "Now students can climb steel ladders.", cn: "现在学生们可以爬钢梯了。", hint: "Modal 'can' + base verb / 情态动词 can + 动词原形", noise: ["climbing", "could"] }
             ]
         },
         {
-            id: 'c5', title: 'Clever Kids', icon: '💡',
+            id: 'c5', title: 'Time Capsules', icon: '⏳',
             data: [
-                { en: "There are many clever kids in Chinese history.", cn: "中国历史上有许多聪明的孩子。", hint: "Phrase: in history / 介词 in", noise: ["on", "is"] },
-                { en: "They thought of new ways to solve problems.", cn: "他们想出了解决问题的新方法。", hint: "Past tense of think / think 的一般过去式", noise: ["think", "solving"] },
-                { en: "At the age of seven he saved his friend.", cn: "在七岁的时候他救了他的朋友。", hint: "Phrase: at the age of / 固定表达 at the age of", noise: ["in", "save"] },
-                { en: "The boy fell in a big jar full of water.", cn: "男孩掉进了一个装满水的大缸里。", hint: "Past tense of fall / fall 的一般过去式", noise: ["falls", "filling"] },
-                { en: "He quickly found a rock and threw it.", cn: "他迅速找了一块石头扔了过去。", hint: "Past tense of throw / throw 的一般过去式", noise: ["throw", "find"] },
-                { en: "The jar broke and the water came out.", cn: "缸破了，水流了出来。", hint: "Past tense of break / break 的一般过去式", noise: ["breaks", "come"] },
-                { en: "He helped to find out the weight of an elephant.", cn: "他帮助称出了一头大象的重量。", hint: "Noun 'weight' / 名词 weight", noise: ["weigh", "a"] },
-                { en: "They could not kill the animal to weigh it.", cn: "他们不能杀这只动物来称重。", hint: "Verb 'weigh' / 动词 weigh", noise: ["weight", "killing"] },
-                { en: "He used a large boat and some rocks.", cn: "他用了一艘大船和一些石头。", hint: "Past tense of use / use 的一般过去式", noise: ["using", "rock"] },
-                { en: "Never look down on young kids.", cn: "永远不要看不起小孩子。", hint: "Imperative with Never / Never 引导的祈使句", noise: ["looking", "no"] }
+                { en: "A time capsule is a special box.", cn: "时间胶囊是一个特殊的盒子。", hint: "Singular present fact / 陈述客观事实", noise: ["are", "boxes"] },
+                { en: "People put letters or even toys in it.", cn: "人们把信甚至玩具放进去。", hint: "Plural noun 'toys' / 复数名词 toys", noise: ["putting", "toy"] },
+                { en: "Years later people open the box to learn about the past.", cn: "多年后人们打开盒子了解过去。", hint: "To + verb for purpose / 不定式表目的", noise: ["opened", "learning"] },
+                { en: "People in China made a special time capsule.", cn: "中国的人们制作了一个特殊的时间胶囊。", hint: "Past tense of make / make 的一般过去式", noise: ["make", "making"] },
+                { en: "It is a small computer chip.", cn: "它是一个小的电脑芯片。", hint: "Adjective before noun / 形容词修饰名词", noise: ["are", "chips"] },
+                { en: "People sent their ideas about life in the future.", cn: "人们发送了他们关于未来生活的想法。", hint: "Past tense of send / send 的一般过去式", noise: ["send", "sending"] },
+                { en: "The time capsule travelled into space.", cn: "时间胶囊飞上了太空。", hint: "Regular past tense / 规则动词过去式", noise: ["travel", "travels"] },
+                { en: "It is now in Shanghai Library.", cn: "它现在在上海图书馆。", hint: "Proper noun / 专有名词", noise: ["was", "libraries"] },
+                { en: "People will open it in twenty years.", cn: "人们将在二十年后打开它。", hint: "Future tense 'will' / 将来时 will", noise: ["opened", "opens"] },
+                { en: "They will see the changes over the years.", cn: "他们将看到这些年来的变化。", hint: "Future tense 'will' + base verb / will + 动词原形", noise: ["seeing", "saw"] }
             ]
         }
     ];
@@ -411,15 +409,15 @@
         },
 
         /* --- Storage Helpers --- */
-        getStats: function() { return JSON.parse(localStorage.getItem('sb_stats_unit5') || '{}'); },
-        saveStats: function(stats) { localStorage.setItem('sb_stats_unit5', JSON.stringify(stats)); },
-        getMistakes: function() { return JSON.parse(localStorage.getItem('sb_mistakes_unit5') || '[]'); },
-        saveMistakes: function(list) { localStorage.setItem('sb_mistakes_unit5', JSON.stringify(list)); },
-        getSessionLogs: function() { return JSON.parse(localStorage.getItem('sb_session_logs_unit5') || '[]'); },
+        getStats: function() { return JSON.parse(localStorage.getItem('sb_stats_unit6') || '{}'); },
+        saveStats: function(stats) { localStorage.setItem('sb_stats_unit6', JSON.stringify(stats)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem('sb_mistakes_unit6') || '[]'); },
+        saveMistakes: function(list) { localStorage.setItem('sb_mistakes_unit6', JSON.stringify(list)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem('sb_session_logs_unit6') || '[]'); },
         saveSessionLog: function(log) { 
             const logs = this.getSessionLogs();
             logs.unshift(log); 
-            localStorage.setItem('sb_session_logs_unit5', JSON.stringify(logs));
+            localStorage.setItem('sb_session_logs_unit6', JSON.stringify(logs));
         },
 
         /* --- Home Screen --- */
@@ -525,7 +523,7 @@
                 btn.className = 'word-btn';
                 
                 let displayWord = word;
-                const alwaysCap = ["I", "Mum", "Dad", "Grandpa", "Mother", "Nature", "Chinese", "Sima", "Guang", "Cao", "Chong"];
+                const alwaysCap = ["I", "China", "Beijing", "Xi'an", "Chengdu", "Grandpa", "Shanghai", "Chinese"];
                 
                 if (!alwaysCap.includes(displayWord)) {
                     displayWord = displayWord.toLowerCase();
@@ -800,8 +798,8 @@
 
         clearMistakes: function() {
             const code = prompt("Enter Teacher Passcode:");
-            if(code && code.toUpperCase() === 'LSNSC') {
-                localStorage.removeItem('sb_mistakes_unit5');
+            if(code && code.toUpperCase() === 'TSPRT') {
+                localStorage.removeItem('sb_mistakes_unit6');
                 this.showMistakes();
             } else {
                 alert("Incorrect Passcode");
@@ -838,9 +836,9 @@
 
         clearHistory: function() {
             const code = prompt("Enter Teacher Passcode:");
-            if(code && code.toUpperCase() === 'LSNSC') {
-                localStorage.removeItem('sb_stats_unit5');
-                localStorage.removeItem('sb_session_logs_unit5');
+            if(code && code.toUpperCase() === 'TSPRT') {
+                localStorage.removeItem('sb_stats_unit6');
+                localStorage.removeItem('sb_session_logs_unit6');
                 location.reload();
             } else {
                 alert("Incorrect Passcode");
