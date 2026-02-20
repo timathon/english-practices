@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Module 1: I want a hot dog - Sentence Builder</title>
+    <title>Module 1: Food & Prices - Sentence Builder</title>
     <style>
         :root {
-            --primary: #58cc02; /* Duolingo Green */
+            --primary: #58cc02;
             --primary-dark: #46a302;
-            --danger: #ff4b4b;
-            --danger-dark: #d33131;
             --secondary: #1cb0f6;
             --secondary-dark: #1185ba;
+            --warning: #ffc800;
+            --warning-dark: #e5b400;
+            --danger: #ff4b4b;
+            --danger-dark: #d33131;
             --neutral: #e5e5e5;
             --text: #4b4b4b;
             --white: #ffffff;
-            --bg: #f7f7f7;
+            --bg: #f0f2f5;
         }
 
         body {
@@ -37,7 +39,7 @@
             background: var(--white);
             min-height: 100vh;
             position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
         }
@@ -51,42 +53,19 @@
         }
 
         /* --- Screens --- */
-        .screen {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-            padding: 20px;
-            flex-grow: 1;
-        }
-
-        .screen.active {
-            display: flex;
-        }
+        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; flex-grow: 1; }
+        .screen.active { display: flex; }
 
         /* --- Home Screen --- */
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            color: var(--primary);
-            margin: 0;
-            font-size: 2rem;
-        }
-
-        h2 {
-            font-size: 1.2rem;
-            color: #777;
-            margin-top: 5px;
-        }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--primary); margin: 0; font-size: 2rem; }
+        h2 { font-size: 1.1rem; color: #999; margin-top: 5px; font-weight: normal; }
 
         .challenge-grid {
             display: grid;
-            grid-template-columns: 1fr;
             gap: 15px;
             overflow-y: auto;
-            padding-bottom: 20px;
+            padding-bottom: 80px; 
         }
 
         .challenge-card {
@@ -94,276 +73,163 @@
             border: 2px solid var(--neutral);
             border-bottom: 4px solid var(--neutral);
             border-radius: 16px;
-            padding: 20px;
+            padding: 15px;
             cursor: pointer;
             transition: transform 0.1s, border-color 0.1s;
-            display: flex;
+        }
+        .challenge-card:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .challenge-card:hover { background-color: #fafafa; border-color: #ccc; }
+
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: bold; margin: 0; }
+        
+        .card-stats { 
+            font-size: 0.8rem; 
+            color: #777; 
+            display: flex; 
+            justify-content: space-between; 
             align-items: center;
-            justify-content: space-between;
+            margin-top: 10px; 
+            background: #f8f9fa; 
+            padding: 10px 12px; 
+            border-radius: 12px; 
+            border: 1px solid #eee;
         }
-
-        .challenge-card:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
+        .stat-row { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start;
         }
-
-        .challenge-card:hover {
-            background-color: #fafafa;
+        .stat-row:last-child {
+            align-items: flex-end; 
         }
-
-        .challenge-icon {
-            font-size: 2rem;
-            margin-right: 15px;
-        }
-
-        .challenge-info h3 {
-            margin: 0;
-            font-size: 1.1rem;
-        }
-
-        .challenge-info p {
-            margin: 5px 0 0;
-            font-size: 0.9rem;
-            color: #888;
-        }
+        
+        .stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+        .stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
 
         /* --- Game Screen --- */
-        .top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .close-btn {
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #ccc;
-            background: none;
-            border: none;
-        }
+        .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .close-btn { font-size: 1.5rem; cursor: pointer; color: #ccc; background: none; border: none; }
 
         .progress-container {
-            flex-grow: 1;
-            margin: 0 15px;
-            height: 16px;
-            background-color: var(--neutral);
-            border-radius: 8px;
-            display: flex;
-            overflow: hidden;
+            flex-grow: 1; margin: 0 15px; height: 16px; background-color: var(--neutral);
+            border-radius: 8px; display: flex; overflow: hidden;
         }
-
-        .progress-segment {
-            flex-grow: 1;
-            border-right: 1px solid var(--white);
-        }
-        .progress-segment:last-child { border-right: none; }
+        .progress-segment { flex-grow: 1; border-right: 1px solid var(--white); }
         .progress-segment.green { background-color: var(--primary); }
+        .progress-segment.yellow { background-color: var(--warning); }
         .progress-segment.red { background-color: var(--danger); }
 
-        .question-area {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .target-sentence {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 20px;
-            font-weight: bold;
-            display: block;
-            text-align: center;
-        }
-
-        .prompt-text {
-            font-size: 1rem;
-            color: #777;
-            margin-bottom: 10px;
-            font-weight: normal;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        
+        .prompt-container { text-align: center; margin-bottom: 20px; }
+        .prompt-cn { font-size: 1.3rem; color: #333; font-weight: bold; margin-bottom: 5px; }
+        .prompt-hint-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--warning); filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); transition: transform 0.2s; }
+        .prompt-hint-btn:hover { transform: scale(1.1); }
+        .hint-text { font-size: 0.9rem; color: #666; font-style: italic; margin-top: 5px; min-height: 1.2em; visibility: hidden; }
+        .hint-text.visible { visibility: visible; animation: fadeIn 0.3s; }
 
         .answer-area {
-            min-height: 60px;
+            min-height: 70px;
             border-top: 2px solid var(--neutral);
             border-bottom: 2px solid var(--neutral);
+            background: #fafafa;
             margin-bottom: 30px;
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            padding: 10px 0;
+            padding: 15px;
             align-items: center;
             justify-content: center;
+            border-radius: 8px;
         }
 
-        .word-pool {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
 
         .word-btn {
             background: var(--white);
             border: 2px solid var(--neutral);
             border-bottom: 4px solid var(--neutral);
             border-radius: 12px;
-            padding: 10px 15px;
+            padding: 10px 14px;
             font-size: 1.1rem;
             cursor: pointer;
             color: var(--text);
+            position: relative;
             transition: all 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-
-        .word-btn:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
-        }
-
-        .word-btn.selected {
-            background: var(--neutral);
-            color: transparent;
-            border-color: transparent;
-            pointer-events: none;
-        }
+        .word-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .word-btn.selected { background: var(--neutral); color: transparent; border-color: transparent; pointer-events: none; }
+        .word-btn.selected .ipa { display: none; }
 
         .word-btn-answer {
             background: var(--white);
             border: 2px solid var(--secondary);
             border-bottom: 4px solid var(--secondary-dark);
             border-radius: 12px;
-            padding: 10px 15px;
+            padding: 10px 14px;
             font-size: 1.1rem;
             cursor: pointer;
             color: var(--secondary-dark);
         }
-
-        /* --- Footer Actions --- */
-        .footer-action {
-            padding-top: 20px;
-            border-top: 2px solid var(--neutral);
-        }
-
-        .check-btn {
-            width: 100%;
-            padding: 15px;
-            border-radius: 16px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: white;
-            background-color: var(--primary);
-            border: none;
-            border-bottom: 5px solid var(--primary-dark);
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-
-        .check-btn:active {
-            transform: translateY(2px);
-            border-bottom-width: 3px;
-        }
-
-        .check-btn.wrong {
-            background-color: var(--danger);
-            border-bottom-color: var(--danger-dark);
-            animation: shake 0.5s;
-        }
-
-        .check-btn.correct {
-            background-color: var(--primary);
-            animation: bounce 0.5s;
-        }
-
-        .check-btn:disabled {
-            background-color: var(--neutral);
-            border-bottom-color: #ccc;
-            color: #999;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* --- Feedback Overlay --- */
-        .feedback {
-            display: none;
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: left;
-        }
-        .feedback.show { display: block; }
-        .feedback.correct { background-color: #d7ffb8; color: #58a700; }
-        .feedback.wrong { background-color: #ffdfe0; color: #ea2b2b; }
-
-        .feedback h3 { margin: 0 0 5px 0; }
         
-        /* --- History Modal --- */
-        #history-modal {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 100;
-            display: none;
-            justify-content: center;
-            align-items: center;
+        .ipa { font-size: 0.75rem; color: #999; font-weight: normal; margin-top: 2px; }
+
+        .footer-action { padding-top: 20px; border-top: 2px solid var(--neutral); }
+        
+        .check-btn {
+            width: 100%; padding: 15px; border-radius: 16px; font-size: 1.2rem; font-weight: bold;
+            color: white; background-color: var(--primary); border: none; border-bottom: 5px solid var(--primary-dark);
+            cursor: pointer; text-transform: uppercase;
         }
-        .modal-content {
-            background: white;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            border-radius: 20px;
-            padding: 20px;
+        .check-btn:active { transform: translateY(2px); border-bottom-width: 3px; }
+        .check-btn:disabled { background-color: var(--neutral); border-bottom-color: #ccc; color: #999; cursor: not-allowed; transform: none; }
+        .check-btn.wrong { background-color: var(--danger); border-bottom-color: var(--danger-dark); animation: shake 0.5s; }
+        .check-btn.correct { background-color: var(--primary); animation: bounce 0.5s; }
+
+        .feedback-area {
+            height: 110px; 
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+            visibility: hidden; 
             display: flex;
             flex-direction: column;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 15px;
+            box-sizing: border-box;
         }
-        .log-list {
-            overflow-y: auto;
-            flex-grow: 1;
-            border: 1px solid #eee;
-            margin-bottom: 15px;
+        .feedback-area.visible { visibility: visible; }
+        .feedback-area.correct { background: #d7ffb8; border: 2px solid #58cc02; }
+        .feedback-area.wrong { background: #ffdfe0; border: 2px solid #ff4b4b; }
+        
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 100;
+            display: none; justify-content: center; align-items: center;
         }
-        .log-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9rem;
+        .modal-content {
+            background: white; width: 90%; max-width: 500px; max-height: 80vh;
+            border-radius: 20px; padding: 20px; display: flex; flex-direction: column;
         }
-        .log-item span.score { font-weight: bold; color: var(--primary); }
-        .danger-text { color: var(--danger); cursor: pointer; font-size: 0.8rem; text-decoration: underline;}
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .log-list { overflow-y: auto; flex-grow: 1; border: 1px solid #eee; margin-bottom: 15px; padding: 5px; }
+        .mistake-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .mistake-item:last-child { border-bottom: none; }
+        .fail-count { background: var(--danger); color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; float: right;}
+        
+        .footer-links { text-align: center; margin-top: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .text-link { background: none; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: underline; }
+        .text-link.danger { color: var(--danger); }
+        .text-link.muted { color: #999; }
 
-        /* --- Mistakes Modal Specifics --- */
-        .mistake-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            text-align: left;
-        }
-        .mistake-date { font-size: 0.8rem; color: #999; margin-bottom: 6px; }
-        .mistake-cn { font-weight: bold; color: #333; margin-bottom: 4px; display:block; }
-        .mistake-wrong { color: var(--danger); text-decoration: line-through; font-size: 0.9rem; margin-bottom: 2px; display:block;}
-        .mistake-correct { color: var(--primary-dark); font-weight: bold; font-size: 0.9rem; display:block;}
-
-        /* --- Animations --- */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-            40% {transform: translateY(-10px);}
-            60% {transform: translateY(-5px);}
-        }
-
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -373,16 +239,14 @@
     <div id="home-screen" class="screen active">
         <header>
             <h1>Module 1</h1>
-            <h2>I want a hot dog, please</h2>
+            <h2>Ordering Food & Prices</h2>
         </header>
 
-        <div class="challenge-grid" id="challenge-list">
-            <!-- Populated by JS -->
-        </div>
+        <div class="challenge-grid" id="challenge-list"></div>
 
-        <div style="margin-top: auto; text-align: center; padding-top: 10px; display:flex; flex-direction:column; gap:10px;">
-            <button onclick="app.showMistakes()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; font-size:1rem;">View My Mistakes</button>
-            <button onclick="app.showHistory()" style="background:none; border:none; color:#ccc; cursor:pointer;">Teacher Dashboard</button>
+        <div class="footer-links">
+            <button class="text-link danger" onclick="app.showMistakes()">⚠ Review My Mistakes</button>
+            <button class="text-link muted" onclick="app.showScoreHistory()">View score history</button>
         </div>
     </div>
 
@@ -390,595 +254,554 @@
     <div id="game-screen" class="screen">
         <div class="top-bar">
             <button class="close-btn" onclick="app.goHome()">✕</button>
-            <div class="progress-container" id="progress-bar">
-                <!-- Segments injected by JS -->
-            </div>
+            <div class="progress-container" id="progress-bar"></div>
         </div>
 
         <div class="question-area">
-            <h2 class="prompt-text">Translate this sentence</h2>
-            <div class="target-sentence" id="display-text"></div> 
-            
-            <div class="answer-area" id="answer-area">
-                <!-- Selected words go here -->
+            <div class="prompt-container">
+                <div class="prompt-cn" id="prompt-cn"></div>
+                <button class="prompt-hint-btn" onclick="app.showHint()">💡</button>
+                <div class="hint-text" id="hint-text"></div>
             </div>
 
-            <div class="word-pool" id="word-pool">
-                <!-- Word options go here -->
-            </div>
+            <div class="answer-area" id="answer-area"></div>
+            <div class="word-pool" id="word-pool"></div>
+        </div>
+
+        <div id="feedback-area" class="feedback-area">
+            <h3 id="feedback-title" style="margin:0"></h3>
+            <p id="feedback-msg" style="margin:5px 0 0"></p>
         </div>
 
         <div class="footer-action">
-            <div class="feedback" id="feedback-area">
-                <h3 id="feedback-title"></h3>
-                <p id="feedback-msg"></p>
-            </div>
             <button id="check-btn" class="check-btn" onclick="app.checkAnswer()">Check</button>
             <button id="next-btn" class="check-btn" onclick="app.nextQuestion()" style="display:none; background-color: var(--secondary); border-bottom-color: var(--secondary-dark);">Continue</button>
         </div>
     </div>
 
-    <!-- History Modal -->
-    <div id="history-modal">
+    <!-- Modals -->
+    <div id="mistakes-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Session History</h2>
-                <button onclick="app.closeHistory()" class="close-btn" style="color:#333">✕</button>
-            </div>
-            <div class="log-list" id="log-list"></div>
-            <div style="text-align: right;">
-                <span class="danger-text" onclick="app.clearHistory()">Clear History (Teacher Only)</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Mistakes Modal -->
-    <div id="mistakes-modal" style="display:none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 style="color:var(--danger)">My Mistakes</h2>
+                <h2 style="color:var(--danger)">Review Mistakes</h2>
                 <button onclick="app.closeMistakes()" class="close-btn" style="color:#333">✕</button>
             </div>
             <div class="log-list" id="mistakes-list"></div>
             <div style="text-align: right;">
-                <span class="danger-text" onclick="app.clearMistakes()">Clear My Mistakes</span>
+                <button class="text-link danger" onclick="app.clearMistakes()">Clear Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Score History</h2>
+                <button onclick="app.closeScoreHistory()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="history-list"></div>
+            <div style="text-align: right; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                <button class="text-link danger" onclick="app.clearHistory()">Teacher: Clear All Data</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    /* --- Data Content extracted from A6B-U1.pdf --- */
+    // IPAs only for difficult words. Sight words omitted intentionally.
+    const ipaDict = {
+        "hamburger": "ˈhæmbɜːɡə", "hamburgers": "ˈhæmbɜːɡəz", "cashier": "kæˈʃɪə", 
+        "noodles": "ˈnuːdlz", "dollar": "ˈdɒlə", "dollars": "ˈdɒləz", 
+        "cents": "sents", "enjoy": "ɪnˈdʒɔɪ", "meal": "miːl", 
+        "chicken": "ˈtʃɪkɪn", "vegetables": "ˈvedʒtəblz", "juice": "dʒuːs",
+        "favourite": "ˈfeɪvərɪt", "restaurant": "ˈrestrɒnt", "careful": "ˈkeəfl",
+        "thirteen": "ˌθɜːˈtiːn", "twenty-five": "ˌtwenti ˈfaɪv", "cheese": "tʃiːz",
+        "shorts": "ʃɔːts", "shoes": "ʃuːz", "dirty": "ˈdɜːti"
+    };
+
     const challenges = [
         {
-            id: 'c1',
-            title: 'Fast Food Basics',
-            icon: '🍔',
-            sentences: [
-                { en: "I want a hot dog, please.", cn: "请给我一个热狗。" },
-                { en: "I want a hamburger.", cn: "我想要一个汉堡包。" },
-                { en: "Can I help you?", cn: "我能为您服务吗？" },
-                { en: "Here comes a hot dog.", cn: "热狗来了。" },
-                { en: "It looks good!", cn: "它看起来很好吃！" },
-                { en: "What is a hot dog?", cn: "什么是热狗？" },
-                { en: "Is it really a dog?", cn: "它真的是狗吗？" },
-                { en: "That is a hot dog.", cn: "那是一个热狗。" },
-                { en: "Do you want a hamburger?", cn: "你想要汉堡包吗？" },
-                { en: "I do not know.", cn: "我不知道。" }
+            id: 'c1', title: 'Fast Food', icon: '🍔',
+            data: [
+                { en: "I want a hot dog.", cn: "我想要一个热狗。", hint: "Use 'want' for desires / 用 'want' 表示想要", noise: ["wants", "an"] },
+                { en: "What do you want?", cn: "你想要什么？", hint: "Question word 'What' / 疑问词 'What'", noise: ["does", "wanting"] },
+                { en: "Can I help you?", cn: "我能帮你吗？(你需要点什么？)", hint: "Modal 'can' for offers / 用 'can' 提供帮助", noise: ["Am", "helping"] },
+                { en: "A hamburger for me too.", cn: "我也要一个汉堡。", hint: "Preposition 'for' + pronoun / 介词 'for' + 代词", noise: ["to", "I"] },
+                { en: "I want some noodles.", cn: "我想要一些面条。", hint: "'some' before plural nouns / 复数名词前用 'some'", noise: ["a", "noodle"] },
+                { en: "What do you want to eat?", cn: "你想要吃什么？", hint: "want to + verb / want to + 动词原形", noise: ["eating", "are"] },
+                { en: "Here you are.", cn: "给你。", hint: "Common phrase for handing things / 递给别人东西的常用语", noise: ["is", "your"] },
+                { en: "Let me take them.", cn: "让我来拿它们。", hint: "Let + object pronoun / Let + 宾格代词", noise: ["I", "taking"] },
+                { en: "Be careful!", cn: "小心！", hint: "Imperative 'Be' / 祈使句 'Be'", noise: ["Are", "care"] },
+                { en: "Enjoy your meal!", cn: "祝你用餐愉快！", hint: "Common restaurant phrase / 餐厅常用祝福语", noise: ["Enjoys", "you"] }
             ]
         },
         {
-            id: 'c2',
-            title: 'Money & Paying',
-            icon: '💵',
-            sentences: [
-                { en: "How much is it?", cn: "多少钱？" },
-                { en: "It is thirteen dollars.", cn: "一共十三美元。" },
-                { en: "Here you are.", cn: "给你。" },
-                { en: "It is two dollars.", cn: "一共两美元。" },
-                { en: "It is one dollar and twenty cents.", cn: "一共一美元二十美分。" },
-                { en: "Three dollars and seventy-five cents.", cn: "三美元七十五美分。" },
-                { en: "A hot dog is four dollars.", cn: "一个热狗四美元。" },
-                { en: "A hamburger is five dollars.", cn: "一个汉堡包五美元。" },
-                { en: "It is thirteen dollars and twenty-five cents.", cn: "一共十三美元二十五美分。" },
-                { en: "Thank you very much.", cn: "非常感谢。" }
+            id: 'c2', title: 'Drinks & Prices', icon: '🥤',
+            data: [
+                { en: "What do you want to drink?", cn: "你想要喝什么？", hint: "want to + verb / want to + 动词原形", noise: ["drinking", "does"] },
+                { en: "I want a cola.", cn: "我想要一杯可乐。", hint: "Article 'a' + singular noun / 冠词 'a' + 单数名词", noise: ["an", "colas"] },
+                { en: "A cola for me too.", cn: "我也要一杯可乐。", hint: "Preposition 'for' / 介词 'for'", noise: ["to", "I"] },
+                { en: "Three colas, please.", cn: "请来三杯可乐。", hint: "Plural noun / 复数名词", noise: ["cola", "pleases"] },
+                { en: "How much is it?", cn: "多少钱？", hint: "Ask about price / 询问价格", noise: ["many", "are"] },
+                { en: "It is thirteen dollars.", cn: "十三美元。", hint: "Plural currency / 货币的复数", noise: ["dollar", "are"] },
+                { en: "It is twenty-five cents.", cn: "二十五美分。", hint: "Plural currency / 货币的复数", noise: ["cent", "are"] },
+                { en: "Milk, juice or tea?", cn: "牛奶，果汁还是茶？", hint: "Conjunction 'or' for choices / 连词 'or' 表示选择", noise: ["and", "milks"] },
+                { en: "I want some milk.", cn: "我想要一些牛奶。", hint: "Uncountable noun / 不可数名词", noise: ["a", "milks"] },
+                { en: "Orange juice, please.", cn: "请来橙汁。", hint: "Noun phrase / 名词短语", noise: ["Oranges", "pleases"] }
             ]
         },
         {
-            id: 'c3',
-            title: 'Drinks & Desires',
-            icon: '🥤',
-            sentences: [
-                { en: "What do you want to drink?", cn: "你想喝什么？" },
-                { en: "I want a cola, please.", cn: "请给我一杯可乐。" },
-                { en: "I want some milk.", cn: "我想要一些牛奶。" },
-                { en: "Do you want orange juice?", cn: "你想要橙汁吗？" },
-                { en: "Three colas, please.", cn: "请给三杯可乐。" },
-                { en: "A cola for me too.", cn: "我也要一杯可乐。" },
-                { en: "Milk, juice or tea?", cn: "牛奶，果汁还是茶？" },
-                { en: "And to drink?", cn: "喝点什么？" },
-                { en: "I want milk and a cola.", cn: "我想要牛奶和可乐。" },
-                { en: "I want tea.", cn: "我想要茶。" }
+            id: 'c3', title: 'Food Choices', icon: '🍗',
+            data: [
+                { en: "I want to eat some meat.", cn: "我想吃些肉。", hint: "want to + verb / want to + 动词原形", noise: ["eating", "meats"] },
+                { en: "I want a hot dog with cheese.", cn: "我想要一个加奶酪的热狗。", hint: "Preposition 'with' / 介词 'with' 表示伴随/添加", noise: ["in", "cheeses"] },
+                { en: "We want a hamburger and noodles.", cn: "我们要一个汉堡和面条。", hint: "Conjunction 'and' / 连词 'and'", noise: ["or", "noodle"] },
+                { en: "Meat, chicken or fish?", cn: "肉，鸡肉还是鱼？", hint: "Conjunction 'or' for choices / 连词 'or' 表示选择", noise: ["and", "fishes"] },
+                { en: "Come in and have a seat.", cn: "进来请坐。", hint: "Imperative / 祈使句", noise: ["coming", "has"] },
+                { en: "Have your favourite dish.", cn: "品尝你最喜欢的菜。", hint: "Imperative / 祈使句", noise: ["has", "you"] },
+                { en: "All our food is very nice.", cn: "我们所有的食物都非常好。", hint: "Uncountable subject 'food' uses 'is' / 不可数主语用 'is'", noise: ["are", "foods"] },
+                { en: "I want chicken and rice.", cn: "我要鸡肉和米饭。", hint: "Uncountable nouns / 不可数名词", noise: ["chickens", "rices"] },
+                { en: "I want a hot dog and some noodles.", cn: "我要一个热狗和一些面条。", hint: "'some' for plural / 复数前用 'some'", noise: ["a", "noodle"] },
+                { en: "I want some vegetables.", cn: "我想要一些蔬菜。", hint: "Plural noun / 复数名词", noise: ["a", "vegetable"] }
             ]
         },
         {
-            id: 'c4',
-            title: 'Making Orders',
-            icon: '🍗',
-            sentences: [
-                { en: "What do you want to eat?", cn: "你想吃什么？" },
-                { en: "I want to eat some meat.", cn: "我想吃点肉。" },
-                { en: "I want noodles and a cola.", cn: "我想要面条和可乐。" },
-                { en: "I want chicken and rice.", cn: "我想要鸡肉和米饭。" },
-                { en: "I want some vegetables.", cn: "我想要一些蔬菜。" },
-                { en: "I want fish and rice.", cn: "我想要鱼和米饭。" },
-                { en: "I want a hot dog with cheese.", cn: "我想要一个加奶酪的热狗。" },
-                { en: "Lots and lots of cheese.", cn: "很多很多的奶酪。" },
-                { en: "Meat, chicken or fish?", cn: "肉，鸡肉还是鱼？" },
-                { en: "I want noodles.", cn: "我想要面条。" }
+            id: 'c4', title: 'Restaurant Fun', icon: '👨‍👩‍👦',
+            data: [
+                { en: "Simon wants a hamburger.", cn: "西蒙想要一个汉堡。", hint: "Third-person singular verb / 动词第三人称单数 (+s)", noise: ["want", "an"] },
+                { en: "Dad wants noodles and a cola.", cn: "爸爸想要面条和一杯可乐。", hint: "Third-person singular verb / 动词第三人称单数", noise: ["want", "noodle"] },
+                { en: "Lingling wants to drink milk.", cn: "玲玲想喝牛奶。", hint: "wants to + verb / wants to + 动词原形", noise: ["want", "drinking"] },
+                { en: "What does Daming want?", cn: "大明想要什么？", hint: "Auxiliary verb 'does' / 助动词 'does'", noise: ["do", "wants"] },
+                { en: "Daming does not know.", cn: "大明不知道。", hint: "Negative auxiliary 'does not' / 否定助动词", noise: ["do", "knows"] },
+                { en: "It looks very good.", cn: "它看起来很好。", hint: "Third-person singular verb / 动词第三人称单数", noise: ["look", "are"] },
+                { en: "I am sorry.", cn: "对不起。", hint: "Be verb for 'I' / 'I' 配合 'am'", noise: ["is", "are"] },
+                { en: "Look at my new shorts.", cn: "看看我的新短裤。", hint: "Preposition 'at' / 介词 'at'", noise: ["on", "short"] },
+                { en: "My shoes are dirty.", cn: "我的鞋子脏了。", hint: "Plural subject uses 'are' / 复数主语用 'are'", noise: ["is", "shoe"] },
+                { en: "Let us go to the restaurant.", cn: "我们去餐厅吧。", hint: "Let us + verb / Let us + 动词原形", noise: ["goes", "in"] }
             ]
         },
         {
-            id: 'c5',
-            title: 'Restaurant Talk',
-            icon: '🍽️',
-            sentences: [
-                { en: "Come in and have a seat.", cn: "进来坐下。" },
-                { en: "Have your favourite dish.", cn: "吃你最喜欢的菜。" },
-                { en: "All our food is very nice.", cn: "我们所有的食物都很好。" },
-                { en: "Enjoy your meal!", cn: "祝你用餐愉快！" },
-                { en: "Let me take them.", cn: "让我拿它们。" },
-                { en: "Be careful!", cn: "小心！" },
-                { en: "Oh no! My new shoes!", cn: "哦不！我的新鞋！" },
-                { en: "I am sorry!", cn: "对不起！" },
-                { en: "That is two hamburgers.", cn: "那是两个汉堡包。" },
-                { en: "A hamburger for me too.", cn: "我也要一个汉堡包。" }
+            id: 'c5', title: 'Menu Math', icon: '🧾',
+            data: [
+                { en: "A hot dog is four dollars.", cn: "一个热狗四美元。", hint: "Singular subject uses 'is' / 单数主语用 'is'", noise: ["are", "dollar"] },
+                { en: "A hamburger is five dollars.", cn: "一个汉堡五美元。", hint: "Plural currency / 货币的复数", noise: ["are", "dollar"] },
+                { en: "Noodles are five dollars.", cn: "面条五美元。", hint: "Plural subject uses 'are' / 复数主语用 'are'", noise: ["is", "noodle"] },
+                { en: "Rice is one dollar.", cn: "米饭一美元。", hint: "Singular currency 'dollar' / 单数货币 'dollar'", noise: ["are", "dollars"] },
+                { en: "Chicken is ten dollars.", cn: "鸡肉十美元。", hint: "Uncountable subject uses 'is' / 不可数主语用 'is'", noise: ["are", "dollar"] },
+                { en: "Fish is fifteen dollars.", cn: "鱼肉十五美元。", hint: "Uncountable subject uses 'is' / 不可数主语用 'is'", noise: ["are", "dollar"] },
+                { en: "Vegetables are eight dollars.", cn: "蔬菜八美元。", hint: "Plural subject uses 'are' / 复数主语用 'are'", noise: ["is", "vegetable"] },
+                { en: "Orange juice is three dollars.", cn: "橙汁三美元。", hint: "Noun phrase subject / 名词短语作主语", noise: ["are", "dollar"] },
+                { en: "Cola is three dollars.", cn: "可乐三美元。", hint: "Uncountable subject uses 'is' / 不可数主语用 'is'", noise: ["are", "dollar"] },
+                { en: "Tea is two dollars.", cn: "茶两美元。", hint: "Plural currency / 货币的复数", noise: ["are", "dollar"] }
             ]
         }
     ];
 
-    const noiseWords = ["is", "are", "the", "a", "an", "to", "for", "my", "his", "was", "were", "can", "do", "did", "and", "or"];
-
-    /* --- Logic --- */
+    /* ---------------- APP LOGIC ---------------- */
     const app = {
         state: {
             currentChallenge: null,
-            originalQueue: [], // The main 10 questions
-            redemptionQueue: [], // Incorrect questions pushed here
+            queue: [],
+            mistakeQueue: [], 
             currentIndex: 0,
-            score: 0,
-            attempts: [], // Array of booleans tracking first-try success
-            isRedemption: false, // Flag to know if we are in redemption phase
-            currentSentenceWords: [],
             userSelection: [],
-            locked: false,
-            currentTargetObj: null // Stores {en: "", cn: ""}
+            currentObj: null,
+            hintUsed: false,
+            scoreLog: [], 
+            locked: false
         },
 
         init: function() {
             this.renderHome();
         },
 
-        getLogs: function() {
-            return JSON.parse(localStorage.getItem('sb_a6b_u1_logs') || '[]');
+        /* --- Storage Helpers --- */
+        getStats: function() { return JSON.parse(localStorage.getItem('sb_stats_m1') || '{}'); },
+        saveStats: function(stats) { localStorage.setItem('sb_stats_m1', JSON.stringify(stats)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem('sb_mistakes_m1') || '[]'); },
+        saveMistakes: function(list) { localStorage.setItem('sb_mistakes_m1', JSON.stringify(list)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem('sb_session_logs_m1') || '[]'); },
+        saveSessionLog: function(log) { 
+            const logs = this.getSessionLogs();
+            logs.unshift(log); 
+            localStorage.setItem('sb_session_logs_m1', JSON.stringify(logs));
+        },
+        
+        getPasscode: function() {
+            // Generates passcode from first letter of each challenge: FDFRM
+            return challenges.map(c => c.title.charAt(0).toUpperCase()).join('');
         },
 
-        getMistakes: function() {
-            return JSON.parse(localStorage.getItem('sb_a6b_u1_mistakes') || '[]');
-        },
-
-        saveLog: function(log) {
-            const logs = this.getLogs();
-            logs.unshift(log); // Add to top
-            localStorage.setItem('sb_a6b_u1_logs', JSON.stringify(logs));
-        },
-
-        saveMistake: function(targetEn, targetCn, challengeTitle, userAnswer) {
-            const mistakes = this.getMistakes();
-            
-            // Check if this specific sentence is already in the mistake list
-            const existingIndex = mistakes.findIndex(m => m.en === targetEn);
-
-            if (existingIndex > -1) {
-                // Update existing entry
-                const existing = mistakes[existingIndex];
-                existing.count = (existing.count || 1) + 1;
-                existing.date = new Date().toLocaleString(); // Update to latest date
-                existing.user = userAnswer; // Update to latest wrong answer
-                
-                // Move to top of list
-                mistakes.splice(existingIndex, 1);
-                mistakes.unshift(existing);
-            } else {
-                // Create new entry
-                const newMistake = {
-                    date: new Date().toLocaleString(),
-                    challenge: challengeTitle,
-                    en: targetEn,
-                    cn: targetCn,
-                    user: userAnswer,
-                    count: 1
-                };
-                mistakes.unshift(newMistake);
-            }
-            
-            localStorage.setItem('sb_a6b_u1_mistakes', JSON.stringify(mistakes));
-        },
-
-        getChallengeStats: function(title) {
-            const logs = this.getLogs();
-            const now = new Date();
-            const todayStr = now.toLocaleDateString();
-
-            const todaysLogs = logs.filter(l => {
-                if (l.challenge !== title) return false;
-                const d = new Date(l.date);
-                return d.toLocaleDateString() === todayStr;
-            });
-
-            const attempts = todaysLogs.length;
-            let maxScore = 0;
-
-            if (attempts > 0) {
-                maxScore = Math.max(...todaysLogs.map(l => {
-                    return parseInt(l.score.split(' / ')[0]);
-                }));
-            }
-
-            return { 
-                attempts: attempts, 
-                maxScore: attempts > 0 ? maxScore : '-' 
-            };
-        },
-
-        /* --- Rendering --- */
+        /* --- Home Screen --- */
         renderHome: function() {
             document.getElementById('home-screen').classList.add('active');
             document.getElementById('game-screen').classList.remove('active');
             
             const list = document.getElementById('challenge-list');
             list.innerHTML = '';
+            const allStats = this.getStats();
+            const todayStr = new Date().toLocaleDateString();
 
             challenges.forEach(c => {
-                const stats = this.getChallengeStats(c.title);
-                const card = document.createElement('div');
-                card.className = 'challenge-card';
-                card.onclick = () => this.startChallenge(c.id);
-                card.innerHTML = `
-                    <div style="display:flex; align-items:center">
-                        <div class="challenge-icon">${c.icon}</div>
-                        <div class="challenge-info">
-                            <h3>${c.title}</h3>
-                            <p>${c.sentences.length} sentences</p>
-                            <p style="font-size:0.85rem; color:var(--primary-dark); font-weight:bold; margin-top:5px;">
-                                Today: ${stats.attempts} runs | Best: ${stats.maxScore}
-                            </p>
+                let s = allStats[c.id] || { today: {date: todayStr, attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+                if(s.today.date !== todayStr) {
+                    s.today = { date: todayStr, attempts: 0, best: 0 };
+                }
+                allStats[c.id] = s;
+
+                const div = document.createElement('div');
+                div.className = 'challenge-card';
+                div.onclick = () => this.startChallenge(c.id);
+                div.innerHTML = `
+                    <div class="card-header">
+                        <div style="display:flex; align-items:center;">
+                            <span style="font-size:1.5rem; margin-right:10px;">${c.icon}</span>
+                            <h3 class="card-title">${c.title}</h3>
                         </div>
+                        <span style="color:var(--primary); font-weight:bold;">START</span>
                     </div>
-                    <div style="color:var(--secondary); font-weight:bold;">START</div>
+                    <div class="card-stats">
+                        <div class="stat-row"><span class="stat-label">TODAY</span> <span class="stat-val">${s.today.attempts} Runs | Best: ${s.today.best}%</span></div>
+                        <div class="stat-row"><span class="stat-label">LIFETIME</span> <span class="stat-val">${s.lifetime.attempts} Runs | Best: ${s.lifetime.best}%</span></div>
+                    </div>
                 `;
-                list.appendChild(card);
+                list.appendChild(div);
             });
+            
+            this.saveStats(allStats);
         },
 
+        /* --- Game Loop --- */
         startChallenge: function(id) {
-            const challenge = challenges.find(c => c.id === id);
-            this.state.currentChallenge = challenge;
-            // Create a deep copy of sentences to avoid modifying original
-            this.state.originalQueue = JSON.parse(JSON.stringify(challenge.sentences)); 
-            this.state.redemptionQueue = [];
+            const c = challenges.find(x => x.id === id);
+            this.state.currentChallenge = c;
+            this.state.queue = [...c.data]; 
+            this.state.mistakeQueue = [];
             this.state.currentIndex = 0;
-            this.state.score = 0;
-            this.state.isRedemption = false;
-            // Initialize progress tracker based on ORIGINAL count
-            this.state.attempts = new Array(challenge.sentences.length).fill(null);
+            this.state.scoreLog = new Array(c.data.length).fill(null);
             
             document.getElementById('home-screen').classList.remove('active');
             document.getElementById('game-screen').classList.add('active');
             
-            this.renderProgressBar();
+            this.renderProgress();
             this.loadQuestion();
         },
 
-        renderProgressBar: function() {
-            const bar = document.getElementById('progress-bar');
-            bar.innerHTML = '';
-            // Only show progress for the original queue length
-            const total = this.state.originalQueue.length;
-            
-            for(let i=0; i<total; i++) {
-                const segment = document.createElement('div');
-                segment.className = 'progress-segment';
-                if(this.state.attempts[i] === true) segment.classList.add('green');
-                if(this.state.attempts[i] === false) segment.classList.add('red');
-                bar.appendChild(segment);
-            }
-        },
-
         loadQuestion: function() {
-            // Determine source queue
-            let sentenceObj = null;
-            
-            if (this.state.currentIndex < this.state.originalQueue.length) {
-                sentenceObj = this.state.originalQueue[this.state.currentIndex];
+            let q = null;
+            if (this.state.currentIndex < this.state.queue.length) {
+                q = this.state.queue[this.state.currentIndex];
                 this.state.isRedemption = false;
-            } else if (this.state.redemptionQueue.length > 0) {
-                // We are in redemption mode
-                sentenceObj = this.state.redemptionQueue.shift(); // Take from front
+            } else if (this.state.mistakeQueue.length > 0) {
+                q = this.state.mistakeQueue[0];
                 this.state.isRedemption = true;
             } else {
-                // Game Over
                 this.finishGame();
                 return;
             }
 
-            this.state.currentTargetObj = sentenceObj;
-
-            // Reset UI State
-            this.state.locked = false;
+            this.state.currentObj = q;
             this.state.userSelection = [];
+            this.state.hintUsed = false;
+            this.state.locked = false;
+
+            document.getElementById('prompt-cn').innerText = q.cn;
+            document.getElementById('hint-text').innerText = q.hint;
+            document.getElementById('hint-text').classList.remove('visible');
+            
+            const feedback = document.getElementById('feedback-area');
+            feedback.className = 'feedback-area'; 
+            
             document.getElementById('check-btn').style.display = 'block';
-            document.getElementById('check-btn').innerText = 'CHECK';
+            document.getElementById('check-btn').disabled = true;
             document.getElementById('check-btn').className = 'check-btn';
             document.getElementById('next-btn').style.display = 'none';
-            document.getElementById('feedback-area').className = 'feedback';
-            document.getElementById('answer-area').innerHTML = '';
             
-            // Set Display Text (Chinese)
-            document.getElementById('display-text').innerText = sentenceObj.cn;
+            this.renderAnswerArea();
+            this.generatePool(q);
+        },
 
-            // Process Sentence (English)
-            const sentenceEn = sentenceObj.en;
-            const cleanSentence = sentenceEn.replace(/[.!?]$/, ''); 
-            const words = cleanSentence.split(' ');
+        generatePool: function(q) {
+            const cleanEn = q.en.replace(/[.!?]$/, '');
+            const correctWords = cleanEn.split(' ');
+            let allWords = [...correctWords, ...q.noise];
+            allWords.sort(() => Math.random() - 0.5);
+
+            const pool = document.getElementById('word-pool');
+            pool.innerHTML = '';
             
-            // Generate pool: 
-            // 1. Lowercase the first word so it's not a visual hint for the start (unless it is "I" or proper noun).
-            // 2. Keep original case for others.
-            let poolWords = words.map((w, i) => {
-                if(i === 0) {
-                    if (w === "I" || w === "Daming" || w === "Simon") return w;
-                    return w.toLowerCase();
-                }
-                return w;
-            });
-            
-            // Add noise
-            for(let k=0; k<3; k++) {
-                const r = noiseWords[Math.floor(Math.random() * noiseWords.length)];
-                // Avoid duplicates in pool
-                if(!poolWords.includes(r)) poolWords.push(r);
-            }
-
-            // Shuffle
-            poolWords.sort(() => Math.random() - 0.5);
-
-            // Render Pool
-            const poolContainer = document.getElementById('word-pool');
-            poolContainer.innerHTML = '';
-            poolWords.forEach((w, idx) => {
+            allWords.forEach((word, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'word-btn';
-                btn.innerText = w;
-                btn.dataset.word = w;
-                btn.dataset.id = idx;
-                btn.onclick = () => this.handleWordSelect(w, idx, btn);
-                poolContainer.appendChild(btn);
-            });
-
-            this.updateCheckButton();
-        },
-
-        handleWordSelect: function(word, id, btnElement) {
-            if(this.state.locked) return;
-            if(btnElement.classList.contains('selected')) return;
-
-            // Add to logic
-            this.state.userSelection.push({word: word, id: id});
-            btnElement.classList.add('selected');
-
-            // Render Answer Area
-            this.renderAnswerArea();
-            this.updateCheckButton();
-        },
-
-        removeWord: function(index) {
-            if(this.state.locked) return;
-            
-            const removed = this.state.userSelection.splice(index, 1)[0];
-            
-            // Unselect in pool
-            const poolBtns = document.querySelectorAll('.word-btn');
-            poolBtns.forEach(btn => {
-                if(btn.dataset.id == removed.id) {
-                    btn.classList.remove('selected');
+                
+                let displayWord = word;
+                const alwaysCap = ["I", "Simon", "Daming", "Lingling", "Dad"];
+                if (!alwaysCap.includes(displayWord)) {
+                    displayWord = displayWord.toLowerCase();
                 }
-            });
 
+                const cleanWord = displayWord.toLowerCase().replace(/[^a-z-]/g, '');
+                const ipa = ipaDict[cleanWord];
+
+                btn.innerHTML = `<span>${displayWord}</span>${ipa ? `<span class="ipa">[${ipa}]</span>` : ''}`;
+                btn.onclick = () => this.selectWord(word, idx, btn); 
+                btn.dataset.val = displayWord;
+                pool.appendChild(btn);
+            });
+        },
+
+        selectWord: function(word, id, btn) {
+            if (this.state.locked) return;
+            if(btn.classList.contains('selected')) return;
+            
+            this.state.userSelection.push({ text: btn.dataset.val, srcBtn: btn });
+            btn.classList.add('selected');
+            
             this.renderAnswerArea();
-            this.updateCheckButton();
+            this.updateCheckBtn();
+        },
+
+        removeWord: function(idx) {
+            if (this.state.locked) return;
+            const item = this.state.userSelection.splice(idx, 1)[0];
+            item.srcBtn.classList.remove('selected');
+            this.renderAnswerArea();
+            this.updateCheckBtn();
         },
 
         renderAnswerArea: function() {
             const area = document.getElementById('answer-area');
             area.innerHTML = '';
-
+            
             this.state.userSelection.forEach((item, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'word-btn-answer';
                 
-                // Logic: Auto Capitalize first word of the constructed sentence
-                let displayText = item.word;
-                if(idx === 0) {
-                    displayText = displayText.charAt(0).toUpperCase() + displayText.slice(1);
+                let txt = item.text;
+                if (idx === 0) {
+                    txt = txt.charAt(0).toUpperCase() + txt.slice(1);
                 }
-
-                btn.innerText = displayText;
+                
+                btn.innerText = txt;
                 btn.onclick = () => this.removeWord(idx);
                 area.appendChild(btn);
             });
         },
 
-        updateCheckButton: function() {
-            const btn = document.getElementById('check-btn');
-            if(this.state.userSelection.length > 0) {
-                btn.disabled = false;
-            } else {
-                btn.disabled = true;
-            }
+        showHint: function() {
+            this.state.hintUsed = true;
+            document.getElementById('hint-text').classList.add('visible');
+        },
+
+        updateCheckBtn: function() {
+            document.getElementById('check-btn').disabled = this.state.userSelection.length === 0;
         },
 
         checkAnswer: function() {
+            if (this.state.locked) return;
+            if (this.state.userSelection.length === 0) return;
+            
+            let userSent = this.state.userSelection.map((item, idx) => {
+                let t = item.text;
+                if (idx === 0) t = t.charAt(0).toUpperCase() + t.slice(1);
+                return t;
+            }).join(' ');
+
             this.state.locked = true;
-            const btn = document.getElementById('check-btn');
+
+            const target = this.state.currentObj.en.replace(/[.!?]$/, '');
+            let isCorrect = userSent === target; 
+            
+            if (!isCorrect && this.state.currentObj.accept) {
+                isCorrect = this.state.currentObj.accept.some(alt => alt.replace(/[.!?]$/, '') === userSent);
+            }
+            
             const feedback = document.getElementById('feedback-area');
             const title = document.getElementById('feedback-title');
             const msg = document.getElementById('feedback-msg');
+            const btn = document.getElementById('check-btn');
 
-            // Construct user sentence
-            let userSentence = "";
-            this.state.userSelection.forEach((item, idx) => {
-                let w = item.word;
-                if(idx === 0) w = w.charAt(0).toUpperCase() + w.slice(1);
-                userSentence += w + " ";
-            });
-            userSentence = userSentence.trim();
-
-            // Target Logic
-            const targetEn = this.state.currentTargetObj.en;
-            const cleanTarget = targetEn.replace(/[.!?]$/, '');
-            
-            const isCorrect = userSentence === cleanTarget;
-
-            if(isCorrect) {
-                // Correct
-                btn.className = 'check-btn correct';
-                btn.innerText = 'Correct!';
-                feedback.className = 'feedback show correct';
-                title.innerText = 'Great Job!';
-                msg.innerText = '';
-                
-                // Logic
-                if(!this.state.isRedemption) {
-                    this.state.attempts[this.state.currentIndex] = true;
-                    this.state.score += 10;
-                }
-            } else {
-                // Wrong
-                btn.className = 'check-btn wrong';
-                btn.innerText = 'Incorrect';
-                feedback.className = 'feedback show wrong';
-                title.innerText = 'Correct Answer:';
-                msg.innerText = targetEn;
-
-                // Log Mistake
-                this.saveMistake(targetEn, this.state.currentTargetObj.cn, this.state.currentChallenge.title, userSentence);
-
-                // Logic
-                if(!this.state.isRedemption) {
-                    this.state.attempts[this.state.currentIndex] = false;
-                    // Add to redemption queue
-                    this.state.redemptionQueue.push(this.state.currentTargetObj);
+            if (isCorrect) {
+                let scoreType = 'green';
+                if (this.state.isRedemption) {
+                    scoreType = 'redemption';
                 } else {
-                    // If wrong in redemption, push to back of redemption queue to try again
-                    this.state.redemptionQueue.push(this.state.currentTargetObj);
+                    if (this.state.hintUsed) scoreType = 'yellow';
+                    this.state.scoreLog[this.state.currentIndex] = scoreType;
+                }
+
+                feedback.className = 'feedback-area correct visible';
+                title.innerText = 'Excellent!';
+                title.style.color = '#58cc02';
+                msg.innerText = '';
+                btn.className = 'check-btn correct';
+
+                if(this.state.isRedemption) this.state.mistakeQueue.shift();
+
+            } else {
+                feedback.className = 'feedback-area wrong visible';
+                title.innerText = 'Correct Answer:';
+                title.style.color = '#ea2b2b';
+                msg.innerText = this.state.currentObj.en;
+                btn.className = 'check-btn wrong';
+
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = 'red';
+                    this.state.mistakeQueue.push(this.state.currentObj);
+                    this.logMistake(this.state.currentObj, userSent);
+                } else {
+                    this.state.mistakeQueue.push(this.state.mistakeQueue.shift());
                 }
             }
 
-            this.renderProgressBar();
-            
-            // Switch buttons
+            this.renderProgress();
             btn.style.display = 'none';
             const nextBtn = document.getElementById('next-btn');
             nextBtn.style.display = 'block';
+
+            let isLast = false;
+            if (this.state.isRedemption) {
+                if (this.state.mistakeQueue.length === 0) isLast = true;
+            } else {
+                if (this.state.currentIndex >= this.state.queue.length - 1 && this.state.mistakeQueue.length === 0) {
+                    isLast = true;
+                }
+            }
+
+            if(isLast) {
+                nextBtn.innerText = "Finish";
+                nextBtn.style.backgroundColor = "var(--primary)";
+                nextBtn.style.borderBottomColor = "var(--primary-dark)";
+            } else {
+                nextBtn.innerText = "Continue";
+                nextBtn.style.backgroundColor = "var(--secondary)";
+                nextBtn.style.borderBottomColor = "var(--secondary-dark)";
+            }
         },
 
         nextQuestion: function() {
-            // If we are in normal mode, increment index
-            if (!this.state.isRedemption) {
-                this.state.currentIndex++;
-            }
-            // If in redemption mode, we just shifted the queue in loadQuestion, so we loop until empty
-            
+            if (!this.state.isRedemption) this.state.currentIndex++;
             this.loadQuestion();
         },
 
+        renderProgress: function() {
+            const bar = document.getElementById('progress-bar');
+            bar.innerHTML = '';
+            for(let i=0; i<10; i++) {
+                const seg = document.createElement('div');
+                seg.className = 'progress-segment';
+                const s = this.state.scoreLog[i];
+                if(s) seg.classList.add(s);
+                bar.appendChild(seg);
+            }
+        },
+
         finishGame: function() {
-            // Save Log
-            const log = {
+            const total = this.state.scoreLog.reduce((acc, curr) => {
+                if (curr === 'green') return acc + 10;
+                if (curr === 'yellow') return acc + 5;
+                return acc;
+            }, 0);
+            
+            const wrongQuestions = [];
+            this.state.scoreLog.forEach((status, index) => {
+                if (status === 'red' && this.state.queue[index]) {
+                    wrongQuestions.push(this.state.queue[index]);
+                }
+            });
+
+            const allStats = this.getStats();
+            const cid = this.state.currentChallenge.id;
+            
+            if (!allStats[cid]) {
+                allStats[cid] = { today: {date: new Date().toLocaleDateString(), attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+            }
+            const s = allStats[cid];
+            
+            s.today.attempts++;
+            if (total > s.today.best) s.today.best = total;
+            
+            s.lifetime.attempts++;
+            if (total > s.lifetime.best) s.lifetime.best = total;
+            
+            allStats[cid] = s;
+            this.saveStats(allStats);
+
+            this.saveSessionLog({
                 date: new Date().toLocaleString(),
                 challenge: this.state.currentChallenge.title,
-                score: this.state.score + ' / ' + (this.state.originalQueue.length * 10)
-            };
-            this.saveLog(log);
+                score: total
+            });
 
-            // Show results UI (re-use game screen or alert)
+            let mistakeHtml = '';
+            if (wrongQuestions.length > 0) {
+                mistakeHtml = `<div style="width:100%; text-align:left; background:#fff; border-radius:12px; padding:15px; margin:20px 0; max-height:300px; overflow-y:auto; border:2px solid var(--neutral);">
+                    <h3 style="color:var(--danger); margin-top:0; border-bottom:1px solid #eee; padding-bottom:5px;">Review Mistakes:</h3>
+                    ${wrongQuestions.map(q => `
+                        <div style="margin-bottom:10px; border-bottom:1px solid #f0f0f0; padding-bottom:5px;">
+                            <div style="font-weight:bold; color:#555;">${q.cn}</div>
+                            <div style="color:var(--primary-dark); font-weight:bold;">${q.en}</div>
+                        </div>
+                    `).join('')}
+                </div>`;
+            } else {
+                mistakeHtml = `<div style="margin:20px 0; color:var(--primary); font-weight:bold; font-size:1.2rem;">🎉 Perfect Run! No mistakes.</div>`;
+            }
+
             document.getElementById('game-screen').innerHTML = `
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center;">
-                    <h1 style="color:var(--primary); font-size:3rem;">Completed!</h1>
-                    <h2>Score: ${this.state.score}</h2>
-                    <div style="margin:20px 0;">
-                        <button onclick="location.reload()" class="check-btn" style="width:200px;">Back to Home</button>
-                    </div>
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:20px;">
+                    <h1 style="color:var(--primary); font-size:3rem; margin:0;">${total}%</h1>
+                    <h2 style="margin:5px 0 20px 0; color:#555;">Challenge Complete!</h2>
+                    ${mistakeHtml}
+                    <button onclick="location.reload()" class="check-btn" style="width:100%; max-width:300px;">Back to Challenges</button>
                 </div>
             `;
         },
 
-        goHome: function() {
-            if(confirm("Exit this challenge? Progress will be lost.")) {
-                this.renderHome();
-            }
-        },
-
-        /* --- History / Teacher Mode --- */
-        showHistory: function() {
-            const modal = document.getElementById('history-modal');
-            const list = document.getElementById('log-list');
-            list.innerHTML = '';
-            const logs = this.getLogs();
-
-            if(logs.length === 0) {
-                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No sessions recorded yet.</p>';
+        /* --- Mistake Logic --- */
+        logMistake: function(qObj, userAns) {
+            const list = this.getMistakes();
+            const existing = list.find(m => m.en === qObj.en);
+            if(existing) {
+                existing.count++;
+                existing.wrong = userAns;
+                existing.timestamp = Date.now();
+                const idx = list.indexOf(existing);
+                list.splice(idx, 1);
+                list.unshift(existing);
             } else {
-                logs.forEach(l => {
-                    const div = document.createElement('div');
-                    div.className = 'log-item';
-                    div.innerHTML = `<strong>${l.challenge}</strong> <span class="score">${l.score}</span><br><span style="color:#999; font-size:0.8rem">${l.date}</span>`;
-                    list.appendChild(div);
+                list.unshift({
+                    en: qObj.en, cn: qObj.cn, wrong: userAns, count: 1, 
+                    timestamp: Date.now(), challenge: this.state.currentChallenge.title
                 });
             }
-            modal.style.display = 'flex';
-        },
-
-        closeHistory: function() {
-            document.getElementById('history-modal').style.display = 'none';
+            this.saveMistakes(list);
         },
 
         showMistakes: function() {
-            const modal = document.getElementById('mistakes-modal');
-            const list = document.getElementById('mistakes-list');
-            list.innerHTML = '';
-            const mistakes = this.getMistakes();
-
-            if(mistakes.length === 0) {
-                list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">No mistakes recorded yet. Keep it up!</p>';
+            const list = this.getMistakes();
+            const container = document.getElementById('mistakes-list');
+            container.innerHTML = '';
+            
+            if(list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No mistakes yet! Great job!</div>';
             } else {
-                mistakes.forEach(m => {
-                    const count = m.count || 1;
-                    const countBadge = count > 1 ? `<span style="background:var(--danger); color:white; padding:1px 6px; border-radius:10px; font-size:0.7rem; margin-left:5px; vertical-align: middle;">x${count}</span>` : '';
-
+                list.forEach(m => {
                     const div = document.createElement('div');
                     div.className = 'mistake-item';
                     div.innerHTML = `
-                        <div class="mistake-date">${m.date} - ${m.challenge}</div>
-                        <div class="mistake-cn"><strong>Q:</strong> ${m.cn}${countBadge}</div>
-                        <div class="mistake-wrong"><strong>You said:</strong> ${m.user || '(No answer)'}</div>
-                        <div class="mistake-correct"><strong>Correct:</strong> ${m.en}</div>
+                        <div style="font-size:0.8rem; color:#999; margin-bottom:5px;">
+                            ${new Date(m.timestamp).toLocaleDateString()} - ${m.challenge}
+                            <span class="fail-count">Failed ${m.count}x</span>
+                        </div>
+                        <div style="font-weight:bold; color:#333; margin-bottom:3px;">${m.cn}</div>
+                        <div style="color:var(--danger); text-decoration:line-through; font-size:0.9rem;">${m.wrong || '(No answer)'}</div>
+                        <div style="color:var(--primary-dark); font-weight:bold; font-size:0.9rem;">${m.en}</div>
                     `;
-                    list.appendChild(div);
+                    container.appendChild(div);
                 });
             }
-            modal.style.display = 'flex';
+            document.getElementById('mistakes-modal').style.display = 'flex';
         },
 
         closeMistakes: function() {
@@ -986,36 +809,60 @@
         },
 
         clearMistakes: function() {
-            // Passcode: FMDMR (Fast, Money, Drinks, Making, Restaurant)
-            const input = prompt("Enter Teacher Passcode to Clear Mistakes:");
-            if(input && input.toUpperCase() === 'FMDMR') {
-                localStorage.removeItem('sb_a6b_u1_mistakes');
-                this.showMistakes(); // Refresh UI
-                alert("Mistake history cleared.");
-            } else if (input) {
-                alert("Incorrect passcode.");
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === this.getPasscode()) {
+                localStorage.removeItem('sb_mistakes_m1');
+                this.showMistakes();
+            } else {
+                alert("Incorrect Passcode");
             }
         },
 
-        clearHistory: function() {
-            // Passcode: FMDMR
-            const input = prompt("Enter Teacher Passcode:");
-            if(input && input.toUpperCase() === 'FMDMR') {
-                localStorage.removeItem('sb_a6b_u1_logs');
-                this.showHistory(); // Refresh
-                alert("History cleared.");
-            } else if (input) {
-                alert("Incorrect passcode.");
+        showScoreHistory: function() {
+            const list = this.getSessionLogs();
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+
+            if(list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No games played yet.</div>';
+            } else {
+                list.forEach(l => {
+                    const div = document.createElement('div');
+                    div.className = 'mistake-item'; 
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="color:#333;">${l.challenge}</strong>
+                            <span style="font-weight:bold; color:var(--primary);">${l.score}%</span>
+                        </div>
+                        <div style="font-size:0.8rem; color:#999;">${l.date}</div>
+                    `;
+                    container.appendChild(div);
+                });
             }
+            document.getElementById('history-modal').style.display = 'flex';
+        },
+
+        closeScoreHistory: function() {
+            document.getElementById('history-modal').style.display = 'none';
+        },
+
+        clearHistory: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === this.getPasscode()) {
+                localStorage.clear();
+                location.reload();
+            } else {
+                alert("Incorrect Passcode");
+            }
+        },
+        
+        goHome: function() {
+            if(confirm("Exit? Progress will be lost.")) location.reload();
         }
     };
 
-    // Initialize
-    window.onload = function() {
-        app.init();
-    };
+    window.onload = function() { app.init(); };
 
 </script>
-
 </body>
 </html>
