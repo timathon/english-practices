@@ -3,7 +3,7 @@ import re
 
 def find_sentence_builder_files():
     """
-    Find all HTML files matching the pattern '*-*-*-Sentence-Builder.html'
+    Find all HTML files matching the pattern '*-Sentence-Builder.html'
     in subdirectories (excluding root and scripts folder).
     """
     sentence_builder_files = []
@@ -15,10 +15,8 @@ def find_sentence_builder_files():
             dirs.remove('scripts')
         
         for file in files:
-            # Match pattern like A5A-U1-Sentence-Builder.html or A6B-M1-Sentence-Builder.html
-            if re.match(r'.+-[UM]\d+-Sentence-Builder\.html$', file) or \
-               re.match(r'.+-[UM][A-Z]+-Sentence-Builder\.html$', file) or \
-               re.match(r'.+-[A-Z]+\d+-Sentence-Builder\.html$', file):
+            # Match any file ending with -Sentence-Builder.html
+            if file.endswith('-Sentence-Builder.html'):
                 path = os.path.join(root, file)
                 sentence_builder_files.append(path)
     
