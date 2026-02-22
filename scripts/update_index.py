@@ -40,17 +40,19 @@ def clean_redundant_pdfs():
                     except OSError as e:
                         print(f"Error removing {pdf_path}: {e}")
 
-def get_html_files():
+def get_html_files(base_dir='.'):
     html_files = []
-    for root, dirs, files in os.walk('.'):
+    for root, dirs, files in os.walk(base_dir):
         if '.git' in dirs:
             dirs.remove('.git')
         if 'scripts' in dirs:
             dirs.remove('scripts')
+        if base_dir == '.' and 'release' in dirs:
+            dirs.remove('release')
         for file in files:
             if file.endswith('.html') and file != 'index.html':
                 path = os.path.join(root, file)
-                rel_path = os.path.relpath(path, '.')
+                rel_path = os.path.relpath(path, base_dir)
                 mtime = os.path.getmtime(path)
                 html_files.append({
                     'path': rel_path,
@@ -196,20 +198,18 @@ def generate_folder_index(folder_path, title):
     with open(os.path.join(folder_path, 'index.html'), 'w') as f:
         f.write(template)
 
-def main():
-    clean_redundant_pdfs()
-    
-    # Generate main index.html
-    files = get_html_files()
+def generate_full_index(file_path, files, title, back_link=None):
     latest_html = generate_latest_section(files)
     tree_html = generate_tree_section(files)
     
+    back_html = f'<p><a href="{back_link}">Back to Main Site</a></p>' if back_link else ""
+
     template = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>English Practices Index</title>
+    <title>{title} Index</title>
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -269,7 +269,8 @@ def main():
     </style>
 </head>
 <body>
-    <h1>English Practices</h1>
+    <h1>{title}</h1>
+    {back_html}
 
 {latest_html}
 
@@ -296,13 +297,29 @@ def main():
 </body>
 </html>
 """
-    with open('index.html', 'w') as f:
+    with open(file_path, 'w') as f:
         f.write(template)
 
-    # Generate index.html for subfolders
-    subfolders = [d for d in os.listdir('.') if os.path.isdir(d) and not d.startswith('.') and d != 'scripts']
+def main():
+    clean_redundant_pdfs()
+    
+    # Generate main index.html
+    files = get_html_files('.')
+    generate_full_index('index.html', files, 'English Practices')
+
+    # Generate index.html for root subfolders
+    subfolders = [d for d in os.listdir('.') if os.path.isdir(d) and not d.startswith('.') and d not in ['scripts', 'release']]
     for folder in subfolders:
         generate_folder_index(folder, f"{folder} Practices")
+
+    # Handle release folder
+    if os.path.exists('release'):
+        release_files = get_html_files('release')
+        generate_full_index('release/index.html', release_files, 'Release Practices', back_link='../index.html')
+        
+        release_subfolders = [d for d in os.listdir('release') if os.path.isdir(os.path.join('release', d))]
+        for folder in release_subfolders:
+            generate_folder_index(os.path.join('release', folder), f"Release - {folder} Practices")
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>After School - Sentence Builder</title>
+    <style>
+        :root {
+            --primary: #58cc02;
+            --primary-dark: #46a302;
+            --secondary: #1cb0f6;
+            --secondary-dark: #1185ba;
+            --warning: #ffc800;
+            --warning-dark: #e5b400;
+            --danger: #ff4b4b;
+            --danger-dark: #d33131;
+            --neutral: #e5e5e5;
+            --text: #4b4b4b;
+            --white: #ffffff;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 600px;
+            background: var(--white);
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 600px) {
+            #app {
+                min-height: 90vh;
+                border-radius: 20px;
+                overflow: hidden;
+            }
+        }
+
+        /* --- Screens --- */
+        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; flex-grow: 1; }
+        .screen.active { display: flex; }
+
+        /* --- Home Screen --- */
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--primary); margin: 0; font-size: 2rem; }
+        
+        @media (max-width: 480px) {
+            h1 { font-size: 1.4rem; }
+        }
+        
+        h2 { font-size: 1.1rem; color: #999; margin-top: 5px; font-weight: normal; }
+
+        .challenge-grid {
+            display: grid;
+            gap: 15px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .challenge-card {
+            background: var(--white);
+            border: 2px solid var(--neutral);
+            border-bottom: 4px solid var(--neutral);
+            border-radius: 16px;
+            padding: 15px;
+            cursor: pointer;
+            transition: transform 0.1s, border-color 0.1s;
+        }
+        .challenge-card:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .challenge-card:hover { background-color: #fafafa; border-color: #ccc; }
+
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: bold; margin: 0; }
+        
+        .card-stats { 
+            font-size: 0.8rem; 
+            color: #777; 
+            display: flex; 
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px; 
+            background: #f8f9fa; 
+            padding: 10px 12px; 
+            border-radius: 12px; 
+            border: 1px solid #eee;
+        }
+        .stat-row { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start;
+        }
+        .stat-row:last-child {
+            align-items: flex-end; 
+        }
+        
+        .stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+        .stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
+
+        /* --- Game Screen --- */
+        .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .close-btn { font-size: 1.5rem; cursor: pointer; color: #ccc; background: none; border: none; }
+
+        .progress-container {
+            flex-grow: 1; margin: 0 15px; height: 16px; background-color: var(--neutral);
+            border-radius: 8px; display: flex; overflow: hidden;
+        }
+        .progress-segment { flex-grow: 1; border-right: 1px solid var(--white); }
+        .progress-segment.green { background-color: var(--primary); }
+        .progress-segment.yellow { background-color: var(--warning); }
+        .progress-segment.red { background-color: var(--danger); }
+
+        .question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        
+        .prompt-container { text-align: center; margin-bottom: 20px; }
+        .prompt-cn { font-size: 1.3rem; color: #333; font-weight: bold; margin-bottom: 5px; }
+        .prompt-hint-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--warning); filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); transition: transform 0.2s; }
+        .prompt-hint-btn:hover { transform: scale(1.1); }
+        .hint-text { font-size: 0.9rem; color: #666; font-style: italic; margin-top: 5px; min-height: 1.2em; visibility: hidden; }
+        .hint-text.visible { visibility: visible; animation: fadeIn 0.3s; }
+
+        .answer-area {
+            min-height: 70px;
+            border-top: 2px solid var(--neutral);
+            border-bottom: 2px solid var(--neutral);
+            background: #fafafa;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 15px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
+
+        .word-btn {
+            background: var(--white);
+            border: 2px solid var(--neutral);
+            border-bottom: 4px solid var(--neutral);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: var(--text);
+            position: relative;
+            transition: all 0.1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .word-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .word-btn.selected { background: var(--neutral); color: transparent; border-color: transparent; pointer-events: none; }
+        .word-btn.selected .ipa { display: none; }
+
+        .word-btn-answer {
+            background: var(--white);
+            border: 2px solid var(--secondary);
+            border-bottom: 4px solid var(--secondary-dark);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: var(--secondary-dark);
+        }
+        
+        .ipa { font-size: 0.75rem; color: #999; font-weight: normal; margin-top: 2px; }
+
+        .footer-action { padding-top: 20px; border-top: 2px solid var(--neutral); }
+        
+        .check-btn {
+            width: 100%; padding: 15px; border-radius: 16px; font-size: 1.2rem; font-weight: bold;
+            color: white; background-color: var(--primary); border: none; border-bottom: 5px solid var(--primary-dark);
+            cursor: pointer; text-transform: uppercase;
+        }
+        .check-btn:active { transform: translateY(2px); border-bottom-width: 3px; }
+        .check-btn:disabled { background-color: var(--neutral); border-bottom-color: #ccc; color: #999; cursor: not-allowed; transform: none; }
+        .check-btn.wrong { background-color: var(--danger); border-bottom-color: var(--danger-dark); animation: shake 0.5s; }
+        .check-btn.correct { background-color: var(--primary); animation: bounce 0.5s; }
+
+        .feedback-area {
+            height: 110px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+            visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        .feedback-area.visible { visibility: visible; }
+        .feedback-area.correct { background: #d7ffb8; border: 2px solid #58cc02; }
+        .feedback-area.wrong { background: #ffdfe0; border: 2px solid #ff4b4b; }
+        
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; width: 90%; max-width: 500px; max-height: 80vh;
+            border-radius: 20px; padding: 20px; display: flex; flex-direction: column;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .log-list { overflow-y: auto; flex-grow: 1; border: 1px solid #eee; margin-bottom: 15px; padding: 5px; }
+        .mistake-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .mistake-item:last-child { border-bottom: none; }
+        .fail-count { background: var(--danger); color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; float: right;}
+        
+        .footer-links { text-align: center; margin-top: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .text-link { background: none; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: underline; }
+        .text-link.danger { color: var(--danger); }
+        .text-link.muted { color: #999; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen active">
+        <header>
+            <div style="display: flex; align-items: center; justify-content: center; position: relative;">
+                <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
+                <h1>After School</h1>
+            </div>
+            <h2>Level B - Sentence Builder</h2>
+        </header>
+
+        <div class="challenge-grid" id="challenge-list">
+            <!-- Injected by JS -->
+        </div>
+
+        <div class="footer-links">
+            <button class="text-link danger" onclick="app.showMistakes()">⚠ Review My Mistakes</button>
+            <button class="text-link muted" onclick="app.showScoreHistory()">View score history</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="top-bar">
+            <button class="close-btn" onclick="app.goHome()">✕</button>
+            <div class="progress-container" id="progress-bar"></div>
+        </div>
+
+        <div class="question-area">
+            <div class="prompt-container">
+                <div class="prompt-cn" id="prompt-cn"></div>
+                <button class="prompt-hint-btn" onclick="app.showHint()">💡</button>
+                <div class="hint-text" id="hint-text"></div>
+            </div>
+
+            <div class="answer-area" id="answer-area"></div>
+            <div class="word-pool" id="word-pool"></div>
+        </div>
+
+        <div id="feedback-area" class="feedback-area">
+            <h3 id="feedback-title" style="margin:0"></h3>
+            <p id="feedback-msg" style="margin:5px 0 0"></p>
+        </div>
+
+        <div class="footer-action">
+            <button id="check-btn" class="check-btn" onclick="app.checkAnswer()">Check</button>
+            <button id="next-btn" class="check-btn" onclick="app.nextQuestion()" style="display:none; background-color: var(--secondary); border-bottom-color: var(--secondary-dark);">Continue</button>
+        </div>
+    </div>
+
+    <!-- Mistakes Modal -->
+    <div id="mistakes-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="color:var(--danger)">Review Mistakes</h2>
+                <button onclick="app.closeMistakes()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="mistakes-list"></div>
+            <div style="text-align: right;">
+                <button class="text-link danger" onclick="app.clearMistakes()">Clear Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score History Modal -->
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Score History</h2>
+                <button onclick="app.closeScoreHistory()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="history-list"></div>
+            <div style="text-align: right; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                <button class="text-link danger" onclick="app.clearHistory()">Teacher: Clear All Data</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ID_A = "3a4X5y2B1mL6p0Q";
+    const ID_B_KEY = ID_A + "-ID_B";
+
+    let ID_B = localStorage.getItem(ID_B_KEY);
+    if (!ID_B) {
+        const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        ID_B = '';
+        for (let i = 0; i < 15; i++) {
+            ID_B += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        localStorage.setItem(ID_B_KEY, ID_B);
+    }
+
+    /* ---------------- DATA & CONTENT ---------------- */
+    const ipaDict = {
+        "school": "skuːl", "study": "ˈstʌdi", "play": "pleɪ", 
+        "dance": "dɑːns", "act": "ækt", "read": "riːd",
+        "sing": "sɪŋ", "bike": "baɪk", "fun": "fʌn", 
+        "friends": "frendz", "library": "ˈlaɪbrəri", "football": "ˈfʊtbɔːl"
+    };
+
+    const challenges = [
+        {
+            id: 'c1', title: 'Action Time', icon: '🏃‍♂️',
+            data: [
+                { en: "I like to study after school.", cn: "我喜欢放学后学习。", hint: "after school / 放学后", noise: ["likes", "studying"], accept: ["After school I like to study."] },
+                { en: "I like to play after school.", cn: "我喜欢放学后玩耍。", hint: "like to + verb / 喜欢做某事", noise: ["playing", "am"], accept: ["After school I like to play."] },
+                { en: "I like to dance after school.", cn: "我喜欢放学后跳舞。", hint: "action: dance / 动作：跳舞", noise: ["dances", "do"], accept: ["After school I like to dance."] },
+                { en: "I like to act after school.", cn: "我喜欢放学后表演。", hint: "action: act / 动作：表演", noise: ["acts", "acting"], accept: ["After school I like to act."] },
+                { en: "We like to study after school.", cn: "我们喜欢放学后学习。", hint: "we = us / 我们", noise: ["us", "studying"], accept: ["After school we like to study."] },
+                { en: "We like to play after school.", cn: "我们喜欢放学后玩耍。", hint: "like to play / 喜欢玩", noise: ["plays", "are"], accept: ["After school we like to play."] },
+                { en: "We like to dance after school.", cn: "我们喜欢放学后跳舞。", hint: "like to dance / 喜欢跳舞", noise: ["dancing", "is"], accept: ["After school we like to dance."] },
+                { en: "We like to act after school.", cn: "我们喜欢放学后表演。", hint: "we like / 我们喜欢", noise: ["likes", "acting"], accept: ["After school we like to act."] },
+                { en: "They like to study after school.", cn: "他们喜欢放学后学习。", hint: "they = multiple people / 他们", noise: ["them", "studies"], accept: ["After school they like to study."] },
+                { en: "They like to play after school.", cn: "他们喜欢放学后玩耍。", hint: "they like / 他们喜欢", noise: ["playing", "are"], accept: ["After school they like to play."] }
+            ]
+        },
+        {
+            id: 'c2', title: 'Fun School', icon: '🏫',
+            data: [
+                { en: "I like to read after school.", cn: "我喜欢放学后阅读。", hint: "action: read / 动作：阅读", noise: ["reads", "reading"], accept: ["After school I like to read."] },
+                { en: "I like to sing after school.", cn: "我喜欢放学后唱歌。", hint: "action: sing / 动作：唱歌", noise: ["sings", "am"], accept: ["After school I like to sing."] },
+                { en: "I like to bike after school.", cn: "我喜欢放学后骑自行车。", hint: "action: bike / 动作：骑车", noise: ["bikes", "biking"], accept: ["After school I like to bike."] },
+                { en: "We like to read after school.", cn: "我们喜欢放学后阅读。", hint: "we like to / 我们喜欢...", noise: ["reading", "us"], accept: ["After school we like to read."] },
+                { en: "We like to sing after school.", cn: "我们喜欢放学后唱歌。", hint: "after school / 放学后", noise: ["sings", "are"], accept: ["After school we like to sing."] },
+                { en: "We like to bike after school.", cn: "我们喜欢放学后骑自行车。", hint: "bike = ride a bike / 骑自行车", noise: ["biking", "rides"], accept: ["After school we like to bike."] },
+                { en: "We like to have fun after school.", cn: "我们喜欢放学后玩得开心。", hint: "have fun / 玩得开心", noise: ["has", "funs"], accept: ["After school we like to have fun."] },
+                { en: "I like to have fun after school.", cn: "我喜欢放学后玩得开心。", hint: "have fun / 玩得开心", noise: ["having", "am"], accept: ["After school I like to have fun."] },
+                { en: "They like to read after school.", cn: "他们喜欢放学后阅读。", hint: "they = multiple people / 他们", noise: ["reads", "them"], accept: ["After school they like to read."] },
+                { en: "They like to sing after school.", cn: "他们喜欢放学后唱歌。", hint: "they like / 他们喜欢", noise: ["singing", "is"], accept: ["After school they like to sing."] }
+            ]
+        },
+        {
+            id: 'c3', title: 'Third Person', icon: '👦',
+            data: [
+                { en: "He likes to study after school.", cn: "他喜欢放学后学习。", hint: "Add 's' to like for He / 第三人称单数加 's'", noise: ["like", "studies"], accept: ["After school he likes to study."] },
+                { en: "She likes to play after school.", cn: "她喜欢放学后玩耍。", hint: "Add 's' to like for She / 第三人称单数加 's'", noise: ["like", "playing"], accept: ["After school she likes to play."] },
+                { en: "He likes to dance after school.", cn: "他喜欢放学后跳舞。", hint: "he likes / 他喜欢", noise: ["like", "dances"], accept: ["After school he likes to dance."] },
+                { en: "She likes to act after school.", cn: "她喜欢放学后表演。", hint: "she likes / 她喜欢", noise: ["like", "acting"], accept: ["After school she likes to act."] },
+                { en: "He likes to read after school.", cn: "他喜欢放学后阅读。", hint: "action: read / 动作：阅读", noise: ["like", "reads"], accept: ["After school he likes to read."] },
+                { en: "She likes to sing after school.", cn: "她喜欢放学后唱歌。", hint: "action: sing / 动作：唱歌", noise: ["like", "sings"], accept: ["After school she likes to sing."] },
+                { en: "He likes to bike after school.", cn: "他喜欢放学后骑自行车。", hint: "action: bike / 动作：骑车", noise: ["like", "bikes"], accept: ["After school he likes to bike."] },
+                { en: "She likes to have fun after school.", cn: "她喜欢放学后玩得开心。", hint: "have fun / 玩得开心", noise: ["like", "has"], accept: ["After school she likes to have fun."] },
+                { en: "The boy likes to play.", cn: "这个男孩喜欢玩耍。", hint: "The boy = he / 男孩用第单数形式", noise: ["like", "playing"] },
+                { en: "The girl likes to read.", cn: "这个女孩喜欢阅读。", hint: "The girl = she / 女孩用单数形式", noise: ["like", "reads"] }
+            ]
+        },
+        {
+            id: 'c4', title: 'Extra Practice', icon: '⭐',
+            data: [
+                { en: "Do you like to study?", cn: "你喜欢学习吗？", hint: "Start with 'Do' / 以 'Do' 开头", noise: ["Are", "studies"] },
+                { en: "Do you like to play?", cn: "你喜欢玩耍吗？", hint: "Start with 'Do' / 以 'Do' 开头", noise: ["Does", "playing"] },
+                { en: "Do you like to dance?", cn: "你喜欢跳舞吗？", hint: "like to dance / 喜欢跳舞", noise: ["Are", "dances"] },
+                { en: "Do you like to act?", cn: "你喜欢表演吗？", hint: "like to act / 喜欢表演", noise: ["Is", "acting"] },
+                { en: "Do you like to read?", cn: "你喜欢阅读吗？", hint: "like to read / 喜欢阅读", noise: ["Does", "reads"] },
+                { en: "Do you like to sing?", cn: "你喜欢唱歌吗？", hint: "like to sing / 喜欢唱歌", noise: ["Are", "sings"] },
+                { en: "Do you like to bike?", cn: "你喜欢骑自行车吗？", hint: "like to bike / 喜欢骑车", noise: ["Does", "biking"] },
+                { en: "Does he like to play?", cn: "他喜欢玩耍吗？", hint: "Use 'Does' for he / 第三人称单数疑问句用 'Does'", noise: ["Do", "plays"] },
+                { en: "Does she like to read?", cn: "她喜欢阅读吗？", hint: "Use 'Does' for she / 第三人称单数疑问句用 'Does'", noise: ["Do", "reads"] },
+                { en: "What do you do after school?", cn: "你放学后做什么？", hint: "Question word 'What' / 疑问词 'What'", noise: ["How", "does"] }
+            ]
+        },
+        {
+            id: 'c5', title: 'Review All', icon: '🏆',
+            data: [
+                { en: "I like to study and play.", cn: "我喜欢学习和玩耍。", hint: "Connect with 'and' / 用 'and' 连接", noise: ["likes", "studying"] },
+                { en: "We like to sing and dance.", cn: "我们喜欢唱歌跳舞。", hint: "sing and dance / 唱歌跳舞", noise: ["sings", "dancing"] },
+                { en: "He likes to read books.", cn: "他喜欢读书。", hint: "read books / 读书", noise: ["like", "reading"] },
+                { en: "She likes to ride a bike.", cn: "她喜欢骑自行车。", hint: "ride a bike / 骑自行车", noise: ["like", "rides"] },
+                { en: "I have fun with my friends.", cn: "我和我的朋友们玩得很开心。", hint: "with my friends / 和我的朋友们", noise: ["has", "friend"] },
+                { en: "We have fun after school.", cn: "我们放学后玩得很开心。", hint: "have fun / 玩得开心", noise: ["has", "funs"], accept: ["After school we have fun."] },
+                { en: "What are some ways to have fun?", cn: "有哪些玩得开心的方法？", hint: "from focus question / 核心问题", noise: ["is", "way"] },
+                { en: "I like to read in the library.", cn: "我喜欢在图书馆阅读。", hint: "in the library / 在图书馆", noise: ["reads", "on"] },
+                { en: "He likes to play football.", cn: "他喜欢踢足球。", hint: "play football / 踢足球", noise: ["like", "plays"] },
+                { en: "After school is fun.", cn: "放学后很有趣。", hint: "fun = enjoyable / 很有趣", noise: ["are", "funs"] }
+            ]
+        }
+    ];
+
+    /* ---------------- APP LOGIC ---------------- */
+    const app = {
+        state: {
+            currentChallenge: null,
+            queue: [],
+            mistakeQueue: [],
+            currentIndex: 0,
+            userSelection: [],
+            currentObj: null,
+            hintUsed: false,
+            scoreLog: [],
+            locked: false
+        },
+
+        init: function() {
+            this.renderHome();
+        },
+
+        getStats: function() { return JSON.parse(localStorage.getItem(`${ID_B}-sb_stats_afterschool`) || '{}'); },
+        saveStats: function(stats) { localStorage.setItem(`${ID_B}-sb_stats_afterschool`, JSON.stringify(stats)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem(`${ID_B}-sb_mistakes_afterschool`) || '[]'); },
+        saveMistakes: function(list) { localStorage.setItem(`${ID_B}-sb_mistakes_afterschool`, JSON.stringify(list)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem(`${ID_B}-sb_session_logs_afterschool`) || '[]'); },
+        saveSessionLog: function(log) { 
+            const logs = this.getSessionLogs();
+            logs.unshift(log); 
+            localStorage.setItem(`${ID_B}-sb_session_logs_afterschool`, JSON.stringify(logs));
+        },
+
+        renderHome: function() {
+            document.getElementById('home-screen').classList.add('active');
+            document.getElementById('game-screen').classList.remove('active');
+            
+            const list = document.getElementById('challenge-list');
+            list.innerHTML = '';
+            const allStats = this.getStats();
+            const todayStr = new Date().toLocaleDateString();
+
+            challenges.forEach(c => {
+                let s = allStats[c.id] || { today: {date: todayStr, attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+                
+                if(s.today.date !== todayStr) {
+                    s.today = { date: todayStr, attempts: 0, best: 0 };
+                }
+
+                allStats[c.id] = s;
+
+                const div = document.createElement('div');
+                div.className = 'challenge-card';
+                div.onclick = () => this.startChallenge(c.id);
+                div.innerHTML = `
+                    <div class="card-header">
+                        <div style="display:flex; align-items:center;">
+                            <span style="font-size:1.5rem; margin-right:10px;">${c.icon}</span>
+                            <h3 class="card-title">${c.title}</h3>
+                        </div>
+                        <span style="color:var(--primary); font-weight:bold;">START</span>
+                    </div>
+                    <div class="card-stats">
+                        <div class="stat-row"><span class="stat-label">TODAY</span> <span class="stat-val">${s.today.attempts} Runs | Best: ${s.today.best}%</span></div>
+                        <div class="stat-row"><span class="stat-label">LIFETIME</span> <span class="stat-val">${s.lifetime.attempts} Runs | Best: ${s.lifetime.best}%</span></div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            
+            this.saveStats(allStats);
+        },
+
+        startChallenge: function(id) {
+            const c = challenges.find(x => x.id === id);
+            this.state.currentChallenge = c;
+            this.state.queue = [...c.data]; 
+            this.state.mistakeQueue = [];
+            this.state.currentIndex = 0;
+            this.state.scoreLog = new Array(c.data.length).fill(null);
+            
+            document.getElementById('home-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            
+            this.renderProgress();
+            this.loadQuestion();
+        },
+
+        loadQuestion: function() {
+            let q = null;
+            if (this.state.currentIndex < this.state.queue.length) {
+                q = this.state.queue[this.state.currentIndex];
+                this.state.isRedemption = false;
+            } else if (this.state.mistakeQueue.length > 0) {
+                q = this.state.mistakeQueue[0];
+                this.state.isRedemption = true;
+            } else {
+                this.finishGame();
+                return;
+            }
+
+            this.state.currentObj = q;
+            this.state.userSelection = [];
+            this.state.hintUsed = false;
+            this.state.locked = false;
+
+            document.getElementById('prompt-cn').innerText = q.cn;
+            document.getElementById('hint-text').innerText = q.hint;
+            document.getElementById('hint-text').classList.remove('visible');
+            
+            const feedback = document.getElementById('feedback-area');
+            feedback.className = 'feedback-area'; 
+            
+            document.getElementById('check-btn').style.display = 'block';
+            document.getElementById('check-btn').disabled = true;
+            document.getElementById('check-btn').className = 'check-btn';
+            document.getElementById('next-btn').style.display = 'none';
+            
+            this.renderAnswerArea();
+            this.generatePool(q);
+        },
+
+        generatePool: function(q) {
+            const cleanEn = q.en.replace(/[.!?]$/, '');
+            const correctWords = cleanEn.split(' ');
+            let allWords = [...correctWords, ...q.noise];
+            
+            allWords.sort(() => Math.random() - 0.5);
+
+            const pool = document.getElementById('word-pool');
+            pool.innerHTML = '';
+            
+            allWords.forEach((word, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'word-btn';
+                
+                let displayWord = word;
+                const alwaysCap = ["I", "Simba", "Simba's", "Lion", "King", "Sunday", "Monday", "China", "ID"];
+                
+                if (!alwaysCap.includes(displayWord)) {
+                    displayWord = displayWord.toLowerCase();
+                }
+
+                const cleanWord = displayWord.toLowerCase().replace(/[^a-z]/g, '');
+                const ipa = ipaDict[cleanWord];
+
+                btn.innerHTML = `<span>${displayWord}</span>${ipa ? `<span class="ipa">[${ipa}]</span>` : ''}`;
+                btn.onclick = () => this.selectWord(word, idx, btn); 
+                btn.dataset.val = displayWord;
+                pool.appendChild(btn);
+            });
+        },
+
+        selectWord: function(word, id, btn) {
+            if (this.state.locked) return;
+            if(btn.classList.contains('selected')) return;
+            
+            this.state.userSelection.push({ text: btn.dataset.val, srcBtn: btn });
+            btn.classList.add('selected');
+            
+            this.renderAnswerArea();
+            this.updateCheckBtn();
+        },
+
+        removeWord: function(idx) {
+            if (this.state.locked) return;
+            const item = this.state.userSelection.splice(idx, 1)[0];
+            item.srcBtn.classList.remove('selected');
+            this.renderAnswerArea();
+            this.updateCheckBtn();
+        },
+
+        renderAnswerArea: function() {
+            const area = document.getElementById('answer-area');
+            area.innerHTML = '';
+            
+            this.state.userSelection.forEach((item, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'word-btn-answer';
+                
+                let txt = item.text;
+                if (idx === 0) {
+                    txt = txt.charAt(0).toUpperCase() + txt.slice(1);
+                }
+                
+                btn.innerText = txt;
+                btn.onclick = () => this.removeWord(idx);
+                area.appendChild(btn);
+            });
+        },
+
+        showHint: function() {
+            this.state.hintUsed = true;
+            document.getElementById('hint-text').classList.add('visible');
+        },
+
+        updateCheckBtn: function() {
+            document.getElementById('check-btn').disabled = this.state.userSelection.length === 0;
+        },
+
+        checkAnswer: function() {
+            if (this.state.locked) return;
+
+            if (this.state.userSelection.length === 0) return;
+            
+            let userSent = this.state.userSelection.map((item, idx) => {
+                let t = item.text;
+                if (idx === 0) t = t.charAt(0).toUpperCase() + t.slice(1);
+                return t;
+            }).join(' ');
+
+            this.state.locked = true;
+
+            const target = this.state.currentObj.en.replace(/[.!?]$/, '');
+            
+            let isCorrect = userSent === target; 
+            
+            if (!isCorrect && this.state.currentObj.accept) {
+                isCorrect = this.state.currentObj.accept.some(alt => alt.replace(/[.!?]$/, '') === userSent);
+            }
+            
+            const feedback = document.getElementById('feedback-area');
+            const title = document.getElementById('feedback-title');
+            const msg = document.getElementById('feedback-msg');
+            const btn = document.getElementById('check-btn');
+
+            if (isCorrect) {
+                let scoreType = 'green';
+                if (this.state.isRedemption) {
+                    scoreType = 'redemption';
+                } else {
+                    if (this.state.hintUsed) scoreType = 'yellow';
+                    this.state.scoreLog[this.state.currentIndex] = scoreType;
+                }
+
+                feedback.className = 'feedback-area correct visible';
+                title.innerText = 'Excellent!';
+                title.style.color = '#58cc02';
+                msg.innerText = '';
+                btn.className = 'check-btn correct';
+
+                if(this.state.isRedemption) this.state.mistakeQueue.shift();
+
+            } else {
+                feedback.className = 'feedback-area wrong visible';
+                title.innerText = 'Correct Answer:';
+                title.style.color = '#ea2b2b';
+                msg.innerText = this.state.currentObj.en;
+                btn.className = 'check-btn wrong';
+
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = 'red';
+                    this.state.mistakeQueue.push(this.state.currentObj);
+                    this.logMistake(this.state.currentObj, userSent);
+                } else {
+                    this.state.mistakeQueue.push(this.state.mistakeQueue.shift());
+                }
+            }
+
+            this.renderProgress();
+            btn.style.display = 'none';
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.style.display = 'block';
+
+            let isLast = false;
+            if (this.state.isRedemption) {
+                if (this.state.mistakeQueue.length === 0) isLast = true;
+            } else {
+                if (this.state.currentIndex >= this.state.queue.length - 1 && this.state.mistakeQueue.length === 0) {
+                    isLast = true;
+                }
+            }
+
+            if(isLast) {
+                nextBtn.innerText = "Finish";
+                nextBtn.style.backgroundColor = "var(--primary)";
+                nextBtn.style.borderBottomColor = "var(--primary-dark)";
+            } else {
+                nextBtn.innerText = "Continue";
+                nextBtn.style.backgroundColor = "var(--secondary)";
+                nextBtn.style.borderBottomColor = "var(--secondary-dark)";
+            }
+        },
+
+        nextQuestion: function() {
+            if (!this.state.isRedemption) this.state.currentIndex++;
+            this.loadQuestion();
+        },
+
+        renderProgress: function() {
+            const bar = document.getElementById('progress-bar');
+            bar.innerHTML = '';
+            for(let i=0; i<10; i++) {
+                const seg = document.createElement('div');
+                seg.className = 'progress-segment';
+                const s = this.state.scoreLog[i];
+                if(s) seg.classList.add(s);
+                bar.appendChild(seg);
+            }
+        },
+
+        finishGame: function() {
+            const total = this.state.scoreLog.reduce((acc, curr) => {
+                if (curr === 'green') return acc + 10;
+                if (curr === 'yellow') return acc + 5;
+                return acc;
+            }, 0);
+            
+            const wrongQuestions = [];
+            this.state.scoreLog.forEach((status, index) => {
+                if (status === 'red' && this.state.queue[index]) {
+                    wrongQuestions.push(this.state.queue[index]);
+                }
+            });
+
+            const allStats = this.getStats();
+            const cid = this.state.currentChallenge.id;
+            
+            if (!allStats[cid]) {
+                allStats[cid] = { today: {date: new Date().toLocaleDateString(), attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+            }
+            const s = allStats[cid];
+            
+            s.today.attempts++;
+            if (total > s.today.best) s.today.best = total;
+            
+            s.lifetime.attempts++;
+            if (total > s.lifetime.best) s.lifetime.best = total;
+            
+            allStats[cid] = s;
+            this.saveStats(allStats);
+
+            this.saveSessionLog({
+                date: new Date().toLocaleString(),
+                challenge: this.state.currentChallenge.title,
+                score: total
+            });
+
+            let mistakeHtml = '';
+            if (wrongQuestions.length > 0) {
+                mistakeHtml = `<div style="width:100%; text-align:left; background:#fff; border-radius:12px; padding:15px; margin:20px 0; max-height:300px; overflow-y:auto; border:2px solid var(--neutral);">
+                    <h3 style="color:var(--danger); margin-top:0; border-bottom:1px solid #eee; padding-bottom:5px;">Review Mistakes:</h3>
+                    ${wrongQuestions.map(q => `
+                        <div style="margin-bottom:10px; border-bottom:1px solid #f0f0f0; padding-bottom:5px;">
+                            <div style="font-weight:bold; color:#555;">${q.cn}</div>
+                            <div style="color:var(--primary-dark); font-weight:bold;">${q.en}</div>
+                        </div>
+                    `).join('')}
+                </div>`;
+            } else {
+                mistakeHtml = `<div style="margin:20px 0; color:var(--primary); font-weight:bold; font-size:1.2rem;">🎉 Perfect Run! No mistakes.</div>`;
+            }
+
+            document.getElementById('game-screen').innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:20px;">
+                    <h1 style="color:var(--primary); font-size:3rem; margin:0;">${total}%</h1>
+                    <h2 style="margin:5px 0 20px 0; color:#555;">Challenge Complete!</h2>
+                    
+                    ${mistakeHtml}
+
+                    <button onclick="location.reload()" class="check-btn" style="width:100%; max-width:300px;">Back to Challenges</button>
+                </div>
+            `;
+        },
+
+        logMistake: function(qObj, userAns) {
+            const list = this.getMistakes();
+            const existing = list.find(m => m.en === qObj.en);
+            if(existing) {
+                existing.count++;
+                existing.wrong = userAns;
+                existing.timestamp = Date.now();
+                const idx = list.indexOf(existing);
+                list.splice(idx, 1);
+                list.unshift(existing);
+            } else {
+                list.unshift({
+                    en: qObj.en, cn: qObj.cn, wrong: userAns, count: 1, 
+                    timestamp: Date.now(), challenge: this.state.currentChallenge.title
+                });
+            }
+            this.saveMistakes(list);
+        },
+
+        showMistakes: function() {
+            const list = this.getMistakes();
+            const container = document.getElementById('mistakes-list');
+            container.innerHTML = '';
+            
+            if(list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No mistakes yet! Great job!</div>';
+            } else {
+                list.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = 'mistake-item';
+                    div.innerHTML = `
+                        <div style="font-size:0.8rem; color:#999; margin-bottom:5px;">
+                            ${new Date(m.timestamp).toLocaleDateString()} - ${m.challenge}
+                            <span class="fail-count">Failed ${m.count}x</span>
+                        </div>
+                        <div style="font-weight:bold; color:#333; margin-bottom:3px;">${m.cn}</div>
+                        <div style="color:var(--danger); text-decoration:line-through; font-size:0.9rem;">${m.wrong || '(No answer)'}</div>
+                        <div style="color:var(--primary-dark); font-weight:bold; font-size:0.9rem;">${m.en}</div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('mistakes-modal').style.display = 'flex';
+        },
+
+        closeMistakes: function() {
+            document.getElementById('mistakes-modal').style.display = 'none';
+        },
+
+        clearMistakes: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === 'AFTER') {
+                localStorage.removeItem(`${ID_B}-sb_mistakes_afterschool`);
+                this.showMistakes();
+            } else {
+                alert("Incorrect Passcode");
+            }
+        },
+
+        showScoreHistory: function() {
+            const list = this.getSessionLogs();
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+
+            if(list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">No games played yet.</div>';
+            } else {
+                list.forEach(l => {
+                    const div = document.createElement('div');
+                    div.className = 'mistake-item';
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="color:#333;">${l.challenge}</strong>
+                            <span style="font-weight:bold; color:var(--primary);">${l.score}%</span>
+                        </div>
+                        <div style="font-size:0.8rem; color:#999;">${l.date}</div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('history-modal').style.display = 'flex';
+        },
+
+        closeScoreHistory: function() {
+            document.getElementById('history-modal').style.display = 'none';
+        },
+
+        clearHistory: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === 'AFTER') {
+                localStorage.removeItem(`${ID_B}-sb_stats_afterschool`);
+                localStorage.removeItem(`${ID_B}-sb_session_logs_afterschool`);
+                localStorage.removeItem(`${ID_B}-sb_mistakes_afterschool`);
+                location.reload();
+            } else {
+                alert("Incorrect Passcode");
+            }
+        },
+        
+        goHome: function() {
+            if(confirm("Exit? Progress will be lost.")) location.reload();
+        }
+    };
+
+    window.onload = function() { app.init(); };
+
+</script>
+</body>
+</html>
