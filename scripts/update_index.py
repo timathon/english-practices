@@ -45,10 +45,10 @@ def get_html_files(base_dir='.'):
     for root, dirs, files in os.walk(base_dir):
         if '.git' in dirs:
             dirs.remove('.git')
-        if 'scripts' in dirs:
-            dirs.remove('scripts')
-        if base_dir == '.' and 'release' in dirs:
-            dirs.remove('release')
+        if 'scripts' in dirs: dirs.remove('scripts')
+        if 'data' in dirs: dirs.remove('data')
+        if 'templates' in dirs: dirs.remove('templates')
+        if 'release' in dirs: dirs.remove('release')
         for file in files:
             if file.endswith('.html') and file != 'index.html':
                 path = os.path.join(root, file)
@@ -308,18 +308,11 @@ def main():
     generate_full_index('index.html', files, 'English Practices')
 
     # Generate index.html for root subfolders
-    subfolders = [d for d in os.listdir('.') if os.path.isdir(d) and not d.startswith('.') and d not in ['scripts', 'release']]
+    subfolders = [d for d in os.listdir('.') if os.path.isdir(d) and not d.startswith('.') and d not in ['scripts', 'release', 'data', 'templates']]
     for folder in subfolders:
         generate_folder_index(folder, f"{folder} Practices")
 
-    # Handle release folder
-    if os.path.exists('release'):
-        release_files = get_html_files('release')
-        generate_full_index('release/index.html', release_files, 'Release Practices', back_link='../index.html')
-        
-        release_subfolders = [d for d in os.listdir('release') if os.path.isdir(os.path.join('release', d))]
-        for folder in release_subfolders:
-            generate_folder_index(os.path.join('release', folder), f"Release - {folder} Practices")
+    
 
 if __name__ == "__main__":
     main()
