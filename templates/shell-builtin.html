@@ -300,22 +300,46 @@
         },
         generatePool: function(q) {
             const cleanEn = q.en.replace(/[.!?]$/, "");
-            const correctWords = cleanEn.split(" ");
-            let allWords = [...correctWords, ...q.noise];
+            const originalWords = cleanEn.split(" ");
+            let allWords = [...originalWords, ...q.noise];
             allWords.sort(() => Math.random() - 0.5);
+            
             const pool = document.getElementById("word-pool");
             pool.innerHTML = "";
+            
             allWords.forEach((word, idx) => {
                 const btn = document.createElement("button");
                 btn.className = "word-btn";
+                
                 let displayWord = word;
-                const alwaysCap = ["I", "Simba", "ID", "China", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-                if (!alwaysCap.includes(displayWord)) displayWord = displayWord.toLowerCase();
+                const isAcronym = word.length > 1 && word === word.toUpperCase();
+                const isI = word === "I";
+                const isOriginalCapitalized = word.charAt(0) === word.charAt(0).toUpperCase() && word.charAt(0) !== word.charAt(0).toLowerCase();
+                
+                // Heuristic: Lowercase everything except:
+                // 1. Acronyms (ID, USA, UN)
+                // 2. The pronoun "I"
+                // 3. Proper nouns/names (detected if they were capitalized in the middle of the original sentence)
+                
+                let shouldKeepCapital = isAcronym || isI;
+                
+                if (!shouldKeepCapital && isOriginalCapitalized) {
+                    // Check if it's a proper noun by seeing if it's capitalized in the original sentence AND not at the start
+                    const foundInMiddle = originalWords.some((w, i) => i > 0 && w === word);
+                    if (foundInMiddle) {
+                        shouldKeepCapital = true;
+                    }
+                }
+
+                if (!shouldKeepCapital) {
+                    displayWord = word.toLowerCase();
+                }
+
                 const cleanWord = displayWord.toLowerCase().replace(/[^a-z]/g, "");
                 const ipa = ipaDict[cleanWord];
                 btn.innerHTML = `<span>${displayWord}</span>${ipa ? `<span class="ipa">[${ipa}]</span>` : ""}`;
-                btn.onclick = () => this.selectWord(word, idx, btn); 
-                btn.dataset.val = word;
+                btn.onclick = () => this.selectWord(displayWord, idx, btn); 
+                btn.dataset.val = displayWord;
                 pool.appendChild(btn);
             });
         },

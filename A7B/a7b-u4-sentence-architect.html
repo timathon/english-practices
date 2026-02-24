@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{TITLE}} - Sentence Architect</title>
+    <title>Eat Well - Sentence Architect</title>
     <style>
         :root {
-            --primary: {{PRIMARY_COLOR}};
-            --primary-dark: {{PRIMARY_COLOR_DARK}};
+            --primary: #f59e0b;
+            --primary-dark: #d97706;
             --secondary: #1cb0f6;
             --secondary-dark: #1185ba;
             --warning: #ffc800;
@@ -29,37 +29,11 @@
             min-height: 100vh; user-select: none;
         }
 
-        #auth-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--bg);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 1000;
-        }
-        #auth-overlay.hidden { display: none; }
-        .auth-spinner {
-            width: 50px; height: 50px;
-            border: 5px solid var(--neutral); border-top-color: var(--secondary);
-            border-radius: 50%; animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        .auth-message { font-size: 1.2rem; color: var(--text); text-align: center; }
-        .auth-error { color: var(--danger); font-weight: bold; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        #device-indicator {
-            position: fixed; top: 10px; right: 10px;
-            background: var(--secondary); color: white;
-            padding: 5px 12px; border-radius: 12px;
-            font-size: 0.85rem; font-weight: bold;
-            z-index: 999; display: none;
-        }
-        #device-indicator.visible { display: block; }
-
         #app {
             width: 100%; max-width: 600px;
             background: var(--white); min-height: 100vh;
             position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            display: none; flex-direction: column;
+            display: flex; flex-direction: column;
         }
 
         @media (min-width: 600px) {
@@ -174,20 +148,14 @@
 </head>
 <body>
 
-<div id="auth-overlay">
-    <div class="auth-spinner"></div>
-    <div class="auth-message">正在认证...</div>
-</div>
-<div id="device-indicator"></div>
-
 <div id="app">
     <div id="home-screen" class="screen active">
         <header>
             <div style="display: flex; align-items: center; justify-content: center; position: relative;">
                 <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
-                <h1>{{TITLE}}</h1>
+                <h1>Eat Well</h1>
             </div>
-            <h2>{{LEVEL}}</h2>
+            <h2>Grade 7 - Unit 4</h2>
         </header>
         <div class="challenge-grid" id="challenge-list"></div>
         <div class="footer-links">
@@ -248,26 +216,10 @@
 </div>
 
 <script>
-    const ID_A = "{{ID_A}}";
-    const ID_B_KEY = ID_A + "-ID_B";
-    const AUTH_DONE_KEY = ID_A + "-auth-done";
-    const DEVICE_NUMBER_KEY = ID_A + "-device-number";
-    const DECRYPTION_KEY_KEY = ID_A + "-decryption-key";
-    const AUTH_DATE_KEY = ID_A + "-auth-date";
-    const EXPIRY_DATE_KEY = ID_A + "-expiry-date";
-
-    let ID_B = localStorage.getItem(ID_B_KEY);
-    if (!ID_B) {
-        const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        ID_B = '';
-        for (let i = 0; i < 15; i++) {
-            ID_B += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        localStorage.setItem(ID_B_KEY, ID_B);
-    }
-
-    const ipaDict = {{IPA_DICT}};
-    const encryptedChallenges = "{{ENCRYPTED_DATA}}";
+    const ID_A = "3s1Pnq2932kC8VNiw";
+    const ipaDict = {"cabbage":"ˈkæbɪdʒ","mutton":"ˈmʌtn","porridge":"ˈpɒrɪdʒ","customer":"ˈkʌstəmə","strawberry":"ˈstrɔːbəri","balanced":"ˈbælənst","hamburger":"ˈhæmbɜːɡə","cereal":"ˈsɪəriəl","yogurt":"ˈjɒɡət"};
+    const encryptedChallenges = "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";
+    const builtInKey = 3366350597;
     let challenges = [];
 
     function _0x4f2a(cipherText, key) {
@@ -288,15 +240,20 @@
             currentIndex: 0, userSelection: [], currentObj: null,
             hintUsed: false, scoreLog: [], locked: false
         },
-        init: function() { this.renderHome(); },
-        getStats: function() { return JSON.parse(localStorage.getItem(ID_A + "-stats{{STORAGE_SUFFIX}}") || "{}"); },
-        saveStats: function(stats) { localStorage.setItem(ID_A + "-stats{{STORAGE_SUFFIX}}", JSON.stringify(stats)); },
-        getMistakes: function() { return JSON.parse(localStorage.getItem(ID_A + "-mistakes{{STORAGE_SUFFIX}}") || "[]"); },
-        saveMistakes: function(list) { localStorage.setItem(ID_A + "-mistakes{{STORAGE_SUFFIX}}", JSON.stringify(list)); },
-        getSessionLogs: function() { return JSON.parse(localStorage.getItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}") || "[]"); },
+        init: function() { 
+            try {
+                challenges = JSON.parse(_0x4f2a(encryptedChallenges, builtInKey));
+                this.renderHome();
+            } catch(e) { console.error("Initialization failed"); }
+        },
+        getStats: function() { return JSON.parse(localStorage.getItem(ID_A + "-stats_a7b_u4") || "{}"); },
+        saveStats: function(stats) { localStorage.setItem(ID_A + "-stats_a7b_u4", JSON.stringify(stats)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem(ID_A + "-mistakes_a7b_u4") || "[]"); },
+        saveMistakes: function(list) { localStorage.setItem(ID_A + "-mistakes_a7b_u4", JSON.stringify(list)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem(ID_A + "-session_logs_a7b_u4") || "[]"); },
         saveSessionLog: function(log) { 
             const logs = this.getSessionLogs(); logs.unshift(log); 
-            localStorage.setItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}", JSON.stringify(logs));
+            localStorage.setItem(ID_A + "-session_logs_a7b_u4", JSON.stringify(logs));
         },
         renderHome: function() {
             document.getElementById("home-screen").classList.add("active");
@@ -515,7 +472,7 @@
         closeMistakes: function() { document.getElementById("mistakes-modal").style.display = "none"; },
         clearMistakes: function() {
             const code = prompt("Enter Teacher Passcode:");
-            if(code && code.toUpperCase() === "{{PASSCODE}}") { localStorage.removeItem(ID_A + "-mistakes{{STORAGE_SUFFIX}}"); this.showMistakes(); }
+            if(code && code.toUpperCase() === "MDCHM") { localStorage.removeItem(ID_A + "-mistakes_a7b_u4"); this.showMistakes(); }
             else alert("Incorrect Passcode");
         },
         showScoreHistory: function() {
@@ -531,98 +488,16 @@
         closeScoreHistory: function() { document.getElementById("history-modal").style.display = "none"; },
         clearHistory: function() {
             const code = prompt("Enter Teacher Passcode:");
-            if(code && code.toUpperCase() === "{{PASSCODE}}") {
-                localStorage.removeItem(ID_A + "-stats{{STORAGE_SUFFIX}}");
-                localStorage.removeItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}");
+            if(code && code.toUpperCase() === "MDCHM") {
+                localStorage.removeItem(ID_A + "-stats_a7b_u4");
+                localStorage.removeItem(ID_A + "-session_logs_a7b_u4");
                 location.reload();
             } else alert("Incorrect Passcode");
         },
         goHome: function() { if(confirm("Exit? Progress will be lost.")) location.reload(); }
     };
 
-    async function authenticate() {
-        const cachedDeviceNumber = localStorage.getItem(DEVICE_NUMBER_KEY);
-        const cachedKey = localStorage.getItem(DECRYPTION_KEY_KEY);
-        const cachedDate = localStorage.getItem(AUTH_DATE_KEY);
-        const cachedExpiry = localStorage.getItem(EXPIRY_DATE_KEY);
-        const now = Date.now();
-        
-        if (cachedExpiry && now > parseInt(cachedExpiry)) {
-            document.getElementById("auth-overlay").innerHTML = "<div class='auth-message auth-error'>访问已过期 (Expired)</div>";
-            return;
-        }
-
-        const isSameDay = (t1, t2) => {
-            if (!t1 || !t2) return false;
-            const d1 = new Date(parseInt(t1));
-            const d2 = new Date(parseInt(t2));
-            return d1.getFullYear() === d2.getFullYear() &&
-                   d1.getMonth() === d2.getMonth() &&
-                   d1.getDate() === d2.getDate();
-        };
-
-        if (localStorage.getItem(AUTH_DONE_KEY) === "true" && cachedDeviceNumber && cachedKey && isSameDay(cachedDate, now)) {
-            showApp(cachedDeviceNumber);
-            const key = parseInt(cachedKey, 10);
-            try {
-                challenges = JSON.parse(_0x4f2a(encryptedChallenges, key));
-                app.init();
-            } catch (e) {
-                localStorage.removeItem(AUTH_DONE_KEY);
-                location.reload();
-            }
-            return;
-        }
-
-        const overlay = document.getElementById("auth-overlay");
-        try {
-            const response = await fetch("https://bipass-rgbxhjyfuv.cn-zhangjiakou.fcapp.run", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ idA: ID_A, idB: ID_B })
-            });
-            const data = await response.json();
-            
-            if (response.status === 403 && data.error === "User count limit reached") {
-                overlay.innerHTML = "<div class='auth-message auth-error'>设备数量已达上限 (User count limit reached)</div>";
-                return;
-            }
-
-            const expiryDate = data["expiry"];
-            if (expiryDate && now > expiryDate) {
-                overlay.innerHTML = "<div class='auth-message auth-error'>访问已过期 (Expired)</div>";
-                localStorage.setItem(EXPIRY_DATE_KEY, expiryDate.toString());
-                return;
-            }
-
-            if (data.number > 0 && data.key) {
-                showApp(data.number);
-                challenges = JSON.parse(_0x4f2a(encryptedChallenges, data.key));
-                localStorage.setItem(AUTH_DONE_KEY, "true");
-                localStorage.setItem(DEVICE_NUMBER_KEY, data.number);
-                localStorage.setItem(DECRYPTION_KEY_KEY, data.key.toString());
-                localStorage.setItem(AUTH_DATE_KEY, now.toString());
-                if (expiryDate) localStorage.setItem(EXPIRY_DATE_KEY, expiryDate.toString());
-                app.init();
-            } else {
-                overlay.innerHTML = "<div class='auth-message auth-error'>" + (data.error || (data.number === 0 ? "认证失败，请重试" : "系统错误")) + "</div>";
-            }
-        } catch (e) {
-            overlay.innerHTML = "<div class='auth-message auth-error'>系统错误，请稍后再试</div>";
-        }
-    }
-
-    
-
-    
-
-    function showApp(num) {
-        document.getElementById("device-indicator").textContent = "设备" + num;
-        document.getElementById("device-indicator").classList.add("visible");
-        document.getElementById("auth-overlay").classList.add("hidden");
-        document.getElementById("app").style.display = "flex";
-    }
-
-    window.onload = function() { authenticate(); };
+    window.onload = function() { app.init(); };
 </script>
 </body>
 </html>
