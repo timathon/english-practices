@@ -154,11 +154,27 @@ function rebuildIndexes() {
     });
 }
 
-function generate(jsonPath, type, outputPath) {
+function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3) {
     const absoluteJsonPath = resolvePath(jsonPath);
     const data = JSON.parse(fs.readFileSync(absoluteJsonPath, 'utf8'));
     
-    const ID_A = data.ID_A || generateIDA();
+    let ID_A = data.ID_A || generateIDA();
+
+    // Add encoded suffix to ID_A
+    const digits = ID_A.match(/\d/g);
+    const lastDigit = digits ? parseInt(digits[digits.length - 1]) : 0;
+    
+    const userMap = { 3: 'a', 6: 'b', 10: 'c' };
+    const validityMap = { 3: 'o', 6: 'p', 12: 'q' };
+    
+    const uChar = userMap[userCount] || 'a';
+    const vChar = validityMap[validityMonths] || 'o';
+    
+    const suffix = String.fromCharCode(uChar.charCodeAt(0) + lastDigit) + 
+                   String.fromCharCode(vChar.charCodeAt(0) + lastDigit);
+    
+    ID_A += suffix;
+    
     const key = generateKey(ID_A);
     
     const json = JSON.stringify(data.challenges);
@@ -295,6 +311,21 @@ async function interactive() {
     
     const typeIdxInput = await question('\nSelect type (1 or 2) [1]: ');
     const selectedType = (typeIdxInput === '2') ? 'builtin' : 'post';
+
+    console.log('\nUser Count:');
+    console.log('1. 3 [default]');
+    console.log('2. 6');
+    console.log('3. 10');
+    const userCountInput = await question('Select user count (1, 2, or 3) [1]: ');
+    const userCount = userCountInput === '2' ? 6 : (userCountInput === '3' ? 10 : 3);
+
+    console.log('\nValidity Months:');
+    console.log('1. 3 [default]');
+    console.log('2. 6');
+    console.log('3. 12');
+    const validityMonthsInput = await question('Select validity months (1, 2, or 3) [1]: ');
+    const validityMonths = validityMonthsInput === '2' ? 6 : (validityMonthsInput === '3' ? 12 : 3);
+
     rl.close();
 
     for (const selectedFolder of selectedFolders) {
@@ -312,7 +343,7 @@ async function interactive() {
             const jsonPath = path.join(folderPath, file);
             const outputFilename = file.replace(".json", ".html");
             const outputPath = path.join('release', selectedType, selectedFolder, outputFilename);
-            generate(jsonPath, selectedType, outputPath);
+            generate(jsonPath, selectedType, outputPath, userCount, validityMonths);
         }
     }
 

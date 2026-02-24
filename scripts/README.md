@@ -25,8 +25,13 @@ node scripts/generate_release.js <json_path> <type> <output_path>
 ## 🔒 Security Model
 
 1.  **ID_A**: A unique identifier assigned to each exercise.
-2.  **Encryption**: The `challenges` array is stringified, converted to UTF-8 bytes, XOR-encrypted using a key derived from `ID_A` (via djb2), and finally Base64 encoded.
-3.  **Obfuscation**: The decryption logic in the final HTML is renamed to generic identifiers (e.g., `_0x4f2a`) and comments are stripped to hide the underlying mechanism.
+2.  **ID_A Suffix**: During generation, a two-letter suffix is appended to `ID_A` to encode license metadata:
+    *   **User Count Encoding**: 3 users → 'a', 6 users → 'b', 10 users → 'c'.
+    *   **Validity Months Encoding**: 3 months → 'o', 6 months → 'p', 12 months → 'q'.
+    *   **Obfuscation Shift**: Both letters are shifted forward by the **last numeric digit** found in the original `ID_A`.
+        *   *Example*: If base `ID_A` ends in digit `3`, and we select 3 users ('a') for 12 months ('q'), the suffix becomes `dt` ('a'+3, 'q'+3).
+3.  **Encryption**: The `challenges` array is stringified, converted to UTF-8 bytes, XOR-encrypted using a key derived from the final `ID_A` (via djb2), and finally Base64 encoded.
+4.  **Obfuscation**: The decryption logic in the final HTML is renamed to generic identifiers (e.g., `_0x4f2a`) and comments are stripped to hide the underlying mechanism.
 
 ## 📝 Creating a New Exercise
 

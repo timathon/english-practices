@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unit 7: A Day to Remember - Sentence Builder</title>
+    <title>The Picnic - Sentence Architect</title>
     <style>
         :root {
             --primary: #58cc02;
@@ -52,25 +52,23 @@
             }
         }
 
-        /* --- Screens --- */
-        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; flex-grow: 1; box-sizing: border-box; }
+        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; flex-grow: 1; }
         .screen.active { display: flex; }
 
-        /* --- Home Screen --- */
         header { text-align: center; margin-bottom: 20px; }
         h1 { color: var(--primary); margin: 0; font-size: 2rem; }
-
+        
         @media (max-width: 480px) {
             h1 { font-size: 1.4rem; }
         }
+        
         h2 { font-size: 1.1rem; color: #999; margin-top: 5px; font-weight: normal; }
 
         .challenge-grid {
             display: grid;
             gap: 15px;
             overflow-y: auto;
-            padding-bottom: 20px; 
-            flex-grow: 1;
+            padding-bottom: 80px;
         }
 
         .challenge-card {
@@ -92,7 +90,7 @@
             font-size: 0.8rem; 
             color: #777; 
             display: flex; 
-            justify-content: space-between; 
+            justify-content: space-between;
             align-items: center;
             margin-top: 10px; 
             background: #f8f9fa; 
@@ -112,9 +110,8 @@
         .stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
         .stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
 
-        /* --- Game Screen --- */
         .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        .close-btn { font-size: 1.5rem; cursor: pointer; color: #ccc; background: none; border: none; padding: 0 5px; }
+        .close-btn { font-size: 1.5rem; cursor: pointer; color: #ccc; background: none; border: none; }
 
         .progress-container {
             flex-grow: 1; margin: 0 15px; height: 16px; background-color: var(--neutral);
@@ -125,7 +122,7 @@
         .progress-segment.yellow { background-color: var(--warning); }
         .progress-segment.red { background-color: var(--danger); }
 
-        .question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; position: relative; }
+        .question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; position: relative; }
         
         .prompt-container { text-align: center; margin-bottom: 20px; }
         .prompt-cn { font-size: 1.3rem; color: #333; font-weight: bold; margin-bottom: 5px; }
@@ -139,7 +136,7 @@
             border-top: 2px solid var(--neutral);
             border-bottom: 2px solid var(--neutral);
             background: #fafafa;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
@@ -149,9 +146,8 @@
             border-radius: 8px;
         }
 
-        .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 10px; }
+        .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
 
-        /* Word Buttons */
         .word-btn {
             background: var(--white);
             border: 2px solid var(--neutral);
@@ -169,7 +165,7 @@
         }
         .word-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
         .word-btn.selected { background: var(--neutral); color: transparent; border-color: transparent; pointer-events: none; }
-        .word-btn.selected .ipa { display: none; } 
+        .word-btn.selected .ipa { display: none; }
 
         .word-btn-answer {
             background: var(--white);
@@ -184,8 +180,7 @@
         
         .ipa { font-size: 0.75rem; color: #999; font-weight: normal; margin-top: 2px; }
 
-        /* Footer & Feedback */
-        .footer-action { padding-top: 15px; border-top: 2px solid var(--neutral); margin-top: auto; }
+        .footer-action { padding-top: 20px; border-top: 2px solid var(--neutral); }
         
         .check-btn {
             width: 100%; padding: 15px; border-radius: 16px; font-size: 1.2rem; font-weight: bold;
@@ -198,12 +193,12 @@
         .check-btn.correct { background-color: var(--primary); animation: bounce 0.5s; }
 
         .feedback-area {
-            height: 90px; 
+            height: 110px;
             margin-bottom: 10px;
             padding: 10px;
             border-radius: 12px;
             text-align: center;
-            visibility: hidden; 
+            visibility: hidden;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -214,7 +209,6 @@
         .feedback-area.correct { background: #d7ffb8; border: 2px solid #58cc02; }
         .feedback-area.wrong { background: #ffdfe0; border: 2px solid #ff4b4b; }
         
-        /* Modals */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5); z-index: 100;
@@ -222,7 +216,7 @@
         }
         .modal-content {
             background: white; width: 90%; max-width: 500px; max-height: 80vh;
-            border-radius: 20px; padding: 20px; display: flex; flex-direction: column; box-sizing: border-box;
+            border-radius: 20px; padding: 20px; display: flex; flex-direction: column;
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .log-list { overflow-y: auto; flex-grow: 1; border: 1px solid #eee; margin-bottom: 15px; padding: 5px; }
@@ -230,7 +224,7 @@
         .mistake-item:last-child { border-bottom: none; }
         .fail-count { background: var(--danger); color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; float: right;}
         
-        .footer-links { text-align: center; margin-top: auto; padding: 15px 0 0 0; display: flex; flex-direction: column; gap: 10px; }
+        .footer-links { text-align: center; margin-top: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
         .text-link { background: none; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: underline; }
         .text-link.danger { color: var(--danger); }
         .text-link.muted { color: #999; }
@@ -243,19 +237,16 @@
 <body>
 
 <div id="app">
-    <!-- Home Screen -->
     <div id="home-screen" class="screen active">
         <header>
             <div style="display: flex; align-items: center; justify-content: center; position: relative;">
                 <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
-            <h1>Unit 7: A Day to Remember</h1>
+                <h1>The Picnic</h1>
             </div>
-            <h2>Sentence Builder Challenge</h2>
+            <h2>Level B Sentence Architect</h2>
         </header>
 
-        <div class="challenge-grid" id="challenge-list">
-            <!-- Injected by JS -->
-        </div>
+        <div class="challenge-grid" id="challenge-list"></div>
 
         <div class="footer-links">
             <button class="text-link danger" onclick="app.showMistakes()">⚠ Review My Mistakes</button>
@@ -263,7 +254,6 @@
         </div>
     </div>
 
-    <!-- Game Screen -->
     <div id="game-screen" class="screen">
         <div class="top-bar">
             <button class="close-btn" onclick="app.goHome()">✕</button>
@@ -282,8 +272,8 @@
         </div>
 
         <div id="feedback-area" class="feedback-area">
-            <h3 id="feedback-title" style="margin:0; font-size: 1.1rem;"></h3>
-            <p id="feedback-msg" style="margin:5px 0 0; font-size: 0.95rem;"></p>
+            <h3 id="feedback-title" style="margin:0"></h3>
+            <p id="feedback-msg" style="margin:5px 0 0"></p>
         </div>
 
         <div class="footer-action">
@@ -292,11 +282,10 @@
         </div>
     </div>
 
-    <!-- Mistakes Modal -->
     <div id="mistakes-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 style="color:var(--danger); margin:0;">Review Mistakes</h2>
+                <h2 style="color:var(--danger)">Review Mistakes</h2>
                 <button onclick="app.closeMistakes()" class="close-btn" style="color:#333">✕</button>
             </div>
             <div class="log-list" id="mistakes-list"></div>
@@ -306,11 +295,10 @@
         </div>
     </div>
 
-    <!-- Score History Modal -->
     <div id="history-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 style="margin:0;">Score History</h2>
+                <h2>Score History</h2>
                 <button onclick="app.closeScoreHistory()" class="close-btn" style="color:#333">✕</button>
             </div>
             <div class="log-list" id="history-list"></div>
@@ -322,106 +310,113 @@
 </div>
 
 <script>
-    /* ---------------- DATA & CONTENT ---------------- */
+    const ID_A = "q3X45mP2t6y1K7w";
+    const ID_B_KEY = ID_A + "-ID_B";
+
+    let ID_B = localStorage.getItem(ID_B_KEY);
+    if (!ID_B) {
+        const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        ID_B = '';
+        for (let i = 0; i < 15; i++) {
+            ID_B += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        localStorage.setItem(ID_B_KEY, ID_B);
+    }
+
     const ipaDict = {
-        "terrible": "ˈterəbl", "tourist": "ˈtʊərɪst", "tourists": "ˈtʊərɪsts", "realize": "ˈrɪəlaɪz", 
-        "astronaut": "ˈæstrənɔːt", "astronauts": "ˈæstrənɔːts", "exhibition": "ˌeksɪˈbɪʃn", 
-        "direction": "dɪˈrekʃn", "directions": "dɪˈrekʃnz", "wastewater": "ˈweɪstwɔːtə", 
-        "screen": "skriːn", "screens": "skriːnz", "machine": "məˈʃiːn", "machines": "məˈʃiːnz", 
-        "germ": "dʒɜːm", "germs": "dʒɜːmz", "strawberry": "ˈstrɔːbəri", "strawberries": "ˈstrɔːbəriz", 
-        "branch": "brɑːntʃ", "branches": "brɑːntʃɪz", "eclipse": "ɪˈklɪps", 
-        "astronomer": "əˈstrɒnəmə", "universe": "ˈjuːnɪvɜːs"
+        "picnic": "ˈpɪknɪk", "basket": "ˈbɑːskɪt", "cheese": "tʃiːz",
+        "sandwiches": "ˈsændwɪtʃɪz", "chips": "tʃɪps", "soda": "ˈsəʊdə",
+        "apples": "ˈæplz", "cookies": "ˈkʊkiz", "mouse": "maʊs", "who": "huː"
     };
 
     const challenges = [
         {
-            id: 'c1', title: 'Terrible Weekend', icon: '😫',
+            id: 'c1', title: 'Getting Ready', icon: '🧺',
             data: [
-                { en: "How was your weekend?", cn: "你的周末过得怎么样？", hint: "Wh- question for past state / 询问过去状态的疑问句", noise: ["is", "you"] },
-                { en: "It was a terrible day.", cn: "那真是糟糕的一天。", hint: "Past 'be' verb / be动词的过去式", noise: ["is", "terribly"] },
-                { en: "I got on the wrong bus.", cn: "我上错了公交车。", hint: "Past tense of 'get' / get的过去式", noise: ["get", "in"] },
-                { en: "I left my book on the bus too.", cn: "我也把书落在了公交车上。", hint: "Past tense of 'leave' / leave的过去式", noise: ["leave", "at"] },
-                { en: "Some tourists asked me the way.", cn: "一些游客向我问路。", hint: "Regular past verb (+ed) / 规则动词过去式", noise: ["ask", "them"] },
-                { en: "I gave them the wrong directions.", cn: "我给他们指错了方向。", hint: "Past tense of 'give' / give的过去式", noise: ["give", "right"] },
-                { en: "I was late to meet my friends.", cn: "我去见朋友迟到了。", hint: "Past 'be' verb with 'I' / 与I连用的be动词过去式", noise: ["am", "meeting"] },
-                { en: "I didn't mean to do that.", cn: "我不是故意那样做的。", hint: "Negative past auxiliary / 助动词过去式的否定", noise: ["don't", "meant"] },
-                { en: "I only realized it after they left.", cn: "他们在离开后我才意识到。", hint: "Past tense 'left' / 过去式left", noise: ["leave", "leaving"] },
-                { en: "What happened to you?", cn: "你发生了什么事？", hint: "Question word as subject / 疑问词作主语", noise: ["happens", "do"] }
+                { en: "Ted and Peg go on a picnic.", cn: "Ted和Peg去野餐。", hint: "Use 'go on a' for picnic / 去野餐用 'go on a'", noise: ["goes", "in"], accept: ["Peg and Ted go on a picnic."] },
+                { en: "Peg gets a picnic basket.", cn: "Peg拿了一个野餐篮。", hint: "Add 's' to verb for Peg / 动词加 's' 修饰 Peg", noise: ["get", "an"] },
+                { en: "Ted puts in cheese.", cn: "Ted放进奶酪。", hint: "Uncountable noun, no 'a' / 不可数名词，前面不加 'a'", noise: ["put", "a"] },
+                { en: "Peg puts in sandwiches.", cn: "Peg放进三明治。", hint: "Plural noun / 复数名词", noise: ["sandwich", "put"] },
+                { en: "They go on a picnic.", cn: "他们去野餐。", hint: "Pronoun for Ted and Peg / 代替Ted和Peg的代词", noise: ["goes", "the"] },
+                { en: "Ted gets a basket.", cn: "Ted拿了一个篮子。", hint: "Article 'a' before consonant / 辅音前用 'a'", noise: ["get", "an"] },
+                { en: "We go on a picnic.", cn: "我们去野餐。", hint: "Subject 'We' uses base verb / 主语 'We' 用动词原形", noise: ["goes", "at"] },
+                { en: "She gets a basket.", cn: "她拿了一个篮子。", hint: "Pronoun for Peg / 代替Peg的代词", noise: ["get", "he"] },
+                { en: "Ted gets the picnic basket.", cn: "Ted拿了那个野餐篮。", hint: "Specific item uses 'the' / 特指物品用 'the'", noise: ["get", "a"] },
+                { en: "He puts in cheese.", cn: "他放进奶酪。", hint: "Pronoun for Ted / 代替Ted的代词", noise: ["she", "put"] }
             ]
         },
         {
-            id: 'c2', title: 'Remembering the Past', icon: '🏛️',
+            id: 'c2', title: 'Packing Food', icon: '🍎',
             data: [
-                { en: "I visited the science museum yesterday.", cn: "我昨天参观了科学博物馆。", hint: "Time word at the end / 时间状语放在句末", noise: ["visit", "tomorrow"], accept: ["Yesterday I visited the science museum."] },
-                { en: "Did you see anything interesting?", cn: "你看到什么有趣的东西了吗？", hint: "Did + base verb / Did + 动词原形", noise: ["saw", "something"] },
-                { en: "Yes, there was a space exhibition.", cn: "是的，那里有一个太空展览。", hint: "Past 'there be' / 过去时的there be句型", noise: ["is", "an"] },
-                { en: "You could go inside the rooms.", cn: "你可以进到房间里面去。", hint: "Past of 'can' / can的过去式", noise: ["can", "in"] },
-                { en: "We learnt how astronauts live and work.", cn: "我们了解到宇航员是如何生活和工作的。", hint: "Question word + clause / 疑问词+从句", noise: ["learning", "lived"] },
-                { en: "Were there any astronauts there?", cn: "那里有宇航员吗？", hint: "Plural past 'there be' question / 复数there be的疑问句", noise: ["Was", "astronaut"] },
-                { en: "There were no astronauts, but there were robots.", cn: "那里没有宇航员，但有机器人。", hint: "Plural past 'be' / be动词复数过去式", noise: ["was", "robot"] },
-                { en: "I asked one of them questions.", cn: "我问了其中一个（机器人）问题。", hint: "Pronoun 'them' / 代词宾格them", noise: ["they", "asking"] },
-                { en: "It answered me!", cn: "它回答了我！", hint: "Regular past verb / 规则动词过去式", noise: ["answers", "I"] },
-                { en: "It was a day to remember.", cn: "那是值得纪念的一天。", hint: "Infinitive as adjective / 不定式作后置定语", noise: ["is", "remembered"] }
+                { en: "Ted puts in chips.", cn: "Ted放进薯片。", hint: "Plural 'chips' / 复数形式 'chips'", noise: ["chip", "put"] },
+                { en: "Peg puts in soda pop.", cn: "Peg放进汽水。", hint: "Uncountable 'soda pop' / 不可数名词 'soda pop'", noise: ["a", "put"] },
+                { en: "Ted puts in apples.", cn: "Ted放进苹果。", hint: "Plural noun / 复数名词", noise: ["apple", "put"] },
+                { en: "Peg puts in cookies.", cn: "Peg放进饼干。", hint: "Plural noun ending in 's' / 以's'结尾的复数名词", noise: ["cookie", "put"] },
+                { en: "He puts in chips.", cn: "他放进薯片。", hint: "Pronoun for a boy / 指代男孩的代词", noise: ["she", "put"] },
+                { en: "She puts in apples.", cn: "她放进苹果。", hint: "Pronoun for a girl / 指代女孩的代词", noise: ["he", "put"] },
+                { en: "Ted puts in soda pop.", cn: "Ted放进汽水。", hint: "Name acts as 'He' / 名字相当于 'He'", noise: ["put", "the"] },
+                { en: "Peg puts in chips.", cn: "Peg放进薯片。", hint: "Name acts as 'She' / 名字相当于 'She'", noise: ["put", "a"] },
+                { en: "He puts in cookies.", cn: "他放进饼干。", hint: "Base verb + s / 动词原形加 s", noise: ["put", "cookie"] },
+                { en: "She puts in sandwiches.", cn: "她放进三明治。", hint: "Plural 'es' for sandwich / sandwich的复数加 'es'", noise: ["sandwich", "put"] }
             ]
         },
         {
-            id: 'c3', title: 'Interesting Plant', icon: '🏭',
+            id: 'c3', title: 'Grammar Focus', icon: '🧀',
             data: [
-                { en: "Our class went to a wastewater plant.", cn: "我们班去了一家污水处理厂。", hint: "Past tense of 'go' / go的过去式", noise: ["goes", "in"] },
-                { en: "It was not boring at all.", cn: "它一点也不无聊。", hint: "not... at all / 根本不...", noise: ["is", "bored"] },
-                { en: "The plant makes dirty water clean again.", cn: "这家工厂把脏水再次变干净。", hint: "make + object + adj. / make+宾语+形容词", noise: ["made", "cleanly"] },
-                { en: "First, dirty water goes into the plant.", cn: "首先，脏水进入工厂。", hint: "Present tense for facts / 描述事实用一般现在时", noise: ["went", "in"] },
-                { en: "Special screens remove large pieces of waste.", cn: "特殊的筛网去除大块的废弃物。", hint: "Plural subject 'screens' / 复数主语screens", noise: ["removes", "piece"] },
-                { en: "Then large machines clean the water.", cn: "然后大型机器清洁水。", hint: "Adjective before noun / 形容词在名词前", noise: ["machine", "cleans"] },
-                { en: "They remove germs and other small things.", cn: "它们去除细菌和其他微小物质。", hint: "Plural 'germs' / 名词复数germs", noise: ["removes", "germ"] },
-                { en: "These things are usually too small to see.", cn: "这些东西通常太小而看不见。", hint: "too... to... / 太...而不能...", noise: ["is", "seeing"] },
-                { en: "It takes a few more steps.", cn: "还需要几个步骤。", hint: "'take' for process/time / take表示花费(时间、过程)", noise: ["took", "step"] },
-                { en: "I didn't realize it was so hard.", cn: "我之前没意识到这这么困难。", hint: "didn't + base verb / didn't+动词原形", noise: ["don't", "realized"] }
+                { en: "Ted puts in some cheese.", cn: "Ted放进一些奶酪。", hint: "Use 'some' for uncountables / 不可数名词前用 'some'", noise: ["a", "put"] },
+                { en: "Peg puts in some sandwiches.", cn: "Peg放进一些三明治。", hint: "'some' with plural nouns / 'some' 修饰复数名词", noise: ["a", "sandwich"] },
+                { en: "Ted puts in the chips.", cn: "Ted放进那些薯片。", hint: "Specific items 'the' / 特指物品用 'the'", noise: ["a", "chip"] },
+                { en: "Peg puts in some soda pop.", cn: "Peg放进一些汽水。", hint: "'some' for liquid / 液体前用 'some'", noise: ["a", "put"] },
+                { en: "Ted puts in two apples.", cn: "Ted放进两个苹果。", hint: "Number + plural noun / 数字 + 复数名词", noise: ["apple", "put"] },
+                { en: "Peg puts in the cookies.", cn: "Peg放进那些饼干。", hint: "Specific plural / 特指复数", noise: ["cookie", "put"] },
+                { en: "I put in some cheese.", cn: "我放进一些奶酪。", hint: "Subject 'I' uses base verb / 主语 'I' 用动词原形", noise: ["puts", "a"] },
+                { en: "We put in the apples.", cn: "我们放进苹果。", hint: "Subject 'We' uses base verb / 主语 'We' 用动词原形", noise: ["puts", "apple"] },
+                { en: "You put in the chips.", cn: "你放进薯片。", hint: "Subject 'You' uses base verb / 主语 'You' 用动词原形", noise: ["puts", "chip"] },
+                { en: "They put in some cookies.", cn: "他们放进一些饼干。", hint: "Subject 'They' uses base verb / 主语 'They' 用动词原形", noise: ["puts", "a"] }
             ]
         },
         {
-            id: 'c4', title: 'Picking Fruits', icon: '🍓',
+            id: 'c4', title: 'The Surprise', icon: '🐭',
             data: [
-                { en: "We went on a school trip to a farm.", cn: "我们去农场进行了一次学校旅行。", hint: "go on a trip / 去旅行", noise: ["go", "in"] },
-                { en: "There were large tents with fruits and vegetables.", cn: "那里有装满水果和蔬菜的大帐篷。", hint: "Preposition 'with' / 介词with", noise: ["was", "tent"] },
-                { en: "The farmer told us about the plants.", cn: "农夫告诉了我们关于植物的事。", hint: "Past tense of 'tell' / tell的过去式", noise: ["tells", "plant"] },
-                { en: "Then we got straight to work.", cn: "然后我们直接开始工作。", hint: "get to work / 开始工作", noise: ["getting", "works"] },
-                { en: "First, we picked some strawberries.", cn: "首先，我们摘了一些草莓。", hint: "Regular past verb (+ed) / 规则动词过去式", noise: ["pick", "strawberry"], accept: ["We picked some strawberries first."] },
-                { en: "Slowly, we filled many baskets.", cn: "慢慢地，我们装满了许多篮子。", hint: "Adverb of manner / 方式副词", noise: ["Slow", "fill"], accept: ["We filled many baskets slowly."] },
-                { en: "The farmer taught us how to cut branches.", cn: "农夫教我们如何剪树枝。", hint: "how + to verb / how+不定式", noise: ["teaches", "cuts"] },
-                { en: "Finally, we watered the plants.", cn: "最后，我们给植物浇了水。", hint: "'water' as a verb / water作动词(浇水)", noise: ["water", "plant"], accept: ["We watered the plants finally."] },
-                { en: "Farming isn't easy!", cn: "务农不容易！", hint: "Gerund as subject / 动名词作主语", noise: ["Farm", "aren't"] },
-                { en: "Every grain comes from hard work.", cn: "粒粒皆辛苦。/每一粒谷物都来自辛勤劳动。", hint: "Singular subject 'Every' / Every后接单数名词", noise: ["come", "grains"] }
+                { en: "Who put the mouse in the basket?", cn: "谁把老鼠放进篮子里的？", hint: "Question word for person / 询问人的疑问词", noise: ["what", "puts"] },
+                { en: "The mouse is in the basket.", cn: "老鼠在篮子里。", hint: "Preposition 'in' / 介词 'in' (在...里面)", noise: ["on", "are"] },
+                { en: "A mouse is in the picnic basket.", cn: "一只老鼠在野餐篮里。", hint: "Article 'A' for one mouse / 冠词 'A' 表示一只老鼠", noise: ["are", "an"] },
+                { en: "Did Ted put the mouse in?", cn: "是Ted把老鼠放进去的吗？", hint: "Past tense question 'Did' / 过去时疑问词 'Did'", noise: ["does", "puts"] },
+                { en: "Did Peg put the mouse in?", cn: "是Peg把老鼠放进去的吗？", hint: "Past tense question 'Did' / 过去时疑问词 'Did'", noise: ["does", "puts"] },
+                { en: "I see a mouse in the basket.", cn: "我看到篮子里有一只老鼠。", hint: "Verb 'see' / 动词 'see' (看到)", noise: ["sees", "an"] },
+                { en: "Look at the mouse!", cn: "看那只老鼠！", hint: "Phrase 'Look at' / 短语 'Look at' (看着)", noise: ["looking", "in"] },
+                { en: "The mouse likes cheese.", cn: "这只老鼠喜欢奶酪。", hint: "Verb + s for singular subject / 单数主语动词加 's'", noise: ["like", "a"] },
+                { en: "The mouse likes cookies.", cn: "这只老鼠喜欢饼干。", hint: "Verb + s for singular subject / 单数主语动词加 's'", noise: ["like", "cookie"] },
+                { en: "Who gets the basket?", cn: "谁拿了篮子？", hint: "Question word 'Who' / 疑问词 'Who'", noise: ["what", "get"] }
             ]
         },
         {
-            id: 'c5', title: 'Solar Eclipse', icon: '🌘',
+            id: 'c5', title: 'Story Review', icon: '📖',
             data: [
-                { en: "There was a total solar eclipse in Wuhan.", cn: "武汉出现了一次日全食。", hint: "Past 'there be' / 过去时的there be句型", noise: ["is", "an"] },
-                { en: "I woke up early today.", cn: "我今天醒得很早。", hint: "Past tense of 'wake' / wake的过去式", noise: ["wakes", "earlier"], accept: ["Today I woke up early."] },
-                { en: "I couldn't wait to see it.", cn: "我迫不及待地想看到它。", hint: "Past of 'can not' / can not的过去式", noise: ["can't", "seeing"] },
-                { en: "We took cameras, chairs, and special glasses.", cn: "我们带了相机、椅子和特殊的眼镜。", hint: "Past tense of 'take' / take的过去式", noise: ["takes", "glass"] },
-                { en: "Slowly, the moon moved in front of the sun.", cn: "慢慢地，月亮移到了太阳前面。", hint: "Prepositional phrase / 介词短语 in front of", noise: ["move", "on"] },
-                { en: "It got darker and darker.", cn: "天变得越来越暗。", hint: "Comparative + and + comparative / 比较级+and+比较级", noise: ["dark", "gets"] },
-                { en: "The sky went dark.", cn: "天空变暗了。", hint: "Past tense of 'go' (become) / go的过去式(表示变得)", noise: ["goes", "darkly"] },
-                { en: "The light made a ring around the moon.", cn: "光在月亮周围形成了一个光环。", hint: "Past tense of 'make' / make的过去式", noise: ["makes", "rings"] },
-                { en: "The total eclipse lasted for over five minutes.", cn: "日全食持续了五分钟以上。", hint: "Regular past verb 'lasted' / 规则动词过去式lasted", noise: ["last", "on"] },
-                { en: "I want to become an astronomer someday.", cn: "我想有一天成为一名天文学家。", hint: "want to + verb / want to + 动词原形", noise: ["wants", "becoming"], accept: ["Someday I want to become an astronomer."] }
+                { en: "Ted and Peg go on a picnic.", cn: "Ted和Peg去野餐。", hint: "Use 'go on a' for picnic / 去野餐用 'go on a'", noise: ["goes", "in"], accept: ["Peg and Ted go on a picnic."] },
+                { en: "Peg gets a picnic basket.", cn: "Peg拿了一个野餐篮。", hint: "Add 's' to verb for Peg / 动词加 's' 修饰 Peg", noise: ["get", "an"] },
+                { en: "Ted puts in cheese.", cn: "Ted放进奶酪。", hint: "Uncountable noun, no 'a' / 不可数名词，前面不加 'a'", noise: ["put", "a"] },
+                { en: "Peg puts in sandwiches.", cn: "Peg放进三明治。", hint: "Plural noun / 复数名词", noise: ["sandwich", "put"] },
+                { en: "Ted puts in chips.", cn: "Ted放进薯片。", hint: "Plural 'chips' / 复数形式 'chips'", noise: ["chip", "put"] },
+                { en: "Peg puts in soda pop.", cn: "Peg放进汽水。", hint: "Uncountable 'soda pop' / 不可数名词 'soda pop'", noise: ["a", "put"] },
+                { en: "Ted puts in apples.", cn: "Ted放进苹果。", hint: "Plural noun / 复数名词", noise: ["apple", "put"] },
+                { en: "Peg puts in cookies.", cn: "Peg放进饼干。", hint: "Plural noun ending in 's' / 以's'结尾的复数名词", noise: ["cookie", "put"] },
+                { en: "Who put the mouse in the basket?", cn: "谁把老鼠放进篮子里的？", hint: "Question word for person / 询问人的疑问词", noise: ["what", "puts"] },
+                { en: "The mouse is in the basket!", cn: "老鼠在篮子里！", hint: "Preposition 'in' / 介词 'in'", noise: ["on", "are"], accept: ["The mouse is in the basket."] }
             ]
         }
     ];
 
-    /* ---------------- APP LOGIC ---------------- */
     const app = {
         state: {
             currentChallenge: null,
             queue: [],
-            mistakeQueue: [], 
+            mistakeQueue: [],
             currentIndex: 0,
             userSelection: [],
             currentObj: null,
             hintUsed: false,
-            scoreLog: [], 
+            scoreLog: [],
             locked: false
         },
 
@@ -429,19 +424,17 @@
             this.renderHome();
         },
 
-        /* --- Storage Helpers --- */
-        getStats: function() { return JSON.parse(localStorage.getItem('sb_stats_unit7') || '{}'); },
-        saveStats: function(stats) { localStorage.setItem('sb_stats_unit7', JSON.stringify(stats)); },
-        getMistakes: function() { return JSON.parse(localStorage.getItem('sb_mistakes_unit7') || '[]'); },
-        saveMistakes: function(list) { localStorage.setItem('sb_mistakes_unit7', JSON.stringify(list)); },
-        getSessionLogs: function() { return JSON.parse(localStorage.getItem('sb_session_logs_u7') || '[]'); },
+        getStats: function() { return JSON.parse(localStorage.getItem(`${ID_B}-sb_stats_unit1`) || '{}'); },
+        saveStats: function(stats) { localStorage.setItem(`${ID_B}-sb_stats_unit1`, JSON.stringify(stats)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem(`${ID_B}-sb_mistakes_unit1`) || '[]'); },
+        saveMistakes: function(list) { localStorage.setItem(`${ID_B}-sb_mistakes_unit1`, JSON.stringify(list)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem(`${ID_B}-sb_session_logs`) || '[]'); },
         saveSessionLog: function(log) { 
             const logs = this.getSessionLogs();
             logs.unshift(log); 
-            localStorage.setItem('sb_session_logs_u7', JSON.stringify(logs));
+            localStorage.setItem(`${ID_B}-sb_session_logs`, JSON.stringify(logs));
         },
 
-        /* --- Home Screen --- */
         renderHome: function() {
             document.getElementById('home-screen').classList.add('active');
             document.getElementById('game-screen').classList.remove('active');
@@ -466,7 +459,7 @@
                 div.innerHTML = `
                     <div class="card-header">
                         <div style="display:flex; align-items:center;">
-                            <span style="font-size:1.6rem; margin-right:12px;">${c.icon}</span>
+                            <span style="font-size:1.5rem; margin-right:10px;">${c.icon}</span>
                             <h3 class="card-title">${c.title}</h3>
                         </div>
                         <span style="color:var(--primary); font-weight:bold;">START</span>
@@ -482,11 +475,10 @@
             this.saveStats(allStats);
         },
 
-        /* --- Game Loop --- */
         startChallenge: function(id) {
             const c = challenges.find(x => x.id === id);
             this.state.currentChallenge = c;
-            this.state.queue = [...c.data]; 
+            this.state.queue = [...c.data];
             this.state.mistakeQueue = [];
             this.state.currentIndex = 0;
             this.state.scoreLog = new Array(c.data.length).fill(null);
@@ -533,11 +525,10 @@
         },
 
         generatePool: function(q) {
-            // Strip punctuation before splitting
-            const cleanEn = q.en.replace(/[.,!?]$/g, '').replace(/,/g, '');
+            const cleanEn = q.en.replace(/[.!?]$/, '');
             const correctWords = cleanEn.split(' ');
-            
             let allWords = [...correctWords, ...q.noise];
+            
             allWords.sort(() => Math.random() - 0.5);
 
             const pool = document.getElementById('word-pool');
@@ -548,7 +539,7 @@
                 btn.className = 'word-btn';
                 
                 let displayWord = word;
-                const alwaysCap = ["I", "Wuhan", "Peter", "Teng", "Fei"];
+                const alwaysCap = ["I", "Ted", "Peg"];
                 
                 if (!alwaysCap.includes(displayWord)) {
                     displayWord = displayWord.toLowerCase();
@@ -623,13 +614,11 @@
 
             this.state.locked = true;
 
-            const target = this.state.currentObj.en.replace(/[.,!?]/g, '');
-            const normalizedUserSent = userSent.replace(/[.,!?]/g, '');
-            
-            let isCorrect = normalizedUserSent === target; 
+            const target = this.state.currentObj.en.replace(/[.!?]$/, '');
+            let isCorrect = userSent === target; 
             
             if (!isCorrect && this.state.currentObj.accept) {
-                isCorrect = this.state.currentObj.accept.some(alt => alt.replace(/[.,!?]/g, '') === normalizedUserSent);
+                isCorrect = this.state.currentObj.accept.some(alt => alt.replace(/[.!?]$/, '') === userSent);
             }
             
             const feedback = document.getElementById('feedback-area');
@@ -766,17 +755,16 @@
 
             document.getElementById('game-screen').innerHTML = `
                 <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:20px;">
-                    <h1 style="color:var(--primary); font-size:4rem; margin:0;">${total}%</h1>
+                    <h1 style="color:var(--primary); font-size:3rem; margin:0;">${total}%</h1>
                     <h2 style="margin:5px 0 20px 0; color:#555;">Challenge Complete!</h2>
                     
                     ${mistakeHtml}
 
-                    <button onclick="location.reload()" class="check-btn" style="width:100%; max-width:300px; margin-top:auto;">Back to Challenges</button>
+                    <button onclick="location.reload()" class="check-btn" style="width:100%; max-width:300px;">Back to Challenges</button>
                 </div>
             `;
         },
 
-        /* --- Mistake Logic --- */
         logMistake: function(qObj, userAns) {
             const list = this.getMistakes();
             const existing = list.find(m => m.en === qObj.en);
@@ -828,15 +816,14 @@
 
         clearMistakes: function() {
             const code = prompt("Enter Teacher Passcode:");
-            if(code && code.toUpperCase() === 'TRIPS') {
-                localStorage.removeItem('sb_mistakes_unit7');
+            if(code && code.toUpperCase() === 'GPGTS') {
+                localStorage.removeItem(`${ID_B}-sb_mistakes_unit1`);
                 this.showMistakes();
-            } else if (code !== null) {
-                alert("Incorrect Passcode. Hint: First letters of the 5 challenges.");
+            } else {
+                alert("Incorrect Passcode");
             }
         },
 
-        /* --- Score History Logic --- */
         showScoreHistory: function() {
             const list = this.getSessionLogs();
             const container = document.getElementById('history-list');
@@ -847,7 +834,7 @@
             } else {
                 list.forEach(l => {
                     const div = document.createElement('div');
-                    div.className = 'mistake-item'; 
+                    div.className = 'mistake-item';
                     div.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <strong style="color:#333;">${l.challenge}</strong>
@@ -867,12 +854,13 @@
 
         clearHistory: function() {
             const code = prompt("Enter Teacher Passcode:");
-            if(code && code.toUpperCase() === 'TRIPS') {
-                localStorage.removeItem('sb_stats_unit7');
-                localStorage.removeItem('sb_session_logs_u7');
+            if(code && code.toUpperCase() === 'GPGTS') {
+                localStorage.removeItem(`${ID_B}-sb_stats_unit1`);
+                localStorage.removeItem(`${ID_B}-sb_session_logs`);
+                localStorage.removeItem(`${ID_B}-sb_mistakes_unit1`);
                 location.reload();
-            } else if (code !== null) {
-                alert("Incorrect Passcode.");
+            } else {
+                alert("Incorrect Passcode");
             }
         },
         
