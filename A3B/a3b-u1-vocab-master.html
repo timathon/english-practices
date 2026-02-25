@@ -1,1011 +1,515 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Animal Friends - Vocab Journey</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Friends - Vocab Master</title>
     <style>
         :root {
-            --primary: #58cc02;
-            --primary-dark: #46a302;
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
             --secondary: #1cb0f6;
-            --secondary-dark: #1899d6;
+            --secondary-dark: #1185ba;
             --warning: #ffc800;
             --warning-dark: #e5b400;
             --danger: #ff4b4b;
-            --danger-dark: #ea2b2b;
+            --danger-dark: #d33131;
             --neutral: #e5e5e5;
             --text: #4b4b4b;
             --white: #ffffff;
-            --bg: #f7f7f7;
-            --card-bg: #ffffff;
-        }
-
-        * {
-            box-sizing: border-box;
+            --bg: #f0f2f5;
         }
 
         body {
-            font-family: "Microsoft YaHei", 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg);
             color: var(--text);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; user-select: none;
         }
 
         #app {
-            width: 100%;
-            max-width: 600px;
-            background: var(--card-bg);
-            min-height: 100vh;
-            position: relative;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            display: flex;
-            flex-direction: column;
+            width: 100%; max-width: 600px;
+            background: var(--white); min-height: 100vh;
+            position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column;
         }
 
         @media (min-width: 600px) {
-            #app {
-                min-height: 90vh;
-                border-radius: 20px;
-                overflow: hidden;
-                border: 2px solid var(--neutral);
-            }
+            #app { min-height: 90vh; border-radius: 20px; overflow: hidden; }
         }
 
-        .screen {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-            padding: 20px;
-            flex-grow: 1;
-        }
+        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; flex-grow: 1; }
+        .screen.active { display: flex; }
 
-        .screen.active {
-            display: flex;
-        }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--primary); margin: 0; font-size: 2rem; }
+        @media (max-width: 480px) { h1 { font-size: 1.4rem; } }
+        h2 { font-size: 1.1rem; color: #999; margin-top: 5px; font-weight: normal; }
 
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding-top: 10px;
-        }
-
-        h1 {
-            color: var(--secondary);
-            margin: 0;
-            font-size: 1.8rem;
-        }
-
-        h2 {
-            font-size: 1rem;
-            color: #999;
-            margin-top: 5px;
-            font-weight: normal;
-        }
-
-        /* Home Screen */
-        .challenge-grid {
-            display: grid;
-            gap: 15px;
-            overflow-y: auto;
-            padding-bottom: 20px;
-            flex-grow: 1;
-            align-content: start;
-        }
-
+        .challenge-grid { display: grid; gap: 15px; overflow-y: auto; padding-bottom: 80px; }
         .challenge-card {
-            background: var(--white);
-            border: 2px solid var(--neutral);
-            border-bottom: 4px solid var(--neutral);
-            border-radius: 16px;
-            padding: 15px 20px;
-            cursor: pointer;
-            transition: transform 0.1s, border-color 0.1s;
-            display: flex;
-            flex-direction: column;
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 16px; padding: 15px; cursor: pointer; transition: transform 0.1s, border-color 0.1s;
         }
-
-        .challenge-card:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
-            margin-bottom: 2px;
+        .challenge-card:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .challenge-card:hover { background-color: #fafafa; border-color: #ccc; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: bold; margin: 0; }
+        .card-stats { 
+            font-size: 0.8rem; color: #777; display: flex; justify-content: space-between; align-items: center;
+            margin-top: 10px; background: #f8f9fa; padding: 10px 12px; border-radius: 12px; border: 1px solid #eee;
         }
+        .stat-row { display: flex; flex-direction: column; align-items: flex-start; }
+        .stat-row:last-child { align-items: flex-end; }
+        .stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+        .stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
 
-        .challenge-card:hover {
-            background-color: #fafffd;
-            border-color: #d1d1d1;
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-
-        .card-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin: 0;
-            color: #333;
-        }
-
-        .card-desc {
-            font-size: 0.9rem;
-            color: #777;
-            margin-bottom: 12px;
-        }
-
-        .start-btn-mini {
-            background: var(--secondary);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            border-bottom: 3px solid var(--secondary-dark);
-        }
-
-        /* Game Screen */
-        .top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .close-btn {
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #ccc;
-            background: none;
-            border: none;
-            font-weight: bold;
-        }
-
+        .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .close-btn { font-size: 1.5rem; cursor: pointer; color: #ccc; background: none; border: none; }
         .progress-container {
-            flex-grow: 1;
-            margin: 0 15px;
-            height: 16px;
-            background-color: var(--neutral);
-            border-radius: 8px;
-            display: flex;
-            overflow: hidden;
+            flex-grow: 1; margin: 0 15px; height: 16px; background-color: var(--neutral);
+            border-radius: 8px; display: flex; overflow: hidden;
         }
+        .progress-segment { flex-grow: 1; border-right: 1px solid var(--white); }
+        .progress-segment.green { background-color: var(--primary); }
+        .progress-segment.yellow { background-color: var(--warning); }
+        .progress-segment.red { background-color: var(--danger); }
 
-        .progress-segment {
-            flex-grow: 1;
-            border-right: 1px solid var(--card-bg);
-            transition: background-color 0.3s;
-        }
-
-        .progress-segment:last-child {
-            border-right: none;
-        }
-
-        .progress-segment.green {
-            background-color: var(--primary);
-        }
-
-        .progress-segment.red {
-            background-color: var(--danger);
-        }
-
-        .progress-segment.yellow {
-            background-color: var(--warning);
-        }
-
-        .question-area {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            position: relative;
-        }
-
-        .prompt-container {
-            text-align: center;
-            margin-bottom: 30px;
-            margin-top: 10px;
-        }
-
-        .question-type {
-            font-size: 0.9rem;
-            color: #777;
-            text-transform: uppercase;
-            font-weight: bold;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .prompt-text {
-            font-size: 2.5rem;
-            color: #333;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .prompt-cn {
-            font-size: 2rem;
-            color: #333;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .hint-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 40px;
-        }
-
-        .prompt-hint-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--warning);
-            filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
-            transition: transform 0.2s;
-        }
-
-        .prompt-hint-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .hint-text {
-            font-size: 0.95rem;
-            color: #16a085;
-            background: #e8f8f5;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border-left: 3px solid #1abc9c;
-            margin-top: 5px;
-            display: none;
-            max-width: 90%;
-            text-align: left;
-            line-height: 1.4;
-        }
-
-        .hint-text.visible {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
+        .question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .prompt-container { text-align: center; margin-bottom: 20px; }
+        .prompt-type { font-size: 0.8rem; color: #aaa; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .prompt-val { font-size: 2.5rem; color: #333; font-weight: bold; margin-bottom: 5px; }
+        .prompt-hint-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--warning); filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); transition: transform 0.2s; }
+        .prompt-hint-btn:hover { transform: scale(1.1); }
+        .hint-text { font-size: 0.9rem; color: #666; font-style: italic; margin: 5px auto; max-width: 80%; min-height: 1.2em; visibility: hidden; }
+        .hint-text.visible { visibility: visible; animation: fadeIn 0.3s; }
 
         .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;
         }
-
         .option-btn {
-            background: var(--white);
-            border: 2px solid var(--neutral);
-            border-bottom: 4px solid var(--neutral);
-            border-radius: 16px;
-            padding: 15px 10px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: var(--text);
-            transition: all 0.1s;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 16px; padding: 15px 10px; font-size: 1.1rem; cursor: pointer; color: var(--text);
+            transition: all 0.1s; text-align: center; display: flex; align-items: center; justify-content: center;
             min-height: 70px;
         }
-
-        .option-btn:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
-        }
-
+        .option-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
         .option-btn.selected {
-            background: #ddf4ff;
-            border-color: var(--secondary);
-            border-bottom-color: var(--secondary-dark);
+            background: #ddf4ff; border-color: var(--secondary); border-bottom-color: var(--secondary-dark);
             color: var(--secondary-dark);
         }
-
-        .footer-action {
-            padding-top: 15px;
-            border-top: 2px solid var(--neutral);
-            position: relative;
+        
+        .footer-action { padding-top: 20px; border-top: 2px solid var(--neutral); }
+        .check-btn {
+            width: 100%; padding: 15px; border-radius: 16px; font-size: 1.2rem; font-weight: bold;
+            color: white; background-color: var(--primary); border: none; border-bottom: 5px solid var(--primary-dark);
+            cursor: pointer; text-transform: uppercase;
         }
+        .check-btn:active { transform: translateY(2px); border-bottom-width: 3px; }
+        .check-btn:disabled { background-color: var(--neutral); border-bottom-color: #ccc; color: #999; cursor: not-allowed; transform: none; }
+        .check-btn.wrong { background-color: var(--danger); border-bottom-color: var(--danger-dark); animation: shake 0.5s; }
+        .check-btn.correct { background-color: var(--primary); animation: bounce 0.5s; }
 
         .feedback-area {
-            position: absolute;
-            bottom: 100%;
-            left: -20px;
-            right: -20px;
-            padding: 15px 20px 20px 20px;
-            background: white;
-            border-top: 2px solid #eee;
-            visibility: hidden;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-            z-index: 10;
+            height: 140px; margin-bottom: 10px; padding: 10px; border-radius: 12px; text-align: center;
+            visibility: hidden; display: flex; flex-direction: column; justify-content: center;
         }
+        .feedback-area.visible { visibility: visible; }
+        .feedback-area.correct { background-color: #d7ffb8; }
+        .feedback-area.wrong { background-color: #ffdfe0; }
+        .feedback-sentence { margin-top: 5px; font-style: italic; color: #666; font-size: 0.9rem; }
 
-        .feedback-area.visible {
-            visibility: visible;
-            opacity: 1;
-            transform: translateY(0);
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center; z-index: 2000;
         }
-
-        .feedback-area.correct {
-            background-color: #d7ffb8;
-            border-top-color: #b7eb8f;
+        .modal-content {
+            background: white; width: 90%; max-width: 500px; max-height: 80vh; border-radius: 20px;
+            padding: 20px; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .log-list { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; }
+        .mistake-item { padding: 12px; border-bottom: 1px solid #eee; }
+        .mistake-item:last-child { border-bottom: none; }
+        .fail-count { background: var(--danger); color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; float: right;}
+        .footer-links { text-align: center; margin-top: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .text-link { background: none; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: underline; }
+        .text-link.danger { color: var(--danger); }
+        .text-link.muted { color: #999; }
 
-        .feedback-area.wrong {
-            background-color: #ffdfe0;
-            border-top-color: #ffa39e;
-        }
-
-        .feedback-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-        }
-
-        .feedback-desc {
-            font-size: 1rem;
-            color: #555;
-            line-height: 1.4;
-        }
-
-        .feedback-sentence {
-            margin-top: 8px;
-            font-size: 0.9rem;
-            font-style: italic;
-            color: #46a302;
-            border-left: 3px solid #46a302;
-            padding-left: 8px;
-        }
-
-        .feedback-hook {
-            margin-top: 8px;
-            font-size: 0.95rem;
-            color: #d33131;
-            background: #fff;
-            padding: 8px;
-            border-radius: 6px;
-            border-left: 3px solid #ea2b2b;
-        }
-
-        .check-btn {
-            width: 100%;
-            padding: 15px;
-            border-radius: 16px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: white;
-            background-color: var(--neutral);
-            border: none;
-            border-bottom: 4px solid #ccc;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.1s;
-        }
-
-        .check-btn.active {
-            background-color: var(--primary);
-            border-bottom-color: var(--primary-dark);
-        }
-
-        .check-btn.active:active {
-            transform: translateY(2px);
-            border-bottom-width: 2px;
-        }
-
-        .check-btn.correct {
-            background-color: var(--primary);
-            border-bottom-color: var(--primary-dark);
-            animation: bounce 0.5s;
-        }
-
-        .check-btn.wrong {
-            background-color: var(--danger);
-            border-bottom-color: var(--danger-dark);
-            animation: shake 0.5s;
-        }
-
-        .check-btn.continue {
-            background-color: var(--primary);
-            border-bottom-color: var(--primary-dark);
-        }
-
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            25% {
-                transform: translateX(-5px);
-            }
-
-            75% {
-                transform: translateX(5px);
-            }
-        }
-
-        @keyframes bounce {
-
-            0%,
-            20%,
-            50%,
-            80%,
-            100% {
-                transform: translateY(0);
-            }
-
-            40% {
-                transform: translateY(-8px);
-            }
-
-            60% {
-                transform: translateY(-4px);
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Finish Screen */
-        .finish-container {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-
-        .finish-icon {
-            font-size: 5rem;
-            margin-bottom: 10px;
-        }
-
-        .mistakes-review {
-            width: 100%;
-            text-align: left;
-            background: #fff;
-            border-radius: 12px;
-            padding: 15px;
-            margin: 20px 0;
-            max-height: 50vh;
-            overflow-y: auto;
-            border: 2px solid var(--neutral);
-        }
-
-        .mistake-item {
-            border-bottom: 1px solid #eee;
-            padding: 10px 0;
-        }
-
-        .mistake-item:last-child {
-            border-bottom: none;
-        }
-
-        .m-en {
-            font-weight: bold;
-            color: var(--secondary-dark);
-            font-size: 1.1rem;
-        }
-
-        .m-cn {
-            color: #555;
-        }
-
-        .m-hook {
-            font-size: 0.85rem;
-            color: #16a085;
-            margin-top: 4px;
-        }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-
 <body>
 
-    <div id="app">
-        <!-- Home Screen -->
-        <div id="home-screen" class="screen active">
-            <header>
-                <div style="display: flex; align-items: center; justify-content: center; position: relative;">
-                    <a href="index.html"
-                        style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
-                    <h1>Animal Friends</h1>
-                </div>
-                <h2>Unit 1 Vocabulary Challenges</h2>
-            </header>
-            <div class="challenge-grid" id="challenge-list">
-                <!-- Populated by JS -->
+<div id="app">
+    <div id="home-screen" class="screen active">
+        <header>
+            <div style="display: flex; align-items: center; justify-content: center; position: relative;">
+                <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
+                <h1>Animal Friends</h1>
             </div>
+            <h2>Grade 3 Semester 2 - Unit 1 Vocab Master</h2>
+        </header>
+        <div class="challenge-grid" id="challenge-list"></div>
+        <div class="footer-links">
+            <button class="text-link danger" onclick="app.showMistakes()">⚠ Review My Mistakes</button>
+            <button class="text-link muted" onclick="app.showScoreHistory()">View score history</button>
         </div>
+    </div>
 
-        <!-- Game Screen -->
-        <div id="game-screen" class="screen">
-            <div class="top-bar">
-                <button class="close-btn" onclick="app.goHome()">✕</button>
-                <div class="progress-container" id="progress-bar"></div>
+    <div id="game-screen" class="screen">
+        <div class="top-bar">
+            <button class="close-btn" onclick="app.goHome()">✕</button>
+            <div class="progress-container" id="progress-bar"></div>
+        </div>
+        <div class="question-area">
+            <div class="prompt-container">
+                <div class="prompt-type" id="prompt-type">Select the meaning</div>
+                <div class="prompt-val" id="prompt-val"></div>
+                <button class="prompt-hint-btn" onclick="app.showHint()">💡</button>
+                <div class="hint-text" id="hint-text"></div>
             </div>
+            <div class="options-grid" id="options-area"></div>
+        </div>
+        <div id="feedback-area" class="feedback-area">
+            <h3 id="feedback-title" style="margin:0"></h3>
+            <p id="feedback-msg" style="margin:5px 0 0"></p>
+            <div id="feedback-sentence" class="feedback-sentence"></div>
+        </div>
+        <div class="footer-action">
+            <button id="check-btn" class="check-btn" onclick="app.checkAnswer()">Check</button>
+            <button id="next-btn" class="check-btn" onclick="app.nextQuestion()" style="display:none; background-color: var(--secondary); border-bottom-color: var(--secondary-dark);">Continue</button>
+        </div>
+    </div>
 
-            <div class="question-area">
-                <div class="prompt-container">
-                    <div class="question-type" id="q-type-label">Select the correct meaning</div>
-                    <div class="prompt-text" id="prompt-text"></div>
-                    <div class="hint-wrapper">
-                        <button class="prompt-hint-btn" id="hint-btn" onclick="app.showHint()">💡</button>
-                        <div class="hint-text" id="hint-text"></div>
-                    </div>
-                </div>
-
-                <div class="options-grid" id="options-area">
-                    <!-- Options populated by JS -->
-                </div>
+    <div id="mistakes-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="color:var(--danger)">Review Mistakes</h2>
+                <button onclick="app.closeMistakes()" class="close-btn" style="color:#333">✕</button>
             </div>
-
-            <div class="footer-action">
-                <div id="feedback-area" class="feedback-area">
-                    <div class="feedback-title" id="feedback-title"></div>
-                    <div class="feedback-desc" id="feedback-desc"></div>
-                    <div class="feedback-sentence" id="feedback-sentence"></div>
-                    <div class="feedback-hook" id="feedback-hook"></div>
-                </div>
-                <button id="check-btn" class="check-btn" onclick="app.handleMainAction()">Check</button>
+            <div class="log-list" id="mistakes-list"></div>
+            <div style="text-align: right;">
+                <button class="text-link danger" onclick="app.clearMistakes()">Clear Mistakes</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // Complete Vocabulary Database extracted from A3B-New-U1-Vocab-Master.html
-        const vocabData = [
-            { id: 1, en: "animal", cn: "动物", sentence: "What animals does Tom draw?", hook: "【谐音+联想】a(一只) + ni(泥) + mal(猫) ➡️ 泥巴里钻出一只像猫的动物。" },
-            { id: 2, en: "panda", cn: "大熊猫", sentence: "Are they pandas?", hook: "【谐音联想】pan(盼) + da(达) ➡️ 大家天天盼望到达四川看大熊猫。" },
-            { id: 3, en: "elephant", cn: "象", sentence: "They're elephants.", hook: "【谐音联想】ele(饿了) + phant(胖的) ➡️ 饿了的胖大象，鼻子长长能卷树叶。" },
-            { id: 4, en: "bear", cn: "熊", sentence: "And bears, giraffes and monkeys, Where are they?", hook: "【谐音联想】bear读音似“背儿” ➡️ 狗熊爸爸最喜欢背儿子去森林玩。" },
-            { id: 5, en: "giraffe", cn: "长颈鹿", sentence: "They're giraffes.", hook: "【谐音联想】gi(吉) + raffe(拉夫) ➡️ 名字叫吉拉夫的长颈鹿，脖子真的很长。" },
-            { id: 6, en: "monkey", cn: "猴", sentence: "And bears, giraffes and monkeys...", hook: "【词根拆分】mon(门) + key(钥匙) ➡️ 调皮的猴子偷走了开门的钥匙。" },
-            { id: 7, en: "them", cn: "他们/它们", sentence: "I can't see them.", hook: "【家族对比】they是“他们”站排头（主语），them是“他们”站后面（宾语，后面有个m收尾）。" },
-            { id: 8, en: "draw", cn: "画, 绘画", sentence: "What animals does Tom draw?", hook: "【谐音动作】读音似“抓” ➡️ 抓起铅笔开始画画。" },
-            { id: 9, en: "tiger", cn: "老虎", sentence: "But tigers are strong!", hook: "【谐音联想】ti-ger(泰格) ➡️ 拳击明星泰森，像老虎一样猛！" },
-            { id: 10, en: "strong", cn: "强壮的", sentence: "But tigers are strong!", hook: "【谐音联想】读音似“死壮” ➡️ 健身房的大汉练得死壮死壮的，非常强壮。" },
-            { id: 11, en: "short", cn: "矮的, 短的", sentence: "Oh, Tom. Giraffes aren't short!", hook: "【同源对比】shirt(衬衫)通常是短的(short)。" },
-            { id: 12, en: "white", cn: "白色的", sentence: "Yes! They're black and white!", hook: "【谐音联想】读音似“坏特” ➡️ 坏特工为了雪地隐身，穿着白色的衣服。" },
-            { id: 13, en: "brown", cn: "棕色的", sentence: "They're brown and yellow.", hook: "【谐音联想】读音似“不让” ➡️ 棕色的大熊很护食，不让人靠近。" },
-            { id: 14, en: "zebra", cn: "斑马", sentence: "A zebra is here.", hook: "【形象拆分】z(像条纹) + bra(胸衣) ➡️ 披着Z字形黑白条纹外衣的马就是斑马。" },
-            { id: 15, en: "move", cn: "移动", sentence: "Let's move on.", hook: "【谐音联想】读音似“木屋” ➡️ 伐木工用卡车把木屋移动到了另一个地方。" },
-            { id: 16, en: "road", cn: "道路", sentence: "Lions on the road.", hook: "【谐音联想】读音似“肉的” ➡️ 宽阔的道路上掉了一块肉，的确很奇怪。" },
-            { id: 17, en: "dance", cn: "跳舞", sentence: "Let's dance along.", hook: "【谐音联想】读音似“单丝” ➡️ 舞蹈演员穿着单薄的丝绸衣服跳舞。" },
-            { id: 18, en: "along", cn: "一起, 沿着", sentence: "Let's dance along.", hook: "【词根拆分】a(一) + long(长) ➡️ 队伍排成一长条，大家一起往前走。" },
-            { id: 19, en: "which", cn: "哪一个", sentence: "Which words have 'z' or 'l' sounds?", hook: "【同音词】发音同witch(巫婆) ➡️ 这么多戴帽子的人，哪一个是巫婆？" },
-            { id: 20, en: "word", cn: "单词", sentence: "Which words have 'z' or 'l' sounds?", hook: "【谐音联想】读音似“我的” ➡️ 只要背熟了，这个单词就是我的了！" },
-            { id: 21, en: "stone", cn: "石头", sentence: "They're stone lions.", hook: "【拆分联想】s(蛇的形状) + tone(桶的谐音) ➡️ 蛇藏在桶旁边的石头下面。" },
-            { id: 22, en: "hat", cn: "帽子", sentence: "It's a panda hat.", hook: "【形象拆分】h(长得像一把椅子) + at(在...上) ➡️ 把帽子放在椅子上。" },
-            { id: 23, en: "shoe", cn: "鞋", sentence: "They are tiger shoes.", hook: "【谐音联想】读音似“树” ➡️ 调皮的小孩把鞋扔到了树上。" },
-            { id: 24, en: "tall", cn: "高的", sentence: "They're tall.", hook: "【形象拆分】t(像大树) + all(所有) ➡️ 所有的树都很高大。" },
-            { id: 25, en: "him", cn: "他(宾格)", sentence: "I love him.", hook: "【家族对比】he加了m变成了尾巴，只能跟在动词后面做宾语（他）。" },
-            { id: 26, en: "ostrich", cn: "鸵鸟", sentence: "She is an ostrich.", hook: "【形象联想】O开头，代表鸵鸟生下的巨大的O型圆蛋！" },
-            { id: 27, en: "fast", cn: "快的", sentence: "She is fast.", hook: "【谐音联想】读音似“发丝特” ➡️ 跑得太快了，头发丝特别凌乱。" },
-            { id: 28, en: "chameleon", cn: "变色龙", sentence: "He is a chameleon.", hook: "【拼写拆分】cha(茶) + me(我) + leon(里昂) ➡️ 里昂喝了我的茶，脸像变色龙一样变色了。" },
-            { id: 29, en: "small", cn: "小的", sentence: "He is small.", hook: "【拼写拆分】s(死) + mall(商场) ➡️ 这个商场(mall)真是死(s)小死小的。" },
-            { id: 30, en: "lion", cn: "狮子", sentence: "This is Mufasa. He is a little lion.", hook: "【谐音联想】读音似“来昂” ➡️ 狮子大吼一声：“来昂！谁敢过来？”" },
-            { id: 31, en: "cute", cn: "可爱的", sentence: "He is cute.", hook: "【谐音联想】读音似“Q特” ➡️ 也就是特长得别Q，特别可爱！" },
-            { id: 32, en: "out", cn: "向外, 出来", sentence: "In and out of the zoo.", hook: "【外来词发音】读音似“凹特” ➡️ 比赛被“Out”了，就是被淘汰出局、往外赶了。" },
-            { id: 33, en: "zoo", cn: "动物园", sentence: "Let's go to the zoo!", hook: "【象形联想】外形像数字200 ➡️ 去动物园玩要花200块钱买门票。" },
-            { id: 34, en: "go", cn: "走, 去", sentence: "Let's go to the zoo!", hook: "【谐音联想】读音似“狗” ➡️ 带着小狗一起出去走走。" }
-        ];
-
-        // Challenge Configuration
-        const challengesConfig = [
-            { id: "c1", title: "Challenge 1: Animals & Basics", desc: "Words 1-10 (animal, panda, tiger...)", range: [1, 10] },
-            { id: "c2", title: "Challenge 2: Colors & Actions", desc: "Words 11-20 (short, white, move...)", range: [11, 20] },
-            { id: "c3", title: "Challenge 3: Descriptions", desc: "Words 21-30 (tall, fast, small...)", range: [21, 30] },
-            { id: "c4", title: "Challenge 4: Final Test & Review", desc: "Words 31-34 + Random Review", range: [31, 34], addReview: 6 }
-        ];
-
-        const app = {
-            state: {
-                queue: [],            // List of question objects
-                mistakes: [],         // Track mistakes for redemption round
-                currentIndex: 0,      // Current progress
-                currentQuestion: null,
-                selectedOption: null,
-                gameState: "idle",    // idle, answered_correct, answered_wrong, finished
-                hintUsed: false,
-                wrongHistoryThisRun: [] // For the final recap screen
-            },
-
-            init: function () {
-                this.renderHome();
-            },
-
-            renderHome: function () {
-                document.getElementById("home-screen").classList.add("active");
-                document.getElementById("game-screen").classList.remove("active");
-                const list = document.getElementById("challenge-list");
-                list.innerHTML = "";
-
-                challengesConfig.forEach(c => {
-                    const div = document.createElement("div");
-                    div.className = "challenge-card";
-                    div.onclick = () => this.startChallenge(c);
-                    div.innerHTML = `
-                    <div class="card-header">
-                        <h3 class="card-title">${c.title}</h3>
-                        <div class="start-btn-mini">START</div>
-                    </div>
-                    <div class="card-desc">${c.desc}</div>
-                `;
-                    list.appendChild(div);
-                });
-            },
-
-            startChallenge: function (config) {
-                // Build question queue
-                let wordsList = vocabData.filter(w => w.id >= config.range[0] && w.id <= config.range[1]);
-
-                // Add review words if needed (for Challenge 4)
-                if (config.addReview) {
-                    const otherWords = vocabData.filter(w => w.id < config.range[0] || w.id > config.range[1]);
-                    // Shuffle and pick
-                    otherWords.sort(() => 0.5 - Math.random());
-                    wordsList = wordsList.concat(otherWords.slice(0, config.addReview));
-                }
-
-                // Shuffle words and create question objects
-                wordsList.sort(() => 0.5 - Math.random());
-
-                this.state.queue = wordsList.map(word => {
-                    // Randomly decide if it's EN->CN or CN->EN
-                    const isEnToCn = Math.random() > 0.5;
-                    return {
-                        wordData: word,
-                        type: isEnToCn ? "en2cn" : "cn2en"
-                    };
-                });
-
-                this.state.mistakes = [];
-                this.state.wrongHistoryThisRun = [];
-                this.state.currentIndex = 0;
-
-                // Re-show the top-bar in case it was hidden from a previous finish
-                const topBar = document.querySelector(".top-bar");
-                if (topBar) topBar.style.display = "flex";
-
-                document.getElementById("home-screen").classList.remove("active");
-                document.getElementById("game-screen").classList.add("active");
-
-                this.renderProgress();
-                this.loadQuestion();
-            },
-
-            loadQuestion: function () {
-                this.state.gameState = "idle";
-                this.state.selectedOption = null;
-                this.state.hintUsed = false;
-
-                // Check if we finished the main queue, then move to mistakes (Redemption)
-                if (this.state.currentIndex >= this.state.queue.length) {
-                    if (this.state.mistakes.length > 0) {
-                        this.state.currentQuestion = this.state.mistakes[0];
-                    } else {
-                        this.finishChallenge();
-                        return;
-                    }
-                } else {
-                    this.state.currentQuestion = this.state.queue[this.state.currentIndex];
-                }
-
-                const q = this.state.currentQuestion;
-                const w = q.wordData;
-
-                // Reset UI
-                document.getElementById("hint-text").classList.remove("visible");
-                document.getElementById("hint-text").innerText = w.hook;
-                document.getElementById("feedback-area").className = "feedback-area";
-
-                const btn = document.getElementById("check-btn");
-                btn.className = "check-btn";
-                btn.innerText = "Check";
-                btn.disabled = true;
-
-                // Setup prompt
-                const qTypeLabel = document.getElementById("q-type-label");
-                const promptText = document.getElementById("prompt-text");
-
-                if (q.type === "en2cn") {
-                    qTypeLabel.innerText = "Select the Chinese meaning";
-                    promptText.innerText = w.en;
-                    promptText.className = "prompt-text";
-                } else {
-                    qTypeLabel.innerText = "Select the English word";
-                    promptText.innerText = w.cn;
-                    promptText.className = "prompt-cn";
-                }
-
-                // Setup options
-                this.generateOptions(q);
-
-                this.renderProgress();
-            },
-
-            generateOptions: function (q) {
-                const w = q.wordData;
-                const optionsArea = document.getElementById("options-area");
-                optionsArea.innerHTML = "";
-
-                let options = [];
-                let correctText = q.type === "en2cn" ? w.cn : w.en;
-                options.push({ text: correctText, isCorrect: true });
-
-                // Get distractors
-                const distractorsPool = vocabData.filter(item => item.id !== w.id);
-                distractorsPool.sort(() => 0.5 - Math.random());
-
-                for (let i = 0; i < 3; i++) {
-                    if (distractorsPool[i]) {
-                        options.push({
-                            text: q.type === "en2cn" ? distractorsPool[i].cn : distractorsPool[i].en,
-                            isCorrect: false
-                        });
-                    }
-                }
-
-                // Shuffle options
-                options.sort(() => 0.5 - Math.random());
-
-                options.forEach((opt, index) => {
-                    const btn = document.createElement("div");
-                    btn.className = "option-btn";
-                    btn.innerText = opt.text;
-                    btn.onclick = () => this.selectOption(index, btn, opt);
-                    optionsArea.appendChild(btn);
-                });
-            },
-
-            selectOption: function (index, btnElement, optData) {
-                if (this.state.gameState !== "idle") return; // Block clicks if already checked
-
-                // Remove selected class from all
-                const options = document.getElementById("options-area").children;
-                for (let i = 0; i < options.length; i++) {
-                    options[i].classList.remove("selected");
-                }
-
-                // Select current
-                btnElement.classList.add("selected");
-                this.state.selectedOption = optData;
-
-                // Enable check button
-                const checkBtn = document.getElementById("check-btn");
-                checkBtn.disabled = false;
-                checkBtn.classList.add("active");
-            },
-
-            showHint: function () {
-                this.state.hintUsed = true;
-                document.getElementById("hint-text").classList.add("visible");
-            },
-
-            handleMainAction: function () {
-                const btn = document.getElementById("check-btn");
-
-                if (this.state.gameState === "idle") {
-                    this.checkAnswer();
-                } else {
-                    this.nextQuestion();
-                }
-            },
-
-            checkAnswer: function () {
-                if (!this.state.selectedOption) return;
-
-                const isCorrect = this.state.selectedOption.isCorrect;
-                const q = this.state.currentQuestion;
-                const w = q.wordData;
-
-                const feedbackArea = document.getElementById("feedback-area");
-                const feedbackTitle = document.getElementById("feedback-title");
-                const feedbackDesc = document.getElementById("feedback-desc");
-                const feedbackSentence = document.getElementById("feedback-sentence");
-                const feedbackHook = document.getElementById("feedback-hook");
-                const btn = document.getElementById("check-btn");
-
-                // Reset feedback elements
-                feedbackDesc.style.display = "none";
-                feedbackSentence.style.display = "none";
-                feedbackHook.style.display = "none";
-
-                if (isCorrect) {
-                    this.state.gameState = "answered_correct";
-                    feedbackArea.className = "feedback-area correct visible";
-                    feedbackTitle.innerHTML = "✅ Excellent!";
-                    feedbackTitle.style.color = "#46a302";
-
-                    // Reinforce context
-                    feedbackSentence.innerText = "📖 " + w.sentence;
-                    feedbackSentence.style.display = "block";
-
-                    btn.className = "check-btn correct";
-                    btn.innerText = "Continue";
-
-                    // If in redemption queue, remove it
-                    if (this.state.currentIndex >= this.state.queue.length) {
-                        this.state.mistakes.shift();
-                    }
-                } else {
-                    this.state.gameState = "answered_wrong";
-                    feedbackArea.className = "feedback-area wrong visible";
-                    feedbackTitle.innerHTML = "❌ Correct Answer:";
-                    feedbackTitle.style.color = "#ea2b2b";
-
-                    const correctText = q.type === "en2cn" ? w.cn : w.en;
-                    feedbackDesc.innerHTML = `<strong style="font-size:1.2rem">${correctText}</strong>`;
-                    feedbackDesc.style.display = "block";
-
-                    // Show mnemonic hook for learning
-                    feedbackHook.innerText = "💡 " + w.hook;
-                    feedbackHook.style.display = "block";
-
-                    btn.className = "check-btn wrong";
-                    btn.innerText = "Got it";
-
-                    // Handle mistake logic
-                    if (this.state.currentIndex < this.state.queue.length) {
-                        // Main run mistake
-                        this.state.mistakes.push(q);
-                        // Add to run history if not already there
-                        if (!this.state.wrongHistoryThisRun.find(item => item.id === w.id)) {
-                            this.state.wrongHistoryThisRun.push(w);
-                        }
-                    } else {
-                        // Redemption mistake -> move to back of queue
-                        const failedQ = this.state.mistakes.shift();
-                        this.state.mistakes.push(failedQ);
-                    }
-                }
-
-                this.renderProgress();
-            },
-
-            nextQuestion: function () {
-                // Hide feedback
-                document.getElementById("feedback-area").classList.remove("visible");
-
-                if (this.state.currentIndex < this.state.queue.length) {
-                    this.state.currentIndex++;
-                }
-
-                this.loadQuestion();
-            },
-
-            renderProgress: function () {
-                const bar = document.getElementById("progress-bar");
-                bar.innerHTML = "";
-                const total = this.state.queue.length;
-
-                for (let i = 0; i < total; i++) {
-                    const seg = document.createElement("div");
-                    seg.className = "progress-segment";
-
-                    if (i < this.state.currentIndex) {
-                        seg.classList.add("green");
-                    } else if (i === this.state.currentIndex && this.state.gameState === "answered_correct") {
-                        // Immediately light up the current segment if answered correctly
-                        seg.classList.add("green");
-                    }
-
-                    bar.appendChild(seg);
-                }
-
-                // Show extra segments in red to indicate remaining mistakes to retry
-                if (this.state.mistakes.length > 0) {
-                    for (let i = 0; i < this.state.mistakes.length; i++) {
-                        const seg = document.createElement("div");
-                        seg.className = "progress-segment red";
-                        bar.appendChild(seg);
-                    }
-                }
-            },
-
-            finishChallenge: function () {
-                const topBar = document.querySelector(".top-bar");
-                if (topBar) topBar.style.display = "none";
-
-                const area = document.querySelector(".question-area");
-
-                let mistakesHtml = "";
-                if (this.state.wrongHistoryThisRun.length > 0) {
-                    mistakesHtml = `
-                    <div class="mistakes-review">
-                        <h3 style="color:var(--danger-dark); margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Review your mistakes:</h3>
-                        ${this.state.wrongHistoryThisRun.map(w => `
-                            <div class="mistake-item">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span class="m-en">${w.en}</span>
-                                    <span class="m-cn">${w.cn}</span>
-                                </div>
-                                <div class="m-hook">${w.hook}</div>
-                            </div>
-                        `).join("")}
-                    </div>
-                `;
-                }
-
-                area.innerHTML = `
-                <div class="finish-container">
-                    <div class="finish-icon">🎉</div>
-                    <h2 style="color:var(--primary-dark); font-size:2rem; margin:10px 0;">Challenge Complete!</h2>
-                    <p style="color:#777; margin-bottom: 20px;">You've practiced ${this.state.queue.length} words.</p>
-                    ${mistakesHtml}
-                </div>
-            `;
-
-                const btn = document.getElementById("check-btn");
-                btn.className = "check-btn active";
-                btn.innerText = "Return to Menu";
-                btn.onclick = () => this.goHome();
-
-                // hide feedback
-                document.getElementById("feedback-area").classList.remove("visible");
-            },
-
-            goHome: function () {
-                if (this.state.gameState !== "finished" && this.state.currentIndex > 0 && this.state.currentIndex < this.state.queue.length) {
-                    if (!confirm("Are you sure you want to quit? Your progress will be lost.")) {
-                        return;
-                    }
-                }
-                // Reset to default UI
-                document.querySelector(".question-area").innerHTML = `
-                <div class="prompt-container">
-                    <div class="question-type" id="q-type-label"></div>
-                    <div class="prompt-text" id="prompt-text"></div>
-                    <div class="hint-wrapper">
-                        <button class="prompt-hint-btn" id="hint-btn" onclick="app.showHint()">💡</button>
-                        <div class="hint-text" id="hint-text"></div>
-                    </div>
-                </div>
-                <div class="options-grid" id="options-area"></div>
-            `;
-
-                document.getElementById("check-btn").onclick = () => this.handleMainAction();
-                this.renderHome();
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Score History</h2>
+                <button onclick="app.closeScoreHistory()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="history-list"></div>
+            <div style="text-align: right; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                <button class="text-link danger" onclick="app.clearHistory()">Teacher: Clear All Data</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ID_A = "v998kVM4wXoe729jx";
+    const ipaDict = {"animal":"ˈænɪml","panda":"ˈpændə","elephant":"ˈelɪfənt","bear":"beə","giraffe":"dʒəˈrɑːf","monkey":"ˈmʌŋki","tiger":"ˈtaɪɡə","zebra":"ˈzebrə","strong":"strɒŋ","short":"ʃɔːt","white":"waɪt","brown":"braʊn","move":"muːv","road":"rəʊd","dance":"dɑːns","along":"əˈlɒŋ","which":"wɪtʃ","word":"wɜːd","stone":"stəʊn","hat":"hæt","shoe":"ʃuː","tall":"tɔːl","him":"hɪm","fast":"fɑːst","small":"smɔːl","lion":"ˈlaɪən","cute":"kjuːt","out":"aʊt","zoo":"zuː","go":"ɡəʊ"};
+    
+    const vocabData = [
+        { id: 1, en: "animal", cn: "动物", sentence: "What animals does Tom draw?", hook: "【谐音+联想】a(一只) + ni(泥) + mal(猫) ➡️ 泥巴里钻出一只像猫的动物。" },
+        { id: 2, en: "panda", cn: "大熊猫", sentence: "Are they pandas?", hook: "【谐音联想】pan(盼) + da(达) ➡️ 大家天天盼望到达四川看大熊猫。" },
+        { id: 3, en: "elephant", cn: "象", sentence: "They're elephants.", hook: "【谐音联想】ele(饿了) + phant(胖的) ➡️ 饿了的胖大象，鼻子长长能卷树叶。" },
+        { id: 4, en: "bear", cn: "熊", sentence: "And bears, giraffes and monkeys, Where are they?", hook: "【谐音联想】bear读音似“背儿” ➡️ 狗熊爸爸最喜欢背儿子去森林玩。" },
+        { id: 5, en: "giraffe", cn: "长颈鹿", sentence: "They're giraffes.", hook: "【谐音联想】gi(吉) + raffe(拉夫) ➡️ 名字叫吉拉夫的长颈鹿，脖子真的很长。" },
+        { id: 6, en: "monkey", cn: "猴", sentence: "And bears, giraffes and monkeys...", hook: "【词根拆分】mon(门) + key(钥匙) ➡️ 调皮的猴子偷走了开门的钥匙。" },
+        { id: 7, en: "them", cn: "他们/它们", sentence: "I can't see them.", hook: "【家族对比】they是“他们”站排头（主语），them是“他们”站后面（宾语，后面有个m收尾）。" },
+        { id: 8, en: "draw", cn: "画, 绘画", sentence: "What animals does Tom draw?", hook: "【谐音动作】读音似“抓” ➡️ 抓起铅笔开始画画。" },
+        { id: 9, en: "tiger", cn: "老虎", sentence: "But tigers are strong!", hook: "【谐音联想】ti-ger(泰格) ➡️ 拳击明星泰森，像老虎一样猛！" },
+        { id: 10, en: "strong", cn: "强壮的", sentence: "But tigers are strong!", hook: "【谐音联想】读音似“死壮” ➡️ 健身房的大汉练得死壮死壮的，非常强壮。" },
+        { id: 11, en: "short", cn: "矮的, 短的", sentence: "Oh, Tom. Giraffes aren't short!", hook: "【同源对比】shirt(衬衫)通常是短的(short)。" },
+        { id: 12, en: "white", cn: "白色的", sentence: "Yes! They're black and white!", hook: "【谐音联想】读音似“坏特” ➡️ 坏特工为了雪地隐身，穿着白色的衣服。" },
+        { id: 13, en: "brown", cn: "棕色的", sentence: "They're brown and yellow.", hook: "【谐音联想】读音似“不让” ➡️ 棕色的大熊很护食，不让人靠近。" },
+        { id: 14, en: "zebra", cn: "斑马", sentence: "A zebra is here.", hook: "【形象拆分】z(像条纹) + bra(胸衣) ➡️ 披着Z字形黑白条纹外衣的马就是斑马。" },
+        { id: 15, en: "move", cn: "移动", sentence: "Let's move on.", hook: "【谐音联想】读音似“木屋” ➡️ 伐木工用卡车把木屋移动到了另一个地方。" },
+        { id: 16, en: "road", cn: "道路", sentence: "Lions on the road.", hook: "【谐音联想】读音似“肉的” ➡️ 宽阔的道路上掉了一块肉，的确很奇怪。" },
+        { id: 17, en: "dance", cn: "跳舞", sentence: "Let's dance along.", hook: "【谐音联想】读音似“单丝” ➡️ 舞蹈演员穿着单薄的丝绸衣服跳舞。" },
+        { id: 18, en: "along", cn: "一起, 沿着", sentence: "Let's dance along.", hook: "【词根拆分】a(一) + long(长) ➡️ 队伍排成一长条，大家一起往前走。" },
+        { id: 19, en: "which", cn: "哪一个", sentence: "Which words have 'z' or 'l' sounds?", hook: "【同音词】发音同witch(巫婆) ➡️ 这么多戴帽子的人，哪一个是巫婆？" },
+        { id: 20, en: "word", cn: "单词", sentence: "Which words have 'z' or 'l' sounds?", hook: "【谐音联想】读音似“我的” ➡️ 只要背熟了，这个单词就是我的了！" },
+        { id: 21, en: "stone", cn: "石头", sentence: "They're stone lions.", hook: "【拆分联想】s(蛇的形状) + tone(桶的谐音) ➡️ 蛇藏在桶旁边的石头下面。" },
+        { id: 22, en: "hat", cn: "帽子", sentence: "It's a panda hat.", hook: "【形象拆分】h(长得像一把椅子) + at(在...上) ➡️ 把帽子放在椅子上。" },
+        { id: 23, en: "shoe", cn: "鞋", sentence: "They are tiger shoes.", hook: "【谐音联想】读音似“树” ➡️ 调皮的小孩把鞋扔到了树上。" },
+        { id: 24, en: "tall", cn: "高的", sentence: "They're tall.", hook: "【形象拆分】t(像大树) + all(所有) ➡️ 所有的树都很高大。" },
+        { id: 25, en: "him", cn: "他(宾格)", sentence: "I love him.", hook: "【家族对比】he加了m变成了尾巴，只能跟在动词后面做宾语（他）。" },
+        { id: 26, en: "ostrich", cn: "鸵鸟", sentence: "She is an ostrich.", hook: "【形象联想】O开头，代表鸵鸟生下的巨大的O型圆蛋！" },
+        { id: 27, en: "fast", cn: "快的", sentence: "She is fast.", hook: "【谐音联想】读音似“发丝特” ➡️ 跑得太快了，头发丝特别凌乱。" },
+        { id: 28, en: "chameleon", cn: "变色龙", sentence: "He is a chameleon.", hook: "【拼写拆分】cha(茶) + me(我) + leon(里昂) ➡️ 里昂喝了我的茶，脸像变色龙一样变色了。" },
+        { id: 29, en: "small", cn: "小的", sentence: "He is small.", hook: "【拼写拆分】s(死) + mall(商场) ➡️ 这个商场(mall)真是死(s)小死小的。" },
+        { id: 30, en: "lion", cn: "狮子", sentence: "This is Mufasa. He is a little lion.", hook: "【谐音联想】读音似“来昂” ➡️ 狮子大吼一声：“来昂！谁敢过来？”" },
+        { id: 31, en: "cute", cn: "可爱的", sentence: "He is cute.", hook: "【谐音联想】读音似“Q特” ➡️ 也就是特长得别Q，特别可爱！" },
+        { id: 32, en: "out", cn: "向外, 出来", sentence: "In and out of the zoo.", hook: "【外来词发音】读音似“凹特” ➡️ 比赛被“Out”了，就是被淘汰出局、往外赶了。" },
+        { id: 33, en: "zoo", cn: "动物园", sentence: "Let's go to the zoo!", hook: "【象形联想】外形像数字200 ➡️ 去动物园玩要花200块钱买门票。" },
+        { id: 34, en: "go", cn: "走, 去", sentence: "Let's go to the zoo!", hook: "【谐音联想】读音似“狗” ➡️ 带着小狗一起出去走走。" }
+    ];
+
+    const challenges = [
+        { id: "c1", icon: "🦁", title: "Animals & Basics", range: [1, 10] },
+        { id: "c2", icon: "🎨", title: "Colors & Actions", range: [11, 20] },
+        { id: "c3", icon: "🦒", title: "Descriptions", range: [21, 30] },
+        { id: "c4", icon: "🏆", title: "Final Test & Review", range: [31, 34], addReview: 6 }
+    ];
+
+    const app = {
+        state: {
+            currentChallenge: null, queue: [], mistakeQueue: [],
+            currentIndex: 0, currentObj: null, selectedOption: null,
+            hintUsed: false, scoreLog: [], locked: false, isRedemption: false
+        },
+        init: function() { this.renderHome(); },
+        getStats: function() { return JSON.parse(localStorage.getItem(ID_A + "-stats") || "{}"); },
+        saveStats: function(stats) { localStorage.setItem(ID_A + "-stats", JSON.stringify(stats)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem(ID_A + "-mistakes") || "[]"); },
+        saveMistakes: function(list) { localStorage.setItem(ID_A + "-mistakes", JSON.stringify(list)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem(ID_A + "-session_logs") || "[]"); },
+        saveSessionLog: function(log) { 
+            const logs = this.getSessionLogs(); logs.unshift(log); 
+            localStorage.setItem(ID_A + "-session_logs", JSON.stringify(logs));
+        },
+        renderHome: function() {
+            document.getElementById("home-screen").classList.add("active");
+            document.getElementById("game-screen").classList.remove("active");
+            const list = document.getElementById("challenge-list");
+            list.innerHTML = "";
+            const allStats = this.getStats();
+            const todayStr = new Date().toLocaleDateString();
+            challenges.forEach(c => {
+                let s = allStats[c.id] || { today: {date: todayStr, attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+                if(s.today.date !== todayStr) s.today = { date: todayStr, attempts: 0, best: 0 };
+                allStats[c.id] = s;
+                const div = document.createElement("div");
+                div.className = "challenge-card";
+                div.onclick = () => this.startChallenge(c.id);
+                div.innerHTML = `<div class="card-header"><div style="display:flex; align-items:center;"><span style="font-size:1.5rem; margin-right:10px;">${c.icon}</span><h3 class="card-title">${c.title}</h3></div><span style="color:var(--primary); font-weight:bold;">START</span></div><div class="card-stats"><div class="stat-row"><span class="stat-label">TODAY</span> <span class="stat-val">${s.today.attempts} Runs | Best: ${s.today.best}%</span></div><div class="stat-row"><span class="stat-label">LIFETIME</span> <span class="stat-val">${s.lifetime.attempts} Runs | Best: ${s.lifetime.best}%</span></div></div>`;
+                list.appendChild(div);
+            });
+            this.saveStats(allStats);
+        },
+        startChallenge: function(id) {
+            const c = challenges.find(x => x.id === id);
+            let wordsList = vocabData.filter(w => w.id >= c.range[0] && w.id <= c.range[1]);
+            if (c.addReview) {
+                const otherWords = vocabData.filter(w => w.id < c.range[0] || w.id > c.range[1]);
+                otherWords.sort(() => 0.5 - Math.random());
+                wordsList = wordsList.concat(otherWords.slice(0, c.addReview));
             }
-        };
+            wordsList.sort(() => 0.5 - Math.random());
+            
+            this.state.currentChallenge = c;
+            this.state.queue = wordsList.map(word => ({ wordData: word, type: Math.random() > 0.5 ? "en2cn" : "cn2en" }));
+            this.state.mistakeQueue = [];
+            this.state.currentIndex = 0; 
+            this.state.scoreLog = new Array(this.state.queue.length).fill(null);
+            
+            document.getElementById("home-screen").classList.remove("active");
+            document.getElementById("game-screen").classList.add("active");
+            this.renderProgress(); this.loadQuestion();
+        },
+        loadQuestion: function() {
+            let q = null;
+            if (this.state.currentIndex < this.state.queue.length) { q = this.state.queue[this.state.currentIndex]; this.state.isRedemption = false; }
+            else if (this.state.mistakeQueue.length > 0) { q = this.state.mistakeQueue[0]; this.state.isRedemption = true; }
+            else { this.finishGame(); return; }
+            
+            this.state.currentObj = q; this.state.selectedOption = null; this.state.hintUsed = false; this.state.locked = false;
+            
+            const w = q.wordData;
+            const promptType = document.getElementById("prompt-type");
+            const promptVal = document.getElementById("prompt-val");
+            
+            if (q.type === "en2cn") {
+                promptType.innerText = "Select the Chinese meaning";
+                promptVal.innerText = w.en;
+            } else {
+                promptType.innerText = "Select the English word";
+                promptVal.innerText = w.cn;
+            }
+            
+            document.getElementById("hint-text").innerText = w.hook;
+            document.getElementById("hint-text").classList.remove("visible");
+            document.getElementById("feedback-area").className = "feedback-area"; 
+            document.getElementById("feedback-sentence").innerText = "";
+            document.getElementById("check-btn").style.display = "block";
+            document.getElementById("check-btn").disabled = true;
+            document.getElementById("check-btn").className = "check-btn";
+            document.getElementById("next-btn").style.display = "none";
+            
+            this.generateOptions(q);
+        },
+        generateOptions: function(q) {
+            const w = q.wordData;
+            const optionsArea = document.getElementById("options-area");
+            optionsArea.innerHTML = "";
+            
+            let options = [];
+            let correctText = q.type === "en2cn" ? w.cn : w.en;
+            options.push({ text: correctText, isCorrect: true });
+            
+            const distractorsPool = vocabData.filter(item => item.id !== w.id);
+            distractorsPool.sort(() => 0.5 - Math.random());
+            for (let i = 0; i < 3; i++) {
+                if (distractorsPool[i]) {
+                    options.push({ text: q.type === "en2cn" ? distractorsPool[i].cn : distractorsPool[i].en, isCorrect: false });
+                }
+            }
+            options.sort(() => 0.5 - Math.random());
+            
+            options.forEach((opt, idx) => {
+                const btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = opt.text;
+                btn.onclick = () => this.selectOption(opt, btn);
+                optionsArea.appendChild(btn);
+            });
+        },
+        selectOption: function(opt, btn) {
+            if (this.state.locked) return;
+            const options = document.querySelectorAll(".option-btn");
+            options.forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+            this.state.selectedOption = opt;
+            document.getElementById("check-btn").disabled = false;
+        },
+        showHint: function() { this.state.hintUsed = true; document.getElementById("hint-text").classList.add("visible"); },
+        checkAnswer: function() {
+            if (this.state.locked || !this.state.selectedOption) return;
+            this.state.locked = true;
+            
+            const isCorrect = this.state.selectedOption.isCorrect;
+            const q = this.state.currentObj;
+            const w = q.wordData;
+            const feedback = document.getElementById("feedback-area");
+            const title = document.getElementById("feedback-title");
+            const msg = document.getElementById("feedback-msg");
+            const sentence = document.getElementById("feedback-sentence");
+            const btn = document.getElementById("check-btn");
+            
+            if (isCorrect) {
+                let scoreType = "green";
+                if (this.state.isRedemption) scoreType = "redemption";
+                else {
+                    if (this.state.hintUsed) scoreType = "yellow";
+                    this.state.scoreLog[this.state.currentIndex] = scoreType;
+                }
+                feedback.className = "feedback-area correct visible";
+                title.innerText = "Correct!"; title.style.color = "#58cc02"; 
+                msg.innerText = "";
+                sentence.innerText = "📖 " + w.sentence;
+                btn.className = "check-btn correct";
+                if(this.state.isRedemption) this.state.mistakeQueue.shift();
+            } else {
+                feedback.className = "feedback-area wrong visible";
+                title.innerText = "Correct Answer:"; title.style.color = "#ea2b2b"; 
+                msg.innerHTML = `<strong style="font-size:1.2rem">${q.type === "en2cn" ? w.cn : w.en}</strong>`;
+                sentence.innerText = "💡 " + w.hook;
+                btn.className = "check-btn wrong";
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = "red";
+                    this.state.mistakeQueue.push(q);
+                    this.logMistake(w, this.state.selectedOption.text);
+                } else this.state.mistakeQueue.push(this.state.mistakeQueue.shift());
+            }
+            this.renderProgress();
+            btn.style.display = "none";
+            const nextBtn = document.getElementById("next-btn");
+            nextBtn.style.display = "block";
+            let isLast = this.state.isRedemption ? (this.state.mistakeQueue.length === 0) : (this.state.currentIndex >= this.state.queue.length - 1 && this.state.mistakeQueue.length === 0);
+            if(isLast) { nextBtn.innerText = "Finish"; nextBtn.style.backgroundColor = "var(--primary)"; nextBtn.style.borderBottomColor = "var(--primary-dark)"; }
+            else { nextBtn.innerText = "Continue"; nextBtn.style.backgroundColor = "var(--secondary)"; nextBtn.style.borderBottomColor = "var(--secondary-dark)"; }
+        },
+        nextQuestion: function() { if (!this.state.isRedemption) this.state.currentIndex++; this.loadQuestion(); },
+        renderProgress: function() {
+            const bar = document.getElementById("progress-bar");
+            bar.innerHTML = "";
+            for(let i=0; i<10; i++) {
+                const seg = document.createElement("div");
+                seg.className = "progress-segment";
+                const s = this.state.scoreLog[i];
+                if(s) seg.classList.add(s);
+                bar.appendChild(seg);
+            }
+        },
+        finishGame: function() {
+            const total = this.state.scoreLog.reduce((acc, curr) => {
+                if (curr === "green") return acc + 10;
+                if (curr === "yellow") return acc + 5;
+                return acc;
+            }, 0);
+            const scorePercent = Math.round((total / (this.state.queue.length * 10)) * 100);
+            
+            const wrongWords = [];
+            this.state.scoreLog.forEach((status, index) => { if (status === "red" && this.state.queue[index]) wrongWords.push(this.state.queue[index].wordData); });
+            
+            const allStats = this.getStats();
+            const cid = this.state.currentChallenge.id;
+            if (!allStats[cid]) allStats[cid] = { today: {date: new Date().toLocaleDateString(), attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+            const s = allStats[cid];
+            s.today.attempts++; if (scorePercent > s.today.best) s.today.best = scorePercent;
+            s.lifetime.attempts++; if (scorePercent > s.lifetime.best) s.lifetime.best = scorePercent;
+            this.saveStats(allStats);
+            this.saveSessionLog({ date: new Date().toLocaleString(), challenge: this.state.currentChallenge.title, score: scorePercent });
+            
+            let mistakeHtml = wrongWords.length > 0 ? `<div style="width:100%; text-align:left; background:#fff; border-radius:12px; padding:15px; margin:20px 0; max-height:300px; overflow-y:auto; border:2px solid var(--neutral);"><h3 style="color:var(--danger); margin-top:0; border-bottom:1px solid #eee; padding-bottom:5px;">Review Mistakes:</h3>${wrongWords.map(w => `<div style="margin-bottom:10px; border-bottom:1px solid #f0f0f0; padding-bottom:5px;"><div style="display:flex; justify-content:space-between;"><span style="font-weight:bold; color:#333;">${w.en}</span><span style="color:#777;">${w.cn}</span></div><div style="font-size:0.8rem; color:#16a085; margin-top:2px;">${w.hook}</div></div>`).join("")}</div>` : `<div style="margin:20px 0; color:var(--primary); font-weight:bold; font-size:1.2rem;">🎉 Perfect Run! No mistakes.</div>`;
+            document.getElementById("game-screen").innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:20px;"><h1 style="color:var(--primary); font-size:3rem; margin:0;">${scorePercent}%</h1><h2 style="margin:5px 0 20px 0; color:#555;">Challenge Complete!</h2>${mistakeHtml}<button onclick="location.reload()" class="check-btn" style="width:100%; max-width:300px;">Back to Menu</button></div>`;
+        },
+        logMistake: function(w, userAns) {
+            const list = this.getMistakes();
+            const existing = list.find(m => m.en === w.en);
+            if(existing) { existing.count++; existing.wrong = userAns; existing.timestamp = Date.now(); list.splice(list.indexOf(existing), 1); list.unshift(existing); }
+            else list.unshift({ en: w.en, cn: w.cn, wrong: userAns, count: 1, timestamp: Date.now(), challenge: this.state.currentChallenge.title });
+            this.saveMistakes(list);
+        },
+        showMistakes: function() {
+            const list = this.getMistakes(); const container = document.getElementById("mistakes-list"); container.innerHTML = "";
+            if(list.length === 0) container.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>No mistakes yet! Great job!</div>";
+            else list.forEach(m => {
+                const div = document.createElement("div"); div.className = "mistake-item";
+                div.innerHTML = `<div style="font-size:0.8rem; color:#999; margin-bottom:5px;">${new Date(m.timestamp).toLocaleDateString()} - ${m.challenge}<span class="fail-count">Failed ${m.count}x</span></div><div style="font-weight:bold; color:#333; margin-bottom:3px;">${m.en} - ${m.cn}</div><div style="color:var(--danger); font-size:0.9rem;">Your last answer: ${m.wrong || "(No answer)"}</div>`;
+                container.appendChild(div);
+            });
+            document.getElementById("mistakes-modal").style.display = "flex";
+        },
+        closeMistakes: function() { document.getElementById("mistakes-modal").style.display = "none"; },
+        clearMistakes: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === "NDAYD") { localStorage.removeItem(ID_A + "-mistakes"); this.showMistakes(); }
+            else alert("Incorrect Passcode");
+        },
+        showScoreHistory: function() {
+            const list = this.getSessionLogs(); const container = document.getElementById("history-list"); container.innerHTML = "";
+            if(list.length === 0) container.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>No games played yet.</div>";
+            else list.forEach(l => {
+                const div = document.createElement("div"); div.className = "mistake-item";
+                div.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><strong style="color:#333;">${l.challenge}</strong><span style="font-weight:bold; color:var(--primary);">${l.score}%</span></div><div style="font-size:0.8rem; color:#999;">${l.date}</div>`;
+                container.appendChild(div);
+            });
+            document.getElementById("history-modal").style.display = "flex";
+        },
+        closeScoreHistory: function() { document.getElementById("history-modal").style.display = "none"; },
+        clearHistory: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === "NDAYD") {
+                localStorage.removeItem(ID_A + "-stats");
+                localStorage.removeItem(ID_A + "-session_logs");
+                location.reload();
+            } else alert("Incorrect Passcode");
+        },
+        goHome: function() { if(confirm("Exit? Progress will be lost.")) location.reload(); }
+    };
 
-        window.onload = function () {
-            app.init();
-        };
-    </script>
+    window.onload = function() { app.init(); };
+</script>
 </body>
-
 </html>
