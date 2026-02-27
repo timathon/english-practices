@@ -261,6 +261,21 @@ except Exception as e:
     }
 }
 
+function loadFragment(type) {
+    const fragmentPath = resolvePath(`templates/fragments/${type}.html`);
+    if (!fs.existsSync(fragmentPath)) {
+        throw new Error(`Auth fragment not found for type: ${type}`);
+    }
+    const content = fs.readFileSync(fragmentPath, 'utf8');
+    const sections = { CSS: "", UI: "", VARS: "", LOGIC: "" };
+    
+    const parts = content.split(/<!-- (CSS|UI|VARS|LOGIC) -->/);
+    for (let i = 1; i < parts.length; i += 2) {
+        sections[parts[i]] = parts[i+1].trim();
+    }
+    return sections;
+}
+
 async function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3, skipAudio = false) {
     const absoluteJsonPath = resolvePath(jsonPath);
     let data;
@@ -274,7 +289,6 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     
     let ID_A = data.ID_A || generateIDA();
 
-    // Add encoded suffix to ID_A
     const digits = ID_A.match(/\d/g);
     const lastDigit = digits ? parseInt(digits[digits.length - 1]) : 0;
     
@@ -291,7 +305,6 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     
     const key = generateKey(ID_A);
 
-    // Audio Generation Integration with Batching
     const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
     const audioTasks = [];
     for (const challenge of data.challenges) {
@@ -319,10 +332,17 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const encrypted = xorEncrypt(bytes, key);
     const base64 = Buffer.from(encrypted).toString('base64');
 
-    const templateName = type === 'post' ? 'templates/shell-post.html' : 'templates/shell-builtin.html';
-    const templatePath = resolvePath(templateName);
+    const templatePath = resolvePath('templates/shell-master.html');
     let html = fs.readFileSync(templatePath, 'utf8');
+    
+    // Load and inject auth fragments
+    const auth = loadFragment(type);
+    html = html.replace(/{{AUTH_CSS}}/g, auth.CSS);
+    html = html.replace(/{{AUTH_UI}}/g, auth.UI);
+    html = html.replace(/{{AUTH_VARS}}/g, auth.VARS);
+    html = html.replace(/{{AUTH_LOGIC}}/g, auth.LOGIC);
 
+    // Inject shared data
     html = html.replace(/{{TITLE}}/g, data.title);
     html = html.replace(/{{LEVEL}}/g, data.level || "Sentence Architect");
     html = html.replace(/{{PRIMARY_COLOR}}/g, data.primaryColor || "#58cc02");
