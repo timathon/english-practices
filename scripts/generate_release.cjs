@@ -1,9 +1,24 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
+const crypto = require('crypto');
+const { execSync } = require('child_process');
+const { S3Client, PutObjectCommand, HeadObjectCommand } = require("@aws-sdk/client-s3");
 
 // Base directory is the project root (parent of scripts/)
 const BASE_DIR = path.resolve(__dirname, '..');
+
+// R2 Configuration
+const s3Client = new S3Client({
+    region: "auto",
+    endpoint: "https://11927bf8264141e4f5b12471ea4d95d8.r2.cloudflarestorage.com",
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+});
+const BUCKET_NAME = "embroid-001";
+const PUBLIC_URL_BASE = "https://pub-80888800000000000000000000000000.r2.dev"; // Replace with actual public URL if needed, or use a placeholder
 
 function resolvePath(p) {
     return path.isAbsolute(p) ? p : path.resolve(BASE_DIR, p);
@@ -154,9 +169,91 @@ function rebuildIndexes() {
     });
 }
 
-function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3) {
+async function getAudioForSentence(sentence, folderName) {
+    if (!process.env.GOOGLE_API_KEY) {
+        console.warn("Skipping audio generation: GOOGLE_API_KEY not set.");
+        return null;
+    }
+
+    const hash = crypto.createHash('md5').update(sentence).digest('hex');
+    const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
+    const finalUrl = `https://r2.smartedu.run/${r2Key}`; 
+
+    // Check if exists
+    try {
+        await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
+        console.log(`Audio exists for: "${sentence.substring(0, 20)}..."`);
+        return finalUrl;
+    } catch (e) {
+        // Continue to generate
+    }
+
+    console.log(`Generating audio for: "${sentence}"`);
+    const tempWav = path.join(BASE_DIR, `temp_${hash}.wav`);
+    const tempMp3 = path.join(BASE_DIR, `temp_${hash}.mp3`);
+
+    const pythonScript = `
+import os
+import wave
+from google import genai
+from google.genai import types
+client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
+response = client.models.generate_content(
+    model="gemini-2.0-flash",
+    contents="Say clearly: ${sentence.replace(/"/g, '\\"')}",
+    config=types.GenerateContentConfig(
+        response_modalities=["AUDIO"],
+        speech_config=types.SpeechConfig(
+            voice_config=types.VoiceConfig(
+                prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Kore")
+            )
+        )
+    )
+)
+with wave.open("${tempWav}", "wb") as wf:
+    wf.setnchannels(1)
+    wf.setsampwidth(2)
+    wf.setframerate(24000)
+    wf.writeframes(response.candidates[0].content.parts[0].inline_data.data)
+`;
+
+    fs.writeFileSync('temp_tts.py', pythonScript);
+    try {
+        execSync('python3 temp_tts.py');
+        // Convert to mp3
+        execSync(`ffmpeg -i "${tempWav}" -codec:a libmp3lame -qscale:a 2 "${tempMp3}" -y -loglevel error`);
+        
+        // Upload to R2
+        const fileBuffer = fs.readFileSync(tempMp3);
+        await s3Client.send(new PutObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: r2Key,
+            Body: fileBuffer,
+            ContentType: "audio/mpeg",
+        }));
+        
+        console.log(`Uploaded audio to R2: ${r2Key}`);
+        return finalUrl;
+    } catch (err) {
+        console.error("Error in audio generation/upload:", err.message);
+        return null;
+    } finally {
+        if (fs.existsSync('temp_tts.py')) fs.unlinkSync('temp_tts.py');
+        if (fs.existsSync(tempWav)) fs.unlinkSync(tempWav);
+        if (fs.existsSync(tempMp3)) fs.unlinkSync(tempMp3);
+    }
+}
+
+async function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3) {
     const absoluteJsonPath = resolvePath(jsonPath);
-    const data = JSON.parse(fs.readFileSync(absoluteJsonPath, 'utf8'));
+    let data;
+    try {
+        data = JSON.parse(fs.readFileSync(absoluteJsonPath, 'utf8'));
+    } catch (e) {
+        console.error(`Error parsing JSON from ${jsonPath}: ${e.message}`);
+        console.warn(`Skipping ${jsonPath} due to invalid format.`);
+        return;
+    }
     
     let ID_A = data.ID_A || generateIDA();
 
@@ -176,6 +273,17 @@ function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3)
     ID_A += suffix;
     
     const key = generateKey(ID_A);
+
+    // Audio Generation Integration
+    const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
+    for (const challenge of data.challenges) {
+        for (const item of challenge.data) {
+            if (item.en && !item.audio) {
+                const audioUrl = await getAudioForSentence(item.en, folderName);
+                if (audioUrl) item.audio = audioUrl;
+            }
+        }
+    }
     
     const json = JSON.stringify(data.challenges);
     const bytes = Buffer.from(json, 'utf8');
@@ -343,7 +451,7 @@ async function interactive() {
             const jsonPath = path.join(folderPath, file);
             const outputFilename = file.replace(".json", ".html");
             const outputPath = path.join('release', selectedType, selectedFolder, outputFilename);
-            generate(jsonPath, selectedType, outputPath, userCount, validityMonths);
+            await generate(jsonPath, selectedType, outputPath, userCount, validityMonths);
         }
     }
 

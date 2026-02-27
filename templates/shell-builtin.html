@@ -141,6 +141,31 @@
         .text-link.danger { color: var(--danger); }
         .text-link.muted { color: #999; }
 
+        .settings-fab {
+            position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; cursor: pointer; z-index: 998; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .settings-fab:active { transform: translateY(2px); border-bottom-width: 2px; }
+
+        .play-btn {
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; margin-right: 8px; vertical-align: middle; transition: all 0.1s;
+        }
+        .play-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .play-btn svg { width: 20px; height: 20px; fill: var(--secondary); }
+
+        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .setting-item:last-child { border-bottom: none; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -180,7 +205,12 @@
         </div>
         <div id="feedback-area" class="feedback-area">
             <h3 id="feedback-title" style="margin:0"></h3>
-            <p id="feedback-msg" style="margin:5px 0 0"></p>
+            <div style="display:flex; align-items:center; justify-content:center; margin-top:5px;">
+                <button id="play-btn" class="play-btn" onclick="app.playAudio()">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <p id="feedback-msg" style="margin:0"></p>
+            </div>
         </div>
         <div class="footer-action">
             <button id="check-btn" class="check-btn" onclick="app.checkAnswer()">Check</button>
@@ -213,7 +243,25 @@
             </div>
         </div>
     </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button onclick="app.toggleSettings()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="setting-item">
+                <span>Auto-play after check</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoplay-toggle" onchange="app.updateSettings()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
 </div>
+
+<button class="settings-fab" onclick="app.toggleSettings()">⚙️</button>
 
 <script>
     const ID_A = "{{ID_A}}";
@@ -238,9 +286,14 @@
         state: {
             currentChallenge: null, queue: [], mistakeQueue: [],
             currentIndex: 0, userSelection: [], currentObj: null,
-            hintUsed: false, scoreLog: [], locked: false
+            hintUsed: false, scoreLog: [], locked: false,
+            settings: { autoplay: true }
         },
+        audio: null,
         init: function() { 
+            const savedSettings = localStorage.getItem(ID_A + "-settings");
+            if (savedSettings) this.state.settings = JSON.parse(savedSettings);
+            document.getElementById("autoplay-toggle").checked = this.state.settings.autoplay;
             try {
                 challenges = JSON.parse(_0x4f2a(encryptedChallenges, builtInKey));
                 this.renderHome();
@@ -254,6 +307,21 @@
         saveSessionLog: function(log) { 
             const logs = this.getSessionLogs(); logs.unshift(log); 
             localStorage.setItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}", JSON.stringify(logs));
+        },
+        toggleSettings: function() {
+            const modal = document.getElementById("settings-modal");
+            modal.style.display = modal.style.display === "flex" ? "none" : "flex";
+        },
+        updateSettings: function() {
+            this.state.settings.autoplay = document.getElementById("autoplay-toggle").checked;
+            localStorage.setItem(ID_A + "-settings", JSON.stringify(this.state.settings));
+        },
+        playAudio: function() {
+            if (this.state.currentObj && this.state.currentObj.audio) {
+                if (this.audio) this.audio.pause();
+                this.audio = new Audio(this.state.currentObj.audio);
+                this.audio.play().catch(e => console.warn("Audio play failed", e));
+            }
         },
         renderHome: function() {
             document.getElementById("home-screen").classList.add("active");
@@ -392,6 +460,10 @@
             const title = document.getElementById("feedback-title");
             const msg = document.getElementById("feedback-msg");
             const btn = document.getElementById("check-btn");
+            const playBtn = document.getElementById("play-btn");
+
+            playBtn.style.display = this.state.currentObj.audio ? "inline-flex" : "none";
+
             if (isCorrect) {
                 let scoreType = "green";
                 if (this.state.isRedemption) scoreType = "redemption";
@@ -400,7 +472,7 @@
                     this.state.scoreLog[this.state.currentIndex] = scoreType;
                 }
                 feedback.className = "feedback-area correct visible";
-                title.innerText = "Perfect Structure!"; title.style.color = "#58cc02"; msg.innerText = "";
+                title.innerText = "Perfect Structure!"; title.style.color = "#58cc02"; msg.innerText = this.state.currentObj.en;
                 btn.className = "check-btn correct";
                 if(this.state.isRedemption) this.state.mistakeQueue.shift();
             } else {
@@ -413,6 +485,9 @@
                     this.logMistake(this.state.currentObj, userSent);
                 } else this.state.mistakeQueue.push(this.state.mistakeQueue.shift());
             }
+
+            if (this.state.settings.autoplay) this.playAudio();
+
             this.renderProgress();
             btn.style.display = "none";
             const nextBtn = document.getElementById("next-btn");
