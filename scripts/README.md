@@ -1,41 +1,60 @@
-# Exercise Release Generator
+# Exercise Release Generator (`generate_release.cjs`)
 
-This script automates the process of converting raw exercise content (JSON) into secure, obfuscated HTML files for production. It handles data encryption, authentication integration, and UI shell generation.
+This script automates the process of converting raw exercise content (JSON) into secure, obfuscated HTML files for production. It handles data encryption, Gemini-powered TTS generation, R2 cloud storage uploading, and automatic index generation.
 
 ## 🛠 Usage
 
+### 1. Interactive Mode (Recommended)
+Run the script without arguments to enter an interactive step-by-step wizard.
 ```bash
-node scripts/generate_release.js <json_path> <type> <output_path>
+node scripts/generate_release.cjs
+```
+- Select multiple folders to batch process.
+- Configure release type, user count, and validity.
+- **Skip Audio:** Defaults to `yes`. Choose `no` if you need to generate new audio files.
+
+### 2. Direct Mode
+Generate a specific file immediately.
+```bash
+node scripts/generate_release.cjs <json_path> <type> <output_path> [--skip-audio]
 ```
 
 ### Parameters
-1.  **`json_path`**: Path to the filled-out content JSON (see `templates/content-template.json`).
+1.  **`json_path`**: Path to the content JSON (e.g., `data/A3B/u1.json`).
 2.  **`type`**:
-    *   `post`: Generates a version that requires a POST request to the authentication server to retrieve the decryption key. Implements local storage caching.
-    *   `builtin`: Generates a version where the decryption key is pre-calculated and embedded. No network request is made.
-3.  **`output_path`**: The filename for the generated HTML (e.g., `release/My-Exercise.html`).
+    *   `post`: Requires authentication server request.
+    *   `builtin`: Decryption key is embedded (Standalone).
+3.  **`output_path`**: Destination HTML path.
+4.  **`--skip-audio`** (Optional): Skips TTS and R2 upload, but keeps links in HTML.
 
-## 📁 System Components
+## 🔑 Environment Variables
+The following keys are required for full functionality (especially audio generation):
+- `GOOGLE_API_KEY`: For Gemini 2.5 Flash TTS.
+- `AWS_ACCESS_KEY_ID`: For R2 Storage access.
+- `AWS_SECRET_ACCESS_KEY`: For R2 Storage access.
 
--   **`templates/shell-post.html`**: The UI template for authenticated exercises.
--   **`templates/shell-builtin.html`**: The UI template for standalone exercises.
--   **`data/`**: Folder containing the extracted content for existing exercises.
--   **`templates/content-template.json`**: A blueprint for creating new exercise data.
+## 🎙 Audio System
+- **Model:** `gemini-2.5-flash-preview-tts` (Voice: "Kore").
+- **Storage:** MP3 files are uploaded to Cloudflare R2 (`embroid-001`).
+- **Batching:** Processes 5 sentences in parallel.
+- **Caching:** The script checks R2 for existing files before generating new ones to save API costs.
+- **Temp Files:** Intermediate files are managed in the `/temp` directory and cleaned up automatically.
 
 ## 🔒 Security Model
+1.  **ID_A**: A unique identifier. If missing in JSON, a valid one is generated automatically.
+2.  **License Suffix**: Encodes user count and validity into the final `ID_A`.
+3.  **Encryption**: Content is XOR-encrypted using a key derived from the final `ID_A` (djb2 hash).
+4.  **Obfuscation**: Decryption logic is renamed to generic identifiers (`_0x4f2a`) in the output.
 
-1.  **ID_A**: A unique identifier assigned to each exercise.
-2.  **ID_A Suffix**: During generation, a two-letter suffix is appended to `ID_A` to encode license metadata:
-    *   **User Count Encoding**: 3 users → 'a', 6 users → 'b', 10 users → 'c'.
-    *   **Validity Months Encoding**: 3 months → 'o', 6 months → 'p', 12 months → 'q'.
-    *   **Obfuscation Shift**: Both letters are shifted forward by the **last numeric digit** found in the original `ID_A`.
-        *   *Example*: If base `ID_A` ends in digit `3`, and we select 3 users ('a') for 12 months ('q'), the suffix becomes `dt` ('a'+3, 'q'+3).
-3.  **Encryption**: The `challenges` array is stringified, converted to UTF-8 bytes, XOR-encrypted using a key derived from the final `ID_A` (via djb2), and finally Base64 encoded.
-4.  **Obfuscation**: The decryption logic in the final HTML is renamed to generic identifiers (e.g., `_0x4f2a`) and comments are stripped to hide the underlying mechanism.
+## 📁 System Components
+- `templates/shell-post.html`: UI template for authenticated exercises.
+- `templates/shell-builtin.html`: UI template for standalone exercises.
+- `data/`: Source exercise JSON files.
+- `release/`: Generated HTML files (organized by timestamp and type).
+- `temp/`: Used for intermediate audio processing.
 
 ## 📝 Creating a New Exercise
-
-1.  Copy `templates/content-template.json` to a new file in `data/`.
-2.  Fill in the `title`, `ID_A` (unique 15-char string), `ipaDict`, and `challenges`.
-3.  Choose a unique `storageSuffix` (e.g., `_unit5`) to prevent data collision in the browser's LocalStorage.
-4.  Run the generator script.
+1. Copy `templates/content-template.json` to a new folder in `data/`.
+2. Fill in metadata and `challenges`.
+3. Ensure `storageSuffix` is unique to prevent browser cache collisions.
+4. Run the generator script.

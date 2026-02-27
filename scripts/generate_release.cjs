@@ -18,7 +18,7 @@ const s3Client = new S3Client({
     },
 });
 const BUCKET_NAME = "embroid-001";
-const PUBLIC_URL_BASE = "https://pub-80888800000000000000000000000000.r2.dev"; // Replace with actual public URL if needed, or use a placeholder
+const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
 function resolvePath(p) {
     return path.isAbsolute(p) ? p : path.resolve(BASE_DIR, p);
@@ -169,7 +169,19 @@ function rebuildIndexes() {
     });
 }
 
-async function getAudioForSentence(sentence, folderName) {
+function getAudioUrl(sentence, folderName) {
+    const hash = crypto.createHash('md5').update(sentence).digest('hex');
+    const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
+    return `${PUBLIC_URL_BASE}/${r2Key}`;
+}
+
+async function getAudioForSentence(sentence, folderName, skipGeneration = false) {
+    const finalUrl = getAudioUrl(sentence, folderName);
+
+    if (skipGeneration) {
+        return finalUrl;
+    }
+
     if (!process.env.GOOGLE_API_KEY) {
         console.warn("Skipping audio generation: GOOGLE_API_KEY not set.");
         return null;
@@ -177,20 +189,22 @@ async function getAudioForSentence(sentence, folderName) {
 
     const hash = crypto.createHash('md5').update(sentence).digest('hex');
     const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
-    const finalUrl = `https://r2.smartedu.run/${r2Key}`; 
 
     // Check if exists
     try {
         await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
-        console.log(`Audio exists for: "${sentence.substring(0, 20)}..."`);
         return finalUrl;
     } catch (e) {
         // Continue to generate
     }
 
-    console.log(`Generating audio for: "${sentence}"`);
-    const tempWav = path.join(BASE_DIR, `temp_${hash}.wav`);
-    const tempMp3 = path.join(BASE_DIR, `temp_${hash}.mp3`);
+    console.log(`Generating audio for: "${sentence.substring(0, 30)}..."`);
+    const TEMP_DIR = path.join(BASE_DIR, 'temp');
+    if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+    const tempWav = path.join(TEMP_DIR, `temp_${hash}.wav`);
+    const tempMp3 = path.join(TEMP_DIR, `temp_${hash}.mp3`);
+    const tempPy = path.join(TEMP_DIR, `temp_tts_${hash}.py`);
 
     const pythonScript = `
 import os
@@ -198,28 +212,32 @@ import wave
 from google import genai
 from google.genai import types
 client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
-response = client.models.generate_content(
-    model="gemini-2.0-flash",
-    contents="Say clearly: ${sentence.replace(/"/g, '\\"')}",
-    config=types.GenerateContentConfig(
-        response_modalities=["AUDIO"],
-        speech_config=types.SpeechConfig(
-            voice_config=types.VoiceConfig(
-                prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Kore")
+try:
+    response = client.models.generate_content(
+        model="gemini-2.5-flash-preview-tts",
+        contents="Say clearly: ${sentence.replace(/"/g, '\\"')}",
+        config=types.GenerateContentConfig(
+            response_modalities=["AUDIO"],
+            speech_config=types.SpeechConfig(
+                voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Kore")
+                )
             )
         )
     )
-)
-with wave.open("${tempWav}", "wb") as wf:
-    wf.setnchannels(1)
-    wf.setsampwidth(2)
-    wf.setframerate(24000)
-    wf.writeframes(response.candidates[0].content.parts[0].inline_data.data)
+    with wave.open("${tempWav}", "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(24000)
+        wf.writeframes(response.candidates[0].content.parts[0].inline_data.data)
+except Exception as e:
+    print(f"Error: {e}")
+    exit(1)
 `;
 
-    fs.writeFileSync('temp_tts.py', pythonScript);
+    fs.writeFileSync(tempPy, pythonScript);
     try {
-        execSync('python3 temp_tts.py');
+        execSync(`python3 "${tempPy}"`);
         // Convert to mp3
         execSync(`ffmpeg -i "${tempWav}" -codec:a libmp3lame -qscale:a 2 "${tempMp3}" -y -loglevel error`);
         
@@ -232,19 +250,18 @@ with wave.open("${tempWav}", "wb") as wf:
             ContentType: "audio/mpeg",
         }));
         
-        console.log(`Uploaded audio to R2: ${r2Key}`);
         return finalUrl;
     } catch (err) {
-        console.error("Error in audio generation/upload:", err.message);
+        console.error(`Error processing "${sentence.substring(0, 20)}":`, err.message);
         return null;
     } finally {
-        if (fs.existsSync('temp_tts.py')) fs.unlinkSync('temp_tts.py');
+        if (fs.existsSync(tempPy)) fs.unlinkSync(tempPy);
         if (fs.existsSync(tempWav)) fs.unlinkSync(tempWav);
         if (fs.existsSync(tempMp3)) fs.unlinkSync(tempMp3);
     }
 }
 
-async function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3) {
+async function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3, skipAudio = false) {
     const absoluteJsonPath = resolvePath(jsonPath);
     let data;
     try {
@@ -274,15 +291,27 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     
     const key = generateKey(ID_A);
 
-    // Audio Generation Integration
+    // Audio Generation Integration with Batching
     const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
+    const audioTasks = [];
     for (const challenge of data.challenges) {
         for (const item of challenge.data) {
             if (item.en && !item.audio) {
-                const audioUrl = await getAudioForSentence(item.en, folderName);
-                if (audioUrl) item.audio = audioUrl;
+                audioTasks.push(item);
             }
         }
+    }
+
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < audioTasks.length; i += BATCH_SIZE) {
+        const batch = audioTasks.slice(i, i + BATCH_SIZE);
+        if (!skipAudio) {
+            console.log(`Processing audio batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(audioTasks.length/BATCH_SIZE)}...`);
+        }
+        await Promise.all(batch.map(async (item) => {
+            const url = await getAudioForSentence(item.en, folderName, skipAudio);
+            if (url) item.audio = url;
+        }));
     }
     
     const json = JSON.stringify(data.challenges);
@@ -434,6 +463,9 @@ async function interactive() {
     const validityMonthsInput = await question('Select validity months (1, 2, or 3) [1]: ');
     const validityMonths = validityMonthsInput === '2' ? 6 : (validityMonthsInput === '3' ? 12 : 3);
 
+    const skipAudioInput = await question('\nSkip audio generation (yes/no) [yes]: ');
+    const skipAudio = skipAudioInput.toLowerCase() !== 'no' && skipAudioInput.toLowerCase() !== 'n';
+
     rl.close();
 
     for (const selectedFolder of selectedFolders) {
@@ -451,7 +483,7 @@ async function interactive() {
             const jsonPath = path.join(folderPath, file);
             const outputFilename = file.replace(".json", ".html");
             const outputPath = path.join('release', selectedType, selectedFolder, outputFilename);
-            await generate(jsonPath, selectedType, outputPath, userCount, validityMonths);
+            await generate(jsonPath, selectedType, outputPath, userCount, validityMonths, skipAudio);
         }
     }
 
@@ -462,10 +494,11 @@ const args = process.argv.slice(2);
 if (args.length === 0) {
     interactive();
 } else if (args.length >= 3) {
-    generate(args[0], args[1], args[2]);
+    const skipAudio = args.includes('--skip-audio') || args.includes('-s');
+    generate(args[0], args[1], args[2], 3, 3, skipAudio);
 } else {
     console.log("Usage:");
     console.log("  Interactive: node generate_release.js");
-    console.log("  Direct:      node generate_release.js <json_path> <type: post|builtin> <output_path>");
+    console.log("  Direct:      node generate_release.js <json_path> <type: post|builtin> <output_path> [--skip-audio]");
     process.exit(1);
 }
