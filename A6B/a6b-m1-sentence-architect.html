@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 1: Ordering Food - Sentence Architect</title>
+    <style>
+        :root {
+            --primary: #ff5722;
+            --primary-dark: #e64a19;
+            --secondary: #1cb0f6;
+            --secondary-dark: #1185ba;
+            --warning: #ffc800;
+            --warning-dark: #e5b400;
+            --danger: #ff4b4b;
+            --danger-dark: #d33131;
+            --neutral: #e5e5e5;
+            --text: #4b4b4b;
+            --white: #ffffff;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; user-select: none;
+        }
+
+        /* --- AUTH CSS SLOT START --- */
+        
+        /* --- AUTH CSS SLOT END --- */
+
+        #app {
+            width: 100%; max-width: 600px;
+            background: var(--white); min-height: 100vh;
+            position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: none; flex-direction: column;
+        }
+
+        @media (min-width: 600px) {
+            #app { min-height: 90vh; border-radius: 20px; overflow: hidden; }
+        }
+
+        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; flex-grow: 1; }
+        .screen.active { display: flex; }
+
+        header { text-align: center; margin-bottom: 20px; position: relative; }
+        h1 { color: var(--primary); margin: 0; font-size: 2rem; }
+        @media (max-width: 480px) { h1 { font-size: 1.4rem; } }
+        h2 { font-size: 1.1rem; color: #999; margin-top: 5px; font-weight: normal; }
+
+        .challenge-grid { display: grid; gap: 15px; overflow-y: auto; padding-bottom: 80px; }
+        .challenge-card {
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 16px; padding: 15px; cursor: pointer; transition: transform 0.1s, border-color 0.1s;
+        }
+        .challenge-card:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .challenge-card:hover { background-color: #fafafa; border-color: #ccc; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: bold; margin: 0; }
+        .card-stats { 
+            font-size: 0.8rem; color: #777; display: flex; justify-content: space-between; align-items: center;
+            margin-top: 10px; background: #f8f9fa; padding: 10px 12px; border-radius: 12px; border: 1px solid #eee;
+        }
+        .stat-row { display: flex; flex-direction: column; align-items: flex-start; }
+        .stat-row:last-child { align-items: flex-end; }
+        .stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+        .stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
+
+        .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; height: 40px; }
+        .close-btn { font-size: 1.5rem; cursor: pointer; color: #ccc; background: none; border: none; flex-shrink: 0; width: 30px; }
+        .progress-container {
+            flex-grow: 1; margin: 0 15px; height: 12px; background-color: var(--neutral);
+            border-radius: 6px; display: flex; overflow: hidden;
+        }
+        .progress-segment { flex-grow: 1; border-right: 1px solid var(--white); }
+        .progress-segment.green { background-color: var(--primary); }
+        .progress-segment.yellow { background-color: var(--warning); }
+        .progress-segment.red { background-color: var(--danger); }
+
+        .question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .prompt-container { text-align: center; margin-bottom: 20px; }
+        .prompt-cn { font-size: 1.3rem; color: #333; font-weight: bold; margin-bottom: 5px; }
+        .prompt-hint-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--warning); filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); transition: transform 0.2s; }
+        .prompt-hint-btn:hover { transform: scale(1.1); }
+        .hint-text { font-size: 0.9rem; color: #666; font-style: italic; margin-top: 5px; min-height: 1.2em; visibility: hidden; }
+        .hint-text.visible { visibility: visible; animation: fadeIn 0.3s; }
+
+        .answer-area {
+            min-height: 70px; border-top: 2px solid var(--neutral); border-bottom: 2px solid var(--neutral);
+            background: #fafafa; margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 8px; padding: 15px;
+            align-items: center; justify-content: center; border-radius: 8px;
+        }
+        .word-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .word-btn {
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 12px; padding: 10px 14px; font-size: 1.1rem; cursor: pointer; color: var(--text);
+            position: relative; transition: all 0.1s; display: flex; flex-direction: column; align-items: center;
+        }
+        .word-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .word-btn.selected { background: var(--neutral); color: transparent; border-color: transparent; pointer-events: none; }
+        .word-btn.selected .ipa { display: none; }
+        .word-btn-answer {
+            background: var(--white); border: 2px solid var(--secondary); border-bottom: 4px solid var(--secondary-dark);
+            border-radius: 12px; padding: 10px 14px; font-size: 1.1rem; cursor: pointer; color: var(--secondary-dark);
+        }
+        .ipa { font-size: 0.75rem; color: #999; font-weight: normal; margin-top: 2px; }
+        .footer-action { padding-top: 20px; border-top: 2px solid var(--neutral); }
+        .check-btn {
+            width: 100%; padding: 15px; border-radius: 16px; font-size: 1.2rem; font-weight: bold;
+            color: white; background-color: var(--primary); border: none; border-bottom: 5px solid var(--primary-dark);
+            cursor: pointer; text-transform: uppercase;
+        }
+        .check-btn:active { transform: translateY(2px); border-bottom-width: 3px; }
+        .check-btn:disabled { background-color: var(--neutral); border-bottom-color: #ccc; color: #999; cursor: not-allowed; transform: none; }
+        .check-btn.wrong { background-color: var(--danger); border-bottom-color: var(--danger-dark); animation: shake 0.5s; }
+        .check-btn.correct { background-color: var(--primary); animation: bounce 0.5s; }
+
+        .feedback-area {
+            height: 110px; margin-bottom: 10px; padding: 10px; border-radius: 12px; text-align: center;
+            visibility: hidden; display: flex; flex-direction: column; justify-content: center;
+        }
+        .feedback-area.visible { visibility: visible; }
+        .feedback-area.correct { background-color: #d7ffb8; }
+        .feedback-area.wrong { background-color: #ffdfe0; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .modal-content {
+            background: white; width: 90%; max-width: 500px; max-height: 80vh; border-radius: 20px;
+            padding: 20px; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .log-list { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; }
+        .mistake-item { padding: 12px; border-bottom: 1px solid #eee; }
+        .mistake-item:last-child { border-bottom: none; }
+        .fail-count { background: var(--danger); color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; float: right;}
+        .footer-links { text-align: center; margin-top: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .text-link { background: none; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: underline; }
+        .text-link.danger { color: var(--danger); }
+        .text-link.muted { color: #999; }
+
+        .settings-fab {
+            width: 36px; height: 36px;
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; cursor: pointer; z-index: 998; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            flex-shrink: 0; transition: all 0.1s;
+        }
+        .settings-fab:active { transform: translateY(2px); border-bottom-width: 2px; }
+
+        .play-btn {
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; margin-right: 8px; vertical-align: middle; transition: all 0.1s;
+        }
+        .play-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .play-btn svg { width: 20px; height: 20px; fill: var(--secondary); }
+
+        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .setting-item:last-child { border-bottom: none; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<!-- --- AUTH UI SLOT START --- -->
+
+<!-- --- AUTH UI SLOT END --- -->
+
+<div id="app">
+    <div id="home-screen" class="screen active">
+        <header>
+            <div style="display: flex; align-items: center; justify-content: center; position: relative; height: 40px;">
+                <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
+                <h1>Module 1: Ordering Food</h1>
+                <button class="settings-fab" onclick="app.toggleSettings()" style="position: absolute; right: 0;">⚙️</button>
+            </div>
+            <h2 style="margin-top: 15px;">Grade 6 - Module 1</h2>
+        </header>
+        <div class="challenge-grid" id="challenge-list"></div>
+        <div class="footer-links">
+            <button class="text-link danger" onclick="app.showMistakes()">⚠ Review My Mistakes</button>
+            <button class="text-link muted" onclick="app.showScoreHistory()">View score history</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="top-bar">
+            <button class="close-btn" onclick="app.goHome()">✕</button>
+            <div class="progress-container" id="progress-bar"></div>
+            <button class="settings-fab" onclick="app.toggleSettings()">⚙️</button>
+        </div>
+        <div class="question-area">
+            <div class="prompt-container">
+                <div class="prompt-cn" id="prompt-cn"></div>
+                <button class="prompt-hint-btn" onclick="app.showHint()">💡</button>
+                <div class="hint-text" id="hint-text"></div>
+            </div>
+            <div class="answer-area" id="answer-area"></div>
+            <div class="word-pool" id="word-pool"></div>
+        </div>
+        <div id="feedback-area" class="feedback-area">
+            <h3 id="feedback-title" style="margin:0"></h3>
+            <div style="display:flex; align-items:center; justify-content:center; margin-top:5px;">
+                <button id="play-btn" class="play-btn" onclick="app.playAudio()">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <p id="feedback-msg" style="margin:0"></p>
+            </div>
+        </div>
+        <div class="footer-action">
+            <button id="check-btn" class="check-btn" onclick="app.checkAnswer()">Check</button>
+            <button id="next-btn" class="check-btn" onclick="app.nextQuestion()" style="display:none; background-color: var(--secondary); border-bottom-color: var(--secondary-dark);">Continue</button>
+        </div>
+    </div>
+
+    <div id="mistakes-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="color:var(--danger)">Review Mistakes</h2>
+                <button onclick="app.closeMistakes()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="mistakes-list"></div>
+            <div style="text-align: right;">
+                <button class="text-link danger" onclick="app.clearMistakes()">Clear Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Score History</h2>
+                <button onclick="app.closeScoreHistory()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="history-list"></div>
+            <div style="text-align: right; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                <button class="text-link danger" onclick="app.clearHistory()">Teacher: Clear All Data</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button onclick="app.toggleSettings()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="setting-item">
+                <span>Auto-play sentence audio</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoplay-toggle" onchange="app.updateSettings()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <span>Sound effects</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="sfx-toggle" onchange="app.updateSettings()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* --- AUTH VARS SLOT START --- */
+    const ID_A = "3F158693CVcUpAOdr";
+    const builtInKey = 835553989;
+    /* --- AUTH VARS SLOT END --- */
+
+    const ipaDict = {"hamburger":"ˈhæmbɜːɡə","cola":"ˈkəʊlə","dollar":"ˈdɒlə","cent":"sent","enjoy":"ɪnˈdʒɔɪ","meal":"miːl","careful":"ˈkeəfl","cheese":"tʃiːz","noodle":"ˈnuːdl","chicken":"ˈtʃɪkɪn"};
+    const encryptedChallenges = "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";
+    let challenges = [];
+
+    function _0x4f2a(cipherText, key) {
+        const _0xb1 = new Uint8Array(4);
+        _0xb1[0] = key & 0xFF; _0xb1[1] = (key >> 8) & 0xFF;
+        _0xb1[2] = (key >> 16) & 0xFF; _0xb1[3] = (key >> 24) & 0xFF;
+        const _0xc2 = atob(cipherText);
+        const bytes = new Uint8Array(_0xc2.length);
+        for (let i = 0; i < _0xc2.length; i++) {
+            bytes[i] = _0xc2.charCodeAt(i) ^ _0xb1[i % 4];
+        }
+        return new TextDecoder().decode(bytes);
+    }
+
+    const app = {
+        state: {
+            currentChallenge: null, queue: [], mistakeQueue: [],
+            currentIndex: 0, userSelection: [], currentObj: null,
+            hintUsed: false, scoreLog: [], locked: false,
+            settings: { autoplay: true, sfx: true }
+        },
+        audio: null,
+        sfx: {
+            correct: "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3",
+            wrong: "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3"
+        },
+        playSFX: function(type) {
+            if (!this.state.settings.sfx) return;
+            const url = this.sfx[type];
+            if (!url) return;
+
+            const hash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            const cacheKey = "ep-sa-audio-" + hash;
+            const source = localStorage.getItem(cacheKey) || url;
+            
+            const sound = new Audio(source);
+            sound.play().catch(e => console.error("SFX Play Error:", e));
+        },
+        init: function() { 
+            const savedSettings = localStorage.getItem(ID_A + "-settings");
+            if (savedSettings) this.state.settings = Object.assign(this.state.settings, JSON.parse(savedSettings));
+            document.getElementById("autoplay-toggle").checked = this.state.settings.autoplay;
+            document.getElementById("sfx-toggle").checked = this.state.settings.sfx;
+            
+            // Cache SFX
+            this.cacheAudio(this.sfx.correct);
+            this.cacheAudio(this.sfx.wrong);
+
+            this.renderHome(); 
+        },
+        getStats: function() { return JSON.parse(localStorage.getItem(ID_A + "-stats_a6b_m1") || "{}"); },
+        saveStats: function(stats) { localStorage.setItem(ID_A + "-stats_a6b_m1", JSON.stringify(stats)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem(ID_A + "-mistakes_a6b_m1") || "[]"); },
+        saveMistakes: function(list) { localStorage.setItem(ID_A + "-mistakes_a6b_m1", JSON.stringify(list)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem(ID_A + "-session_logs_a6b_m1") || "[]"); },
+        saveSessionLog: function(log) { 
+            const logs = this.getSessionLogs(); logs.unshift(log); 
+            localStorage.setItem(ID_A + "-session_logs_a6b_m1", JSON.stringify(logs));
+        },
+        toggleSettings: function() {
+            const modal = document.getElementById("settings-modal");
+            modal.style.display = modal.style.display === "flex" ? "none" : "flex";
+        },
+        updateSettings: function() {
+            this.state.settings.autoplay = document.getElementById("autoplay-toggle").checked;
+            this.state.settings.sfx = document.getElementById("sfx-toggle").checked;
+            localStorage.setItem(ID_A + "-settings", JSON.stringify(this.state.settings));
+        },
+        cacheAudio: async function(url) {
+            if (!url) return;
+            const hash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            const cacheKey = "ep-sa-audio-" + hash;
+            
+            if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+            try {
+                const resp = await fetch(url);
+                const blob = await resp.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        try {
+                            localStorage.setItem(cacheKey, reader.result);
+                        } catch(e) { 
+                            console.warn("Audio cache full, playing from URL"); 
+                        }
+                        resolve(reader.result);
+                    };
+                    reader.readAsDataURL(blob);
+                });
+            } catch(e) { console.error("Cache failed", e); }
+        },
+        playAudio: async function() {
+            if (this.state.currentObj && this.state.currentObj.audio) {
+                if (this.audio) this.audio.pause();
+                const hash = Array.from(this.state.currentObj.audio).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const cacheKey = "ep-sa-audio-" + hash;
+                const source = localStorage.getItem(cacheKey) || this.state.currentObj.audio;
+                this.audio = new Audio(source);
+                this.audio.play().catch(e => console.warn("Audio play failed", e));
+            }
+        },
+        renderHome: function() {
+            document.getElementById("home-screen").classList.add("active");
+            document.getElementById("game-screen").classList.remove("active");
+            const list = document.getElementById("challenge-list");
+            list.innerHTML = "";
+            const allStats = this.getStats();
+            const todayStr = new Date().toLocaleDateString();
+            challenges.forEach(c => {
+                let s = allStats[c.id] || { today: {date: todayStr, attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+                if(s.today.date !== todayStr) s.today = { date: todayStr, attempts: 0, best: 0 };
+                allStats[c.id] = s;
+                const div = document.createElement("div");
+                div.className = "challenge-card";
+                div.onclick = () => this.startChallenge(c.id);
+                div.innerHTML = `<div class="card-header"><div style="display:flex; align-items:center;"><span style="font-size:1.5rem; margin-right:10px;">${c.icon}</span><h3 class="card-title">${c.title}</h3></div><span style="color:var(--primary); font-weight:bold;">START</span></div><div class="card-stats"><div class="stat-row"><span class="stat-label">TODAY</span> <span class="stat-val">${s.today.attempts} Runs | Best: ${s.today.best}%</span></div><div class="stat-row"><span class="stat-label">LIFETIME</span> <span class="stat-val">${s.lifetime.attempts} Runs | Best: ${s.lifetime.best}%</span></div></div>`;
+                list.appendChild(div);
+            });
+            this.saveStats(allStats);
+        },
+        startChallenge: function(id) {
+            const c = challenges.find(x => x.id === id);
+            this.state.currentChallenge = c; this.state.queue = [...c.data]; this.state.mistakeQueue = [];
+            this.state.currentIndex = 0; this.state.scoreLog = new Array(c.data.length).fill(null);
+            
+            // Preload all audio
+            c.data.forEach(item => this.cacheAudio(item.audio));
+
+            document.getElementById("home-screen").classList.remove("active");
+            document.getElementById("game-screen").classList.add("active");
+            this.renderProgress(); this.loadQuestion();
+        },
+        loadQuestion: function() {
+            let q = null;
+            if (this.state.currentIndex < this.state.queue.length) { q = this.state.queue[this.state.currentIndex]; this.state.isRedemption = false; }
+            else if (this.state.mistakeQueue.length > 0) { q = this.state.mistakeQueue[0]; this.state.isRedemption = true; }
+            else { this.finishGame(); return; }
+            this.state.currentObj = q; this.state.userSelection = []; this.state.hintUsed = false; this.state.locked = false;
+            document.getElementById("prompt-cn").innerText = q.cn;
+            document.getElementById("hint-text").innerText = q.hint;
+            document.getElementById("hint-text").classList.remove("visible");
+            document.getElementById("feedback-area").className = "feedback-area"; 
+            document.getElementById("check-btn").style.display = "block";
+            document.getElementById("check-btn").disabled = true;
+            document.getElementById("check-btn").className = "check-btn";
+            document.getElementById("next-btn").style.display = "none";
+            this.renderAnswerArea(); this.generatePool(q);
+        },
+        generatePool: function(q) {
+            const cleanEn = q.en.replace(/[.!?]$/, "");
+            const originalWords = cleanEn.split(" ");
+            let allWords = [...originalWords, ...q.noise];
+            allWords.sort(() => Math.random() - 0.5);
+            
+            const pool = document.getElementById("word-pool");
+            pool.innerHTML = "";
+            
+            allWords.forEach((word, idx) => {
+                const btn = document.createElement("button");
+                btn.className = "word-btn";
+                
+                let displayWord = word;
+                const isAcronym = word.length > 1 && word === word.toUpperCase();
+                const isI = word === "I";
+                const isOriginalCapitalized = word.charAt(0) === word.charAt(0).toUpperCase() && word.charAt(0) !== word.charAt(0).toLowerCase();
+                
+                let shouldKeepCapital = isAcronym || isI;
+                
+                if (!shouldKeepCapital && isOriginalCapitalized) {
+                    const foundInMiddle = originalWords.some((w, i) => i > 0 && w === word);
+                    if (foundInMiddle) {
+                        shouldKeepCapital = true;
+                    }
+                }
+
+                if (!shouldKeepCapital) {
+                    displayWord = word.toLowerCase();
+                }
+
+                const cleanWord = displayWord.toLowerCase().replace(/[^a-z]/g, "");
+                const ipa = ipaDict[cleanWord];
+                btn.innerHTML = `<span>${displayWord}</span>${ipa ? `<span class="ipa">[${ipa}]</span>` : ""}`;
+                btn.onclick = () => this.selectWord(displayWord, idx, btn); 
+                btn.dataset.val = displayWord;
+                pool.appendChild(btn);
+            });
+        },
+        selectWord: function(word, id, btn) {
+            if (this.state.locked || btn.classList.contains("selected")) return;
+            this.state.userSelection.push({ text: btn.dataset.val, srcBtn: btn });
+            btn.classList.add("selected");
+            this.renderAnswerArea(); this.updateCheckBtn();
+        },
+        removeWord: function(idx) {
+            if (this.state.locked) return;
+            const item = this.state.userSelection.splice(idx, 1)[0];
+            item.srcBtn.classList.remove("selected");
+            this.renderAnswerArea(); this.updateCheckBtn();
+        },
+        renderAnswerArea: function() {
+            const area = document.getElementById("answer-area");
+            area.innerHTML = "";
+            this.state.userSelection.forEach((item, idx) => {
+                const btn = document.createElement("button");
+                btn.className = "word-btn-answer";
+                let txt = item.text;
+                if (idx === 0) {
+                    if (txt.charAt(0) === txt.charAt(0).toLowerCase()) {
+                        txt = txt.charAt(0).toUpperCase() + txt.slice(1);
+                    }
+                }
+                btn.innerText = txt;
+                btn.onclick = () => this.removeWord(idx);
+                area.appendChild(btn);
+            });
+        },
+        showHint: function() { this.state.hintUsed = true; document.getElementById("hint-text").classList.add("visible"); },
+        updateCheckBtn: function() { document.getElementById("check-btn").disabled = this.state.userSelection.length === 0; },
+        checkAnswer: function() {
+            if (this.state.locked || this.state.userSelection.length === 0) return;
+            let userSent = this.state.userSelection.map((item, idx) => {
+                let t = item.text;
+                if (idx === 0) t = t.charAt(0).toUpperCase() + t.slice(1);
+                return t;
+            }).join(" ");
+            this.state.locked = true;
+            const target = this.state.currentObj.en.replace(/[.!?]$/, "");
+            let isCorrect = userSent === target; 
+            if (!isCorrect && this.state.currentObj.accept) {
+                isCorrect = this.state.currentObj.accept.some(alt => alt.replace(/[.!?]$/, "") === userSent);
+            }
+            const feedback = document.getElementById("feedback-area");
+            const title = document.getElementById("feedback-title");
+            const msg = document.getElementById("feedback-msg");
+            const btn = document.getElementById("check-btn");
+            const playBtn = document.getElementById("play-btn");
+
+            playBtn.style.display = this.state.currentObj.audio ? "inline-flex" : "none";
+
+            if (isCorrect) {
+                this.playSFX('correct');
+                let scoreType = "green";
+                if (this.state.isRedemption) scoreType = "redemption";
+                else {
+                    if (this.state.hintUsed) scoreType = "yellow";
+                    this.state.scoreLog[this.state.currentIndex] = scoreType;
+                }
+                feedback.className = "feedback-area correct visible";
+                title.innerText = "Perfect Structure!"; title.style.color = "#58cc02"; msg.innerText = this.state.currentObj.en;
+                btn.className = "check-btn correct";
+                if(this.state.isRedemption) this.state.mistakeQueue.shift();
+            } else {
+                this.playSFX('wrong');
+                feedback.className = "feedback-area wrong visible";
+                title.innerText = "Correct Answer:"; title.style.color = "#ea2b2b"; msg.innerText = this.state.currentObj.en;
+                btn.className = "check-btn wrong";
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = "red";
+                    this.state.mistakeQueue.push(this.state.currentObj);
+                    this.logMistake(this.state.currentObj, userSent);
+                } else this.state.mistakeQueue.push(this.state.mistakeQueue.shift());
+            }
+
+            if (this.state.settings.autoplay) {
+                setTimeout(() => this.playAudio(), 200);
+            }
+
+            this.renderProgress();
+            btn.style.display = "none";
+            const nextBtn = document.getElementById("next-btn");
+            nextBtn.style.display = "block";
+            let isLast = this.state.isRedemption ? (this.state.mistakeQueue.length === 0) : (this.state.currentIndex >= this.state.queue.length - 1 && this.state.mistakeQueue.length === 0);
+            if(isLast) { nextBtn.innerText = "Finish"; nextBtn.style.backgroundColor = "var(--primary)"; nextBtn.style.borderBottomColor = "var(--primary-dark)"; }
+            else { nextBtn.innerText = "Continue"; nextBtn.style.backgroundColor = "var(--secondary)"; nextBtn.style.borderBottomColor = "var(--secondary-dark)"; }
+        },
+        nextQuestion: function() { if (!this.state.isRedemption) this.state.currentIndex++; this.loadQuestion(); },
+        renderProgress: function() {
+            const bar = document.getElementById("progress-bar");
+            bar.innerHTML = "";
+            for(let i=0; i<10; i++) {
+                const seg = document.createElement("div");
+                seg.className = "progress-segment";
+                const s = this.state.scoreLog[i];
+                if(s) seg.classList.add(s);
+                bar.appendChild(seg);
+            }
+        },
+        finishGame: function() {
+            const total = this.state.scoreLog.reduce((acc, curr) => {
+                if (curr === "green") return acc + 10;
+                if (curr === "yellow") return acc + 5;
+                return acc;
+            }, 0);
+            const wrongQuestions = [];
+            this.state.scoreLog.forEach((status, index) => { if (status === "red" && this.state.queue[index]) wrongQuestions.push(this.state.queue[index]); });
+            const allStats = this.getStats();
+            const cid = this.state.currentChallenge.id;
+            if (!allStats[cid]) allStats[cid] = { today: {date: new Date().toLocaleDateString(), attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+            const s = allStats[cid];
+            s.today.attempts++; if (total > s.today.best) s.today.best = total;
+            s.lifetime.attempts++; if (total > s.lifetime.best) s.lifetime.best = total;
+            this.saveStats(allStats);
+            this.saveSessionLog({ date: new Date().toLocaleString(), challenge: this.state.currentChallenge.title, score: total });
+            let mistakeHtml = wrongQuestions.length > 0 ? `<div style="width:100%; text-align:left; background:#fff; border-radius:12px; padding:15px; margin:20px 0; max-height:300px; overflow-y:auto; border:2px solid var(--neutral);"><h3 style="color:var(--danger); margin-top:0; border-bottom:1px solid #eee; padding-bottom:5px;">Review Mistakes:</h3>${wrongQuestions.map(q => `<div style="margin-bottom:10px; border-bottom:1px solid #f0f0f0; padding-bottom:5px;"><div style="font-weight:bold; color:#555;">${q.cn}</div><div style="color:var(--primary-dark); font-weight:bold;">${q.en}</div></div>`).join("")}</div>` : `<div style="margin:20px 0; color:var(--primary); font-weight:bold; font-size:1.2rem;">🎉 Perfect Run! No mistakes.</div>`;
+            document.getElementById("game-screen").innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:20px;"><h1 style="color:var(--primary); font-size:3rem; margin:0;">${total}%</h1><h2 style="margin:5px 0 20px 0; color:#555;">Challenge Complete!</h2>${mistakeHtml}<button onclick="location.reload()" class="check-btn" style="width:100%; max-width:300px;">Back to Challenges</button></div>`;
+        },
+        logMistake: function(qObj, userAns) {
+            const list = this.getMistakes();
+            const existing = list.find(m => m.en === qObj.en);
+            if(existing) { existing.count++; existing.wrong = userAns; existing.timestamp = Date.now(); list.splice(list.indexOf(existing), 1); list.unshift(existing); }
+            else list.unshift({ en: qObj.en, cn: qObj.cn, wrong: userAns, count: 1, timestamp: Date.now(), challenge: this.state.currentChallenge.title });
+            this.saveMistakes(list);
+        },
+        showMistakes: function() {
+            const list = this.getMistakes(); const container = document.getElementById("mistakes-list"); container.innerHTML = "";
+            if(list.length === 0) container.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>No mistakes yet! Great job!</div>";
+            else list.forEach(m => {
+                const div = document.createElement("div"); div.className = "mistake-item";
+                div.innerHTML = `<div style="font-size:0.8rem; color:#999; margin-bottom:5px;">${new Date(m.timestamp).toLocaleDateString()} - ${m.challenge}<span class="fail-count">Failed ${m.count}x</span></div><div style="font-weight:bold; color:#333; margin-bottom:3px;">${m.cn}</div><div style="color:var(--danger); text-decoration:line-through; font-size:0.9rem;">${m.wrong || "(No answer)"}</div><div style="color:var(--primary-dark); font-weight:bold; font-size:0.9rem;">${m.en}</div>`;
+                container.appendChild(div);
+            });
+            document.getElementById("mistakes-modal").style.display = "flex";
+        },
+        closeMistakes: function() { document.getElementById("mistakes-modal").style.display = "none"; },
+        clearMistakes: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === "FDPOC") { localStorage.removeItem(ID_A + "-mistakes_a6b_m1"); this.showMistakes(); }
+            else alert("Incorrect Passcode");
+        },
+        showScoreHistory: function() {
+            const list = this.getSessionLogs(); const container = document.getElementById("history-list"); container.innerHTML = "";
+            if(list.length === 0) container.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>No games played yet.</div>";
+            else list.forEach(l => {
+                const div = document.createElement("div"); div.className = "mistake-item";
+                div.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><strong style="color:#333;">${l.challenge}</strong><span style="font-weight:bold; color:var(--primary);">${l.score}%</span></div><div style="font-size:0.8rem; color:#999;">${l.date}</div>`;
+                container.appendChild(div);
+            });
+            document.getElementById("history-modal").style.display = "flex";
+        },
+        closeScoreHistory: function() { document.getElementById("history-modal").style.display = "none"; },
+        clearHistory: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === "FDPOC") {
+                localStorage.removeItem(ID_A + "-stats_a6b_m1");
+                localStorage.removeItem(ID_A + "-session_logs_a6b_m1");
+                location.reload();
+            } else alert("Incorrect Passcode");
+        },
+        goHome: function() { if(confirm("Exit? Progress will be lost.")) location.reload(); }
+    };
+
+    /* --- AUTH LOGIC SLOT START --- */
+    window.onload = function() { 
+        try {
+            challenges = JSON.parse(_0x4f2a(encryptedChallenges, builtInKey));
+            app.init();
+            document.getElementById("app").style.display = "flex";
+        } catch(e) {
+            console.error("Initialization failed");
+        }
+    };
+    /* --- AUTH LOGIC SLOT END --- */
+</script>
+</body>
+</html>
