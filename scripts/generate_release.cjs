@@ -175,10 +175,12 @@ function getAudioUrl(sentence, folderName) {
     return `${PUBLIC_URL_BASE}/${r2Key}`;
 }
 
-async function getAudioForSentence(sentence, folderName, skipGeneration = false) {
+let isGeminiQuotaExhausted = false;
+
+async function getAudioForSentence(sentence, folderName, mode = '1') {
     const finalUrl = getAudioUrl(sentence, folderName);
 
-    if (skipGeneration) {
+    if (mode === '1') {
         return finalUrl;
     }
 
@@ -190,12 +192,14 @@ async function getAudioForSentence(sentence, folderName, skipGeneration = false)
     const hash = crypto.createHash('md5').update(sentence).digest('hex');
     const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
 
-    // Check if exists
-    try {
-        await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
-        return finalUrl;
-    } catch (e) {
-        // Continue to generate
+    if (mode === '2') {
+        // Check if exists
+        try {
+            await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
+            return finalUrl;
+        } catch (e) {
+            // Continue to generate
+        }
     }
 
     console.log(`Generating audio for: "${sentence.substring(0, 30)}..."`);
@@ -214,24 +218,31 @@ from google import genai
 from google.genai import types
 
 def try_gemini():
+    if "${isGeminiQuotaExhausted}" == "true":
+        raise Exception("429 RESOURCE_EXHAUSTED (pre-skipped)")
     client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
-    response = client.models.generate_content(
-        model="gemini-2.5-flash-preview-tts",
-        contents="Say clearly: ${sentence.replace(/"/g, '\\"')}",
-        config=types.GenerateContentConfig(
-            response_modalities=["AUDIO"],
-            speech_config=types.SpeechConfig(
-                voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Kore")
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-preview-tts",
+            contents="Say clearly: ${sentence.replace(/"/g, '\\"')}",
+            config=types.GenerateContentConfig(
+                response_modalalities=["AUDIO"],
+                speech_config=types.SpeechConfig(
+                    voice_config=types.VoiceConfig(
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Kore")
+                    )
                 )
             )
         )
-    )
-    with wave.open("${tempWav}", "wb") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(24000)
-        wf.writeframes(response.candidates[0].content.parts[0].inline_data.data)
+        with wave.open("${tempWav}", "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(24000)
+            wf.writeframes(response.candidates[0].content.parts[0].inline_data.data)
+    except Exception as e:
+        if "429" in str(e):
+            print("MARK_QUOTA_EXHAUSTED")
+        raise e
 
 def try_google_cloud():
     try:
@@ -243,10 +254,11 @@ def try_google_cloud():
     input_text = texttospeech.SynthesisInput(text="${sentence.replace(/"/g, '\\"')}")
     voice = texttospeech.VoiceSelectionParams(
         language_code="en-US",
-        name="en-US-Chirp3-HD-Charon",
+        name="en-US-Chirp3-HD-Kore",
     )
     audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.LINEAR16
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16,
+        speaking_rate=0.9
     )
     response = client.synthesize_speech(
         input=input_text,
@@ -272,7 +284,10 @@ except Exception as e:
 
     fs.writeFileSync(tempPy, pythonScript);
     try {
-        execSync(`python3 "${tempPy}"`);
+        const output = execSync(`python3 "${tempPy}"`).toString();
+        if (output.includes("MARK_QUOTA_EXHAUSTED")) {
+            isGeminiQuotaExhausted = true;
+        }
         // Convert to mp3
         execSync(`ffmpeg -i "${tempWav}" -codec:a libmp3lame -qscale:a 2 "${tempMp3}" -y -loglevel error`);
         
@@ -311,7 +326,7 @@ function loadFragment(type) {
     return sections;
 }
 
-async function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3, skipAudio = false) {
+async function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3, audioMode = '1') {
     const absoluteJsonPath = resolvePath(jsonPath);
     let data;
     try {
@@ -344,7 +359,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const audioTasks = [];
     for (const challenge of data.challenges) {
         for (const item of challenge.data) {
-            if (item.en && !item.audio) {
+            if (item.en && (audioMode === '3' || !item.audio)) {
                 audioTasks.push(item);
             }
         }
@@ -353,11 +368,11 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const BATCH_SIZE = 5;
     for (let i = 0; i < audioTasks.length; i += BATCH_SIZE) {
         const batch = audioTasks.slice(i, i + BATCH_SIZE);
-        if (!skipAudio) {
+        if (audioMode !== '1') {
             console.log(`Processing audio batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(audioTasks.length/BATCH_SIZE)}...`);
         }
         await Promise.all(batch.map(async (item) => {
-            const url = await getAudioForSentence(item.en, folderName, skipAudio);
+            const url = await getAudioForSentence(item.en, folderName, audioMode);
             if (url) item.audio = url;
         }));
     }
@@ -412,9 +427,9 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     rebuildIndexes();
 }
 
-async function checkboxSelector(message, options) {
+async function checkboxSelector(message, options, defaultSelected = false) {
     return new Promise((resolve) => {
-        const choices = options.map(o => ({ name: o, selected: false }));
+        const choices = options.map(o => ({ name: o, selected: defaultSelected }));
         let cursor = 0;
 
         const render = () => {
@@ -491,6 +506,29 @@ async function interactive() {
         return;
     }
 
+    let filesToProcess = []; // Array of { folder, file }
+    if (selectedFolders.length === 1) {
+        const selectedFolder = selectedFolders[0];
+        const folderPath = path.join(dataDir, selectedFolder);
+        const allFiles = fs.readdirSync(folderPath).filter(f => f.endsWith('.json'));
+        if (allFiles.length === 0) {
+            console.warn(`No JSON files found in ${selectedFolder}. Exiting.`);
+            return;
+        }
+        const selectedFiles = await checkboxSelector(`Select files in ${selectedFolder}:`, allFiles, true);
+        if (selectedFiles.length === 0) {
+            console.log('No files selected. Exiting.');
+            return;
+        }
+        filesToProcess = selectedFiles.map(f => ({ folder: selectedFolder, file: f }));
+    } else {
+        for (const folder of selectedFolders) {
+            const folderPath = path.join(dataDir, folder);
+            const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.json'));
+            filesToProcess.push(...files.map(f => ({ folder, file: f })));
+        }
+    }
+
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
@@ -518,42 +556,36 @@ async function interactive() {
     const validityMonthsInput = await question('Select validity months (1, 2, or 3) [1]: ');
     const validityMonths = validityMonthsInput === '2' ? 6 : (validityMonthsInput === '3' ? 12 : 3);
 
-    const skipAudioInput = await question('\nSkip audio generation (yes/no) [yes]: ');
-    const skipAudio = skipAudioInput.toLowerCase() !== 'no' && skipAudioInput.toLowerCase() !== 'n';
+    console.log('\nAudio Generation:');
+    console.log('1. skip (default)');
+    console.log('2. skip exist and generate missing');
+    console.log('3. regenerate and overwrite');
+    const audioMode = await question('Select audio generation mode (1, 2, or 3) [1]: ') || '1';
 
     rl.close();
 
-    for (const selectedFolder of selectedFolders) {
-        const folderPath = path.join(dataDir, selectedFolder);
-        const files = fs.readdirSync(folderPath).filter(f => f.endsWith('.json'));
+    console.log(`\nProcessing ${filesToProcess.length} files...`);
 
-        if (files.length === 0) {
-            console.warn(`No JSON files found in ${selectedFolder}. Skipping.`);
-            continue;
-        }
-
-        console.log(`\nProcessing folder: ${selectedFolder} (${files.length} files)`);
-
-        for (const file of files) {
-            const jsonPath = path.join(folderPath, file);
-            const outputFilename = file.replace(".json", ".html");
-            const outputPath = path.join('release', selectedType, selectedFolder, outputFilename);
-            await generate(jsonPath, selectedType, outputPath, userCount, validityMonths, skipAudio);
-        }
+    for (const task of filesToProcess) {
+        const jsonPath = path.join(dataDir, task.folder, task.file);
+        const outputFilename = task.file.replace(".json", ".html");
+        const outputPath = path.join('release', selectedType, task.folder, outputFilename);
+        await generate(jsonPath, selectedType, outputPath, userCount, validityMonths, audioMode);
     }
 
     console.log('\nBatch generation complete.');
 }
 
+
 const args = process.argv.slice(2);
 if (args.length === 0) {
     interactive();
 } else if (args.length >= 3) {
-    const skipAudio = args.includes('--skip-audio') || args.includes('-s');
-    generate(args[0], args[1], args[2], 3, 3, skipAudio);
+    const audioMode = args.includes('--regenerate') ? '3' : (args.includes('--skip-audio') ? '1' : '2');
+    generate(args[0], args[1], args[2], 3, 3, audioMode);
 } else {
     console.log("Usage:");
     console.log("  Interactive: node generate_release.js");
-    console.log("  Direct:      node generate_release.js <json_path> <type: post|builtin> <output_path> [--skip-audio]");
+    console.log("  Direct:      node generate_release.js <json_path> <type: post|builtin> <output_path> [--skip-audio|--regenerate]");
     process.exit(1);
 }
