@@ -557,9 +557,9 @@ async function interactive() {
     const validityMonths = validityMonthsInput === '2' ? 6 : (validityMonthsInput === '3' ? 12 : 3);
 
     console.log('\nAudio Generation:');
-    console.log('1. skip (default)');
-    console.log('2. skip exist and generate missing');
-    console.log('3. regenerate and overwrite');
+    console.log('1. Skip [default]');
+    console.log('2. Generate missing only [skip existing]');
+    console.log('3. Regenerate all [overwrite existing]');
     const audioMode = await question('Select audio generation mode (1, 2, or 3) [1]: ') || '1';
 
     rl.close();
