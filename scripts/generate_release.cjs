@@ -209,10 +209,12 @@ async function getAudioForSentence(sentence, folderName, skipGeneration = false)
     const pythonScript = `
 import os
 import wave
+import sys
 from google import genai
 from google.genai import types
-client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
-try:
+
+def try_gemini():
+    client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
     response = client.models.generate_content(
         model="gemini-2.5-flash-preview-tts",
         contents="Say clearly: ${sentence.replace(/"/g, '\\"')}",
@@ -230,9 +232,42 @@ try:
         wf.setsampwidth(2)
         wf.setframerate(24000)
         wf.writeframes(response.candidates[0].content.parts[0].inline_data.data)
+
+def try_google_cloud():
+    try:
+        from google.cloud import texttospeech
+    except ImportError:
+        print("google-cloud-texttospeech not installed", file=sys.stderr)
+        raise
+    client = texttospeech.TextToSpeechClient()
+    input_text = texttospeech.SynthesisInput(text="${sentence.replace(/"/g, '\\"')}")
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="en-US",
+        name="en-US-Chirp3-HD-Charon",
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16
+    )
+    response = client.synthesize_speech(
+        input=input_text,
+        voice=voice,
+        audio_config=audio_config,
+    )
+    with open("${tempWav}", "wb") as out:
+        out.write(response.audio_content)
+
+try:
+    try_gemini()
+    print("Gemini TTS success")
 except Exception as e:
-    print(f"Error: {e}")
-    exit(1)
+    print(f"Gemini TTS failed: {e}", file=sys.stderr)
+    try:
+        print("Attempting fallback to Google Cloud TTS...", file=sys.stderr)
+        try_google_cloud()
+        print("Google Cloud TTS success")
+    except Exception as e2:
+        print(f"Fallback failed: {e2}", file=sys.stderr)
+        sys.exit(1)
 `;
 
     fs.writeFileSync(tempPy, pythonScript);
