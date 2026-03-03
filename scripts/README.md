@@ -51,6 +51,33 @@ node scripts/vocab_release_gen.cjs <input_json_path> <output_html_path> [--skip-
 
 ---
 
+## 3. Vocab Master Generator (`vm_release_gen.cjs`)
+
+Generates interactive vocabulary challenge HTML files (Cloze, Cn2En, En2Cn) based on `*-vocab-master.json` files.
+
+### ✨ Key Features
+- **Interactive Challenges:** Supports three question types: Cloze (fill in the blank), Cn2En (select English), and En2Cn (select Chinese meaning).
+- **Security:** Obfuscates exercise data using XOR encryption and unique `ID_A` generation.
+- **Batch TTS Audio:** Automatically generates audio for context sentences in batches using Gemini 2.5 Flash.
+- **Progress Tracking:** Includes a visual progress bar and persists lifetime/best score statistics in `localStorage`.
+- **Review System:** Automatically logs mistakes for later review by students.
+- **Controlled Flow:** Implements a 2-second delay on the "Continue" button after checking an answer to ensure students read the feedback.
+
+### 🛠 Usage
+
+#### Interactive Mode
+Run without arguments to select folders and `*-vocab-master.json` files.
+```bash
+node scripts/vm_release_gen.cjs
+```
+
+#### Direct Mode
+```bash
+node scripts/vm_release_gen.cjs <json_path> <type> <output_path> [--skip-audio|--regenerate]
+```
+
+---
+
 ## 🛠 System Dependencies
 Required for audio generation and processing:
 - `python3`: With `google-genai`.
@@ -64,6 +91,7 @@ Required for full functionality:
 
 ## 📁 System Components
 - `templates/shell-master.html`: Core UI for sentence exercises.
+- `templates/vm-shell-master.html`: Interactive UI for vocabulary challenges.
 - `templates/vocab-guide.html`: Layout for vocabulary guides.
 - `data/`: Source JSON files.
 - `release/`: Generated production HTML files.
