@@ -359,11 +359,11 @@ async function interactive() {
     if (selectedFolders.length === 0) return;
     let filesToProcess = [];
     if (selectedFolders.length === 1) {
-        const allFiles = fs.readdirSync(path.join(dataDir, selectedFolders[0])).filter(f => f.endsWith('.json'));
+        const allFiles = fs.readdirSync(path.join(dataDir, selectedFolders[0])).filter(f => f.endsWith('-sentence-architect.json'));
         const selectedFiles = await checkboxSelector(`Select files in ${selectedFolders[0]}:`, allFiles, true);
         filesToProcess = selectedFiles.map(f => ({ folder: selectedFolders[0], file: f }));
     } else {
-        selectedFolders.forEach(folder => filesToProcess.push(...fs.readdirSync(path.join(dataDir, folder)).filter(f => f.endsWith('.json')).map(f => ({ folder, file: f }))));
+        selectedFolders.forEach(folder => filesToProcess.push(...fs.readdirSync(path.join(dataDir, folder)).filter(f => f.endsWith('-sentence-architect.json')).map(f => ({ folder, file: f }))));
     }
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     const question = (q) => new Promise(res => rl.question(q, res));

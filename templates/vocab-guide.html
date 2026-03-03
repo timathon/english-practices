@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{TITLE}}</title>
+    <style>
+        /* Compact A4 Print Optimization */
+        @page { size: A4; margin: 10mm; } 
+        body { 
+            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            color: #333; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: #fff;
+            padding: 15px; 
+            box-sizing: border-box;
+            position: relative;
+        }
+        h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
+        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-bottom: 25px; margin-top: 0; }
+        
+        /* Responsive Grid Layout */
+        .vocab-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px; 
+        }
+
+        @media (min-width: 600px) {
+            .vocab-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Compact Vocab Cards */
+        .vocab-item { 
+            page-break-inside: avoid; 
+            break-inside: avoid;
+            padding: 15px; 
+            border: 1px solid #eee; 
+            border-radius: 10px; 
+            background-color: #fafafa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; }
+        .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
+        .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
+        .value { flex-grow: 1; }
+        
+        /* Tighter inner boxes */
+        .context-box { 
+            background-color: #fff; 
+            border-left: 4px solid #f39c12; 
+            padding: 8px 12px; 
+            margin: 10px 0; 
+            font-size: 0.95em;
+            font-style: italic; 
+            color: #555;
+            border-radius: 0 4px 4px 0;
+        }
+        .hook-box { 
+            background-color: #e8f8f5; 
+            border-left: 4px solid #1abc9c; 
+            padding: 8px 12px; 
+            margin-top: auto; 
+            font-size: 0.95em;
+            border-radius: 0 4px 4px 0;
+        }
+        .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
+
+        .play-btn {
+            background: var(--white, #fff);
+            border: 1px solid #eee;
+            border-bottom: 3px solid #ddd;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 5px;
+            vertical-align: middle;
+            transition: all 0.1s;
+            padding: 0;
+        }
+        .play-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
+
+        /* Floating Toggle */
+        #sort-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #sort-toggle:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+        #sort-toggle:active {
+            transform: scale(0.95);
+        }
+
+        @media print {
+            @page { margin: 8mm; }
+            body { padding: 0; font-size: 10px; }
+            header a { display: none; }
+            header div { display: inline !important; min-height: 0 !important; margin: 0 !important; }
+            h1 { display: inline; font-size: 1.2em; margin: 0; }
+            h2 { display: inline; font-size: 1.1em; border: none; padding: 0; margin-left: 15px; }
+            header { text-align: center; border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; }
+            .vocab-grid { 
+                grid-template-columns: 1fr 1fr 1fr; 
+                gap: 6px; 
+            }
+            .vocab-item { 
+                padding: 5px 8px; 
+                box-shadow: none; 
+                border: 1px solid #ccc;
+                min-height: 0;
+            }
+            .word-title { font-size: 1em; margin-bottom: 3px; padding-bottom: 1px; }
+            .details { margin-bottom: 1px; font-size: 0.8em; line-height: 1.2; }
+            .label { width: 60px; font-size: 0.8em; }
+            .context-box { margin: 3px 0; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
+            .hook-box { margin-top: 3px; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
+            #sort-toggle { display: none; }
+            .play-btn { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 10px;">
+            <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
+            <h1 style="margin: 0;">Vocabulary Guide</h1>
+            <button id="sort-toggle" onclick="toggleSort()">
+                <span id="sort-icon">🔤</span>
+                <span id="sort-text">Sort A-Z</span>
+            </button>
+        </div>
+        <h2>{{LEVEL}}</h2>
+    </header>
+
+    <div class="vocab-grid" id="vocab-container">
+        {{ITEMS}}
+    </div>
+
+    <script>
+        let isAlphabetical = false;
+        const container = document.getElementById('vocab-container');
+        const items = Array.from(container.getElementsByClassName('vocab-item'));
+        
+        function toggleSort() {
+            isAlphabetical = !isAlphabetical;
+            const btnText = document.getElementById('sort-text');
+            const btnIcon = document.getElementById('sort-icon');
+
+            if (isAlphabetical) {
+                items.sort((a, b) => a.dataset.word.localeCompare(b.dataset.word));
+                btnText.innerText = "Textbook Order";
+                btnIcon.innerText = "📖";
+            } else {
+                items.sort((a, b) => parseInt(a.dataset.index) - parseInt(b.dataset.index));
+                btnText.innerText = "Sort A-Z";
+                btnIcon.innerText = "🔤";
+            }
+
+            // Clear and re-append sorted items
+            container.innerHTML = '';
+            items.forEach(item => container.appendChild(item));
+        }
+    </script>
+
+</body>
+</html>
