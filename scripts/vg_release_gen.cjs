@@ -10,7 +10,7 @@ const { S3Client, PutObjectCommand, HeadObjectCommand } = require("@aws-sdk/clie
  * Converts vocabulary JSON data into a formatted, print-optimized HTML guide.
  * Uses templates/vocab-guide.html as the base structure.
  * 
- * Usage: node scripts/vocab_release_gen.cjs [input_json_path] [output_html_path]
+ * Usage: node scripts/vg_release_gen.cjs [input_json_path] [output_html_path]
  */
 
 const BASE_DIR = path.resolve(__dirname, '..');

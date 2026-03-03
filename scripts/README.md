@@ -4,7 +4,7 @@ This folder contains scripts to automate the process of converting raw exercise 
 
 ---
 
-## 1. Sentence Architect Generator (`sentence_release_gen.cjs`)
+## 1. Sentence Architect Generator (`sa_release_gen.cjs`)
 
 Automates the creation of secure, obfuscated HTML files for sentence building exercises. Handles data encryption, Gemini-powered TTS generation, and Cloudflare R2 uploading.
 
@@ -13,18 +13,18 @@ Automates the creation of secure, obfuscated HTML files for sentence building ex
 #### Interactive Mode (Recommended)
 Run without arguments to enter an interactive wizard. Filters for `*-sentence-architect.json` files.
 ```bash
-node scripts/sentence_release_gen.cjs
+node scripts/sa_release_gen.cjs
 ```
 
 #### Direct Mode
 Generate a specific file immediately.
 ```bash
-node scripts/sentence_release_gen.cjs <json_path> <type> <output_path> [--skip-audio|--regenerate]
+node scripts/sa_release_gen.cjs <json_path> <type> <output_path> [--skip-audio|--regenerate]
 ```
 
 ---
 
-## 2. Vocabulary Guide Generator (`vocab_release_gen.cjs`)
+## 2. Vocabulary Guide Generator (`vg_release_gen.cjs`)
 
 Converts vocabulary JSON data into a formatted, print-optimized HTML guide using `templates/vocab-guide.html`.
 
@@ -41,12 +41,12 @@ Converts vocabulary JSON data into a formatted, print-optimized HTML guide using
 #### Interactive Mode
 Run without arguments to select folders and `*-vocab-guide.json` files. Includes prompts for audio generation modes (Skip, Missing, Regenerate).
 ```bash
-node scripts/vocab_release_gen.cjs
+node scripts/vg_release_gen.cjs
 ```
 
 #### Direct Mode
 ```bash
-node scripts/vocab_release_gen.cjs <input_json_path> <output_html_path> [--skip-audio|--regenerate]
+node scripts/vg_release_gen.cjs <input_json_path> <output_html_path> [--skip-audio|--regenerate]
 ```
 
 ---
@@ -90,7 +90,7 @@ Required for full functionality:
 - `AWS_SECRET_ACCESS_KEY`: For Cloudflare R2 access.
 
 ## 📁 System Components
-- `templates/shell-master.html`: Core UI for sentence exercises.
+- `templates/sa-shell-master.html`: Core UI for sentence exercises.
 - `templates/vm-shell-master.html`: Interactive UI for vocabulary challenges.
 - `templates/vocab-guide.html`: Layout for vocabulary guides.
 - `data/`: Source JSON files.

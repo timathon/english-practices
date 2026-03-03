@@ -303,7 +303,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const encrypted = xorEncrypt(Buffer.from(json, 'utf8'), key);
     const base64 = Buffer.from(encrypted).toString('base64');
 
-    let html = fs.readFileSync(resolvePath('templates/shell-master.html'), 'utf8');
+    let html = fs.readFileSync(resolvePath('templates/sa-shell-master.html'), 'utf8');
     const auth = loadFragment(type);
     ['CSS', 'UI', 'VARS', 'LOGIC'].forEach(s => html = html.replace(new RegExp(`{{AUTH_${s}}}`, 'g'), auth[s]));
     html = html.replace(/{{TITLE}}/g, data.title).replace(/{{LEVEL}}/g, data.level || "Sentence Architect")
