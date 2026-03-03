@@ -47,7 +47,8 @@
             display: flex;
             flex-direction: column;
         }
-        .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; }
+        .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; }
         .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
         .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
         .value { flex-grow: 1; }
@@ -166,6 +167,8 @@
     </div>
 
     <script>
+        const vocabData = {{VOCAB_DATA}};
+
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
         const items = Array.from(container.getElementsByClassName('vocab-item'));
@@ -189,6 +192,60 @@
             container.innerHTML = '';
             items.forEach(item => container.appendChild(item));
         }
+
+        const app = {
+            currentAudio: null,
+
+            cacheAudio: async function(url) {
+                if (!url) return;
+                const hash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const cacheKey = "ep-sa-audio-" + hash;
+                
+                if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+                try {
+                    const resp = await fetch(url);
+                    const blob = await resp.blob();
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            try {
+                                localStorage.setItem(cacheKey, reader.result);
+                            } catch(e) { 
+                                console.warn("Audio cache full"); 
+                            }
+                            resolve(reader.result);
+                        };
+                        reader.readAsDataURL(blob);
+                    });
+                } catch(e) { console.error("Cache failed", e); }
+            },
+
+            playAudio: function() {
+                const btn = window.event.currentTarget || window.event.target.closest('.play-btn');
+                const card = btn.closest('.vocab-item');
+                const index = parseInt(card.dataset.index);
+                const url = vocabData[index].audio;
+                if (!url) return;
+
+                if (this.currentAudio) this.currentAudio.pause();
+                
+                const cacheHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const cacheKey = "ep-sa-audio-" + cacheHash;
+                const source = localStorage.getItem(cacheKey) || url;
+
+                this.currentAudio = new Audio(source);
+                this.currentAudio.play().catch(e => console.warn("Audio playback failed", e));
+            }
+        };
+
+        // Preload all audio on startup
+        window.addEventListener('load', () => {
+            vocabData.forEach(item => {
+                if (item.audio) {
+                    app.cacheAudio(item.audio);
+                }
+            });
+        });
     </script>
 
 </body>

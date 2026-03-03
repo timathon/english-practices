@@ -30,21 +30,23 @@ Converts vocabulary JSON data into a formatted, print-optimized HTML guide using
 
 ### ✨ Key Features
 - **Interactive Sorting:** Includes a floating toggle to switch between "Textbook Order" and "Alphabetical (A-Z) Order".
+- **Batch TTS Audio:** Automatically generates high-quality audio for context sentences using Gemini 2.5 Flash (processed in batches of 10).
+- **Audio Caching:** Implements background preloading and Base64 `localStorage` caching for instant, offline-ready playback.
+- **Clean HTML:** Uses a state-driven audio system where URLs are managed via injected JSON, keeping the DOM structure minimal.
 - **Print Optimization:** Automatically switches to a compact 3-column grid during printing, maximizing space on A4 pages while hiding web-only UI elements.
-- **Header Logic:** Displays a standard "Vocabulary Guide" title with the specific textbook `level` as a subtitle.
-- **Navigation:** Includes a quick-access home link to `index.html`.
+- **Textbook Context:** Displays "Page Number" badges (e.g., P9) to link vocabulary back to physical textbook materials.
 
 ### 🛠 Usage
 
 #### Interactive Mode
-Run without arguments to select folders and `*-vocab-guide.json` files.
+Run without arguments to select folders and `*-vocab-guide.json` files. Includes prompts for audio generation modes (Skip, Missing, Regenerate).
 ```bash
 node scripts/vocab_release_gen.cjs
 ```
 
 #### Direct Mode
 ```bash
-node scripts/vocab_release_gen.cjs <input_json_path> <output_html_path>
+node scripts/vocab_release_gen.cjs <input_json_path> <output_html_path> [--skip-audio|--regenerate]
 ```
 
 ---
