@@ -60,8 +60,9 @@ async function getAudioBatch(tasks, folderName) {
     const separator = " . . . . . "; 
     const sentences = tasks.map(t => t.context_sentence);
     const combinedText = sentences.join(separator) + separator;
+    const totalWords = combinedText.trim().split(/\s+/).length;
     
-    console.log(`TTS Batch Request: ${tasks.length} sentences. Total length: ${combinedText.length} characters.`);
+    console.log(`TTS Batch Request: ${tasks.length} sentences. Total words: ${totalWords}.`);
 
     const pythonScript = `
 import wave
