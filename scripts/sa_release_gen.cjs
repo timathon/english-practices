@@ -153,7 +153,7 @@ async function getAudioBatch(tasks, folderName) {
         return;
     }
 
-    const TEMP_DIR = path.join(BASE_DIR, 'temp');
+    const TEMP_DIR = path.join(BASE_DIR, 'temp', 'audio');
     if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
     const batchId = crypto.randomBytes(4).toString('hex');
@@ -208,16 +208,23 @@ except Exception as e:
         if (pyOutput.includes("MARK_QUOTA_EXHAUSTED")) isGeminiQuotaExhausted = true;
 
         // Detect silences
-        const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=-30dB:d=0.4" -f null - 2>&1`).toString();
-        const silences = [];
+        const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=-30dB:d=0.3" -f null - 2>&1`).toString();
+        const allSilences = [];
         const startRe = /silence_start: ([\d.]+)/g;
         const endRe = /silence_end: ([\d.]+)/g;
         let sMatch, eMatch;
         while ((sMatch = startRe.exec(silenceOutput)) !== null && (eMatch = endRe.exec(silenceOutput)) !== null) {
-            silences.push({ start: parseFloat(sMatch[1]), end: parseFloat(eMatch[1]) });
+            const start = parseFloat(sMatch[1]);
+            const end = parseFloat(eMatch[1]);
+            allSilences.push({ start, end, duration: end - start });
         }
 
-        console.log(`Detected ${silences.length} markers. Sentences: ${tasks.length}.`);
+        const silences = allSilences
+            .sort((a, b) => b.duration - a.duration)
+            .slice(0, tasks.length)
+            .sort((a, b) => a.start - b.start);
+
+        console.log(`Detected ${allSilences.length} total pauses, using the ${silences.length} longest as separators.`);
 
         let startTime = 0;
         for (let i = 0; i < tasks.length; i++) {
@@ -272,30 +279,56 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const key = generateKey(ID_A);
 
     const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
+    
+    // Cache busting: Fetch metadata for all existing audio files to get timestamps
+    const metadataMap = new Map();
+    const allAudioTasks = [];
+    for (const challenge of data.challenges) {
+        for (const item of challenge.data) {
+            if (item.en) {
+                const hash = crypto.createHash('md5').update(item.en).digest('hex');
+                const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
+                allAudioTasks.push({ item, r2Key, hash });
+            }
+        }
+    }
+
+    console.log(`Checking metadata for ${allAudioTasks.length} audio files...`);
+    await Promise.all(allAudioTasks.map(async (task) => {
+        try {
+            const head = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: task.r2Key }));
+            if (head.LastModified) metadataMap.set(task.hash, head.LastModified.getTime());
+        } catch (e) {}
+    }));
+
     for (const challenge of data.challenges) {
         const tasksToGenerate = [];
         for (const item of challenge.data) {
             if (item.en) {
-                const finalUrl = getAudioUrl(item.en, folderName);
+                const hash = crypto.createHash('md5').update(item.en).digest('hex');
+                const timestamp = metadataMap.get(hash);
+                const baseUrl = getAudioUrl(item.en, folderName);
+                const finalUrl = timestamp ? `${baseUrl}?v=${timestamp}` : baseUrl;
+
                 if (audioMode === '1') {
                     item.audio = finalUrl;
                 } else {
-                    const hash = crypto.createHash('md5').update(item.en).digest('hex');
                     const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
-                    let exists = false;
-                    if (audioMode === '2') {
-                        try {
-                            await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
-                            exists = true;
-                            item.audio = finalUrl;
-                        } catch (e) {}
+                    let exists = metadataMap.has(hash);
+                    if (audioMode === '2' && exists) {
+                        item.audio = finalUrl;
                     }
-                    if (!exists) tasksToGenerate.push(item);
+                    if (!exists || audioMode === '3') tasksToGenerate.push(item);
                 }
             }
         }
         if (tasksToGenerate.length > 0) {
             await getAudioBatch(tasksToGenerate, folderName);
+            // After generation, we don't have the new timestamp yet, but next run will pick it up
+            // Or we can just use current timestamp for newly generated ones
+            tasksToGenerate.forEach(item => {
+                if (!item.audio.includes('?v=')) item.audio += `?v=${Date.now()}`;
+            });
         }
     }
     
@@ -306,6 +339,12 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     let html = fs.readFileSync(resolvePath('templates/sa-shell-master.html'), 'utf8');
     const auth = loadFragment(type);
     ['CSS', 'UI', 'VARS', 'LOGIC'].forEach(s => html = html.replace(new RegExp(`{{AUTH_${s}}}`, 'g'), auth[s]));
+    
+    // Inject Celebration Fragment
+    const celebration = loadFragment('celebration');
+    html = html.replace(/{{CELEBRATION_CSS}}/g, celebration.CSS);
+    html = html.replace(/{{CELEBRATION_LOGIC}}/g, celebration.LOGIC);
+
     html = html.replace(/{{TITLE}}/g, data.title).replace(/{{LEVEL}}/g, data.level || "Sentence Architect")
                .replace(/{{PRIMARY_COLOR}}/g, data.primaryColor || "#58cc02")
                .replace(/{{PRIMARY_COLOR_DARK}}/g, data.primaryColorDark || "#46a302")

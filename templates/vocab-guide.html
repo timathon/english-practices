@@ -120,6 +120,41 @@
             transform: scale(0.95);
         }
 
+        /* Floating Scroll Buttons */
+        .scroll-btns {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .scroll-btn {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        .scroll-btn:hover {
+            opacity: 1;
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        .scroll-btn:active {
+            transform: scale(0.9);
+        }
+
         @media print {
             @page { margin: 8mm; }
             body { padding: 0; font-size: 10px; }
@@ -144,6 +179,7 @@
             .context-box { margin: 3px 0; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
             .hook-box { margin-top: 3px; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
             #sort-toggle { display: none; }
+            .scroll-btns { display: none; }
             .play-btn { display: none; }
         }
     </style>
@@ -164,6 +200,11 @@
 
     <div class="vocab-grid" id="vocab-container">
         {{ITEMS}}
+    </div>
+
+    <div class="scroll-btns">
+        <button class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="To Top">▲</button>
+        <button class="scroll-btn" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="To Bottom">▼</button>
     </div>
 
     <script>
@@ -198,22 +239,32 @@
 
             cacheAudio: async function(url) {
                 if (!url) return;
-                const hash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-sa-audio-" + hash;
+                const baseUrl = url.split('?')[0];
+                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const baseHash = Array.from(baseUrl).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const cacheKey = "ep-sa-audio-" + urlHash;
                 
                 if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+
                 try {
                     const resp = await fetch(url);
                     const blob = await resp.blob();
                     return new Promise((resolve) => {
                         const reader = new FileReader();
                         reader.onloadend = () => {
+                            const result = reader.result;
                             try {
-                                localStorage.setItem(cacheKey, reader.result);
-                            } catch(e) { 
-                                console.warn("Audio cache full"); 
+                                const versionRegistryKey = "ep-sa-meta-" + baseHash;
+                                const oldCacheKey = localStorage.getItem(versionRegistryKey);
+                                if (oldCacheKey && oldCacheKey !== cacheKey) {
+                                    localStorage.removeItem(oldCacheKey);
+                                }
+                                localStorage.setItem(cacheKey, result);
+                                localStorage.setItem(versionRegistryKey, cacheKey);
+                            } catch(e) {
+                                console.warn("Storage full, could not cache audio");
                             }
-                            resolve(reader.result);
+                            resolve(result);
                         };
                         reader.readAsDataURL(blob);
                     });
@@ -229,8 +280,8 @@
 
                 if (this.currentAudio) this.currentAudio.pause();
                 
-                const cacheHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-sa-audio-" + cacheHash;
+                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const cacheKey = "ep-sa-audio-" + urlHash;
                 const source = localStorage.getItem(cacheKey) || url;
 
                 this.currentAudio = new Audio(source);

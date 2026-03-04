@@ -50,7 +50,7 @@ async function getAudioBatch(tasks, folderName) {
         return;
     }
 
-    const TEMP_DIR = path.join(BASE_DIR, 'temp');
+    const TEMP_DIR = path.join(BASE_DIR, 'temp', 'audio');
     if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
     const batchId = crypto.randomBytes(4).toString('hex');
@@ -103,16 +103,23 @@ except Exception as e:
         const pyOutput = execSync(`python3 "${tempPy}"`).toString();
         if (pyOutput.includes("MARK_QUOTA_EXHAUSTED")) isGeminiQuotaExhausted = true;
 
-        const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=-30dB:d=0.4" -f null - 2>&1`).toString();
-        const silences = [];
+        const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=-30dB:d=0.3" -f null - 2>&1`).toString();
+        const allSilences = [];
         const startRe = /silence_start: ([\d.]+)/g;
         const endRe = /silence_end: ([\d.]+)/g;
         let sMatch, eMatch;
         while ((sMatch = startRe.exec(silenceOutput)) !== null && (eMatch = endRe.exec(silenceOutput)) !== null) {
-            silences.push({ start: parseFloat(sMatch[1]), end: parseFloat(eMatch[1]) });
+            const start = parseFloat(sMatch[1]);
+            const end = parseFloat(eMatch[1]);
+            allSilences.push({ start, end, duration: end - start });
         }
 
-        console.log(`Detected ${silences.length} markers. Sentences: ${tasks.length}.`);
+        const silences = allSilences
+            .sort((a, b) => b.duration - a.duration)
+            .slice(0, tasks.length)
+            .sort((a, b) => a.start - b.start);
+
+        console.log(`Detected ${allSilences.length} total pauses, using the ${silences.length} longest as separators.`);
 
         let startTime = 0;
         for (let i = 0; i < tasks.length; i++) {
@@ -198,25 +205,31 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
 
         const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
         const jsonData = JSON.parse(fs.readFileSync(absoluteInputPath, 'utf8'));
+        const vocab = jsonData.unit_vocabulary;
 
-        // Audio logic
+        // Cache busting: Fetch metadata for all existing audio files to get timestamps
+        const metadataMap = new Map();
+        console.log(`Checking metadata for ${vocab.length} audio files...`);
+        await Promise.all(vocab.map(async (item) => {
+            if (!item.context_sentence) return;
+            const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
+            const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
+            try {
+                const head = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
+                if (head.LastModified) metadataMap.set(hash, head.LastModified.getTime());
+            } catch (e) {}
+        }));
+
+        // Audio generation logic
         if (audioMode !== '1') {
-            const vocab = jsonData.unit_vocabulary;
             for (let i = 0; i < vocab.length; i += 10) {
                 const chunk = vocab.slice(i, i + 10);
                 const tasksToGenerate = [];
                 for (const item of chunk) {
                     if (item.context_sentence) {
                         const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
-                        const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
-                        let exists = false;
-                        if (audioMode === '2') {
-                            try {
-                                await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
-                                exists = true;
-                            } catch (e) {}
-                        }
-                        if (!exists) tasksToGenerate.push(item);
+                        let exists = metadataMap.has(hash);
+                        if (!exists || audioMode === '3') tasksToGenerate.push(item);
                     }
                 }
                 if (tasksToGenerate.length > 0) {
@@ -224,6 +237,16 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
                 }
             }
         }
+
+        // Apply versioned URLs
+        vocab.forEach(item => {
+            if (item.context_sentence) {
+                const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
+                const baseUrl = getAudioUrl(item.context_sentence, folderName);
+                const timestamp = metadataMap.get(hash) || Date.now();
+                item.audio = `${baseUrl}?v=${timestamp}`;
+            }
+        });
 
         const htmlContent = generateHtml(jsonData, folderName);
 

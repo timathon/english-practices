@@ -174,6 +174,9 @@
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- CELEBRATION CSS SLOT --- */
+        {{CELEBRATION_CSS}}
     </style>
 </head>
 <body>
@@ -351,17 +354,47 @@
         },
         cacheAudio: async function(url) {
             if (!url) return;
-            const hash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-            const cacheKey = "ep-vm-audio-" + hash;
+            // Cache busting: Identify base URL without query params
+            const baseUrl = url.split('?')[0];
+            const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            const baseHash = Array.from(baseUrl).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            const cacheKey = "ep-vm-audio-" + urlHash;
+            
             if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+
+            // New version detected: Purge any existing cached versions of this base audio
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith("ep-vm-audio-")) {
+                    // We don't store the base hash directly in the key, but we can check if it matches the current base
+                    // To be safe and simple, we'll store a mapping or just rely on the fact that 
+                    // users don't have thousands of versions.
+                    // Better approach: store metadata in a separate key
+                }
+            }
+
             try {
                 const resp = await fetch(url);
                 const blob = await resp.blob();
                 return new Promise((resolve) => {
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                        try { localStorage.setItem(cacheKey, reader.result); } catch(e) {}
-                        resolve(reader.result);
+                        const result = reader.result;
+                        try {
+                            // Cleanup: Find keys that might be old versions of this specific audio
+                            // We use a prefix + baseHash to identify related files
+                            const versionRegistryKey = "ep-vm-meta-" + baseHash;
+                            const oldCacheKey = localStorage.getItem(versionRegistryKey);
+                            if (oldCacheKey && oldCacheKey !== cacheKey) {
+                                localStorage.removeItem(oldCacheKey);
+                            }
+                            
+                            localStorage.setItem(cacheKey, result);
+                            localStorage.setItem(versionRegistryKey, cacheKey);
+                        } catch(e) {
+                            console.warn("Storage full, could not cache audio");
+                        }
+                        resolve(result);
                     };
                     reader.readAsDataURL(blob);
                 });
@@ -370,9 +403,11 @@
         playAudio: async function() {
             if (this.state.currentObj && this.state.currentObj.audio) {
                 if (this.audio) this.audio.pause();
-                const hash = Array.from(this.state.currentObj.audio).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-vm-audio-" + hash;
-                const source = localStorage.getItem(cacheKey) || this.state.currentObj.audio;
+                const url = this.state.currentObj.audio;
+                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const cacheKey = "ep-vm-audio-" + urlHash;
+                
+                const source = localStorage.getItem(cacheKey) || url;
                 this.audio = new Audio(source);
                 this.audio.play().catch(e => console.warn("Audio play failed", e));
             }
@@ -398,8 +433,12 @@
         },
         startChallenge: function(id) {
             const c = challenges.find(x => x.id === id);
-            this.state.currentChallenge = c; this.state.queue = [...c.questions]; this.state.mistakeQueue = [];
-            this.state.currentIndex = 0; this.state.scoreLog = new Array(c.questions.length).fill(null);
+            this.state.currentChallenge = c; 
+            // Question Randomization
+            this.state.queue = [...c.questions].sort(() => Math.random() - 0.5); 
+            this.state.mistakeQueue = [];
+            this.state.currentIndex = 0; 
+            this.state.scoreLog = new Array(c.questions.length).fill(null);
             c.questions.forEach(q => this.cacheAudio(q.audio));
             document.getElementById("home-screen").classList.remove("active");
             document.getElementById("game-screen").classList.add("active");
@@ -434,20 +473,26 @@
         generateOptions: function(q) {
             const optionsArea = document.getElementById("options-area");
             optionsArea.innerHTML = "";
-            q.options.forEach((optText, idx) => {
+            
+            // Create map of original index to text
+            const indexedOptions = q.options.map((text, idx) => ({ text, originalIdx: idx }));
+            // Shuffle
+            indexedOptions.sort(() => Math.random() - 0.5);
+
+            indexedOptions.forEach((opt) => {
                 const btn = document.createElement("button");
                 btn.className = "option-btn";
-                btn.innerText = optText;
-                btn.onclick = () => this.selectOption(idx, btn);
+                btn.innerText = opt.text;
+                btn.onclick = () => this.selectOption(opt.originalIdx, btn);
                 optionsArea.appendChild(btn);
             });
         },
-        selectOption: function(idx, btn) {
+        selectOption: function(originalIdx, btn) {
             if (this.state.locked) return;
             const options = document.querySelectorAll(".option-btn");
             options.forEach(b => b.classList.remove("selected"));
             btn.classList.add("selected");
-            this.state.selectedOption = idx;
+            this.state.selectedOption = originalIdx;
             document.getElementById("check-btn").disabled = false;
         },
         showHint: function() { this.state.hintUsed = true; document.getElementById("hint-text").classList.add("visible"); },
@@ -466,6 +511,16 @@
 
             playBtn.style.display = q.audio ? "inline-flex" : "none";
 
+            // Find the visual buttons for highlighting
+            let selectedBtn, correctBtn;
+            options.forEach(b => {
+                // Since selectOption passes the originalIdx, we don't have it on the btn directly easily
+                // but we can just use the classes
+                if (b.classList.contains("selected")) selectedBtn = b;
+                // To find the correct one, we can re-map or just check text
+                if (b.innerText === q.options[q.answer]) correctBtn = b;
+            });
+
             if (isCorrect) {
                 this.playSFX('correct');
                 let scoreType = "green";
@@ -474,7 +529,7 @@
                     if (this.state.hintUsed) scoreType = "yellow";
                     this.state.scoreLog[this.state.currentIndex] = scoreType;
                 }
-                options[this.state.selectedOption].classList.add("correct");
+                selectedBtn.classList.add("correct");
                 feedback.className = "feedback-area correct visible";
                 title.innerText = "Excellent!"; title.style.color = "#58cc02"; 
                 msg.innerText = q.word + " - " + q.meaning;
@@ -483,8 +538,8 @@
                 if(this.state.isRedemption) this.state.mistakeQueue.shift();
             } else {
                 this.playSFX('wrong');
-                options[this.state.selectedOption].classList.add("wrong");
-                options[q.answer].classList.add("correct");
+                selectedBtn.classList.add("wrong");
+                correctBtn.classList.add("correct");
                 feedback.className = "feedback-area wrong visible";
                 title.innerText = "Correct Answer:"; title.style.color = "#ea2b2b"; 
                 msg.innerText = q.options[q.answer];
@@ -541,6 +596,9 @@
                 bar.appendChild(seg);
             }
         },
+        /* --- CELEBRATION LOGIC SLOT --- */
+        {{CELEBRATION_LOGIC}}
+
         finishGame: function() {
             const totalScore = this.state.scoreLog.reduce((acc, curr) => {
                 if (curr === "green") return acc + 1;
@@ -556,6 +614,8 @@
             s.lifetime.attempts++; if (scorePercent > s.lifetime.best) s.lifetime.best = scorePercent;
             this.saveStats(allStats);
             this.saveSessionLog({ date: new Date().toLocaleString(), challenge: this.state.currentChallenge.title, score: scorePercent });
+            
+            this.showCelebration(scorePercent);
             document.getElementById("game-screen").innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; padding:20px;"><h1 style="color:var(--primary); font-size:3rem; margin:0;">${scorePercent}%</h1><h2 style="margin:5px 0 20px 0; color:#555;">Challenge Complete!</h2><button onclick="location.reload()" class="check-btn" style="width:100%; max-width:300px;">Back to Menu</button></div>`;
         },
         logMistake: function(q, userAns) {
