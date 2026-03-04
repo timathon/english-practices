@@ -48,7 +48,9 @@
         for (let i = 0; i < 15; i++) {
             ID_B += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-        localStorage.setItem(ID_B_KEY, ID_B);
+        try {
+            localStorage.setItem(ID_B_KEY, ID_B);
+        } catch(e) { console.error("Failed to save ID_B", e); }
     }
 
 <!-- LOGIC -->
@@ -78,8 +80,13 @@
             const key = parseInt(cachedKey, 10);
             try {
                 challenges = JSON.parse(_0x4f2a(encryptedChallenges, key));
-                app.init();
+                if (typeof app !== 'undefined' && app.init) {
+                    app.init();
+                } else {
+                    console.error("App not initialized correctly");
+                }
             } catch (e) {
+                console.error("Initialization from cache failed", e);
                 localStorage.removeItem(AUTH_DONE_KEY);
                 location.reload();
             }
@@ -102,23 +109,42 @@
             const expiryDate = data["expiry"];
             if (expiryDate && now > expiryDate) {
                 overlay.innerHTML = "<div class='auth-message auth-error'>访问已过期 (Expired)</div>";
-                localStorage.setItem(EXPIRY_DATE_KEY, expiryDate.toString());
+                if (typeof app !== 'undefined' && app.safeSetItem) {
+                    app.safeSetItem(EXPIRY_DATE_KEY, expiryDate.toString());
+                } else {
+                    localStorage.setItem(EXPIRY_DATE_KEY, expiryDate.toString());
+                }
                 return;
             }
 
             if (data.number > 0 && data.key) {
                 showApp(data.number);
                 challenges = JSON.parse(_0x4f2a(encryptedChallenges, data.key));
-                localStorage.setItem(AUTH_DONE_KEY, "true");
-                localStorage.setItem(DEVICE_NUMBER_KEY, data.number);
-                localStorage.setItem(DECRYPTION_KEY_KEY, data.key.toString());
-                localStorage.setItem(AUTH_DATE_KEY, now.toString());
-                if (expiryDate) localStorage.setItem(EXPIRY_DATE_KEY, expiryDate.toString());
-                app.init();
+                
+                if (typeof app !== 'undefined' && app.safeSetItem) {
+                    app.safeSetItem(AUTH_DONE_KEY, "true");
+                    app.safeSetItem(DEVICE_NUMBER_KEY, data.number);
+                    app.safeSetItem(DECRYPTION_KEY_KEY, data.key.toString());
+                    app.safeSetItem(AUTH_DATE_KEY, now.toString());
+                    if (expiryDate) app.safeSetItem(EXPIRY_DATE_KEY, expiryDate.toString());
+                } else {
+                    localStorage.setItem(AUTH_DONE_KEY, "true");
+                    localStorage.setItem(DEVICE_NUMBER_KEY, data.number);
+                    localStorage.setItem(DECRYPTION_KEY_KEY, data.key.toString());
+                    localStorage.setItem(AUTH_DATE_KEY, now.toString());
+                    if (expiryDate) localStorage.setItem(EXPIRY_DATE_KEY, expiryDate.toString());
+                }
+                
+                if (typeof app !== 'undefined' && app.init) {
+                    app.init();
+                } else {
+                    console.error("App not found during remote auth");
+                }
             } else {
                 overlay.innerHTML = "<div class='auth-message auth-error'>" + (data.error || (data.number === 0 ? "认证失败，请重试" : "系统错误")) + "</div>";
             }
         } catch (e) {
+            console.error("Auth request failed", e);
             overlay.innerHTML = "<div class='auth-message auth-error'>系统错误，请稍后再试</div>";
         }
     }

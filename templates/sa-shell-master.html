@@ -327,6 +327,33 @@
             const sound = new Audio(source);
             sound.play().catch(e => console.error("SFX Play Error:", e));
         },
+        clearAudioCache: function() {
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-") || key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-"))) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+            console.log("Cleared audio cache to free up space");
+        },
+        safeSetItem: function(key, value) {
+            try {
+                localStorage.setItem(key, value);
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    this.clearAudioCache();
+                    try {
+                        localStorage.setItem(key, value);
+                    } catch (e2) {
+                        console.error("Storage still full after clearing cache", e2);
+                    }
+                } else {
+                    console.error("Error saving to localStorage", e);
+                }
+            }
+        },
         init: function() { 
             const savedSettings = localStorage.getItem(ID_A + "-settings");
             if (savedSettings) this.state.settings = Object.assign(this.state.settings, JSON.parse(savedSettings));
@@ -340,13 +367,13 @@
             this.renderHome(); 
         },
         getStats: function() { return JSON.parse(localStorage.getItem(ID_A + "-stats{{STORAGE_SUFFIX}}") || "{}"); },
-        saveStats: function(stats) { localStorage.setItem(ID_A + "-stats{{STORAGE_SUFFIX}}", JSON.stringify(stats)); },
+        saveStats: function(stats) { this.safeSetItem(ID_A + "-stats{{STORAGE_SUFFIX}}", JSON.stringify(stats)); },
         getMistakes: function() { return JSON.parse(localStorage.getItem(ID_A + "-mistakes{{STORAGE_SUFFIX}}") || "[]"); },
-        saveMistakes: function(list) { localStorage.setItem(ID_A + "-mistakes{{STORAGE_SUFFIX}}", JSON.stringify(list)); },
+        saveMistakes: function(list) { this.safeSetItem(ID_A + "-mistakes{{STORAGE_SUFFIX}}", JSON.stringify(list)); },
         getSessionLogs: function() { return JSON.parse(localStorage.getItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}") || "[]"); },
         saveSessionLog: function(log) { 
             const logs = this.getSessionLogs(); logs.unshift(log); 
-            localStorage.setItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}", JSON.stringify(logs));
+            this.safeSetItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}", JSON.stringify(logs));
         },
         toggleSettings: function() {
             const modal = document.getElementById("settings-modal");
@@ -355,7 +382,7 @@
         updateSettings: function() {
             this.state.settings.autoplay = document.getElementById("autoplay-toggle").checked;
             this.state.settings.sfx = document.getElementById("sfx-toggle").checked;
-            localStorage.setItem(ID_A + "-settings", JSON.stringify(this.state.settings));
+            this.safeSetItem(ID_A + "-settings", JSON.stringify(this.state.settings));
         },
         cacheAudio: async function(url) {
             if (!url) return;
@@ -379,8 +406,8 @@
                             if (oldCacheKey && oldCacheKey !== cacheKey) {
                                 localStorage.removeItem(oldCacheKey);
                             }
-                            localStorage.setItem(cacheKey, result);
-                            localStorage.setItem(versionRegistryKey, cacheKey);
+                            this.safeSetItem(cacheKey, result);
+                            this.safeSetItem(versionRegistryKey, cacheKey);
                         } catch(e) {
                             console.warn("Storage full, could not cache audio");
                         }
