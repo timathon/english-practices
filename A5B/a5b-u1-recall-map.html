@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecallMap: Growing Up</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --line-color: #cbd5e1;
+            --box-empty: #e2e8f0;
+            --box-emoji: #fef08a;
+            --box-full: #ffffff;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .header-titles h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .header-titles p {
+            margin: 0.25rem 0 0 0;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-next {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-next:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-next:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-show-all {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-show-all:hover {
+            background-color: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .btn-show-all:disabled {
+            background-color: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+            border-color: transparent;
+        }
+
+        .btn-reset {
+            background-color: white;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-reset:hover {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        main {
+            flex: 1;
+            overflow: auto;
+            padding: 3rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+
+        /* Mindmap Tree CSS */
+        .mindmap-node-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .node-box {
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin: 10px 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid transparent;
+            min-height: 28px;
+        }
+
+        /* States */
+        .node-box.empty {
+            background-color: var(--box-empty);
+            border-style: dashed;
+            border-color: #94a3b8;
+            min-width: 80px;
+            opacity: 0.8;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .node-box.emoji {
+            background-color: var(--box-emoji);
+            border-color: #facc15;
+            min-width: 40px;
+            justify-content: center;
+            animation: bounceIn 0.4s ease-out;
+        }
+
+        .node-box.full {
+            background-color: var(--box-full);
+            border-color: var(--primary-color);
+            min-width: 120px;
+        }
+
+        .node-content-emoji {
+            font-size: 1.4rem;
+        }
+
+        .node-content-text {
+            color: #0f172a;
+        }
+
+        /* Connectors */
+        .children-container {
+            display: flex;
+            flex-direction: column;
+            margin-left: 30px;
+            padding-left: 30px;
+            border-left: 3px solid var(--line-color);
+            position: relative;
+        }
+
+        .child-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .child-row::before {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            width: 30px;
+            height: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+        }
+
+        /* Animations */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background-color: #e2e8f0;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-titles">
+            <h1>RecallMap: Unit 1</h1>
+            <p>Active Recall Memory Engine (English ELT)</p>
+        </div>
+        <div class="controls">
+            <button class="btn-reset" onclick="resetMap()">🔄 Reset (重置)</button>
+            <button class="btn-show-all" id="showAllBtn" onclick="showAll()">👁️ Show All (显示全部)</button>
+            <button class="btn-next" id="nextBtn" onclick="nextStep()">Show Next (显示下一步) ➡️</button>
+        </div>
+        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+    </header>
+
+    <main id="mindmap-container">
+        <!-- Rendered by JS -->
+    </main>
+
+    <script>
+        // 1. Define the Mindmap Data Structure
+        const initialData = {
+            id: 'root', text: 'Unit 1: Growing Up', emoji: '🌱', state: 'emoji', // Start with just the emoji
+            children: [
+                { 
+                    id: 'stories', text: 'Stories (3 Stories)', emoji: '📖', state: 'hidden', 
+                    children: [
+                        { 
+                            id: 'story1', text: 'My Brother & I', emoji: '👦', state: 'hidden', 
+                            children: [
+                                { id: 's1_1', text: 'Age 4: Cried a lot, not happy', emoji: '😭', state: 'hidden' },
+                                { id: 's1_2', text: "Age 6: Didn't listen, angry", emoji: '😡', state: 'hidden' },
+                                { id: 's1_3', text: 'Age 8: Play football, happy', emoji: '⚽', state: 'hidden' },
+                                { id: 's1_4', text: 'Age 10: Same school, help each other', emoji: '🤝', state: 'hidden' }
+                            ]
+                        },
+                        { 
+                            id: 'story2', text: 'Summer Camp', emoji: '🏕️', state: 'hidden', 
+                            children: [
+                                { id: 's2_1', text: '7 days: Hard training, tired', emoji: '🥵', state: 'hidden' },
+                                { id: 's2_2', text: 'Teachers & Friends: Helpful', emoji: '🫂', state: 'hidden' },
+                                { id: 's2_3', text: 'Food: Cooked tomatoes with sugar', emoji: '🍅', state: 'hidden' },
+                                { id: 's2_4', text: 'Feeling: Growing up, great', emoji: '🌟', state: 'hidden' }
+                            ]
+                        },
+                        { 
+                            id: 'story3', text: 'The Lion King', emoji: '🦁', state: 'hidden', 
+                            children: [
+                                { id: 's3_1', text: 'Simba: A baby lion', emoji: '🐾', state: 'hidden' },
+                                { id: 's3_2', text: 'Bad Uncle: Killed dad', emoji: '👿', state: 'hidden' },
+                                { id: 's3_3', text: 'Life was hard: Never gave up', emoji: '💪', state: 'hidden' },
+                                { id: 's3_4', text: 'End: Beat uncle, new king', emoji: '👑', state: 'hidden' }
+                            ]
+                        }
+                    ]
+                },
+                { 
+                    id: 'vocab', text: 'Key Vocabulary', emoji: '📚', state: 'hidden', 
+                    children: [
+                        { 
+                            id: 'v_verbs', text: 'Verbs (Actions)', emoji: '🏃', state: 'hidden',
+                            children: [
+                                { id: 'v_v1', text: 'pay (付款)', emoji: '💰', state: 'hidden' },
+                                { id: 'v_v2', text: 'ride (骑)', emoji: '🚲', state: 'hidden' },
+                                { id: 'v_v3', text: 'fall (摔倒)', emoji: '🤕', state: 'hidden' },
+                                { id: 'v_v4', text: 'beat (击败) / kill (杀死)', emoji: '🥊', state: 'hidden' },
+                                { id: 'v_v5', text: 'mean (意思是)', emoji: '🤔', state: 'hidden' }
+                            ]
+                        },
+                        { 
+                            id: 'v_nouns', text: 'Nouns (Things)', emoji: '📦', state: 'hidden',
+                            children: [
+                                { id: 'v_n1', text: 'ID (身份证明)', emoji: '🪪', state: 'hidden' },
+                                { id: 'v_n2', text: 'holiday (假期)', emoji: '🏖️', state: 'hidden' },
+                                { id: 'v_n3', text: 'summer camp (夏令营)', emoji: '⛺', state: 'hidden' },
+                                { id: 'v_n4', text: 'skier (滑雪者) / training (训练)', emoji: '⛷️', state: 'hidden' },
+                                { id: 'v_n5', text: 'difficulty (难题)', emoji: '🧩', state: 'hidden' }
+                            ]
+                        }
+                    ]
+                },
+                { 
+                    id: 'grammar', text: 'Grammar: Past Tense', emoji: '✍️', state: 'hidden', 
+                    children: [
+                        { id: 'g_1', text: 'am / is ➔ was', emoji: '🧍', state: 'hidden' },
+                        { id: 'g_2', text: 'are ➔ were', emoji: '👨‍👩‍👧‍👦', state: 'hidden' },
+                        { id: 'g_3', text: 'Example: I was six. We were happy.', emoji: '🗣️', state: 'hidden' }
+                    ]
+                }
+            ]
+        };
+
+        let treeData = null;
+        let actionSteps = [];
+        let currentStepIndex = 0;
+
+        // 2. Generate the Exact Sequence of Reveal Steps
+        function generateSteps(node) {
+            if (!node.children || node.children.length === 0) return;
+
+            // STEP 1: Draw all empty boxes for this specific level to show structure
+            actionSteps.push(() => {
+                node.children.forEach(child => child.state = 'empty');
+            });
+
+            // STEP 2: For each child node, reveal Emoji -> Text -> Recurse into its children
+            node.children.forEach(child => {
+                // Reveal Emoji Hint
+                actionSteps.push(() => {
+                    child.state = 'emoji';
+                });
+                
+                // Reveal Full Text
+                actionSteps.push(() => {
+                    child.state = 'full';
+                });
+
+                // Recurse to build sub-level steps
+                generateSteps(child);
+            });
+        }
+
+        // Deep clone data to allow resetting
+        function cloneData(data) {
+            return JSON.parse(JSON.stringify(data));
+        }
+
+        // 3. Render Engine (Creates DOM elements recursively)
+        function renderNode(node) {
+            if (node.state === 'hidden') return null;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mindmap-node-wrapper';
+
+            const box = document.createElement('div');
+            box.className = `node-box ${node.state}`;
+            
+            if (node.state === 'emoji') {
+                box.innerHTML = `<span class="node-content-emoji">${node.emoji}</span>`;
+            } else if (node.state === 'full') {
+                box.innerHTML = `
+                    <span class="node-content-emoji">${node.emoji}</span>
+                    <span class="node-content-text">${node.text}</span>
+                `;
+            }
+            // If 'empty', innerHTML remains blank by design
+
+            wrapper.appendChild(box);
+
+            // Check if any children need to be displayed
+            if (node.children && node.children.some(c => c.state !== 'hidden')) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children-container';
+                
+                node.children.forEach(child => {
+                    const childElement = renderNode(child);
+                    if (childElement) {
+                        const childRow = document.createElement('div');
+                        childRow.className = 'child-row';
+                        childRow.appendChild(childElement);
+                        childrenContainer.appendChild(childRow);
+                    }
+                });
+                wrapper.appendChild(childrenContainer);
+            }
+
+            return wrapper;
+        }
+
+        function renderDOM() {
+            const container = document.getElementById('mindmap-container');
+            container.innerHTML = ''; // Clear current tree
+            const domTree = renderNode(treeData);
+            if (domTree) {
+                container.appendChild(domTree);
+            }
+
+            // Scroll to the far right smoothly to keep focus on new items
+            container.scrollTo({
+                left: container.scrollWidth,
+                behavior: 'smooth'
+            });
+
+            // Update Progress Bar
+            const progress = (currentStepIndex / actionSteps.length) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        // 4. Interaction Controllers
+        function nextStep() {
+            if (currentStepIndex < actionSteps.length) {
+                // Execute the state change function stored in the array
+                actionSteps[currentStepIndex]();
+                currentStepIndex++;
+                renderDOM();
+
+                // Check if finished
+                if (currentStepIndex >= actionSteps.length) {
+                    const btn = document.getElementById('nextBtn');
+                    btn.disabled = true;
+                    btn.innerHTML = '🎉 Completed! (已完成)';
+                    document.getElementById('showAllBtn').disabled = true;
+                }
+            }
+        }
+
+        function showAll() {
+            if (currentStepIndex < actionSteps.length) {
+                // Instantly execute all remaining steps
+                while (currentStepIndex < actionSteps.length) {
+                    actionSteps[currentStepIndex]();
+                    currentStepIndex++;
+                }
+                renderDOM();
+
+                // Update Buttons
+                const nextBtn = document.getElementById('nextBtn');
+                nextBtn.disabled = true;
+                nextBtn.innerHTML = '🎉 Completed! (已完成)';
+                document.getElementById('showAllBtn').disabled = true;
+            }
+        }
+
+        function resetMap() {
+            treeData = cloneData(initialData);
+            actionSteps = [];
+            currentStepIndex = 0;
+            
+            // Add initial step to reveal the root node's full text
+            actionSteps.push(() => {
+                treeData.state = 'full';
+            });
+
+            generateSteps(treeData);
+            
+            const btn = document.getElementById('nextBtn');
+            btn.disabled = false;
+            btn.innerHTML = 'Show Next (显示下一步) ➡️';
+
+            const showAllBtn = document.getElementById('showAllBtn');
+            if(showAllBtn) showAllBtn.disabled = false;
+            
+            renderDOM();
+        }
+
+        // Initialize on Load
+        window.onload = () => {
+            resetMap();
+        };
+
+        // Add keyboard support (Spacebar or Right Arrow to advance)
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowRight') {
+                e.preventDefault(); // Prevent page scrolling on space
+                const btn = document.getElementById('nextBtn');
+                if (!btn.disabled) {
+                    nextStep();
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

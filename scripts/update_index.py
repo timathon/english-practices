@@ -49,6 +49,8 @@ def get_html_files(base_dir='.'):
         if 'data' in dirs: dirs.remove('data')
         if 'templates' in dirs: dirs.remove('templates')
         if 'release' in dirs: dirs.remove('release')
+        if 'temp' in dirs: dirs.remove('temp')
+        if 'node_modules' in dirs: dirs.remove('node_modules')
         for file in files:
             if file.endswith('.html') and file != 'index.html':
                 path = os.path.join(root, file)
@@ -308,7 +310,7 @@ def main():
     generate_full_index('index.html', files, 'English Practices')
 
     # Generate index.html for root subfolders
-    subfolders = [d for d in os.listdir('.') if os.path.isdir(d) and not d.startswith('.') and d not in ['scripts', 'release', 'data', 'templates']]
+    subfolders = [d for d in os.listdir('.') if os.path.isdir(d) and not d.startswith('.') and d not in ['scripts', 'release', 'data', 'templates', 'temp', 'node_modules']]
     for folder in subfolders:
         generate_folder_index(folder, f"{folder} Practices")
 
