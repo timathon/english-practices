@@ -120,6 +120,37 @@
             transform: scale(0.95);
         }
 
+        /* Refresh Cache Button */
+        #refresh-cache {
+            position: fixed;
+            top: 75px;
+            right: 20px;
+            padding: 10px 15px;
+            background: #1abc9c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #refresh-cache:hover {
+            background: #16a085;
+            transform: scale(1.05);
+        }
+        #refresh-cache:active {
+            transform: scale(0.95);
+        }
+        #refresh-cache.loading {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
         /* Floating Scroll Buttons */
         .scroll-btns {
             position: fixed;
@@ -197,7 +228,7 @@
                 background-color: #f5fdfc;
             }
             
-            #sort-toggle, .scroll-btns, .play-btn { display: none !important; }
+            #sort-toggle, #refresh-cache, .scroll-btns, .play-btn { display: none !important; }
         }
     </style>
 </head>
@@ -210,6 +241,10 @@
             <button id="sort-toggle" onclick="toggleSort()">
                 <span id="sort-icon">🔤</span>
                 <span id="sort-text">Sort A-Z</span>
+            </button>
+            <button id="refresh-cache" onclick="app.refreshCache()">
+                <span id="refresh-icon">🔄</span>
+                <span id="refresh-text">Refresh Audio</span>
             </button>
         </div>
         <h2>{{LEVEL}}</h2>
@@ -313,6 +348,47 @@
                         reader.readAsDataURL(blob);
                     });
                 } catch(e) { console.error("Cache failed", e); }
+            },
+
+            refreshCache: async function() {
+                const btn = document.getElementById('refresh-cache');
+                const btnText = document.getElementById('refresh-text');
+                if (btn.classList.contains('loading')) return;
+
+                btn.classList.add('loading');
+                btnText.innerText = "Checking...";
+                let updatedCount = 0;
+
+                try {
+                    for (const item of vocabData) {
+                        if (!item.audio) continue;
+                        
+                        const url = item.audio;
+                        const baseUrl = url.split('?')[0];
+                        const urlParams = new URLSearchParams(url.split('?')[1]);
+                        const currentVersion = parseInt(urlParams.get('v')) || 0;
+
+                        try {
+                            const response = await fetch(url, { method: 'HEAD' });
+                            const lastModifiedStr = response.headers.get('Last-Modified');
+                            if (lastModifiedStr) {
+                                const lastModified = new Date(lastModifiedStr).getTime();
+                                if (lastModified > currentVersion) {
+                                    const newUrl = `${baseUrl}?v=${lastModified}`;
+                                    await this.cacheAudio(newUrl);
+                                    item.audio = newUrl;
+                                    updatedCount++;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Failed to check ${item.word}`, e);
+                        }
+                    }
+                    alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+                } finally {
+                    btn.classList.remove('loading');
+                    btnText.innerText = "Refresh Audio";
+                }
             },
 
             playAudio: function() {

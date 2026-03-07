@@ -162,6 +162,37 @@
         .play-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
         .play-btn svg { width: 20px; height: 20px; fill: var(--secondary); }
 
+        /* Refresh Cache Button */
+        #refresh-cache {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: #1abc9c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #refresh-cache:hover {
+            background: #16a085;
+            transform: scale(1.05);
+        }
+        #refresh-cache:active {
+            transform: scale(0.95);
+        }
+        #refresh-cache.loading {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
         .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #eee; }
         .setting-item:last-child { border-bottom: none; }
         .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
@@ -280,6 +311,11 @@
             </div>
         </div>
     </div>
+
+    <button id="refresh-cache" onclick="app.refreshCache()">
+        <span id="refresh-icon">🔄</span>
+        <span id="refresh-text">Refresh Audio</span>
+    </button>
 </div>
 
 <script>
@@ -426,6 +462,52 @@
                 const source = localStorage.getItem(cacheKey) || url;
                 this.audio = new Audio(source);
                 this.audio.play().catch(e => console.warn("Audio play failed", e));
+            }
+        },
+        refreshCache: async function() {
+            const btn = document.getElementById('refresh-cache');
+            const btnText = document.getElementById('refresh-text');
+            if (btn.classList.contains('loading')) return;
+
+            btn.classList.add('loading');
+            btnText.innerText = "Checking...";
+            let updatedCount = 0;
+
+            try {
+                // Collect all items from all challenges
+                const items = [];
+                challenges.forEach(c => {
+                    if (c.data) items.push(...c.data);
+                });
+
+                for (const item of items) {
+                    if (!item.audio) continue;
+                    
+                    const url = item.audio;
+                    const baseUrl = url.split('?')[0];
+                    const urlParams = new URLSearchParams(url.split('?')[1]);
+                    const currentVersion = parseInt(urlParams.get('v')) || 0;
+
+                    try {
+                        const response = await fetch(url, { method: 'HEAD' });
+                        const lastModifiedStr = response.headers.get('Last-Modified');
+                        if (lastModifiedStr) {
+                            const lastModified = new Date(lastModifiedStr).getTime();
+                            if (lastModified > currentVersion) {
+                                const newUrl = `${baseUrl}?v=${lastModified}`;
+                                await this.cacheAudio(newUrl);
+                                item.audio = newUrl;
+                                updatedCount++;
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Failed to check audio for ${item.en || item.word}`, e);
+                    }
+                }
+                alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+            } finally {
+                btn.classList.remove('loading');
+                btnText.innerText = "Refresh Audio";
             }
         },
         renderHome: function() {
