@@ -180,7 +180,37 @@ function generateTreeSection(files) {
 function generateFolderIndex(folderPath, title) {
     const files = getHtmlFilesInDirectory(folderPath);
     const sortedFiles = [...files].sort(naturalCompare);
-    const listHtml = sortedFiles.map(f => `            <li><a href="${f.path}">${f.name}</a></li>`).join('\n');
+    
+    const groups = {};
+    for (const f of sortedFiles) {
+        // Group by unit/module prefix like A7B-U1 or a6b-m1
+        const match = f.name.match(/^([a-zA-Z0-9]+-[uUmM]\d+)/i);
+        const unit = match ? match[1].toUpperCase() : 'General';
+        if (!groups[unit]) groups[unit] = [];
+        groups[unit].push(f);
+    }
+
+    const groupKeys = Object.keys(groups).sort(naturalCompare);
+    
+    let listHtml = '<div class="tree"><ul>\n';
+    for (const unit of groupKeys) {
+        const unitFiles = groups[unit];
+        if (unit === 'General' && groupKeys.length === 1) {
+            // If only general, render flat list
+            for (const f of unitFiles) {
+                listHtml += `            <li><a href="${f.path}">${f.name}</a></li>\n`;
+            }
+        } else {
+            listHtml += `            <li><span class="folder folder-toggle">${unit}</span> <span class="file-count"></span>\n`;
+            listHtml += '                <ul class="collapsed">\n';
+            for (const f of unitFiles) {
+                listHtml += `                    <li><a href="${f.path}">${f.name}</a></li>\n`;
+            }
+            listHtml += '                </ul>\n';
+            listHtml += '            </li>\n';
+        }
+    }
+    listHtml += '        </ul></div>';
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -221,6 +251,29 @@ function generateFolderIndex(folderPath, title) {
         a:hover {
             text-decoration: underline;
         }
+        /* Tree styles */
+        .tree ul {
+            padding-left: 20px;
+        }
+        .tree li {
+            position: relative;
+        }
+        .folder {
+            font-weight: bold;
+            color: #444;
+            cursor: pointer;
+        }
+        .folder-toggle {
+            cursor: pointer;
+        }
+        .file-count {
+            font-weight: normal;
+            font-style: italic;
+            color: #888;
+        }
+        .collapsed {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -228,10 +281,27 @@ function generateFolderIndex(folderPath, title) {
     <p><a href="../index.html">Back to Main Index</a></p>
     <div class="section">
         <h2>Files in this folder</h2>
-        <ul>
-${listHtml}
-        </ul>
+        ${listHtml}
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const folders = document.querySelectorAll('.folder-toggle');
+
+            folders.forEach(folder => {
+                const sublist = folder.nextElementSibling.nextElementSibling;
+                if (sublist && sublist.tagName === 'UL') {
+                    const fileCount = sublist.children.length;
+                    const fileCountSpan = folder.nextElementSibling;
+                    fileCountSpan.textContent = \`(\${fileCount} files)\`;
+
+                    folder.addEventListener('click', () => {
+                        sublist.classList.toggle('collapsed');
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>`;
     fs.writeFileSync(path.join(folderPath, 'index.html'), html);

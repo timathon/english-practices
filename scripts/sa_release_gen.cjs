@@ -135,14 +135,14 @@ function rebuildIndexes() {
     });
 }
 
-function getAudioUrl(sentence, folderName) {
+function getAudioUrl(sentence, book, unit) {
     const hash = crypto.createHash('md5').update(sentence).digest('hex');
-    return `${PUBLIC_URL_BASE}/ep/sa/${folderName}/${hash}.mp3`;
+    return `${PUBLIC_URL_BASE}/ep/sa/${book}/${unit}/${hash}.mp3`;
 }
 
 let isGeminiQuotaExhausted = false;
 
-async function getAudioBatch(tasks, folderName) {
+async function getAudioBatch(tasks, book, unit) {
     if (tasks.length === 0) return;
     if (!process.env.GOOGLE_API_KEY) {
         console.warn("Skipping audio generation: GOOGLE_API_KEY not set.");
@@ -157,7 +157,10 @@ async function getAudioBatch(tasks, folderName) {
     if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
     const batchId = crypto.randomBytes(4).toString('hex');
-    const combinedWav = path.join(TEMP_DIR, `batch_${batchId}_combined.wav`);
+    const batchOutputDir = path.join(TEMP_DIR, `batch_${batchId}`);
+    if (!fs.existsSync(batchOutputDir)) fs.mkdirSync(batchOutputDir, { recursive: true });
+    
+    const combinedWav = path.join(batchOutputDir, `batch_${batchId}_combined.wav`);
     const tempPy = path.join(TEMP_DIR, `batch_${batchId}_tts.py`);
 
     // Markers: " . . . " usually induces enough silence for silencedetect
@@ -166,7 +169,7 @@ async function getAudioBatch(tasks, folderName) {
     const combinedText = sentences.join(separator) + separator;
     const totalWords = combinedText.trim().split(/\s+/).length;
     
-    console.log(`TTS Batch Request: ${tasks.length} sentences. Total words: ${totalWords}.`);
+    console.log(`TTS Batch Request [ID: ${batchId}]: ${tasks.length} sentences for Sentence Architect. Total words: ${totalWords}.`);
 
     const pythonScript = `
 import wave
@@ -230,7 +233,11 @@ except Exception as e:
         for (let i = 0; i < tasks.length; i++) {
             const item = tasks[i];
             const hash = crypto.createHash('md5').update(item.en).digest('hex');
-            const segmentMp3 = path.join(TEMP_DIR, `segment_${hash}.mp3`);
+            
+            // Internal filename: order_firstword_hash.mp3
+            const firstWord = item.en.split(' ')[0].replace(/[^a-zA-Z]/g, '');
+            const segmentFileName = `${String(i + 1).padStart(3, '0')}_${firstWord}_${hash}.mp3`;
+            const segmentMp3 = path.join(batchOutputDir, segmentFileName);
             
             // Split point is the middle of the detected silence
             const s = silences[i];
@@ -238,7 +245,7 @@ except Exception as e:
 
             execSync(`ffmpeg -i "${combinedWav}" -ss ${startTime} -to ${endTime} -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
             
-            const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
+            const r2Key = `ep/sa/${book}/${unit}/${hash}.mp3`;
             await s3Client.send(new PutObjectCommand({
                 Bucket: BUCKET_NAME,
                 Key: r2Key,
@@ -248,13 +255,12 @@ except Exception as e:
             
             item.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
             startTime = endTime;
-            if (fs.existsSync(segmentMp3)) fs.unlinkSync(segmentMp3);
         }
     } catch (err) {
         console.error("Batch TTS processing failed:", err.message);
     } finally {
         if (fs.existsSync(tempPy)) fs.unlinkSync(tempPy);
-        if (fs.existsSync(combinedWav)) fs.unlinkSync(combinedWav);
+        // Preserving combinedWav as requested
     }
 }
 
@@ -279,6 +285,8 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const key = generateKey(ID_A);
 
     const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
+    const fileName = path.basename(jsonPath);
+    const unitName = fileName.split('-')[1] || 'u1';
     
     // Cache busting: Fetch metadata for all existing audio files to get timestamps
     const metadataMap = new Map();
@@ -287,7 +295,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
         for (const item of challenge.data) {
             if (item.en) {
                 const hash = crypto.createHash('md5').update(item.en).digest('hex');
-                const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
+                const r2Key = `ep/sa/${folderName}/${unitName}/${hash}.mp3`;
                 allAudioTasks.push({ item, r2Key, hash });
             }
         }
@@ -307,13 +315,12 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
             if (item.en) {
                 const hash = crypto.createHash('md5').update(item.en).digest('hex');
                 const timestamp = metadataMap.get(hash);
-                const baseUrl = getAudioUrl(item.en, folderName);
+                const baseUrl = getAudioUrl(item.en, folderName, unitName);
                 const finalUrl = timestamp ? `${baseUrl}?v=${timestamp}` : baseUrl;
 
                 if (audioMode === '1') {
                     item.audio = finalUrl;
                 } else {
-                    const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
                     let exists = metadataMap.has(hash);
                     if (audioMode === '2' && exists) {
                         item.audio = finalUrl;
@@ -323,11 +330,11 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
             }
         }
         if (tasksToGenerate.length > 0) {
-            await getAudioBatch(tasksToGenerate, folderName);
+            await getAudioBatch(tasksToGenerate, folderName, unitName);
             // After generation, we don't have the new timestamp yet, but next run will pick it up
             // Or we can just use current timestamp for newly generated ones
             tasksToGenerate.forEach(item => {
-                if (!item.audio.includes('?v=')) item.audio += `?v=${Date.now()}`;
+                if (item.audio && !item.audio.includes('?v=')) item.audio += `?v=${Date.now()}`;
             });
         }
     }

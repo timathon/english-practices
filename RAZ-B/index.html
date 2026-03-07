@@ -37,6 +37,29 @@
         a:hover {
             text-decoration: underline;
         }
+        /* Tree styles */
+        .tree ul {
+            padding-left: 20px;
+        }
+        .tree li {
+            position: relative;
+        }
+        .folder {
+            font-weight: bold;
+            color: #444;
+            cursor: pointer;
+        }
+        .folder-toggle {
+            cursor: pointer;
+        }
+        .file-count {
+            font-weight: normal;
+            font-style: italic;
+            color: #888;
+        }
+        .collapsed {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -44,12 +67,31 @@
     <p><a href="../index.html">Back to Main Index</a></p>
     <div class="section">
         <h2>Files in this folder</h2>
-        <ul>
+        <div class="tree"><ul>
             <li><a href="A-Cold-Day-Sentence-Builder.html">A-Cold-Day-Sentence-Builder.html</a></li>
             <li><a href="After-School-Sentence-Builder.html">After-School-Sentence-Builder.html</a></li>
             <li><a href="Go-Animals-Go-Sentence-Builder.html">Go-Animals-Go-Sentence-Builder.html</a></li>
             <li><a href="The-Picnic-Sentence-Architect.html">The-Picnic-Sentence-Architect.html</a></li>
-        </ul>
+        </ul></div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const folders = document.querySelectorAll('.folder-toggle');
+
+            folders.forEach(folder => {
+                const sublist = folder.nextElementSibling.nextElementSibling;
+                if (sublist && sublist.tagName === 'UL') {
+                    const fileCount = sublist.children.length;
+                    const fileCountSpan = folder.nextElementSibling;
+                    fileCountSpan.textContent = `(${fileCount} files)`;
+
+                    folder.addEventListener('click', () => {
+                        sublist.classList.toggle('collapsed');
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

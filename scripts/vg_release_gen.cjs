@@ -32,14 +32,14 @@ function resolvePath(p) {
     return path.isAbsolute(p) ? p : path.resolve(BASE_DIR, p);
 }
 
-function getAudioUrl(sentence, folderName) {
+function getAudioUrl(sentence, book, unit) {
     const hash = crypto.createHash('md5').update(sentence).digest('hex');
-    return `${PUBLIC_URL_BASE}/ep/sa/${folderName}/${hash}.mp3`;
+    return `${PUBLIC_URL_BASE}/ep/vg/${book}/${unit}/${hash}.mp3`;
 }
 
 let isGeminiQuotaExhausted = false;
 
-async function getAudioBatch(tasks, folderName) {
+async function getAudioBatch(tasks, book, unit) {
     if (tasks.length === 0) return;
     if (!process.env.GOOGLE_API_KEY) {
         console.warn("Skipping audio generation: GOOGLE_API_KEY not set.");
@@ -54,7 +54,10 @@ async function getAudioBatch(tasks, folderName) {
     if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
     const batchId = crypto.randomBytes(4).toString('hex');
-    const combinedWav = path.join(TEMP_DIR, `batch_${batchId}_combined.wav`);
+    const batchOutputDir = path.join(TEMP_DIR, `batch_${batchId}`);
+    if (!fs.existsSync(batchOutputDir)) fs.mkdirSync(batchOutputDir, { recursive: true });
+
+    const combinedWav = path.join(batchOutputDir, `batch_${batchId}_combined.wav`);
     const tempPy = path.join(TEMP_DIR, `batch_${batchId}_tts.py`);
 
     const separator = " . . . . . "; 
@@ -62,7 +65,7 @@ async function getAudioBatch(tasks, folderName) {
     const combinedText = sentences.join(separator) + separator;
     const totalWords = combinedText.trim().split(/\s+/).length;
     
-    console.log(`TTS Batch Request: ${tasks.length} sentences. Total words: ${totalWords}.`);
+    console.log(`TTS Batch Request [ID: ${batchId}]: ${tasks.length} sentences. Total words: ${totalWords}.`);
 
     const pythonScript = `
 import wave
@@ -125,14 +128,18 @@ except Exception as e:
         for (let i = 0; i < tasks.length; i++) {
             const item = tasks[i];
             const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
-            const segmentMp3 = path.join(TEMP_DIR, `segment_${hash}.mp3`);
+            
+            // Internal filename: order_firstword_hash.mp3
+            const firstWord = item.context_sentence.split(' ')[0].replace(/[^a-zA-Z]/g, '');
+            const segmentFileName = `${String(i + 1).padStart(3, '0')}_${firstWord}_${hash}.mp3`;
+            const segmentMp3 = path.join(batchOutputDir, segmentFileName);
             
             const s = silences[i];
             const endTime = s ? (s.start + s.end) / 2 : (startTime + 10); 
 
             execSync(`ffmpeg -i "${combinedWav}" -ss ${startTime} -to ${endTime} -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
             
-            const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
+            const r2Key = `ep/vg/${book}/${unit}/${hash}.mp3`;
             await s3Client.send(new PutObjectCommand({
                 Bucket: BUCKET_NAME,
                 Key: r2Key,
@@ -142,17 +149,16 @@ except Exception as e:
             
             item.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
             startTime = endTime;
-            if (fs.existsSync(segmentMp3)) fs.unlinkSync(segmentMp3);
         }
     } catch (err) {
         console.error("Batch TTS processing failed:", err.message);
     } finally {
         if (fs.existsSync(tempPy)) fs.unlinkSync(tempPy);
-        if (fs.existsSync(combinedWav)) fs.unlinkSync(combinedWav);
+        // Preserving combinedWav as requested
     }
 }
 
-function generateHtml(data, folderName) {
+function generateHtml(data, book, unit) {
     if (!fs.existsSync(TEMPLATE_PATH)) {
         throw new Error(`Template not found at ${TEMPLATE_PATH}`);
     }
@@ -165,7 +171,7 @@ function generateHtml(data, folderName) {
         const pageLabel = item.page_number ? `P${item.page_number}` : '';
         // Pre-calculate audio URL for the JSON data we will inject
         if (item.context_sentence) {
-            item.audio = getAudioUrl(item.context_sentence, folderName);
+            item.audio = getAudioUrl(item.context_sentence, book, unit);
         }
         return `
         <div class="vocab-item" data-word="${item.word.toLowerCase()}" data-index="${index}">
@@ -204,6 +210,9 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         }
 
         const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
+        const fileName = path.basename(jsonPath);
+        const unitName = fileName.split('-')[1] || 'u1';
+
         const jsonData = JSON.parse(fs.readFileSync(absoluteInputPath, 'utf8'));
         const vocab = jsonData.unit_vocabulary;
 
@@ -213,7 +222,7 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         await Promise.all(vocab.map(async (item) => {
             if (!item.context_sentence) return;
             const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
-            const r2Key = `ep/sa/${folderName}/${hash}.mp3`;
+            const r2Key = `ep/vg/${folderName}/${unitName}/${hash}.mp3`;
             try {
                 const head = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
                 if (head.LastModified) metadataMap.set(hash, head.LastModified.getTime());
@@ -233,7 +242,7 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
                     }
                 }
                 if (tasksToGenerate.length > 0) {
-                    await getAudioBatch(tasksToGenerate, folderName);
+                    await getAudioBatch(tasksToGenerate, folderName, unitName);
                 }
             }
         }
@@ -242,13 +251,13 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         vocab.forEach(item => {
             if (item.context_sentence) {
                 const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
-                const baseUrl = getAudioUrl(item.context_sentence, folderName);
+                const baseUrl = getAudioUrl(item.context_sentence, folderName, unitName);
                 const timestamp = metadataMap.get(hash) || Date.now();
                 item.audio = `${baseUrl}?v=${timestamp}`;
             }
         });
 
-        const htmlContent = generateHtml(jsonData, folderName);
+        const htmlContent = generateHtml(jsonData, folderName, unitName);
 
         const outputDir = path.dirname(absoluteOutputPath);
         if (!fs.existsSync(outputDir)) {
