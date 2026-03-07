@@ -68,21 +68,26 @@
     <div class="section">
         <h2>Files in this folder</h2>
         <div class="tree"><ul>
-            <li><span class="folder folder-toggle">A3B-U1</span> <span class="file-count"></span>
+            <li><span class="folder folder-toggle" data-unit="A3B-U1">A3B-U1</span> <span class="file-count"></span>
                 <ul class="collapsed">
-                    <li><a href="a3b-u1-recall-map.html">a3b-u1-recall-map.html</a></li>
-                    <li><a href="a3b-u1-sentence-architect.html">a3b-u1-sentence-architect.html</a></li>
-                    <li><a href="a3b-u1-spelling-hero.html">a3b-u1-spelling-hero.html</a></li>
-                    <li><a href="a3b-u1-vocab-guide.html">a3b-u1-vocab-guide.html</a></li>
-                    <li><a href="a3b-u1-vocab-master.html">a3b-u1-vocab-master.html</a></li>
+                    <li><a href="a3b-u1-recall-map.html" onclick="saveLastUnit('A3B-U1')">a3b-u1-recall-map.html</a></li>
+                    <li><a href="a3b-u1-sentence-architect.html" onclick="saveLastUnit('A3B-U1')">a3b-u1-sentence-architect.html</a></li>
+                    <li><a href="a3b-u1-spelling-hero.html" onclick="saveLastUnit('A3B-U1')">a3b-u1-spelling-hero.html</a></li>
+                    <li><a href="a3b-u1-vocab-guide.html" onclick="saveLastUnit('A3B-U1')">a3b-u1-vocab-guide.html</a></li>
+                    <li><a href="a3b-u1-vocab-master.html" onclick="saveLastUnit('A3B-U1')">a3b-u1-vocab-master.html</a></li>
                 </ul>
             </li>
         </ul></div>
     </div>
 
     <script>
+        function saveLastUnit(unit) {
+            localStorage.setItem('last-unit-' + window.location.pathname, unit);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const folders = document.querySelectorAll('.folder-toggle');
+            const lastUnit = localStorage.getItem('last-unit-' + window.location.pathname);
 
             folders.forEach(folder => {
                 const sublist = folder.nextElementSibling.nextElementSibling;
@@ -91,8 +96,18 @@
                     const fileCountSpan = folder.nextElementSibling;
                     fileCountSpan.textContent = `(${fileCount} files)`;
 
+                    const unit = folder.getAttribute('data-unit');
+                    if (unit === lastUnit) {
+                        sublist.classList.remove('collapsed');
+                    }
+
                     folder.addEventListener('click', () => {
                         sublist.classList.toggle('collapsed');
+                        if (!sublist.classList.contains('collapsed')) {
+                            saveLastUnit(unit);
+                        } else if (localStorage.getItem('last-unit-' + window.location.pathname) === unit) {
+                            localStorage.removeItem('last-unit-' + window.location.pathname);
+                        }
                     });
                 }
             });

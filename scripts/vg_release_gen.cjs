@@ -216,35 +216,70 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         const jsonData = JSON.parse(fs.readFileSync(absoluteInputPath, 'utf8'));
         const vocab = jsonData.unit_vocabulary;
 
-        // Cache busting: Fetch metadata for all existing audio files to get timestamps
+        // Fetch existing metadata to decide what needs generating (only if not skip-audio)
         const metadataMap = new Map();
-        console.log(`Checking metadata for ${vocab.length} audio files...`);
-        await Promise.all(vocab.map(async (item) => {
-            if (!item.context_sentence) return;
-            const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
-            const r2Key = `ep/vg/${folderName}/${unitName}/${hash}.mp3`;
-            try {
-                const head = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
-                if (head.LastModified) metadataMap.set(hash, head.LastModified.getTime());
-            } catch (e) {}
-        }));
+        if (audioMode !== '1') {
+            console.log(`Checking metadata for ${vocab.length} audio files...`);
+            await Promise.all(vocab.map(async (item) => {
+                if (!item.context_sentence) return;
+                const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
+                const r2Key = `ep/vg/${folderName}/${unitName}/${hash}.mp3`;
+                try {
+                    const head = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
+                    if (head.LastModified) metadataMap.set(hash, head.LastModified.getTime());
+                } catch (e) {}
+            }));
+        }
 
         // Audio generation logic
         if (audioMode !== '1') {
-            for (let i = 0; i < vocab.length; i += 10) {
-                const chunk = vocab.slice(i, i + 10);
-                const tasksToGenerate = [];
-                for (const item of chunk) {
-                    if (item.context_sentence) {
-                        const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
-                        let exists = metadataMap.has(hash);
-                        if (!exists || audioMode === '3') tasksToGenerate.push(item);
+            // Deduplicate sentences to avoid redundant TTS calls and R2 uploads
+            const uniqueSentencesMap = new Map();
+            vocab.forEach(item => {
+                if (!item.context_sentence) return;
+                const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
+                if (!uniqueSentencesMap.has(hash)) {
+                    const exists = metadataMap.has(hash);
+                    if (!exists || audioMode === '3') {
+                        uniqueSentencesMap.set(hash, item.context_sentence);
                     }
                 }
-                if (tasksToGenerate.length > 0) {
-                    await getAudioBatch(tasksToGenerate, folderName, unitName);
+            });
+
+            const uniqueTasks = Array.from(uniqueSentencesMap.values()).map(s => ({ context_sentence: s }));
+            
+            if (uniqueTasks.length > 0) {
+                console.log(`Processing ${uniqueTasks.length} unique audio tasks...`);
+                for (let i = 0; i < uniqueTasks.length; i += 10) {
+                    const chunk = uniqueTasks.slice(i, i + 10);
+                    await getAudioBatch(chunk, folderName, unitName);
                 }
             }
+
+            // Re-fetch ALL metadata after generation to ensure we have the absolute latest timestamps
+            console.log("Updating audio timestamps after generation...");
+            metadataMap.clear();
+            await Promise.all(vocab.map(async (item) => {
+                if (!item.context_sentence) return;
+                const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
+                const r2Key = `ep/vg/${folderName}/${unitName}/${hash}.mp3`;
+                try {
+                    const head = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
+                    if (head.LastModified) metadataMap.set(hash, head.LastModified.getTime());
+                } catch (e) {}
+            }));
+        } else {
+            // If skip-audio, we still need to fetch metadata once for versioned URLs
+            console.log("Fetching existing metadata for versioning...");
+            await Promise.all(vocab.map(async (item) => {
+                if (!item.context_sentence) return;
+                const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
+                const r2Key = `ep/vg/${folderName}/${unitName}/${hash}.mp3`;
+                try {
+                    const head = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
+                    if (head.LastModified) metadataMap.set(hash, head.LastModified.getTime());
+                } catch (e) {}
+            }));
         }
 
         // Apply versioned URLs
@@ -252,6 +287,7 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
             if (item.context_sentence) {
                 const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
                 const baseUrl = getAudioUrl(item.context_sentence, folderName, unitName);
+                // Use a fallback if still not found, but it should be there now
                 const timestamp = metadataMap.get(hash) || Date.now();
                 item.audio = `${baseUrl}?v=${timestamp}`;
             }

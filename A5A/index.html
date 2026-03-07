@@ -68,42 +68,47 @@
     <div class="section">
         <h2>Files in this folder</h2>
         <div class="tree"><ul>
-            <li><span class="folder folder-toggle">A5A-U1</span> <span class="file-count"></span>
+            <li><span class="folder folder-toggle" data-unit="A5A-U1">A5A-U1</span> <span class="file-count"></span>
                 <ul class="collapsed">
-                    <li><a href="A5A-U1-Sentence-Builder.html">A5A-U1-Sentence-Builder.html</a></li>
+                    <li><a href="A5A-U1-Sentence-Builder.html" onclick="saveLastUnit('A5A-U1')">A5A-U1-Sentence-Builder.html</a></li>
                 </ul>
             </li>
-            <li><span class="folder folder-toggle">A5A-U2</span> <span class="file-count"></span>
+            <li><span class="folder folder-toggle" data-unit="A5A-U2">A5A-U2</span> <span class="file-count"></span>
                 <ul class="collapsed">
-                    <li><a href="A5A-U2-Sentence-Builder.html">A5A-U2-Sentence-Builder.html</a></li>
+                    <li><a href="A5A-U2-Sentence-Builder.html" onclick="saveLastUnit('A5A-U2')">A5A-U2-Sentence-Builder.html</a></li>
                 </ul>
             </li>
-            <li><span class="folder folder-toggle">A5A-U3</span> <span class="file-count"></span>
+            <li><span class="folder folder-toggle" data-unit="A5A-U3">A5A-U3</span> <span class="file-count"></span>
                 <ul class="collapsed">
-                    <li><a href="A5A-U3-Sentence-Builder.html">A5A-U3-Sentence-Builder.html</a></li>
+                    <li><a href="A5A-U3-Sentence-Builder.html" onclick="saveLastUnit('A5A-U3')">A5A-U3-Sentence-Builder.html</a></li>
                 </ul>
             </li>
-            <li><span class="folder folder-toggle">A5A-U4</span> <span class="file-count"></span>
+            <li><span class="folder folder-toggle" data-unit="A5A-U4">A5A-U4</span> <span class="file-count"></span>
                 <ul class="collapsed">
-                    <li><a href="A5A-U4-Sentence-Builder.html">A5A-U4-Sentence-Builder.html</a></li>
+                    <li><a href="A5A-U4-Sentence-Builder.html" onclick="saveLastUnit('A5A-U4')">A5A-U4-Sentence-Builder.html</a></li>
                 </ul>
             </li>
-            <li><span class="folder folder-toggle">A5A-U5</span> <span class="file-count"></span>
+            <li><span class="folder folder-toggle" data-unit="A5A-U5">A5A-U5</span> <span class="file-count"></span>
                 <ul class="collapsed">
-                    <li><a href="A5A-U5-Sentence-Builder.html">A5A-U5-Sentence-Builder.html</a></li>
+                    <li><a href="A5A-U5-Sentence-Builder.html" onclick="saveLastUnit('A5A-U5')">A5A-U5-Sentence-Builder.html</a></li>
                 </ul>
             </li>
-            <li><span class="folder folder-toggle">A5A-U6</span> <span class="file-count"></span>
+            <li><span class="folder folder-toggle" data-unit="A5A-U6">A5A-U6</span> <span class="file-count"></span>
                 <ul class="collapsed">
-                    <li><a href="A5A-U6-Sentence-Builder.html">A5A-U6-Sentence-Builder.html</a></li>
+                    <li><a href="A5A-U6-Sentence-Builder.html" onclick="saveLastUnit('A5A-U6')">A5A-U6-Sentence-Builder.html</a></li>
                 </ul>
             </li>
         </ul></div>
     </div>
 
     <script>
+        function saveLastUnit(unit) {
+            localStorage.setItem('last-unit-' + window.location.pathname, unit);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const folders = document.querySelectorAll('.folder-toggle');
+            const lastUnit = localStorage.getItem('last-unit-' + window.location.pathname);
 
             folders.forEach(folder => {
                 const sublist = folder.nextElementSibling.nextElementSibling;
@@ -112,8 +117,18 @@
                     const fileCountSpan = folder.nextElementSibling;
                     fileCountSpan.textContent = `(${fileCount} files)`;
 
+                    const unit = folder.getAttribute('data-unit');
+                    if (unit === lastUnit) {
+                        sublist.classList.remove('collapsed');
+                    }
+
                     folder.addEventListener('click', () => {
                         sublist.classList.toggle('collapsed');
+                        if (!sublist.classList.contains('collapsed')) {
+                            saveLastUnit(unit);
+                        } else if (localStorage.getItem('last-unit-' + window.location.pathname) === unit) {
+                            localStorage.removeItem('last-unit-' + window.location.pathname);
+                        }
                     });
                 }
             });

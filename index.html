@@ -205,8 +205,13 @@
     </div>
 
     <script>
+        function saveLastFolder(path) {
+            localStorage.setItem('last-folder-' + window.location.pathname, path);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const folders = document.querySelectorAll('.folder-toggle');
+            const lastFolder = localStorage.getItem('last-folder-' + window.location.pathname);
 
             folders.forEach(folder => {
                 const sublist = folder.nextElementSibling.nextElementSibling;
@@ -215,11 +220,25 @@
                     const fileCountSpan = folder.nextElementSibling;
                     fileCountSpan.textContent = `(${fileCount} files)`;
 
+                    // Simple way to get the folder "path" or name
+                    const folderName = folder.textContent;
+                    if (folderName === lastFolder) {
+                        sublist.classList.remove('collapsed');
+                        // Expand parents too if it was nested (though here tree is shallow)
+                    }
+
                     folder.addEventListener('click', () => {
                         sublist.classList.toggle('collapsed');
+                        if (!sublist.classList.contains('collapsed')) {
+                            saveLastFolder(folderName);
+                        } else if (localStorage.getItem('last-folder-' + window.location.pathname) === folderName) {
+                            localStorage.removeItem('last-folder-' + window.location.pathname);
+                        }
                     });
                 }
             });
+
+            // Also handle links in Latest section if possible, though they are flat
         });
     </script>
 </body>

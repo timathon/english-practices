@@ -316,9 +316,10 @@
 
     const app = {
         state: {
-            currentChallenge: null, queue: [], currentIndex: 0,
-            currentObj: null, userSelection: [], activeSlot: 0,
-            locked: false, scoreLog: [], settings: { autoplay: true, sfx: true }
+            currentChallenge: null, queue: [], mistakeQueue: [],
+            currentIndex: 0, currentObj: null, userSelection: [], 
+            activeSlot: 0, locked: false, scoreLog: [], 
+            isRedemption: false, settings: { autoplay: true, sfx: true }
         },
         audio: null,
         sfx: {
@@ -435,8 +436,9 @@
             const c = challenges.find(x => x.id === id);
             this.state.currentChallenge = c;
             this.state.queue = [...c.data].sort(() => Math.random() - 0.5);
+            this.state.mistakeQueue = [];
             this.state.currentIndex = 0;
-            this.state.scoreLog = [];
+            this.state.scoreLog = new Array(c.data.length).fill(null);
 
             // Preload all audio for this challenge
             c.data.forEach(item => this.cacheAudio(item.audio));
@@ -446,8 +448,18 @@
             this.loadQuestion();
         },
         loadQuestion: function() {
-            if (this.state.currentIndex >= this.state.queue.length) { this.finishGame(); return; }
-            const q = this.state.queue[this.state.currentIndex];
+            let q = null;
+            if (this.state.currentIndex < this.state.queue.length) { 
+                q = this.state.queue[this.state.currentIndex]; 
+                this.state.isRedemption = false; 
+            } else if (this.state.mistakeQueue.length > 0) { 
+                q = this.state.mistakeQueue[0]; 
+                this.state.isRedemption = true; 
+            } else { 
+                this.finishGame(); 
+                return; 
+            }
+
             this.state.currentObj = q;
             this.state.userSelection = [];
             this.state.activeSlot = 0;
@@ -457,6 +469,7 @@
             document.getElementById("feedback-area").className = "feedback-area";
             document.getElementById("check-btn").style.display = "block";
             document.getElementById("check-btn").disabled = true;
+            document.getElementById("check-btn").className = "check-btn";
             document.getElementById("next-btn").style.display = "none";
 
             if (q.type === 'linear') {
@@ -566,17 +579,28 @@
 
             if (isCorrect) {
                 this.playSFX('correct');
-                this.state.scoreLog.push('green');
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = 'green';
+                }
                 feedback.className = "feedback-area correct visible";
                 title.innerText = "Excellent!";
                 msg.innerText = q.word;
+                btn.className = "check-btn correct";
+                if (this.state.isRedemption) this.state.mistakeQueue.shift();
             } else {
                 this.playSFX('wrong');
-                this.state.scoreLog.push('red');
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = 'red';
+                    this.state.mistakeQueue.push(this.state.currentObj);
+                    this.logMistake(q, userResult);
+                } else {
+                    // Move to the back of mistake queue
+                    this.state.mistakeQueue.push(this.state.mistakeQueue.shift());
+                }
                 feedback.className = "feedback-area wrong visible";
                 title.innerText = "Keep Trying!";
                 msg.innerText = q.word;
-                this.logMistake(q, userResult);
+                btn.className = "check-btn wrong";
             }
 
             if (this.state.settings.autoplay) this.playAudio(2);
@@ -584,19 +608,16 @@
             btn.style.display = "none";
             const nextBtn = document.getElementById("next-btn");
             nextBtn.style.display = "block";
-            nextBtn.disabled = true;
-            nextBtn.style.opacity = "0.5";
-            nextBtn.style.cursor = "not-allowed";
             
-            setTimeout(() => {
-                nextBtn.disabled = false;
-                nextBtn.style.opacity = "1";
-                nextBtn.style.cursor = "pointer";
-            }, 1000);
+            let isLast = this.state.isRedemption ? (this.state.mistakeQueue.length === 0) : (this.state.currentIndex >= this.state.queue.length - 1 && this.state.mistakeQueue.length === 0);
+            nextBtn.innerText = isLast ? "Finish" : "Continue";
 
             this.renderProgress();
         },
-        nextQuestion: function() { this.state.currentIndex++; this.loadQuestion(); },
+        nextQuestion: function() { 
+            if (!this.state.isRedemption) this.state.currentIndex++; 
+            this.loadQuestion(); 
+        },
         playAudio: async function(times = 1) {
             if (this.state.currentObj && this.state.currentObj.audio) {
                 if (this.audio) { this.audio.pause(); this.audio.onended = null; }
@@ -619,13 +640,14 @@
             for (let i = 0; i < 10; i++) {
                 const seg = document.createElement("div");
                 seg.className = "progress-segment";
-                if (this.state.scoreLog[i]) seg.classList.add(this.state.scoreLog[i]);
+                const s = this.state.scoreLog[i];
+                if (s) seg.classList.add(s);
                 bar.appendChild(seg);
             }
         },
         finishGame: function() {
             const correct = this.state.scoreLog.filter(s => s === 'green').length;
-            const total = Math.round((correct / 10) * 100);
+            const total = Math.round((correct / this.state.scoreLog.length) * 100);
             const allStats = this.getStats();
             const cid = this.state.currentChallenge.id;
             if (!allStats[cid]) allStats[cid] = { today: {date: new Date().toLocaleDateString(), attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };

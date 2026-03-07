@@ -35,6 +35,9 @@ async function main() {
         process.exit(1);
     }
 
+    const format = await askQuestion("Select filename format:\n 1. number_word_hash.mp3 (Default)\n 2. hash.mp3\n Choice: ") || '1';
+    const targetPrefix = await askQuestion("Enter R2 Target Prefix (e.g., ep/vg/a7a/u1/ or leave empty for all ep/): ") || 'ep/';
+
     const batchDir = path.join(BASE_DIR, 'temp', 'audio', `batch_${batchId}`);
     if (!fs.existsSync(batchDir)) {
         console.error(`❌ Batch directory not found: ${batchDir}`);
@@ -44,8 +47,13 @@ async function main() {
     // 1. Collect hashes from local files
     const localFiles = fs.readdirSync(batchDir).filter(f => f.endsWith('.mp3'));
     const hashes = localFiles.map(f => {
-        const match = f.match(/_([a-f0-9]{32})\.mp3$/);
-        return match ? match[1] : null;
+        if (format === '1') {
+            const match = f.match(/_([a-f0-9]{32})\.mp3$/);
+            return match ? match[1] : null;
+        } else {
+            const match = f.match(/^([a-f0-9]{32})\.mp3$/);
+            return match ? match[1] : null;
+        }
     }).filter(h => h !== null);
 
     if (hashes.length === 0) {
@@ -63,7 +71,7 @@ async function main() {
         do {
             const listCommand = new ListObjectsV2Command({
                 Bucket: BUCKET_NAME,
-                Prefix: 'ep/',
+                Prefix: targetPrefix,
                 ContinuationToken: continuationToken
             });
 

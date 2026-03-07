@@ -201,10 +201,10 @@ function generateFolderIndex(folderPath, title) {
                 listHtml += `            <li><a href="${f.path}">${f.name}</a></li>\n`;
             }
         } else {
-            listHtml += `            <li><span class="folder folder-toggle">${unit}</span> <span class="file-count"></span>\n`;
+            listHtml += `            <li><span class="folder folder-toggle" data-unit="${unit}">${unit}</span> <span class="file-count"></span>\n`;
             listHtml += '                <ul class="collapsed">\n';
             for (const f of unitFiles) {
-                listHtml += `                    <li><a href="${f.path}">${f.name}</a></li>\n`;
+                listHtml += `                    <li><a href="${f.path}" onclick="saveLastUnit('${unit}')">${f.name}</a></li>\n`;
             }
             listHtml += '                </ul>\n';
             listHtml += '            </li>\n';
@@ -285,8 +285,13 @@ function generateFolderIndex(folderPath, title) {
     </div>
 
     <script>
+        function saveLastUnit(unit) {
+            localStorage.setItem('last-unit-' + window.location.pathname, unit);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const folders = document.querySelectorAll('.folder-toggle');
+            const lastUnit = localStorage.getItem('last-unit-' + window.location.pathname);
 
             folders.forEach(folder => {
                 const sublist = folder.nextElementSibling.nextElementSibling;
@@ -295,8 +300,18 @@ function generateFolderIndex(folderPath, title) {
                     const fileCountSpan = folder.nextElementSibling;
                     fileCountSpan.textContent = \`(\${fileCount} files)\`;
 
+                    const unit = folder.getAttribute('data-unit');
+                    if (unit === lastUnit) {
+                        sublist.classList.remove('collapsed');
+                    }
+
                     folder.addEventListener('click', () => {
                         sublist.classList.toggle('collapsed');
+                        if (!sublist.classList.contains('collapsed')) {
+                            saveLastUnit(unit);
+                        } else if (localStorage.getItem('last-unit-' + window.location.pathname) === unit) {
+                            localStorage.removeItem('last-unit-' + window.location.pathname);
+                        }
                     });
                 }
             });
@@ -385,8 +400,13 @@ ${latestHtml}
 ${treeHtml}
 
     <script>
+        function saveLastFolder(path) {
+            localStorage.setItem('last-folder-' + window.location.pathname, path);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const folders = document.querySelectorAll('.folder-toggle');
+            const lastFolder = localStorage.getItem('last-folder-' + window.location.pathname);
 
             folders.forEach(folder => {
                 const sublist = folder.nextElementSibling.nextElementSibling;
@@ -395,11 +415,25 @@ ${treeHtml}
                     const fileCountSpan = folder.nextElementSibling;
                     fileCountSpan.textContent = \`(\${fileCount} files)\`;
 
+                    // Simple way to get the folder "path" or name
+                    const folderName = folder.textContent;
+                    if (folderName === lastFolder) {
+                        sublist.classList.remove('collapsed');
+                        // Expand parents too if it was nested (though here tree is shallow)
+                    }
+
                     folder.addEventListener('click', () => {
                         sublist.classList.toggle('collapsed');
+                        if (!sublist.classList.contains('collapsed')) {
+                            saveLastFolder(folderName);
+                        } else if (localStorage.getItem('last-folder-' + window.location.pathname) === folderName) {
+                            localStorage.removeItem('last-folder-' + window.location.pathname);
+                        }
                     });
                 }
             });
+
+            // Also handle links in Latest section if possible, though they are flat
         });
     </script>
 </body>

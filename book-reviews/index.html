@@ -74,8 +74,13 @@
     </div>
 
     <script>
+        function saveLastUnit(unit) {
+            localStorage.setItem('last-unit-' + window.location.pathname, unit);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const folders = document.querySelectorAll('.folder-toggle');
+            const lastUnit = localStorage.getItem('last-unit-' + window.location.pathname);
 
             folders.forEach(folder => {
                 const sublist = folder.nextElementSibling.nextElementSibling;
@@ -84,8 +89,18 @@
                     const fileCountSpan = folder.nextElementSibling;
                     fileCountSpan.textContent = `(${fileCount} files)`;
 
+                    const unit = folder.getAttribute('data-unit');
+                    if (unit === lastUnit) {
+                        sublist.classList.remove('collapsed');
+                    }
+
                     folder.addEventListener('click', () => {
                         sublist.classList.toggle('collapsed');
+                        if (!sublist.classList.contains('collapsed')) {
+                            saveLastUnit(unit);
+                        } else if (localStorage.getItem('last-unit-' + window.location.pathname) === unit) {
+                            localStorage.removeItem('last-unit-' + window.location.pathname);
+                        }
                     });
                 }
             });
