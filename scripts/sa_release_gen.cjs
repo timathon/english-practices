@@ -222,12 +222,15 @@ except Exception as e:
             allSilences.push({ start, end, duration: end - start });
         }
 
-        const silences = allSilences
+        // Filter out leading silence (starting within first 0.1s)
+        const candidateSilences = allSilences.filter(s => s.start > 0.1);
+
+        const silences = candidateSilences
             .sort((a, b) => b.duration - a.duration)
             .slice(0, tasks.length)
             .sort((a, b) => a.start - b.start);
 
-        console.log(`Detected ${allSilences.length} total pauses, using the ${silences.length} longest as separators.`);
+        console.log(`Detected ${allSilences.length} total pauses, using ${silences.length} longest (after filtering ${allSilences.length - candidateSilences.length} leading) as separators.`);
 
         let startTime = 0;
         for (let i = 0; i < tasks.length; i++) {

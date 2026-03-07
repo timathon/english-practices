@@ -96,11 +96,16 @@ except Exception as e:
             allSilences.push({ start: parseFloat(sMatch[1]), end: parseFloat(eMatch[1]) });
         }
 
-        const silences = allSilences
+        // Filter out leading silence (starting within first 0.1s)
+        const candidateSilences = allSilences.filter(s => s.start > 0.1);
+
+        const silences = candidateSilences
             .map(s => ({ ...s, duration: s.end - s.start }))
             .sort((a, b) => b.duration - a.duration)
             .slice(0, tasks.length)
             .sort((a, b) => a.start - b.start);
+
+        console.log(`Detected ${allSilences.length} total pauses, using ${silences.length} longest (after filtering ${allSilences.length - candidateSilences.length} leading) as separators.`);
 
         let startTime = 0;
         for (let i = 0; i < tasks.length; i++) {
