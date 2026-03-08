@@ -22,6 +22,22 @@
         h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
         h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-bottom: 25px; margin-top: 0; }
         
+        /* Stats Display */
+        .stats-bar {
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .stats-bar b { color: #2c3e50; }
+
         /* Responsive Grid Layout */
         .vocab-grid {
             display: grid;
@@ -32,6 +48,24 @@
         @media (min-width: 600px) {
             .vocab-grid {
                 grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .controls-container {
+                /* Same as desktop defaults */
+                top: 20px;
+                right: 20px;
+                left: auto;
+                bottom: auto;
+                flex-direction: column;
+            }
+            .scroll-btns {
+                right: 20px;
+                bottom: 20px;
+            }
+            body {
+                padding-bottom: 15px; /* Reset padding */
             }
         }
 
@@ -46,9 +80,32 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
+            position: relative;
+            transition: all 0.2s;
         }
+        .vocab-item.is-hidden-state {
+            opacity: 0.4;
+            filter: grayscale(0.8);
+        }
+        .vocab-item.is-hidden-state:not(.force-show) {
+            display: none;
+        }
+
+        .item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hide-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin: 0;
+        }
+
         .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; }
+        .word-ipa { font-size: 0.7em; color: #7f8c8d; font-weight: normal; margin-left: 8px; font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif; }
+        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; line-height: 1.2; display: inline-flex; align-items: center; }
         .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
         .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
         .value { flex-grow: 1; }
@@ -93,63 +150,43 @@
         .play-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
 
-        /* Floating Toggle */
-        #sort-toggle {
+        /* Floating Controls */
+        .controls-container {
             position: fixed;
             top: 20px;
             right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .control-btn {
             padding: 10px 15px;
-            background: #3498db;
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
             font-weight: bold;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: 140px;
         }
-        #sort-toggle:hover {
-            background: #2980b9;
-            transform: scale(1.05);
-        }
-        #sort-toggle:active {
-            transform: scale(0.95);
-        }
+        .control-btn:hover { transform: scale(1.05); }
+        .control-btn:active { transform: scale(0.95); }
 
-        /* Refresh Cache Button */
-        #refresh-cache {
-            position: fixed;
-            top: 75px;
-            right: 20px;
-            padding: 10px 15px;
-            background: #1abc9c;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
-            font-weight: bold;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #refresh-cache:hover {
-            background: #16a085;
-            transform: scale(1.05);
-        }
-        #refresh-cache:active {
-            transform: scale(0.95);
-        }
-        #refresh-cache.loading {
-            opacity: 0.7;
-            cursor: wait;
-        }
+        #sort-toggle { background: #3498db; }
+        #sort-toggle:hover { background: #2980b9; }
+
+        #show-hidden-toggle { background: #9b59b6; }
+        #show-hidden-toggle:hover { background: #8e44ad; }
+        #show-hidden-toggle.active { background: #2c3e50; }
+
+        #refresh-cache { background: #1abc9c; }
+        #refresh-cache:hover { background: #16a085; }
+        #refresh-cache.loading { opacity: 0.7; cursor: wait; }
 
         /* Floating Scroll Buttons */
         .scroll-btns {
@@ -206,7 +243,12 @@
                 background: #fff;
                 border-radius: 5px;
                 min-height: 0;
+                display: flex; /* Remove !important to allow display: none from .is-hidden-state */
+                opacity: 1 !important;
+                filter: none !important;
             }
+            .vocab-item.is-hidden-state { display: none !important; } /* Ensure hidden items stay hidden in print */
+
             .word-title { font-size: 1.25em; margin-bottom: 4px; padding-bottom: 2px; color: #000; }
             .page-badge { font-size: 0.7em; padding: 1px 4px; }
             .details { margin-bottom: 2px; font-size: 0.95em; line-height: 1.2; }
@@ -228,27 +270,37 @@
                 background-color: #f5fdfc;
             }
             
-            #sort-toggle, #refresh-cache, .scroll-btns, .play-btn { display: none !important; }
+            .controls-container, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 5px;">
             <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
             <h1 style="margin: 0;">Vocabulary Guide</h1>
-            <button id="sort-toggle" onclick="toggleSort()">
-                <span id="sort-icon">🔤</span>
-                <span id="sort-text">Sort A-Z</span>
-            </button>
-            <button id="refresh-cache" onclick="app.refreshCache()">
-                <span id="refresh-icon">🔄</span>
-                <span id="refresh-text">Refresh Audio</span>
-            </button>
         </div>
         <h2>{{LEVEL}}</h2>
+        <div class="stats-bar" id="stats-display">
+            Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
+        </div>
     </header>
+
+    <div class="controls-container">
+        <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
+            <span id="sort-icon">🔤</span>
+            <span id="sort-text">Sort A-Z</span>
+        </button>
+        <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
+            <span id="hidden-icon">👁️</span>
+            <span id="hidden-text">Show Hidden</span>
+        </button>
+        <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
+            <span id="refresh-icon">🔄</span>
+            <span id="refresh-text">Refresh Audio</span>
+        </button>
+    </div>
 
     <div class="vocab-grid" id="vocab-container">
         {{ITEMS}}
@@ -288,60 +340,132 @@
 
         const app = {
             currentAudio: null,
+            hiddenWords: new Set(),
+            showHiddenMode: false,
+            unitKey: "ep-vg-hidden-" + btoa(document.title + "{{LEVEL}}").substring(0, 16),
+
+            init: function() {
+                // Load hidden words from localStorage
+                const stored = localStorage.getItem(this.unitKey);
+                if (stored) {
+                    try {
+                        const indices = JSON.parse(stored);
+                        this.hiddenWords = new Set(indices);
+                    } catch(e) { console.error("Failed to parse hidden words", e); }
+                }
+
+                // Apply initial state to cards
+                items.forEach(item => {
+                    const idx = parseInt(item.dataset.index);
+                    if (this.hiddenWords.has(idx)) {
+                        item.classList.add('is-hidden-state');
+                        const cb = item.querySelector('.hide-checkbox');
+                        if (cb) cb.checked = true;
+                    }
+                });
+
+                this.updateStats();
+            },
+
+            getHash: function(str) {
+                return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            },
+
+            updateStats: function() {
+                const total = vocabData.length;
+                const hidden = this.hiddenWords.size;
+                const shown = total - hidden;
+                
+                document.getElementById('stats-display').innerHTML = 
+                    `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+            },
+
+            toggleWordHidden: function(index) {
+                const item = items.find(it => parseInt(it.dataset.index) === index);
+                if (!item) return;
+
+                if (this.hiddenWords.has(index)) {
+                    this.hiddenWords.delete(index);
+                    item.classList.remove('is-hidden-state');
+                } else {
+                    this.hiddenWords.add(index);
+                    item.classList.add('is-hidden-state');
+                }
+
+                // Persist
+                localStorage.setItem(this.unitKey, JSON.stringify(Array.from(this.hiddenWords)));
+                this.updateStats();
+            },
+
+            toggleShowHiddenMode: function() {
+                this.showHiddenMode = !this.showHiddenMode;
+                const btn = document.getElementById('show-hidden-toggle');
+                const btnText = document.getElementById('hidden-text');
+                const btnIcon = document.getElementById('hidden-icon');
+
+                if (this.showHiddenMode) {
+                    btn.classList.add('active');
+                    btnText.innerText = "Hide Learnt";
+                    btnIcon.innerText = "🙈";
+                    items.forEach(item => item.classList.add('force-show'));
+                } else {
+                    btn.classList.remove('active');
+                    btnText.innerText = "Show Hidden";
+                    btnIcon.innerText = "👁️";
+                    items.forEach(item => item.classList.remove('force-show'));
+                }
+            },
 
             clearAudioCache: function() {
                 const keysToRemove = [];
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key && (key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-") || key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-"))) {
+                    if (key && (key.startsWith("ep-vg-") || key.startsWith("ep-sa-") || key.startsWith("ep-vm-") || key.startsWith("ep-sh-"))) {
                         keysToRemove.push(key);
                     }
                 }
                 keysToRemove.forEach(k => localStorage.removeItem(k));
                 console.log("Cleared audio cache to free up space");
             },
+
             safeSetItem: function(key, value) {
                 try {
                     localStorage.setItem(key, value);
                 } catch (e) {
                     if (e.name === 'QuotaExceededError') {
+                        console.warn("LocalStorage quota exceeded, attempting to clear cache...");
                         this.clearAudioCache();
                         try {
                             localStorage.setItem(key, value);
                         } catch (e2) {
-                            console.error("Storage still full after clearing cache", e2);
+                            console.error("Storage still full after clearing cache. Audio will not be cached.", e2);
                         }
                     } else {
                         console.error("Error saving to localStorage", e);
                     }
                 }
             },
+
             cacheAudio: async function(url) {
                 if (!url) return;
                 const baseUrl = url.split('?')[0];
-                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const baseHash = Array.from(baseUrl).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-sa-audio-" + urlHash;
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-vg-audio-" + baseHash;
+                const metaKey = "ep-vg-meta-" + baseHash;
                 
                 if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
 
                 try {
                     const resp = await fetch(url);
+                    const lastModified = resp.headers.get('Last-Modified');
                     const blob = await resp.blob();
                     return new Promise((resolve) => {
                         const reader = new FileReader();
                         reader.onloadend = () => {
                             const result = reader.result;
-                            try {
-                                const versionRegistryKey = "ep-sa-meta-" + baseHash;
-                                const oldCacheKey = localStorage.getItem(versionRegistryKey);
-                                if (oldCacheKey && oldCacheKey !== cacheKey) {
-                                    localStorage.removeItem(oldCacheKey);
-                                }
-                                this.safeSetItem(cacheKey, result);
-                                this.safeSetItem(versionRegistryKey, cacheKey);
-                            } catch(e) {
-                                console.warn("Storage full, could not cache audio");
+                            this.safeSetItem(cacheKey, result);
+                            if (lastModified) {
+                                this.safeSetItem(metaKey, new Date(lastModified).getTime().toString());
                             }
                             resolve(result);
                         };
@@ -365,8 +489,10 @@
                         
                         const url = item.audio;
                         const baseUrl = url.split('?')[0];
-                        const urlParams = new URLSearchParams(url.split('?')[1]);
-                        const currentVersion = parseInt(urlParams.get('v')) || 0;
+                        const baseHash = this.getHash(baseUrl);
+                        const metaKey = "ep-vg-meta-" + baseHash;
+                        const cacheKey = "ep-vg-audio-" + baseHash;
+                        const currentVersion = parseInt(localStorage.getItem(metaKey)) || 0;
 
                         try {
                             const response = await fetch(url, { method: 'HEAD' });
@@ -374,9 +500,9 @@
                             if (lastModifiedStr) {
                                 const lastModified = new Date(lastModifiedStr).getTime();
                                 if (lastModified > currentVersion) {
-                                    const newUrl = `${baseUrl}?v=${lastModified}`;
-                                    await this.cacheAudio(newUrl);
-                                    item.audio = newUrl;
+                                    localStorage.removeItem(cacheKey);
+                                    localStorage.removeItem(metaKey);
+                                    await this.cacheAudio(url);
                                     updatedCount++;
                                 }
                             }
@@ -400,8 +526,9 @@
 
                 if (this.currentAudio) this.currentAudio.pause();
                 
-                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-sa-audio-" + urlHash;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-vg-audio-" + baseHash;
                 const source = localStorage.getItem(cacheKey) || url;
 
                 this.currentAudio = new Audio(source);
@@ -409,8 +536,9 @@
             }
         };
 
-        // Preload all audio on startup
+        // Initialize and preload
         window.addEventListener('load', () => {
+            app.init();
             vocabData.forEach(item => {
                 if (item.audio) {
                     app.cacheAudio(item.audio);

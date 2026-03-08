@@ -22,22 +22,6 @@
         h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
         h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-bottom: 25px; margin-top: 0; }
         
-        /* Stats Display */
-        .stats-bar {
-            text-align: center;
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 15px;
-            background: #f8f9fa;
-            padding: 5px 10px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-        }
-        .stats-bar b { color: #2c3e50; }
-
         /* Responsive Grid Layout */
         .vocab-grid {
             display: grid;
@@ -48,24 +32,6 @@
         @media (min-width: 600px) {
             .vocab-grid {
                 grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .controls-container {
-                /* Same as desktop defaults */
-                top: 20px;
-                right: 20px;
-                left: auto;
-                bottom: auto;
-                flex-direction: column;
-            }
-            .scroll-btns {
-                right: 20px;
-                bottom: 20px;
-            }
-            body {
-                padding-bottom: 15px; /* Reset padding */
             }
         }
 
@@ -80,32 +46,9 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
-            position: relative;
-            transition: all 0.2s;
         }
-        .vocab-item.is-hidden-state {
-            opacity: 0.4;
-            filter: grayscale(0.8);
-        }
-        .vocab-item.is-hidden-state:not(.force-show) {
-            display: none;
-        }
-
-        .item-meta {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .hide-checkbox {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-            margin: 0;
-        }
-
         .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .word-ipa { font-size: 0.7em; color: #7f8c8d; font-weight: normal; margin-left: 8px; font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif; }
-        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; line-height: 1.2; display: inline-flex; align-items: center; }
+        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; }
         .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
         .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
         .value { flex-grow: 1; }
@@ -150,43 +93,32 @@
         .play-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
 
-        /* Floating Controls */
-        .controls-container {
+        /* Floating Toggle */
+        #sort-toggle {
             position: fixed;
             top: 20px;
             right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 1000;
-        }
-        .control-btn {
             padding: 10px 15px;
+            background: #3498db;
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
             font-weight: bold;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 8px;
-            min-width: 140px;
         }
-        .control-btn:hover { transform: scale(1.05); }
-        .control-btn:active { transform: scale(0.95); }
-
-        #sort-toggle { background: #3498db; }
-        #sort-toggle:hover { background: #2980b9; }
-
-        #show-hidden-toggle { background: #9b59b6; }
-        #show-hidden-toggle:hover { background: #8e44ad; }
-        #show-hidden-toggle.active { background: #2c3e50; }
-
-        #refresh-cache { background: #1abc9c; }
-        #refresh-cache:hover { background: #16a085; }
-        #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+        #sort-toggle:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+        #sort-toggle:active {
+            transform: scale(0.95);
+        }
 
         /* Floating Scroll Buttons */
         .scroll-btns {
@@ -225,92 +157,53 @@
 
         @media print {
             @page { margin: 8mm; }
-            body { padding: 0; font-size: 11px; color: #000; line-height: 1.2; }
-            header { border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; text-align: center; }
+            body { padding: 0; font-size: 10px; }
             header a { display: none; }
             header div { display: inline !important; min-height: 0 !important; margin: 0 !important; }
-            h1 { display: inline; font-size: 1.4em; margin: 0; }
-            h2 { display: inline; font-size: 1.2em; border: none; padding: 0; margin-left: 15px; }
-            
+            h1 { display: inline; font-size: 1.2em; margin: 0; }
+            h2 { display: inline; font-size: 1.1em; border: none; padding: 0; margin-left: 15px; }
+            header { text-align: center; border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; }
             .vocab-grid { 
-                grid-template-columns: repeat(4, 1fr); 
+                grid-template-columns: 1fr 1fr 1fr; 
                 gap: 6px; 
             }
             .vocab-item { 
-                padding: 6px 8px; 
+                padding: 5px 8px; 
                 box-shadow: none; 
-                border: 0.5pt solid #bbb;
-                background: #fff;
-                border-radius: 5px;
+                border: 1px solid #ccc;
                 min-height: 0;
-                display: flex; /* Remove !important to allow display: none from .is-hidden-state */
-                opacity: 1 !important;
-                filter: none !important;
             }
-            .vocab-item.is-hidden-state { display: none !important; } /* Ensure hidden items stay hidden in print */
-
-            .word-title { font-size: 1.25em; margin-bottom: 4px; padding-bottom: 2px; color: #000; }
-            .page-badge { font-size: 0.7em; padding: 1px 4px; }
-            .details { margin-bottom: 2px; font-size: 0.95em; line-height: 1.2; }
-            .label { width: auto; font-size: 0.85em; margin-right: 3px; color: #444; }
-            .value { font-weight: 400; }
-            
-            .context-box { 
-                margin: 2px 0; 
-                padding: 3px 6px; 
-                font-size: 0.95em; 
-                border-left-width: 2pt; 
-                background-color: #fdfaf5;
-            }
-            .hook-box { 
-                margin-top: 1px; 
-                padding: 3px 6px; 
-                font-size: 0.95em; 
-                border-left-width: 2pt; 
-                background-color: #f5fdfc;
-            }
-            
-            .controls-container, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
+            .word-title { font-size: 1em; margin-bottom: 3px; padding-bottom: 1px; }
+            .details { margin-bottom: 1px; font-size: 0.8em; line-height: 1.2; }
+            .label { width: 60px; font-size: 0.8em; }
+            .context-box { margin: 3px 0; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
+            .hook-box { margin-top: 3px; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
+            #sort-toggle { display: none; }
+            .scroll-btns { display: none; }
+            .play-btn { display: none; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 5px;">
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 10px;">
             <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
             <h1 style="margin: 0;">Vocabulary Guide</h1>
+            <button id="sort-toggle" onclick="toggleSort()">
+                <span id="sort-icon">🔤</span>
+                <span id="sort-text">Sort A-Z</span>
+            </button>
         </div>
         <h2>Grade 3 Semester 2 - Unit 1</h2>
-        <div class="stats-bar" id="stats-display">
-            Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
-        </div>
     </header>
-
-    <div class="controls-container">
-        <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
-            <span id="sort-icon">🔤</span>
-            <span id="sort-text">Sort A-Z</span>
-        </button>
-        <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
-            <span id="hidden-icon">👁️</span>
-            <span id="hidden-text">Show Hidden</span>
-        </button>
-        <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
-            <span id="refresh-icon">🔄</span>
-            <span id="refresh-text">Refresh Audio</span>
-        </button>
-    </div>
 
     <div class="vocab-grid" id="vocab-container">
         
         <div class="vocab-item" data-word="animal" data-index="0">
             <h2 class="word-title">
-                <span>1. animal<span class="word-ipa">[ˈænɪml]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P1</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
-                </div>
+                <span>1. animal</span>
+                <span class="page-badge">P1</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">动物</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">an-i-mal</span></div>
@@ -326,11 +219,8 @@
 
         <div class="vocab-item" data-word="panda" data-index="1">
             <h2 class="word-title">
-                <span>2. panda<span class="word-ipa">[ˈpændə]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P1</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
-                </div>
+                <span>2. panda</span>
+                <span class="page-badge">P1</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">大熊猫</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pan-da</span></div>
@@ -346,11 +236,8 @@
 
         <div class="vocab-item" data-word="elephant" data-index="2">
             <h2 class="word-title">
-                <span>3. elephant<span class="word-ipa">[ˈelɪfənt]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P1</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
-                </div>
+                <span>3. elephant</span>
+                <span class="page-badge">P1</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">象</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">el-e-phant</span></div>
@@ -366,11 +253,8 @@
 
         <div class="vocab-item" data-word="bear" data-index="3">
             <h2 class="word-title">
-                <span>4. bear<span class="word-ipa">[beə(r)]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P1</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
-                </div>
+                <span>4. bear</span>
+                <span class="page-badge">P1</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">熊</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
@@ -386,11 +270,8 @@
 
         <div class="vocab-item" data-word="giraffe" data-index="4">
             <h2 class="word-title">
-                <span>5. giraffe<span class="word-ipa">[dʒəˈrɑːf]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P1</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
-                </div>
+                <span>5. giraffe</span>
+                <span class="page-badge">P1</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">长颈鹿</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">gi-raffe</span></div>
@@ -406,11 +287,8 @@
 
         <div class="vocab-item" data-word="monkey" data-index="5">
             <h2 class="word-title">
-                <span>6. monkey<span class="word-ipa">[ˈmʌŋki]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P1</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
-                </div>
+                <span>6. monkey</span>
+                <span class="page-badge">P1</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">猴</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">mon-key</span></div>
@@ -426,11 +304,8 @@
 
         <div class="vocab-item" data-word="them" data-index="6">
             <h2 class="word-title">
-                <span>7. them<span class="word-ipa">[ðəm]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P1</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
-                </div>
+                <span>7. them</span>
+                <span class="page-badge">P1</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">他们;她们;它们</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
@@ -446,11 +321,8 @@
 
         <div class="vocab-item" data-word="draw" data-index="7">
             <h2 class="word-title">
-                <span>8. draw<span class="word-ipa">[drɔː]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P3</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
-                </div>
+                <span>8. draw</span>
+                <span class="page-badge">P3</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">画,绘画</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
@@ -466,11 +338,8 @@
 
         <div class="vocab-item" data-word="tiger" data-index="8">
             <h2 class="word-title">
-                <span>9. tiger<span class="word-ipa">[ˈtaɪɡə(r)]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P3</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
-                </div>
+                <span>9. tiger</span>
+                <span class="page-badge">P3</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">老虎,虎</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ti-ger</span></div>
@@ -486,11 +355,8 @@
 
         <div class="vocab-item" data-word="strong" data-index="9">
             <h2 class="word-title">
-                <span>10. strong<span class="word-ipa">[strɒŋ]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P3</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
-                </div>
+                <span>10. strong</span>
+                <span class="page-badge">P3</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">强壮的,力气大的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
@@ -506,11 +372,8 @@
 
         <div class="vocab-item" data-word="short" data-index="10">
             <h2 class="word-title">
-                <span>11. short<span class="word-ipa">[ʃɔːt]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P3</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(10)">
-                </div>
+                <span>11. short</span>
+                <span class="page-badge">P3</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">个子矮的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">r控制音节 (R-Controlled)</span></div>
@@ -526,11 +389,8 @@
 
         <div class="vocab-item" data-word="white" data-index="11">
             <h2 class="word-title">
-                <span>12. white<span class="word-ipa">[waɪt]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P3</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(11)">
-                </div>
+                <span>12. white</span>
+                <span class="page-badge">P3</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">白的,白色的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
@@ -546,11 +406,8 @@
 
         <div class="vocab-item" data-word="brown" data-index="12">
             <h2 class="word-title">
-                <span>13. brown<span class="word-ipa">[braʊn]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P4</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(12)">
-                </div>
+                <span>13. brown</span>
+                <span class="page-badge">P4</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">棕色的;褐色的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
@@ -566,11 +423,8 @@
 
         <div class="vocab-item" data-word="zebra" data-index="13">
             <h2 class="word-title">
-                <span>14. zebra<span class="word-ipa">[ˈzebrə]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(13)">
-                </div>
+                <span>14. zebra</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">斑马</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ze-bra</span></div>
@@ -586,11 +440,8 @@
 
         <div class="vocab-item" data-word="move" data-index="14">
             <h2 class="word-title">
-                <span>15. move<span class="word-ipa">[muːv]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(14)">
-                </div>
+                <span>15. move</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">移动</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
@@ -606,11 +457,8 @@
 
         <div class="vocab-item" data-word="road" data-index="15">
             <h2 class="word-title">
-                <span>16. road<span class="word-ipa">[rəʊd]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(15)">
-                </div>
+                <span>16. road</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">路,道路</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
@@ -626,11 +474,8 @@
 
         <div class="vocab-item" data-word="dance" data-index="16">
             <h2 class="word-title">
-                <span>17. dance<span class="word-ipa">[dɑːns]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(16)">
-                </div>
+                <span>17. dance</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">跳舞</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
@@ -646,11 +491,8 @@
 
         <div class="vocab-item" data-word="along" data-index="17">
             <h2 class="word-title">
-                <span>18. along<span class="word-ipa">[əˈlɒŋ]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(17)">
-                </div>
+                <span>18. along</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">一起</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">a-long</span></div>
@@ -666,11 +508,8 @@
 
         <div class="vocab-item" data-word="which" data-index="18">
             <h2 class="word-title">
-                <span>19. which<span class="word-ipa">[wɪtʃ]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(18)">
-                </div>
+                <span>19. which</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">哪一个;哪些</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
@@ -686,11 +525,8 @@
 
         <div class="vocab-item" data-word="word" data-index="19">
             <h2 class="word-title">
-                <span>20. word<span class="word-ipa">[wɜːd]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(19)">
-                </div>
+                <span>20. word</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">字,词,单词</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">r控制音节 (R-Controlled)</span></div>
@@ -706,11 +542,8 @@
 
         <div class="vocab-item" data-word="stone" data-index="20">
             <h2 class="word-title">
-                <span>21. stone<span class="word-ipa">[stəʊn]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P8</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(20)">
-                </div>
+                <span>21. stone</span>
+                <span class="page-badge">P8</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">石头</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
@@ -726,11 +559,8 @@
 
         <div class="vocab-item" data-word="hat" data-index="21">
             <h2 class="word-title">
-                <span>22. hat<span class="word-ipa">[hæt]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P8</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(21)">
-                </div>
+                <span>22. hat</span>
+                <span class="page-badge">P8</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">帽子</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
@@ -746,11 +576,8 @@
 
         <div class="vocab-item" data-word="shoe" data-index="22">
             <h2 class="word-title">
-                <span>23. shoe<span class="word-ipa">[ʃuː]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P8</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(22)">
-                </div>
+                <span>23. shoe</span>
+                <span class="page-badge">P8</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">鞋</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
@@ -766,11 +593,8 @@
 
         <div class="vocab-item" data-word="tall" data-index="23">
             <h2 class="word-title">
-                <span>24. tall<span class="word-ipa">[tɔːl]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P4</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(23)">
-                </div>
+                <span>24. tall</span>
+                <span class="page-badge">P4</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">高的,高大的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
@@ -786,11 +610,8 @@
 
         <div class="vocab-item" data-word="him" data-index="24">
             <h2 class="word-title">
-                <span>25. him<span class="word-ipa">[hɪm]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P5</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(24)">
-                </div>
+                <span>25. him</span>
+                <span class="page-badge">P5</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">他;它(指雄性动物)</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
@@ -806,11 +627,8 @@
 
         <div class="vocab-item" data-word="ostrich" data-index="25">
             <h2 class="word-title">
-                <span>26. ostrich<span class="word-ipa">[ˈɒstrɪtʃ]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P5</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(25)">
-                </div>
+                <span>26. ostrich</span>
+                <span class="page-badge">P5</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">鸵鸟</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">os-trich</span></div>
@@ -826,11 +644,8 @@
 
         <div class="vocab-item" data-word="fast" data-index="26">
             <h2 class="word-title">
-                <span>27. fast<span class="word-ipa">[fɑːst]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P5</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(26)">
-                </div>
+                <span>27. fast</span>
+                <span class="page-badge">P5</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">快的,快速的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
@@ -846,11 +661,8 @@
 
         <div class="vocab-item" data-word="chameleon" data-index="27">
             <h2 class="word-title">
-                <span>28. chameleon<span class="word-ipa">[kəˈmiːliən]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P5</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(27)">
-                </div>
+                <span>28. chameleon</span>
+                <span class="page-badge">P5</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">变色龙</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">cha-me-le-on</span></div>
@@ -866,11 +678,8 @@
 
         <div class="vocab-item" data-word="small" data-index="28">
             <h2 class="word-title">
-                <span>29. small<span class="word-ipa">[smɔːl]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P5</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(28)">
-                </div>
+                <span>29. small</span>
+                <span class="page-badge">P5</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">小的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
@@ -886,11 +695,8 @@
 
         <div class="vocab-item" data-word="lion" data-index="29">
             <h2 class="word-title">
-                <span>30. lion<span class="word-ipa">[ˈlaɪən]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P6</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(29)">
-                </div>
+                <span>30. lion</span>
+                <span class="page-badge">P6</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">狮子</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">li-on</span></div>
@@ -906,11 +712,8 @@
 
         <div class="vocab-item" data-word="cute" data-index="30">
             <h2 class="word-title">
-                <span>31. cute<span class="word-ipa">[kjuːt]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P6</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(30)">
-                </div>
+                <span>31. cute</span>
+                <span class="page-badge">P6</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">可爱的,逗人喜爱的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
@@ -926,11 +729,8 @@
 
         <div class="vocab-item" data-word="out" data-index="31">
             <h2 class="word-title">
-                <span>32. out<span class="word-ipa">[aʊt]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(31)">
-                </div>
+                <span>32. out</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">往外,向外,出来</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
@@ -946,11 +746,8 @@
 
         <div class="vocab-item" data-word="zoo" data-index="32">
             <h2 class="word-title">
-                <span>33. zoo<span class="word-ipa">[zuː]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(32)">
-                </div>
+                <span>33. zoo</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">动物园</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
@@ -966,11 +763,8 @@
 
         <div class="vocab-item" data-word="go" data-index="33">
             <h2 class="word-title">
-                <span>34. go<span class="word-ipa">[ɡəʊ]</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(33)">
-                </div>
+                <span>34. go</span>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">走,去</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">开音节 (Open)</span></div>
@@ -987,10 +781,7 @@
         <div class="vocab-item" data-word="look at" data-index="34">
             <h2 class="word-title">
                 <span>35. look at</span>
-                <div class="item-meta">
-                    <span class="page-badge">P3</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(34)">
-                </div>
+                <span class="page-badge">P3</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">看，注视</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">look at</span></div>
@@ -1007,10 +798,7 @@
         <div class="vocab-item" data-word="black and white" data-index="35">
             <h2 class="word-title">
                 <span>36. black and white</span>
-                <div class="item-meta">
-                    <span class="page-badge">P3</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(35)">
-                </div>
+                <span class="page-badge">P3</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">黑白相间的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">black and white</span></div>
@@ -1027,10 +815,7 @@
         <div class="vocab-item" data-word="move on" data-index="36">
             <h2 class="word-title">
                 <span>37. move on</span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(36)">
-                </div>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">继续前进</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">move on</span></div>
@@ -1047,10 +832,7 @@
         <div class="vocab-item" data-word="dance along" data-index="37">
             <h2 class="word-title">
                 <span>38. dance along</span>
-                <div class="item-meta">
-                    <span class="page-badge">P7</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(37)">
-                </div>
+                <span class="page-badge">P7</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">跟着跳舞</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">dance a-long</span></div>
@@ -1067,10 +849,7 @@
         <div class="vocab-item" data-word="sleep in the day" data-index="38">
             <h2 class="word-title">
                 <span>39. sleep in the day</span>
-                <div class="item-meta">
-                    <span class="page-badge">P12</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(38)">
-                </div>
+                <span class="page-badge">P12</span>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">白天睡觉</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sleep in the day</span></div>
@@ -1091,7 +870,7 @@
     </div>
 
     <script>
-        const vocabData = [{"word":"animal","ipa":"[ˈænɪml]","meaning":"动物","syllable_type":"an-i-mal","comparison":"none","page_number":"1","context_sentence":"In this unit, we will learn to... name different animals;","memorization_hook":"谐音“爱你么”，小动物这么可爱，你“爱你么”？联想：可爱的动物问你爱不爱它。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/46434466f66d5a33d24e7cbd647ece09.mp3"},{"word":"panda","ipa":"[ˈpændə]","meaning":"大熊猫","syllable_type":"pan-da","comparison":"pan","page_number":"1","context_sentence":"Pandas, pandas, Where are they?","memorization_hook":"谐音“胖哒”，大熊猫吃竹子长得胖胖的（胖哒）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/b26ea58576de7e2e19cb1eb08468bb2e.mp3"},{"word":"elephant","ipa":"[ˈelɪfənt]","meaning":"象","syllable_type":"el-e-phant","comparison":"elegant","page_number":"1","context_sentence":"Elephants, elephants, Where are they?","memorization_hook":"e(鹅)+le(乐)+phant(发音类似“分它”)：大白鹅很高兴，因为大象“分它”食物吃。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/1df9df4b7ee7cb88039b6368506964c3.mp3"},{"word":"bear","ipa":"[beə(r)]","meaning":"熊","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"pear","page_number":"1","context_sentence":"And bears, giraffes and monkeys, Where are they?","memorization_hook":"比较记忆，把pear(梨)的首字母p换成b就是bear(熊)，想象一头熊正在津津有味地吃着梨。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/d27889a321f69782dcc01bc04da90f64.mp3"},{"word":"giraffe","ipa":"[dʒəˈrɑːf]","meaning":"长颈鹿","syllable_type":"gi-raffe","comparison":"draft","page_number":"1","context_sentence":"And bears, giraffes and monkeys, Where are they?","memorization_hook":"词首gi谐音“极”，raffe谐音“拉夫”。极力拉夫的长颈鹿，把脖子都给拉得特别长。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/d27889a321f69782dcc01bc04da90f64.mp3"},{"word":"monkey","ipa":"[ˈmʌŋki]","meaning":"猴","syllable_type":"mon-key","comparison":"money","page_number":"1","context_sentence":"And bears, giraffes and monkeys, Where are they?","memorization_hook":"mon（联想money钱）+ key（钥匙）。调皮的猴子偷走了你的钱（money）和金钥匙（key）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/d27889a321f69782dcc01bc04da90f64.mp3"},{"word":"them","ipa":"[ðəm]","meaning":"他们;她们;它们","syllable_type":"闭音节 (Closed)","comparison":"they","page_number":"1","context_sentence":"I can't see them.","memorization_hook":"the(这)+m(们)。用the作为词根加上m，表示“他们”作为接受动作的宾语（我看见了“他们”）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/c96b75c25df6f6a8287ca609e3e16def.mp3"},{"word":"draw","ipa":"[drɔː]","meaning":"画,绘画","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"drag","page_number":"3","context_sentence":"What animals does Tom draw?","memorization_hook":"谐音“抓”。画画的时候，小手一定要“抓”稳画笔才能画出漂亮的画。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/7d9d22eed0caa042cd392384de81f91a.mp3"},{"word":"tiger","ipa":"[ˈtaɪɡə(r)]","meaning":"老虎,虎","syllable_type":"ti-ger","comparison":"timer","page_number":"3","context_sentence":"Are they tigers?","memorization_hook":"ti(踢) + ger(哥)。这只老虎脾气特别凶，一脚就“踢”飞了平头“哥”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/2c74a4320979a4acd03c7cae6e7b1094.mp3"},{"word":"strong","ipa":"[strɒŋ]","meaning":"强壮的,力气大的","syllable_type":"闭音节 (Closed)","comparison":"string","page_number":"3","context_sentence":"But tigers are strong!","memorization_hook":"谐音“死壮”。健身房里的那个人练得满身肌肉，可以说是“死壮死壮”的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/2612ee0b01209b76b66b2e626b59e2fb.mp3"},{"word":"short","ipa":"[ʃɔːt]","meaning":"个子矮的","syllable_type":"r控制音节 (R-Controlled)","comparison":"shirt","page_number":"3","context_sentence":"Oh, Tom. Giraffes aren't short!","memorization_hook":"比较记忆，对比shirt(衬衫)。买来的衬衫(shirt)实在太短(short)了，根本穿不上。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/c3defffe6604ab3f3c9241e006aaa15b.mp3"},{"word":"white","ipa":"[waɪt]","meaning":"白的,白色的","syllable_type":"相对开音节 (VCe)","comparison":"write","page_number":"3","context_sentence":"Yes! They're black and white!","memorization_hook":"谐音“坏特”。电影里那个穿着全白色西装的反派是个大“坏特”（大坏蛋）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/06263f4cc8ca2b37828a9224d6180f39.mp3"},{"word":"brown","ipa":"[braʊn]","meaning":"棕色的;褐色的","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"crown","page_number":"4","context_sentence":"They're brown and yellow.","memorization_hook":"b(不) + row(划船) + n(泥)。绝对不要(b)在棕色浑浊的泥(n)水里划船(row)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/f0fb10c04b01a895760e78072daf9f6a.mp3"},{"word":"zebra","ipa":"[ˈzebrə]","meaning":"斑马","syllable_type":"ze-bra","comparison":"zero","page_number":"7","context_sentence":"A zebra is here.","memorization_hook":"ze(贼) + bra(音似“不拉”)。这匹斑马脾气很倔，像个“贼”一样死活拉“不拉”走。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/bce20a3343d4297bcdd163b87a9d89f5.mp3"},{"word":"move","ipa":"[muːv]","meaning":"移动","syllable_type":"相对开音节 (VCe)","comparison":"movie","page_number":"7","context_sentence":"Let's move on.","memorization_hook":"加一个字母i就是movie(电影)，因为电影就是由一帧帧不断移动(move)的画面组合而成的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/1fb5539d3074722033b48d9923da35d3.mp3"},{"word":"road","ipa":"[rəʊd]","meaning":"路,道路","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"read","page_number":"7","context_sentence":"Lions on the road.","memorization_hook":"谐音“肉的”。童话世界里的这条大路是用“肉”铺成的，走在上面软绵绵的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/8d3860468c4e9f19fc865434af0a30df.mp3"},{"word":"dance","ipa":"[dɑːns]","meaning":"跳舞","syllable_type":"相对开音节 (VCe)","comparison":"chance","page_number":"7","context_sentence":"Let's dance along.","memorization_hook":"谐音“但是”。他平时看着很害羞，“但是”一上舞台跳起舞(dance)来就光芒四射。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/90364cb062b107a4e9a93320de3e9c4a.mp3"},{"word":"along","ipa":"[əˈlɒŋ]","meaning":"一起","syllable_type":"a-long","comparison":"long","page_number":"7","context_sentence":"Let's dance along.","memorization_hook":"a(一个) + long(长)。大家手牵手，一起走完了一条很长很长(long)的路。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/90364cb062b107a4e9a93320de3e9c4a.mp3"},{"word":"which","ipa":"[wɪtʃ]","meaning":"哪一个;哪些","syllable_type":"闭音节 (Closed)","comparison":"witch","page_number":"7","context_sentence":"Which words have 'z' or 'l' sounds?","memorization_hook":"谐音“位置”。在捉迷藏时你问我：你想藏在“哪一个”位置？发音同witch（女巫），是在问“哪一个才是真女巫？”","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/0998021dcfdbd363934f7fc1254ba936.mp3"},{"word":"word","ipa":"[wɜːd]","meaning":"字,词,单词","syllable_type":"r控制音节 (R-Controlled)","comparison":"world","page_number":"7","context_sentence":"Which words have 'z' or 'l' sounds?","memorization_hook":"谐音“我的”。我在听写时记住了这个单词(word)，这个满分就是“我的”，谁也抢不走。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/0998021dcfdbd363934f7fc1254ba936.mp3"},{"word":"stone","ipa":"[stəʊn]","meaning":"石头","syllable_type":"相对开音节 (VCe)","comparison":"tone","page_number":"8","context_sentence":"stone lions","memorization_hook":"s(蛇) + tone(声音)。安静的山谷里，一块大石头的缝隙里突然传出了蛇发出的声音。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/25a0c7e652e3889d008df7e29553fa2a.mp3"},{"word":"hat","ipa":"[hæt]","meaning":"帽子","syllable_type":"闭音节 (Closed)","comparison":"cat","page_number":"8","context_sentence":"a panda hat","memorization_hook":"对比记忆cat(猫)和bat(蝙蝠)。冬天冷了，给你心爱的宠物猫(cat)戴上一顶毛茸茸的小帽子(hat)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/4c62ba63f6fb8d1566123d74cbe830ad.mp3"},{"word":"shoe","ipa":"[ʃuː]","meaning":"鞋","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"show","page_number":"8","context_sentence":"tiger shoes","memorization_hook":"谐音“嘘”。穿上这双特制的运动鞋走路完全没有声音，像忍者一样，嘘！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/81b04d61761684cd709ad2f16a0a8cd4.mp3"},{"word":"tall","ipa":"[tɔːl]","meaning":"高的,高大的","syllable_type":"闭音节 (Closed)","comparison":"fall","page_number":"4","context_sentence":"They're tall.","memorization_hook":"谐音“头”。个子特别高的人，走在人群里往往一眼就能被别人看到“头”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/a359dac2295a96c9770cda1d0b2e7c63.mp3"},{"word":"him","ipa":"[hɪm]","meaning":"他;它(指雄性动物)","syllable_type":"闭音节 (Closed)","comparison":"hit","page_number":"5","context_sentence":"I love him.","memorization_hook":"hi(打招呼) + m(联想man男人)。在路上遇到了你认识的他，热情地跟他打声招呼说Hi。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/0a54dd561d2a27e41d4c440f257552d1.mp3"},{"word":"ostrich","ipa":"[ˈɒstrɪtʃ]","meaning":"鸵鸟","syllable_type":"os-trich","comparison":"strict","page_number":"5","context_sentence":"This is Linda. She is an ostrich.","memorization_hook":"os(音似“喔死”) + trich(谐音“吹气”)。鸵鸟遇到危险把头埋在沙子里快“喔死”了，赶紧给它“吹气”抢救。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/49719baeca9741d5da4e9fd48acd783e.mp3"},{"word":"fast","ipa":"[fɑːst]","meaning":"快的,快速的","syllable_type":"闭音节 (Closed)","comparison":"last","page_number":"5","context_sentence":"She is fast.","memorization_hook":"f(发) + a(一) + st(石头)。用弹弓以极其快速的速度发射了一块小石头。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/3da174f77f57df9c310fe757d9bdea4f.mp3"},{"word":"chameleon","ipa":"[kəˈmiːliən]","meaning":"变色龙","syllable_type":"cha-me-le-on","comparison":"lion","page_number":"5","context_sentence":"He is a chameleon.","memorization_hook":"cha(茶) + me(我) + leon(莱昂)。这只变色龙变成了茶色，偷偷爬过来想吓唬我(me)和好朋友莱昂(leon)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/b9a8795de5e2513d032f9ddf9c28d8e4.mp3"},{"word":"small","ipa":"[smɔːl]","meaning":"小的","syllable_type":"闭音节 (Closed)","comparison":"mall","page_number":"5","context_sentence":"He is small.","memorization_hook":"s(蛇) + mall(大型商场)。一条体型非常小的玩具蛇不小心掉进了巨大的购物商场(mall)里。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/8000f7b51412a6ae5d9891e57d102241.mp3"},{"word":"lion","ipa":"[ˈlaɪən]","meaning":"狮子","syllable_type":"li-on","comparison":"iron","page_number":"6","context_sentence":"This is Mufasa. He is a little lion.","memorization_hook":"谐音“来嗯”。威风凛凛的狮子慢慢走过来，喉咙里发出“嗯嗯”的低沉吼叫声。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/82012cf0daba22358f63b1b6e260aaa8.mp3"},{"word":"cute","ipa":"[kjuːt]","meaning":"可爱的,逗人喜爱的","syllable_type":"相对开音节 (VCe)","comparison":"cut","page_number":"6","context_sentence":"He is cute.","memorization_hook":"cut(切) + e(鹅)。烘焙课上，切出了一块非常可爱的企鹅形状小饼干。发音像字母Q，代表Q萌可爱。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/ac4de6eac430016d3de67300552c12d3.mp3"},{"word":"out","ipa":"[aʊt]","meaning":"往外,向外,出来","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"our","page_number":"7","context_sentence":"In and out of the zoo","memorization_hook":"谐音“熬它”。周末跑到外面去玩游戏，打算彻夜不眠，非得在外面通宵“熬它”一整晚不可。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/48f6fbc3b3af458e87d0ae3a2d1289ce.mp3"},{"word":"zoo","ipa":"[zuː]","meaning":"动物园","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"too","page_number":"7","context_sentence":"Let's go to the zoo!","memorization_hook":"z(长得像鸭子) + oo(像两只圆圆的眼睛)。在动物园的湖边，看到一只鸭子正瞪着两只圆圆的大眼睛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/453021a9f22244322196de0348a5bab5.mp3"},{"word":"go","ipa":"[ɡəʊ]","meaning":"走,去","syllable_type":"开音节 (Open)","comparison":"to","page_number":"7","context_sentence":"Let's go to the zoo!","memorization_hook":"谐音“狗”。晚饭后最喜欢做的事情就是带上家里的小狗一起出门散步（去）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/453021a9f22244322196de0348a5bab5.mp3"},{"word":"look at","ipa":"NA","meaning":"看，注视","syllable_type":"look at","comparison":"look for","page_number":"3","context_sentence":"Look at my picture!","memorization_hook":"look(看) + at(在一个特定点)。把你的目光牢牢锁定、聚焦在某一个点上，就是专注地“注视”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/ef56df4c37b2fafb3f8e785a29906a21.mp3"},{"word":"black and white","ipa":"NA","meaning":"黑白相间的","syllable_type":"black and white","comparison":"black or white","page_number":"3","context_sentence":"Yes! They're black and white!","memorization_hook":"联想大熊猫的经典特征：大熊猫怎么拍彩色照片洗出来都只有黑色(black)和白色(white)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/06263f4cc8ca2b37828a9224d6180f39.mp3"},{"word":"move on","ipa":"NA","meaning":"继续前进","syllable_type":"move on","comparison":"move in","page_number":"7","context_sentence":"Let's move on.","memorization_hook":"move(移动) + on(在...上/持续地)。不要停下脚步，持续不断地在道路上移动，就代表着“继续前进”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/1fb5539d3074722033b48d9923da35d3.mp3"},{"word":"dance along","ipa":"NA","meaning":"跟着跳舞","syllable_type":"dance a-long","comparison":"sing along","page_number":"7","context_sentence":"Let's dance along.","memorization_hook":"dance(跳舞) + along(一起/顺着)。听到欢快的音乐响起，顺着强烈的节奏大家一起开心地跳起舞来。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/90364cb062b107a4e9a93320de3e9c4a.mp3"},{"word":"sleep in the day","ipa":"NA","meaning":"白天睡觉","syllable_type":"sleep in the day","comparison":"sleep at night","page_number":"12","context_sentence":"They sleep in the day.","memorization_hook":"sleep(睡觉) + in the day(在白天)。联想猫头鹰和蝙蝠的生活习性，它们到了白天(in the day)就会去睡觉。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a3b/u1/1a2148c5907016e961135f94ba4f0013.mp3"}];
+        const vocabData = [{"word":"animal","meaning":"动物","syllable_type":"an-i-mal","comparison":"none","page_number":"1","context_sentence":"In this unit, we will learn to... name different animals;","memorization_hook":"谐音“爱你么”，小动物这么可爱，你“爱你么”？联想：可爱的动物问你爱不爱它。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/46434466f66d5a33d24e7cbd647ece09.mp3"},{"word":"panda","meaning":"大熊猫","syllable_type":"pan-da","comparison":"pan","page_number":"1","context_sentence":"Pandas, pandas, Where are they?","memorization_hook":"谐音“胖哒”，大熊猫吃竹子长得胖胖的（胖哒）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/b26ea58576de7e2e19cb1eb08468bb2e.mp3"},{"word":"elephant","meaning":"象","syllable_type":"el-e-phant","comparison":"elegant","page_number":"1","context_sentence":"Elephants, elephants, Where are they?","memorization_hook":"e(鹅)+le(乐)+phant(发音类似“分它”)：大白鹅很高兴，因为大象“分它”食物吃。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/1df9df4b7ee7cb88039b6368506964c3.mp3"},{"word":"bear","meaning":"熊","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"pear","page_number":"1","context_sentence":"And bears, giraffes and monkeys, Where are they?","memorization_hook":"比较记忆，把pear(梨)的首字母p换成b就是bear(熊)，想象一头熊正在津津有味地吃着梨。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/d27889a321f69782dcc01bc04da90f64.mp3"},{"word":"giraffe","meaning":"长颈鹿","syllable_type":"gi-raffe","comparison":"draft","page_number":"1","context_sentence":"And bears, giraffes and monkeys, Where are they?","memorization_hook":"词首gi谐音“极”，raffe谐音“拉夫”。极力拉夫的长颈鹿，把脖子都给拉得特别长。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/d27889a321f69782dcc01bc04da90f64.mp3"},{"word":"monkey","meaning":"猴","syllable_type":"mon-key","comparison":"money","page_number":"1","context_sentence":"And bears, giraffes and monkeys, Where are they?","memorization_hook":"mon（联想money钱）+ key（钥匙）。调皮的猴子偷走了你的钱（money）和金钥匙（key）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/d27889a321f69782dcc01bc04da90f64.mp3"},{"word":"them","meaning":"他们;她们;它们","syllable_type":"闭音节 (Closed)","comparison":"they","page_number":"1","context_sentence":"I can't see them.","memorization_hook":"the(这)+m(们)。用the作为词根加上m，表示“他们”作为接受动作的宾语（我看见了“他们”）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/c96b75c25df6f6a8287ca609e3e16def.mp3"},{"word":"draw","meaning":"画,绘画","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"drag","page_number":"3","context_sentence":"What animals does Tom draw?","memorization_hook":"谐音“抓”。画画的时候，小手一定要“抓”稳画笔才能画出漂亮的画。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/7d9d22eed0caa042cd392384de81f91a.mp3"},{"word":"tiger","meaning":"老虎,虎","syllable_type":"ti-ger","comparison":"timer","page_number":"3","context_sentence":"Are they tigers?","memorization_hook":"ti(踢) + ger(哥)。这只老虎脾气特别凶，一脚就“踢”飞了平头“哥”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/2c74a4320979a4acd03c7cae6e7b1094.mp3"},{"word":"strong","meaning":"强壮的,力气大的","syllable_type":"闭音节 (Closed)","comparison":"string","page_number":"3","context_sentence":"But tigers are strong!","memorization_hook":"谐音“死壮”。健身房里的那个人练得满身肌肉，可以说是“死壮死壮”的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/2612ee0b01209b76b66b2e626b59e2fb.mp3"},{"word":"short","meaning":"个子矮的","syllable_type":"r控制音节 (R-Controlled)","comparison":"shirt","page_number":"3","context_sentence":"Oh, Tom. Giraffes aren't short!","memorization_hook":"比较记忆，对比shirt(衬衫)。买来的衬衫(shirt)实在太短(short)了，根本穿不上。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/c3defffe6604ab3f3c9241e006aaa15b.mp3"},{"word":"white","meaning":"白的,白色的","syllable_type":"相对开音节 (VCe)","comparison":"write","page_number":"3","context_sentence":"Yes! They're black and white!","memorization_hook":"谐音“坏特”。电影里那个穿着全白色西装的反派是个大“坏特”（大坏蛋）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/06263f4cc8ca2b37828a9224d6180f39.mp3"},{"word":"brown","meaning":"棕色的;褐色的","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"crown","page_number":"4","context_sentence":"They're brown and yellow.","memorization_hook":"b(不) + row(划船) + n(泥)。绝对不要(b)在棕色浑浊的泥(n)水里划船(row)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/f0fb10c04b01a895760e78072daf9f6a.mp3"},{"word":"zebra","meaning":"斑马","syllable_type":"ze-bra","comparison":"zero","page_number":"7","context_sentence":"A zebra is here.","memorization_hook":"ze(贼) + bra(音似“不拉”)。这匹斑马脾气很倔，像个“贼”一样死活拉“不拉”走。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/bce20a3343d4297bcdd163b87a9d89f5.mp3"},{"word":"move","meaning":"移动","syllable_type":"相对开音节 (VCe)","comparison":"movie","page_number":"7","context_sentence":"Let's move on.","memorization_hook":"加一个字母i就是movie(电影)，因为电影就是由一帧帧不断移动(move)的画面组合而成的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/1fb5539d3074722033b48d9923da35d3.mp3"},{"word":"road","meaning":"路,道路","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"read","page_number":"7","context_sentence":"Lions on the road.","memorization_hook":"谐音“肉的”。童话世界里的这条大路是用“肉”铺成的，走在上面软绵绵的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/8d3860468c4e9f19fc865434af0a30df.mp3"},{"word":"dance","meaning":"跳舞","syllable_type":"相对开音节 (VCe)","comparison":"chance","page_number":"7","context_sentence":"Let's dance along.","memorization_hook":"谐音“但是”。他平时看着很害羞，“但是”一上舞台跳起舞(dance)来就光芒四射。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/90364cb062b107a4e9a93320de3e9c4a.mp3"},{"word":"along","meaning":"一起","syllable_type":"a-long","comparison":"long","page_number":"7","context_sentence":"Let's dance along.","memorization_hook":"a(一个) + long(长)。大家手牵手，一起走完了一条很长很长(long)的路。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/90364cb062b107a4e9a93320de3e9c4a.mp3"},{"word":"which","meaning":"哪一个;哪些","syllable_type":"闭音节 (Closed)","comparison":"witch","page_number":"7","context_sentence":"Which words have 'z' or 'l' sounds?","memorization_hook":"谐音“位置”。在捉迷藏时你问我：你想藏在“哪一个”位置？发音同witch（女巫），是在问“哪一个才是真女巫？”","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/0998021dcfdbd363934f7fc1254ba936.mp3"},{"word":"word","meaning":"字,词,单词","syllable_type":"r控制音节 (R-Controlled)","comparison":"world","page_number":"7","context_sentence":"Which words have 'z' or 'l' sounds?","memorization_hook":"谐音“我的”。我在听写时记住了这个单词(word)，这个满分就是“我的”，谁也抢不走。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/0998021dcfdbd363934f7fc1254ba936.mp3"},{"word":"stone","meaning":"石头","syllable_type":"相对开音节 (VCe)","comparison":"tone","page_number":"8","context_sentence":"stone lions","memorization_hook":"s(蛇) + tone(声音)。安静的山谷里，一块大石头的缝隙里突然传出了蛇发出的声音。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/25a0c7e652e3889d008df7e29553fa2a.mp3"},{"word":"hat","meaning":"帽子","syllable_type":"闭音节 (Closed)","comparison":"cat","page_number":"8","context_sentence":"a panda hat","memorization_hook":"对比记忆cat(猫)和bat(蝙蝠)。冬天冷了，给你心爱的宠物猫(cat)戴上一顶毛茸茸的小帽子(hat)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/4c62ba63f6fb8d1566123d74cbe830ad.mp3"},{"word":"shoe","meaning":"鞋","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"show","page_number":"8","context_sentence":"tiger shoes","memorization_hook":"谐音“嘘”。穿上这双特制的运动鞋走路完全没有声音，像忍者一样，嘘！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/81b04d61761684cd709ad2f16a0a8cd4.mp3"},{"word":"tall","meaning":"高的,高大的","syllable_type":"闭音节 (Closed)","comparison":"fall","page_number":"4","context_sentence":"They're tall.","memorization_hook":"谐音“头”。个子特别高的人，走在人群里往往一眼就能被别人看到“头”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/a359dac2295a96c9770cda1d0b2e7c63.mp3"},{"word":"him","meaning":"他;它(指雄性动物)","syllable_type":"闭音节 (Closed)","comparison":"hit","page_number":"5","context_sentence":"I love him.","memorization_hook":"hi(打招呼) + m(联想man男人)。在路上遇到了你认识的他，热情地跟他打声招呼说Hi。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/0a54dd561d2a27e41d4c440f257552d1.mp3"},{"word":"ostrich","meaning":"鸵鸟","syllable_type":"os-trich","comparison":"strict","page_number":"5","context_sentence":"This is Linda. She is an ostrich.","memorization_hook":"os(音似“喔死”) + trich(谐音“吹气”)。鸵鸟遇到危险把头埋在沙子里快“喔死”了，赶紧给它“吹气”抢救。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/49719baeca9741d5da4e9fd48acd783e.mp3"},{"word":"fast","meaning":"快的,快速的","syllable_type":"闭音节 (Closed)","comparison":"last","page_number":"5","context_sentence":"She is fast.","memorization_hook":"f(发) + a(一) + st(石头)。用弹弓以极其快速的速度发射了一块小石头。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/3da174f77f57df9c310fe757d9bdea4f.mp3"},{"word":"chameleon","meaning":"变色龙","syllable_type":"cha-me-le-on","comparison":"lion","page_number":"5","context_sentence":"He is a chameleon.","memorization_hook":"cha(茶) + me(我) + leon(莱昂)。这只变色龙变成了茶色，偷偷爬过来想吓唬我(me)和好朋友莱昂(leon)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/b9a8795de5e2513d032f9ddf9c28d8e4.mp3"},{"word":"small","meaning":"小的","syllable_type":"闭音节 (Closed)","comparison":"mall","page_number":"5","context_sentence":"He is small.","memorization_hook":"s(蛇) + mall(大型商场)。一条体型非常小的玩具蛇不小心掉进了巨大的购物商场(mall)里。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/8000f7b51412a6ae5d9891e57d102241.mp3"},{"word":"lion","meaning":"狮子","syllable_type":"li-on","comparison":"iron","page_number":"6","context_sentence":"This is Mufasa. He is a little lion.","memorization_hook":"谐音“来嗯”。威风凛凛的狮子慢慢走过来，喉咙里发出“嗯嗯”的低沉吼叫声。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/82012cf0daba22358f63b1b6e260aaa8.mp3"},{"word":"cute","meaning":"可爱的,逗人喜爱的","syllable_type":"相对开音节 (VCe)","comparison":"cut","page_number":"6","context_sentence":"He is cute.","memorization_hook":"cut(切) + e(鹅)。烘焙课上，切出了一块非常可爱的企鹅形状小饼干。发音像字母Q，代表Q萌可爱。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/ac4de6eac430016d3de67300552c12d3.mp3"},{"word":"out","meaning":"往外,向外,出来","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"our","page_number":"7","context_sentence":"In and out of the zoo","memorization_hook":"谐音“熬它”。周末跑到外面去玩游戏，打算彻夜不眠，非得在外面通宵“熬它”一整晚不可。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/48f6fbc3b3af458e87d0ae3a2d1289ce.mp3"},{"word":"zoo","meaning":"动物园","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"too","page_number":"7","context_sentence":"Let's go to the zoo!","memorization_hook":"z(长得像鸭子) + oo(像两只圆圆的眼睛)。在动物园的湖边，看到一只鸭子正瞪着两只圆圆的大眼睛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/453021a9f22244322196de0348a5bab5.mp3"},{"word":"go","meaning":"走,去","syllable_type":"开音节 (Open)","comparison":"to","page_number":"7","context_sentence":"Let's go to the zoo!","memorization_hook":"谐音“狗”。晚饭后最喜欢做的事情就是带上家里的小狗一起出门散步（去）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/453021a9f22244322196de0348a5bab5.mp3"},{"word":"look at","meaning":"看，注视","syllable_type":"look at","comparison":"look for","page_number":"3","context_sentence":"Look at my picture!","memorization_hook":"look(看) + at(在一个特定点)。把你的目光牢牢锁定、聚焦在某一个点上，就是专注地“注视”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/ef56df4c37b2fafb3f8e785a29906a21.mp3"},{"word":"black and white","meaning":"黑白相间的","syllable_type":"black and white","comparison":"black or white","page_number":"3","context_sentence":"Yes! They're black and white!","memorization_hook":"联想大熊猫的经典特征：大熊猫怎么拍彩色照片洗出来都只有黑色(black)和白色(white)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/06263f4cc8ca2b37828a9224d6180f39.mp3"},{"word":"move on","meaning":"继续前进","syllable_type":"move on","comparison":"move in","page_number":"7","context_sentence":"Let's move on.","memorization_hook":"move(移动) + on(在...上/持续地)。不要停下脚步，持续不断地在道路上移动，就代表着“继续前进”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/1fb5539d3074722033b48d9923da35d3.mp3"},{"word":"dance along","meaning":"跟着跳舞","syllable_type":"dance a-long","comparison":"sing along","page_number":"7","context_sentence":"Let's dance along.","memorization_hook":"dance(跳舞) + along(一起/顺着)。听到欢快的音乐响起，顺着强烈的节奏大家一起开心地跳起舞来。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/90364cb062b107a4e9a93320de3e9c4a.mp3"},{"word":"sleep in the day","meaning":"白天睡觉","syllable_type":"sleep in the day","comparison":"sleep at night","page_number":"12","context_sentence":"They sleep in the day.","memorization_hook":"sleep(睡觉) + in the day(在白天)。联想猫头鹰和蝙蝠的生活习性，它们到了白天(in the day)就会去睡觉。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a3b/1a2148c5907016e961135f94ba4f0013.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -1119,181 +898,39 @@
 
         const app = {
             currentAudio: null,
-            hiddenWords: new Set(),
-            showHiddenMode: false,
-            unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 3 Semester 2 - Unit 1").substring(0, 16),
-
-            init: function() {
-                // Load hidden words from localStorage
-                const stored = localStorage.getItem(this.unitKey);
-                if (stored) {
-                    try {
-                        const indices = JSON.parse(stored);
-                        this.hiddenWords = new Set(indices);
-                    } catch(e) { console.error("Failed to parse hidden words", e); }
-                }
-
-                // Apply initial state to cards
-                items.forEach(item => {
-                    const idx = parseInt(item.dataset.index);
-                    if (this.hiddenWords.has(idx)) {
-                        item.classList.add('is-hidden-state');
-                        const cb = item.querySelector('.hide-checkbox');
-                        if (cb) cb.checked = true;
-                    }
-                });
-
-                this.updateStats();
-            },
-
-            getHash: function(str) {
-                return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-            },
-
-            updateStats: function() {
-                const total = vocabData.length;
-                const hidden = this.hiddenWords.size;
-                const shown = total - hidden;
-                
-                document.getElementById('stats-display').innerHTML = 
-                    `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
-            },
-
-            toggleWordHidden: function(index) {
-                const item = items.find(it => parseInt(it.dataset.index) === index);
-                if (!item) return;
-
-                if (this.hiddenWords.has(index)) {
-                    this.hiddenWords.delete(index);
-                    item.classList.remove('is-hidden-state');
-                } else {
-                    this.hiddenWords.add(index);
-                    item.classList.add('is-hidden-state');
-                }
-
-                // Persist
-                localStorage.setItem(this.unitKey, JSON.stringify(Array.from(this.hiddenWords)));
-                this.updateStats();
-            },
-
-            toggleShowHiddenMode: function() {
-                this.showHiddenMode = !this.showHiddenMode;
-                const btn = document.getElementById('show-hidden-toggle');
-                const btnText = document.getElementById('hidden-text');
-                const btnIcon = document.getElementById('hidden-icon');
-
-                if (this.showHiddenMode) {
-                    btn.classList.add('active');
-                    btnText.innerText = "Hide Learnt";
-                    btnIcon.innerText = "🙈";
-                    items.forEach(item => item.classList.add('force-show'));
-                } else {
-                    btn.classList.remove('active');
-                    btnText.innerText = "Show Hidden";
-                    btnIcon.innerText = "👁️";
-                    items.forEach(item => item.classList.remove('force-show'));
-                }
-            },
-
-            clearAudioCache: function() {
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (key.startsWith("ep-vg-") || key.startsWith("ep-sa-") || key.startsWith("ep-vm-") || key.startsWith("ep-sh-"))) {
-                        keysToRemove.push(key);
-                    }
-                }
-                keysToRemove.forEach(k => localStorage.removeItem(k));
-                console.log("Cleared audio cache to free up space");
-            },
-
-            safeSetItem: function(key, value) {
-                try {
-                    localStorage.setItem(key, value);
-                } catch (e) {
-                    if (e.name === 'QuotaExceededError') {
-                        console.warn("LocalStorage quota exceeded, attempting to clear cache...");
-                        this.clearAudioCache();
-                        try {
-                            localStorage.setItem(key, value);
-                        } catch (e2) {
-                            console.error("Storage still full after clearing cache. Audio will not be cached.", e2);
-                        }
-                    } else {
-                        console.error("Error saving to localStorage", e);
-                    }
-                }
-            },
 
             cacheAudio: async function(url) {
                 if (!url) return;
                 const baseUrl = url.split('?')[0];
-                const baseHash = this.getHash(baseUrl);
-                const cacheKey = "ep-vg-audio-" + baseHash;
-                const metaKey = "ep-vg-meta-" + baseHash;
+                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const baseHash = Array.from(baseUrl).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const cacheKey = "ep-sa-audio-" + urlHash;
                 
                 if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
 
                 try {
                     const resp = await fetch(url);
-                    const lastModified = resp.headers.get('Last-Modified');
                     const blob = await resp.blob();
                     return new Promise((resolve) => {
                         const reader = new FileReader();
                         reader.onloadend = () => {
                             const result = reader.result;
-                            this.safeSetItem(cacheKey, result);
-                            if (lastModified) {
-                                this.safeSetItem(metaKey, new Date(lastModified).getTime().toString());
+                            try {
+                                const versionRegistryKey = "ep-sa-meta-" + baseHash;
+                                const oldCacheKey = localStorage.getItem(versionRegistryKey);
+                                if (oldCacheKey && oldCacheKey !== cacheKey) {
+                                    localStorage.removeItem(oldCacheKey);
+                                }
+                                localStorage.setItem(cacheKey, result);
+                                localStorage.setItem(versionRegistryKey, cacheKey);
+                            } catch(e) {
+                                console.warn("Storage full, could not cache audio");
                             }
                             resolve(result);
                         };
                         reader.readAsDataURL(blob);
                     });
                 } catch(e) { console.error("Cache failed", e); }
-            },
-
-            refreshCache: async function() {
-                const btn = document.getElementById('refresh-cache');
-                const btnText = document.getElementById('refresh-text');
-                if (btn.classList.contains('loading')) return;
-
-                btn.classList.add('loading');
-                btnText.innerText = "Checking...";
-                let updatedCount = 0;
-
-                try {
-                    for (const item of vocabData) {
-                        if (!item.audio) continue;
-                        
-                        const url = item.audio;
-                        const baseUrl = url.split('?')[0];
-                        const baseHash = this.getHash(baseUrl);
-                        const metaKey = "ep-vg-meta-" + baseHash;
-                        const cacheKey = "ep-vg-audio-" + baseHash;
-                        const currentVersion = parseInt(localStorage.getItem(metaKey)) || 0;
-
-                        try {
-                            const response = await fetch(url, { method: 'HEAD' });
-                            const lastModifiedStr = response.headers.get('Last-Modified');
-                            if (lastModifiedStr) {
-                                const lastModified = new Date(lastModifiedStr).getTime();
-                                if (lastModified > currentVersion) {
-                                    localStorage.removeItem(cacheKey);
-                                    localStorage.removeItem(metaKey);
-                                    await this.cacheAudio(url);
-                                    updatedCount++;
-                                }
-                            }
-                        } catch (e) {
-                            console.error(`Failed to check ${item.word}`, e);
-                        }
-                    }
-                    alert(`Refresh complete. Updated ${updatedCount} audio files.`);
-                } finally {
-                    btn.classList.remove('loading');
-                    btnText.innerText = "Refresh Audio";
-                }
             },
 
             playAudio: function() {
@@ -1305,9 +942,8 @@
 
                 if (this.currentAudio) this.currentAudio.pause();
                 
-                const baseUrl = url.split('?')[0];
-                const baseHash = this.getHash(baseUrl);
-                const cacheKey = "ep-vg-audio-" + baseHash;
+                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+                const cacheKey = "ep-sa-audio-" + urlHash;
                 const source = localStorage.getItem(cacheKey) || url;
 
                 this.currentAudio = new Audio(source);
@@ -1315,9 +951,8 @@
             }
         };
 
-        // Initialize and preload
+        // Preload all audio on startup
         window.addEventListener('load', () => {
-            app.init();
             vocabData.forEach(item => {
                 if (item.audio) {
                     app.cacheAudio(item.audio);
