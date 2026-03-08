@@ -1477,6 +1477,49 @@
     </div>
 
     <script>
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function() {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function(id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function(id, blob, meta) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, meta, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
         const vocabData = [{"word":"around the world","meaning":"世界各地","syllable_type":"a-round the world","comparison":"round vs. ground","page_number":"33","context_sentence":"find out more about the way of life in different places around the world.","memorization_hook":"联想记忆：a round (一个圆圈) 绕着 world (世界) 跑，就是去‘世界各地’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/35eda92072e3d92c25c37ae5356b4232.mp3"},{"word":"right now","meaning":"现在；立刻","syllable_type":"right now","comparison":"right vs. light","page_number":"34","context_sentence":"What are you doing right now?","memorization_hook":"组合记忆：Right (正确的/就在这里) + Now (现在)，强调‘就是现在’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/dade2c98684dd8dc5ebca476d276f52f.mp3"},{"word":"ride","meaning":"骑；旅程","syllable_type":"相对开音节 (VCe)","comparison":"ride vs. side","page_number":"34","context_sentence":"riding a bike","memorization_hook":"谐音记忆：‘来得’快。骑车总是比走路‘来得’快。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/57325bfdbe66936ee8226d137323c2da.mp3"},{"word":"moment","meaning":"某个时刻；片刻","syllable_type":"mo-ment","comparison":"moment vs. movement","page_number":"34","context_sentence":"What are you doing at the moment?","memorization_hook":"词根记忆：mo- (move 移动) + -ment (名词后缀)，时间移动的一个小点就是‘时刻’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/74d46b3c926999ce96ae02292b872a9d.mp3"},{"word":"at the moment","meaning":"现在；此刻","syllable_type":"at the mo-ment","comparison":"now vs. then","page_number":"34","context_sentence":"What are you doing at the moment?","memorization_hook":"固定搭配：在这个 (the) 瞬间 (moment)，指的就是‘此刻’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/74d46b3c926999ce96ae02292b872a9d.mp3"},{"word":"work on","meaning":"做；从事","syllable_type":"work on","comparison":"work for vs. work with","page_number":"34","context_sentence":"I'd love to, but I'm working on something important.","memorization_hook":"形象记忆：在 (on) 某件事上面工作 (work)，就是在‘从事/忙于’它。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/258f268ae35381388e9a7aa350967ea5.mp3"},{"word":"dragon","meaning":"龙","syllable_type":"drag-on","comparison":"dragon vs. wagon","page_number":"35","context_sentence":"Are you making them for the Dragon Boat Festival?","memorization_hook":"拆分记忆：drag (拖曳) + on (在...上)，龙在云端‘拖曳’而行。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/a7241bf6a6a59ad6898cedac73939f53.mp3"},{"word":"festival","meaning":"节日","syllable_type":"fes-ti-val","comparison":"festival vs. carnival","page_number":"35","context_sentence":"Are you making them for the Dragon Boat Festival?","memorization_hook":"联想记忆：Feast (宴会) 的变体，有宴会的地方就是‘节日’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/a7241bf6a6a59ad6898cedac73939f53.mp3"},{"word":"hold on","meaning":"别挂断电话；等一等","syllable_type":"hold on","comparison":"hold vs. cold","page_number":"35","context_sentence":"Hold on. Here's Mum.","memorization_hook":"动作记忆：Hold (抓住) + On (不放)，抓住电话线不放，就是‘别挂断’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/19e797681d4a8e91d41cfa43024775ec.mp3"},{"word":"voice","meaning":"嗓音；声音","syllable_type":"相对开音节 (VCe)","comparison":"voice vs. choice","page_number":"35","context_sentence":"It's great to hear your voice!","memorization_hook":"比较记忆：Sound 指任何声音，Voice 专指人的‘嗓音’（有V的人类嗓音）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/9e9ad9ba07a8254b82056cd1b5e83536.mp3"},{"word":"race","meaning":"比赛；竞赛","syllable_type":"相对开音节 (VCe)","comparison":"race vs. face","page_number":"35","context_sentence":"watching dragon boat races on TV.","memorization_hook":"形象记忆：R 像跑动的人，Race 就是大家一起跑的‘比赛’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/ca371dc0dfb7c3120e6789f85cc0819f.mp3"},{"word":"darling","meaning":"亲爱的；宝贝","syllable_type":"dar-ling","comparison":"darling vs. dark","page_number":"35","context_sentence":"Bye, darling!","memorization_hook":"词源记忆：Dear (亲爱的) + -ling (小)，就是‘亲爱的小宝贝’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/5740196eb9fc4f319febefef3b56485a.mp3"},{"word":"somebody","meaning":"某人；有人","syllable_type":"some-bod-y","comparison":"anybody vs. nobody","page_number":"36","context_sentence":"When you call somebody","memorization_hook":"合成词：Some (一些/某个) + Body (身体/人)，即‘某个人’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/b6fb785023a561ff008b8760fe52d300.mp3"},{"word":"could","meaning":"能；可以","syllable_type":"元音字母组合音节","comparison":"could vs. would","page_number":"36","context_sentence":"Could I speak to ...?","memorization_hook":"语气对比：Can 的过去式，但在电话中表示‘更委婉的请求’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/e9b27fd4d0ae745d447c646d6113993a.mp3"},{"word":"message","meaning":"消息；信息","syllable_type":"mes-sage","comparison":"message vs. passage","page_number":"36","context_sentence":"Can I take a message?","memorization_hook":"谐音记忆：‘买手机’。买手机是为了发 message (信息)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/4d78522619f6cb435d04d6c6b619a217.mp3"},{"word":"kick","meaning":"踢；踹","syllable_type":"闭音节","comparison":"kick vs. pick","page_number":"37","context_sentence":"What are the boys kicking?","memorization_hook":"动作记忆：K 像一条伸出去‘踢’的腿。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/e2c96ff17e3938a798345b266f2e5366.mp3"},{"word":"online","meaning":"在线的","syllable_type":"on-line","comparison":"online vs. offline","page_number":"37","context_sentence":"She is taking an online class in her room.","memorization_hook":"组合记忆：On (在...上) + Line (线/网线)，连在线上就是‘在线’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/5a6df8efb076acb7d2e4e55b22bf453b.mp3"},{"word":"shuttlecock","meaning":"羽毛球","syllable_type":"shut-tle-cock","comparison":"shuttle vs. cock","page_number":"37","context_sentence":"It's a kind of shuttlecock.","memorization_hook":"联想记忆：Shuttle (穿梭) + Cock (公鸡/羽毛)，在网间穿梭的羽毛球。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/39bb148beebffeb6e3ccf05f708d41d5.mp3"},{"word":"sight","meaning":"名胜；风景；视力","syllable_type":"元音字母组合音节","comparison":"sight vs. light","page_number":"37","context_sentence":"My uncle is showing us all the sights.","memorization_hook":"词根记忆：与 see 有关。眼睛能看到 (see) 的美丽东西就是 sight (名胜)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/68144cf481dbf52dee5d073767493ab7.mp3"},{"word":"exam","meaning":"考试","syllable_type":"ex-am","comparison":"exam vs. example","page_number":"37","context_sentence":"I know it's near your exams.","memorization_hook":"缩写记忆：Examination 的缩写，ex- (出/结果) + -am (我是)，考试测出‘我是谁’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/4298f4f9b3847299e3cbb3792328840b.mp3"},{"word":"hope","meaning":"希望","syllable_type":"相对开音节 (VCe)","comparison":"hope vs. rope","page_number":"37","context_sentence":"I hope it all goes well!","memorization_hook":"谐音记忆：‘好铺’。希望能有一条‘好铺’的成功之路。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/c08eb4ad72f6085b89e198307d34d542.mp3"},{"word":"forward","meaning":"向前","syllable_type":"for-ward","comparison":"forward vs. backward","page_number":"37","context_sentence":"I'm looking forward to seeing you soon!","memorization_hook":"词缀记忆：for- (向/前) + -ward (方向)，合起来就是‘向前’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/fde6850734d4da28e2e8a8dfa9dc653d.mp3"},{"word":"look forward to","meaning":"盼望","syllable_type":"look for-ward to","comparison":"expect vs. wait","page_number":"37","context_sentence":"I'm looking forward to seeing you soon!","memorization_hook":"形象记忆：目光 (look) 向前 (forward) 看，代表你很‘期待’未来的见面。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/fde6850734d4da28e2e8a8dfa9dc653d.mp3"},{"word":"skate","meaning":"滑冰","syllable_type":"相对开音节 (VCe)","comparison":"skate vs. plate","page_number":"37","context_sentence":"Are you skating?","memorization_hook":"联想记忆：S 形滑行 + Kate (凯特)，凯特在滑冰。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/a420d6bab38271c4de4b6d9c468d9d9e.mp3"},{"word":"happen","meaning":"发生","syllable_type":"hap-pen","comparison":"happen vs. happy","page_number":"38","context_sentence":"What is happening in different time zones around the world right now?","memorization_hook":"词根记忆：Hap (机会/运气)。偶然发生的事情就是 happen。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/bd8aaf9f2bdbf2984e92463a450a5395.mp3"},{"word":"time zone","meaning":"时区","syllable_type":"time zone","comparison":"time vs. zone","page_number":"38","context_sentence":"What is happening in different time zones...","memorization_hook":"组合记忆：Time (时间) + Zone (区域)，划分时间的区域就是‘时区’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/9a221e8c213605a3c0dbb7a3ad527c1a.mp3"},{"word":"rush","meaning":"冲；奔","syllable_type":"闭音节","comparison":"rush vs. brush","page_number":"38","context_sentence":"Some people are rushing to get home from work.","memorization_hook":"谐音记忆：‘热射’。天气太热被太阳‘射’，所以要赶紧‘冲’回家。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/b7a6731f9bfdc3358ac72cfd0ccdd61a.mp3"},{"word":"in a hurry","meaning":"匆忙","syllable_type":"in a hur-ry","comparison":"hurry vs. worry","page_number":"38","context_sentence":"But others are not in a hurry!","memorization_hook":"联想记忆：Hurry (快) 就像火 (huo) 一样急，in a hurry 就是‘在急忙中’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/27fd80e0d4dde2386ce58f2b265e3f93.mp3"},{"word":"shine","meaning":"发光；照耀","syllable_type":"相对开音节 (VCe)","comparison":"shine vs. wine","page_number":"38","context_sentence":"Lights are shining brightly across the city","memorization_hook":"形象记忆：S 代表 Sun (太阳)，太阳在发光。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/4e15b4afed3b13e1cbea040128dd9291.mp3"},{"word":"brightly","meaning":"明亮地","syllable_type":"bright-ly","comparison":"bright vs. light","page_number":"38","context_sentence":"Lights are shining brightly across the city","memorization_hook":"词缀记忆：Bright (明亮的) + -ly (副词后缀)，表示‘明亮地’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/4e15b4afed3b13e1cbea040128dd9291.mp3"},{"word":"colourful","meaning":"色彩鲜艳的","syllable_type":"col-our-ful","comparison":"colourful vs. beautiful","page_number":"38","context_sentence":"and colourful boats are moving slowly","memorization_hook":"词缀记忆：Colour (颜色) + -ful (充满...的)，充满颜色的就是‘色彩鲜艳的’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/796674531a74a855eed11cb611950b06.mp3"},{"word":"slowly","meaning":"缓慢地","syllable_type":"slow-ly","comparison":"slow vs. low","page_number":"38","context_sentence":"colourful boats are moving slowly down the river.","memorization_hook":"词缀记忆：Slow (慢) + -ly (副词后缀)，‘缓慢地’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/6d8d2e618dbb2ac7cb04debcd1619f2c.mp3"},{"word":"such as","meaning":"例如","syllable_type":"such as","comparison":"like vs. for example","page_number":"38","context_sentence":"eating delicious food, such as Chongqing hot pot","memorization_hook":"联想记忆：Such (这样) + As (作为)，作为这样的例子，即‘例如’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/e8bd890409eb19795030fc8387e3070c.mp3"},{"word":"painting","meaning":"绘画作品","syllable_type":"paint-ing","comparison":"paint vs. point","page_number":"38","context_sentence":"shopping for gifts, such as paintings and bags","memorization_hook":"词缀记忆：Paint (画) + -ing (名词后缀)，画出来的成果就是‘绘画作品’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/081e5c5707fbf24bbc3e2b21763da6c1.mp3"},{"word":"market","meaning":"市场","syllable_type":"mar-ket","comparison":"market vs. pocket","page_number":"38","context_sentence":"in the markets.","memorization_hook":"联想记忆：Mark (标记/价格) + et (小地方)，标记价格进行交易的小地方就是‘市场’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/7b06a5a96dc15044c6cdccf12dc0bec6.mp3"},{"word":"side by side","meaning":"并排；并肩地","syllable_type":"side by side","comparison":"face to face","page_number":"38","context_sentence":"people live side by side with many wonderful animals!","memorization_hook":"形象记忆：一边 (side) 靠着另一边 (side)，就是‘肩并肩’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/3a7e78b861e718e2232621647a061874.mp3"},{"word":"subway","meaning":"地铁","syllable_type":"sub-way","comparison":"subway vs. highway","page_number":"38","context_sentence":"Many people are rushing to the subway.","memorization_hook":"词缀记忆：Sub- (在下面) + Way (路)，地底下的路就是‘地铁’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/843579227664d88ce5c103df9d99536f.mp3"},{"word":"bright","meaning":"鲜艳的；明亮的","syllable_type":"元音字母组合音节","comparison":"bright vs. right","page_number":"38","context_sentence":"Bright yellow taxis are picking up...","memorization_hook":"联想记忆：B (太阳的形状) + Right (正确的)，太阳正确地照耀着，很‘明亮’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/a6104f33348ee78d1adb3b90948f24e9.mp3"},{"word":"drop off","meaning":"(开车)把某人送到某处","syllable_type":"drop off","comparison":"pick up vs. take off","page_number":"38","context_sentence":"picking up and dropping off passengers.","memorization_hook":"动作记忆：Drop (落下) + Off (离开)，让乘客落下去自己离开，就是‘送到某处放下’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/ba8ceff3d408fe314fef0b7bdd9f429f.mp3"},{"word":"passenger","meaning":"乘客","syllable_type":"pas-sen-ger","comparison":"passenger vs. message","page_number":"38","context_sentence":"picking up and dropping off passengers.","memorization_hook":"词根记忆：Pass (经过) + -en- + -ger (人)，‘路过/经过’这段路的人就是‘乘客’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/ba8ceff3d408fe314fef0b7bdd9f429f.mp3"},{"word":"central","meaning":"中心的；中央的","syllable_type":"cen-tral","comparison":"central vs. center","page_number":"38","context_sentence":"jogging, walking, and riding bikes in Central Park.","memorization_hook":"联想记忆：Center (中心) 的形容词形式，-al 结尾通常是形容词。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/b1dd479917dc6fd9fb401265b6079548.mp3"},{"word":"explain","meaning":"解释；说明","syllable_type":"ex-plain","comparison":"explain vs. plain","page_number":"39","context_sentence":"Can you explain why the time is different...?","memorization_hook":"词根记忆：Ex- (出) + Plain (平坦/清晰)，把事情变清晰说出来就是‘解释’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/a0e1c6849952aeefb19abddcf66dbc98.mp3"},{"word":"take part in","meaning":"参加","syllable_type":"take part in","comparison":"join vs. join in","page_number":"39","context_sentence":"Our family are taking part in a boat tour","memorization_hook":"联想记忆：拿走 (take) 一部分 (part) 责任或时间进入 (in) 活动，就是‘参加’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/55e22e787126774271257176d4ce6b84.mp3"},{"word":"tour","meaning":"旅行；旅游","syllable_type":"元音字母组合音节","comparison":"tour vs. sour","page_number":"39","context_sentence":"Our family are taking part in a boat tour","memorization_hook":"谐音记忆：‘突儿’。突然想去旅游，去突袭一圈儿。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/55e22e787126774271257176d4ce6b84.mp3"},{"word":"sunshine","meaning":"阳光","syllable_type":"sun-shine","comparison":"sunshine vs. moonshine","page_number":"39","context_sentence":"the morning sunshine is great.","memorization_hook":"组合记忆：Sun (太阳) + Shine (发光)，太阳发的光就是‘阳光’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/af9b0436bc2249f750c73117a4c99235.mp3"},{"word":"drive","meaning":"开车；驾驶","syllable_type":"相对开音节 (VCe)","comparison":"drive vs. dive","page_number":"39","context_sentence":"I'm driving to work today","memorization_hook":"联想记忆：D (Driver 司机) + R (Road 路) + Ive (我)，我在路上当司机‘开车’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/7695c03a9ddebf0b409af9e6722e6b7b.mp3"},{"word":"rush hour","meaning":"交通高峰期","syllable_type":"rush hour","comparison":"rush vs. hour","page_number":"39","context_sentence":"taking a long time because it's rush hour.","memorization_hook":"组合记忆：Rush (冲/急) + Hour (小时)，大家都急着冲的小时就是‘高峰期’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/c5aaf8e3fa7100010220124ea2fd623a.mp3"},{"word":"daytime","meaning":"白昼；白天","syllable_type":"day-time","comparison":"nighttime vs. bedtime","page_number":"33","context_sentence":"Can you explain how it can be daytime in one city...?","memorization_hook":"合成词：Day (日子) + Time (时间)，日子里的时间即‘白昼’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/cf5009e399abd7120507cc13012f7c8a.mp3"},{"word":"holiday","meaning":"假期","syllable_type":"hol-i-day","comparison":"holiday vs. vacation","page_number":"35","context_sentence":"We're having a holiday here.","memorization_hook":"联想记忆：Holy (神圣的) + Day (日子)，古代神圣的日子就是大家休息的‘假期’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/89d7a1183852bb530facb849cdae9ad1.mp3"},{"word":"powerful","meaning":"强大的；强有力的","syllable_type":"pow-er-ful","comparison":"powerful vs. wonderful","page_number":"69","context_sentence":"It's so powerful!","memorization_hook":"词缀记忆：Power (力量) + -ful (充满)，充满力量就是‘强大的’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/0567376aa1d1eb70379a8e4938e8d557.mp3"},{"word":"raincoat","meaning":"雨衣","syllable_type":"rain-coat","comparison":"raincoat vs. jacket","page_number":"69","context_sentence":"We're wearing raincoats but are still getting very wet!","memorization_hook":"组合记忆：Rain (雨) + Coat (外套)，下雨穿的外套就是‘雨衣’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/6843929b14ef2a1a708073d5003b0d2c.mp3"},{"word":"sunbathing","meaning":"日光浴","syllable_type":"sun-bath-ing","comparison":"sunbathing vs. swimming","page_number":"69","context_sentence":"others are sunbathing or playing games on the beach.","memorization_hook":"联想记忆：Sun (太阳) + Bath (洗澡)，在阳光里洗澡就是‘日光浴’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/e5fad843d134d447eefcff84ef404a60.mp3"},{"word":"tricky","meaning":"棘手的；难办的","syllable_type":"trick-y","comparison":"trick vs. lucky","page_number":"69","context_sentence":"It's tricky, but I think I'm making good progress.","memorization_hook":"词根记忆：Trick (诡计) + -y (形容词)，像诡计一样变化莫测，所以‘难办’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/80b607f7b7864323f1bf24a57bbc9d4d.mp3"},{"word":"progress","meaning":"进步；进展","syllable_type":"pro-gress","comparison":"progress vs. process","page_number":"69","context_sentence":"I think I'm making good progress.","memorization_hook":"词根记忆：Pro- (向前) + Gress (走)，向前走就是‘进步’。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a7b/u5/2f4a0cd9398e33f0815a6c0032dfe6e7.mp3"}];
 
         let isAlphabetical = false;
@@ -1505,11 +1548,12 @@
 
         const app = {
             currentAudio: null,
+            audioObjectURL: null,
             hiddenWords: new Set(),
             showHiddenMode: false,
             unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 7 Semester 2 - Unit 5").substring(0, 16),
 
-            init: function() {
+            init: async function() {
                 // Load hidden words from localStorage
                 const stored = localStorage.getItem(this.unitKey);
                 if (stored) {
@@ -1530,6 +1574,28 @@
                 });
 
                 this.updateStats();
+
+                // Preload audio
+                vocabData.forEach(item => {
+                    if (item.audio) {
+                        this.cacheAudio(item.audio);
+                    }
+                });
+
+                // Cleanup legacy localStorage audio cache
+                setTimeout(() => {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                    key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                    key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                    key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                }, 2000);
             },
 
             getHash: function(str) {
@@ -1621,61 +1687,22 @@
                 this.updateStats();
             },
 
-            clearAudioCache: function() {
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (key.startsWith("ep-vg-") || key.startsWith("ep-sa-") || key.startsWith("ep-vm-") || key.startsWith("ep-sh-"))) {
-                        keysToRemove.push(key);
-                    }
-                }
-                keysToRemove.forEach(k => localStorage.removeItem(k));
-                console.log("Cleared audio cache to free up space");
-            },
-
-            safeSetItem: function(key, value) {
-                try {
-                    localStorage.setItem(key, value);
-                } catch (e) {
-                    if (e.name === 'QuotaExceededError') {
-                        console.warn("LocalStorage quota exceeded, attempting to clear cache...");
-                        this.clearAudioCache();
-                        try {
-                            localStorage.setItem(key, value);
-                        } catch (e2) {
-                            console.error("Storage still full after clearing cache. Audio will not be cached.", e2);
-                        }
-                    } else {
-                        console.error("Error saving to localStorage", e);
-                    }
-                }
-            },
-
             cacheAudio: async function(url) {
                 if (!url) return;
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
-                const cacheKey = "ep-vg-audio-" + baseHash;
-                const metaKey = "ep-vg-meta-" + baseHash;
+                const cacheKey = "ep-audio-" + baseHash;
                 
-                if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+                const cached = await db.get(cacheKey);
+                if (cached) return cached.blob;
 
                 try {
                     const resp = await fetch(url);
                     const lastModified = resp.headers.get('Last-Modified');
                     const blob = await resp.blob();
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const result = reader.result;
-                            this.safeSetItem(cacheKey, result);
-                            if (lastModified) {
-                                this.safeSetItem(metaKey, new Date(lastModified).getTime().toString());
-                            }
-                            resolve(result);
-                        };
-                        reader.readAsDataURL(blob);
-                    });
+                    const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                    await db.set(cacheKey, blob, meta);
+                    return blob;
                 } catch(e) { console.error("Cache failed", e); }
             },
 
@@ -1696,9 +1723,9 @@
                         const url = item.audio;
                         const baseUrl = url.split('?')[0];
                         const baseHash = this.getHash(baseUrl);
-                        const metaKey = "ep-vg-meta-" + baseHash;
-                        const cacheKey = "ep-vg-audio-" + baseHash;
-                        const currentVersion = parseInt(localStorage.getItem(metaKey)) || 0;
+                        const cacheKey = "ep-audio-" + baseHash;
+                        const cached = await db.get(cacheKey);
+                        const currentVersion = cached?.meta?.lastModified || 0;
 
                         try {
                             const response = await fetch(url, { method: 'HEAD' });
@@ -1706,8 +1733,6 @@
                             if (lastModifiedStr) {
                                 const lastModified = new Date(lastModifiedStr).getTime();
                                 if (lastModified > currentVersion) {
-                                    localStorage.removeItem(cacheKey);
-                                    localStorage.removeItem(metaKey);
                                     await this.cacheAudio(url);
                                     updatedCount++;
                                 }
@@ -1723,7 +1748,7 @@
                 }
             },
 
-            playAudio: function(btn) {
+            playAudio: async function(btn) {
                 const card = btn.closest('.vocab-item');
                 const index = parseInt(card.dataset.index);
                 const url = vocabData[index].audio;
@@ -1731,24 +1756,41 @@
 
                 if (this.currentAudio) {
                     this.currentAudio.pause();
-                    // Re-enable any previously disabled button
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
                     document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
                 }
                 
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
-                const cacheKey = "ep-vg-audio-" + baseHash;
-                const source = localStorage.getItem(cacheKey) || url;
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
 
                 this.currentAudio = new Audio(source);
                 btn.disabled = true;
 
-                this.currentAudio.onended = () => { btn.disabled = false; };
-                this.currentAudio.onerror = () => { btn.disabled = false; };
+                const cleanup = () => {
+                    btn.disabled = false;
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+
+                this.currentAudio.onended = cleanup;
+                this.currentAudio.onerror = cleanup;
 
                 this.currentAudio.play().catch(e => {
                     console.warn("Audio playback failed", e);
-                    btn.disabled = false;
+                    cleanup();
                 });
             }
         };
@@ -1756,11 +1798,6 @@
         // Initialize and preload
         window.addEventListener('load', () => {
             app.init();
-            vocabData.forEach(item => {
-                if (item.audio) {
-                    app.cacheAudio(item.audio);
-                }
-            });
         });
     </script>
 

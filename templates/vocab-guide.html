@@ -398,6 +398,49 @@
     </div>
 
     <script>
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function() {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function(id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function(id, blob, meta) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, meta, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
         const vocabData = {{VOCAB_DATA}};
 
         let isAlphabetical = false;
@@ -426,11 +469,12 @@
 
         const app = {
             currentAudio: null,
+            audioObjectURL: null,
             hiddenWords: new Set(),
             showHiddenMode: false,
             unitKey: "ep-vg-hidden-" + btoa(document.title + "{{LEVEL}}").substring(0, 16),
 
-            init: function() {
+            init: async function() {
                 // Load hidden words from localStorage
                 const stored = localStorage.getItem(this.unitKey);
                 if (stored) {
@@ -451,6 +495,28 @@
                 });
 
                 this.updateStats();
+
+                // Preload audio
+                vocabData.forEach(item => {
+                    if (item.audio) {
+                        this.cacheAudio(item.audio);
+                    }
+                });
+
+                // Cleanup legacy localStorage audio cache
+                setTimeout(() => {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                    key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                    key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                    key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                }, 2000);
             },
 
             getHash: function(str) {
@@ -542,61 +608,22 @@
                 this.updateStats();
             },
 
-            clearAudioCache: function() {
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (key.startsWith("ep-vg-") || key.startsWith("ep-sa-") || key.startsWith("ep-vm-") || key.startsWith("ep-sh-"))) {
-                        keysToRemove.push(key);
-                    }
-                }
-                keysToRemove.forEach(k => localStorage.removeItem(k));
-                console.log("Cleared audio cache to free up space");
-            },
-
-            safeSetItem: function(key, value) {
-                try {
-                    localStorage.setItem(key, value);
-                } catch (e) {
-                    if (e.name === 'QuotaExceededError') {
-                        console.warn("LocalStorage quota exceeded, attempting to clear cache...");
-                        this.clearAudioCache();
-                        try {
-                            localStorage.setItem(key, value);
-                        } catch (e2) {
-                            console.error("Storage still full after clearing cache. Audio will not be cached.", e2);
-                        }
-                    } else {
-                        console.error("Error saving to localStorage", e);
-                    }
-                }
-            },
-
             cacheAudio: async function(url) {
                 if (!url) return;
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
-                const cacheKey = "ep-vg-audio-" + baseHash;
-                const metaKey = "ep-vg-meta-" + baseHash;
+                const cacheKey = "ep-audio-" + baseHash;
                 
-                if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+                const cached = await db.get(cacheKey);
+                if (cached) return cached.blob;
 
                 try {
                     const resp = await fetch(url);
                     const lastModified = resp.headers.get('Last-Modified');
                     const blob = await resp.blob();
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const result = reader.result;
-                            this.safeSetItem(cacheKey, result);
-                            if (lastModified) {
-                                this.safeSetItem(metaKey, new Date(lastModified).getTime().toString());
-                            }
-                            resolve(result);
-                        };
-                        reader.readAsDataURL(blob);
-                    });
+                    const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                    await db.set(cacheKey, blob, meta);
+                    return blob;
                 } catch(e) { console.error("Cache failed", e); }
             },
 
@@ -617,9 +644,9 @@
                         const url = item.audio;
                         const baseUrl = url.split('?')[0];
                         const baseHash = this.getHash(baseUrl);
-                        const metaKey = "ep-vg-meta-" + baseHash;
-                        const cacheKey = "ep-vg-audio-" + baseHash;
-                        const currentVersion = parseInt(localStorage.getItem(metaKey)) || 0;
+                        const cacheKey = "ep-audio-" + baseHash;
+                        const cached = await db.get(cacheKey);
+                        const currentVersion = cached?.meta?.lastModified || 0;
 
                         try {
                             const response = await fetch(url, { method: 'HEAD' });
@@ -627,8 +654,6 @@
                             if (lastModifiedStr) {
                                 const lastModified = new Date(lastModifiedStr).getTime();
                                 if (lastModified > currentVersion) {
-                                    localStorage.removeItem(cacheKey);
-                                    localStorage.removeItem(metaKey);
                                     await this.cacheAudio(url);
                                     updatedCount++;
                                 }
@@ -644,7 +669,7 @@
                 }
             },
 
-            playAudio: function(btn) {
+            playAudio: async function(btn) {
                 const card = btn.closest('.vocab-item');
                 const index = parseInt(card.dataset.index);
                 const url = vocabData[index].audio;
@@ -652,24 +677,41 @@
 
                 if (this.currentAudio) {
                     this.currentAudio.pause();
-                    // Re-enable any previously disabled button
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
                     document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
                 }
                 
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
-                const cacheKey = "ep-vg-audio-" + baseHash;
-                const source = localStorage.getItem(cacheKey) || url;
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
 
                 this.currentAudio = new Audio(source);
                 btn.disabled = true;
 
-                this.currentAudio.onended = () => { btn.disabled = false; };
-                this.currentAudio.onerror = () => { btn.disabled = false; };
+                const cleanup = () => {
+                    btn.disabled = false;
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+
+                this.currentAudio.onended = cleanup;
+                this.currentAudio.onerror = cleanup;
 
                 this.currentAudio.play().catch(e => {
                     console.warn("Audio playback failed", e);
-                    btn.disabled = false;
+                    cleanup();
                 });
             }
         };
@@ -677,11 +719,6 @@
         // Initialize and preload
         window.addEventListener('load', () => {
             app.init();
-            vocabData.forEach(item => {
-                if (item.audio) {
-                    app.cacheAudio(item.audio);
-                }
-            });
         });
     </script>
 

@@ -817,6 +817,49 @@
     </div>
 
     <script>
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function() {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function(id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function(id, blob, meta) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, meta, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
         const vocabData = [{"word":"ID","meaning":"身份证明","syllable_type":"I-D","comparison":"IT, idea","page_number":"2","context_sentence":"You can have an ID card.","memorization_hook":"字母联想法：I (我) 的 D (D开头，Document文件)，证明我身份的文件就是ID (身份证)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/708ce5ddeac49ec68de7c25533380625.mp3"},{"word":"pay","meaning":"付款;付钱给(某人)","syllable_type":"元音字母组合音节","comparison":"play, say, day","page_number":"2","context_sentence":"You have to pay to go on trains.","memorization_hook":"谐音记忆法：发音类似“赔”。弄坏了别人的东西就要“赔”钱，也就是付款 pay。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/b894a3777148d332ecbe226669eaa589.mp3"},{"word":"ride","meaning":"骑,骑自行车","syllable_type":"相对开音节","comparison":"hide, side, wide","page_number":"2","context_sentence":"You can ride a bike on the road.","memorization_hook":"联想记忆法：r (形状像一根草) + ide (谐音“爱的”) -> 我骑 (ride) 着我爱的自行车在草地上玩。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/8b5bb50e8cce359105bb561b759b4fbb.mp3"},{"word":"could","meaning":"能,会,可以","syllable_type":"元音字母组合音节","comparison":"would, should","page_number":"3","context_sentence":"We could play football together.","memorization_hook":"词源联想法：could是can的过去式。c (看) + ould (谐音“我的”) -> 过去我“能”看我的球赛。注意字母L是不发音的哦！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/6e8a5102ff62f48854425d5540db86b3.mp3"},{"word":"holiday","meaning":"假期","syllable_type":"hol-i-day","comparison":"holy, day","page_number":"4","context_sentence":"Last year, we were in Harbin for the winter holiday.","memorization_hook":"谐音联想法：holi (谐音“好礼”) + day (天)。收到好礼物的这一天，就是快乐的假期 (holiday)！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/b0840551db37c06ef550c52b9572f8e7.mp3"},{"word":"skier","meaning":"滑雪者","syllable_type":"ski-er","comparison":"ski, sky","page_number":"4","context_sentence":"By the last day of the holiday, I was a good skier.","memorization_hook":"词缀记忆法：ski (滑雪) + er (表示人的后缀)。滑雪的人就是滑雪者 (skier)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/77256c09e230e143d09112235978bd68.mp3"},{"word":"camp","meaning":"活动营地,度假营地","syllable_type":"闭音节","comparison":"lamp, damp","page_number":"5","context_sentence":"After the camp, we felt great.","memorization_hook":"谐音记忆法：c (看) + amp (谐音“俺铺”)。看，俺铺好的床铺，就在度假营地 (camp) 里！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/159e9fd67cb2863d981f0321c03cede0.mp3"},{"word":"summer camp","meaning":"夏令营","syllable_type":"sum-mer camp","comparison":"winter camp","page_number":"5","context_sentence":"The summer camp is over.","memorization_hook":"合成词记忆法：summer (夏天) + camp (营地) = 夏令营。夏天在营地里开心玩耍。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/bdd2058af128ee61438031de51f64932.mp3"},{"word":"training","meaning":"训练,培训","syllable_type":"train-ing","comparison":"train, raining","page_number":"5","context_sentence":"It was very hot and our training was hard.","memorization_hook":"词缀记忆法：train (火车/训练) + ing (名词后缀)。像火车一样不断循环往复地辛苦练习，就是在进行训练 (training)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/13072fab142602c60a10221b9c5b238a.mp3"},{"word":"third","meaning":"第三的","syllable_type":"r控制音节","comparison":"bird, dirt","page_number":"5","context_sentence":"On the third day, we cooked lunch on our own.","memorization_hook":"联想记忆法：th (咬舌音，数字3 three的开头) + ird (联想bird)。这是我第三 (third) 次看到这只小鸟 (bird)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/553fc1a29be4c8aab7d8e5fcf397fcba.mp3"},{"word":"mean","meaning":"意思是,表示...的意思","syllable_type":"元音字母组合音节","comparison":"meat, bean","page_number":"7","context_sentence":"Growing up means a lot","memorization_hook":"谐音记忆法：谐音“谜暗”。这个谜语暗藏的“意思” (mean) 到底是什么呢？","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/2da40f8abb3f6c16107820571daeab5d.mp3"},{"word":"fall","meaning":"摔倒,跌倒","syllable_type":"闭音节","comparison":"tall, ball, call","page_number":"7","context_sentence":"We sometimes fall.","memorization_hook":"谐音记忆法：发音类似“佛”。如果不小心摔倒 (fall) 的时候，大喊一声“阿弥陀佛”保佑不疼！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/a05222fc47d16df3ee8d260bb09948b9.mp3"},{"word":"film","meaning":"电影,影片","syllable_type":"闭音节","comparison":"fill, milk","page_number":"8","context_sentence":"What is the film about?","memorization_hook":"谐音记忆法：发音类似“飞马”。很多经典电影 (film) 开场经常有一个飞马的标志。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/76749b59f4e1367e29aed0310aa0d3a2.mp3"},{"word":"kill","meaning":"弄死,杀死","syllable_type":"闭音节","comparison":"ill, hill, pill","page_number":"8","context_sentence":"He killed Simba's dad.","memorization_hook":"联想记忆法：k (看) + ill (生病)。看他生病了，病毒快要把他弄死 (kill) 了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/038115838a90ed5f0f51ba787af6389f.mp3"},{"word":"beat","meaning":"击败,打败,战胜","syllable_type":"元音字母组合音节","comparison":"meat, seat","page_number":"8","context_sentence":"With his friends' help, Simba beat his uncle.","memorization_hook":"联想记忆法：b (不) + eat (吃)。在打败 (beat) 敌人之前，我坚决不吃饭 (eat)！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/b73ab33a69f54deb34a8a2c65a42cf0d.mp3"},{"word":"difficulty","meaning":"难题,难事","syllable_type":"dif-fi-cul-ty","comparison":"difficult, faculty","page_number":"8","context_sentence":"We all have to face difficulties and learn to grow up.","memorization_hook":"趣味拼读法：difficult (困难的) 的名词形式。di (弟弟) + ffi (谐音“发发”) + cul (哭) + ty (谐音“涕”)。弟弟遇到难事 (difficulty)，发脾气哭得流鼻涕。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/280df7fdb34092040e1a35ed0b8a8d47.mp3"},{"word":"growing up","meaning":"长大，成长","syllable_type":"grow-ing up","comparison":"grow up, going up","page_number":"1","context_sentence":"How do you feel about growing up?","memorization_hook":"短语拆解法：grow (生长) + up (向上)。像小树苗一样不断向上生长，就是长大 (growing up)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/3835afaff2317e6d5d56678c6f040dab.mp3"},{"word":"each other","meaning":"彼此，互相","syllable_type":"each oth-er","comparison":"each, other","page_number":"3","context_sentence":"We go to the same school and we help each other.","memorization_hook":"逻辑拆解法：each (每个) + other (另一个)。每一个人都在帮助另一个人，也就是大家“互相、彼此” (each other) 帮忙。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/70e8044fc47c9ecc518c46fdceebe128.mp3"},{"word":"at first","meaning":"起初，一开始","syllable_type":"at first","comparison":"at last, first","page_number":"4","context_sentence":"At first, I was not good at it.","memorization_hook":"逻辑拆解法：first是“第一，首先”，处在 (at) 事情第一的位置，自然就是“起初，一开始” (at first)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/e262e0082aeaed5f494c08ffe0808e28.mp3"},{"word":"on our own","meaning":"靠我们自己","syllable_type":"on our own","comparison":"on my own, own","page_number":"5","context_sentence":"On the third day, we cooked lunch on our own.","memorization_hook":"逻辑拆解法：own有“自己的”意思。在 (on) 我们 (our) 自己的 (own) 力量掌控下，也就是“靠我们自己”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/553fc1a29be4c8aab7d8e5fcf397fcba.mp3"},{"word":"give up","meaning":"放弃","syllable_type":"give up","comparison":"stand up, give","page_number":"13","context_sentence":"But he never gave up.","memorization_hook":"动作联想法：give (给) + up (向上)。举起双手，把手里的武器全向上交出去，表示投降、“放弃” (give up)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/dd5d3595df2b8ed5af752d56396364b2.mp3"}];
 
         let isAlphabetical = false;
@@ -845,11 +888,12 @@
 
         const app = {
             currentAudio: null,
+            audioObjectURL: null,
             hiddenWords: new Set(),
             showHiddenMode: false,
             unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 5 Semester 2 - Unit 1").substring(0, 16),
 
-            init: function() {
+            init: async function() {
                 // Load hidden words from localStorage
                 const stored = localStorage.getItem(this.unitKey);
                 if (stored) {
@@ -870,6 +914,28 @@
                 });
 
                 this.updateStats();
+
+                // Preload audio
+                vocabData.forEach(item => {
+                    if (item.audio) {
+                        this.cacheAudio(item.audio);
+                    }
+                });
+
+                // Cleanup legacy localStorage audio cache
+                setTimeout(() => {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                    key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                    key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                    key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                }, 2000);
             },
 
             getHash: function(str) {
@@ -961,61 +1027,22 @@
                 this.updateStats();
             },
 
-            clearAudioCache: function() {
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (key.startsWith("ep-vg-") || key.startsWith("ep-sa-") || key.startsWith("ep-vm-") || key.startsWith("ep-sh-"))) {
-                        keysToRemove.push(key);
-                    }
-                }
-                keysToRemove.forEach(k => localStorage.removeItem(k));
-                console.log("Cleared audio cache to free up space");
-            },
-
-            safeSetItem: function(key, value) {
-                try {
-                    localStorage.setItem(key, value);
-                } catch (e) {
-                    if (e.name === 'QuotaExceededError') {
-                        console.warn("LocalStorage quota exceeded, attempting to clear cache...");
-                        this.clearAudioCache();
-                        try {
-                            localStorage.setItem(key, value);
-                        } catch (e2) {
-                            console.error("Storage still full after clearing cache. Audio will not be cached.", e2);
-                        }
-                    } else {
-                        console.error("Error saving to localStorage", e);
-                    }
-                }
-            },
-
             cacheAudio: async function(url) {
                 if (!url) return;
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
-                const cacheKey = "ep-vg-audio-" + baseHash;
-                const metaKey = "ep-vg-meta-" + baseHash;
+                const cacheKey = "ep-audio-" + baseHash;
                 
-                if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+                const cached = await db.get(cacheKey);
+                if (cached) return cached.blob;
 
                 try {
                     const resp = await fetch(url);
                     const lastModified = resp.headers.get('Last-Modified');
                     const blob = await resp.blob();
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const result = reader.result;
-                            this.safeSetItem(cacheKey, result);
-                            if (lastModified) {
-                                this.safeSetItem(metaKey, new Date(lastModified).getTime().toString());
-                            }
-                            resolve(result);
-                        };
-                        reader.readAsDataURL(blob);
-                    });
+                    const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                    await db.set(cacheKey, blob, meta);
+                    return blob;
                 } catch(e) { console.error("Cache failed", e); }
             },
 
@@ -1036,9 +1063,9 @@
                         const url = item.audio;
                         const baseUrl = url.split('?')[0];
                         const baseHash = this.getHash(baseUrl);
-                        const metaKey = "ep-vg-meta-" + baseHash;
-                        const cacheKey = "ep-vg-audio-" + baseHash;
-                        const currentVersion = parseInt(localStorage.getItem(metaKey)) || 0;
+                        const cacheKey = "ep-audio-" + baseHash;
+                        const cached = await db.get(cacheKey);
+                        const currentVersion = cached?.meta?.lastModified || 0;
 
                         try {
                             const response = await fetch(url, { method: 'HEAD' });
@@ -1046,8 +1073,6 @@
                             if (lastModifiedStr) {
                                 const lastModified = new Date(lastModifiedStr).getTime();
                                 if (lastModified > currentVersion) {
-                                    localStorage.removeItem(cacheKey);
-                                    localStorage.removeItem(metaKey);
                                     await this.cacheAudio(url);
                                     updatedCount++;
                                 }
@@ -1063,7 +1088,7 @@
                 }
             },
 
-            playAudio: function(btn) {
+            playAudio: async function(btn) {
                 const card = btn.closest('.vocab-item');
                 const index = parseInt(card.dataset.index);
                 const url = vocabData[index].audio;
@@ -1071,24 +1096,41 @@
 
                 if (this.currentAudio) {
                     this.currentAudio.pause();
-                    // Re-enable any previously disabled button
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
                     document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
                 }
                 
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
-                const cacheKey = "ep-vg-audio-" + baseHash;
-                const source = localStorage.getItem(cacheKey) || url;
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
 
                 this.currentAudio = new Audio(source);
                 btn.disabled = true;
 
-                this.currentAudio.onended = () => { btn.disabled = false; };
-                this.currentAudio.onerror = () => { btn.disabled = false; };
+                const cleanup = () => {
+                    btn.disabled = false;
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+
+                this.currentAudio.onended = cleanup;
+                this.currentAudio.onerror = cleanup;
 
                 this.currentAudio.play().catch(e => {
                     console.warn("Audio playback failed", e);
-                    btn.disabled = false;
+                    cleanup();
                 });
             }
         };
@@ -1096,11 +1138,6 @@
         // Initialize and preload
         window.addEventListener('load', () => {
             app.init();
-            vocabData.forEach(item => {
-                if (item.audio) {
-                    app.cacheAudio(item.audio);
-                }
-            });
         });
     </script>
 

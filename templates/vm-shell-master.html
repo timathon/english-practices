@@ -320,6 +320,49 @@
 </div>
 
 <script>
+    const db = {
+        name: 'ep-audio-cache',
+        version: 1,
+        instance: null,
+        open: function() {
+            return new Promise((resolve, reject) => {
+                if (this.instance) return resolve(this.instance);
+                const request = indexedDB.open(this.name, this.version);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('audio')) {
+                        db.createObjectStore('audio', { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    this.instance = e.target.result;
+                    resolve(this.instance);
+                };
+                request.onerror = (e) => reject(e);
+            });
+        },
+        get: async function(id) {
+            const db = await this.open();
+            return new Promise((resolve) => {
+                const transaction = db.transaction('audio', 'readonly');
+                const store = transaction.objectStore('audio');
+                const request = store.get(id);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => resolve(null);
+            });
+        },
+        set: async function(id, blob, meta) {
+            const db = await this.open();
+            return new Promise((resolve) => {
+                const transaction = db.transaction('audio', 'readwrite');
+                const store = transaction.objectStore('audio');
+                store.put({ id, blob, meta, timestamp: Date.now() });
+                transaction.oncomplete = () => resolve(true);
+                transaction.onerror = () => resolve(false);
+            });
+        }
+    };
+
     /* --- AUTH VARS SLOT START --- */
     {{AUTH_VARS}}
     /* --- AUTH VARS SLOT END --- */
@@ -347,64 +390,76 @@
             settings: { autoplay: true, sfx: true }
         },
         audio: null,
+        audioObjectURL: null,
         sfx: {
             correct: "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3",
             wrong: "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3"
         },
-        playSFX: function(type) {
+        getHash: function(str) {
+            return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+        },
+        playSFX: async function(type) {
             if (!this.state.settings.sfx) return;
             const url = this.sfx[type];
             if (!url) return;
-            const hash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-            const cacheKey = "ep-vm-audio-" + hash;
-            const source = localStorage.getItem(cacheKey) || url;
+            const baseUrl = url.split('?')[0];
+            const baseHash = this.getHash(baseUrl);
+            const cacheKey = "ep-audio-" + baseHash;
+            const cached = await db.get(cacheKey);
+            
+            let source = url;
+            let objectURL = null;
+            if (cached && cached.blob) {
+                objectURL = URL.createObjectURL(cached.blob);
+                source = objectURL;
+            }
+            
             const sound = new Audio(source);
-            sound.play().catch(e => console.error("SFX Play Error:", e));
-        },
-        clearAudioCache: function() {
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && (key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-") || key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-"))) {
-                    keysToRemove.push(key);
-                }
-            }
-            keysToRemove.forEach(k => localStorage.removeItem(k));
-            console.log("Cleared audio cache to free up space");
-        },
-        safeSetItem: function(key, value) {
-            try {
-                localStorage.setItem(key, value);
-            } catch (e) {
-                if (e.name === 'QuotaExceededError') {
-                    this.clearAudioCache();
-                    try {
-                        localStorage.setItem(key, value);
-                    } catch (e2) {
-                        console.error("Storage still full after clearing cache", e2);
-                    }
-                } else {
-                    console.error("Error saving to localStorage", e);
-                }
-            }
-        },
-        init: function() { 
+            sound.onended = () => { if (objectURL) URL.revokeObjectURL(objectURL); };
+            sound.onerror = () => { if (objectURL) URL.revokeObjectURL(objectURL); };
+            sound.play().catch(e => {
+                console.error("SFX Play Error:", e);
+                if (objectURL) URL.revokeObjectURL(objectURL);
+            });
+        init: async function() { 
             const savedSettings = localStorage.getItem(ID_A + "-settings");
             if (savedSettings) this.state.settings = Object.assign(this.state.settings, JSON.parse(savedSettings));
             document.getElementById("autoplay-toggle").checked = this.state.settings.autoplay;
             document.getElementById("sfx-toggle").checked = this.state.settings.sfx;
             this.cacheAudio(this.sfx.correct);
             this.cacheAudio(this.sfx.wrong);
+
+            // Preload all challenges audio
+            challenges.forEach(c => {
+                if (c.questions) c.questions.forEach(q => this.cacheAudio(q.audio));
+            });
+
             this.renderHome(); 
+
+            // Cleanup legacy localStorage audio cache
+        ...
+            setTimeout(() => {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+            }, 2000);
         },
         getStats: function() { return JSON.parse(localStorage.getItem(ID_A + "-stats{{STORAGE_SUFFIX}}") || "{}"); },
-        saveStats: function(stats) { this.safeSetItem(ID_A + "-stats{{STORAGE_SUFFIX}}", JSON.stringify(stats)); },
+        saveStats: function(stats) { localStorage.setItem(ID_A + "-stats{{STORAGE_SUFFIX}}", JSON.stringify(stats)); },
         getMistakes: function() { return JSON.parse(localStorage.getItem(ID_A + "-mistakes{{STORAGE_SUFFIX}}") || "[]"); },
-        saveMistakes: function(list) { this.safeSetItem(ID_A + "-mistakes{{STORAGE_SUFFIX}}", JSON.stringify(list)); },
+        saveMistakes: function(list) { localStorage.setItem(ID_A + "-mistakes{{STORAGE_SUFFIX}}", JSON.stringify(list)); },
         getSessionLogs: function() { return JSON.parse(localStorage.getItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}") || "[]"); },
         saveSessionLog: function(log) { 
             const logs = this.getSessionLogs(); logs.unshift(log); 
-            this.safeSetItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}", JSON.stringify(logs));
+            localStorage.setItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}", JSON.stringify(logs));
         },
         toggleSettings: function() {
             const modal = document.getElementById("settings-modal");
@@ -413,55 +468,60 @@
         updateSettings: function() {
             this.state.settings.autoplay = document.getElementById("autoplay-toggle").checked;
             this.state.settings.sfx = document.getElementById("sfx-toggle").checked;
-            this.safeSetItem(ID_A + "-settings", JSON.stringify(this.state.settings));
+            localStorage.setItem(ID_A + "-settings", JSON.stringify(this.state.settings));
         },
         cacheAudio: async function(url) {
             if (!url) return;
-            // Cache busting: Identify base URL without query params
             const baseUrl = url.split('?')[0];
-            const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-            const baseHash = Array.from(baseUrl).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-            const cacheKey = "ep-vm-audio-" + urlHash;
+            const baseHash = this.getHash(baseUrl);
+            const cacheKey = "ep-audio-" + baseHash;
             
-            if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+            const cached = await db.get(cacheKey);
+            if (cached) return cached.blob;
 
             try {
                 const resp = await fetch(url);
+                const lastModified = resp.headers.get('Last-Modified');
                 const blob = await resp.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const result = reader.result;
-                        try {
-                            // Cleanup: Find keys that might be old versions of this specific audio
-                            // We use a prefix + baseHash to identify related files
-                            const versionRegistryKey = "ep-vm-meta-" + baseHash;
-                            const oldCacheKey = localStorage.getItem(versionRegistryKey);
-                            if (oldCacheKey && oldCacheKey !== cacheKey) {
-                                localStorage.removeItem(oldCacheKey);
-                            }
-                            
-                            this.safeSetItem(cacheKey, result);
-                            this.safeSetItem(versionRegistryKey, cacheKey);
-                        } catch(e) {
-                            console.warn("Storage full, could not cache audio");
-                        }
-                        resolve(result);
-                    };
-                    reader.readAsDataURL(blob);
-                });
-            } catch(e) {}
+                const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                await db.set(cacheKey, blob, meta);
+                return blob;
+            } catch(e) { console.error("Cache failed", e); }
         },
         playAudio: async function() {
             if (this.state.currentObj && this.state.currentObj.audio) {
-                if (this.audio) this.audio.pause();
+                if (this.audio) {
+                    this.audio.pause();
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                }
                 const url = this.state.currentObj.audio;
-                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-vm-audio-" + urlHash;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
                 
-                const source = localStorage.getItem(cacheKey) || url;
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
+
                 this.audio = new Audio(source);
-                this.audio.play().catch(e => console.warn("Audio play failed", e));
+                const cleanup = () => {
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+                this.audio.onended = cleanup;
+                this.audio.onerror = cleanup;
+                this.audio.play().catch(e => {
+                    console.warn("Audio play failed", e);
+                    cleanup();
+                });
             }
         },
         refreshCache: async function() {
@@ -484,8 +544,10 @@
                     
                     const url = item.audio;
                     const baseUrl = url.split('?')[0];
-                    const urlParams = new URLSearchParams(url.split('?')[1]);
-                    const currentVersion = parseInt(urlParams.get('v')) || 0;
+                    const baseHash = this.getHash(baseUrl);
+                    const cacheKey = "ep-audio-" + baseHash;
+                    const cached = await db.get(cacheKey);
+                    const currentVersion = cached?.meta?.lastModified || 0;
 
                     try {
                         const response = await fetch(url, { method: 'HEAD' });
@@ -493,9 +555,7 @@
                         if (lastModifiedStr) {
                             const lastModified = new Date(lastModifiedStr).getTime();
                             if (lastModified > currentVersion) {
-                                const newUrl = `${baseUrl}?v=${lastModified}`;
-                                await this.cacheAudio(newUrl);
-                                item.audio = newUrl;
+                                await this.cacheAudio(url);
                                 updatedCount++;
                             }
                         }
