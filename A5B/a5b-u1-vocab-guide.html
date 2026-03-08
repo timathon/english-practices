@@ -20,8 +20,59 @@
             position: relative;
         }
         h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
-        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-bottom: 25px; margin-top: 0; }
+        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-top: 0; }
         
+        /* Stats Display */
+        .stats-bar {
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .stats-bar b { color: #2c3e50; }
+
+        /* Floating Scroll Buttons */
+        .scroll-btns {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .scroll-btn {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        .scroll-btn:hover {
+            opacity: 1;
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        .scroll-btn:active {
+            transform: scale(0.9);
+        }
+
         /* Responsive Grid Layout */
         .vocab-grid {
             display: grid;
@@ -32,6 +83,60 @@
         @media (min-width: 600px) {
             .vocab-grid {
                 grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Desktop vs Mobile Display Logic */
+        .mobile-only { display: none !important; }
+        .desktop-only { display: flex !important; }
+
+        @media (max-width: 600px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { display: flex !important; }
+
+            .mobile-controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid #eee;
+                padding: 8px 12px;
+                display: flex;
+                justify-content: space-around;
+                gap: 8px;
+                z-index: 2000;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            }
+
+            .mobile-btn {
+                flex: 1;
+                border: none;
+                background: none;
+                padding: 6px 4px;
+                border-radius: 8px;
+                color: #555;
+                font-size: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                transition: background 0.2s;
+            }
+            .mobile-btn .btn-icon { font-size: 18px; margin-bottom: 2px; }
+            .mobile-btn:active { background: #f0f0f0; }
+            
+            #m-sort-btn { color: #3498db; }
+            #m-hidden-btn { color: #9b59b6; }
+            #m-refresh-btn { color: #1abc9c; }
+            
+            .scroll-btns {
+                right: 15px !important;
+                bottom: 110px !important;
+            }
+            body {
+                padding-bottom: 70px; 
             }
         }
 
@@ -46,9 +151,32 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
+            position: relative;
+            transition: all 0.2s;
         }
+        .vocab-item.is-hidden-state {
+            opacity: 0.4;
+            filter: grayscale(0.8);
+        }
+        .vocab-item.is-hidden-state:not(.force-show) {
+            display: none;
+        }
+
+        .item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hide-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin: 0;
+        }
+
         .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; }
+        .word-ipa { font-size: 0.7em; color: #7f8c8d; font-weight: normal; margin-left: 8px; font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif; }
+        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; line-height: 1.2; display: inline-flex; align-items: center; }
         .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
         .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
         .value { flex-grow: 1; }
@@ -93,81 +221,147 @@
         .play-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
 
-        /* Floating Toggle */
-        #sort-toggle {
+        /* Floating Controls */
+        .controls-container {
             position: fixed;
             top: 20px;
             right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .control-btn {
             padding: 10px 15px;
-            background: #3498db;
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
             font-weight: bold;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: 140px;
         }
-        #sort-toggle:hover {
-            background: #2980b9;
-            transform: scale(1.05);
-        }
-        #sort-toggle:active {
-            transform: scale(0.95);
-        }
+        .control-btn:hover { transform: scale(1.05); }
+        .control-btn:active { transform: scale(0.95); }
+
+        #sort-toggle { background: #3498db; }
+        #sort-toggle:hover { background: #2980b9; }
+
+        #show-hidden-toggle { background: #9b59b6; }
+        #show-hidden-toggle:hover { background: #8e44ad; }
+        #show-hidden-toggle.active { background: #2c3e50; }
+
+        #refresh-cache { background: #1abc9c; }
+        #refresh-cache:hover { background: #16a085; }
+        #refresh-cache.loading { opacity: 0.7; cursor: wait; }
 
         @media print {
             @page { margin: 8mm; }
-            body { padding: 0; font-size: 10px; }
+            body { padding: 0; font-size: 11px; color: #000; line-height: 1.2; }
+            header { border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; text-align: center; }
             header a { display: none; }
             header div { display: inline !important; min-height: 0 !important; margin: 0 !important; }
-            h1 { display: inline; font-size: 1.2em; margin: 0; }
-            h2 { display: inline; font-size: 1.1em; border: none; padding: 0; margin-left: 15px; }
-            header { text-align: center; border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; }
+            h1 { display: inline; font-size: 1.4em; margin: 0; }
+            h2 { display: inline; font-size: 1.2em; border: none; padding: 0; margin-left: 15px; }
+            
             .vocab-grid { 
-                grid-template-columns: 1fr 1fr 1fr; 
+                grid-template-columns: repeat(4, 1fr); 
                 gap: 6px; 
             }
             .vocab-item { 
-                padding: 5px 8px; 
+                padding: 6px 8px; 
                 box-shadow: none; 
-                border: 1px solid #ccc;
+                border: 0.5pt solid #bbb;
+                background: #fff;
+                border-radius: 5px;
                 min-height: 0;
+                display: flex; /* Remove !important to allow display: none from .is-hidden-state */
+                opacity: 1 !important;
+                filter: none !important;
             }
-            .word-title { font-size: 1em; margin-bottom: 3px; padding-bottom: 1px; }
-            .details { margin-bottom: 1px; font-size: 0.8em; line-height: 1.2; }
-            .label { width: 60px; font-size: 0.8em; }
-            .context-box { margin: 3px 0; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
-            .hook-box { margin-top: 3px; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
-            #sort-toggle { display: none; }
-            .play-btn { display: none; }
+            .vocab-item.is-hidden-state { display: none !important; } /* Ensure hidden items stay hidden in print */
+
+            .word-title { font-size: 1.25em; margin-bottom: 4px; padding-bottom: 2px; color: #000; }
+            .page-badge { font-size: 0.7em; padding: 1px 4px; }
+            .details { margin-bottom: 2px; font-size: 0.95em; line-height: 1.2; }
+            .label { width: auto; font-size: 0.85em; margin-right: 3px; color: #444; }
+            .value { font-weight: 400; }
+            
+            .context-box { 
+                margin: 2px 0; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #fdfaf5;
+            }
+            .hook-box { 
+                margin-top: 1px; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #f5fdfc;
+            }
+            
+            .controls-container, .mobile-controls, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 5px;">
             <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
             <h1 style="margin: 0;">Vocabulary Guide</h1>
-            <button id="sort-toggle" onclick="toggleSort()">
-                <span id="sort-icon">🔤</span>
-                <span id="sort-text">Sort A-Z</span>
-            </button>
         </div>
         <h2>Grade 5 Semester 2 - Unit 1</h2>
+        <div class="stats-bar" id="stats-display">
+            Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
+        </div>
     </header>
+
+    <div class="controls-container desktop-only">
+        <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
+            <span class="sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
+            <span class="hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
+            <span class="refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh Audio</span>
+        </button>
+    </div>
+
+    <div class="mobile-controls mobile-only">
+        <button class="mobile-btn" onclick="toggleSort()" id="m-sort-btn">
+            <span class="btn-icon sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleShowHiddenMode()" id="m-hidden-btn">
+            <span class="btn-icon hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
+            <span class="btn-icon refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh</span>
+        </button>
+    </div>
 
     <div class="vocab-grid" id="vocab-container">
         
         <div class="vocab-item" data-word="id" data-index="0">
             <h2 class="word-title">
                 <span>1. ID</span>
-                <span class="page-badge">P2</span>
+                <div class="item-meta">
+                    <span class="page-badge">P2</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">身份证明</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">I-D</span></div>
@@ -184,7 +378,10 @@
         <div class="vocab-item" data-word="pay" data-index="1">
             <h2 class="word-title">
                 <span>2. pay</span>
-                <span class="page-badge">P2</span>
+                <div class="item-meta">
+                    <span class="page-badge">P2</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">付款;付钱给(某人)</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
@@ -201,7 +398,10 @@
         <div class="vocab-item" data-word="ride" data-index="2">
             <h2 class="word-title">
                 <span>3. ride</span>
-                <span class="page-badge">P2</span>
+                <div class="item-meta">
+                    <span class="page-badge">P2</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">骑,骑自行车</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节</span></div>
@@ -218,7 +418,10 @@
         <div class="vocab-item" data-word="could" data-index="3">
             <h2 class="word-title">
                 <span>4. could</span>
-                <span class="page-badge">P3</span>
+                <div class="item-meta">
+                    <span class="page-badge">P3</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">能,会,可以</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
@@ -235,7 +438,10 @@
         <div class="vocab-item" data-word="holiday" data-index="4">
             <h2 class="word-title">
                 <span>5. holiday</span>
-                <span class="page-badge">P4</span>
+                <div class="item-meta">
+                    <span class="page-badge">P4</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">假期</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">hol-i-day</span></div>
@@ -252,7 +458,10 @@
         <div class="vocab-item" data-word="skier" data-index="5">
             <h2 class="word-title">
                 <span>6. skier</span>
-                <span class="page-badge">P4</span>
+                <div class="item-meta">
+                    <span class="page-badge">P4</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">滑雪者</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ski-er</span></div>
@@ -269,7 +478,10 @@
         <div class="vocab-item" data-word="camp" data-index="6">
             <h2 class="word-title">
                 <span>7. camp</span>
-                <span class="page-badge">P5</span>
+                <div class="item-meta">
+                    <span class="page-badge">P5</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">活动营地,度假营地</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节</span></div>
@@ -286,7 +498,10 @@
         <div class="vocab-item" data-word="summer camp" data-index="7">
             <h2 class="word-title">
                 <span>8. summer camp</span>
-                <span class="page-badge">P5</span>
+                <div class="item-meta">
+                    <span class="page-badge">P5</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">夏令营</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sum-mer camp</span></div>
@@ -303,7 +518,10 @@
         <div class="vocab-item" data-word="training" data-index="8">
             <h2 class="word-title">
                 <span>9. training</span>
-                <span class="page-badge">P5</span>
+                <div class="item-meta">
+                    <span class="page-badge">P5</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">训练,培训</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">train-ing</span></div>
@@ -320,7 +538,10 @@
         <div class="vocab-item" data-word="third" data-index="9">
             <h2 class="word-title">
                 <span>10. third</span>
-                <span class="page-badge">P5</span>
+                <div class="item-meta">
+                    <span class="page-badge">P5</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">第三的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">r控制音节</span></div>
@@ -337,7 +558,10 @@
         <div class="vocab-item" data-word="mean" data-index="10">
             <h2 class="word-title">
                 <span>11. mean</span>
-                <span class="page-badge">P7</span>
+                <div class="item-meta">
+                    <span class="page-badge">P7</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(10)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">意思是,表示...的意思</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
@@ -354,7 +578,10 @@
         <div class="vocab-item" data-word="fall" data-index="11">
             <h2 class="word-title">
                 <span>12. fall</span>
-                <span class="page-badge">P7</span>
+                <div class="item-meta">
+                    <span class="page-badge">P7</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(11)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">摔倒,跌倒</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节</span></div>
@@ -371,7 +598,10 @@
         <div class="vocab-item" data-word="film" data-index="12">
             <h2 class="word-title">
                 <span>13. film</span>
-                <span class="page-badge">P8</span>
+                <div class="item-meta">
+                    <span class="page-badge">P8</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(12)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">电影,影片</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节</span></div>
@@ -388,7 +618,10 @@
         <div class="vocab-item" data-word="kill" data-index="13">
             <h2 class="word-title">
                 <span>14. kill</span>
-                <span class="page-badge">P8</span>
+                <div class="item-meta">
+                    <span class="page-badge">P8</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(13)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">弄死,杀死</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节</span></div>
@@ -405,7 +638,10 @@
         <div class="vocab-item" data-word="beat" data-index="14">
             <h2 class="word-title">
                 <span>15. beat</span>
-                <span class="page-badge">P8</span>
+                <div class="item-meta">
+                    <span class="page-badge">P8</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(14)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">击败,打败,战胜</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
@@ -422,7 +658,10 @@
         <div class="vocab-item" data-word="difficulty" data-index="15">
             <h2 class="word-title">
                 <span>16. difficulty</span>
-                <span class="page-badge">P8</span>
+                <div class="item-meta">
+                    <span class="page-badge">P8</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(15)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">难题,难事</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">dif-fi-cul-ty</span></div>
@@ -439,7 +678,10 @@
         <div class="vocab-item" data-word="growing up" data-index="16">
             <h2 class="word-title">
                 <span>17. growing up</span>
-                <span class="page-badge">P1</span>
+                <div class="item-meta">
+                    <span class="page-badge">P1</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(16)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">长大，成长</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">grow-ing up</span></div>
@@ -456,7 +698,10 @@
         <div class="vocab-item" data-word="each other" data-index="17">
             <h2 class="word-title">
                 <span>18. each other</span>
-                <span class="page-badge">P3</span>
+                <div class="item-meta">
+                    <span class="page-badge">P3</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(17)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">彼此，互相</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">each oth-er</span></div>
@@ -473,7 +718,10 @@
         <div class="vocab-item" data-word="at first" data-index="18">
             <h2 class="word-title">
                 <span>19. at first</span>
-                <span class="page-badge">P4</span>
+                <div class="item-meta">
+                    <span class="page-badge">P4</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(18)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">起初，一开始</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">at first</span></div>
@@ -490,7 +738,10 @@
         <div class="vocab-item" data-word="on our own" data-index="19">
             <h2 class="word-title">
                 <span>20. on our own</span>
-                <span class="page-badge">P5</span>
+                <div class="item-meta">
+                    <span class="page-badge">P5</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(19)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">靠我们自己</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">on our own</span></div>
@@ -507,7 +758,10 @@
         <div class="vocab-item" data-word="give up" data-index="20">
             <h2 class="word-title">
                 <span>21. give up</span>
-                <span class="page-badge">P13</span>
+                <div class="item-meta">
+                    <span class="page-badge">P13</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(20)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">放弃</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">give up</span></div>
@@ -522,8 +776,13 @@
         </div>
     </div>
 
+    <div class="scroll-btns">
+        <button class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="To Top">▲</button>
+        <button class="scroll-btn" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="To Bottom">▼</button>
+    </div>
+
     <script>
-        const vocabData = [{"word":"ID","meaning":"身份证明","syllable_type":"I-D","comparison":"IT, idea","page_number":"2","context_sentence":"You can have an ID card.","memorization_hook":"字母联想法：I (我) 的 D (D开头，Document文件)，证明我身份的文件就是ID (身份证)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/708ce5ddeac49ec68de7c25533380625.mp3"},{"word":"pay","meaning":"付款;付钱给(某人)","syllable_type":"元音字母组合音节","comparison":"play, say, day","page_number":"2","context_sentence":"You have to pay to go on trains.","memorization_hook":"谐音记忆法：发音类似“赔”。弄坏了别人的东西就要“赔”钱，也就是付款 pay。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/b894a3777148d332ecbe226669eaa589.mp3"},{"word":"ride","meaning":"骑,骑自行车","syllable_type":"相对开音节","comparison":"hide, side, wide","page_number":"2","context_sentence":"You can ride a bike on the road.","memorization_hook":"联想记忆法：r (形状像一根草) + ide (谐音“爱的”) -> 我骑 (ride) 着我爱的自行车在草地上玩。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/8b5bb50e8cce359105bb561b759b4fbb.mp3"},{"word":"could","meaning":"能,会,可以","syllable_type":"元音字母组合音节","comparison":"would, should","page_number":"3","context_sentence":"We could play football together.","memorization_hook":"词源联想法：could是can的过去式。c (看) + ould (谐音“我的”) -> 过去我“能”看我的球赛。注意字母L是不发音的哦！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/6e8a5102ff62f48854425d5540db86b3.mp3"},{"word":"holiday","meaning":"假期","syllable_type":"hol-i-day","comparison":"holy, day","page_number":"4","context_sentence":"Last year, we were in Harbin for the winter holiday.","memorization_hook":"谐音联想法：holi (谐音“好礼”) + day (天)。收到好礼物的这一天，就是快乐的假期 (holiday)！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/b0840551db37c06ef550c52b9572f8e7.mp3"},{"word":"skier","meaning":"滑雪者","syllable_type":"ski-er","comparison":"ski, sky","page_number":"4","context_sentence":"By the last day of the holiday, I was a good skier.","memorization_hook":"词缀记忆法：ski (滑雪) + er (表示人的后缀)。滑雪的人就是滑雪者 (skier)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/77256c09e230e143d09112235978bd68.mp3"},{"word":"camp","meaning":"活动营地,度假营地","syllable_type":"闭音节","comparison":"lamp, damp","page_number":"5","context_sentence":"After the camp, we felt great.","memorization_hook":"谐音记忆法：c (看) + amp (谐音“俺铺”)。看，俺铺好的床铺，就在度假营地 (camp) 里！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/159e9fd67cb2863d981f0321c03cede0.mp3"},{"word":"summer camp","meaning":"夏令营","syllable_type":"sum-mer camp","comparison":"winter camp","page_number":"5","context_sentence":"The summer camp is over.","memorization_hook":"合成词记忆法：summer (夏天) + camp (营地) = 夏令营。夏天在营地里开心玩耍。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/bdd2058af128ee61438031de51f64932.mp3"},{"word":"training","meaning":"训练,培训","syllable_type":"train-ing","comparison":"train, raining","page_number":"5","context_sentence":"It was very hot and our training was hard.","memorization_hook":"词缀记忆法：train (火车/训练) + ing (名词后缀)。像火车一样不断循环往复地辛苦练习，就是在进行训练 (training)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/13072fab142602c60a10221b9c5b238a.mp3"},{"word":"third","meaning":"第三的","syllable_type":"r控制音节","comparison":"bird, dirt","page_number":"5","context_sentence":"On the third day, we cooked lunch on our own.","memorization_hook":"联想记忆法：th (咬舌音，数字3 three的开头) + ird (联想bird)。这是我第三 (third) 次看到这只小鸟 (bird)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/553fc1a29be4c8aab7d8e5fcf397fcba.mp3"},{"word":"mean","meaning":"意思是,表示...的意思","syllable_type":"元音字母组合音节","comparison":"meat, bean","page_number":"7","context_sentence":"Growing up means a lot","memorization_hook":"谐音记忆法：谐音“谜暗”。这个谜语暗藏的“意思” (mean) 到底是什么呢？","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/2da40f8abb3f6c16107820571daeab5d.mp3"},{"word":"fall","meaning":"摔倒,跌倒","syllable_type":"闭音节","comparison":"tall, ball, call","page_number":"7","context_sentence":"We sometimes fall.","memorization_hook":"谐音记忆法：发音类似“佛”。如果不小心摔倒 (fall) 的时候，大喊一声“阿弥陀佛”保佑不疼！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/a05222fc47d16df3ee8d260bb09948b9.mp3"},{"word":"film","meaning":"电影,影片","syllable_type":"闭音节","comparison":"fill, milk","page_number":"8","context_sentence":"What is the film about?","memorization_hook":"谐音记忆法：发音类似“飞马”。很多经典电影 (film) 开场经常有一个飞马的标志。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/76749b59f4e1367e29aed0310aa0d3a2.mp3"},{"word":"kill","meaning":"弄死,杀死","syllable_type":"闭音节","comparison":"ill, hill, pill","page_number":"8","context_sentence":"He killed Simba's dad.","memorization_hook":"联想记忆法：k (看) + ill (生病)。看他生病了，病毒快要把他弄死 (kill) 了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/038115838a90ed5f0f51ba787af6389f.mp3"},{"word":"beat","meaning":"击败,打败,战胜","syllable_type":"元音字母组合音节","comparison":"meat, seat","page_number":"8","context_sentence":"With his friends' help, Simba beat his uncle.","memorization_hook":"联想记忆法：b (不) + eat (吃)。在打败 (beat) 敌人之前，我坚决不吃饭 (eat)！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/b73ab33a69f54deb34a8a2c65a42cf0d.mp3"},{"word":"difficulty","meaning":"难题,难事","syllable_type":"dif-fi-cul-ty","comparison":"difficult, faculty","page_number":"8","context_sentence":"We all have to face difficulties and learn to grow up.","memorization_hook":"趣味拼读法：difficult (困难的) 的名词形式。di (弟弟) + ffi (谐音“发发”) + cul (哭) + ty (谐音“涕”)。弟弟遇到难事 (difficulty)，发脾气哭得流鼻涕。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/280df7fdb34092040e1a35ed0b8a8d47.mp3"},{"word":"growing up","meaning":"长大，成长","syllable_type":"grow-ing up","comparison":"grow up, going up","page_number":"1","context_sentence":"How do you feel about growing up?","memorization_hook":"短语拆解法：grow (生长) + up (向上)。像小树苗一样不断向上生长，就是长大 (growing up)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/3835afaff2317e6d5d56678c6f040dab.mp3"},{"word":"each other","meaning":"彼此，互相","syllable_type":"each oth-er","comparison":"each, other","page_number":"3","context_sentence":"We go to the same school and we help each other.","memorization_hook":"逻辑拆解法：each (每个) + other (另一个)。每一个人都在帮助另一个人，也就是大家“互相、彼此” (each other) 帮忙。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/70e8044fc47c9ecc518c46fdceebe128.mp3"},{"word":"at first","meaning":"起初，一开始","syllable_type":"at first","comparison":"at last, first","page_number":"4","context_sentence":"At first, I was not good at it.","memorization_hook":"逻辑拆解法：first是“第一，首先”，处在 (at) 事情第一的位置，自然就是“起初，一开始” (at first)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/e262e0082aeaed5f494c08ffe0808e28.mp3"},{"word":"on our own","meaning":"靠我们自己","syllable_type":"on our own","comparison":"on my own, own","page_number":"5","context_sentence":"On the third day, we cooked lunch on our own.","memorization_hook":"逻辑拆解法：own有“自己的”意思。在 (on) 我们 (our) 自己的 (own) 力量掌控下，也就是“靠我们自己”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/553fc1a29be4c8aab7d8e5fcf397fcba.mp3"},{"word":"give up","meaning":"放弃","syllable_type":"give up","comparison":"stand up, give","page_number":"13","context_sentence":"But he never gave up.","memorization_hook":"动作联想法：give (给) + up (向上)。举起双手，把手里的武器全向上交出去，表示投降、“放弃” (give up)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a5b/dd5d3595df2b8ed5af752d56396364b2.mp3"}];
+        const vocabData = [{"word":"ID","meaning":"身份证明","syllable_type":"I-D","comparison":"IT, idea","page_number":"2","context_sentence":"You can have an ID card.","memorization_hook":"字母联想法：I (我) 的 D (D开头，Document文件)，证明我身份的文件就是ID (身份证)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/708ce5ddeac49ec68de7c25533380625.mp3"},{"word":"pay","meaning":"付款;付钱给(某人)","syllable_type":"元音字母组合音节","comparison":"play, say, day","page_number":"2","context_sentence":"You have to pay to go on trains.","memorization_hook":"谐音记忆法：发音类似“赔”。弄坏了别人的东西就要“赔”钱，也就是付款 pay。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/b894a3777148d332ecbe226669eaa589.mp3"},{"word":"ride","meaning":"骑,骑自行车","syllable_type":"相对开音节","comparison":"hide, side, wide","page_number":"2","context_sentence":"You can ride a bike on the road.","memorization_hook":"联想记忆法：r (形状像一根草) + ide (谐音“爱的”) -> 我骑 (ride) 着我爱的自行车在草地上玩。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/8b5bb50e8cce359105bb561b759b4fbb.mp3"},{"word":"could","meaning":"能,会,可以","syllable_type":"元音字母组合音节","comparison":"would, should","page_number":"3","context_sentence":"We could play football together.","memorization_hook":"词源联想法：could是can的过去式。c (看) + ould (谐音“我的”) -> 过去我“能”看我的球赛。注意字母L是不发音的哦！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/6e8a5102ff62f48854425d5540db86b3.mp3"},{"word":"holiday","meaning":"假期","syllable_type":"hol-i-day","comparison":"holy, day","page_number":"4","context_sentence":"Last year, we were in Harbin for the winter holiday.","memorization_hook":"谐音联想法：holi (谐音“好礼”) + day (天)。收到好礼物的这一天，就是快乐的假期 (holiday)！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/b0840551db37c06ef550c52b9572f8e7.mp3"},{"word":"skier","meaning":"滑雪者","syllable_type":"ski-er","comparison":"ski, sky","page_number":"4","context_sentence":"By the last day of the holiday, I was a good skier.","memorization_hook":"词缀记忆法：ski (滑雪) + er (表示人的后缀)。滑雪的人就是滑雪者 (skier)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/77256c09e230e143d09112235978bd68.mp3"},{"word":"camp","meaning":"活动营地,度假营地","syllable_type":"闭音节","comparison":"lamp, damp","page_number":"5","context_sentence":"After the camp, we felt great.","memorization_hook":"谐音记忆法：c (看) + amp (谐音“俺铺”)。看，俺铺好的床铺，就在度假营地 (camp) 里！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/159e9fd67cb2863d981f0321c03cede0.mp3"},{"word":"summer camp","meaning":"夏令营","syllable_type":"sum-mer camp","comparison":"winter camp","page_number":"5","context_sentence":"The summer camp is over.","memorization_hook":"合成词记忆法：summer (夏天) + camp (营地) = 夏令营。夏天在营地里开心玩耍。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/bdd2058af128ee61438031de51f64932.mp3"},{"word":"training","meaning":"训练,培训","syllable_type":"train-ing","comparison":"train, raining","page_number":"5","context_sentence":"It was very hot and our training was hard.","memorization_hook":"词缀记忆法：train (火车/训练) + ing (名词后缀)。像火车一样不断循环往复地辛苦练习，就是在进行训练 (training)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/13072fab142602c60a10221b9c5b238a.mp3"},{"word":"third","meaning":"第三的","syllable_type":"r控制音节","comparison":"bird, dirt","page_number":"5","context_sentence":"On the third day, we cooked lunch on our own.","memorization_hook":"联想记忆法：th (咬舌音，数字3 three的开头) + ird (联想bird)。这是我第三 (third) 次看到这只小鸟 (bird)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/553fc1a29be4c8aab7d8e5fcf397fcba.mp3"},{"word":"mean","meaning":"意思是,表示...的意思","syllable_type":"元音字母组合音节","comparison":"meat, bean","page_number":"7","context_sentence":"Growing up means a lot","memorization_hook":"谐音记忆法：谐音“谜暗”。这个谜语暗藏的“意思” (mean) 到底是什么呢？","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/2da40f8abb3f6c16107820571daeab5d.mp3"},{"word":"fall","meaning":"摔倒,跌倒","syllable_type":"闭音节","comparison":"tall, ball, call","page_number":"7","context_sentence":"We sometimes fall.","memorization_hook":"谐音记忆法：发音类似“佛”。如果不小心摔倒 (fall) 的时候，大喊一声“阿弥陀佛”保佑不疼！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/a05222fc47d16df3ee8d260bb09948b9.mp3"},{"word":"film","meaning":"电影,影片","syllable_type":"闭音节","comparison":"fill, milk","page_number":"8","context_sentence":"What is the film about?","memorization_hook":"谐音记忆法：发音类似“飞马”。很多经典电影 (film) 开场经常有一个飞马的标志。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/76749b59f4e1367e29aed0310aa0d3a2.mp3"},{"word":"kill","meaning":"弄死,杀死","syllable_type":"闭音节","comparison":"ill, hill, pill","page_number":"8","context_sentence":"He killed Simba's dad.","memorization_hook":"联想记忆法：k (看) + ill (生病)。看他生病了，病毒快要把他弄死 (kill) 了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/038115838a90ed5f0f51ba787af6389f.mp3"},{"word":"beat","meaning":"击败,打败,战胜","syllable_type":"元音字母组合音节","comparison":"meat, seat","page_number":"8","context_sentence":"With his friends' help, Simba beat his uncle.","memorization_hook":"联想记忆法：b (不) + eat (吃)。在打败 (beat) 敌人之前，我坚决不吃饭 (eat)！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/b73ab33a69f54deb34a8a2c65a42cf0d.mp3"},{"word":"difficulty","meaning":"难题,难事","syllable_type":"dif-fi-cul-ty","comparison":"difficult, faculty","page_number":"8","context_sentence":"We all have to face difficulties and learn to grow up.","memorization_hook":"趣味拼读法：difficult (困难的) 的名词形式。di (弟弟) + ffi (谐音“发发”) + cul (哭) + ty (谐音“涕”)。弟弟遇到难事 (difficulty)，发脾气哭得流鼻涕。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/280df7fdb34092040e1a35ed0b8a8d47.mp3"},{"word":"growing up","meaning":"长大，成长","syllable_type":"grow-ing up","comparison":"grow up, going up","page_number":"1","context_sentence":"How do you feel about growing up?","memorization_hook":"短语拆解法：grow (生长) + up (向上)。像小树苗一样不断向上生长，就是长大 (growing up)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/3835afaff2317e6d5d56678c6f040dab.mp3"},{"word":"each other","meaning":"彼此，互相","syllable_type":"each oth-er","comparison":"each, other","page_number":"3","context_sentence":"We go to the same school and we help each other.","memorization_hook":"逻辑拆解法：each (每个) + other (另一个)。每一个人都在帮助另一个人，也就是大家“互相、彼此” (each other) 帮忙。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/70e8044fc47c9ecc518c46fdceebe128.mp3"},{"word":"at first","meaning":"起初，一开始","syllable_type":"at first","comparison":"at last, first","page_number":"4","context_sentence":"At first, I was not good at it.","memorization_hook":"逻辑拆解法：first是“第一，首先”，处在 (at) 事情第一的位置，自然就是“起初，一开始” (at first)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/e262e0082aeaed5f494c08ffe0808e28.mp3"},{"word":"on our own","meaning":"靠我们自己","syllable_type":"on our own","comparison":"on my own, own","page_number":"5","context_sentence":"On the third day, we cooked lunch on our own.","memorization_hook":"逻辑拆解法：own有“自己的”意思。在 (on) 我们 (our) 自己的 (own) 力量掌控下，也就是“靠我们自己”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/553fc1a29be4c8aab7d8e5fcf397fcba.mp3"},{"word":"give up","meaning":"放弃","syllable_type":"give up","comparison":"stand up, give","page_number":"13","context_sentence":"But he never gave up.","memorization_hook":"动作联想法：give (给) + up (向上)。举起双手，把手里的武器全向上交出去，表示投降、“放弃” (give up)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/vg/a5b/u1/dd5d3595df2b8ed5af752d56396364b2.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -531,17 +790,17 @@
         
         function toggleSort() {
             isAlphabetical = !isAlphabetical;
-            const btnText = document.getElementById('sort-text');
-            const btnIcon = document.getElementById('sort-icon');
+            const textEls = document.querySelectorAll('.sort-text');
+            const iconEls = document.querySelectorAll('.sort-icon');
 
             if (isAlphabetical) {
                 items.sort((a, b) => a.dataset.word.localeCompare(b.dataset.word));
-                btnText.innerText = "Textbook Order";
-                btnIcon.innerText = "📖";
+                textEls.forEach(el => el.innerText = "Textbook Order");
+                iconEls.forEach(el => el.innerText = "📖");
             } else {
                 items.sort((a, b) => parseInt(a.dataset.index) - parseInt(b.dataset.index));
-                btnText.innerText = "Sort A-Z";
-                btnIcon.innerText = "🔤";
+                textEls.forEach(el => el.innerText = "Sort A-Z");
+                iconEls.forEach(el => el.innerText = "🔤");
             }
 
             // Clear and re-append sorted items
@@ -551,29 +810,184 @@
 
         const app = {
             currentAudio: null,
+            hiddenWords: new Set(),
+            showHiddenMode: false,
+            unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 5 Semester 2 - Unit 1").substring(0, 16),
+
+            init: function() {
+                // Load hidden words from localStorage
+                const stored = localStorage.getItem(this.unitKey);
+                if (stored) {
+                    try {
+                        const indices = JSON.parse(stored);
+                        this.hiddenWords = new Set(indices);
+                    } catch(e) { console.error("Failed to parse hidden words", e); }
+                }
+
+                // Apply initial state to cards
+                items.forEach(item => {
+                    const idx = parseInt(item.dataset.index);
+                    if (this.hiddenWords.has(idx)) {
+                        item.classList.add('is-hidden-state');
+                        const cb = item.querySelector('.hide-checkbox');
+                        if (cb) cb.checked = true;
+                    }
+                });
+
+                this.updateStats();
+            },
+
+            getHash: function(str) {
+                return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            },
+
+            updateStats: function() {
+                const total = vocabData.length;
+                const hidden = this.hiddenWords.size;
+                const shown = total - hidden;
+                
+                const display = document.getElementById('stats-display');
+                if (display) {
+                    display.innerHTML = `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+                }
+            },
+
+            toggleWordHidden: function(index) {
+                const item = items.find(it => parseInt(it.dataset.index) === index);
+                if (!item) return;
+
+                if (this.hiddenWords.has(index)) {
+                    this.hiddenWords.delete(index);
+                    item.classList.remove('is-hidden-state');
+                } else {
+                    this.hiddenWords.add(index);
+                    item.classList.add('is-hidden-state');
+                }
+
+                // Persist
+                localStorage.setItem(this.unitKey, JSON.stringify(Array.from(this.hiddenWords)));
+                this.updateStats();
+            },
+
+            toggleShowHiddenMode: function() {
+                this.showHiddenMode = !this.showHiddenMode;
+                const desktopBtn = document.getElementById('show-hidden-toggle');
+                const textEls = document.querySelectorAll('.hidden-text');
+                const iconEls = document.querySelectorAll('.hidden-icon');
+
+                if (this.showHiddenMode) {
+                    if (desktopBtn) desktopBtn.classList.add('active');
+                    textEls.forEach(el => el.innerText = "Hide Learnt");
+                    iconEls.forEach(el => el.innerText = "🙈");
+                    items.forEach(item => item.classList.add('force-show'));
+                } else {
+                    if (desktopBtn) desktopBtn.classList.remove('active');
+                    textEls.forEach(el => el.innerText = "Show Hidden");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.remove('force-show'));
+                }
+            },
+
+            clearAudioCache: function() {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith("ep-vg-") || key.startsWith("ep-sa-") || key.startsWith("ep-vm-") || key.startsWith("ep-sh-"))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+                console.log("Cleared audio cache to free up space");
+            },
+
+            safeSetItem: function(key, value) {
+                try {
+                    localStorage.setItem(key, value);
+                } catch (e) {
+                    if (e.name === 'QuotaExceededError') {
+                        console.warn("LocalStorage quota exceeded, attempting to clear cache...");
+                        this.clearAudioCache();
+                        try {
+                            localStorage.setItem(key, value);
+                        } catch (e2) {
+                            console.error("Storage still full after clearing cache. Audio will not be cached.", e2);
+                        }
+                    } else {
+                        console.error("Error saving to localStorage", e);
+                    }
+                }
+            },
 
             cacheAudio: async function(url) {
                 if (!url) return;
-                const hash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-sa-audio-" + hash;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-vg-audio-" + baseHash;
+                const metaKey = "ep-vg-meta-" + baseHash;
                 
                 if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+
                 try {
                     const resp = await fetch(url);
+                    const lastModified = resp.headers.get('Last-Modified');
                     const blob = await resp.blob();
                     return new Promise((resolve) => {
                         const reader = new FileReader();
                         reader.onloadend = () => {
-                            try {
-                                localStorage.setItem(cacheKey, reader.result);
-                            } catch(e) { 
-                                console.warn("Audio cache full"); 
+                            const result = reader.result;
+                            this.safeSetItem(cacheKey, result);
+                            if (lastModified) {
+                                this.safeSetItem(metaKey, new Date(lastModified).getTime().toString());
                             }
-                            resolve(reader.result);
+                            resolve(result);
                         };
                         reader.readAsDataURL(blob);
                     });
                 } catch(e) { console.error("Cache failed", e); }
+            },
+
+            refreshCache: async function() {
+                const desktopBtn = document.getElementById('refresh-cache');
+                const textEls = document.querySelectorAll('.refresh-text');
+                
+                if (desktopBtn && desktopBtn.classList.contains('loading')) return;
+
+                if (desktopBtn) desktopBtn.classList.add('loading');
+                textEls.forEach(el => el.innerText = "Checking...");
+                let updatedCount = 0;
+
+                try {
+                    for (const item of vocabData) {
+                        if (!item.audio) continue;
+                        
+                        const url = item.audio;
+                        const baseUrl = url.split('?')[0];
+                        const baseHash = this.getHash(baseUrl);
+                        const metaKey = "ep-vg-meta-" + baseHash;
+                        const cacheKey = "ep-vg-audio-" + baseHash;
+                        const currentVersion = parseInt(localStorage.getItem(metaKey)) || 0;
+
+                        try {
+                            const response = await fetch(url, { method: 'HEAD' });
+                            const lastModifiedStr = response.headers.get('Last-Modified');
+                            if (lastModifiedStr) {
+                                const lastModified = new Date(lastModifiedStr).getTime();
+                                if (lastModified > currentVersion) {
+                                    localStorage.removeItem(cacheKey);
+                                    localStorage.removeItem(metaKey);
+                                    await this.cacheAudio(url);
+                                    updatedCount++;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Failed to check ${item.word}`, e);
+                        }
+                    }
+                    alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+                } finally {
+                    if (desktopBtn) desktopBtn.classList.remove('loading');
+                    textEls.forEach(el => el.innerText = el.parentElement.id.includes('m-') ? "Refresh" : "Refresh Audio");
+                }
             },
 
             playAudio: function() {
@@ -585,8 +999,9 @@
 
                 if (this.currentAudio) this.currentAudio.pause();
                 
-                const cacheHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-sa-audio-" + cacheHash;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-vg-audio-" + baseHash;
                 const source = localStorage.getItem(cacheKey) || url;
 
                 this.currentAudio = new Audio(source);
@@ -594,8 +1009,9 @@
             }
         };
 
-        // Preload all audio on startup
+        // Initialize and preload
         window.addEventListener('load', () => {
+            app.init();
             vocabData.forEach(item => {
                 if (item.audio) {
                     app.cacheAudio(item.audio);

@@ -20,7 +20,7 @@
             position: relative;
         }
         h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
-        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-bottom: 25px; margin-top: 0; }
+        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-top: 0; }
         
         /* Stats Display */
         .stats-bar {
@@ -38,6 +38,41 @@
         }
         .stats-bar b { color: #2c3e50; }
 
+        /* Floating Scroll Buttons */
+        .scroll-btns {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .scroll-btn {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        .scroll-btn:hover {
+            opacity: 1;
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        .scroll-btn:active {
+            transform: scale(0.9);
+        }
+
         /* Responsive Grid Layout */
         .vocab-grid {
             display: grid;
@@ -51,21 +86,57 @@
             }
         }
 
+        /* Desktop vs Mobile Display Logic */
+        .mobile-only { display: none !important; }
+        .desktop-only { display: flex !important; }
+
         @media (max-width: 600px) {
-            .controls-container {
-                /* Same as desktop defaults */
-                top: 20px;
-                right: 20px;
-                left: auto;
-                bottom: auto;
-                flex-direction: column;
+            .desktop-only { display: none !important; }
+            .mobile-only { display: flex !important; }
+
+            .mobile-controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid #eee;
+                padding: 8px 12px;
+                display: flex;
+                justify-content: space-around;
+                gap: 8px;
+                z-index: 2000;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
             }
+
+            .mobile-btn {
+                flex: 1;
+                border: none;
+                background: none;
+                padding: 6px 4px;
+                border-radius: 8px;
+                color: #555;
+                font-size: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                transition: background 0.2s;
+            }
+            .mobile-btn .btn-icon { font-size: 18px; margin-bottom: 2px; }
+            .mobile-btn:active { background: #f0f0f0; }
+            
+            #m-sort-btn { color: #3498db; }
+            #m-hidden-btn { color: #9b59b6; }
+            #m-refresh-btn { color: #1abc9c; }
+            
             .scroll-btns {
-                right: 20px;
-                bottom: 20px;
+                right: 15px !important;
+                bottom: 110px !important;
             }
             body {
-                padding-bottom: 15px; /* Reset padding */
+                padding-bottom: 70px; 
             }
         }
 
@@ -188,41 +259,6 @@
         #refresh-cache:hover { background: #16a085; }
         #refresh-cache.loading { opacity: 0.7; cursor: wait; }
 
-        /* Floating Scroll Buttons */
-        .scroll-btns {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 1000;
-        }
-        .scroll-btn {
-            width: 40px;
-            height: 40px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            opacity: 0.5;
-            transition: all 0.2s;
-        }
-        .scroll-btn:hover {
-            opacity: 1;
-            background: #2980b9;
-            transform: scale(1.1);
-        }
-        .scroll-btn:active {
-            transform: scale(0.9);
-        }
-
         @media print {
             @page { margin: 8mm; }
             body { padding: 0; font-size: 11px; color: #000; line-height: 1.2; }
@@ -270,7 +306,7 @@
                 background-color: #f5fdfc;
             }
             
-            .controls-container, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
+            .controls-container, .mobile-controls, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
         }
     </style>
 </head>
@@ -287,18 +323,33 @@
         </div>
     </header>
 
-    <div class="controls-container">
+    <div class="controls-container desktop-only">
         <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
-            <span id="sort-icon">🔤</span>
-            <span id="sort-text">Sort A-Z</span>
+            <span class="sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
         </button>
         <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
-            <span id="hidden-icon">👁️</span>
-            <span id="hidden-text">Show Hidden</span>
+            <span class="hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
         </button>
         <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
-            <span id="refresh-icon">🔄</span>
-            <span id="refresh-text">Refresh Audio</span>
+            <span class="refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh Audio</span>
+        </button>
+    </div>
+
+    <div class="mobile-controls mobile-only">
+        <button class="mobile-btn" onclick="toggleSort()" id="m-sort-btn">
+            <span class="btn-icon sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleShowHiddenMode()" id="m-hidden-btn">
+            <span class="btn-icon hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
+            <span class="btn-icon refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh</span>
         </button>
     </div>
 
@@ -1099,17 +1150,17 @@
         
         function toggleSort() {
             isAlphabetical = !isAlphabetical;
-            const btnText = document.getElementById('sort-text');
-            const btnIcon = document.getElementById('sort-icon');
+            const textEls = document.querySelectorAll('.sort-text');
+            const iconEls = document.querySelectorAll('.sort-icon');
 
             if (isAlphabetical) {
                 items.sort((a, b) => a.dataset.word.localeCompare(b.dataset.word));
-                btnText.innerText = "Textbook Order";
-                btnIcon.innerText = "📖";
+                textEls.forEach(el => el.innerText = "Textbook Order");
+                iconEls.forEach(el => el.innerText = "📖");
             } else {
                 items.sort((a, b) => parseInt(a.dataset.index) - parseInt(b.dataset.index));
-                btnText.innerText = "Sort A-Z";
-                btnIcon.innerText = "🔤";
+                textEls.forEach(el => el.innerText = "Sort A-Z");
+                iconEls.forEach(el => el.innerText = "🔤");
             }
 
             // Clear and re-append sorted items
@@ -1155,8 +1206,10 @@
                 const hidden = this.hiddenWords.size;
                 const shown = total - hidden;
                 
-                document.getElementById('stats-display').innerHTML = 
-                    `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+                const display = document.getElementById('stats-display');
+                if (display) {
+                    display.innerHTML = `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+                }
             },
 
             toggleWordHidden: function(index) {
@@ -1178,19 +1231,19 @@
 
             toggleShowHiddenMode: function() {
                 this.showHiddenMode = !this.showHiddenMode;
-                const btn = document.getElementById('show-hidden-toggle');
-                const btnText = document.getElementById('hidden-text');
-                const btnIcon = document.getElementById('hidden-icon');
+                const desktopBtn = document.getElementById('show-hidden-toggle');
+                const textEls = document.querySelectorAll('.hidden-text');
+                const iconEls = document.querySelectorAll('.hidden-icon');
 
                 if (this.showHiddenMode) {
-                    btn.classList.add('active');
-                    btnText.innerText = "Hide Learnt";
-                    btnIcon.innerText = "🙈";
+                    if (desktopBtn) desktopBtn.classList.add('active');
+                    textEls.forEach(el => el.innerText = "Hide Learnt");
+                    iconEls.forEach(el => el.innerText = "🙈");
                     items.forEach(item => item.classList.add('force-show'));
                 } else {
-                    btn.classList.remove('active');
-                    btnText.innerText = "Show Hidden";
-                    btnIcon.innerText = "👁️";
+                    if (desktopBtn) desktopBtn.classList.remove('active');
+                    textEls.forEach(el => el.innerText = "Show Hidden");
+                    iconEls.forEach(el => el.innerText = "👁️");
                     items.forEach(item => item.classList.remove('force-show'));
                 }
             },
@@ -1254,12 +1307,13 @@
             },
 
             refreshCache: async function() {
-                const btn = document.getElementById('refresh-cache');
-                const btnText = document.getElementById('refresh-text');
-                if (btn.classList.contains('loading')) return;
+                const desktopBtn = document.getElementById('refresh-cache');
+                const textEls = document.querySelectorAll('.refresh-text');
+                
+                if (desktopBtn && desktopBtn.classList.contains('loading')) return;
 
-                btn.classList.add('loading');
-                btnText.innerText = "Checking...";
+                if (desktopBtn) desktopBtn.classList.add('loading');
+                textEls.forEach(el => el.innerText = "Checking...");
                 let updatedCount = 0;
 
                 try {
@@ -1291,8 +1345,8 @@
                     }
                     alert(`Refresh complete. Updated ${updatedCount} audio files.`);
                 } finally {
-                    btn.classList.remove('loading');
-                    btnText.innerText = "Refresh Audio";
+                    if (desktopBtn) desktopBtn.classList.remove('loading');
+                    textEls.forEach(el => el.innerText = el.parentElement.id.includes('m-') ? "Refresh" : "Refresh Audio");
                 }
             },
 
