@@ -75,14 +75,22 @@
 
         /* Responsive Grid Layout */
         .vocab-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vocab-item { 
+            margin-bottom: 15px;
         }
 
         @media (min-width: 600px) {
             .vocab-grid {
+                display: grid;
                 grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .vocab-item {
+                margin-bottom: 0;
             }
         }
 
@@ -129,6 +137,7 @@
             
             #m-sort-btn { color: #3498db; }
             #m-hidden-btn { color: #9b59b6; }
+            #m-reset-btn { color: #e67e22; }
             #m-refresh-btn { color: #1abc9c; }
             
             .scroll-btns {
@@ -152,7 +161,8 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            transition: all 0.2s;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out, filter 0.2s, box-shadow 0.2s;
         }
         .vocab-item.is-hidden-state {
             opacity: 0.4;
@@ -160,6 +170,17 @@
         }
         .vocab-item.is-hidden-state:not(.force-show) {
             display: none;
+        }
+        .vocab-item.fading-out {
+            opacity: 0 !important;
+            height: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top-width: 0 !important;
+            border-bottom-width: 0 !important;
+            pointer-events: none;
         }
 
         .item-meta {
@@ -187,7 +208,7 @@
             border-left: 4px solid #f39c12; 
             padding: 8px 12px; 
             margin: 10px 0; 
-            font-size: 0.95em;
+            font-size: 1.1em;
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
@@ -196,9 +217,11 @@
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
             padding: 8px 12px; 
-            margin-top: auto; 
             font-size: 0.95em;
             border-radius: 0 4px 4px 0;
+        }
+        @media (min-width: 600px) {
+            .hook-box { margin-top: auto; }
         }
         .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
 
@@ -218,7 +241,8 @@
             transition: all 0.1s;
             padding: 0;
         }
-        .play-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
         .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
 
         /* Floating Controls */
@@ -258,6 +282,9 @@
         #refresh-cache { background: #1abc9c; }
         #refresh-cache:hover { background: #16a085; }
         #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+
+        #reset-hidden { background: #e67e22 !important; }
+        #reset-hidden:hover { background: #d35400 !important; }
 
         @media print {
             @page { margin: 8mm; }
@@ -332,6 +359,10 @@
             <span class="hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
+        <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
+            <span class="reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
         <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
             <span class="refresh-icon">🔄</span>
             <span class="refresh-text">Refresh Audio</span>
@@ -347,9 +378,13 @@
             <span class="btn-icon hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
+        <button class="mobile-btn" onclick="app.resetHidden()" id="m-reset-btn">
+            <span class="btn-icon reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
         <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
             <span class="btn-icon refresh-icon">🔄</span>
-            <span class="refresh-text">Refresh</span>
+            <span class="refresh-text">Refresh Audio</span>
         </button>
     </div>
 
@@ -440,9 +475,30 @@
                 if (this.hiddenWords.has(index)) {
                     this.hiddenWords.delete(index);
                     item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
                 } else {
                     this.hiddenWords.add(index);
-                    item.classList.add('is-hidden-state');
+                    
+                    const isMobile = window.innerWidth <= 600;
+                    if (this.showHiddenMode || !isMobile) {
+                        // Instant hide for desktop or when in "Show Hidden" mode
+                        item.classList.add('is-hidden-state');
+                    } else {
+                        // Mobile: Smooth collapse animation
+                        const h = item.offsetHeight;
+                        item.style.height = h + 'px';
+                        item.offsetHeight; // Force reflow
+                        item.classList.add('fading-out');
+                        
+                        setTimeout(() => {
+                            if (this.hiddenWords.has(index)) {
+                                item.classList.add('is-hidden-state');
+                                item.classList.remove('fading-out');
+                                item.style.height = '';
+                            }
+                        }, 500);
+                    }
                 }
 
                 // Persist
@@ -467,6 +523,23 @@
                     iconEls.forEach(el => el.innerText = "👁️");
                     items.forEach(item => item.classList.remove('force-show'));
                 }
+            },
+
+            resetHidden: function() {
+                if (!confirm("Are you sure you want to reset all hidden words?")) return;
+                
+                this.hiddenWords.clear();
+                localStorage.removeItem(this.unitKey);
+                
+                items.forEach(item => {
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                    const cb = item.querySelector('.hide-checkbox');
+                    if (cb) cb.checked = false;
+                });
+                
+                this.updateStats();
             },
 
             clearAudioCache: function() {
@@ -567,18 +640,21 @@
                     alert(`Refresh complete. Updated ${updatedCount} audio files.`);
                 } finally {
                     if (desktopBtn) desktopBtn.classList.remove('loading');
-                    textEls.forEach(el => el.innerText = el.parentElement.id.includes('m-') ? "Refresh" : "Refresh Audio");
+                    textEls.forEach(el => el.innerText = "Refresh Audio");
                 }
             },
 
-            playAudio: function() {
-                const btn = window.event.currentTarget || window.event.target.closest('.play-btn');
+            playAudio: function(btn) {
                 const card = btn.closest('.vocab-item');
                 const index = parseInt(card.dataset.index);
                 const url = vocabData[index].audio;
                 if (!url) return;
 
-                if (this.currentAudio) this.currentAudio.pause();
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    // Re-enable any previously disabled button
+                    document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
+                }
                 
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
@@ -586,7 +662,15 @@
                 const source = localStorage.getItem(cacheKey) || url;
 
                 this.currentAudio = new Audio(source);
-                this.currentAudio.play().catch(e => console.warn("Audio playback failed", e));
+                btn.disabled = true;
+
+                this.currentAudio.onended = () => { btn.disabled = false; };
+                this.currentAudio.onerror = () => { btn.disabled = false; };
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    btn.disabled = false;
+                });
             }
         };
 

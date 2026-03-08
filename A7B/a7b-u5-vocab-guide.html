@@ -75,14 +75,22 @@
 
         /* Responsive Grid Layout */
         .vocab-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vocab-item { 
+            margin-bottom: 15px;
         }
 
         @media (min-width: 600px) {
             .vocab-grid {
+                display: grid;
                 grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .vocab-item {
+                margin-bottom: 0;
             }
         }
 
@@ -129,6 +137,7 @@
             
             #m-sort-btn { color: #3498db; }
             #m-hidden-btn { color: #9b59b6; }
+            #m-reset-btn { color: #e67e22; }
             #m-refresh-btn { color: #1abc9c; }
             
             .scroll-btns {
@@ -152,7 +161,8 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            transition: all 0.2s;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out, filter 0.2s, box-shadow 0.2s;
         }
         .vocab-item.is-hidden-state {
             opacity: 0.4;
@@ -160,6 +170,17 @@
         }
         .vocab-item.is-hidden-state:not(.force-show) {
             display: none;
+        }
+        .vocab-item.fading-out {
+            opacity: 0 !important;
+            height: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top-width: 0 !important;
+            border-bottom-width: 0 !important;
+            pointer-events: none;
         }
 
         .item-meta {
@@ -187,7 +208,7 @@
             border-left: 4px solid #f39c12; 
             padding: 8px 12px; 
             margin: 10px 0; 
-            font-size: 0.95em;
+            font-size: 1.1em;
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
@@ -196,9 +217,11 @@
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
             padding: 8px 12px; 
-            margin-top: auto; 
             font-size: 0.95em;
             border-radius: 0 4px 4px 0;
+        }
+        @media (min-width: 600px) {
+            .hook-box { margin-top: auto; }
         }
         .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
 
@@ -218,7 +241,8 @@
             transition: all 0.1s;
             padding: 0;
         }
-        .play-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
         .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
 
         /* Floating Controls */
@@ -258,6 +282,9 @@
         #refresh-cache { background: #1abc9c; }
         #refresh-cache:hover { background: #16a085; }
         #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+
+        #reset-hidden { background: #e67e22 !important; }
+        #reset-hidden:hover { background: #d35400 !important; }
 
         @media print {
             @page { margin: 8mm; }
@@ -332,6 +359,10 @@
             <span class="hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
+        <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
+            <span class="reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
         <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
             <span class="refresh-icon">🔄</span>
             <span class="refresh-text">Refresh Audio</span>
@@ -347,9 +378,13 @@
             <span class="btn-icon hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
+        <button class="mobile-btn" onclick="app.resetHidden()" id="m-reset-btn">
+            <span class="btn-icon reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
         <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
             <span class="btn-icon refresh-icon">🔄</span>
-            <span class="refresh-text">Refresh</span>
+            <span class="refresh-text">Refresh Audio</span>
         </button>
     </div>
 
@@ -370,7 +405,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "find out more about the way of life in different places around the world."
+                "find out more about the way of life in different places around the world."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：a round (一个圆圈) 绕着 world (世界) 跑，就是去‘世界各地’。</div>
         </div>
@@ -390,7 +425,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "What are you doing right now?"
+                "What are you doing right now?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合记忆：Right (正确的/就在这里) + Now (现在)，强调‘就是现在’。</div>
         </div>
@@ -410,7 +445,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "riding a bike"
+                "riding a bike"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：‘来得’快。骑车总是比走路‘来得’快。</div>
         </div>
@@ -430,7 +465,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "What are you doing at the moment?"
+                "What are you doing at the moment?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根记忆：mo- (move 移动) + -ment (名词后缀)，时间移动的一个小点就是‘时刻’。</div>
         </div>
@@ -450,7 +485,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "What are you doing at the moment?"
+                "What are you doing at the moment?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 固定搭配：在这个 (the) 瞬间 (moment)，指的就是‘此刻’。</div>
         </div>
@@ -470,7 +505,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I'd love to, but I'm working on something important."
+                "I'd love to, but I'm working on something important."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 形象记忆：在 (on) 某件事上面工作 (work)，就是在‘从事/忙于’它。</div>
         </div>
@@ -490,7 +525,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Are you making them for the Dragon Boat Festival?"
+                "Are you making them for the Dragon Boat Festival?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 拆分记忆：drag (拖曳) + on (在...上)，龙在云端‘拖曳’而行。</div>
         </div>
@@ -510,7 +545,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Are you making them for the Dragon Boat Festival?"
+                "Are you making them for the Dragon Boat Festival?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：Feast (宴会) 的变体，有宴会的地方就是‘节日’。</div>
         </div>
@@ -530,7 +565,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Hold on. Here's Mum."
+                "Hold on. Here's Mum."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 动作记忆：Hold (抓住) + On (不放)，抓住电话线不放，就是‘别挂断’。</div>
         </div>
@@ -550,7 +585,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "It's great to hear your voice!"
+                "It's great to hear your voice!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 比较记忆：Sound 指任何声音，Voice 专指人的‘嗓音’（有V的人类嗓音）。</div>
         </div>
@@ -570,7 +605,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "watching dragon boat races on TV."
+                "watching dragon boat races on TV."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 形象记忆：R 像跑动的人，Race 就是大家一起跑的‘比赛’。</div>
         </div>
@@ -590,7 +625,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Bye, darling!"
+                "Bye, darling!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词源记忆：Dear (亲爱的) + -ling (小)，就是‘亲爱的小宝贝’。</div>
         </div>
@@ -610,7 +645,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "When you call somebody"
+                "When you call somebody"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 合成词：Some (一些/某个) + Body (身体/人)，即‘某个人’。</div>
         </div>
@@ -630,7 +665,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Could I speak to ...?"
+                "Could I speak to ...?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 语气对比：Can 的过去式，但在电话中表示‘更委婉的请求’。</div>
         </div>
@@ -650,7 +685,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Can I take a message?"
+                "Can I take a message?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：‘买手机’。买手机是为了发 message (信息)。</div>
         </div>
@@ -670,7 +705,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "What are the boys kicking?"
+                "What are the boys kicking?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 动作记忆：K 像一条伸出去‘踢’的腿。</div>
         </div>
@@ -690,7 +725,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "She is taking an online class in her room."
+                "She is taking an online class in her room."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合记忆：On (在...上) + Line (线/网线)，连在线上就是‘在线’。</div>
         </div>
@@ -710,7 +745,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "It's a kind of shuttlecock."
+                "It's a kind of shuttlecock."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：Shuttle (穿梭) + Cock (公鸡/羽毛)，在网间穿梭的羽毛球。</div>
         </div>
@@ -730,7 +765,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "My uncle is showing us all the sights."
+                "My uncle is showing us all the sights."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根记忆：与 see 有关。眼睛能看到 (see) 的美丽东西就是 sight (名胜)。</div>
         </div>
@@ -750,7 +785,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I know it's near your exams."
+                "I know it's near your exams."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 缩写记忆：Examination 的缩写，ex- (出/结果) + -am (我是)，考试测出‘我是谁’。</div>
         </div>
@@ -770,7 +805,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I hope it all goes well!"
+                "I hope it all goes well!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：‘好铺’。希望能有一条‘好铺’的成功之路。</div>
         </div>
@@ -790,7 +825,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I'm looking forward to seeing you soon!"
+                "I'm looking forward to seeing you soon!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀记忆：for- (向/前) + -ward (方向)，合起来就是‘向前’。</div>
         </div>
@@ -810,7 +845,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I'm looking forward to seeing you soon!"
+                "I'm looking forward to seeing you soon!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 形象记忆：目光 (look) 向前 (forward) 看，代表你很‘期待’未来的见面。</div>
         </div>
@@ -830,7 +865,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Are you skating?"
+                "Are you skating?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：S 形滑行 + Kate (凯特)，凯特在滑冰。</div>
         </div>
@@ -850,7 +885,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "What is happening in different time zones around the world right now?"
+                "What is happening in different time zones around the world right now?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根记忆：Hap (机会/运气)。偶然发生的事情就是 happen。</div>
         </div>
@@ -870,7 +905,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "What is happening in different time zones..."
+                "What is happening in different time zones..."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合记忆：Time (时间) + Zone (区域)，划分时间的区域就是‘时区’。</div>
         </div>
@@ -890,7 +925,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Some people are rushing to get home from work."
+                "Some people are rushing to get home from work."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：‘热射’。天气太热被太阳‘射’，所以要赶紧‘冲’回家。</div>
         </div>
@@ -910,7 +945,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "But others are not in a hurry!"
+                "But others are not in a hurry!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：Hurry (快) 就像火 (huo) 一样急，in a hurry 就是‘在急忙中’。</div>
         </div>
@@ -930,7 +965,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Lights are shining brightly across the city"
+                "Lights are shining brightly across the city"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 形象记忆：S 代表 Sun (太阳)，太阳在发光。</div>
         </div>
@@ -950,7 +985,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Lights are shining brightly across the city"
+                "Lights are shining brightly across the city"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀记忆：Bright (明亮的) + -ly (副词后缀)，表示‘明亮地’。</div>
         </div>
@@ -970,7 +1005,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "and colourful boats are moving slowly"
+                "and colourful boats are moving slowly"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀记忆：Colour (颜色) + -ful (充满...的)，充满颜色的就是‘色彩鲜艳的’。</div>
         </div>
@@ -990,7 +1025,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "colourful boats are moving slowly down the river."
+                "colourful boats are moving slowly down the river."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀记忆：Slow (慢) + -ly (副词后缀)，‘缓慢地’。</div>
         </div>
@@ -1010,7 +1045,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "eating delicious food, such as Chongqing hot pot"
+                "eating delicious food, such as Chongqing hot pot"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：Such (这样) + As (作为)，作为这样的例子，即‘例如’。</div>
         </div>
@@ -1030,7 +1065,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "shopping for gifts, such as paintings and bags"
+                "shopping for gifts, such as paintings and bags"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀记忆：Paint (画) + -ing (名词后缀)，画出来的成果就是‘绘画作品’。</div>
         </div>
@@ -1050,7 +1085,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "in the markets."
+                "in the markets."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：Mark (标记/价格) + et (小地方)，标记价格进行交易的小地方就是‘市场’。</div>
         </div>
@@ -1070,7 +1105,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "people live side by side with many wonderful animals!"
+                "people live side by side with many wonderful animals!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 形象记忆：一边 (side) 靠着另一边 (side)，就是‘肩并肩’。</div>
         </div>
@@ -1090,7 +1125,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Many people are rushing to the subway."
+                "Many people are rushing to the subway."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀记忆：Sub- (在下面) + Way (路)，地底下的路就是‘地铁’。</div>
         </div>
@@ -1110,7 +1145,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Bright yellow taxis are picking up..."
+                "Bright yellow taxis are picking up..."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：B (太阳的形状) + Right (正确的)，太阳正确地照耀着，很‘明亮’。</div>
         </div>
@@ -1130,7 +1165,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "picking up and dropping off passengers."
+                "picking up and dropping off passengers."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 动作记忆：Drop (落下) + Off (离开)，让乘客落下去自己离开，就是‘送到某处放下’。</div>
         </div>
@@ -1150,7 +1185,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "picking up and dropping off passengers."
+                "picking up and dropping off passengers."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根记忆：Pass (经过) + -en- + -ger (人)，‘路过/经过’这段路的人就是‘乘客’。</div>
         </div>
@@ -1170,7 +1205,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "jogging, walking, and riding bikes in Central Park."
+                "jogging, walking, and riding bikes in Central Park."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：Center (中心) 的形容词形式，-al 结尾通常是形容词。</div>
         </div>
@@ -1190,7 +1225,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Can you explain why the time is different...?"
+                "Can you explain why the time is different...?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根记忆：Ex- (出) + Plain (平坦/清晰)，把事情变清晰说出来就是‘解释’。</div>
         </div>
@@ -1210,7 +1245,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Our family are taking part in a boat tour"
+                "Our family are taking part in a boat tour"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：拿走 (take) 一部分 (part) 责任或时间进入 (in) 活动，就是‘参加’。</div>
         </div>
@@ -1230,7 +1265,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Our family are taking part in a boat tour"
+                "Our family are taking part in a boat tour"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：‘突儿’。突然想去旅游，去突袭一圈儿。</div>
         </div>
@@ -1250,7 +1285,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "the morning sunshine is great."
+                "the morning sunshine is great."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合记忆：Sun (太阳) + Shine (发光)，太阳发的光就是‘阳光’。</div>
         </div>
@@ -1270,7 +1305,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I'm driving to work today"
+                "I'm driving to work today"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：D (Driver 司机) + R (Road 路) + Ive (我)，我在路上当司机‘开车’。</div>
         </div>
@@ -1290,7 +1325,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "taking a long time because it's rush hour."
+                "taking a long time because it's rush hour."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合记忆：Rush (冲/急) + Hour (小时)，大家都急着冲的小时就是‘高峰期’。</div>
         </div>
@@ -1310,7 +1345,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Can you explain how it can be daytime in one city...?"
+                "Can you explain how it can be daytime in one city...?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 合成词：Day (日子) + Time (时间)，日子里的时间即‘白昼’。</div>
         </div>
@@ -1330,7 +1365,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "We're having a holiday here."
+                "We're having a holiday here."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：Holy (神圣的) + Day (日子)，古代神圣的日子就是大家休息的‘假期’。</div>
         </div>
@@ -1350,7 +1385,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "It's so powerful!"
+                "It's so powerful!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀记忆：Power (力量) + -ful (充满)，充满力量就是‘强大的’。</div>
         </div>
@@ -1370,7 +1405,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "We're wearing raincoats but are still getting very wet!"
+                "We're wearing raincoats but are still getting very wet!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合记忆：Rain (雨) + Coat (外套)，下雨穿的外套就是‘雨衣’。</div>
         </div>
@@ -1390,7 +1425,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "others are sunbathing or playing games on the beach."
+                "others are sunbathing or playing games on the beach."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：Sun (太阳) + Bath (洗澡)，在阳光里洗澡就是‘日光浴’。</div>
         </div>
@@ -1410,7 +1445,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "It's tricky, but I think I'm making good progress."
+                "It's tricky, but I think I'm making good progress."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根记忆：Trick (诡计) + -y (形容词)，像诡计一样变化莫测，所以‘难办’。</div>
         </div>
@@ -1430,7 +1465,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I think I'm making good progress."
+                "I think I'm making good progress."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根记忆：Pro- (向前) + Gress (走)，向前走就是‘进步’。</div>
         </div>
@@ -1519,9 +1554,30 @@
                 if (this.hiddenWords.has(index)) {
                     this.hiddenWords.delete(index);
                     item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
                 } else {
                     this.hiddenWords.add(index);
-                    item.classList.add('is-hidden-state');
+                    
+                    const isMobile = window.innerWidth <= 600;
+                    if (this.showHiddenMode || !isMobile) {
+                        // Instant hide for desktop or when in "Show Hidden" mode
+                        item.classList.add('is-hidden-state');
+                    } else {
+                        // Mobile: Smooth collapse animation
+                        const h = item.offsetHeight;
+                        item.style.height = h + 'px';
+                        item.offsetHeight; // Force reflow
+                        item.classList.add('fading-out');
+                        
+                        setTimeout(() => {
+                            if (this.hiddenWords.has(index)) {
+                                item.classList.add('is-hidden-state');
+                                item.classList.remove('fading-out');
+                                item.style.height = '';
+                            }
+                        }, 500);
+                    }
                 }
 
                 // Persist
@@ -1546,6 +1602,23 @@
                     iconEls.forEach(el => el.innerText = "👁️");
                     items.forEach(item => item.classList.remove('force-show'));
                 }
+            },
+
+            resetHidden: function() {
+                if (!confirm("Are you sure you want to reset all hidden words?")) return;
+                
+                this.hiddenWords.clear();
+                localStorage.removeItem(this.unitKey);
+                
+                items.forEach(item => {
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                    const cb = item.querySelector('.hide-checkbox');
+                    if (cb) cb.checked = false;
+                });
+                
+                this.updateStats();
             },
 
             clearAudioCache: function() {
@@ -1646,18 +1719,21 @@
                     alert(`Refresh complete. Updated ${updatedCount} audio files.`);
                 } finally {
                     if (desktopBtn) desktopBtn.classList.remove('loading');
-                    textEls.forEach(el => el.innerText = el.parentElement.id.includes('m-') ? "Refresh" : "Refresh Audio");
+                    textEls.forEach(el => el.innerText = "Refresh Audio");
                 }
             },
 
-            playAudio: function() {
-                const btn = window.event.currentTarget || window.event.target.closest('.play-btn');
+            playAudio: function(btn) {
                 const card = btn.closest('.vocab-item');
                 const index = parseInt(card.dataset.index);
                 const url = vocabData[index].audio;
                 if (!url) return;
 
-                if (this.currentAudio) this.currentAudio.pause();
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    // Re-enable any previously disabled button
+                    document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
+                }
                 
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
@@ -1665,7 +1741,15 @@
                 const source = localStorage.getItem(cacheKey) || url;
 
                 this.currentAudio = new Audio(source);
-                this.currentAudio.play().catch(e => console.warn("Audio playback failed", e));
+                btn.disabled = true;
+
+                this.currentAudio.onended = () => { btn.disabled = false; };
+                this.currentAudio.onerror = () => { btn.disabled = false; };
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    btn.disabled = false;
+                });
             }
         };
 

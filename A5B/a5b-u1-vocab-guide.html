@@ -75,14 +75,22 @@
 
         /* Responsive Grid Layout */
         .vocab-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vocab-item { 
+            margin-bottom: 15px;
         }
 
         @media (min-width: 600px) {
             .vocab-grid {
+                display: grid;
                 grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .vocab-item {
+                margin-bottom: 0;
             }
         }
 
@@ -129,6 +137,7 @@
             
             #m-sort-btn { color: #3498db; }
             #m-hidden-btn { color: #9b59b6; }
+            #m-reset-btn { color: #e67e22; }
             #m-refresh-btn { color: #1abc9c; }
             
             .scroll-btns {
@@ -152,7 +161,8 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            transition: all 0.2s;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out, filter 0.2s, box-shadow 0.2s;
         }
         .vocab-item.is-hidden-state {
             opacity: 0.4;
@@ -160,6 +170,17 @@
         }
         .vocab-item.is-hidden-state:not(.force-show) {
             display: none;
+        }
+        .vocab-item.fading-out {
+            opacity: 0 !important;
+            height: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top-width: 0 !important;
+            border-bottom-width: 0 !important;
+            pointer-events: none;
         }
 
         .item-meta {
@@ -187,7 +208,7 @@
             border-left: 4px solid #f39c12; 
             padding: 8px 12px; 
             margin: 10px 0; 
-            font-size: 0.95em;
+            font-size: 1.1em;
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
@@ -196,9 +217,11 @@
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
             padding: 8px 12px; 
-            margin-top: auto; 
             font-size: 0.95em;
             border-radius: 0 4px 4px 0;
+        }
+        @media (min-width: 600px) {
+            .hook-box { margin-top: auto; }
         }
         .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
 
@@ -218,7 +241,8 @@
             transition: all 0.1s;
             padding: 0;
         }
-        .play-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
         .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
 
         /* Floating Controls */
@@ -258,6 +282,9 @@
         #refresh-cache { background: #1abc9c; }
         #refresh-cache:hover { background: #16a085; }
         #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+
+        #reset-hidden { background: #e67e22 !important; }
+        #reset-hidden:hover { background: #d35400 !important; }
 
         @media print {
             @page { margin: 8mm; }
@@ -332,6 +359,10 @@
             <span class="hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
+        <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
+            <span class="reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
         <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
             <span class="refresh-icon">🔄</span>
             <span class="refresh-text">Refresh Audio</span>
@@ -347,9 +378,13 @@
             <span class="btn-icon hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
+        <button class="mobile-btn" onclick="app.resetHidden()" id="m-reset-btn">
+            <span class="btn-icon reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
         <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
             <span class="btn-icon refresh-icon">🔄</span>
-            <span class="refresh-text">Refresh</span>
+            <span class="refresh-text">Refresh Audio</span>
         </button>
     </div>
 
@@ -370,7 +405,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "You can have an ID card."
+                "You can have an ID card."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 字母联想法：I (我) 的 D (D开头，Document文件)，证明我身份的文件就是ID (身份证)。</div>
         </div>
@@ -390,7 +425,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "You have to pay to go on trains."
+                "You have to pay to go on trains."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：发音类似“赔”。弄坏了别人的东西就要“赔”钱，也就是付款 pay。</div>
         </div>
@@ -410,7 +445,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "You can ride a bike on the road."
+                "You can ride a bike on the road."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆法：r (形状像一根草) + ide (谐音“爱的”) -> 我骑 (ride) 着我爱的自行车在草地上玩。</div>
         </div>
@@ -430,7 +465,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "We could play football together."
+                "We could play football together."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词源联想法：could是can的过去式。c (看) + ould (谐音“我的”) -> 过去我“能”看我的球赛。注意字母L是不发音的哦！</div>
         </div>
@@ -450,7 +485,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Last year, we were in Harbin for the winter holiday."
+                "Last year, we were in Harbin for the winter holiday."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音联想法：holi (谐音“好礼”) + day (天)。收到好礼物的这一天，就是快乐的假期 (holiday)！</div>
         </div>
@@ -470,7 +505,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "By the last day of the holiday, I was a good skier."
+                "By the last day of the holiday, I was a good skier."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀记忆法：ski (滑雪) + er (表示人的后缀)。滑雪的人就是滑雪者 (skier)。</div>
         </div>
@@ -490,7 +525,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "After the camp, we felt great."
+                "After the camp, we felt great."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：c (看) + amp (谐音“俺铺”)。看，俺铺好的床铺，就在度假营地 (camp) 里！</div>
         </div>
@@ -510,7 +545,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "The summer camp is over."
+                "The summer camp is over."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 合成词记忆法：summer (夏天) + camp (营地) = 夏令营。夏天在营地里开心玩耍。</div>
         </div>
@@ -530,7 +565,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "It was very hot and our training was hard."
+                "It was very hot and our training was hard."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀记忆法：train (火车/训练) + ing (名词后缀)。像火车一样不断循环往复地辛苦练习，就是在进行训练 (training)。</div>
         </div>
@@ -550,7 +585,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "On the third day, we cooked lunch on our own."
+                "On the third day, we cooked lunch on our own."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆法：th (咬舌音，数字3 three的开头) + ird (联想bird)。这是我第三 (third) 次看到这只小鸟 (bird)。</div>
         </div>
@@ -570,7 +605,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Growing up means a lot"
+                "Growing up means a lot"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：谐音“谜暗”。这个谜语暗藏的“意思” (mean) 到底是什么呢？</div>
         </div>
@@ -590,7 +625,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "We sometimes fall."
+                "We sometimes fall."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：发音类似“佛”。如果不小心摔倒 (fall) 的时候，大喊一声“阿弥陀佛”保佑不疼！</div>
         </div>
@@ -610,7 +645,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "What is the film about?"
+                "What is the film about?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：发音类似“飞马”。很多经典电影 (film) 开场经常有一个飞马的标志。</div>
         </div>
@@ -630,7 +665,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "He killed Simba's dad."
+                "He killed Simba's dad."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆法：k (看) + ill (生病)。看他生病了，病毒快要把他弄死 (kill) 了。</div>
         </div>
@@ -650,7 +685,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "With his friends' help, Simba beat his uncle."
+                "With his friends' help, Simba beat his uncle."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆法：b (不) + eat (吃)。在打败 (beat) 敌人之前，我坚决不吃饭 (eat)！</div>
         </div>
@@ -670,7 +705,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "We all have to face difficulties and learn to grow up."
+                "We all have to face difficulties and learn to grow up."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 趣味拼读法：difficult (困难的) 的名词形式。di (弟弟) + ffi (谐音“发发”) + cul (哭) + ty (谐音“涕”)。弟弟遇到难事 (difficulty)，发脾气哭得流鼻涕。</div>
         </div>
@@ -690,7 +725,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "How do you feel about growing up?"
+                "How do you feel about growing up?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 短语拆解法：grow (生长) + up (向上)。像小树苗一样不断向上生长，就是长大 (growing up)。</div>
         </div>
@@ -710,7 +745,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "We go to the same school and we help each other."
+                "We go to the same school and we help each other."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 逻辑拆解法：each (每个) + other (另一个)。每一个人都在帮助另一个人，也就是大家“互相、彼此” (each other) 帮忙。</div>
         </div>
@@ -730,7 +765,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "At first, I was not good at it."
+                "At first, I was not good at it."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 逻辑拆解法：first是“第一，首先”，处在 (at) 事情第一的位置，自然就是“起初，一开始” (at first)。</div>
         </div>
@@ -750,7 +785,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "On the third day, we cooked lunch on our own."
+                "On the third day, we cooked lunch on our own."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 逻辑拆解法：own有“自己的”意思。在 (on) 我们 (our) 自己的 (own) 力量掌控下，也就是“靠我们自己”。</div>
         </div>
@@ -770,7 +805,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "But he never gave up."
+                "But he never gave up."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 动作联想法：give (给) + up (向上)。举起双手，把手里的武器全向上交出去，表示投降、“放弃” (give up)。</div>
         </div>
@@ -859,9 +894,30 @@
                 if (this.hiddenWords.has(index)) {
                     this.hiddenWords.delete(index);
                     item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
                 } else {
                     this.hiddenWords.add(index);
-                    item.classList.add('is-hidden-state');
+                    
+                    const isMobile = window.innerWidth <= 600;
+                    if (this.showHiddenMode || !isMobile) {
+                        // Instant hide for desktop or when in "Show Hidden" mode
+                        item.classList.add('is-hidden-state');
+                    } else {
+                        // Mobile: Smooth collapse animation
+                        const h = item.offsetHeight;
+                        item.style.height = h + 'px';
+                        item.offsetHeight; // Force reflow
+                        item.classList.add('fading-out');
+                        
+                        setTimeout(() => {
+                            if (this.hiddenWords.has(index)) {
+                                item.classList.add('is-hidden-state');
+                                item.classList.remove('fading-out');
+                                item.style.height = '';
+                            }
+                        }, 500);
+                    }
                 }
 
                 // Persist
@@ -886,6 +942,23 @@
                     iconEls.forEach(el => el.innerText = "👁️");
                     items.forEach(item => item.classList.remove('force-show'));
                 }
+            },
+
+            resetHidden: function() {
+                if (!confirm("Are you sure you want to reset all hidden words?")) return;
+                
+                this.hiddenWords.clear();
+                localStorage.removeItem(this.unitKey);
+                
+                items.forEach(item => {
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                    const cb = item.querySelector('.hide-checkbox');
+                    if (cb) cb.checked = false;
+                });
+                
+                this.updateStats();
             },
 
             clearAudioCache: function() {
@@ -986,18 +1059,21 @@
                     alert(`Refresh complete. Updated ${updatedCount} audio files.`);
                 } finally {
                     if (desktopBtn) desktopBtn.classList.remove('loading');
-                    textEls.forEach(el => el.innerText = el.parentElement.id.includes('m-') ? "Refresh" : "Refresh Audio");
+                    textEls.forEach(el => el.innerText = "Refresh Audio");
                 }
             },
 
-            playAudio: function() {
-                const btn = window.event.currentTarget || window.event.target.closest('.play-btn');
+            playAudio: function(btn) {
                 const card = btn.closest('.vocab-item');
                 const index = parseInt(card.dataset.index);
                 const url = vocabData[index].audio;
                 if (!url) return;
 
-                if (this.currentAudio) this.currentAudio.pause();
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    // Re-enable any previously disabled button
+                    document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
+                }
                 
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
@@ -1005,7 +1081,15 @@
                 const source = localStorage.getItem(cacheKey) || url;
 
                 this.currentAudio = new Audio(source);
-                this.currentAudio.play().catch(e => console.warn("Audio playback failed", e));
+                btn.disabled = true;
+
+                this.currentAudio.onended = () => { btn.disabled = false; };
+                this.currentAudio.onerror = () => { btn.disabled = false; };
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    btn.disabled = false;
+                });
             }
         };
 

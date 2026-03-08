@@ -194,7 +194,7 @@ function generateHtml(data, book, unit) {
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "${item.context_sentence}"
+                "${item.context_sentence}"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ${item.memorization_hook}</div>
         </div>`;

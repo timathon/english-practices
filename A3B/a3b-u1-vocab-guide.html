@@ -75,14 +75,22 @@
 
         /* Responsive Grid Layout */
         .vocab-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vocab-item { 
+            margin-bottom: 15px;
         }
 
         @media (min-width: 600px) {
             .vocab-grid {
+                display: grid;
                 grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .vocab-item {
+                margin-bottom: 0;
             }
         }
 
@@ -129,6 +137,7 @@
             
             #m-sort-btn { color: #3498db; }
             #m-hidden-btn { color: #9b59b6; }
+            #m-reset-btn { color: #e67e22; }
             #m-refresh-btn { color: #1abc9c; }
             
             .scroll-btns {
@@ -152,7 +161,8 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            transition: all 0.2s;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out, filter 0.2s, box-shadow 0.2s;
         }
         .vocab-item.is-hidden-state {
             opacity: 0.4;
@@ -160,6 +170,17 @@
         }
         .vocab-item.is-hidden-state:not(.force-show) {
             display: none;
+        }
+        .vocab-item.fading-out {
+            opacity: 0 !important;
+            height: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top-width: 0 !important;
+            border-bottom-width: 0 !important;
+            pointer-events: none;
         }
 
         .item-meta {
@@ -187,7 +208,7 @@
             border-left: 4px solid #f39c12; 
             padding: 8px 12px; 
             margin: 10px 0; 
-            font-size: 0.95em;
+            font-size: 1.1em;
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
@@ -196,9 +217,11 @@
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
             padding: 8px 12px; 
-            margin-top: auto; 
             font-size: 0.95em;
             border-radius: 0 4px 4px 0;
+        }
+        @media (min-width: 600px) {
+            .hook-box { margin-top: auto; }
         }
         .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
 
@@ -218,7 +241,8 @@
             transition: all 0.1s;
             padding: 0;
         }
-        .play-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
         .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
 
         /* Floating Controls */
@@ -258,6 +282,9 @@
         #refresh-cache { background: #1abc9c; }
         #refresh-cache:hover { background: #16a085; }
         #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+
+        #reset-hidden { background: #e67e22 !important; }
+        #reset-hidden:hover { background: #d35400 !important; }
 
         @media print {
             @page { margin: 8mm; }
@@ -332,6 +359,10 @@
             <span class="hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
+        <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
+            <span class="reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
         <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
             <span class="refresh-icon">🔄</span>
             <span class="refresh-text">Refresh Audio</span>
@@ -347,9 +378,13 @@
             <span class="btn-icon hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
+        <button class="mobile-btn" onclick="app.resetHidden()" id="m-reset-btn">
+            <span class="btn-icon reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
         <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
             <span class="btn-icon refresh-icon">🔄</span>
-            <span class="refresh-text">Refresh</span>
+            <span class="refresh-text">Refresh Audio</span>
         </button>
     </div>
 
@@ -370,7 +405,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "In this unit, we will learn to... name different animals;"
+                "In this unit, we will learn to... name different animals;"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“爱你么”，小动物这么可爱，你“爱你么”？联想：可爱的动物问你爱不爱它。</div>
         </div>
@@ -390,7 +425,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Pandas, pandas, Where are they?"
+                "Pandas, pandas, Where are they?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“胖哒”，大熊猫吃竹子长得胖胖的（胖哒）。</div>
         </div>
@@ -410,7 +445,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Elephants, elephants, Where are they?"
+                "Elephants, elephants, Where are they?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> e(鹅)+le(乐)+phant(发音类似“分它”)：大白鹅很高兴，因为大象“分它”食物吃。</div>
         </div>
@@ -430,7 +465,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "And bears, giraffes and monkeys, Where are they?"
+                "And bears, giraffes and monkeys, Where are they?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 比较记忆，把pear(梨)的首字母p换成b就是bear(熊)，想象一头熊正在津津有味地吃着梨。</div>
         </div>
@@ -450,7 +485,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "And bears, giraffes and monkeys, Where are they?"
+                "And bears, giraffes and monkeys, Where are they?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词首gi谐音“极”，raffe谐音“拉夫”。极力拉夫的长颈鹿，把脖子都给拉得特别长。</div>
         </div>
@@ -470,7 +505,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "And bears, giraffes and monkeys, Where are they?"
+                "And bears, giraffes and monkeys, Where are they?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> mon（联想money钱）+ key（钥匙）。调皮的猴子偷走了你的钱（money）和金钥匙（key）。</div>
         </div>
@@ -490,7 +525,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I can't see them."
+                "I can't see them."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> the(这)+m(们)。用the作为词根加上m，表示“他们”作为接受动作的宾语（我看见了“他们”）。</div>
         </div>
@@ -510,7 +545,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "What animals does Tom draw?"
+                "What animals does Tom draw?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“抓”。画画的时候，小手一定要“抓”稳画笔才能画出漂亮的画。</div>
         </div>
@@ -530,7 +565,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Are they tigers?"
+                "Are they tigers?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ti(踢) + ger(哥)。这只老虎脾气特别凶，一脚就“踢”飞了平头“哥”。</div>
         </div>
@@ -550,7 +585,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "But tigers are strong!"
+                "But tigers are strong!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“死壮”。健身房里的那个人练得满身肌肉，可以说是“死壮死壮”的。</div>
         </div>
@@ -570,7 +605,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Oh, Tom. Giraffes aren't short!"
+                "Oh, Tom. Giraffes aren't short!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 比较记忆，对比shirt(衬衫)。买来的衬衫(shirt)实在太短(short)了，根本穿不上。</div>
         </div>
@@ -590,7 +625,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Yes! They're black and white!"
+                "Yes! They're black and white!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“坏特”。电影里那个穿着全白色西装的反派是个大“坏特”（大坏蛋）。</div>
         </div>
@@ -610,7 +645,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "They're brown and yellow."
+                "They're brown and yellow."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> b(不) + row(划船) + n(泥)。绝对不要(b)在棕色浑浊的泥(n)水里划船(row)。</div>
         </div>
@@ -630,7 +665,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "A zebra is here."
+                "A zebra is here."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ze(贼) + bra(音似“不拉”)。这匹斑马脾气很倔，像个“贼”一样死活拉“不拉”走。</div>
         </div>
@@ -650,7 +685,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Let's move on."
+                "Let's move on."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 加一个字母i就是movie(电影)，因为电影就是由一帧帧不断移动(move)的画面组合而成的。</div>
         </div>
@@ -670,7 +705,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Lions on the road."
+                "Lions on the road."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“肉的”。童话世界里的这条大路是用“肉”铺成的，走在上面软绵绵的。</div>
         </div>
@@ -690,7 +725,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Let's dance along."
+                "Let's dance along."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“但是”。他平时看着很害羞，“但是”一上舞台跳起舞(dance)来就光芒四射。</div>
         </div>
@@ -710,7 +745,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Let's dance along."
+                "Let's dance along."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> a(一个) + long(长)。大家手牵手，一起走完了一条很长很长(long)的路。</div>
         </div>
@@ -730,7 +765,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Which words have 'z' or 'l' sounds?"
+                "Which words have 'z' or 'l' sounds?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“位置”。在捉迷藏时你问我：你想藏在“哪一个”位置？发音同witch（女巫），是在问“哪一个才是真女巫？”</div>
         </div>
@@ -750,7 +785,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Which words have 'z' or 'l' sounds?"
+                "Which words have 'z' or 'l' sounds?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“我的”。我在听写时记住了这个单词(word)，这个满分就是“我的”，谁也抢不走。</div>
         </div>
@@ -770,7 +805,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "stone lions"
+                "stone lions"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s(蛇) + tone(声音)。安静的山谷里，一块大石头的缝隙里突然传出了蛇发出的声音。</div>
         </div>
@@ -790,7 +825,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "a panda hat"
+                "a panda hat"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 对比记忆cat(猫)和bat(蝙蝠)。冬天冷了，给你心爱的宠物猫(cat)戴上一顶毛茸茸的小帽子(hat)。</div>
         </div>
@@ -810,7 +845,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "tiger shoes"
+                "tiger shoes"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“嘘”。穿上这双特制的运动鞋走路完全没有声音，像忍者一样，嘘！</div>
         </div>
@@ -830,7 +865,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "They're tall."
+                "They're tall."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“头”。个子特别高的人，走在人群里往往一眼就能被别人看到“头”。</div>
         </div>
@@ -850,7 +885,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I love him."
+                "I love him."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> hi(打招呼) + m(联想man男人)。在路上遇到了你认识的他，热情地跟他打声招呼说Hi。</div>
         </div>
@@ -870,7 +905,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "This is Linda. She is an ostrich."
+                "This is Linda. She is an ostrich."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> os(音似“喔死”) + trich(谐音“吹气”)。鸵鸟遇到危险把头埋在沙子里快“喔死”了，赶紧给它“吹气”抢救。</div>
         </div>
@@ -890,7 +925,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "She is fast."
+                "She is fast."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> f(发) + a(一) + st(石头)。用弹弓以极其快速的速度发射了一块小石头。</div>
         </div>
@@ -910,7 +945,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "He is a chameleon."
+                "He is a chameleon."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> cha(茶) + me(我) + leon(莱昂)。这只变色龙变成了茶色，偷偷爬过来想吓唬我(me)和好朋友莱昂(leon)。</div>
         </div>
@@ -930,7 +965,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "He is small."
+                "He is small."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s(蛇) + mall(大型商场)。一条体型非常小的玩具蛇不小心掉进了巨大的购物商场(mall)里。</div>
         </div>
@@ -950,7 +985,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "This is Mufasa. He is a little lion."
+                "This is Mufasa. He is a little lion."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“来嗯”。威风凛凛的狮子慢慢走过来，喉咙里发出“嗯嗯”的低沉吼叫声。</div>
         </div>
@@ -970,7 +1005,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "He is cute."
+                "He is cute."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> cut(切) + e(鹅)。烘焙课上，切出了一块非常可爱的企鹅形状小饼干。发音像字母Q，代表Q萌可爱。</div>
         </div>
@@ -990,7 +1025,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "In and out of the zoo"
+                "In and out of the zoo"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“熬它”。周末跑到外面去玩游戏，打算彻夜不眠，非得在外面通宵“熬它”一整晚不可。</div>
         </div>
@@ -1010,7 +1045,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Let's go to the zoo!"
+                "Let's go to the zoo!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> z(长得像鸭子) + oo(像两只圆圆的眼睛)。在动物园的湖边，看到一只鸭子正瞪着两只圆圆的大眼睛。</div>
         </div>
@@ -1030,7 +1065,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Let's go to the zoo!"
+                "Let's go to the zoo!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“狗”。晚饭后最喜欢做的事情就是带上家里的小狗一起出门散步（去）。</div>
         </div>
@@ -1050,7 +1085,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Look at my picture!"
+                "Look at my picture!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> look(看) + at(在一个特定点)。把你的目光牢牢锁定、聚焦在某一个点上，就是专注地“注视”。</div>
         </div>
@@ -1070,7 +1105,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Yes! They're black and white!"
+                "Yes! They're black and white!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想大熊猫的经典特征：大熊猫怎么拍彩色照片洗出来都只有黑色(black)和白色(white)。</div>
         </div>
@@ -1090,7 +1125,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Let's move on."
+                "Let's move on."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> move(移动) + on(在...上/持续地)。不要停下脚步，持续不断地在道路上移动，就代表着“继续前进”。</div>
         </div>
@@ -1110,7 +1145,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Let's dance along."
+                "Let's dance along."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> dance(跳舞) + along(一起/顺着)。听到欢快的音乐响起，顺着强烈的节奏大家一起开心地跳起舞来。</div>
         </div>
@@ -1130,7 +1165,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "They sleep in the day."
+                "They sleep in the day."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sleep(睡觉) + in the day(在白天)。联想猫头鹰和蝙蝠的生活习性，它们到了白天(in the day)就会去睡觉。</div>
         </div>
@@ -1219,9 +1254,30 @@
                 if (this.hiddenWords.has(index)) {
                     this.hiddenWords.delete(index);
                     item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
                 } else {
                     this.hiddenWords.add(index);
-                    item.classList.add('is-hidden-state');
+                    
+                    const isMobile = window.innerWidth <= 600;
+                    if (this.showHiddenMode || !isMobile) {
+                        // Instant hide for desktop or when in "Show Hidden" mode
+                        item.classList.add('is-hidden-state');
+                    } else {
+                        // Mobile: Smooth collapse animation
+                        const h = item.offsetHeight;
+                        item.style.height = h + 'px';
+                        item.offsetHeight; // Force reflow
+                        item.classList.add('fading-out');
+                        
+                        setTimeout(() => {
+                            if (this.hiddenWords.has(index)) {
+                                item.classList.add('is-hidden-state');
+                                item.classList.remove('fading-out');
+                                item.style.height = '';
+                            }
+                        }, 500);
+                    }
                 }
 
                 // Persist
@@ -1246,6 +1302,23 @@
                     iconEls.forEach(el => el.innerText = "👁️");
                     items.forEach(item => item.classList.remove('force-show'));
                 }
+            },
+
+            resetHidden: function() {
+                if (!confirm("Are you sure you want to reset all hidden words?")) return;
+                
+                this.hiddenWords.clear();
+                localStorage.removeItem(this.unitKey);
+                
+                items.forEach(item => {
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                    const cb = item.querySelector('.hide-checkbox');
+                    if (cb) cb.checked = false;
+                });
+                
+                this.updateStats();
             },
 
             clearAudioCache: function() {
@@ -1346,18 +1419,21 @@
                     alert(`Refresh complete. Updated ${updatedCount} audio files.`);
                 } finally {
                     if (desktopBtn) desktopBtn.classList.remove('loading');
-                    textEls.forEach(el => el.innerText = el.parentElement.id.includes('m-') ? "Refresh" : "Refresh Audio");
+                    textEls.forEach(el => el.innerText = "Refresh Audio");
                 }
             },
 
-            playAudio: function() {
-                const btn = window.event.currentTarget || window.event.target.closest('.play-btn');
+            playAudio: function(btn) {
                 const card = btn.closest('.vocab-item');
                 const index = parseInt(card.dataset.index);
                 const url = vocabData[index].audio;
                 if (!url) return;
 
-                if (this.currentAudio) this.currentAudio.pause();
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    // Re-enable any previously disabled button
+                    document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
+                }
                 
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
@@ -1365,7 +1441,15 @@
                 const source = localStorage.getItem(cacheKey) || url;
 
                 this.currentAudio = new Audio(source);
-                this.currentAudio.play().catch(e => console.warn("Audio playback failed", e));
+                btn.disabled = true;
+
+                this.currentAudio.onended = () => { btn.disabled = false; };
+                this.currentAudio.onerror = () => { btn.disabled = false; };
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    btn.disabled = false;
+                });
             }
         };
 
