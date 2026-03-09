@@ -480,6 +480,9 @@
 
             try {
                 const resp = await fetch(url);
+                if (!resp.ok) return null;
+                const contentType = resp.headers.get('Content-Type');
+                if (!contentType || !contentType.startsWith('audio/')) return null;
                 const lastModified = resp.headers.get('Last-Modified');
                 const blob = await resp.blob();
                 const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};

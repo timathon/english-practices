@@ -70,25 +70,40 @@ async function getAudioBatch(tasks, book, unit) {
     const pythonScript = `
 import wave
 import sys
+import time
 from google import genai
 from google.genai import types
 
 client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
-try:
-    response = client.models.generate_content(
-        model="gemini-2.5-flash-preview-tts",
-        contents="Say clearly: ${combinedText.replace(/"/g, '\\"')}",
-        config=types.GenerateContentConfig(
-            responseModalities=["AUDIO"],
-            speechConfig=types.SpeechConfig(
-                voiceConfig=types.VoiceConfig(
-                    prebuiltVoiceConfig=types.PrebuiltVoiceConfig(
-                        voiceName="Kore"
+
+def get_tts():
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash-preview-tts",
+                contents="Say clearly: ${combinedText.replace(/"/g, '\\"')}",
+                config=types.GenerateContentConfig(
+                    responseModalities=["AUDIO"],
+                    speechConfig=types.SpeechConfig(
+                        voiceConfig=types.VoiceConfig(
+                            prebuiltVoiceConfig=types.PrebuiltVoiceConfig(
+                                voiceName="Kore"
+                            )
+                        )
                     )
                 )
             )
-        )
-    )
+            return response
+        except Exception as e:
+            if "500" in str(e) and attempt < 2:
+                time.sleep(2)
+                continue
+            if "429" in str(e): print("MARK_QUOTA_EXHAUSTED")
+            print(f"FAILED: {e}", file=sys.stderr)
+            sys.exit(1)
+
+try:
+    response = get_tts()
     with wave.open("${combinedWav}", "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
@@ -96,8 +111,7 @@ try:
         wf.writeframes(response.candidates[0].content.parts[0].inline_data.data)
     print("SUCCESS")
 except Exception as e:
-    if "429" in str(e): print("MARK_QUOTA_EXHAUSTED")
-    print(f"FAILED: {e}", file=sys.stderr)
+    print(f"FAILED FINAL: {e}", file=sys.stderr)
     sys.exit(1)
 `;
 
@@ -218,6 +232,7 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         }
 
         const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
+        const bookName = folderName.replace(/-[0-9]+$/, '');
         const fileName = path.basename(jsonPath);
         const unitName = fileName.split('-')[1] || 'u1';
 
@@ -233,7 +248,7 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
                 await Promise.all(vocab.map(async (item) => {
                     if (!item.context_sentence) return;
                     const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
-                    const r2Key = `ep/${folderName}/${hash}.mp3`;
+                    const r2Key = `ep/${bookName}/${hash}.mp3`;
                     try {
                         await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
                         existingHashes.add(hash);
@@ -260,7 +275,7 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
                 console.log(`Processing ${uniqueTasks.length} unique audio tasks...`);
                 for (let i = 0; i < uniqueTasks.length; i += 10) {
                     const chunk = uniqueTasks.slice(i, i + 10);
-                    await getAudioBatch(chunk, folderName, unitName);
+                    await getAudioBatch(chunk, bookName, unitName);
                 }
             }
         }
@@ -268,11 +283,11 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         // Apply base URLs (Versioning is handled by the client-side template)
         vocab.forEach(item => {
             if (item.context_sentence) {
-                item.audio = getAudioUrl(item.context_sentence, folderName, unitName);
+                item.audio = getAudioUrl(item.context_sentence, bookName, unitName);
             }
         });
 
-        const htmlContent = generateHtml(jsonData, folderName, unitName);
+        const htmlContent = generateHtml(jsonData, bookName, unitName);
 
         const outputDir = path.dirname(absoluteOutputPath);
         if (!fs.existsSync(outputDir)) {

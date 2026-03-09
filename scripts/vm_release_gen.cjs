@@ -167,25 +167,40 @@ async function getAudioBatch(tasks, book, unit) {
     const pythonScript = `
 import wave
 import sys
+import time
 from google import genai
 from google.genai import types
 
 client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
-try:
-    response = client.models.generate_content(
-        model="gemini-2.5-flash-preview-tts",
-        contents="Say clearly: ${combinedText.replace(/"/g, '\\"')}",
-        config=types.GenerateContentConfig(
-            responseModalities=["AUDIO"],
-            speechConfig=types.SpeechConfig(
-                voiceConfig=types.VoiceConfig(
-                    prebuiltVoiceConfig=types.PrebuiltVoiceConfig(
-                        voiceName="Kore"
+
+def get_tts():
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash-preview-tts",
+                contents="Say clearly: ${combinedText.replace(/"/g, '\\"')}",
+                config=types.GenerateContentConfig(
+                    responseModalities=["AUDIO"],
+                    speechConfig=types.SpeechConfig(
+                        voiceConfig=types.VoiceConfig(
+                            prebuiltVoiceConfig=types.PrebuiltVoiceConfig(
+                                voiceName="Kore"
+                            )
+                        )
                     )
                 )
             )
-        )
-    )
+            return response
+        except Exception as e:
+            if "500" in str(e) and attempt < 2:
+                time.sleep(2)
+                continue
+            if "429" in str(e): print("MARK_QUOTA_EXHAUSTED")
+            print(f"FAILED: {e}", file=sys.stderr)
+            sys.exit(1)
+
+try:
+    response = get_tts()
     with wave.open("${combinedWav}", "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
@@ -193,8 +208,7 @@ try:
         wf.writeframes(response.candidates[0].content.parts[0].inline_data.data)
     print("SUCCESS")
 except Exception as e:
-    if "429" in str(e): print("MARK_QUOTA_EXHAUSTED")
-    print(f"FAILED: {e}", file=sys.stderr)
+    print(f"FAILED FINAL: {e}", file=sys.stderr)
     sys.exit(1)
 `;
 
@@ -277,6 +291,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const key = generateKey(ID_A);
 
     const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
+    const bookName = folderName.replace(/-[0-9]+$/, '');
     const fileName = path.basename(jsonPath);
     const unitName = fileName.split('-')[1] || 'u1';
 
@@ -290,7 +305,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
             await Promise.all(allQuestions.map(async (q) => {
                 if (!q.context_sentence) return;
                 const hash = crypto.createHash('md5').update(q.context_sentence).digest('hex');
-                const r2Key = `ep/${folderName}/${hash}.mp3`;
+                const r2Key = `ep/${bookName}/${hash}.mp3`;
                 try {
                     await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
                     existingHashes.add(hash);
@@ -309,7 +324,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
                 }
             }
             if (tasksToGenerate.length > 0) {
-                await getAudioBatch(tasksToGenerate, folderName, unitName);
+                await getAudioBatch(tasksToGenerate, bookName, unitName);
             }
         }
     }
@@ -318,7 +333,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     for (const challenge of data.challenges) {
         for (const q of challenge.questions) {
             if (q.context_sentence) {
-                q.audio = getAudioUrl(q.context_sentence, folderName, unitName);
+                q.audio = getAudioUrl(q.context_sentence, bookName, unitName);
             }
         }
     }

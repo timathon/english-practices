@@ -36,7 +36,7 @@ async function main() {
     }
 
     const format = await askQuestion("Select filename format:\n 1. number_word_hash.mp3 (Default)\n 2. hash.mp3\n Choice: ") || '1';
-    const targetPrefix = await askQuestion("Enter R2 Target Prefix (e.g., ep/vg/a7a/u1/ or leave empty for all ep/): ") || 'ep/';
+    const targetPrefix = await askQuestion("Enter R2 Target Prefix (e.g., ep/a7a/ or leave empty for all ep/): ") || 'ep/';
 
     const batchDir = path.join(BASE_DIR, 'temp', 'audio', `batch_${batchId}`);
     if (!fs.existsSync(batchDir)) {

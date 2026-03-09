@@ -1,98 +1,81 @@
-# Release Generators
+# Scripts & Automation
 
-This folder contains scripts to automate the process of converting raw exercise and vocabulary content (JSON) into production-ready HTML files.
-
----
-
-## 1. Sentence Architect Generator (`sa_release_gen.cjs`)
-
-Automates the creation of secure, obfuscated HTML files for sentence building exercises. Handles data encryption, Gemini-powered TTS generation, and Cloudflare R2 uploading.
-
-### 🛠 Usage
-
-#### Interactive Mode (Recommended)
-Run without arguments to enter an interactive wizard. Filters for `*-sentence-architect.json` files.
-```bash
-node scripts/sa_release_gen.cjs
-```
-
-#### Direct Mode
-Generate a specific file immediately.
-```bash
-node scripts/sa_release_gen.cjs <json_path> <type> <output_path> [--skip-audio|--regenerate]
-```
+This folder contains the core automation logic for the English Practices platform, including release generators, audio processing utilities, and maintenance tools.
 
 ---
 
-## 2. Vocabulary Guide Generator (`vg_release_gen.cjs`)
+## 🚀 Release Generators
 
-Converts vocabulary JSON data into a formatted, print-optimized HTML guide using `templates/vocab-guide.html`.
+These scripts convert raw JSON content into production-ready, interactive HTML files.
 
-### ✨ Key Features
-- **Interactive Sorting:** Includes a floating toggle to switch between "Textbook Order" and "Alphabetical (A-Z) Order".
-- **Batch TTS Audio:** Automatically generates high-quality audio for context sentences using Gemini 2.5 Flash (processed in batches of 10).
-- **Audio Caching:** Implements background preloading and Base64 `localStorage` caching for instant, offline-ready playback.
-- **Clean HTML:** Uses a state-driven audio system where URLs are managed via injected JSON, keeping the DOM structure minimal.
-- **Print Optimization:** Automatically switches to a compact 3-column grid during printing, maximizing space on A4 pages while hiding web-only UI elements.
-- **Textbook Context:** Displays "Page Number" badges (e.g., P9) to link vocabulary back to physical textbook materials.
+### 1. Sentence Architect (`sa_release_gen.cjs`)
+Generates sentence-building exercises with XOR encryption and integrated TTS.
+- **Input:** `*-sentence-architect.json`
+- **Template:** `templates/sa-shell-master.html`
+- **Usage:** `node scripts/sa_release_gen.cjs` (Interactive)
 
-### 🛠 Usage
+### 2. Spelling Hero (`sh_release_gen.cjs`)
+Creates interactive spelling challenges (Linear & Word Soup modes).
+- **Input:** `*-spelling-hero.json`
+- **Template:** `templates/sh-shell-master.html`
+- **Usage:** `node scripts/sh_release_gen.cjs` (Interactive)
 
-#### Interactive Mode
-Run without arguments to select folders and `*-vocab-guide.json` files. Includes prompts for audio generation modes (Skip, Missing, Regenerate).
-```bash
-node scripts/vg_release_gen.cjs
-```
+### 3. Vocab Master (`vm_release_gen.cjs`)
+Generates vocabulary challenges with progress tracking and mistake review.
+- **Input:** `*-vocab-master.json`
+- **Template:** `templates/vm-shell-master.html`
+- **Usage:** `node scripts/vm_release_gen.cjs` (Interactive)
 
-#### Direct Mode
-```bash
-node scripts/vg_release_gen.cjs <input_json_path> <output_html_path> [--skip-audio|--regenerate]
-```
+### 4. Vocabulary Guide (`vg_release_gen.cjs`)
+Produces print-optimized vocabulary guides with textbook references.
+- **Input:** `*-vocab-guide.json`
+- **Template:** `templates/vocab-guide.html`
+- **Usage:** `node scripts/vg_release_gen.cjs` (Interactive)
 
----
-
-## 3. Vocab Master Generator (`vm_release_gen.cjs`)
-
-Generates interactive vocabulary challenge HTML files (Cloze, Cn2En, En2Cn) based on `*-vocab-master.json` files.
-
-### ✨ Key Features
-- **Interactive Challenges:** Supports three question types: Cloze (fill in the blank), Cn2En (select English), and En2Cn (select Chinese meaning).
-- **Security:** Obfuscates exercise data using XOR encryption and unique `ID_A` generation.
-- **Batch TTS Audio:** Automatically generates audio for context sentences in batches using Gemini 2.5 Flash.
-- **Progress Tracking:** Includes a visual progress bar and persists lifetime/best score statistics in `localStorage`.
-- **Review System:** Automatically logs mistakes for later review by students.
-- **Controlled Flow:** Implements a 2-second delay on the "Continue" button after checking an answer to ensure students read the feedback.
-
-### 🛠 Usage
-
-#### Interactive Mode
-Run without arguments to select folders and `*-vocab-master.json` files.
-```bash
-node scripts/vm_release_gen.cjs
-```
-
-#### Direct Mode
-```bash
-node scripts/vm_release_gen.cjs <json_path> <type> <output_path> [--skip-audio|--regenerate]
-```
+### 5. Recall Map (`rm_release_gen.cjs`)
+Converts hierarchical data into interactive mindmap/recall exercises.
+- **Input:** `*-recall-map.json`
+- **Template:** `templates/rm-shell-master.html`
+- **Usage:** `node scripts/rm_release_gen.cjs` (Interactive)
 
 ---
 
-## 🛠 System Dependencies
-Required for audio generation and processing:
-- `python3`: With `google-genai`.
-- `ffmpeg`: For MP3 conversion.
+## 🔊 Audio & TTS Utilities
 
-## 🔑 Environment Variables
-Required for full functionality:
-- `GOOGLE_API_KEY`: For Gemini 2.5 Flash TTS.
-- `AWS_ACCESS_KEY_ID`: For Cloudflare R2 access.
-- `AWS_SECRET_ACCESS_KEY`: For Cloudflare R2 access.
+Tools for handling speech synthesis and R2 storage.
 
-## 📁 System Components
-- `templates/sa-shell-master.html`: Core UI for sentence exercises.
-- `templates/vm-shell-master.html`: Interactive UI for vocabulary challenges.
-- `templates/vocab-guide.html`: Layout for vocabulary guides.
-- `data/`: Source JSON files.
-- `release/`: Generated production HTML files.
-- `temp/`: Temporary directory for audio processing.
+- **`tts-gen-cut.cjs`**: Shared core utility for batch TTS (Gemini API) and automatic silence-based cutting (FFmpeg). Used by generators.
+- **`tts-download.cjs`**: Downloads existing audio from R2 to local `temp/` for inspection or manual editing.
+- **`upload_sfx.cjs`**: Utility to upload sound effects (correct/error) to the unified `ep/sfx/` folder.
+- **`remove_bad_mp3.cjs`**: Helps identify and remove corrupted or unwanted audio files from local batches and R2.
+- **`cut-audio.cjs`**: Manual utility for advanced audio splitting and trimming.
+
+---
+
+## 🛠 Maintenance Tools
+
+- **`update_index.cjs`**: Automatically regenerates root and sub-folder `index.html` files to keep the exercise directory up to date.
+- **`clean_release.cjs`**: Safely removes old builds from the `release/` directory to save space.
+- **`batch-rename.cjs`**: Utility for normalizing filenames across the project.
+
+---
+
+## ⚙️ Configuration
+
+### Dependencies
+- **Node.js**: `v22+` recommended.
+- **Python 3**: Required for `google-genai` TTS interface.
+- **FFmpeg**: Essential for audio cutting and MP3 conversion.
+
+### Environment Variables
+Ensure these are set in your shell or `.env` file:
+```bash
+GOOGLE_API_KEY=your_key_here       # For Gemini TTS
+AWS_ACCESS_KEY_ID=your_id_here     # For Cloudflare R2
+AWS_SECRET_ACCESS_KEY=your_secret  # For Cloudflare R2
+```
+
+### Storage Structure (R2)
+All audio is stored in a unified, normalized structure:
+`ep/{book}/{md5_hash}.mp3`
+*(Note: Book names are stripped of numeric suffixes like -1, -2 for global sharing)*

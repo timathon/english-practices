@@ -157,6 +157,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const key = generateKey(ID_A);
 
     const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
+    const bookName = folderName.replace(/-[0-9]+$/, '');
     const fileName = path.basename(jsonPath);
     const unitName = fileName.split('-')[1] || 'u1';
 
@@ -166,7 +167,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const uniqueWords = [...new Set(allWords)];
     const wordTasks = uniqueWords.map(word => {
         const hash = crypto.createHash('md5').update(word).digest('hex');
-        const r2Key = `ep/${folderName}/${hash}.mp3`;
+        const r2Key = `ep/${bookName}/${hash}.mp3`;
         return { word, r2Key, hash };
     });
 
@@ -177,7 +178,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
             await Promise.all(wordTasks.map(async (task) => {
                 try {
                     await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: task.r2Key }));
-                    existingHashes.add(hash);
+                    existingHashes.add(task.hash);
                 } catch (e) {}
             }));
         }
@@ -190,7 +191,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
         }
 
         if (tasksToGenerate.length > 0) {
-            await getAudioBatch(tasksToGenerate, folderName, unitName, 'sh');
+            await getAudioBatch(tasksToGenerate, bookName, unitName, 'sh');
         }
     }
 

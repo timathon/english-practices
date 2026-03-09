@@ -47,7 +47,8 @@ async function main() {
 
         const hash = crypto.createHash('md5').update(item.context_sentence).digest('hex');
         const fileName = `${hash}.mp3`;
-        const url = `${PUBLIC_URL_BASE}/ep/sa/${folderName}/${fileName}`;
+        const bookName = folderName.replace(/-[0-9]+$/, '');
+        const url = `${PUBLIC_URL_BASE}/ep/${bookName}/${fileName}`;
         const targetPath = path.join(downloadDir, fileName);
 
         if (fs.existsSync(targetPath)) {
