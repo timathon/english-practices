@@ -186,6 +186,37 @@
 
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         
+        /* Refresh Cache Button */
+        #refresh-cache {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: #1abc9c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        #refresh-cache:hover {
+            background: #16a085;
+            transform: scale(1.05);
+        }
+        #refresh-cache:active {
+            transform: scale(0.95);
+        }
+        #refresh-cache.loading {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
         .confetti {
             position: fixed; width: 10px; height: 10px; background-color: #f00;
             z-index: 3000; top: 50%; left: 50%; border-radius: 2px;
@@ -306,10 +337,57 @@
             </div>
         </div>
     </div>
+
+    <button id="refresh-cache" onclick="app.refreshCache()">
+        <span id="refresh-text">Refresh 🔊</span>
+    </button>
 </div>
 
 <script>
-    const encryptedChallenges = "WSbIzWZ/0IZhNceVIHHI0GsphsEgZ8jnajyGyGczjcEibMiIIDSJy2x/0IbywmQLIHHIwGMpi4Y4BpGGdiSawSBnyMhrM4/FcH/GhnUymMAgZ8jtRn/GhmEzyJ4gtVAP5uZXTK3cDDyMf8aGYTWfymkuyJ5ZJsjHbS+YwWEpyJ4gFMiIIDKa0GsyhNcgZ7GGR3/Ghkt/xoZbf7fZLibIx20vmMFhKcieIBnIiCAymtBrMoTXIGexhkB/xoZSf8aGRn+32V9xyMV3OYPLIGfIzHYpmtc4csXUdz/HwWBt3pRnaY/FYW2OkGFs2sUyPIzAZz+MwTJqiJZkOdqKcG/EwGcrxcFycpnMLTzfxi0o24tgatucYzmPxzVuj5Q2Po+XZz7dljI5jpUzPNqSY27anCwwmpc9K9eVNWrYkztp2pMxbdqUICDG3yApk9Rnf9CGcTKf1CBxyNNtL46GOH+j4CBxyMdsf9CG6udBQLngAguDu3IqIHHIxnA0ic9xf9D/IATIiCAUyIggGMiIIBnIiCAfyIggDcj5Ln+LynEqj9YgZ7GGS3/GhkZ/t4ggPJ/AazLIniA1ntByLtCLLS2fxi84iJQ2bY+QZzyJlGZpiZUyPNrFZDmPxmQ42pNgb4zAMnOYliw5j9ItOJqLcTXFxTc/xdEzcoiTM2WLwGc+3Zdnbd7HZ26PxzVv2sBmbNvFMmuLlzJlxMlybtXSP2zdkzBq05AyatmUMm3I2S4myNB7LY+GOH+GzWw4i9YgccjTbS+Ohjh/msV7f8aGYTPIniC5UTzk8VSf5uZyTZDsDR+bdQw7krlQHit/xoZhNZ/KaS7InlkmyMdtL5jBYSnIniAtyIggMprQazKE1yBnsYZyf8aGYH/GhnN/t9kuJsjHbS+YwWEpyJ4gPJOGLn+F1HY0hcpxf9D/IDiThi5/i80gccjFe3+32V9xyMV3OYPLIGfIzHYpmtc4csXUdz/HwWBt3pRnaY/FYW2OkGFs2sUyPIzAZz+MwTJqiJZkOdqKcG/EwGcrxcFycpnMLTzfxi0o24tgbdjFNmiLkTtriMJgZdzCZ2/fkzo/jsE1aIzCN2nekCwwmpc9K9eVNWrYkztp2pMzbdqUICDG3yApk9Rnf9CGcTKf1CBxyNNtL46GOH+axXt/xoZhM8ieILlRPOTxVJ/m5nJNkOwNH5t1DDuSuVAeK3/GhmAvg8dpLsieWX+LzSBxyNUgccjBe3/GhmMkyIggLciIID/I+S5/i8pxKo/WIGexhnJ/xoZjJMj5Ln+L0WY0hYY4f4LQdi2Zni1ymtFgcI/GMmnawTY4i8cyOd7HM22LlGM7jsFgO4+UNT/YwmZtxNYwc47BdHKP1C0ugotjaIiLd2zFxjJvi5A3PN+dND+MxjprjMEwaN2cYDmPkzc7jJE2ad6Kby3Zm3Rg25M1b92dNm3dlTJt2oZ/cZGGdiSawSBnyMhrM4/FcH/GhnUymMAgZ8jWazmPhi5/icogZ8hNqMzGTajMAiOotUso6uBMhi5/icx3M4HXIGex3yA+hdZwOInQIGfI1iBxyMtyKYPLbC7Inll/hIYuf5iGLn+Ghl8gxt8gPoXWcDiJ0CBnyM0gccjLcimDy2wuyJ5Zf5OGLn+Dhi5/j4ZfIMbfID6F1nA4idAgZ8jAIHHIy3Ipg8tsLsieWX+Ihi5/moYuf46GXyDG3yA+hdZwOInQIGfIwSBxyMtyKYPLbC7Inll/i4Yuf4WGLn+Phl8gt4ggPJ/AazLIniA1ntByLtCLLS2fxi84iJQ2bY+QZzyJlGZpiZUyPNrFZDmPxmQ42pNgb4zAMnOYliw5j9ItOJqLcTXFxTc/xdEzctqRO2rclzZo2sIyZN/GNmTdl2Bp35RnPIyROm7TnWFsxMlybtXSP2zdkzBq05Aya9qUMm3I2S4myNB7LY+GOH+Zy3ctyIggKoXWZn/QhnA0jsEgccjHbH/Qhuv3e4jr93tMhfcCBY61VwIgccjGcDSJz3F/0P8gMsiIIC/IiCAzyIggJMiIIDTIiCA5yIggOMiIIDHI+S5/i8pxKo/WIGexhnB/xoZrf8aGZn/Ghmd/t4ggPJ/AazLIniA1ntByLtCLLS2fxi84iJQ2bY+QZzyJlGZpiZUyPNrFZDmPxmQ42pNgb4zAMnOYliw5j9ItOJqLcTXFxTc/xdEzctqRO2rclzZo2sIyZN/GNmTdl2Bp35RnPIyROm7TnWFsxMlybtXSP2zdkzBq05Aya9qUMm3I2S4myNB7LY+GOH+GzWw4i9YgccjTbS+Ohjh/ict3MY6GLn+JyiBnyEyB4MZAvsfGQY3yDh+nf8aGYTWfymkuyJ5ZJsjHbS+YwWEpyJ4gPsiIIDKa0GsyhNcgZ7GGaX/GhmF/xoZlf7fZLibIx20vmMFhKcieIDKfyGZ/xoZtLZ7NbTOZhjgGyMt3MY6GLn+fyGZ/xoZ3MY/AIACX+S5/i9FmNIWGOH+C0HYtmZ4tcprRYHCPxjJp2sE2OIvHMjnexzNti5RjO47BYDuPlDU/2MJmbcTWMHOOwXRyj9QtLoKLY2iIi3dsxcIyad6VMWvckDpliMAzb9nGZ22PkWQ/3cA0PtqXYW+Iim8t2Zt0YNuTNW/dnTZt0pcybdqGf3GRhnYkmsEgZ8jXbSiahi5/nctwOcieID6F0W45yIggPoSGOH8CJ79xDhiYcQ8rrblRASBxyMZwNInPcX/Q/yAohsAgccjHIHHIwyBxyMt3MY6GLn+fyGc5yIggNsj5Ln+LynEqj9YgZ7GGYX/Ghm0ohsAgAMaGYyiOzW1/0IZqKZ7UcWfFi3IoiIlnP9qQMjjewWM+2sA2PtuUY22LwmY4iMJnbd3GMDuOlCwv2IpmOJyLZy3F12pyi5Fgcp+VLTvakDZs2ZI0adKcYDnbljE/j5RnaIzGNTncxzJuiZZgc4fUMWKcmTNq3ZY1ZN6UOm7alDJ/l4h5f57dcjjIniAxg8pnPJiGLn+dy3A5yJ4gNYXIazmL3SBxyMdsf9CG59xtQp7CyIggPoLRbDaZhjgGkYZhMpjWZz6ehjh/gstuf8aGbS2ezW0zmYY4BsjMYzHIiCA1j8ggccjMbTHI+X9xkYZhMpjWZz6ehjh/g4Yuf4XUdjSFynF/0P8gOMiIIDzIiCA0yPl/cZGGYTKY1mc+noY4f47Fe3/Ghm0tns1tM5mGOAbIwGMkyIggOY/dIHHIwGM0yPl/AMaGYyiOzW1/0IZqKZ7UcWfFi3IoiIlnP9qQMjjewWM+2sA2PtuUY22LwmY4iMJnbd3GMDuOlCwv2IpmOJyLZy3F12pyi5Fgcp+VLWrTwDo42ZAyZduWZGSOxjI/iMJjaNqcYDiIlzNkjsFjc4fUMWKcmTNq3ZY1ZN6UNGjalDJ/l4h5f57dcjjIniAuhdFyf8aGdTKYwCBnyMxtMYPAYyTIiCA+hIY4fw8lhbt2OyBxyMZwNInPcX/Q/yA0yIggOY/dIHHIwGM0yIggNYXIIHHIwGMkyIggNYvIIHHIwSBxyMxnMcj5Ln+LynEqj9YgZ7GGajKGhi5/g4Yuf47Fe3+3iCA8n8BrMsieIDWe0HIu0IstLZ/GLziIlDZtj5BnPImUZmmJlTI82sVkOY/GZDjak2BvjMAyc5iWLDmP0i04motxNcXFNz/F0TNy3Z1mZY+XNm3SlTA708BgbYjGZDzflDo/j8YxbNPAZzzEyXJu1dI/bN2TMGrTkDJr35QybcjZXyDG3yA0joY4f4nML2/IiCApg9BuOMieIB6CxW4xj8plOMqWIHHIzWEyhIY4fxo7jPLIiCA5i9Bjf9D/eX+e3XI4yJ4gMYPKZzyYhi5/nctwOcieIC6BzWcvyIggPoSGOH8MH5O0cQ7q3W+GLn+JzHczgdcgZ7HfID6F1nA4idAgZ8jXaTTIiCAymtBrMoTXIGexhnE2k4Yuf5nPa3/GhnE2j4ZfIMbfID6F1nA4idAgZ8jBcH/Ghm0tns1tM5mGOAbIy3B/xoZnL8iIICiYhl8gt4ggPJ/AazLIniA1ntByLtCLLS2fxi84iJQ2bY+QZzyJlGZpiZUyPNrFZDmPxmQ42pNgb4zAMnOYliw5j9ItOJqLcTXFxTc/xdEzcoyRMWnfxmRriZYwbIidYWyIlDRk2cI3ZNKcZm6OkDdsxMlybtXSP2zdkzBq05AyZd+UMm3I2S4myNB7LY+GOH+Zy3ctyIggKoXWZn/QhnE2g8Fwf8aGYTPIniC7UTXrxkBMgtjIiCA/mM1hNpmGOAbI12k0yIggMpiGLn+P1iBxyNdpOMiIIC6B3SBxyNFwf7eIIDyE13U4mIY4BsjXaTTIiCA4mIZfccjFdzmDyyBnyMx2KZrXOHLF1Hc/x8Fgbd6UZ2mPxWFtjpBhbNrFMjyMwGc/jMEyaoiWZDnainBvxMBnK8XBcnKZzC0838YtKNuLZGjZkDc/jJJhb9iVYGSJlWBt3J0xO9+dOmWOl2Zp35UsMJqXPSvXlTVq2JM7adqcN23alCAgxt8gKZPUZ3/Qhm40hMFjL8iIICqF1mZ/0IZhPIfUIHHIx2x/0Ibk6VFBiPUCNKe4dhQuuFAC59xtTJL4Dziyf8aGYTWfymkuyJ5ZJsjHbS+YwWEpyJ4gPsiIIDKa0GsyhNcgZ7GGaX/GhmV/xoZhf7fZLibIx20vmMFhKcieIDzIiCAymtBrMoTXIGexhmd/xoZjf8aGd3+32S4myMdtL5jBYSnIniAwyIggMprQazKE1yBnsYZvf8aGbH/Ghmw6yPl/cZGGYTKY1mc+noY4f5qGLn+F1HY0hcpxf9D/ID/IiCA5yIggLcj5fwDGhmMojs1tf9CGaime1HFnxYtyKIiJZz/akDI43sFjPtrANj7blGNti8JmOIjCZ23dxjA7jpQsL9iKZjici2ctxddqcouRYHKflS08jpwwONORY2SJkzZl2MdkbtnHZDjfnWNu2sFjadqSMnOH1DFinJkzat2WNWTelDRk2pQyf5eIeX+e3XI4yJ4gLoXRcn/GhnUymMAgZ8jHYzCahi5/icogZ8hCtuYPLqq1egHnwVqI5+dMQYPaAjSnuHYUIHHIxnA0ic9xf9D/ID7IiCA8yIggMMiIIDONhi5/moYuf4iGLn+fhi5/jYZfccjFbC6dwXB/0P8gPsiIIDzIiCAwyIggLcj5Ln+L0WY0hYY4f4LQdi2Zni1ymtFgcI/GMmnawTY4i8cyOd7HM22LlGM7jsFgO4+UNT/YwmZtxNYwc47BdHKP1C0ugotjaIiLd2zFxWZl2ME7aIudYWrenDA+jJcxPozBN2SLlzI4i5Aya9qKby3Zm3Rg25M1b92dNm3cnTJt2oZ/cZGGdiSawSBnyMhrM4/FcH/GhnUymMAgZ8jQcDyDymszjYYuf4nKIGfITKzwDR+BcQ87u7VECSBxyMdqKITPcX/Q/3l/ictwL4/Hdn/QhnYvi81sf8aGbS2ezW0zmYY4BsjQcDyEwSBxyNBwNIvKIHHI0HA8g8ogAJeIeX+Jy3Avj8d2f9CGazONhi5/hdR2NIXKcX/Q/yA4hMMgccjFbDrIiCA0hMMgAJf5Ln+L0WY0hYY4f4LQdi2Zni1ymtFgcI/GMmnawTY4i8cyOd7HM22LlGM7jsFgO4+UNT/YwmZtxNYwc47BdHKP1C0ugotjaIiLd2zFxzNl38BmPImcYGiLnGRoi8UwbomRYGXaxmFs2MAwbN6Kby3Zm3Rg25M1b92dNm3dnTJt2oZ/cZGGdiSawSBnyNdtKJqGLn+dy3A5yJ4gKZjFazODymV/xoZhM8ieILVECeXmaYjnwlNMrPDIiCA/mM1hNpmGOAbI0HA0i8ogccjNbDrIiCA8hMMgccjQcDyDyiBxyMFsOsiIICmYxWw4yPkuf4vKcSqP1iBnsYZ2L4vNbH/GhmszjYZfccjFdzmDyyBnyMx2KZrXOHLF1Hc/x8Fgbd6UZ2mPxWFtjpBhbNrFMjyMwGc/jMEyaoiWZDnainBvxMBnK8XBcnKZzC0838YtKNuLYWzSkWY5i8c6P9/FOjvfxWNv2cc3P9KUYD7blmZv25AsMJqXPSvXlTVq2JM7adqTO23alCAgxt8gKZPUZ3/Qhm40hMFjL8iIICqF1mZ/0IZ2NYPWZn/GhmEzyJ4gukYI5uVjQ5jZyIggPoLRbDaZhjgGkYZhMpjWZz6ehjh/nswgccjLcimDy2wuyJ5Zf57MIHHI12p/xoZhNcj5f3GRhmEymNZnPp6GOH+D1iBxyMtyKYPLbC7Inll/j9YgccjRcH/GhmsvyPl/cZGGYTKY1mc+noY4f46GLn+F1HY0hcpxf9D/ICnIiCA5yIggP8j5fwDGhmMojs1tf9CGaime1HFnxYtyKIiJZz/akDI43sFjPtrANj7blGNti8JmOIjCZ23dxjA7jpQsL9iKZjici2ctxddqcouRYHKflS05jpFhZYjCN2zfkTo7jMdgON+UMmrakzNk2pxnZN+WNnOH1DFinJkzat2WNWTelDpt2pQyf5eIeX+e3XI4yJ4gLoXRcn/GhnUymMAgZ8jQajSYwCBxyMdsf9CG5fFGQLrUDT6Gf8aGYC+Dx2kuyJ5Zf5nMIHHI0Gp/xoZrL8iIIDnIiCA4mIYuf5/WIHHI0CBxyMdqf7eIIDyE13U4mIY4BsjQan/GhmsvyIggOcj5Ln+L0WY0hYY4f4LQdi2Zni1ymtFgcI/GMmnawTY4i8cyOd7HM22LlGM7jsFgO4+UNT/YwmZtxNYwc47BdHKP1C0ugotjaIiLd2zFwGZoiZxgO9+VN2jSwmQ+iME3bdqTMmrbnTJlj503b96Kby3Zm3Rg25M1b92dNm3SlDJt2oZ/cZGGdiSawSBnyMhrM4/FcH/GhnUymMAgZ8jJZzyEhi5/icogZ8hChtIMJJ+7cgsutUsM5flQiixzDT6Gu24r5N13hi5/icx3M4HXIGex3yA+hdZwOInQIGfIySBxyMtyKYPLbC7Inll/hIYuf4eGLn+Ghl8gxt8gPoXWcDiJ0CBnyMFjf8aGbS2ezW0zmYY4BsjBY3/Ghmc4yIggNI+GXyDG3yA+hdZwOInQIGfIyiBxyMtyKYPLbC7Inll/h4Yuf4TDIHHIyiAAl/kuf4vRZjSFhjh/gtB2LZmeLXKa0WBwj8YyadrBNjiLxzI53sczbYuUYzuOwWA7j5Q1P9jCZm3E1jBzjsF0co/ULS6Ci2NoiIt3bMXGO26OxjNl0pE1b4zHNjndkmE+j5E0a9rCMWXYl2Bti4pvLdmbdGDbkzVv3Z02bd2RMm3ahn9xkYZ2JJrBIGfI120omoYuf53LcDnIniAwj8Vsf8aGYTPIniC7bivk3XdCmvLGTKP1DQC4c8SK5cduQobSDCSff8aGYC+Dx2kuyJ5Zf4eGLn+EwyBxyM1nf8aGb3/Ghmc8yIggM8iIIDHIiCAzyPkuf4vKcSqP1iBnsYZvf8aGZzzIiCAzyPkuf4vRZjSFhjh/gtB2LZmeLXKa0WBwj8YyadrBNjiLxzI53sczbYuUYzuOwWA7j5Q1P9jCZm3E1jBzjsF0co/ULS6Ci2NoiIt3bMXGO26OxjNl0pE1b4zHNjndkmE+j5E0a9rCMWXYl2Bti4pvLdmbdGDbkzVv3Z02bd2RMm3ahn8Al4h5f4PAIGfIx2pw2YYuf57NdjGPhjh/qcxjMYbBbDqPhDF/xoZrPoXKIGfIVJ3HaoYuf47FdjzInlkmyNB7LY+GOH+GzWw4i9YgccjTbS+Ohjh/jMVuMciIID6Ehjh/DDWWuGo2LrVdKOfdeIYuf4nMdzOB1yBnsd8gPoXWcDiJ0CBnyMIgccjLcimDy2wuyJ5Zf5yGLn+Mhi5/mswgAJeIeX+Jy3Avj8d2f9CGYzGGhi5/hdR2NIXKcX/Q/yAyhsggccjRbjHIiCA8hsggAJf5Ln+L0WY0hYY4f4LQdi2Zni1ymtFgcI/GMmnawTY4i8cyOd7HM22LlGM7jsFgO4+UNT/YwmZtxNYwc47BdHKP1C0ugotjaIiLd2zFnTQ72JYxbd6UNGrYwWNq08c0aN/AYTiOxTJlj5Q6btqKby3Zm3Rg25M1b92dNm3ckzJt2oZ/cZGGdiSawSBnyNdtKJqGLn+dy3A5yJ4gO4vIbn/GhmEzyJ4gu3sw5914iOrqZkGCz8iIID+YzWE2mYY4BsjFbjHIiCAyhsggccjCIHHI0W4xyIggK8iIIC2Chl9xyMVsLp3BcH/Q/yA7yIggPIbIIADGhmMojs1tf9CGaime1HFnxYtyKIiJZz/akDI43sFjPtrANj7blGNti8JmOIjCZ23dxjA7jpQsL9iKZjici2ctxddqcouRYHKflS1k3MIwb9mUNm3ckzA4i5M7PtyRNzmJwWY82pxnbdKXMnOH1DFinJkzat2WNWTelDRq2pQyf5eIeX+e3XI4yJ4gMYPKZzyYhi5/nctwOcieIDuDyG9/xoZhM8ieILp+EefgW4jn4FtDi9rIiCA+gtFsNpmGOAaRhmEymNZnPp6GOH+Mhi5/hdR2NIXKcX/Q/yA7yIggK8iIIC3I+X9xkYZhMpjWZz6ehjh/g4Yuf4XUdjSFynF/0P8gOMiIIDzIiCA0yPl/cZGGYTKY1mc+noY4f4aGLn+F1HY0hcpxf9D/IC/IiCAqyIggMcj5f3GRhmEymNZnPp6GOH+Hhi5/hdR2NIXKcX/Q/yAzyIggM42GLn+Hhl8gt4ggPJ/AazLIniA1ntByLtCLLS2fxi84iJQ2bY+QZzyJlGZpiZUyPNrFZDmPxmQ42pNgb4zAMnOYliw5j9ItOJqLcTXFxTc/xdEzcojAYDncwGBsjpxhPtqdY2Tfk2dl3JU6bYzAY2TekDA8xMlybtXSP2zdkzBq05Ayat2UMm3I2S4myNB7LY+GOH+Zy3ctyIggKoXWZn/QhmQ0hskgccjHbH/QhuXJX0G/7MZBv+wNLYV/xoZgL4PHaS7Inll/h4Yuf4uGLn+Mhi5/g4Yuf5iGLn+dhi5/j4Yuf4aGX3HIxWwuncFwf9D/IDvIiCA0yIggMciIIDDI+S5/i9FmNIWGOH+C0HYtmZ4tcprRYHCPxjJp2sE2OIvHMjnexzNti5RjO47BYDuPlDU/2MJmbcTWMHOOwXRyj9QtLoKLY2iIi3dsxcZmP46SZj/bwDo+iZQ7PNORNTjSkjNl2sJmPNOQNm+Lim8t2Zt0YNuTNW/dnTZt3ZMybdqGf3GRhnYkmsEgZ8jIazOPxXB/xoZ1MpjAIGfIz2sxhoYuf4nKIGfIQb7ZDAm5cQw5grtHHyBxyMdqKITPcX/Q/3l/ictwL4/Hdn/Qhml/xoZtLZ7NbTOZhjgGyMcgccjPIHHIwyAAl4h5f4nLcC+Px3Z/0IZrf8aGbS2ezW0zmYY4BsjBIHHI0SBxyM0gAJeIeX+Jy3Avj8d2f9CGbjHIiCAymtBrMoTXIGexhm5/xoZwL8iIIDGGhl8gt4ggPJ/AazLIniA1ntByLtCLLS2fxi84iJQ2bY+QZzyJlGZpiZUyPNrFZDmPxmQ42pNgb4zAMnOYliw5j9ItOJqLcTXFxTc/xdEzct+XNmrZkTpl3sAxaduUNWzdkjA4jsE1PIyUMz7fl2dlxMlybtXSP2zdkzBq05Aya9mUMm3I2S4myNB7LY+GOH+Zy3ctyIggKoXWZn/Qhmk0hsggccjHbH/QhufhbkKv5sZCn90MCbl/xoZgL4PHaS7Inll/g4Yuf5jWIHHIyCBxyMMgccjPIHHIxyBxyNEgccjIbn+3iCA8hNd1OJiGOAbIzyBxyM0gccjIbn+3iCA8n8BrMsieIDWe0HIu0IstLZ/GLziIlDZtj5BnPImUZmmJlTI82sVkOY/GZDjak2BvjMAyc5iWLDmP0i04motxNcXFNz/F0TNy35c2atmROmXewDFp25Q1bN2SMDiOwTU8jJQzPt+XZ2XEyXJu1dI/bN2TMGrTkDJr2ZQybcjZLibI0Hstj4Y4f4bNbDiL1iBxyNNtL46GOH+IwWMpyIggPoSGOH8PI7m1XgEuu2M36ulPiOTVckyBwciIID6C0Ww2mYY4BpGGYTKY1mc+noY4f4iGLn+F1HY0hcpxf9D/IC3IiCA5yIggP8j5f3GRhmEymNZnPp6GOH+PxSBxyMtyKYPLbC7Inll/j8EgccjBY3/GhmM4yPl/cZGGYTKY1mc+noY4f56GLn+F1HY0hcpxf9D/IDnIiCApyIggNsj5fwDGhmMojs1tf9CGaime1HFnxYtyKIiJZz/akDI43sFjPtrANj7blGNti8JmOIjCZ23dxjA7jpQsL9iKZjici2ctxddqcouRYHKflS04jpI7a9ydOmyIwWBo05FgOdrFN22PkDFq25wyaI7BYXOH1DFinJkzat2WNWTelDpv2pQyf5eIeX+e3XI4yJ4gLoXRcn/GhnUymMAgZ8jGZzyehi5/icogZ8hBheYCEKdxDC2RtV4BLrtiPOredoYuf4jWaz6B1yBnsYZmf8aGYzjIiCA5yIggNsiIIC3IiCApyIggOIuGLn+Ihl9xyMVsLp3BcH/Q/yA/yIggOIuGLn+ehl9xyMV3OYPLIGfIzHYpmtc4csXUdz/HwWBt3pRnaY/FYW2OkGFs2sUyPIzAZz+MwTJqiJZkOdqKcG/EwGcrxcFycpnMLTzfxi0o24tnOdydNGvTnDM/j8Y3ZN/GZm2LkTI43pc1bNKUNzmPxywwmpc9K9eVNWrYkztp2pwwbdqUICDG3yApk9Rnf9CGbjSEwWMvyIggKoXWZn/QhmY0jMJrPp/IdiTIiCA+hIY4fwM+vLRIPC60cBrm52GGLn+JzHczgdcgZ7HfID6F1nA4idAgZ8jAazvIiCAymtBrMoTXIGexhmY4jIYuf47NZH/GhmYkjIZfIMbfID6F1nA4idAgZ8jCa3/Ghm0tns1tM5mGOAbIwmd/xoZkJMiIIDuDhl8gxt8gPoXWcDiJ0CBnyMd3MciIIDKa0GsyhNcgZ7GGYTyGhi5/ictuf8aGYSiGhl8gxt8gPoXWcDiJ0CBnyNB7f8aGbS2ezW0zmYY4BsjQZyTIiCApg8EgccjQe3+32V9xyMV3OYPLIGfIzHYpmtc4csXUdz/HwWBt3pRnaY/FYW2OkGFs2sUyPIzAZz+MwTJqiJZkOdqKcG/EwGcrxcFycpnMLTzfxi0o24sxOdycOmiLlGdojJI0bojFY26PlmZsi8ZnbNORYG3YkCwwmpc9K9eVNWrYkztp2pIzbdqUICDG3yApk9Rnf9CGcTKf1CBxyNNtL46GOH+OzWQ7g8d3MZ7dIHHIx2x/0Ibrx1RNoMXGTZjjDh6Jf8aGYC+Dx2kuyJ5Zf47NZH/GhmY4jIYuf4zdIHHIwmt/xoZhPIaGLn+ezWd/xoZhKIaGLn+e3SAAxoZjM5nTZy/Inll/js1kf8aGZDTIiCA+n8ggccjQe3+3iCA8n8BrMsieIDWe0HIu0IstLZ/GLziIlDZtj5BnPImUZmmJlTI82sVkOY/GZDjak2BvjMAyc5iWLDmP0i04motxNcXFNz/F0TNy2cA0ZdKRY22PkWRr3JdgPIuXZ2+OlWM/j5U7aIiUMGnEyXJu1dI/bN2TMGrTkDJr25QybcjZXyC3";
+    const db = {
+        name: 'ep-audio-cache',
+        version: 1,
+        instance: null,
+        open: function() {
+            return new Promise((resolve, reject) => {
+                if (this.instance) return resolve(this.instance);
+                const request = indexedDB.open(this.name, this.version);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('audio')) {
+                        db.createObjectStore('audio', { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    this.instance = e.target.result;
+                    resolve(this.instance);
+                };
+                request.onerror = (e) => reject(e);
+            });
+        },
+        get: async function(id) {
+            const db = await this.open();
+            return new Promise((resolve) => {
+                const transaction = db.transaction('audio', 'readonly');
+                const store = transaction.objectStore('audio');
+                const request = store.get(id);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => resolve(null);
+            });
+        },
+        set: async function(id, blob, meta) {
+            const db = await this.open();
+            return new Promise((resolve) => {
+                const transaction = db.transaction('audio', 'readwrite');
+                const store = transaction.objectStore('audio');
+                store.put({ id, blob, meta, timestamp: Date.now() });
+                transaction.oncomplete = () => resolve(true);
+                transaction.onerror = () => resolve(false);
+            });
+        }
+    };
+
+    const encryptedChallenges = "7zT0KdBt7GLXJ/txlmP0NN07uiWWdfQD3C66LNEhsSWUfvRslia1L9pt7GJE0FjvlmP0JNU7t2KOFK1iwDamJZZ19CzdIbMhxm36YsMgpCSWdfQJ8G36Ytch9HqWp2zrUPRrqBvOMNg6bfpi1yejLt889HrvNPQj2z2kJdc79HqWBvRsliCmNN0guDOWdY1i8W36Yv1t+mLtbYs9mDT0I9s9pCXXO/R6lgv0bJYgpjTdILgzlnWNYvZt+mLkbfpi8G2LPelj9CHBK78vlnX0KMA7pjOOYPkwwS37JdZ/4nDRe7Mh13+ydNd+5iGELrAk0S2wJYR4tHLSK+Zuxn34JNE5+SXEYLd11mC0d4V3tyTRLOFz0X/iI9F8syODfeYk0H7nIYR5t3OEd/gtxHz0PZg09DTNP7Nijm2lL8E/9GyWOLky0G3sYv0L9GyWLLhijm0++h+rbf1c4FemLMH0bJYtpCnXJKVijhT0CZZj9ASWY/QQlmP0ApZj9AWWY/QZlhL6YtUhpTfRPfR6722fYphtkmLpY/QhwSu/L5Z19CjAO6YzjmD5MMEt+yXWf+Jw0XuzIdd/snTXfuYhhC6wJNEtsCWEeLRy0ivmbsZ9+CTROfklxGC3ddZgtHeFd7ck0Szhc9F/4iPRfLMjg33mJNB+5yGEebdzhHf4LcR89D2YNPQ0zT+zYo5tuinaKrcylmP0N9s9smKObaYhzW36Ytch9HqWq23YUuNoe1D0Tqkm/jH7LWcw3ySrbPqdbfpi1yejLt889HrvNPQj2z2kJdc79HqWP/RsliCmNN0guDOWdY1ixG36YtZt+mLFbYs9mDT0I9s9pCXXO/R6li6vYphtuTDAJrkux23sG5Yqr2KYbbcplmP0Ic1tiz3pY/QhwSu/L5Z19CjAO6YzjmD5MMEt+yXWf+Jw0XuzIdd/snTXfuYhhC6wJNEtsCWEeLRy0ivmbsZ9+CTROfklxGC3ddZgtHCGLuJ11XrvdtYptHiCKbNygXjuItAq4XXSKeN0gHv4LcR89D2YNPQ0zT+zYo5tpS/BP/Rslji5MtBt7GLELq9imG21LpZ19KQP1zDsCnQy+yymRPFT9E9oUtBGpA71/2KYbbQy3Sy9M5Z1jWLVJvRslj/0bJY+9GyWKq9imG20YphttzmWEvpi1SGlN9E99HrvbaZimG23OZYS+mLVOrIp223sYtw7ojDHdflvxDq0bdEt5nSEKuIl1SzmJIAs53DVf7cm0Cq0JtF/4SKGKbJwmj3kbtAqoG/RP/khgS35IoR9t3SBLuN5gi2wIox5sCWGeuF41iuzd4EpsHWAe+Ju2T/lYsljrWLANqYllnX0LN0hsyHGbfpiwyCkJJZ19DLdK7NimG21LpZ19Kke3vqpHt4+xx6nd8xc8nBimG21KMEhvTOWdY07liy5MsYqtTSWdfQylmP0L8Q7vy/aPPR67224YphtpGKYbbpi6TL6O5YsuTLGKrU0lnX0KZZj9C/EO78v2jz0eu9tr2KYbb9imG2zYuky+juWLLkyxiq1NJZ19CSWY/QvxDu/L9o89HrvbbRimG2mYphtsmLpMvo7liy5MsYqtTSWdfQllmP0L8Q7vy/aPPR67223YphtuWKYbbNi6TKLbJYuoyTdIPR6lieiNMQ87G+bP6MimSq0cIB/s3TRLrVw0Hu1cYQu5iHSK7Mi0irmd9Z9sCSEYaRymiuzNpsqpm/VerRvhHrvd4J84nWEKeZ5gS3ieYN8tHSBf7Mh0nruc412tXGaIqZzljL6O5Y7rzDRbexixyCjMJZj9DfbPbJijm2kKdAq9GyWLLhijm0/6iVjP+olp1HqXO5aqAnp9GyWLaQp1ySlYo4U9DCWY/QulmP0LJZj9CWWY/QplmP0IpZj9DKWY/QklhL6YtUhpTfRPfR6722kYphtv2KYbbJimG2zYulj9CHBK78vlnX0KMA7pjOOYPkwwS37JdZ/4nDRe7Mh13+ydNd+5iGELrAk0S2wJYR4tHLSK+Zuxn34JNE5+SXEYLd11mDmdY144HOAeuYmhHbjIoB24XPWe+Nw0S6wdYx873nXfvgtxHz0PZg09DTNP7Nijm26KdoqtzKWY/Q32z2yYo5ttS/BI7JimG21LpZ19Kg38vqkCNX6pTvgMvsRbfpi1yejLt889HrvNPQj2z2kJdc79HqWLPRsliCmNN0guDOWdY1i3236Ytdt+mLTbYs9mDT0I9s9pCXXO/R6liCjLNBt+mLbP6Ip2yGlYo4U9C/BI7JimG2jLNBt+mLBI7MklhKrHZhttzXQJrlijm2+NMA/pXqbYKY11mKzIoR75iWAKrcjhCviI4V/t3DVKbIl1imzcIMt5CbQf/gyhmGyJcJgszCbLuMimynmdIB+5XaCe+54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6WP0IcErvy+WdfQowDumM45g+TDBLfsl1n/icNF7syHXf7J0137mIYQusCTRLbAlhHi0ctIr5m7Gffgk0Tn5JcRgt3XWYLckjH2zeYEu7yODe+5y1ynlc9cps3WNLuVw0S7icIJ/+C3EfPQ9mDT0NM0/s2KObbop2iq3MpZj9DfbPbJijm2iMtUmuCnaKPRsliy4Yo5tPu4ZqG3DmKpJ+Vzhe2KYbbUowSG9M5Z1jTuWLLkyxiq1NJZ19DTGLr8ulmP0L8Q7vy/aPPR6722iMtUhs2KYbaIy3S64YphtojLVJrhi6TL6O5YsuTLGKrU0lnX0Kdoo9GyWIKY03SC4M5Z1jWLRIbFimG23LtNt+mLdIbFi6TKLbJYuoyTdIPR6lieiNMQ87G+bP6MimSq0cIB/s3TRLrVw0Hu1cYQu5iHSK7Mi0irmd9Z9sCSEYaRymiuzNpsqpm/VerRv137uddArtyOMLeMhjCnjIdV95SOBLe5w1iznctB953SaIqZzljL6O5Y7rzDRbexixyCjMJZj9DfbPbJijm2iMtUmuCnaKPRsliy4Yo5tPu4ZqG3DmKpJ+Vzhe2KYbbQy3Sy9M5Z1jWLVIbFimG2/LtNt+mLAPb8h2m36YtEhsWKYbaIy1Sa4YphtojLVIbNi6WP0Ido8oSXGbewbljukId0h9GyWJrgnlhL6YtU6sinbbexi3DuiMMd1+W/EOrRt0S3mdIQq4iXVLOYkgCzncNV/tybQKrQm0X/hIoYpsnCaPeRu0Cqgb9E/+SGBLfkjhXfjJNAutXjWerd40nq3IYZ8tXXWd+Yi137kJIZ+4m7ZP+ViyWOtYsA2piWWdfQs3SGzIcZt+mLDIKQklnX0NNwmpCSWY/Qj2m3sYlPjeqQMxjHaMG36Ytcnoy7fPPR67zT0I9s9pCXXO/R6lju+YphtuTDAJrkux23sG5Y7vmKYbaUolmP0I9xtiz2YNPQj2z2kJdc79HqWJqRimG25MMAmuS7HbewbliqkYphtozKWY/Qpxm2LPZg09CPbPaQl1zv0epYr9GyWIKY03SC4M5Z1jWLAbfpi0G36YtZtiz3pY/QhwSu/L5Z19CjAO6YzjmD5MMEt+yXWf+Jw0XuzIdd/snTXfuYhhC6wJNEtsCWEeLRy0ivmbsZ9+CTROfklxGC3ddZgsiSBLO4i0nrndYF3sCbXLbN1hH/hcIN+73CMKu91hnv4LcR89D2YNPQ0zT+zYo5tpS/BP/Rslji5MtBt7GLAJ78y0G36Ytch9HqWqHrsUPdfpy7L9GyWLaQp1ySlYo4U9DTcbfpi0T30bJYmpGKYbbUolmP0NJZj9DPcbfpi0G36YtZti2yWLrgzwyqkYo4U9DTcbfpi3T30bJYr9B2Ybbc10Ca5Yo5tvjTAP6V6m2CmNdZisyKEe+YlgCq3I4Qr4iOFf7dw1SmyJdYps3CDLeQm0H/4MoZhsiXCYLMwmy7jIpsrsnXXd7QmgX7jdYwpsCPWKuNwhHjmd4V25njRduNygGG7MIdtq2zPbaI5xCr0epYjvy7RLqRimG2hL8Yr9HqWIrMh2m36Ytch9HqWqVLPUs9Lpizg+qgV5zHkDmH4blPVUqYwwDDAKW36Ytcnoy7fPPR67zT0I9s9pCXXO/R6liL0bJYgpjTdILgzlnWNYtpt+mLZbfpi2G2LPZg09CPbPaQl1zv0epYqt2KYbbkwwCa5Lsdt7BuWKrdimG2zJZZj9CnRbYs9mDT0I9s9pCXXO/R6liH0bJYgpjTdILgzlnWNYtlt+mLaKPRsliH0HckS+mLVOrIp223sYtw7ojDHdflvxDq0bdEt5nSEKuIl1SzmJIAs53DVf7cm0Cq0JtF/4SKGKbJwmj3kbtAqoG/RP/khgS35Io18siKFd+51g32wI4Ar4XbXLLN1gnnmJod35HPWf7du2T/lYsljrWLANqYllnX0M9s6pmKYbaEvxiv0epYisyHabfpi1yH0epapUs9Sz0umLOD6qBXnMeQOYfhuU9VSpjDAMMApbfpi1j2/I9889HrvbbtimG2zJZZj9CXVbfpi2m36Ytpt+mLaKPRsliazYphtumLpY/Qh2jyhJcZt7BuWIvRsliq3YphtuGLpY/QhwSu/L5Z19CjAO6YzjmD5MMEt+yXWf+Jw0XuzIdd/snTXfuYhhC6wJNEtsCWEeLRy0ivmbsZ9+CTROfklxGC3ddZgtHmHK7RxjHfjd4YptXTQeOAj1yrjdoJ/sHOMfeUihC74LcR89D3pMvo7liayYo5ttSiZfPRslju/NNgq9HqWDL4h2COzLtMq9nOWY/Qp1yC4Yo5tJt8uz/Rsliu3NNVt7BvPbaI5xCr0epYjvy7RLqRimG2hL8Yr9HqWKbcs2G36Ytch9HqWqUfUUc9EbFz4WqU03fRsliy+NdokpWKOFK1i1yCkMtEsomKObbBimG25MMAmuS7Hbewbljn0bJYp9GyWP75i6TL6O5YsuTLGKrU0lnX0Idgj9GyWIKY03SC4M5Z1jWLbI7pimG2jLNht+mLVI7pi6TKLbJYuoyTdIPR6lieiNMQ87G+bP6MimSq0cIB/s3TRLrVw0Hu1cYQu5iHSK7Mi0irmd9Z9sCSEYaRymiuzNpsqpm/VerRvjXmwcoZ85nSEeeFy0S7hedd543XQLLMk1X/uJYR35XCaIqZzljL6O5Y7rzDRbexixyCjMJZj9DfbPbJijm2wIdgj9GyWLLhijm0w0SCqVtKYp2HMUc9EYphttDLdLL0zlnWNYsQn9GyWILoslmP0Idgj9GyWOfRsljq6LJZj9CaWEvpi1SGlN9E99HrvbbBimG23LNhti2yWLqMk3SD0epYnojTEPOxvmz+jIpkqtHCAf7N00S61cNB7tXGELuYh0iuzItIq5nfWfbAkhGGkcporszabKqZv1Xq0b415sHKGfOZ0hHnhctEu4XnXeeN10CyzJNV/7iWEd+VwmiKmc5Yy+juWO68w0W3sYtgmuCXVPfRslji5MtBt7GLSJrotlmP0I9pt7GJT22OlCf76pQn+Mckzbfpi1yejLt889HrvNPQj2z2kJdc79HqWKfRsliCmNN0guDOWdY1i0m36YsJt+mLEbYs9mDT0I9s9pCXXO/R6lib0bJYgpjTdILgzlnWNYtFt+mLVbfpi3W2LPZg09CPbPaQl1zv0epYj9GyWIKY03SC4M5Z1jWLGbfpiw236Ythtiz2YNPQj2z2kJdc79HqWIvRsliCmNN0guDOWdY1i2m36Ytoo9GyWIvQdyRL6YtU6sinbbexi3DuiMMd1+W/EOrRt0S3mdIQq4iXVLOYkgCzncNV/tybQKrQm0X/hIoYpsnCaPeRu0Cqgb9E/+SGBLfki0C2ydtAt5ySMLLVwjS7vdYMq7naFd+Ym0C7vdIB9t27ZP+ViyWOtYsA2piWWdfQz2zqmYphtoS/GK/R6lim/LNlt+mLXIfR6lqhC9VHyZ2xR8menPcj0bJYtpCnXJKVijhT0N5Zj9C6WY/QmlmP0MpZj9C2WY/QplmP0LJZj9CWWEvpi1SGlN9E99HrvbbBimG2/YphtumKYbbti6WP0IcErvy+WdfQowDumM45g+TDBLfsl1n/icNF7syHXf7J0137mIYQusCTRLbAlhHi0ctIr5m7Gffgk0Tn5JcRgt3XWYLQk1ivgJNZ+snjXLOZ51Xbjd9F34HGMf7Ak1XbidIYu+C3EfPQ9mDT0NM0/s2KObbop2iq3MpZj9DfbPbJijm29Kdgj9GyWLLhijm0z/DCpe/uYqUvAUuJtYphttSjBIb0zlnWNO5YsuTLGKrU0lnX0K5Zj9C/EO78v2jz0eu9ttWKYbb1imG2xYuky+juWLLkyxiq1NJZ19CmWY/QvxDu/L9o89HrvbbNimG2jYphtv2LpMvo7liy5MsYqtTSWdfQs2G36Yts/oinbIaVijhT0LJZj9DLGbfpi2CP0HckS+mLVOrIp223sYtw7ojDHdflvxDq0bdEt5nSEKuIl1SzmJIAs53DVf7cm0Cq0JtF/4SKGKbJwmj3kbtAqoG/RP/khgS35dYd74XOBd+500HzicYR453eCfbMk0Xi3JoR+tXWHKu5u2T/lYsljrWLANqYllnX0M9s6pmKYbaEvxiv0epYkvyzYbfpi1yH0epaqasRS4m1sUtJWphn09GyWLaQp1ySlYo4U9CeWY/QjlmP0KZZj9CyWY/Qyxm36YtFt+mLfbfpi2CP0HZhtty7HOLMylnWNYt9t+mLdbfpi2CP0HZhttzXQJrlijm2+NMA/pXqbYKY11mKzIoR75iWAKrcjhCviI4V/t3DVKbIl1imzcIMt5CbQf/gyhmGyJcJgszCbLuMim3rldIN843iMe7JzgH7md4V44HLRK7N31Snmcdd65SWMYbswh22rbM9tojnEKvR6liO/LtEupGKYbaEvxiv0epYtsyHAbfpi1yH0epaqUftc+3NsUsZFqADq+qY81z7DKG36Ytcnoy7fPPR67zT0I9s9pCXXO/R6li30bJYgpjTdILgzlnWNYsRt+mLQbfpi1m2LPZg09CPbPaQl1zv0epYqt2KYbbkwwCa5Lsdt7BuWKrNimG2zIZZj9CHRbYs9mDT0I9s9pCXXO/R6ljv0bJYgpjTdILgzlnWNYtBt+mLAbfpi322LPelj9CHBK78vlnX0KMA7pjOOYPkwwS37JdZ/4nDRe7Mh13+ydNd+5iGELrAk0S2wJYR4tHLSK+Zuxn34JNE5+SXEYLd11mCzJIJ24HaNd+ci0S3jeYEtsnDVeuYlgHzhcYx/4yTRLPgtxHz0PZg09DTNP7Nijm2lL8E/9GyWOLky0G3sYtYqtzSWY/Qj2m3sYlHIbagA6vqmPdw+9BFjMMgsp1XclmP0IsYmtSvHbewblj/0bJYt9GyWKrdimG2yYphtvWKYbaJimG23JZZj9CXRbYtsli64M8MqpGKOFPQilmP0JdVt+mLAbYtsli6jJN0g9HqWJ6I0xDzsb5s/oyKZKrRwgH+zdNEutXDQe7VxhC7mIdIrsyLSKuZ31n2wJIRhpHKaK7M2myqmb9V6tG/RK+B5gnnveIUtsyKBduMi0H+3dYQq4nODfu5wgSuzI5oipnOWMvo7ljuvMNFt7GLYJrgl1T30bJY4uTLQbexi0CawJt0soyzANvRsliy4Yo5tP9oKpnTYmKZM/lD1XWKYbbUowSG9M5Z1jTuWLLkyxiq1NJZ19CTdKfRsliCmNN0guDOWdY1i0CqwYphtsinSbfpi0DawYuky+juWLLkyxiq1NJZ19Cbdbfpi2z+iKdshpWKOFPQm0W36YtI29GyWKb9i6TL6O5YsuTLGKrU0lnX0I8Ej9GyWIKY03SC4M5Z1jWLXLrpimG21L9ht+mLXOrpi6TL6O5YsuTLGKrU0lnX0NM1t+mLbP6Ip2yGlYo4U9DTRNvRslju/JZZj9DTNbYs96WP0IcErvy+WdfQowDumM45g+TDBLfsl1n/icNF7syHXf7J0137mIYQusCTRLbAlhHi0ctIr5m7Gffgk0Tn5JcRgt3XWYOUkgnfuddV/s3XSeeBz1i63c9F9snHVLbNxjXq0cIZ7+C3EfPQ9mDT0NM0/s2KObaUvwT/0bJY4uTLQbexi0CawJt0soyzANvRsliy4Yo5tP9oKpnTYmKZM/lD1XWKYbbQy3Sy9M5Z1jWLSNvRsljuvYphtsCWWY/QjwSP0bJYstyyWY/Qm3W36YtcgumKYbbIp0m2LbJYuuDPDKqRijhT0JN0p9GyWKb9imG21Ndht+mLANvQdmG23NdAmuWKObb40wD+leptgpjXWYrMihHvmJYAqtyOEK+IjhX+3cNUpsiXWKbNwgy3kJtB/+DKGYbIlwmCzMJsu4yKbfLJ2jHfjIYQq4yaCeeUi1S7lJYYr5yHWKud5gS3mcoBhuzCHbasdyRI=";
     let challenges = [];
 
     function _0x4f2a(cipherText, key) {
@@ -326,103 +404,101 @@
 
     const app = {
         state: {
-            currentChallenge: null, queue: [], currentIndex: 0,
-            currentObj: null, userSelection: [], activeSlot: 0,
-            locked: false, scoreLog: [], settings: { autoplay: true, sfx: true }
+            currentChallenge: null, queue: [], mistakeQueue: [],
+            currentIndex: 0, currentObj: null, userSelection: [], 
+            activeSlot: 0, locked: false, scoreLog: [], 
+            isRedemption: false, settings: { autoplay: true, sfx: true }
         },
         audio: null,
+        audioObjectURL: null,
         sfx: {
             correct: "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3",
             wrong: "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3"
         },
-        playSFX: function(type) {
+        getHash: function(str) {
+            return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+        },
+        playSFX: async function(type) {
             if (!this.state.settings.sfx) return;
             const url = this.sfx[type];
-            const hash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-            const cacheKey = "ep-sh-audio-" + hash;
-            const source = localStorage.getItem(cacheKey) || url;
-            new Audio(source).play().catch(() => {});
-        },
-        clearAudioCache: function() {
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && (key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-") || 
-                            key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
-                            key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-"))) {
-                    keysToRemove.push(key);
-                }
+            const baseUrl = url.split('?')[0];
+            const baseHash = this.getHash(baseUrl);
+            const cacheKey = "ep-audio-" + baseHash;
+            const cached = await db.get(cacheKey);
+            
+            let source = url;
+            let objectURL = null;
+            if (cached && cached.blob) {
+                objectURL = URL.createObjectURL(cached.blob);
+                source = objectURL;
             }
-            keysToRemove.forEach(k => localStorage.removeItem(k));
-            console.log("Cleared audio cache to free up space");
+            
+            const sound = new Audio(source);
+            sound.onended = () => { if (objectURL) URL.revokeObjectURL(objectURL); };
+            sound.onerror = () => { if (objectURL) URL.revokeObjectURL(objectURL); };
+            sound.play().catch(() => { if (objectURL) URL.revokeObjectURL(objectURL); });
         },
-        safeSetItem: function(key, value) {
-            try {
-                localStorage.setItem(key, value);
-            } catch (e) {
-                if (e.name === 'QuotaExceededError') {
-                    this.clearAudioCache();
-                    try {
-                        localStorage.setItem(key, value);
-                    } catch (e2) {
-                        console.error("Storage still full after clearing cache", e2);
-                    }
-                } else {
-                    console.error("Error saving to localStorage", e);
-                }
-            }
-        },
-        init: function() {
+        init: async function() {
             const saved = localStorage.getItem(ID_A + "-settings");
             if (saved) Object.assign(this.state.settings, JSON.parse(saved));
             document.getElementById("autoplay-toggle").checked = this.state.settings.autoplay;
             document.getElementById("sfx-toggle").checked = this.state.settings.sfx;
-            
+
             // Cache SFX
             this.cacheAudio(this.sfx.correct);
             this.cacheAudio(this.sfx.wrong);
 
+            // Preload all challenges audio
+            challenges.forEach(c => {
+                if (c.data) c.data.forEach(item => this.cacheAudio(item.audio));
+            });
+
             this.renderHome();
+
+            // Cleanup legacy localStorage audio cache
+            setTimeout(() => {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+            }, 2000);
         },
         getStats: function() { return JSON.parse(localStorage.getItem(ID_A + "-stats") || "{}"); },
-        saveStats: function(s) { this.safeSetItem(ID_A + "-stats", JSON.stringify(s)); },
+        saveStats: function(s) { localStorage.setItem(ID_A + "-stats", JSON.stringify(s)); },
         getMistakes: function() { return JSON.parse(localStorage.getItem(ID_A + "-mistakes") || "[]"); },
-        saveMistakes: function(m) { this.safeSetItem(ID_A + "-mistakes", JSON.stringify(m)); },
+        saveMistakes: function(m) { localStorage.setItem(ID_A + "-mistakes", JSON.stringify(m)); },
         getSessionLogs: function() { return JSON.parse(localStorage.getItem(ID_A + "-session_logs") || "[]"); },
         saveSessionLog: function(log) { 
             const logs = this.getSessionLogs(); logs.unshift(log); 
-            this.safeSetItem(ID_A + "-session_logs", JSON.stringify(logs));
+            localStorage.setItem(ID_A + "-session_logs", JSON.stringify(logs));
         },
         cacheAudio: async function(url) {
             if (!url) return;
             const baseUrl = url.split('?')[0];
-            const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-            const baseHash = Array.from(baseUrl).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-            const cacheKey = "ep-sh-audio-" + urlHash;
+            const baseHash = this.getHash(baseUrl);
+            const cacheKey = "ep-audio-" + baseHash;
             
-            if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+            const cached = await db.get(cacheKey);
+            if (cached) return cached.blob;
 
             try {
                 const resp = await fetch(url);
+                const lastModified = resp.headers.get('Last-Modified');
                 const blob = await resp.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const result = reader.result;
-                        const versionRegistryKey = "ep-sh-meta-" + baseHash;
-                        const oldCacheKey = localStorage.getItem(versionRegistryKey);
-                        if (oldCacheKey && oldCacheKey !== cacheKey) {
-                            localStorage.removeItem(oldCacheKey);
-                        }
-                        this.safeSetItem(cacheKey, result);
-                        this.safeSetItem(versionRegistryKey, cacheKey);
-                        resolve(result);
-                    };
-                    reader.readAsDataURL(blob);
-                });
+                const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                await db.set(cacheKey, blob, meta);
+                return blob;
             } catch(e) { console.error("Cache failed", e); }
         },
         renderHome: function() {
+            document.getElementById("refresh-cache").style.display = "flex";
             document.getElementById("home-screen").classList.add("active");
             document.getElementById("game-screen").classList.remove("active");
             const list = document.getElementById("challenge-list");
@@ -442,11 +518,13 @@
             this.saveStats(allStats);
         },
         startChallenge: function(id) {
+            document.getElementById("refresh-cache").style.display = "none";
             const c = challenges.find(x => x.id === id);
             this.state.currentChallenge = c;
             this.state.queue = [...c.data].sort(() => Math.random() - 0.5);
+            this.state.mistakeQueue = [];
             this.state.currentIndex = 0;
-            this.state.scoreLog = [];
+            this.state.scoreLog = new Array(c.data.length).fill(null);
 
             // Preload all audio for this challenge
             c.data.forEach(item => this.cacheAudio(item.audio));
@@ -456,8 +534,18 @@
             this.loadQuestion();
         },
         loadQuestion: function() {
-            if (this.state.currentIndex >= this.state.queue.length) { this.finishGame(); return; }
-            const q = this.state.queue[this.state.currentIndex];
+            let q = null;
+            if (this.state.currentIndex < this.state.queue.length) { 
+                q = this.state.queue[this.state.currentIndex]; 
+                this.state.isRedemption = false; 
+            } else if (this.state.mistakeQueue.length > 0) { 
+                q = this.state.mistakeQueue[0]; 
+                this.state.isRedemption = true; 
+            } else { 
+                this.finishGame(); 
+                return; 
+            }
+
             this.state.currentObj = q;
             this.state.userSelection = [];
             this.state.activeSlot = 0;
@@ -467,6 +555,7 @@
             document.getElementById("feedback-area").className = "feedback-area";
             document.getElementById("check-btn").style.display = "block";
             document.getElementById("check-btn").disabled = true;
+            document.getElementById("check-btn").className = "check-btn";
             document.getElementById("next-btn").style.display = "none";
 
             if (q.type === 'linear') {
@@ -576,17 +665,28 @@
 
             if (isCorrect) {
                 this.playSFX('correct');
-                this.state.scoreLog.push('green');
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = 'green';
+                }
                 feedback.className = "feedback-area correct visible";
                 title.innerText = "Excellent!";
                 msg.innerText = q.word;
+                btn.className = "check-btn correct";
+                if (this.state.isRedemption) this.state.mistakeQueue.shift();
             } else {
                 this.playSFX('wrong');
-                this.state.scoreLog.push('red');
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = 'red';
+                    this.state.mistakeQueue.push(this.state.currentObj);
+                    this.logMistake(q, userResult);
+                } else {
+                    // Move to the back of mistake queue
+                    this.state.mistakeQueue.push(this.state.mistakeQueue.shift());
+                }
                 feedback.className = "feedback-area wrong visible";
                 title.innerText = "Keep Trying!";
                 msg.innerText = q.word;
-                this.logMistake(q, userResult);
+                btn.className = "check-btn wrong";
             }
 
             if (this.state.settings.autoplay) this.playAudio(2);
@@ -594,33 +694,98 @@
             btn.style.display = "none";
             const nextBtn = document.getElementById("next-btn");
             nextBtn.style.display = "block";
-            nextBtn.disabled = true;
-            nextBtn.style.opacity = "0.5";
-            nextBtn.style.cursor = "not-allowed";
             
-            setTimeout(() => {
-                nextBtn.disabled = false;
-                nextBtn.style.opacity = "1";
-                nextBtn.style.cursor = "pointer";
-            }, 1000);
+            let isLast = this.state.isRedemption ? (this.state.mistakeQueue.length === 0) : (this.state.currentIndex >= this.state.queue.length - 1 && this.state.mistakeQueue.length === 0);
+            nextBtn.innerText = isLast ? "Finish" : "Continue";
 
             this.renderProgress();
         },
-        nextQuestion: function() { this.state.currentIndex++; this.loadQuestion(); },
+        nextQuestion: function() { 
+            if (!this.state.isRedemption) this.state.currentIndex++; 
+            this.loadQuestion(); 
+        },
         playAudio: async function(times = 1) {
             if (this.state.currentObj && this.state.currentObj.audio) {
-                if (this.audio) { this.audio.pause(); this.audio.onended = null; }
+                if (this.audio) {
+                    this.audio.pause();
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                    this.audio.onended = null;
+                }
                 const url = this.state.currentObj.audio;
-                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-sh-audio-" + urlHash;
-                const source = localStorage.getItem(cacheKey) || url;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
+
                 this.audio = new Audio(source);
                 let count = 0;
+                const cleanup = () => {
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
                 this.audio.onended = () => {
                     count++;
-                    if (count < times) this.audio.play().catch(() => {});
+                    if (count < times) this.audio.play().catch(() => { cleanup(); });
+                    else cleanup();
                 };
-                this.audio.play().catch(() => {});
+                this.audio.onerror = cleanup;
+                this.audio.play().catch(() => { cleanup(); });
+            }
+        },
+        refreshCache: async function() {
+            const btn = document.getElementById('refresh-cache');
+            const btnText = document.getElementById('refresh-text');
+            if (btn.classList.contains('loading')) return;
+
+            btn.classList.add('loading');
+            btnText.innerText = "Checking...";
+            let updatedCount = 0;
+
+            try {
+                const items = [];
+                challenges.forEach(c => {
+                    if (c.data) items.push(...c.data);
+                });
+
+                for (const item of items) {
+                    if (!item.audio) continue;
+                    
+                    const url = item.audio;
+                    const baseUrl = url.split('?')[0];
+                    const baseHash = this.getHash(baseUrl);
+                    const cacheKey = "ep-audio-" + baseHash;
+                    const cached = await db.get(cacheKey);
+                    const currentVersion = cached?.meta?.lastModified || 0;
+
+                    try {
+                        const response = await fetch(url, { method: 'HEAD' });
+                        const lastModifiedStr = response.headers.get('Last-Modified');
+                        if (lastModifiedStr) {
+                            const lastModified = new Date(lastModifiedStr).getTime();
+                            if (lastModified > currentVersion) {
+                                await this.cacheAudio(url);
+                                updatedCount++;
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Failed to check audio for ${item.word}`, e);
+                    }
+                }
+                alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+            } finally {
+                btn.classList.remove('loading');
+                btnText.innerText = "Refresh 🔊";
             }
         },
         renderProgress: function() {
@@ -629,13 +794,15 @@
             for (let i = 0; i < 10; i++) {
                 const seg = document.createElement("div");
                 seg.className = "progress-segment";
-                if (this.state.scoreLog[i]) seg.classList.add(this.state.scoreLog[i]);
+                const s = this.state.scoreLog[i];
+                if (s) seg.classList.add(s);
                 bar.appendChild(seg);
             }
         },
         finishGame: function() {
+            document.getElementById("refresh-cache").style.display = "none";
             const correct = this.state.scoreLog.filter(s => s === 'green').length;
-            const total = Math.round((correct / 10) * 100);
+            const total = Math.round((correct / this.state.scoreLog.length) * 100);
             const allStats = this.getStats();
             const cid = this.state.currentChallenge.id;
             if (!allStats[cid]) allStats[cid] = { today: {date: new Date().toLocaleDateString(), attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
@@ -732,8 +899,8 @@
         },
     };
 
-    const ID_A = "i6E1NX3nju2196Shu";
-    const builtInKey = 2766822658;
+    const ID_A = "YysE90Y734UW50bco";
+    const builtInKey = 1087786932;
 
     window.onload = function() { 
         try {

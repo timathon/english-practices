@@ -20,105 +20,23 @@
             position: relative;
         }
         h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
-        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-bottom: 25px; margin-top: 0; }
+        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-top: 0; }
         
-        /* Responsive Grid Layout */
-        .vocab-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px; 
+        /* Stats Display */
+        .stats-bar {
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
         }
-
-        @media (min-width: 600px) {
-            .vocab-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        /* Compact Vocab Cards */
-        .vocab-item { 
-            page-break-inside: avoid; 
-            break-inside: avoid;
-            padding: 15px; 
-            border: 1px solid #eee; 
-            border-radius: 10px; 
-            background-color: #fafafa;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-        }
-        .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; }
-        .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
-        .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
-        .value { flex-grow: 1; }
-        
-        /* Tighter inner boxes */
-        .context-box { 
-            background-color: #fff; 
-            border-left: 4px solid #f39c12; 
-            padding: 8px 12px; 
-            margin: 10px 0; 
-            font-size: 0.95em;
-            font-style: italic; 
-            color: #555;
-            border-radius: 0 4px 4px 0;
-        }
-        .hook-box { 
-            background-color: #e8f8f5; 
-            border-left: 4px solid #1abc9c; 
-            padding: 8px 12px; 
-            margin-top: auto; 
-            font-size: 0.95em;
-            border-radius: 0 4px 4px 0;
-        }
-        .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
-
-        .play-btn {
-            background: var(--white, #fff);
-            border: 1px solid #eee;
-            border-bottom: 3px solid #ddd;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            margin-right: 5px;
-            vertical-align: middle;
-            transition: all 0.1s;
-            padding: 0;
-        }
-        .play-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
-        .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
-
-        /* Floating Toggle */
-        #sort-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
-            font-weight: bold;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #sort-toggle:hover {
-            background: #2980b9;
-            transform: scale(1.05);
-        }
-        #sort-toggle:active {
-            transform: scale(0.95);
-        }
+        .stats-bar b { color: #2c3e50; }
 
         /* Floating Scroll Buttons */
         .scroll-btns {
@@ -155,55 +73,330 @@
             transform: scale(0.9);
         }
 
+        /* Responsive Grid Layout */
+        .vocab-grid {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vocab-item { 
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .vocab-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .vocab-item {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Desktop vs Mobile Display Logic */
+        .mobile-only { display: none !important; }
+        .desktop-only { display: flex !important; }
+
+        @media (max-width: 600px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { display: flex !important; }
+
+            .mobile-controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid #eee;
+                padding: 8px 12px;
+                display: flex;
+                justify-content: space-around;
+                gap: 8px;
+                z-index: 2000;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            }
+
+            .mobile-btn {
+                flex: 1;
+                border: none;
+                background: none;
+                padding: 6px 4px;
+                border-radius: 8px;
+                color: #555;
+                font-size: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                transition: background 0.2s;
+            }
+            .mobile-btn .btn-icon { font-size: 18px; margin-bottom: 2px; }
+            .mobile-btn:active { background: #f0f0f0; }
+            
+            #m-sort-btn { color: #3498db; }
+            #m-hidden-btn { color: #9b59b6; }
+            #m-reset-btn { color: #e67e22; }
+            #m-refresh-btn { color: #1abc9c; }
+            
+            .scroll-btns {
+                right: 15px !important;
+                bottom: 110px !important;
+            }
+            body {
+                padding-bottom: 70px; 
+            }
+        }
+
+        /* Compact Vocab Cards */
+        .vocab-item { 
+            page-break-inside: avoid; 
+            break-inside: avoid;
+            padding: 15px; 
+            border: 1px solid #eee; 
+            border-radius: 10px; 
+            background-color: #fafafa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out, filter 0.2s, box-shadow 0.2s;
+        }
+        .vocab-item.is-hidden-state {
+            opacity: 0.4;
+            filter: grayscale(0.8);
+        }
+        .vocab-item.is-hidden-state:not(.force-show) {
+            display: none;
+        }
+        .vocab-item.fading-out {
+            opacity: 0 !important;
+            height: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top-width: 0 !important;
+            border-bottom-width: 0 !important;
+            pointer-events: none;
+        }
+
+        .item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hide-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .word-ipa { font-size: 0.7em; color: #7f8c8d; font-weight: normal; margin-left: 8px; font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif; }
+        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; line-height: 1.2; display: inline-flex; align-items: center; }
+        .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
+        .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
+        .value { flex-grow: 1; }
+        
+        /* Tighter inner boxes */
+        .context-box { 
+            background-color: #fff; 
+            border-left: 4px solid #f39c12; 
+            padding: 8px 12px; 
+            margin: 10px 0; 
+            font-size: 1.1em;
+            font-style: italic; 
+            color: #555;
+            border-radius: 0 4px 4px 0;
+        }
+        .hook-box { 
+            background-color: #e8f8f5; 
+            border-left: 4px solid #1abc9c; 
+            padding: 8px 12px; 
+            font-size: 0.95em;
+            border-radius: 0 4px 4px 0;
+        }
+        @media (min-width: 600px) {
+            .hook-box { margin-top: auto; }
+        }
+        .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
+
+        .play-btn {
+            background: var(--white, #fff);
+            border: 1px solid #eee;
+            border-bottom: 3px solid #ddd;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 5px;
+            vertical-align: middle;
+            transition: all 0.1s;
+            padding: 0;
+        }
+        .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
+        .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
+
+        /* Floating Controls */
+        .controls-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .control-btn {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+        }
+        .control-btn:hover { transform: scale(1.05); }
+        .control-btn:active { transform: scale(0.95); }
+
+        #sort-toggle { background: #3498db; }
+        #sort-toggle:hover { background: #2980b9; }
+
+        #show-hidden-toggle { background: #9b59b6; }
+        #show-hidden-toggle:hover { background: #8e44ad; }
+        #show-hidden-toggle.active { background: #2c3e50; }
+
+        #refresh-cache { background: #1abc9c; }
+        #refresh-cache:hover { background: #16a085; }
+        #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+
+        #reset-hidden { background: #e67e22 !important; }
+        #reset-hidden:hover { background: #d35400 !important; }
+
         @media print {
             @page { margin: 8mm; }
-            body { padding: 0; font-size: 10px; }
+            body { padding: 0; font-size: 11px; color: #000; line-height: 1.2; }
+            header { border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; text-align: center; }
             header a { display: none; }
             header div { display: inline !important; min-height: 0 !important; margin: 0 !important; }
-            h1 { display: inline; font-size: 1.2em; margin: 0; }
-            h2 { display: inline; font-size: 1.1em; border: none; padding: 0; margin-left: 15px; }
-            header { text-align: center; border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; }
+            h1 { display: inline; font-size: 1.4em; margin: 0; }
+            h2 { display: inline; font-size: 1.2em; border: none; padding: 0; margin-left: 15px; }
+            
             .vocab-grid { 
-                grid-template-columns: 1fr 1fr 1fr; 
+                grid-template-columns: repeat(4, 1fr); 
                 gap: 6px; 
             }
             .vocab-item { 
-                padding: 5px 8px; 
+                padding: 6px 8px; 
                 box-shadow: none; 
-                border: 1px solid #ccc;
+                border: 0.5pt solid #bbb;
+                background: #fff;
+                border-radius: 5px;
                 min-height: 0;
+                display: flex; /* Remove !important to allow display: none from .is-hidden-state */
+                opacity: 1 !important;
+                filter: none !important;
             }
-            .word-title { font-size: 1em; margin-bottom: 3px; padding-bottom: 1px; }
-            .details { margin-bottom: 1px; font-size: 0.8em; line-height: 1.2; }
-            .label { width: 60px; font-size: 0.8em; }
-            .context-box { margin: 3px 0; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
-            .hook-box { margin-top: 3px; padding: 3px 6px; font-size: 0.8em; border-left-width: 2px; }
-            #sort-toggle { display: none; }
-            .scroll-btns { display: none; }
-            .play-btn { display: none; }
+            .vocab-item.is-hidden-state { display: none !important; } /* Ensure hidden items stay hidden in print */
+
+            .word-title { font-size: 1.25em; margin-bottom: 4px; padding-bottom: 2px; color: #000; }
+            .page-badge { font-size: 0.7em; padding: 1px 4px; }
+            .details { margin-bottom: 2px; font-size: 0.95em; line-height: 1.2; }
+            .label { width: auto; font-size: 0.85em; margin-right: 3px; color: #444; }
+            .value { font-weight: 400; }
+            
+            .context-box { 
+                margin: 2px 0; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #fdfaf5;
+            }
+            .hook-box { 
+                margin-top: 1px; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #f5fdfc;
+            }
+            
+            .controls-container, .mobile-controls, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 5px;">
             <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
             <h1 style="margin: 0;">Vocabulary Guide</h1>
-            <button id="sort-toggle" onclick="toggleSort()">
-                <span id="sort-icon">🔤</span>
-                <span id="sort-text">Sort A-Z</span>
-            </button>
         </div>
         <h2>Grade 7 Semester 2 (A7B)</h2>
+        <div class="stats-bar" id="stats-display">
+            Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
+        </div>
     </header>
+
+    <div class="controls-container desktop-only">
+        <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
+            <span class="sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
+            <span class="hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
+            <span class="reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
+            <span class="refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
+
+    <div class="mobile-controls mobile-only">
+        <button class="mobile-btn" onclick="toggleSort()" id="m-sort-btn">
+            <span class="btn-icon sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleShowHiddenMode()" id="m-hidden-btn">
+            <span class="btn-icon hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.resetHidden()" id="m-reset-btn">
+            <span class="btn-icon reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
+            <span class="btn-icon refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
 
     <div class="vocab-grid" id="vocab-container">
         
         <div class="vocab-item" data-word="watermelon" data-index="0">
             <h2 class="word-title">
                 <span>1. watermelon</span>
-                <span class="page-badge">P26</span>
+                <div class="item-meta">
+                    <span class="page-badge">P26</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 西瓜</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">wa-ter-mel-on (多音节)</span></div>
@@ -212,7 +405,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "There isn't any tea, but there's watermelon juice!"
+                "There isn't any tea, but there's watermelon juice!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：water(水) + melon(瓜)，里面全都是水的瓜，当然就是西瓜啦！</div>
         </div>
@@ -220,7 +413,10 @@
         <div class="vocab-item" data-word="cabbage" data-index="1">
             <h2 class="word-title">
                 <span>2. cabbage</span>
-                <span class="page-badge">P26</span>
+                <div class="item-meta">
+                    <span class="page-badge">P26</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 卷心菜</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">cab-bage (多音节)</span></div>
@@ -229,7 +425,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I'd like noodles with beef and cabbage."
+                "I'd like noodles with beef and cabbage."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“卡北极”，联想：探险队被卡在北极，每天只能靠吃冰冻的卷心菜补充维生素。</div>
         </div>
@@ -237,7 +433,10 @@
         <div class="vocab-item" data-word="mutton" data-index="2">
             <h2 class="word-title">
                 <span>3. mutton</span>
-                <span class="page-badge">P26</span>
+                <div class="item-meta">
+                    <span class="page-badge">P26</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 羊肉</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">mut-ton (双音节)</span></div>
@@ -246,7 +445,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Well, there's beef and carrot, and mutton and onion."
+                "Well, there's beef and carrot, and mutton and onion."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“马腾”，联想：草原上的小马腾飞起来，因为被吃羊肉的狼追赶。</div>
         </div>
@@ -254,7 +453,10 @@
         <div class="vocab-item" data-word="cookie" data-index="3">
             <h2 class="word-title">
                 <span>4. cookie</span>
-                <span class="page-badge">P26</span>
+                <div class="item-meta">
+                    <span class="page-badge">P26</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 曲奇饼</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">cook-ie (双音节)</span></div>
@@ -263,7 +465,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "After that we sometimes have ice cream or cookies for a treat!"
+                "After that we sometimes have ice cream or cookies for a treat!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：cook(厨师) + ie(小东西)，厨师做出来的甜甜小点心就是曲奇。</div>
         </div>
@@ -271,7 +473,10 @@
         <div class="vocab-item" data-word="onion" data-index="4">
             <h2 class="word-title">
                 <span>5. onion</span>
-                <span class="page-badge">P26</span>
+                <div class="item-meta">
+                    <span class="page-badge">P26</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 洋葱；葱头</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">on-ion (双音节)</span></div>
@@ -280,7 +485,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Well, there's beef and carrot, and mutton and onion."
+                "Well, there's beef and carrot, and mutton and onion."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“按你按”，联想：切洋葱辣眼睛，让人忍不住一直按你按你（揉眼睛）。</div>
         </div>
@@ -288,7 +493,10 @@
         <div class="vocab-item" data-word="dumpling" data-index="5">
             <h2 class="word-title">
                 <span>6. dumpling</span>
-                <span class="page-badge">P26</span>
+                <div class="item-meta">
+                    <span class="page-badge">P26</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 饺子</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">dump-ling (双音节)</span></div>
@@ -297,7 +505,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Oh, dumplings, my favourite!"
+                "Oh, dumplings, my favourite!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“当铺林”，联想：古代的当铺林立的街头，都在卖热气腾腾的饺子。</div>
         </div>
@@ -305,7 +513,10 @@
         <div class="vocab-item" data-word="taste" data-index="6">
             <h2 class="word-title">
                 <span>7. taste</span>
-                <span class="page-badge">P27</span>
+                <div class="item-meta">
+                    <span class="page-badge">P27</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">v. 有味道；尝</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">taste (相对开音节)</span></div>
@@ -314,7 +525,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "We often have it in America, but it may taste different here."
+                "We often have it in America, but it may taste different here."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“太斯特”，联想：这道菜的味道真是太斯特（特别）了！</div>
         </div>
@@ -322,7 +533,10 @@
         <div class="vocab-item" data-word="choice" data-index="7">
             <h2 class="word-title">
                 <span>8. choice</span>
-                <span class="page-badge">P28</span>
+                <div class="item-meta">
+                    <span class="page-badge">P28</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 选择</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">choice (元音字母组合音节)</span></div>
@@ -331,7 +545,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "How do we make healthy eating choices?"
+                "How do we make healthy eating choices?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“抽一丝”，联想：从一堆五颜六色的丝线中，小心翼翼地选择抽出一丝。</div>
         </div>
@@ -339,7 +553,10 @@
         <div class="vocab-item" data-word="meal" data-index="8">
             <h2 class="word-title">
                 <span>9. meal</span>
-                <span class="page-badge">P28</span>
+                <div class="item-meta">
+                    <span class="page-badge">P28</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 一餐所吃的食物；一餐</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">meal (元音字母组合音节)</span></div>
@@ -348,7 +565,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Eating balanced meals is very important when we are young."
+                "Eating balanced meals is very important when we are young."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“米偶”，联想：用大米捏了一个可爱的小木偶，放在餐桌上陪我吃这一餐。</div>
         </div>
@@ -356,7 +573,10 @@
         <div class="vocab-item" data-word="pork" data-index="9">
             <h2 class="word-title">
                 <span>10. pork</span>
-                <span class="page-badge">P28</span>
+                <div class="item-meta">
+                    <span class="page-badge">P28</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 猪肉</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pork (r控制音节)</span></div>
@@ -365,7 +585,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Dongpo pork is famous in China."
+                "Dongpo pork is famous in China."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“破壳”，联想：小猪仔破壳而出，长大后变成了猪肉（脑洞大开更好记）。</div>
         </div>
@@ -373,7 +593,10 @@
         <div class="vocab-item" data-word="strawberry" data-index="10">
             <h2 class="word-title">
                 <span>11. strawberry</span>
-                <span class="page-badge">P28</span>
+                <div class="item-meta">
+                    <span class="page-badge">P28</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(10)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 草莓</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">straw-ber-ry (多音节)</span></div>
@@ -382,7 +605,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Instead, I have a pear, a banana, or some strawberries!"
+                "Instead, I have a pear, a banana, or some strawberries!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合联想：straw(稻草/麦管) + berry(浆果)，长在草丛里的红色小浆果就是草莓。</div>
         </div>
@@ -390,7 +613,10 @@
         <div class="vocab-item" data-word="customer" data-index="11">
             <h2 class="word-title">
                 <span>12. customer</span>
-                <span class="page-badge">P29</span>
+                <div class="item-meta">
+                    <span class="page-badge">P29</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(11)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 顾客</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">cus-tom-er (多音节)</span></div>
@@ -399,7 +625,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Customer"
+                "Customer"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀：custom(风俗/习惯) + er(人)，习惯经常来店里买东西的人就是顾客。</div>
         </div>
@@ -407,7 +633,10 @@
         <div class="vocab-item" data-word="serve" data-index="12">
             <h2 class="word-title">
                 <span>13. serve</span>
-                <span class="page-badge">P29</span>
+                <div class="item-meta">
+                    <span class="page-badge">P29</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(12)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">v. 提供；服务</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">serve (r控制音节)</span></div>
@@ -416,7 +645,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Sir, we serve everyone."
+                "Sir, we serve everyone."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“蛇舞”，联想：印度街头的艺人提供表演服务，吹起笛子让蛇跳舞。</div>
         </div>
@@ -424,7 +653,10 @@
         <div class="vocab-item" data-word="instead" data-index="13">
             <h2 class="word-title">
                 <span>14. instead</span>
-                <span class="page-badge">P29</span>
+                <div class="item-meta">
+                    <span class="page-badge">P29</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(13)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">adv. 反而；代替</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">in-stead (双音节)</span></div>
@@ -433,7 +665,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Instead, I have a pear, a banana, or some strawberries!"
+                "Instead, I have a pear, a banana, or some strawberries!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“硬死呆的”，联想：他没有出去玩，代替的是硬死呆在家里背单词。</div>
         </div>
@@ -441,7 +673,10 @@
         <div class="vocab-item" data-word="pear" data-index="14">
             <h2 class="word-title">
                 <span>15. pear</span>
-                <span class="page-badge">P29</span>
+                <div class="item-meta">
+                    <span class="page-badge">P29</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(14)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 梨</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pear (元音字母组合音节)</span></div>
@@ -450,7 +685,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Instead, I have a pear, a banana, or some strawberries!"
+                "Instead, I have a pear, a banana, or some strawberries!"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“赔鹅”，联想：他不小心砸坏了邻居的梨树，只好赔给主人一只鹅。</div>
         </div>
@@ -458,7 +693,10 @@
         <div class="vocab-item" data-word="sugar" data-index="15">
             <h2 class="word-title">
                 <span>16. sugar</span>
-                <span class="page-badge">P29</span>
+                <div class="item-meta">
+                    <span class="page-badge">P29</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(15)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 糖</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sug-ar (双音节)</span></div>
@@ -467,7 +705,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Ice cream, sweets, and chocolate are delicious, but they usually have lots of sugar."
+                "Ice cream, sweets, and chocolate are delicious, but they usually have lots of sugar."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“休哥”，联想：喝咖啡苦得受不了，对服务员喊：休哥（老哥），加点糖！</div>
         </div>
@@ -475,7 +713,10 @@
         <div class="vocab-item" data-word="improve" data-index="16">
             <h2 class="word-title">
                 <span>17. improve</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(16)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">v. 改进；改善</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">im-prove (双音节)</span></div>
@@ -484,7 +725,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Improve Your Eating Habits."
+                "Improve Your Eating Habits."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“音谱入屋”，联想：把美妙的音乐曲谱带入屋子，极大地改善了房间的氛围。</div>
         </div>
@@ -492,7 +733,10 @@
         <div class="vocab-item" data-word="habit" data-index="17">
             <h2 class="word-title">
                 <span>18. habit</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(17)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 习惯</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">hab-it (双音节)</span></div>
@@ -501,7 +745,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Healthy eating means eating healthy food and having good eating habits."
+                "Healthy eating means eating healthy food and having good eating habits."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“海龟”，联想：海龟有一种非常好的习惯，就是慢慢悠悠不着急，所以能长寿。</div>
         </div>
@@ -509,7 +753,10 @@
         <div class="vocab-item" data-word="salt" data-index="18">
             <h2 class="word-title">
                 <span>19. salt</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(18)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 盐</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">salt (元音字母组合音节)</span></div>
@@ -518,7 +765,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "But it often has lots of salt, fat, and sugar."
+                "But it often has lots of salt, fat, and sugar."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“馊的”，联想：夏天做菜如果不放盐，很快就会变成馊的了。</div>
         </div>
@@ -526,7 +773,10 @@
         <div class="vocab-item" data-word="fat" data-index="19">
             <h2 class="word-title">
                 <span>20. fat</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(19)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 脂肪 adj. 肥胖的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">fat (闭音节)</span></div>
@@ -535,7 +785,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Eating fat is important for keeping us healthy."
+                "Eating fat is important for keeping us healthy."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“发它”，联想：吃了太多脂肪，身体就像面团一样发它（发酵膨胀）变胖了。</div>
         </div>
@@ -543,7 +793,10 @@
         <div class="vocab-item" data-word="weight" data-index="20">
             <h2 class="word-title">
                 <span>21. weight</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(20)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 体重；重量</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">weight (元音字母组合音节)</span></div>
@@ -552,7 +805,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "That makes us put on weight."
+                "That makes us put on weight."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“胃特”，联想：他的胃特别能装东西，所以吃出了惊人的体重。</div>
         </div>
@@ -560,7 +813,10 @@
         <div class="vocab-item" data-word="cause" data-index="21">
             <h2 class="word-title">
                 <span>22. cause</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(21)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">v. 造成；导致</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">cause (元音字母组合音节)</span></div>
@@ -569,7 +825,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Eating fast food like pizza and hamburgers too often may cause heart problems later."
+                "Eating fast food like pizza and hamburgers too often may cause heart problems later."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“扣子”，联想：吃得太多导致身体发胖，最终崩开了衬衫的扣子。</div>
         </div>
@@ -577,7 +833,10 @@
         <div class="vocab-item" data-word="heart" data-index="22">
             <h2 class="word-title">
                 <span>23. heart</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(22)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 心脏；中心</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">heart (r控制音节)</span></div>
@@ -586,7 +845,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Eating fast food like pizza and hamburgers too often may cause heart problems later."
+                "Eating fast food like pizza and hamburgers too often may cause heart problems later."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“哈特”，联想：跑完一千米长跑后，我的哈特（心脏）在扑通扑通狂跳！</div>
         </div>
@@ -594,7 +853,10 @@
         <div class="vocab-item" data-word="balanced" data-index="23">
             <h2 class="word-title">
                 <span>24. balanced</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(23)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">adj. 均衡的；平衡的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">bal-anced (多音节)</span></div>
@@ -603,7 +865,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Eating balanced meals is very important when we are young."
+                "Eating balanced meals is very important when we are young."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“白愣死”，联想：如果你不吃均衡的饮食，导致营养不良，大夫看了也会白愣死（翻白眼）。</div>
         </div>
@@ -611,7 +873,10 @@
         <div class="vocab-item" data-word="sleepy" data-index="24">
             <h2 class="word-title">
                 <span>25. sleepy</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(24)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">adj. 困倦的；想睡的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sleep-y (双音节)</span></div>
@@ -620,7 +885,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "It is easy to feel sleepy and find it hard to focus on our work or studies if we don't eat breakfast."
+                "It is easy to feel sleepy and find it hard to focus on our work or studies if we don't eat breakfast."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀拆解：sleep(睡觉) + y(充满...的)，脑子里全都是睡觉的念头，就是困倦的。</div>
         </div>
@@ -628,7 +893,10 @@
         <div class="vocab-item" data-word="poor" data-index="25">
             <h2 class="word-title">
                 <span>26. poor</span>
-                <span class="page-badge">P31</span>
+                <div class="item-meta">
+                    <span class="page-badge">P31</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(25)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">adj. 不好的；贫穷的；可怜的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">poor (元音字母组合音节)</span></div>
@@ -637,7 +905,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "How many poor eating habits are mentioned?"
+                "How many poor eating habits are mentioned?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“破”，联想：衣服穿得破破烂烂的，真是个贫穷又可怜的人；在这里引申为习惯“不好”。</div>
         </div>
@@ -645,7 +913,10 @@
         <div class="vocab-item" data-word="result" data-index="26">
             <h2 class="word-title">
                 <span>27. result</span>
-                <span class="page-badge">P31</span>
+                <div class="item-meta">
+                    <span class="page-badge">P31</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(26)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 后果；结果</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">re-sult (双音节)</span></div>
@@ -654,7 +925,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Reason for the result."
+                "Reason for the result."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“里灶头”，联想：不小心烧了里屋的灶头，引发火灾的结果可是很严重的！</div>
         </div>
@@ -662,7 +933,10 @@
         <div class="vocab-item" data-word="article" data-index="27">
             <h2 class="word-title">
                 <span>28. article</span>
-                <span class="page-badge">P31</span>
+                <div class="item-meta">
+                    <span class="page-badge">P31</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(27)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">n. 文章；冠词</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ar-ti-cle (多音节)</span></div>
@@ -671,7 +945,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Read the article from a clinic's newsletter."
+                "Read the article from a clinic's newsletter."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“阿提狗”，联想：这篇优秀的英语文章，其实写的是邻居阿提和他的狗的故事。</div>
         </div>
@@ -679,7 +953,10 @@
         <div class="vocab-item" data-word="common" data-index="28">
             <h2 class="word-title">
                 <span>29. common</span>
-                <span class="page-badge">P31</span>
+                <div class="item-meta">
+                    <span class="page-badge">P31</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(28)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">adj. 共同的；普遍的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">com-mon (双音节)</span></div>
@@ -688,7 +965,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Do you think the poor eating habits in the article are common among young people?"
+                "Do you think the poor eating habits in the article are common among young people?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“靠门”，联想：下课时大家都习惯性地靠门站着聊天，这在学生中是一个普遍的现象。</div>
         </div>
@@ -696,7 +973,10 @@
         <div class="vocab-item" data-word="among" data-index="29">
             <h2 class="word-title">
                 <span>30. among</span>
-                <span class="page-badge">P31</span>
+                <div class="item-meta">
+                    <span class="page-badge">P31</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(29)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">prep. 在……中；……之一</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">a-mong (双音节)</span></div>
@@ -705,7 +985,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Do you think the poor eating habits in the article are common among young people?"
+                "Do you think the poor eating habits in the article are common among young people?"
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“阿蒙”，联想：三国里吴下阿蒙经过学习，在众人之中脱颖而出，令人刮目相看。</div>
         </div>
@@ -713,7 +993,10 @@
         <div class="vocab-item" data-word="soft" data-index="30">
             <h2 class="word-title">
                 <span>31. soft</span>
-                <span class="page-badge">P31</span>
+                <div class="item-meta">
+                    <span class="page-badge">P31</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(30)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">adj. 柔和的；柔软的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">soft (闭音节)</span></div>
@@ -722,7 +1005,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "First, I drink too many soft drinks."
+                "First, I drink too many soft drinks."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“沙发头”，联想：靠在沙发头上睡觉，感觉非常柔软舒服。（soft drink引申为不含酒精的软饮料）</div>
         </div>
@@ -730,7 +1013,10 @@
         <div class="vocab-item" data-word="enough" data-index="31">
             <h2 class="word-title">
                 <span>32. enough</span>
-                <span class="page-badge">P31</span>
+                <div class="item-meta">
+                    <span class="page-badge">P31</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(31)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">adj. 足够的 adv. 足够地</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">e-nough (双音节)</span></div>
@@ -739,7 +1025,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Second, I don't drink enough water."
+                "Second, I don't drink enough water."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“一拿福”，联想：过年时长辈一拿出大“福”字，就说明家里有足够的福气了。</div>
         </div>
@@ -747,7 +1033,10 @@
         <div class="vocab-item" data-word="thirsty" data-index="32">
             <h2 class="word-title">
                 <span>33. thirsty</span>
-                <span class="page-badge">P31</span>
+                <div class="item-meta">
+                    <span class="page-badge">P31</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(32)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">adj. 渴的</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">thirs-ty (双音节)</span></div>
@@ -756,7 +1045,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "I drink water when I am thirsty, but it's better to drink before I get thirsty."
+                "I drink water when I am thirsty, but it's better to drink before I get thirsty."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“色丝提”，联想：沙漠里的人因为太口渴，发出的声音干涩得像是一把拉色了的丝提琴。</div>
         </div>
@@ -764,7 +1053,10 @@
         <div class="vocab-item" data-word="gain weight" data-index="33">
             <h2 class="word-title">
                 <span>34. gain weight</span>
-                <span class="page-badge">P68</span>
+                <div class="item-meta">
+                    <span class="page-badge">P68</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(33)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">词组：增加体重；变胖</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">gain weight</span></div>
@@ -773,7 +1065,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "Not all fat makes us gain weight."
+                "Not all fat makes us gain weight."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：gain是获得，weight是重量。获得了多余的重量，那就是变胖增加体重。</div>
         </div>
@@ -781,7 +1073,10 @@
         <div class="vocab-item" data-word="focus on" data-index="34">
             <h2 class="word-title">
                 <span>35. focus on</span>
-                <span class="page-badge">P30</span>
+                <div class="item-meta">
+                    <span class="page-badge">P30</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(34)">
+                </div>
             </h2>
             <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">词组：集中注意力于</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">fo-cus on</span></div>
@@ -790,7 +1085,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <strong>课文原句:</strong> "It is easy to feel sleepy and find it hard to focus on our work or studies if we don't eat breakfast."
+                "It is easy to feel sleepy and find it hard to focus on our work or studies if we don't eat breakfast."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音联想：focus谐音“佛壳死”，为了修佛，老和尚盯着木鱼敲，把佛壳都敲破了，真是集中注意力于此啊！</div>
         </div>
@@ -802,7 +1097,50 @@
     </div>
 
     <script>
-        const vocabData = [{"word":"watermelon","meaning":"n. 西瓜","syllable_type":"wa-ter-mel-on (多音节)","comparison":"melon","page_number":"26","context_sentence":"There isn't any tea, but there's watermelon juice!","memorization_hook":"联想记忆：water(水) + melon(瓜)，里面全都是水的瓜，当然就是西瓜啦！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/3fed6eee12e8348a9057a203c4988428.mp3"},{"word":"cabbage","meaning":"n. 卷心菜","syllable_type":"cab-bage (多音节)","comparison":"lettuce","page_number":"26","context_sentence":"I'd like noodles with beef and cabbage.","memorization_hook":"谐音“卡北极”，联想：探险队被卡在北极，每天只能靠吃冰冻的卷心菜补充维生素。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/6dcb0c9b4baf827c8a09c3e9e35e8e6f.mp3"},{"word":"mutton","meaning":"n. 羊肉","syllable_type":"mut-ton (双音节)","comparison":"beef, pork","page_number":"26","context_sentence":"Well, there's beef and carrot, and mutton and onion.","memorization_hook":"谐音“马腾”，联想：草原上的小马腾飞起来，因为被吃羊肉的狼追赶。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/5ad3d855f4f80817b724f1f22308b8fc.mp3"},{"word":"cookie","meaning":"n. 曲奇饼","syllable_type":"cook-ie (双音节)","comparison":"biscuit","page_number":"26","context_sentence":"After that we sometimes have ice cream or cookies for a treat!","memorization_hook":"联想记忆：cook(厨师) + ie(小东西)，厨师做出来的甜甜小点心就是曲奇。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/68f507af60d688d08274259edf01546a.mp3"},{"word":"onion","meaning":"n. 洋葱；葱头","syllable_type":"on-ion (双音节)","comparison":"garlic","page_number":"26","context_sentence":"Well, there's beef and carrot, and mutton and onion.","memorization_hook":"谐音“按你按”，联想：切洋葱辣眼睛，让人忍不住一直按你按你（揉眼睛）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/5ad3d855f4f80817b724f1f22308b8fc.mp3"},{"word":"dumpling","meaning":"n. 饺子","syllable_type":"dump-ling (双音节)","comparison":"noodle","page_number":"26","context_sentence":"Oh, dumplings, my favourite!","memorization_hook":"谐音“当铺林”，联想：古代的当铺林立的街头，都在卖热气腾腾的饺子。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/06a79192627e8919f8e391f1c02f7d6d.mp3"},{"word":"taste","meaning":"v. 有味道；尝","syllable_type":"taste (相对开音节)","comparison":"smell, flavor","page_number":"27","context_sentence":"We often have it in America, but it may taste different here.","memorization_hook":"谐音“太斯特”，联想：这道菜的味道真是太斯特（特别）了！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/01a06fcb1ac2a75396709ed27f9fbe08.mp3"},{"word":"choice","meaning":"n. 选择","syllable_type":"choice (元音字母组合音节)","comparison":"choose (v.)","page_number":"28","context_sentence":"How do we make healthy eating choices?","memorization_hook":"谐音“抽一丝”，联想：从一堆五颜六色的丝线中，小心翼翼地选择抽出一丝。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/9b5a805e83344f3737b98cdf98179c6e.mp3"},{"word":"meal","meaning":"n. 一餐所吃的食物；一餐","syllable_type":"meal (元音字母组合音节)","comparison":"food","page_number":"28","context_sentence":"Eating balanced meals is very important when we are young.","memorization_hook":"谐音“米偶”，联想：用大米捏了一个可爱的小木偶，放在餐桌上陪我吃这一餐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/300551a40682f5806ed22eea0b929b76.mp3"},{"word":"pork","meaning":"n. 猪肉","syllable_type":"pork (r控制音节)","comparison":"beef, mutton","page_number":"28","context_sentence":"Dongpo pork is famous in China.","memorization_hook":"谐音“破壳”，联想：小猪仔破壳而出，长大后变成了猪肉（脑洞大开更好记）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/14d30ae61d85e5d595d54a47445c8ab9.mp3"},{"word":"strawberry","meaning":"n. 草莓","syllable_type":"straw-ber-ry (多音节)","comparison":"blueberry","page_number":"28","context_sentence":"Instead, I have a pear, a banana, or some strawberries!","memorization_hook":"组合联想：straw(稻草/麦管) + berry(浆果)，长在草丛里的红色小浆果就是草莓。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/95d48ca2b77645e076e750b3b0cd22c6.mp3"},{"word":"customer","meaning":"n. 顾客","syllable_type":"cus-tom-er (多音节)","comparison":"waiter","page_number":"29","context_sentence":"Customer","memorization_hook":"词根词缀：custom(风俗/习惯) + er(人)，习惯经常来店里买东西的人就是顾客。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/ce26601dac0dea138b7295f02b7620a7.mp3"},{"word":"serve","meaning":"v. 提供；服务","syllable_type":"serve (r控制音节)","comparison":"service (n.)","page_number":"29","context_sentence":"Sir, we serve everyone.","memorization_hook":"谐音“蛇舞”，联想：印度街头的艺人提供表演服务，吹起笛子让蛇跳舞。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/da5f89978fa7f41068aeac7c791013f8.mp3"},{"word":"instead","meaning":"adv. 反而；代替","syllable_type":"in-stead (双音节)","comparison":"instead of","page_number":"29","context_sentence":"Instead, I have a pear, a banana, or some strawberries!","memorization_hook":"谐音“硬死呆的”，联想：他没有出去玩，代替的是硬死呆在家里背单词。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/95d48ca2b77645e076e750b3b0cd22c6.mp3"},{"word":"pear","meaning":"n. 梨","syllable_type":"pear (元音字母组合音节)","comparison":"apple, peach","page_number":"29","context_sentence":"Instead, I have a pear, a banana, or some strawberries!","memorization_hook":"谐音“赔鹅”，联想：他不小心砸坏了邻居的梨树，只好赔给主人一只鹅。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/95d48ca2b77645e076e750b3b0cd22c6.mp3"},{"word":"sugar","meaning":"n. 糖","syllable_type":"sug-ar (双音节)","comparison":"salt","page_number":"29","context_sentence":"Ice cream, sweets, and chocolate are delicious, but they usually have lots of sugar.","memorization_hook":"谐音“休哥”，联想：喝咖啡苦得受不了，对服务员喊：休哥（老哥），加点糖！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/58e84b664a8ba8709a809eb713da8b52.mp3"},{"word":"improve","meaning":"v. 改进；改善","syllable_type":"im-prove (双音节)","comparison":"develop","page_number":"30","context_sentence":"Improve Your Eating Habits.","memorization_hook":"谐音“音谱入屋”，联想：把美妙的音乐曲谱带入屋子，极大地改善了房间的氛围。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/f04a41a08065eda7abc55660ecec08c1.mp3"},{"word":"habit","meaning":"n. 习惯","syllable_type":"hab-it (双音节)","comparison":"hobby","page_number":"30","context_sentence":"Healthy eating means eating healthy food and having good eating habits.","memorization_hook":"谐音“海龟”，联想：海龟有一种非常好的习惯，就是慢慢悠悠不着急，所以能长寿。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/861ad87efe8d29441f3c51da0639e246.mp3"},{"word":"salt","meaning":"n. 盐","syllable_type":"salt (元音字母组合音节)","comparison":"sugar","page_number":"30","context_sentence":"But it often has lots of salt, fat, and sugar.","memorization_hook":"谐音“馊的”，联想：夏天做菜如果不放盐，很快就会变成馊的了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/4418a5c202268aeb95635f974d9dad1f.mp3"},{"word":"fat","meaning":"n. 脂肪 adj. 肥胖的","syllable_type":"fat (闭音节)","comparison":"thin, slim","page_number":"30","context_sentence":"Eating fat is important for keeping us healthy.","memorization_hook":"谐音“发它”，联想：吃了太多脂肪，身体就像面团一样发它（发酵膨胀）变胖了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/05db4434cb234348f1c77c58ae132891.mp3"},{"word":"weight","meaning":"n. 体重；重量","syllable_type":"weight (元音字母组合音节)","comparison":"weigh (v.)","page_number":"30","context_sentence":"That makes us put on weight.","memorization_hook":"谐音“胃特”，联想：他的胃特别能装东西，所以吃出了惊人的体重。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/c088157623ef42e33de38a897746fb46.mp3"},{"word":"cause","meaning":"v. 造成；导致","syllable_type":"cause (元音字母组合音节)","comparison":"because, reason","page_number":"30","context_sentence":"Eating fast food like pizza and hamburgers too often may cause heart problems later.","memorization_hook":"谐音“扣子”，联想：吃得太多导致身体发胖，最终崩开了衬衫的扣子。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/b6da032c6eb8330de377237764c05317.mp3"},{"word":"heart","meaning":"n. 心脏；中心","syllable_type":"heart (r控制音节)","comparison":"hurt (受伤)","page_number":"30","context_sentence":"Eating fast food like pizza and hamburgers too often may cause heart problems later.","memorization_hook":"谐音“哈特”，联想：跑完一千米长跑后，我的哈特（心脏）在扑通扑通狂跳！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/b6da032c6eb8330de377237764c05317.mp3"},{"word":"balanced","meaning":"adj. 均衡的；平衡的","syllable_type":"bal-anced (多音节)","comparison":"balance (n./v.)","page_number":"30","context_sentence":"Eating balanced meals is very important when we are young.","memorization_hook":"谐音“白愣死”，联想：如果你不吃均衡的饮食，导致营养不良，大夫看了也会白愣死（翻白眼）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/300551a40682f5806ed22eea0b929b76.mp3"},{"word":"sleepy","meaning":"adj. 困倦的；想睡的","syllable_type":"sleep-y (双音节)","comparison":"asleep, sleep","page_number":"30","context_sentence":"It is easy to feel sleepy and find it hard to focus on our work or studies if we don't eat breakfast.","memorization_hook":"词缀拆解：sleep(睡觉) + y(充满...的)，脑子里全都是睡觉的念头，就是困倦的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/8a045f25ac3d40bb20e10798f9bbac37.mp3"},{"word":"poor","meaning":"adj. 不好的；贫穷的；可怜的","syllable_type":"poor (元音字母组合音节)","comparison":"rich","page_number":"31","context_sentence":"How many poor eating habits are mentioned?","memorization_hook":"谐音“破”，联想：衣服穿得破破烂烂的，真是个贫穷又可怜的人；在这里引申为习惯“不好”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/e88f884c7c66b1c4c7e6e7f333f70fcc.mp3"},{"word":"result","meaning":"n. 后果；结果","syllable_type":"re-sult (双音节)","comparison":"effect","page_number":"31","context_sentence":"Reason for the result.","memorization_hook":"谐音“里灶头”，联想：不小心烧了里屋的灶头，引发火灾的结果可是很严重的！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/6eb31e55a0c802905b329a20a062ebd5.mp3"},{"word":"article","meaning":"n. 文章；冠词","syllable_type":"ar-ti-cle (多音节)","comparison":"passage, essay","page_number":"31","context_sentence":"Read the article from a clinic's newsletter.","memorization_hook":"谐音“阿提狗”，联想：这篇优秀的英语文章，其实写的是邻居阿提和他的狗的故事。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/2843586377089307905b66dd8d778492.mp3"},{"word":"common","meaning":"adj. 共同的；普遍的","syllable_type":"com-mon (双音节)","comparison":"normal, usual","page_number":"31","context_sentence":"Do you think the poor eating habits in the article are common among young people?","memorization_hook":"谐音“靠门”，联想：下课时大家都习惯性地靠门站着聊天，这在学生中是一个普遍的现象。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/89a4b56a5ebfa29a222b913cd76100d9.mp3"},{"word":"among","meaning":"prep. 在……中；……之一","syllable_type":"a-mong (双音节)","comparison":"between","page_number":"31","context_sentence":"Do you think the poor eating habits in the article are common among young people?","memorization_hook":"谐音“阿蒙”，联想：三国里吴下阿蒙经过学习，在众人之中脱颖而出，令人刮目相看。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/89a4b56a5ebfa29a222b913cd76100d9.mp3"},{"word":"soft","meaning":"adj. 柔和的；柔软的","syllable_type":"soft (闭音节)","comparison":"hard","page_number":"31","context_sentence":"First, I drink too many soft drinks.","memorization_hook":"谐音“沙发头”，联想：靠在沙发头上睡觉，感觉非常柔软舒服。（soft drink引申为不含酒精的软饮料）","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/12cd7b38227b1a949b18997a30a02114.mp3"},{"word":"enough","meaning":"adj. 足够的 adv. 足够地","syllable_type":"e-nough (双音节)","comparison":"sufficient","page_number":"31","context_sentence":"Second, I don't drink enough water.","memorization_hook":"谐音“一拿福”，联想：过年时长辈一拿出大“福”字，就说明家里有足够的福气了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/19b9692091ded8a35844850e85f2a5ca.mp3"},{"word":"thirsty","meaning":"adj. 渴的","syllable_type":"thirs-ty (双音节)","comparison":"hungry","page_number":"31","context_sentence":"I drink water when I am thirsty, but it's better to drink before I get thirsty.","memorization_hook":"谐音“色丝提”，联想：沙漠里的人因为太口渴，发出的声音干涩得像是一把拉色了的丝提琴。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/6459a2a7d422b85c0c37bcdc1d94395c.mp3"},{"word":"gain weight","meaning":"词组：增加体重；变胖","syllable_type":"gain weight","comparison":"lose weight","page_number":"68","context_sentence":"Not all fat makes us gain weight.","memorization_hook":"联想记忆：gain是获得，weight是重量。获得了多余的重量，那就是变胖增加体重。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/2d2f8b682737cd39787e47c8950f9f50.mp3"},{"word":"focus on","meaning":"词组：集中注意力于","syllable_type":"fo-cus on","comparison":"pay attention to","page_number":"30","context_sentence":"It is easy to feel sleepy and find it hard to focus on our work or studies if we don't eat breakfast.","memorization_hook":"谐音联想：focus谐音“佛壳死”，为了修佛，老和尚盯着木鱼敲，把佛壳都敲破了，真是集中注意力于此啊！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sa/a7b/8a045f25ac3d40bb20e10798f9bbac37.mp3"}];
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function() {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function(id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function(id, blob, meta) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, meta, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
+        const vocabData = [{"word":"watermelon","meaning":"n. 西瓜","syllable_type":"wa-ter-mel-on (多音节)","comparison":"melon","page_number":"26","context_sentence":"There isn't any tea, but there's watermelon juice!","memorization_hook":"联想记忆：water(水) + melon(瓜)，里面全都是水的瓜，当然就是西瓜啦！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/3fed6eee12e8348a9057a203c4988428.mp3"},{"word":"cabbage","meaning":"n. 卷心菜","syllable_type":"cab-bage (多音节)","comparison":"lettuce","page_number":"26","context_sentence":"I'd like noodles with beef and cabbage.","memorization_hook":"谐音“卡北极”，联想：探险队被卡在北极，每天只能靠吃冰冻的卷心菜补充维生素。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/6dcb0c9b4baf827c8a09c3e9e35e8e6f.mp3"},{"word":"mutton","meaning":"n. 羊肉","syllable_type":"mut-ton (双音节)","comparison":"beef, pork","page_number":"26","context_sentence":"Well, there's beef and carrot, and mutton and onion.","memorization_hook":"谐音“马腾”，联想：草原上的小马腾飞起来，因为被吃羊肉的狼追赶。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/5ad3d855f4f80817b724f1f22308b8fc.mp3"},{"word":"cookie","meaning":"n. 曲奇饼","syllable_type":"cook-ie (双音节)","comparison":"biscuit","page_number":"26","context_sentence":"After that we sometimes have ice cream or cookies for a treat!","memorization_hook":"联想记忆：cook(厨师) + ie(小东西)，厨师做出来的甜甜小点心就是曲奇。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/68f507af60d688d08274259edf01546a.mp3"},{"word":"onion","meaning":"n. 洋葱；葱头","syllable_type":"on-ion (双音节)","comparison":"garlic","page_number":"26","context_sentence":"Well, there's beef and carrot, and mutton and onion.","memorization_hook":"谐音“按你按”，联想：切洋葱辣眼睛，让人忍不住一直按你按你（揉眼睛）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/5ad3d855f4f80817b724f1f22308b8fc.mp3"},{"word":"dumpling","meaning":"n. 饺子","syllable_type":"dump-ling (双音节)","comparison":"noodle","page_number":"26","context_sentence":"Oh, dumplings, my favourite!","memorization_hook":"谐音“当铺林”，联想：古代的当铺林立的街头，都在卖热气腾腾的饺子。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/06a79192627e8919f8e391f1c02f7d6d.mp3"},{"word":"taste","meaning":"v. 有味道；尝","syllable_type":"taste (相对开音节)","comparison":"smell, flavor","page_number":"27","context_sentence":"We often have it in America, but it may taste different here.","memorization_hook":"谐音“太斯特”，联想：这道菜的味道真是太斯特（特别）了！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/01a06fcb1ac2a75396709ed27f9fbe08.mp3"},{"word":"choice","meaning":"n. 选择","syllable_type":"choice (元音字母组合音节)","comparison":"choose (v.)","page_number":"28","context_sentence":"How do we make healthy eating choices?","memorization_hook":"谐音“抽一丝”，联想：从一堆五颜六色的丝线中，小心翼翼地选择抽出一丝。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/9b5a805e83344f3737b98cdf98179c6e.mp3"},{"word":"meal","meaning":"n. 一餐所吃的食物；一餐","syllable_type":"meal (元音字母组合音节)","comparison":"food","page_number":"28","context_sentence":"Eating balanced meals is very important when we are young.","memorization_hook":"谐音“米偶”，联想：用大米捏了一个可爱的小木偶，放在餐桌上陪我吃这一餐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/300551a40682f5806ed22eea0b929b76.mp3"},{"word":"pork","meaning":"n. 猪肉","syllable_type":"pork (r控制音节)","comparison":"beef, mutton","page_number":"28","context_sentence":"Dongpo pork is famous in China.","memorization_hook":"谐音“破壳”，联想：小猪仔破壳而出，长大后变成了猪肉（脑洞大开更好记）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/14d30ae61d85e5d595d54a47445c8ab9.mp3"},{"word":"strawberry","meaning":"n. 草莓","syllable_type":"straw-ber-ry (多音节)","comparison":"blueberry","page_number":"28","context_sentence":"Instead, I have a pear, a banana, or some strawberries!","memorization_hook":"组合联想：straw(稻草/麦管) + berry(浆果)，长在草丛里的红色小浆果就是草莓。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/95d48ca2b77645e076e750b3b0cd22c6.mp3"},{"word":"customer","meaning":"n. 顾客","syllable_type":"cus-tom-er (多音节)","comparison":"waiter","page_number":"29","context_sentence":"Customer","memorization_hook":"词根词缀：custom(风俗/习惯) + er(人)，习惯经常来店里买东西的人就是顾客。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/ce26601dac0dea138b7295f02b7620a7.mp3"},{"word":"serve","meaning":"v. 提供；服务","syllable_type":"serve (r控制音节)","comparison":"service (n.)","page_number":"29","context_sentence":"Sir, we serve everyone.","memorization_hook":"谐音“蛇舞”，联想：印度街头的艺人提供表演服务，吹起笛子让蛇跳舞。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/da5f89978fa7f41068aeac7c791013f8.mp3"},{"word":"instead","meaning":"adv. 反而；代替","syllable_type":"in-stead (双音节)","comparison":"instead of","page_number":"29","context_sentence":"Instead, I have a pear, a banana, or some strawberries!","memorization_hook":"谐音“硬死呆的”，联想：他没有出去玩，代替的是硬死呆在家里背单词。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/95d48ca2b77645e076e750b3b0cd22c6.mp3"},{"word":"pear","meaning":"n. 梨","syllable_type":"pear (元音字母组合音节)","comparison":"apple, peach","page_number":"29","context_sentence":"Instead, I have a pear, a banana, or some strawberries!","memorization_hook":"谐音“赔鹅”，联想：他不小心砸坏了邻居的梨树，只好赔给主人一只鹅。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/95d48ca2b77645e076e750b3b0cd22c6.mp3"},{"word":"sugar","meaning":"n. 糖","syllable_type":"sug-ar (双音节)","comparison":"salt","page_number":"29","context_sentence":"Ice cream, sweets, and chocolate are delicious, but they usually have lots of sugar.","memorization_hook":"谐音“休哥”，联想：喝咖啡苦得受不了，对服务员喊：休哥（老哥），加点糖！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/58e84b664a8ba8709a809eb713da8b52.mp3"},{"word":"improve","meaning":"v. 改进；改善","syllable_type":"im-prove (双音节)","comparison":"develop","page_number":"30","context_sentence":"Improve Your Eating Habits.","memorization_hook":"谐音“音谱入屋”，联想：把美妙的音乐曲谱带入屋子，极大地改善了房间的氛围。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/f04a41a08065eda7abc55660ecec08c1.mp3"},{"word":"habit","meaning":"n. 习惯","syllable_type":"hab-it (双音节)","comparison":"hobby","page_number":"30","context_sentence":"Healthy eating means eating healthy food and having good eating habits.","memorization_hook":"谐音“海龟”，联想：海龟有一种非常好的习惯，就是慢慢悠悠不着急，所以能长寿。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/861ad87efe8d29441f3c51da0639e246.mp3"},{"word":"salt","meaning":"n. 盐","syllable_type":"salt (元音字母组合音节)","comparison":"sugar","page_number":"30","context_sentence":"But it often has lots of salt, fat, and sugar.","memorization_hook":"谐音“馊的”，联想：夏天做菜如果不放盐，很快就会变成馊的了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/4418a5c202268aeb95635f974d9dad1f.mp3"},{"word":"fat","meaning":"n. 脂肪 adj. 肥胖的","syllable_type":"fat (闭音节)","comparison":"thin, slim","page_number":"30","context_sentence":"Eating fat is important for keeping us healthy.","memorization_hook":"谐音“发它”，联想：吃了太多脂肪，身体就像面团一样发它（发酵膨胀）变胖了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/05db4434cb234348f1c77c58ae132891.mp3"},{"word":"weight","meaning":"n. 体重；重量","syllable_type":"weight (元音字母组合音节)","comparison":"weigh (v.)","page_number":"30","context_sentence":"That makes us put on weight.","memorization_hook":"谐音“胃特”，联想：他的胃特别能装东西，所以吃出了惊人的体重。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/c088157623ef42e33de38a897746fb46.mp3"},{"word":"cause","meaning":"v. 造成；导致","syllable_type":"cause (元音字母组合音节)","comparison":"because, reason","page_number":"30","context_sentence":"Eating fast food like pizza and hamburgers too often may cause heart problems later.","memorization_hook":"谐音“扣子”，联想：吃得太多导致身体发胖，最终崩开了衬衫的扣子。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/b6da032c6eb8330de377237764c05317.mp3"},{"word":"heart","meaning":"n. 心脏；中心","syllable_type":"heart (r控制音节)","comparison":"hurt (受伤)","page_number":"30","context_sentence":"Eating fast food like pizza and hamburgers too often may cause heart problems later.","memorization_hook":"谐音“哈特”，联想：跑完一千米长跑后，我的哈特（心脏）在扑通扑通狂跳！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/b6da032c6eb8330de377237764c05317.mp3"},{"word":"balanced","meaning":"adj. 均衡的；平衡的","syllable_type":"bal-anced (多音节)","comparison":"balance (n./v.)","page_number":"30","context_sentence":"Eating balanced meals is very important when we are young.","memorization_hook":"谐音“白愣死”，联想：如果你不吃均衡的饮食，导致营养不良，大夫看了也会白愣死（翻白眼）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/300551a40682f5806ed22eea0b929b76.mp3"},{"word":"sleepy","meaning":"adj. 困倦的；想睡的","syllable_type":"sleep-y (双音节)","comparison":"asleep, sleep","page_number":"30","context_sentence":"It is easy to feel sleepy and find it hard to focus on our work or studies if we don't eat breakfast.","memorization_hook":"词缀拆解：sleep(睡觉) + y(充满...的)，脑子里全都是睡觉的念头，就是困倦的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/8a045f25ac3d40bb20e10798f9bbac37.mp3"},{"word":"poor","meaning":"adj. 不好的；贫穷的；可怜的","syllable_type":"poor (元音字母组合音节)","comparison":"rich","page_number":"31","context_sentence":"How many poor eating habits are mentioned?","memorization_hook":"谐音“破”，联想：衣服穿得破破烂烂的，真是个贫穷又可怜的人；在这里引申为习惯“不好”。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/e88f884c7c66b1c4c7e6e7f333f70fcc.mp3"},{"word":"result","meaning":"n. 后果；结果","syllable_type":"re-sult (双音节)","comparison":"effect","page_number":"31","context_sentence":"Reason for the result.","memorization_hook":"谐音“里灶头”，联想：不小心烧了里屋的灶头，引发火灾的结果可是很严重的！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/6eb31e55a0c802905b329a20a062ebd5.mp3"},{"word":"article","meaning":"n. 文章；冠词","syllable_type":"ar-ti-cle (多音节)","comparison":"passage, essay","page_number":"31","context_sentence":"Read the article from a clinic's newsletter.","memorization_hook":"谐音“阿提狗”，联想：这篇优秀的英语文章，其实写的是邻居阿提和他的狗的故事。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/2843586377089307905b66dd8d778492.mp3"},{"word":"common","meaning":"adj. 共同的；普遍的","syllable_type":"com-mon (双音节)","comparison":"normal, usual","page_number":"31","context_sentence":"Do you think the poor eating habits in the article are common among young people?","memorization_hook":"谐音“靠门”，联想：下课时大家都习惯性地靠门站着聊天，这在学生中是一个普遍的现象。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/89a4b56a5ebfa29a222b913cd76100d9.mp3"},{"word":"among","meaning":"prep. 在……中；……之一","syllable_type":"a-mong (双音节)","comparison":"between","page_number":"31","context_sentence":"Do you think the poor eating habits in the article are common among young people?","memorization_hook":"谐音“阿蒙”，联想：三国里吴下阿蒙经过学习，在众人之中脱颖而出，令人刮目相看。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/89a4b56a5ebfa29a222b913cd76100d9.mp3"},{"word":"soft","meaning":"adj. 柔和的；柔软的","syllable_type":"soft (闭音节)","comparison":"hard","page_number":"31","context_sentence":"First, I drink too many soft drinks.","memorization_hook":"谐音“沙发头”，联想：靠在沙发头上睡觉，感觉非常柔软舒服。（soft drink引申为不含酒精的软饮料）","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/12cd7b38227b1a949b18997a30a02114.mp3"},{"word":"enough","meaning":"adj. 足够的 adv. 足够地","syllable_type":"e-nough (双音节)","comparison":"sufficient","page_number":"31","context_sentence":"Second, I don't drink enough water.","memorization_hook":"谐音“一拿福”，联想：过年时长辈一拿出大“福”字，就说明家里有足够的福气了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/19b9692091ded8a35844850e85f2a5ca.mp3"},{"word":"thirsty","meaning":"adj. 渴的","syllable_type":"thirs-ty (双音节)","comparison":"hungry","page_number":"31","context_sentence":"I drink water when I am thirsty, but it's better to drink before I get thirsty.","memorization_hook":"谐音“色丝提”，联想：沙漠里的人因为太口渴，发出的声音干涩得像是一把拉色了的丝提琴。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/6459a2a7d422b85c0c37bcdc1d94395c.mp3"},{"word":"gain weight","meaning":"词组：增加体重；变胖","syllable_type":"gain weight","comparison":"lose weight","page_number":"68","context_sentence":"Not all fat makes us gain weight.","memorization_hook":"联想记忆：gain是获得，weight是重量。获得了多余的重量，那就是变胖增加体重。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/2d2f8b682737cd39787e47c8950f9f50.mp3"},{"word":"focus on","meaning":"词组：集中注意力于","syllable_type":"fo-cus on","comparison":"pay attention to","page_number":"30","context_sentence":"It is easy to feel sleepy and find it hard to focus on our work or studies if we don't eat breakfast.","memorization_hook":"谐音联想：focus谐音“佛壳死”，为了修佛，老和尚盯着木鱼敲，把佛壳都敲破了，真是集中注意力于此啊！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/8a045f25ac3d40bb20e10798f9bbac37.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -810,17 +1148,17 @@
         
         function toggleSort() {
             isAlphabetical = !isAlphabetical;
-            const btnText = document.getElementById('sort-text');
-            const btnIcon = document.getElementById('sort-icon');
+            const textEls = document.querySelectorAll('.sort-text');
+            const iconEls = document.querySelectorAll('.sort-icon');
 
             if (isAlphabetical) {
                 items.sort((a, b) => a.dataset.word.localeCompare(b.dataset.word));
-                btnText.innerText = "Textbook Order";
-                btnIcon.innerText = "📖";
+                textEls.forEach(el => el.innerText = "Textbook Order");
+                iconEls.forEach(el => el.innerText = "📖");
             } else {
                 items.sort((a, b) => parseInt(a.dataset.index) - parseInt(b.dataset.index));
-                btnText.innerText = "Sort A-Z";
-                btnIcon.innerText = "🔤";
+                textEls.forEach(el => el.innerText = "Sort A-Z");
+                iconEls.forEach(el => el.innerText = "🔤");
             }
 
             // Clear and re-append sorted items
@@ -830,93 +1168,256 @@
 
         const app = {
             currentAudio: null,
+            audioObjectURL: null,
+            hiddenWords: new Set(),
+            showHiddenMode: false,
+            unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 7 Semester 2 (A7B)").substring(0, 16),
 
-            clearAudioCache: function() {
-                const keysToRemove = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && (key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-") || key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-"))) {
-                        keysToRemove.push(key);
-                    }
+            init: async function() {
+                // Load hidden words from localStorage
+                const stored = localStorage.getItem(this.unitKey);
+                if (stored) {
+                    try {
+                        const indices = JSON.parse(stored);
+                        this.hiddenWords = new Set(indices);
+                    } catch(e) { console.error("Failed to parse hidden words", e); }
                 }
-                keysToRemove.forEach(k => localStorage.removeItem(k));
-                console.log("Cleared audio cache to free up space");
-            },
-            safeSetItem: function(key, value) {
-                try {
-                    localStorage.setItem(key, value);
-                } catch (e) {
-                    if (e.name === 'QuotaExceededError') {
-                        this.clearAudioCache();
-                        try {
-                            localStorage.setItem(key, value);
-                        } catch (e2) {
-                            console.error("Storage still full after clearing cache", e2);
+
+                // Apply initial state to cards
+                items.forEach(item => {
+                    const idx = parseInt(item.dataset.index);
+                    if (this.hiddenWords.has(idx)) {
+                        item.classList.add('is-hidden-state');
+                        const cb = item.querySelector('.hide-checkbox');
+                        if (cb) cb.checked = true;
+                    }
+                });
+
+                this.updateStats();
+
+                // Preload audio
+                vocabData.forEach(item => {
+                    if (item.audio) {
+                        this.cacheAudio(item.audio);
+                    }
+                });
+
+                // Cleanup legacy localStorage audio cache
+                setTimeout(() => {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                    key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                    key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                    key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                            keysToRemove.push(key);
                         }
-                    } else {
-                        console.error("Error saving to localStorage", e);
                     }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                }, 2000);
+            },
+
+            getHash: function(str) {
+                return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            },
+
+            updateStats: function() {
+                const total = vocabData.length;
+                const hidden = this.hiddenWords.size;
+                const shown = total - hidden;
+                
+                const display = document.getElementById('stats-display');
+                if (display) {
+                    display.innerHTML = `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
                 }
             },
+
+            toggleWordHidden: function(index) {
+                const item = items.find(it => parseInt(it.dataset.index) === index);
+                if (!item) return;
+
+                if (this.hiddenWords.has(index)) {
+                    this.hiddenWords.delete(index);
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                } else {
+                    this.hiddenWords.add(index);
+                    
+                    const isMobile = window.innerWidth <= 600;
+                    if (this.showHiddenMode || !isMobile) {
+                        // Instant hide for desktop or when in "Show Hidden" mode
+                        item.classList.add('is-hidden-state');
+                    } else {
+                        // Mobile: Smooth collapse animation
+                        const h = item.offsetHeight;
+                        item.style.height = h + 'px';
+                        item.offsetHeight; // Force reflow
+                        item.classList.add('fading-out');
+                        
+                        setTimeout(() => {
+                            if (this.hiddenWords.has(index)) {
+                                item.classList.add('is-hidden-state');
+                                item.classList.remove('fading-out');
+                                item.style.height = '';
+                            }
+                        }, 500);
+                    }
+                }
+
+                // Persist
+                localStorage.setItem(this.unitKey, JSON.stringify(Array.from(this.hiddenWords)));
+                this.updateStats();
+            },
+
+            toggleShowHiddenMode: function() {
+                this.showHiddenMode = !this.showHiddenMode;
+                const desktopBtn = document.getElementById('show-hidden-toggle');
+                const textEls = document.querySelectorAll('.hidden-text');
+                const iconEls = document.querySelectorAll('.hidden-icon');
+
+                if (this.showHiddenMode) {
+                    if (desktopBtn) desktopBtn.classList.add('active');
+                    textEls.forEach(el => el.innerText = "Hide Learnt");
+                    iconEls.forEach(el => el.innerText = "🙈");
+                    items.forEach(item => item.classList.add('force-show'));
+                } else {
+                    if (desktopBtn) desktopBtn.classList.remove('active');
+                    textEls.forEach(el => el.innerText = "Show Hidden");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.remove('force-show'));
+                }
+            },
+
+            resetHidden: function() {
+                if (!confirm("Are you sure you want to reset all hidden words?")) return;
+                
+                this.hiddenWords.clear();
+                localStorage.removeItem(this.unitKey);
+                
+                items.forEach(item => {
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                    const cb = item.querySelector('.hide-checkbox');
+                    if (cb) cb.checked = false;
+                });
+                
+                this.updateStats();
+            },
+
             cacheAudio: async function(url) {
                 if (!url) return;
                 const baseUrl = url.split('?')[0];
-                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const baseHash = Array.from(baseUrl).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-sa-audio-" + urlHash;
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
                 
-                if (localStorage.getItem(cacheKey)) return localStorage.getItem(cacheKey);
+                const cached = await db.get(cacheKey);
+                if (cached) return cached.blob;
 
                 try {
                     const resp = await fetch(url);
+                    const lastModified = resp.headers.get('Last-Modified');
                     const blob = await resp.blob();
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const result = reader.result;
-                            try {
-                                const versionRegistryKey = "ep-sa-meta-" + baseHash;
-                                const oldCacheKey = localStorage.getItem(versionRegistryKey);
-                                if (oldCacheKey && oldCacheKey !== cacheKey) {
-                                    localStorage.removeItem(oldCacheKey);
-                                }
-                                this.safeSetItem(cacheKey, result);
-                                this.safeSetItem(versionRegistryKey, cacheKey);
-                            } catch(e) {
-                                console.warn("Storage full, could not cache audio");
-                            }
-                            resolve(result);
-                        };
-                        reader.readAsDataURL(blob);
-                    });
+                    const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                    await db.set(cacheKey, blob, meta);
+                    return blob;
                 } catch(e) { console.error("Cache failed", e); }
             },
 
-            playAudio: function() {
-                const btn = window.event.currentTarget || window.event.target.closest('.play-btn');
+            refreshCache: async function() {
+                const desktopBtn = document.getElementById('refresh-cache');
+                const textEls = document.querySelectorAll('.refresh-text');
+                
+                if (desktopBtn && desktopBtn.classList.contains('loading')) return;
+
+                if (desktopBtn) desktopBtn.classList.add('loading');
+                textEls.forEach(el => el.innerText = "Checking...");
+                let updatedCount = 0;
+
+                try {
+                    for (const item of vocabData) {
+                        if (!item.audio) continue;
+                        
+                        const url = item.audio;
+                        const baseUrl = url.split('?')[0];
+                        const baseHash = this.getHash(baseUrl);
+                        const cacheKey = "ep-audio-" + baseHash;
+                        const cached = await db.get(cacheKey);
+                        const currentVersion = cached?.meta?.lastModified || 0;
+
+                        try {
+                            const response = await fetch(url, { method: 'HEAD' });
+                            const lastModifiedStr = response.headers.get('Last-Modified');
+                            if (lastModifiedStr) {
+                                const lastModified = new Date(lastModifiedStr).getTime();
+                                if (lastModified > currentVersion) {
+                                    await this.cacheAudio(url);
+                                    updatedCount++;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Failed to check ${item.word}`, e);
+                        }
+                    }
+                    alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+                } finally {
+                    if (desktopBtn) desktopBtn.classList.remove('loading');
+                    textEls.forEach(el => el.innerText = "Refresh 🔊");
+                }
+            },
+
+            playAudio: async function(btn) {
                 const card = btn.closest('.vocab-item');
                 const index = parseInt(card.dataset.index);
                 const url = vocabData[index].audio;
                 if (!url) return;
 
-                if (this.currentAudio) this.currentAudio.pause();
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                    document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
+                }
                 
-                const urlHash = Array.from(url).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
-                const cacheKey = "ep-sa-audio-" + urlHash;
-                const source = localStorage.getItem(cacheKey) || url;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
 
                 this.currentAudio = new Audio(source);
-                this.currentAudio.play().catch(e => console.warn("Audio playback failed", e));
+                btn.disabled = true;
+
+                const cleanup = () => {
+                    btn.disabled = false;
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+
+                this.currentAudio.onended = cleanup;
+                this.currentAudio.onerror = cleanup;
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    cleanup();
+                });
             }
         };
 
-        // Preload all audio on startup
+        // Initialize and preload
         window.addEventListener('load', () => {
-            vocabData.forEach(item => {
-                if (item.audio) {
-                    app.cacheAudio(item.audio);
-                }
-            });
+            app.init();
         });
     </script>
 

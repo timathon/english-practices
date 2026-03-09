@@ -131,7 +131,7 @@ const currentRunTimestamp = getTimestamp();
 
 function getAudioUrl(sentence, book, unit) {
     const hash = crypto.createHash('md5').update(sentence).digest('hex');
-    return `${PUBLIC_URL_BASE}/ep/vg/${book}/${unit}/${hash}.mp3`;
+    return `${PUBLIC_URL_BASE}/ep/${book}/${hash}.mp3`;
 }
 
 let isGeminiQuotaExhausted = false;
@@ -237,7 +237,7 @@ except Exception as e:
 
             execSync(`ffmpeg -i "${combinedWav}" -ss ${startTime} -to ${endTime} -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
             
-            const r2Key = `ep/vg/${book}/${unit}/${hash}.mp3`;
+            const r2Key = `ep/${book}/${hash}.mp3`;
             await s3Client.send(new PutObjectCommand({
                 Bucket: BUCKET_NAME,
                 Key: r2Key,
@@ -290,7 +290,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
             await Promise.all(allQuestions.map(async (q) => {
                 if (!q.context_sentence) return;
                 const hash = crypto.createHash('md5').update(q.context_sentence).digest('hex');
-                const r2Key = `ep/vg/${folderName}/${unitName}/${hash}.mp3`;
+                const r2Key = `ep/${folderName}/${hash}.mp3`;
                 try {
                     await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
                     existingHashes.add(hash);
