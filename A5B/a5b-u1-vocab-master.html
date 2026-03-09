@@ -480,17 +480,23 @@
             this.state.settings.sfx = document.getElementById("sfx-toggle").checked;
             localStorage.setItem(ID_A + "-settings", JSON.stringify(this.state.settings));
         },
-        cacheAudio: async function(url) {
+        cacheAudio: async function(url, force = false) {
             if (!url) return;
             const baseUrl = url.split('?')[0];
             const baseHash = this.getHash(baseUrl);
             const cacheKey = "ep-audio-" + baseHash;
             
-            const cached = await db.get(cacheKey);
-            if (cached) return cached.blob;
+            if (!force) {
+                const cached = await db.get(cacheKey);
+                if (cached) return cached.blob;
+            }
 
             try {
-                const resp = await fetch(url);
+                const fetchUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+                const resp = await fetch(fetchUrl);
+                if (!resp.ok) return null;
+                const contentType = resp.headers.get('Content-Type');
+                if (!contentType || !contentType.startsWith('audio/')) return null;
                 const lastModified = resp.headers.get('Last-Modified');
                 const blob = await resp.blob();
                 const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
@@ -560,12 +566,13 @@
                     const currentVersion = cached?.meta?.lastModified || 0;
 
                     try {
-                        const response = await fetch(url, { method: 'HEAD' });
+                        const headUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+                        const response = await fetch(headUrl, { method: 'HEAD' });
                         const lastModifiedStr = response.headers.get('Last-Modified');
                         if (lastModifiedStr) {
                             const lastModified = new Date(lastModifiedStr).getTime();
                             if (lastModified > currentVersion) {
-                                await this.cacheAudio(url);
+                                await this.cacheAudio(url, true);
                                 updatedCount++;
                             }
                         }

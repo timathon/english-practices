@@ -769,12 +769,13 @@
                     const currentVersion = cached?.meta?.lastModified || 0;
 
                     try {
-                        const response = await fetch(url, { method: 'HEAD' });
+                        const headUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+                        const response = await fetch(headUrl, { method: 'HEAD' });
                         const lastModifiedStr = response.headers.get('Last-Modified');
                         if (lastModifiedStr) {
                             const lastModified = new Date(lastModifiedStr).getTime();
                             if (lastModified > currentVersion) {
-                                await this.cacheAudio(url);
+                                await this.cacheAudio(url, true);
                                 updatedCount++;
                             }
                         }

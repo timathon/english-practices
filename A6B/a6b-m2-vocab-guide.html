@@ -37,6 +37,15 @@
             white-space: nowrap;
         }
         .stats-bar b { color: #2c3e50; }
+        .stats-bar.updated {
+            animation: stats-highlight 0.5s ease-out;
+        }
+
+        @keyframes stats-highlight {
+            0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); border-color: #3498db; }
+            50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); border-color: #3498db; }
+            100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); border-color: transparent; }
+        }
 
         /* Floating Scroll Buttons */
         .scroll-btns {
@@ -136,6 +145,7 @@
             .mobile-btn:active { background: #f0f0f0; }
             
             #m-sort-btn { color: #3498db; }
+            #m-cn-btn { color: #e91e63; }
             #m-hidden-btn { color: #9b59b6; }
             #m-reset-btn { color: #e67e22; }
             #m-refresh-btn { color: #1abc9c; }
@@ -167,6 +177,26 @@
         .vocab-item.is-hidden-state {
             opacity: 0.4;
             filter: grayscale(0.8);
+        }
+        .vocab-item.hide-cn .details:first-of-type .value {
+            display: none;
+        }
+        .vocab-item.hide-cn .details:first-of-type .cn-placeholder {
+            display: inline;
+            color: #3498db;
+            cursor: pointer;
+            font-style: italic;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+        .vocab-item .cn-placeholder {
+            display: none;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .value {
+            display: inline !important;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .cn-placeholder {
+            display: none !important;
         }
         .vocab-item.is-hidden-state:not(.force-show) {
             display: none;
@@ -267,13 +297,16 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            min-width: 140px;
+            min-width: 110px;
         }
         .control-btn:hover { transform: scale(1.05); }
         .control-btn:active { transform: scale(0.95); }
 
         #sort-toggle { background: #3498db; }
         #sort-toggle:hover { background: #2980b9; }
+
+        #toggle-cn { background: #e91e63; }
+        #toggle-cn:hover { background: #d81b60; }
 
         #show-hidden-toggle { background: #9b59b6; }
         #show-hidden-toggle:hover { background: #8e44ad; }
@@ -352,19 +385,18 @@
 
     <div class="controls-container desktop-only">
         <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
-            <span class="sort-icon">🔤</span>
             <span class="sort-text">Sort A-Z</span>
         </button>
+        <button id="toggle-cn" class="control-btn" onclick="app.toggleCN()">
+            <span class="cn-text">Hide CN</span>
+        </button>
         <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
-            <span class="hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
         <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
-            <span class="reset-icon">🧹</span>
             <span class="reset-text">Reset Hidden</span>
         </button>
         <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
-            <span class="refresh-icon">🔄</span>
             <span class="refresh-text">Refresh 🔊</span>
         </button>
     </div>
@@ -373,6 +405,10 @@
         <button class="mobile-btn" onclick="toggleSort()" id="m-sort-btn">
             <span class="btn-icon sort-icon">🔤</span>
             <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleCN()" id="m-cn-btn">
+            <span class="btn-icon cn-icon">㊙️</span>
+            <span class="cn-text">Hide CN</span>
         </button>
         <button class="mobile-btn" onclick="app.toggleShowHiddenMode()" id="m-hidden-btn">
             <span class="btn-icon hidden-icon">👁️</span>
@@ -398,7 +434,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">早餐</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">早餐</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">break-fast</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">breakfast vs fast</span></div>
             <div class="context-box">
@@ -418,7 +454,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">午餐</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">午餐</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">lunch vs bunch</span></div>
             <div class="context-box">
@@ -438,7 +474,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">池塘</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">池塘</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">pond vs fond</span></div>
             <div class="context-box">
@@ -458,7 +494,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">黑暗的；深色的</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">黑暗的；深色的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">r控制音节 (R-Controlled)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">dark vs park</span></div>
             <div class="context-box">
@@ -478,7 +514,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">干的</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">干的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">开音节 (Open)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">dry vs try</span></div>
             <div class="context-box">
@@ -498,7 +534,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">明天</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">明天</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">to-mor-row</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">tomorrow vs borrow</span></div>
             <div class="context-box">
@@ -518,7 +554,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">天气</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">天气</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">weath-er</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">weather vs feather</span></div>
             <div class="context-box">
@@ -538,7 +574,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">多风的</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">多风的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">win-dy</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">windy vs window</span></div>
             <div class="context-box">
@@ -558,7 +594,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">赢家；获胜者</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">赢家；获胜者</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">win-ner</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">winner vs dinner</span></div>
             <div class="context-box">
@@ -578,7 +614,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">……点半</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">……点半</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">half past</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">half past vs past</span></div>
             <div class="context-box">
@@ -671,9 +707,19 @@
             audioObjectURL: null,
             hiddenWords: new Set(),
             showHiddenMode: false,
+            hideCNMode: true,
             unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 6 Semester 2 Module 2").substring(0, 16),
 
             init: async function() {
+                // Apply default CN visibility
+                if (this.hideCNMode) {
+                    const textEls = document.querySelectorAll('.cn-text');
+                    const iconEls = document.querySelectorAll('.cn-icon');
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.add('hide-cn'));
+                }
+
                 // Load hidden words from localStorage
                 const stored = localStorage.getItem(this.unitKey);
                 if (stored) {
@@ -730,6 +776,9 @@
                 const display = document.getElementById('stats-display');
                 if (display) {
                     display.innerHTML = `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+                    display.classList.remove('updated');
+                    void display.offsetWidth; // Force reflow
+                    display.classList.add('updated');
                 }
             },
 
@@ -807,17 +856,53 @@
                 this.updateStats();
             },
 
-            cacheAudio: async function(url) {
+            toggleCN: function() {
+                this.hideCNMode = !this.hideCNMode;
+                const textEls = document.querySelectorAll('.cn-text');
+                const iconEls = document.querySelectorAll('.cn-icon');
+
+                if (this.hideCNMode) {
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => {
+                        item.classList.add('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                } else {
+                    textEls.forEach(el => el.innerText = "Hide CN");
+                    iconEls.forEach(el => el.innerText = "㊙️");
+                    items.forEach(item => {
+                        item.classList.remove('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                }
+            },
+
+            showItemCN: function(el) {
+                if (!this.hideCNMode) return;
+                const item = el.closest('.vocab-item');
+                if (item) {
+                    item.classList.toggle('force-show-cn');
+                }
+            },
+
+            cacheAudio: async function(url, force = false) {
                 if (!url) return;
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
                 const cacheKey = "ep-audio-" + baseHash;
                 
-                const cached = await db.get(cacheKey);
-                if (cached) return cached.blob;
+                if (!force) {
+                    const cached = await db.get(cacheKey);
+                    if (cached) return cached.blob;
+                }
 
                 try {
-                    const resp = await fetch(url);
+                    const fetchUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+                    const resp = await fetch(fetchUrl);
+                    if (!resp.ok) return null;
+                    const contentType = resp.headers.get('Content-Type');
+                    if (!contentType || !contentType.startsWith('audio/')) return null;
                     const lastModified = resp.headers.get('Last-Modified');
                     const blob = await resp.blob();
                     const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
@@ -848,12 +933,13 @@
                         const currentVersion = cached?.meta?.lastModified || 0;
 
                         try {
-                            const response = await fetch(url, { method: 'HEAD' });
+                            const headUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+                            const response = await fetch(headUrl, { method: 'HEAD' });
                             const lastModifiedStr = response.headers.get('Last-Modified');
                             if (lastModifiedStr) {
                                 const lastModified = new Date(lastModifiedStr).getTime();
                                 if (lastModified > currentVersion) {
-                                    await this.cacheAudio(url);
+                                    await this.cacheAudio(url, true);
                                     updatedCount++;
                                 }
                             }

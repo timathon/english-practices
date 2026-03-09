@@ -201,7 +201,7 @@ function generateHtml(data, book, unit) {
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(${index})">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">${item.meaning}</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">${item.meaning}</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">${item.syllable_type}</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">${item.comparison}</span></div>
             <div class="context-box">

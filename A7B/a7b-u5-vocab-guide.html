@@ -37,6 +37,15 @@
             white-space: nowrap;
         }
         .stats-bar b { color: #2c3e50; }
+        .stats-bar.updated {
+            animation: stats-highlight 0.5s ease-out;
+        }
+
+        @keyframes stats-highlight {
+            0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); border-color: #3498db; }
+            50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); border-color: #3498db; }
+            100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); border-color: transparent; }
+        }
 
         /* Floating Scroll Buttons */
         .scroll-btns {
@@ -136,6 +145,7 @@
             .mobile-btn:active { background: #f0f0f0; }
             
             #m-sort-btn { color: #3498db; }
+            #m-cn-btn { color: #e91e63; }
             #m-hidden-btn { color: #9b59b6; }
             #m-reset-btn { color: #e67e22; }
             #m-refresh-btn { color: #1abc9c; }
@@ -167,6 +177,26 @@
         .vocab-item.is-hidden-state {
             opacity: 0.4;
             filter: grayscale(0.8);
+        }
+        .vocab-item.hide-cn .details:first-of-type .value {
+            display: none;
+        }
+        .vocab-item.hide-cn .details:first-of-type .cn-placeholder {
+            display: inline;
+            color: #3498db;
+            cursor: pointer;
+            font-style: italic;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+        .vocab-item .cn-placeholder {
+            display: none;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .value {
+            display: inline !important;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .cn-placeholder {
+            display: none !important;
         }
         .vocab-item.is-hidden-state:not(.force-show) {
             display: none;
@@ -267,13 +297,16 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            min-width: 140px;
+            min-width: 110px;
         }
         .control-btn:hover { transform: scale(1.05); }
         .control-btn:active { transform: scale(0.95); }
 
         #sort-toggle { background: #3498db; }
         #sort-toggle:hover { background: #2980b9; }
+
+        #toggle-cn { background: #e91e63; }
+        #toggle-cn:hover { background: #d81b60; }
 
         #show-hidden-toggle { background: #9b59b6; }
         #show-hidden-toggle:hover { background: #8e44ad; }
@@ -352,19 +385,18 @@
 
     <div class="controls-container desktop-only">
         <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
-            <span class="sort-icon">🔤</span>
             <span class="sort-text">Sort A-Z</span>
         </button>
+        <button id="toggle-cn" class="control-btn" onclick="app.toggleCN()">
+            <span class="cn-text">Hide CN</span>
+        </button>
         <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
-            <span class="hidden-icon">👁️</span>
             <span class="hidden-text">Show Hidden</span>
         </button>
         <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
-            <span class="reset-icon">🧹</span>
             <span class="reset-text">Reset Hidden</span>
         </button>
         <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
-            <span class="refresh-icon">🔄</span>
             <span class="refresh-text">Refresh 🔊</span>
         </button>
     </div>
@@ -373,6 +405,10 @@
         <button class="mobile-btn" onclick="toggleSort()" id="m-sort-btn">
             <span class="btn-icon sort-icon">🔤</span>
             <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleCN()" id="m-cn-btn">
+            <span class="btn-icon cn-icon">㊙️</span>
+            <span class="cn-text">Hide CN</span>
         </button>
         <button class="mobile-btn" onclick="app.toggleShowHiddenMode()" id="m-hidden-btn">
             <span class="btn-icon hidden-icon">👁️</span>
@@ -398,7 +434,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">世界各地</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">世界各地</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">a-round the world</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">round vs. ground</span></div>
             <div class="context-box">
@@ -418,7 +454,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">现在；立刻</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">现在；立刻</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">right now</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">right vs. light</span></div>
             <div class="context-box">
@@ -438,7 +474,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">骑；旅程</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">骑；旅程</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">ride vs. side</span></div>
             <div class="context-box">
@@ -458,7 +494,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">某个时刻；片刻</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">某个时刻；片刻</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">mo-ment</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">moment vs. movement</span></div>
             <div class="context-box">
@@ -478,7 +514,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">现在；此刻</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">现在；此刻</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">at the mo-ment</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">now vs. then</span></div>
             <div class="context-box">
@@ -498,7 +534,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">做；从事</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">做；从事</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">work on</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">work for vs. work with</span></div>
             <div class="context-box">
@@ -518,7 +554,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">龙</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">龙</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">drag-on</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">dragon vs. wagon</span></div>
             <div class="context-box">
@@ -538,7 +574,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">节日</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">节日</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">fes-ti-val</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">festival vs. carnival</span></div>
             <div class="context-box">
@@ -558,7 +594,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">别挂断电话；等一等</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">别挂断电话；等一等</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">hold on</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">hold vs. cold</span></div>
             <div class="context-box">
@@ -578,7 +614,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">嗓音；声音</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">嗓音；声音</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">voice vs. choice</span></div>
             <div class="context-box">
@@ -598,7 +634,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(10)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">比赛；竞赛</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">比赛；竞赛</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">race vs. face</span></div>
             <div class="context-box">
@@ -618,7 +654,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(11)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">亲爱的；宝贝</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">亲爱的；宝贝</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">dar-ling</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">darling vs. dark</span></div>
             <div class="context-box">
@@ -638,7 +674,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(12)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">某人；有人</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">某人；有人</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">some-bod-y</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">anybody vs. nobody</span></div>
             <div class="context-box">
@@ -658,7 +694,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(13)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">能；可以</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">能；可以</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">could vs. would</span></div>
             <div class="context-box">
@@ -678,7 +714,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(14)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">消息；信息</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">消息；信息</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">mes-sage</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">message vs. passage</span></div>
             <div class="context-box">
@@ -698,7 +734,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(15)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">踢；踹</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">踢；踹</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">kick vs. pick</span></div>
             <div class="context-box">
@@ -718,7 +754,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(16)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">在线的</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">在线的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">on-line</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">online vs. offline</span></div>
             <div class="context-box">
@@ -738,7 +774,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(17)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">羽毛球</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">羽毛球</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">shut-tle-cock</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">shuttle vs. cock</span></div>
             <div class="context-box">
@@ -758,7 +794,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(18)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">名胜；风景；视力</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">名胜；风景；视力</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">sight vs. light</span></div>
             <div class="context-box">
@@ -778,7 +814,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(19)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">考试</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">考试</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ex-am</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">exam vs. example</span></div>
             <div class="context-box">
@@ -798,7 +834,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(20)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">希望</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">希望</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">hope vs. rope</span></div>
             <div class="context-box">
@@ -818,7 +854,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(21)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">向前</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">向前</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">for-ward</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">forward vs. backward</span></div>
             <div class="context-box">
@@ -838,7 +874,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(22)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">盼望</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">盼望</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">look for-ward to</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">expect vs. wait</span></div>
             <div class="context-box">
@@ -858,7 +894,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(23)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">滑冰</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">滑冰</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">skate vs. plate</span></div>
             <div class="context-box">
@@ -878,7 +914,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(24)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">发生</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">发生</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">hap-pen</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">happen vs. happy</span></div>
             <div class="context-box">
@@ -898,7 +934,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(25)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">时区</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">时区</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">time zone</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">time vs. zone</span></div>
             <div class="context-box">
@@ -918,7 +954,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(26)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">冲；奔</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">冲；奔</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">rush vs. brush</span></div>
             <div class="context-box">
@@ -938,7 +974,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(27)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">匆忙</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">匆忙</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">in a hur-ry</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">hurry vs. worry</span></div>
             <div class="context-box">
@@ -958,7 +994,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(28)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">发光；照耀</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">发光；照耀</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">shine vs. wine</span></div>
             <div class="context-box">
@@ -978,7 +1014,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(29)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">明亮地</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">明亮地</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">bright-ly</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">bright vs. light</span></div>
             <div class="context-box">
@@ -998,7 +1034,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(30)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">色彩鲜艳的</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">色彩鲜艳的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">col-our-ful</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">colourful vs. beautiful</span></div>
             <div class="context-box">
@@ -1018,7 +1054,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(31)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">缓慢地</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">缓慢地</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">slow-ly</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">slow vs. low</span></div>
             <div class="context-box">
@@ -1038,7 +1074,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(32)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">例如</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">例如</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">such as</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">like vs. for example</span></div>
             <div class="context-box">
@@ -1058,7 +1094,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(33)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">绘画作品</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">绘画作品</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">paint-ing</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">paint vs. point</span></div>
             <div class="context-box">
@@ -1078,7 +1114,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(34)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">市场</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">市场</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">mar-ket</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">market vs. pocket</span></div>
             <div class="context-box">
@@ -1098,7 +1134,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(35)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">并排；并肩地</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">并排；并肩地</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">side by side</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">face to face</span></div>
             <div class="context-box">
@@ -1118,7 +1154,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(36)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">地铁</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">地铁</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sub-way</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">subway vs. highway</span></div>
             <div class="context-box">
@@ -1138,7 +1174,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(37)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">鲜艳的；明亮的</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">鲜艳的；明亮的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">bright vs. right</span></div>
             <div class="context-box">
@@ -1158,7 +1194,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(38)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">(开车)把某人送到某处</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">(开车)把某人送到某处</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">drop off</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">pick up vs. take off</span></div>
             <div class="context-box">
@@ -1178,7 +1214,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(39)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">乘客</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">乘客</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pas-sen-ger</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">passenger vs. message</span></div>
             <div class="context-box">
@@ -1198,7 +1234,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(40)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">中心的；中央的</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">中心的；中央的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">cen-tral</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">central vs. center</span></div>
             <div class="context-box">
@@ -1218,7 +1254,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(41)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">解释；说明</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">解释；说明</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ex-plain</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">explain vs. plain</span></div>
             <div class="context-box">
@@ -1238,7 +1274,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(42)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">参加</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">参加</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">take part in</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">join vs. join in</span></div>
             <div class="context-box">
@@ -1258,7 +1294,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(43)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">旅行；旅游</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">旅行；旅游</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">tour vs. sour</span></div>
             <div class="context-box">
@@ -1278,7 +1314,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(44)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">阳光</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">阳光</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sun-shine</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">sunshine vs. moonshine</span></div>
             <div class="context-box">
@@ -1298,7 +1334,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(45)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">开车；驾驶</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">开车；驾驶</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">drive vs. dive</span></div>
             <div class="context-box">
@@ -1318,7 +1354,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(46)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">交通高峰期</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">交通高峰期</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">rush hour</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">rush vs. hour</span></div>
             <div class="context-box">
@@ -1338,7 +1374,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(47)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">白昼；白天</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">白昼；白天</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">day-time</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">nighttime vs. bedtime</span></div>
             <div class="context-box">
@@ -1358,7 +1394,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(48)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">假期</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">假期</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">hol-i-day</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">holiday vs. vacation</span></div>
             <div class="context-box">
@@ -1378,7 +1414,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(49)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">强大的；强有力的</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">强大的；强有力的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pow-er-ful</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">powerful vs. wonderful</span></div>
             <div class="context-box">
@@ -1398,7 +1434,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(50)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">雨衣</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">雨衣</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">rain-coat</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">raincoat vs. jacket</span></div>
             <div class="context-box">
@@ -1418,7 +1454,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(51)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">日光浴</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">日光浴</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sun-bath-ing</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">sunbathing vs. swimming</span></div>
             <div class="context-box">
@@ -1438,7 +1474,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(52)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">棘手的；难办的</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">棘手的；难办的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">trick-y</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">trick vs. lucky</span></div>
             <div class="context-box">
@@ -1458,7 +1494,7 @@
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(53)">
                 </div>
             </h2>
-            <div class="details"><span class="label">🇨🇳 中文释义:</span> <span class="value">进步；进展</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">进步；进展</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pro-gress</span></div>
             <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">progress vs. process</span></div>
             <div class="context-box">
@@ -1551,9 +1587,19 @@
             audioObjectURL: null,
             hiddenWords: new Set(),
             showHiddenMode: false,
+            hideCNMode: true,
             unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 7 Semester 2 - Unit 5").substring(0, 16),
 
             init: async function() {
+                // Apply default CN visibility
+                if (this.hideCNMode) {
+                    const textEls = document.querySelectorAll('.cn-text');
+                    const iconEls = document.querySelectorAll('.cn-icon');
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.add('hide-cn'));
+                }
+
                 // Load hidden words from localStorage
                 const stored = localStorage.getItem(this.unitKey);
                 if (stored) {
@@ -1610,6 +1656,9 @@
                 const display = document.getElementById('stats-display');
                 if (display) {
                     display.innerHTML = `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+                    display.classList.remove('updated');
+                    void display.offsetWidth; // Force reflow
+                    display.classList.add('updated');
                 }
             },
 
@@ -1687,17 +1736,53 @@
                 this.updateStats();
             },
 
-            cacheAudio: async function(url) {
+            toggleCN: function() {
+                this.hideCNMode = !this.hideCNMode;
+                const textEls = document.querySelectorAll('.cn-text');
+                const iconEls = document.querySelectorAll('.cn-icon');
+
+                if (this.hideCNMode) {
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => {
+                        item.classList.add('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                } else {
+                    textEls.forEach(el => el.innerText = "Hide CN");
+                    iconEls.forEach(el => el.innerText = "㊙️");
+                    items.forEach(item => {
+                        item.classList.remove('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                }
+            },
+
+            showItemCN: function(el) {
+                if (!this.hideCNMode) return;
+                const item = el.closest('.vocab-item');
+                if (item) {
+                    item.classList.toggle('force-show-cn');
+                }
+            },
+
+            cacheAudio: async function(url, force = false) {
                 if (!url) return;
                 const baseUrl = url.split('?')[0];
                 const baseHash = this.getHash(baseUrl);
                 const cacheKey = "ep-audio-" + baseHash;
                 
-                const cached = await db.get(cacheKey);
-                if (cached) return cached.blob;
+                if (!force) {
+                    const cached = await db.get(cacheKey);
+                    if (cached) return cached.blob;
+                }
 
                 try {
-                    const resp = await fetch(url);
+                    const fetchUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+                    const resp = await fetch(fetchUrl);
+                    if (!resp.ok) return null;
+                    const contentType = resp.headers.get('Content-Type');
+                    if (!contentType || !contentType.startsWith('audio/')) return null;
                     const lastModified = resp.headers.get('Last-Modified');
                     const blob = await resp.blob();
                     const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
@@ -1728,12 +1813,13 @@
                         const currentVersion = cached?.meta?.lastModified || 0;
 
                         try {
-                            const response = await fetch(url, { method: 'HEAD' });
+                            const headUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+                            const response = await fetch(headUrl, { method: 'HEAD' });
                             const lastModifiedStr = response.headers.get('Last-Modified');
                             if (lastModifiedStr) {
                                 const lastModified = new Date(lastModifiedStr).getTime();
                                 if (lastModified > currentVersion) {
-                                    await this.cacheAudio(url);
+                                    await this.cacheAudio(url, true);
                                     updatedCount++;
                                 }
                             }
