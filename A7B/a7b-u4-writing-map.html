@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Writing Map</title>
     <style>
         :root {
-            --primary-color: #10b981; /* Green theme for health/food */
+            --primary-color: #10b981;
+            /* Green theme for health/food */
             --primary-hover: #059669;
             --bg-color: #f8fafc;
             --line-color: #cbd5e1;
             --box-empty: #e2e8f0;
             --box-emoji: #fef08a;
-            --box-keywords: #dbeafe; /* Light blue for keywords */
+            --box-keywords: #dbeafe;
+            /* Light blue for keywords */
             --box-full: #ffffff;
             --text-main: #1e293b;
         }
@@ -31,7 +34,7 @@
 
         header {
             background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
@@ -57,14 +60,14 @@
             background-color: white;
             border: 1px solid var(--line-color);
             transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             color: var(--text-main);
         }
 
         .home-link:hover {
             background-color: var(--bg-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .header-titles h1 {
@@ -97,7 +100,7 @@
             justify-content: center;
             background-color: white;
             color: var(--text-main);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             border: 1px solid var(--line-color);
             padding: 0;
         }
@@ -105,7 +108,7 @@
         .controls button:hover:not(:disabled) {
             background-color: var(--bg-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .controls button#nextBtn {
@@ -152,7 +155,7 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             z-index: 2;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -167,7 +170,7 @@
         }
 
         .node-box.collapsible:hover {
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
             transform: translateY(-2px);
             border-color: var(--primary-color);
         }
@@ -205,11 +208,40 @@
         }
 
         /* Level Hierarchy Variables */
-        .node-box.level-0 { --node-fs: 1.25rem; --node-pad: 14px 24px; --node-fw: 700; --node-border: #6366f1; }
-        .node-box.level-1 { --node-fs: 1.1rem; --node-pad: 12px 20px; --node-fw: 600; --node-border: #10b981; }
-        .node-box.level-2 { --node-fs: 1rem; --node-pad: 10px 16px; --node-fw: 500; --node-border: #0ea5e9; }
-        .node-box.level-3 { --node-fs: 0.95rem; --node-pad: 8px 14px; --node-fw: 400; --node-border: #8b5cf6; }
-        .node-box.level-4 { --node-fs: 0.9rem; --node-pad: 6px 12px; --node-fw: 400; --node-border: #f59e0b; }
+        .node-box.level-0 {
+            --node-fs: 1.25rem;
+            --node-pad: 14px 24px;
+            --node-fw: 700;
+            --node-border: #6366f1;
+        }
+
+        .node-box.level-1 {
+            --node-fs: 1.1rem;
+            --node-pad: 12px 20px;
+            --node-fw: 600;
+            --node-border: #10b981;
+        }
+
+        .node-box.level-2 {
+            --node-fs: 1rem;
+            --node-pad: 10px 16px;
+            --node-fw: 500;
+            --node-border: #0ea5e9;
+        }
+
+        .node-box.level-3 {
+            --node-fs: 0.95rem;
+            --node-pad: 8px 14px;
+            --node-fw: 400;
+            --node-border: #8b5cf6;
+        }
+
+        .node-box.level-4 {
+            --node-fs: 0.9rem;
+            --node-pad: 6px 12px;
+            --node-fw: 400;
+            --node-border: #f59e0b;
+        }
 
         .node-content-emoji {
             font-size: 1.3em;
@@ -217,7 +249,8 @@
         }
 
         .node-content-keywords {
-            color: #1d4ed8; /* Dark blue to match the box theme */
+            color: #1d4ed8;
+            /* Dark blue to match the box theme */
             font-weight: 700;
         }
 
@@ -304,39 +337,92 @@
 
         /* Mobile View Adjustments */
         @media (max-width: 768px) {
-            header { padding: 0.75rem 1rem; }
-            .header-left { gap: 0.75rem; }
-            .header-titles h1 { font-size: 1.25rem; }
-            
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            .header-left {
+                gap: 0.75rem;
+            }
+
+            .header-titles h1 {
+                font-size: 1.25rem;
+            }
+
             .controls {
                 position: fixed;
-                bottom: 0; left: 0; right: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
                 background-color: white;
-                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
                 padding: 1rem;
                 justify-content: center;
                 gap: 1.5rem;
                 z-index: 100;
             }
-            .controls button { width: 56px; height: 56px; font-size: 1.5rem; }
-            
-            main { padding: 1rem 1rem 6rem 1rem; }
 
-            .mindmap-node-wrapper { flex-direction: column; align-items: flex-start; width: 100%; }
+            .controls button {
+                width: 56px;
+                height: 56px;
+                font-size: 1.5rem;
+            }
+
+            main {
+                padding: 1rem 1rem 6rem 1rem;
+            }
+
+            .mindmap-node-wrapper {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+
             .children-container {
-                margin-left: 20px; padding-left: 0; margin-top: 10px; position: relative;
+                margin-left: 20px;
+                padding-left: 0;
+                margin-top: 10px;
+                position: relative;
             }
-            .children-container::before { display: none; }
-            .child-row { padding: 8px 0; width: 100%; position: relative; }
+
+            .children-container::before {
+                display: none;
+            }
+
+            .child-row {
+                padding: 8px 0;
+                width: 100%;
+                position: relative;
+            }
+
             .child-row::before {
-                left: -12px; top: 24px; width: 12px; height: 2px;
+                left: -12px;
+                top: 24px;
+                width: 12px;
+                height: 2px;
             }
+
             .child-row::after {
-                left: -12px; top: 0; bottom: 0; width: 2px;
+                left: -12px;
+                top: 0;
+                bottom: 0;
+                width: 2px;
             }
-            .child-row:first-child::after { top: -10px; }
-            .child-row:last-child::after { bottom: auto; height: 24px; }
-            .child-row:first-child:last-child::after { display: block; top: -10px; height: 34px; }
+
+            .child-row:first-child::after {
+                top: -10px;
+            }
+
+            .child-row:last-child::after {
+                bottom: auto;
+                height: 24px;
+            }
+
+            .child-row:first-child:last-child::after {
+                display: block;
+                top: -10px;
+                height: 34px;
+            }
 
             .node-box {
                 font-size: calc(var(--node-fs, 1.1rem) * 0.9);
@@ -348,24 +434,53 @@
 
         /* Animations */
         @keyframes popIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 0.8; }
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
         }
 
         @keyframes bounceIn {
-            0% { transform: scale(0.8); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(0.8);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         @keyframes slideIn {
-            0% { transform: translateX(-10px); opacity: 0; }
-            100% { transform: translateX(0); opacity: 1; }
+            0% {
+                transform: translateX(-10px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         @keyframes clickFlicker {
-            0% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.4); transform: scale(1.02); }
-            100% { box-shadow: 0 4px 6px rgba(0,0,0,0.05); transform: scale(1); }
+            0% {
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.4);
+                transform: scale(1.02);
+            }
+
+            100% {
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                transform: scale(1);
+            }
         }
 
         .node-box.clicked-flicker {
@@ -381,21 +496,22 @@
             bottom: 0;
             left: 0;
         }
-        
+
         .progress-bar {
             height: 100%;
             background-color: var(--primary-color);
             width: 0%;
             transition: width 0.3s ease;
         }
-
     </style>
 </head>
+
 <body>
 
     <header>
         <div class="header-left">
-            <a href="#" class="home-link" onclick="location.reload()" title="Reset Page">🏠</a>
+            <a href="index.html" class="home-link" title="Back to Home (回到首页)">🏠</a>
+            <!-- <a href="#" class="home-link" onclick="location.reload()" title="Reset Page">🏠</a> -->
             <div class="header-titles">
                 <h1>Writing Map</h1>
                 <p>Press Right Arrow (➡️) to reveal: Emoji -> Keywords -> Sentence</p>
@@ -407,7 +523,9 @@
             <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
             <button id="showAllBtn" onclick="showAll()" title="Toggle Show All (显示全部)">👁️</button>
         </div>
-        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
     </header>
 
     <main id="mindmap-container">
@@ -548,7 +666,7 @@
 
             // STEP B: For each child, reveal through states progressively
             node.children.forEach(child => {
-                
+
                 // 1. Reveal Emoji Hint
                 actionSteps.push(() => {
                     child.state = 'emoji';
@@ -562,7 +680,7 @@
                         activeNodeId = child.id;
                     });
                 }
-                
+
                 // 3. Reveal Full Sentence
                 actionSteps.push(() => {
                     child.state = 'full';
@@ -587,7 +705,7 @@
 
             const box = document.createElement('div');
             box.className = `node-box ${node.state} level-${depth}`;
-            
+
             if (node.id === activeNodeId) box.id = 'active-node';
             if (node.id === clickedNodeId) box.classList.add('clicked-flicker');
 
@@ -613,7 +731,7 @@
                     renderDOM(true);
                 };
             }
-            
+
             // Render Content based on current Learning State
             if (node.state === 'emoji') {
                 box.innerHTML = `<span class="node-content-emoji">${node.emoji}</span>`;
@@ -639,7 +757,7 @@
             if (node.children && node.children.some(c => c.state !== 'hidden') && !hideChildren) {
                 const childrenContainer = document.createElement('div');
                 childrenContainer.className = 'children-container';
-                
+
                 node.children.forEach(child => {
                     const childElement = renderNode(child, depth + 1);
                     if (childElement) {
@@ -668,7 +786,7 @@
             if (activeEl) {
                 const containerRect = container.getBoundingClientRect();
                 const activeRect = activeEl.getBoundingClientRect();
-                
+
                 let shouldScrollToTop = true;
                 if (manualToggle) {
                     let current = activeEl.closest('.child-row');
@@ -690,11 +808,11 @@
                     if (childrenContainer) {
                         const lastChildRow = childrenContainer.lastElementChild;
                         const lastChildBox = lastChildRow ? lastChildRow.querySelector('.node-box') : null;
-                        
+
                         if (lastChildBox) {
                             const lastRect = lastChildBox.getBoundingClientRect();
                             const bottomThreshold = containerRect.bottom - 60;
-                            
+
                             if (lastRect.bottom > bottomThreshold) {
                                 const neededScroll = lastRect.bottom - bottomThreshold;
                                 targetScrollTop = container.scrollTop + neededScroll;
@@ -727,9 +845,9 @@
             prevBtn.disabled = currentStepIndex === 0;
             const isFinished = currentStepIndex >= actionSteps.length;
             nextBtn.disabled = isFinished;
-            
+
             // showAllBtn is NEVER disabled now.
-            
+
             const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
             document.getElementById('progressBar').style.width = `${progress}%`;
         }
@@ -752,7 +870,7 @@
             for (let i = 0; i < currentStepIndex; i++) {
                 actionSteps[i]();
             }
-            
+
             renderDOM();
             updateButtons();
         }
@@ -802,7 +920,7 @@
 
             let targetState = 'emoji';
             let title = "Show Concise version";
-            
+
             if (showAllMode === 2) {
                 targetState = 'keywords';
                 title = "Show Full version";
@@ -820,7 +938,7 @@
                 } else {
                     node.state = state;
                 }
-                
+
                 if (node.children) {
                     node.children.forEach(child => setNodeStateRecursively(child, state));
                 }
@@ -845,7 +963,7 @@
 
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' || e.code === 'ArrowRight') {
-                e.preventDefault(); 
+                e.preventDefault();
                 const btn = document.getElementById('nextBtn');
                 if (!btn.disabled) nextStep();
             } else if (e.code === 'ArrowLeft') {
@@ -857,4 +975,5 @@
 
     </script>
 </body>
+
 </html>

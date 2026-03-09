@@ -160,8 +160,8 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const fileName = path.basename(jsonPath);
     const unitName = fileName.split('-')[1] || 'u1';
 
-    // 1. Prepare Audio Tasks and Cache Busting
-    const metadataMap = new Map();
+    // 1. Audio Generation Logic (Only check R2 if not in Skip mode)
+    const wordToAudioMap = {};
     const allWords = data.spelling_words.map(w => w.word);
     const uniqueWords = [...new Set(allWords)];
     const wordTasks = uniqueWords.map(word => {
@@ -170,43 +170,36 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
         return { word, r2Key, hash };
     });
 
-    console.log(`Checking metadata for ${wordTasks.length} audio files...`);
-    await Promise.all(wordTasks.map(async (task) => {
-        try {
-            const head = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: task.r2Key }));
-            if (head.LastModified) metadataMap.set(task.hash, head.LastModified.getTime());
-        } catch (e) {}
-    }));
+    if (audioMode !== '1') {
+        const existingHashes = new Set();
+        if (audioMode === '2') {
+            console.log(`Checking existing audio files for ${wordTasks.length} items...`);
+            await Promise.all(wordTasks.map(async (task) => {
+                try {
+                    await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: task.r2Key }));
+                    existingHashes.add(hash);
+                } catch (e) {}
+            }));
+        }
 
-    const tasksToGenerate = [];
-    for (const task of wordTasks) {
-        const timestamp = metadataMap.get(task.hash);
-        const baseUrl = `${PUBLIC_URL_BASE}/${task.r2Key}`;
-        const finalUrl = timestamp ? `${baseUrl}?v=${timestamp}` : baseUrl;
-
-        if (audioMode === '1') {
-            task.finalUrl = finalUrl;
-        } else {
-            let exists = metadataMap.has(task.hash);
-            if (audioMode === '2' && exists) {
-                task.finalUrl = finalUrl;
+        const tasksToGenerate = [];
+        for (const task of wordTasks) {
+            if (audioMode === '3' || !existingHashes.has(task.hash)) {
+                tasksToGenerate.push(task);
             }
-            if (!exists || audioMode === '3') tasksToGenerate.push(task);
+        }
+
+        if (tasksToGenerate.length > 0) {
+            await getAudioBatch(tasksToGenerate, folderName, unitName, 'sh');
         }
     }
 
-    if (tasksToGenerate.length > 0) {
-        await getAudioBatch(tasksToGenerate, folderName, unitName, 'sh');
-        tasksToGenerate.forEach(task => {
-            if (task.audio && !task.audio.includes('?v=')) task.audio += `?v=${Date.now()}`;
-            task.finalUrl = task.audio;
-        });
-    }
+    // 2. Map word to final URL (Base URLs only)
+    wordTasks.forEach(t => {
+        wordToAudioMap[t.word] = t.audio || `${PUBLIC_URL_BASE}/${t.r2Key}`;
+    });
 
-    const wordToAudioMap = {};
-    wordTasks.forEach(t => wordToAudioMap[t.word] = t.finalUrl || `${PUBLIC_URL_BASE}/${t.r2Key}`);
-
-    // 2. Generate Questions
+    // 3. Generate Questions
     let questions = [];
     data.spelling_words.forEach(sw => {
         // Mode 1: Linear Choice

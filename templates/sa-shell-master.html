@@ -177,7 +177,7 @@
             z-index: 1000;
             font-weight: bold;
             transition: all 0.2s;
-            display: flex;
+            display: none;
             align-items: center;
             gap: 8px;
         }
@@ -313,8 +313,7 @@
     </div>
 
     <button id="refresh-cache" onclick="app.refreshCache()">
-        <span id="refresh-icon">🔄</span>
-        <span id="refresh-text">Refresh Audio</span>
+        <span id="refresh-text">Refresh 🔊</span>
     </button>
 </div>
 
@@ -422,6 +421,7 @@
                 console.error("SFX Play Error:", e);
                 if (objectURL) URL.revokeObjectURL(objectURL);
             });
+        },
         init: async function() { 
             const savedSettings = localStorage.getItem(ID_A + "-settings");
             if (savedSettings) this.state.settings = Object.assign(this.state.settings, JSON.parse(savedSettings));
@@ -440,7 +440,6 @@
             this.renderHome(); 
 
             // Cleanup legacy localStorage audio cache
-        ...
             setTimeout(() => {
                 const keysToRemove = [];
                 for (let i = 0; i < localStorage.length; i++) {
@@ -570,10 +569,11 @@
                 alert(`Refresh complete. Updated ${updatedCount} audio files.`);
             } finally {
                 btn.classList.remove('loading');
-                btnText.innerText = "Refresh Audio";
+                btnText.innerText = "Refresh 🔊";
             }
         },
         renderHome: function() {
+            document.getElementById("refresh-cache").style.display = "flex";
             document.getElementById("home-screen").classList.add("active");
             document.getElementById("game-screen").classList.remove("active");
             const list = document.getElementById("challenge-list");
@@ -593,6 +593,7 @@
             this.saveStats(allStats);
         },
         startChallenge: function(id) {
+            document.getElementById("refresh-cache").style.display = "none";
             const c = challenges.find(x => x.id === id);
             this.state.currentChallenge = c; 
             this.state.queue = [...c.data].sort(() => Math.random() - 0.5); 
@@ -797,6 +798,7 @@
         {{CELEBRATION_LOGIC}}
 
         finishGame: function() {
+            document.getElementById("refresh-cache").style.display = "none";
             const total = this.state.scoreLog.reduce((acc, curr) => {
                 if (curr === "green") return acc + 10;
                 if (curr === "yellow") return acc + 5;

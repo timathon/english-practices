@@ -201,7 +201,7 @@
             z-index: 1000;
             font-weight: bold;
             transition: all 0.2s;
-            display: flex;
+            display: none;
             align-items: center;
             gap: 8px;
         }
@@ -329,8 +329,7 @@
     </div>
 
     <button id="refresh-cache" onclick="app.refreshCache()">
-        <span id="refresh-icon">🔄</span>
-        <span id="refresh-text">Refresh Audio</span>
+        <span id="refresh-text">Refresh 🔊</span>
     </button>
 </div>
 
@@ -428,6 +427,7 @@
             sound.onended = () => { if (objectURL) URL.revokeObjectURL(objectURL); };
             sound.onerror = () => { if (objectURL) URL.revokeObjectURL(objectURL); };
             sound.play().catch(() => { if (objectURL) URL.revokeObjectURL(objectURL); });
+        },
         init: async function() {
             const saved = localStorage.getItem(ID_A + "-settings");
             if (saved) Object.assign(this.state.settings, JSON.parse(saved));
@@ -446,7 +446,6 @@
             this.renderHome();
 
             // Cleanup legacy localStorage audio cache
-        ...
             setTimeout(() => {
                 const keysToRemove = [];
                 for (let i = 0; i < localStorage.length; i++) {
@@ -489,6 +488,7 @@
             } catch(e) { console.error("Cache failed", e); }
         },
         renderHome: function() {
+            document.getElementById("refresh-cache").style.display = "flex";
             document.getElementById("home-screen").classList.add("active");
             document.getElementById("game-screen").classList.remove("active");
             const list = document.getElementById("challenge-list");
@@ -508,6 +508,7 @@
             this.saveStats(allStats);
         },
         startChallenge: function(id) {
+            document.getElementById("refresh-cache").style.display = "none";
             const c = challenges.find(x => x.id === id);
             this.state.currentChallenge = c;
             this.state.queue = [...c.data].sort(() => Math.random() - 0.5);
@@ -774,7 +775,7 @@
                 alert(`Refresh complete. Updated ${updatedCount} audio files.`);
             } finally {
                 btn.classList.remove('loading');
-                btnText.innerText = "Refresh Audio";
+                btnText.innerText = "Refresh 🔊";
             }
         },
         renderProgress: function() {
@@ -789,6 +790,7 @@
             }
         },
         finishGame: function() {
+            document.getElementById("refresh-cache").style.display = "none";
             const correct = this.state.scoreLog.filter(s => s === 'green').length;
             const total = Math.round((correct / this.state.scoreLog.length) * 100);
             const allStats = this.getStats();

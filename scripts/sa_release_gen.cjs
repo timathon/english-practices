@@ -291,54 +291,46 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const fileName = path.basename(jsonPath);
     const unitName = fileName.split('-')[1] || 'u1';
     
-    // Cache busting: Fetch metadata for all existing audio files to get timestamps
-    const metadataMap = new Map();
-    const allAudioTasks = [];
-    for (const challenge of data.challenges) {
-        for (const item of challenge.data) {
-            if (item.en) {
+    // 1. Audio Generation Logic (Only check R2 if not in Skip mode)
+    if (audioMode !== '1') {
+        const existingHashes = new Set();
+        const allItems = data.challenges.flatMap(c => c.data || []);
+
+        if (audioMode === '2') {
+            console.log(`Checking existing audio files for ${allItems.length} items...`);
+            await Promise.all(allItems.map(async (item) => {
+                if (!item.en) return;
                 const hash = crypto.createHash('md5').update(item.en).digest('hex');
                 const r2Key = `ep/sa/${folderName}/${unitName}/${hash}.mp3`;
-                allAudioTasks.push({ item, r2Key, hash });
+                try {
+                    await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
+                    existingHashes.add(hash);
+                } catch (e) {}
+            }));
+        }
+
+        for (const challenge of data.challenges) {
+            const tasksToGenerate = [];
+            for (const item of challenge.data) {
+                if (item.en) {
+                    const hash = crypto.createHash('md5').update(item.en).digest('hex');
+                    if (audioMode === '3' || !existingHashes.has(hash)) {
+                        tasksToGenerate.push(item);
+                    }
+                }
+            }
+            if (tasksToGenerate.length > 0) {
+                await getAudioBatch(tasksToGenerate, folderName, unitName);
             }
         }
     }
 
-    console.log(`Checking metadata for ${allAudioTasks.length} audio files...`);
-    await Promise.all(allAudioTasks.map(async (task) => {
-        try {
-            const head = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: task.r2Key }));
-            if (head.LastModified) metadataMap.set(task.hash, head.LastModified.getTime());
-        } catch (e) {}
-    }));
-
+    // 2. Apply Audio URLs (Base URLs only, versioning handled by browser-side refresh)
     for (const challenge of data.challenges) {
-        const tasksToGenerate = [];
         for (const item of challenge.data) {
             if (item.en) {
-                const hash = crypto.createHash('md5').update(item.en).digest('hex');
-                const timestamp = metadataMap.get(hash);
-                const baseUrl = getAudioUrl(item.en, folderName, unitName);
-                const finalUrl = timestamp ? `${baseUrl}?v=${timestamp}` : baseUrl;
-
-                if (audioMode === '1') {
-                    item.audio = finalUrl;
-                } else {
-                    let exists = metadataMap.has(hash);
-                    if (audioMode === '2' && exists) {
-                        item.audio = finalUrl;
-                    }
-                    if (!exists || audioMode === '3') tasksToGenerate.push(item);
-                }
+                item.audio = getAudioUrl(item.en, folderName, unitName);
             }
-        }
-        if (tasksToGenerate.length > 0) {
-            await getAudioBatch(tasksToGenerate, folderName, unitName);
-            // After generation, we don't have the new timestamp yet, but next run will pick it up
-            // Or we can just use current timestamp for newly generated ones
-            tasksToGenerate.forEach(item => {
-                if (item.audio && !item.audio.includes('?v=')) item.audio += `?v=${Date.now()}`;
-            });
         }
     }
     
