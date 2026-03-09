@@ -12,6 +12,7 @@
             --line-color: #cbd5e1;
             --box-empty: #e2e8f0;
             --box-emoji: #fef08a;
+            --box-keywords: #dbeafe; /* Light blue for keywords */
             --box-full: #ffffff;
             --text-main: #1e293b;
         }
@@ -144,10 +145,10 @@
 
         .node-box {
             border-radius: 12px;
-            padding: 12px 20px;
+            padding: var(--node-pad, 12px 20px);
             margin: 0;
-            font-size: 1.1rem;
-            font-weight: 500;
+            font-size: var(--node-fs, 1.1rem);
+            font-weight: var(--node-fw, 500);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             z-index: 2;
@@ -181,20 +182,40 @@
 
         .node-box.emoji {
             background-color: var(--box-emoji);
-            border-color: #facc15;
+            border-color: var(--node-border, #facc15);
             min-width: 40px;
             justify-content: center;
             animation: bounceIn 0.4s ease-out;
         }
 
+        /* New State: Keywords */
+        .node-box.keywords {
+            background-color: var(--box-keywords);
+            border-color: var(--node-border, #3b82f6);
+            min-width: 100px;
+            animation: slideIn 0.3s ease-out;
+        }
+
         .node-box.full {
             background-color: var(--box-full);
-            border-color: var(--primary-color);
+            border-color: var(--node-border, var(--primary-color));
             min-width: 120px;
         }
 
+        /* Level Hierarchy Variables */
+        .node-box.level-0 { --node-fs: 1.25rem; --node-pad: 14px 24px; --node-fw: 700; --node-border: #6366f1; }
+        .node-box.level-1 { --node-fs: 1.1rem; --node-pad: 12px 20px; --node-fw: 600; --node-border: #10b981; }
+        .node-box.level-2 { --node-fs: 1rem; --node-pad: 10px 16px; --node-fw: 500; --node-border: #0ea5e9; }
+        .node-box.level-3 { --node-fs: 0.95rem; --node-pad: 8px 14px; --node-fw: 400; --node-border: #8b5cf6; }
+        .node-box.level-4 { --node-fs: 0.9rem; --node-pad: 6px 12px; --node-fw: 400; --node-border: #f59e0b; }
+
         .node-content-emoji {
             font-size: 1.4rem;
+        }
+
+        .node-content-keywords {
+            color: #1d4ed8; /* Dark blue to match the box theme */
+            font-weight: 700;
         }
 
         .node-content-text {
@@ -397,6 +418,11 @@
             100% { transform: scale(1); }
         }
 
+        @keyframes slideIn {
+            0% { transform: translateX(-10px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
         @keyframes clickFlicker {
             0% { box-shadow: 0 0 0 6px rgba(79, 70, 229, 0.4); transform: scale(1.02); }
             100% { box-shadow: 0 4px 6px rgba(0,0,0,0.05); transform: scale(1); }
@@ -453,163 +479,89 @@
         const initialData = {
   "id": "root",
   "text": "Eat Well",
-  "emoji": "🥗",
+  "emoji": "🍽️",
   "state": "emoji",
   "children": [
     {
-      "id": "conversations",
-      "text": "Conversations",
-      "emoji": "💬",
-      "state": "hidden",
-      "children": [
-        {
-          "id": "conv1",
-          "text": "Ordering Food (Sec A)",
-          "emoji": "🍽️",
-          "state": "hidden",
-          "children": [
-            {
-              "id": "c1_1",
-              "text": "Tom: Gongbao chicken",
-              "emoji": "🍗",
-              "state": "hidden"
-            },
-            {
-              "id": "c1_2",
-              "text": "Mum: Hot Mapo tofu",
-              "emoji": "🍲",
-              "state": "hidden"
-            },
-            {
-              "id": "c1_3",
-              "text": "Dad: Chicken cabbage salad",
-              "emoji": "🥗",
-              "state": "hidden"
-            },
-            {
-              "id": "c1_4",
-              "text": "Mum: Fish soup",
-              "emoji": "🥣",
-              "state": "hidden"
-            },
-            {
-              "id": "c1_5",
-              "text": "Tom: Rice",
-              "emoji": "🍚",
-              "state": "hidden"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "stories",
-      "text": "Readings (2 Texts)",
+      "text": "Stories & Readings",
       "emoji": "📖",
-      "state": "hidden",
       "children": [
         {
           "id": "story1",
-          "text": "Eating Habits",
+          "text": "Improve Your Eating Habits",
           "emoji": "🏥",
-          "state": "hidden",
           "children": [
             {
               "id": "s1_1",
-              "text": "Fast food: Fat, heart problems",
+              "text": "Avoid fast food excess",
               "emoji": "🍔",
               "state": "hidden"
             },
             {
               "id": "s1_2",
-              "text": "Breakfast: Energy and better focus",
+              "text": "Importance of breakfast",
               "emoji": "🍳",
               "state": "hidden"
             },
             {
               "id": "s1_3",
-              "text": "Sweets: Tooth problems, eat fruit",
-              "emoji": "🍎",
+              "text": "Reduce sugar and sweets",
+              "emoji": "🍬",
+              "state": "hidden"
+            },
+            {
+              "id": "s1_4",
+              "text": "You are what you eat",
+              "emoji": "🧘",
               "state": "hidden"
             }
-          ]
+          ],
+          "state": "hidden"
         },
         {
           "id": "story2",
           "text": "Food Myths",
-          "emoji": "🤔",
-          "state": "hidden",
+          "emoji": "❓",
           "children": [
             {
               "id": "s2_1",
-              "text": "Veggies only? Need milk too",
-              "emoji": "🥛",
+              "text": "Diverse food groups needed",
+              "emoji": "🗼",
               "state": "hidden"
             },
             {
               "id": "s2_2",
-              "text": "Fat bad? Fat gives energy",
-              "emoji": "🥑",
+              "text": "Fat provides essential energy",
+              "emoji": "🔋",
               "state": "hidden"
             },
             {
               "id": "s2_3",
-              "text": "Young age? Need balanced meals",
-              "emoji": "⚖️",
+              "text": "Develop early healthy habits",
+              "emoji": "👶",
               "state": "hidden"
             }
-          ]
+          ],
+          "state": "hidden"
         }
-      ]
+      ],
+      "state": "hidden"
     },
     {
       "id": "vocab",
-      "text": "Key Vocabulary",
+      "text": "Vocabulary",
       "emoji": "📚",
-      "state": "hidden",
       "children": [
-        {
-          "id": "v_verbs",
-          "text": "Verbs (Actions)",
-          "emoji": "🏃",
-          "state": "hidden",
-          "children": [
-            {
-              "id": "v_v1",
-              "text": "taste (尝)",
-              "emoji": "👅",
-              "state": "hidden"
-            },
-            {
-              "id": "v_v2",
-              "text": "serve (提供;服务)",
-              "emoji": "💁",
-              "state": "hidden"
-            },
-            {
-              "id": "v_v3",
-              "text": "improve (改进;改善)",
-              "emoji": "📈",
-              "state": "hidden"
-            },
-            {
-              "id": "v_v4",
-              "text": "cause (造成;导致)",
-              "emoji": "⚠️",
-              "state": "hidden"
-            }
-          ]
-        },
         {
           "id": "v_nouns",
           "text": "Nouns (Things)",
-          "emoji": "📦",
-          "state": "hidden",
+          "emoji": "🍎",
           "children": [
             {
               "id": "v_n1",
-              "text": "watermelon (西瓜)",
-              "emoji": "🍉",
+              "text": "mutton (羊肉)",
+              "emoji": "🐑",
               "state": "hidden"
             },
             {
@@ -620,29 +572,61 @@
             },
             {
               "id": "v_n3",
-              "text": "mutton (羊肉)",
-              "emoji": "🥩",
-              "state": "hidden"
-            },
-            {
-              "id": "v_n4",
               "text": "dumpling (饺子)",
               "emoji": "🥟",
               "state": "hidden"
             },
             {
+              "id": "v_n4",
+              "text": "pork (猪肉)",
+              "emoji": "🐖",
+              "state": "hidden"
+            },
+            {
               "id": "v_n5",
-              "text": "weight (体重)",
-              "emoji": "⚖️",
+              "text": "habit (习惯)",
+              "emoji": "🔁",
               "state": "hidden"
             }
-          ]
+          ],
+          "state": "hidden"
+        },
+        {
+          "id": "v_verbs",
+          "text": "Verbs (Actions)",
+          "emoji": "👟",
+          "children": [
+            {
+              "id": "v_v1",
+              "text": "taste (有...味道)",
+              "emoji": "👅",
+              "state": "hidden"
+            },
+            {
+              "id": "v_v2",
+              "text": "serve (提供)",
+              "emoji": "🤵",
+              "state": "hidden"
+            },
+            {
+              "id": "v_v3",
+              "text": "improve (改善)",
+              "emoji": "📈",
+              "state": "hidden"
+            },
+            {
+              "id": "v_v4",
+              "text": "cause (导致)",
+              "emoji": "⚠️",
+              "state": "hidden"
+            }
+          ],
+          "state": "hidden"
         },
         {
           "id": "v_phrases",
           "text": "Phrases (Expressions)",
-          "emoji": "🔗",
-          "state": "hidden",
+          "emoji": "💬",
           "children": [
             {
               "id": "v_p1",
@@ -652,60 +636,85 @@
             },
             {
               "id": "v_p2",
-              "text": "put on (增加;穿上)",
-              "emoji": "⬆️",
+              "text": "put on weight (增加体重)",
+              "emoji": "⚖️",
               "state": "hidden"
             },
             {
               "id": "v_p3",
-              "text": "go with (搭配;相配)",
-              "emoji": "🤝",
+              "text": "after all (毕竟)",
+              "emoji": "🔚",
               "state": "hidden"
             },
             {
               "id": "v_p4",
-              "text": "after all (毕竟;终归)",
-              "emoji": "🤷",
+              "text": "soft drink (软饮料)",
+              "emoji": "🥤",
               "state": "hidden"
             }
-          ]
+          ],
+          "state": "hidden"
         }
-      ]
+      ],
+      "state": "hidden"
     },
     {
       "id": "grammar",
-      "text": "Grammar: Nouns",
+      "text": "Grammar Focus",
       "emoji": "✍️",
-      "state": "hidden",
       "children": [
         {
-          "id": "g_1",
-          "text": "Countable: bean, chip, egg",
-          "emoji": "🥚",
+          "id": "g_nouns",
+          "text": "Countable & Uncountable Nouns",
+          "emoji": "🔢",
+          "children": [
+            {
+              "id": "g_c1",
+              "text": "Countable: dumpling, egg, bean",
+              "emoji": "🥚",
+              "state": "hidden"
+            },
+            {
+              "id": "g_u1",
+              "text": "Uncountable: milk, beef, rice",
+              "emoji": "🥛",
+              "state": "hidden"
+            },
+            {
+              "id": "g_b1",
+              "text": "Both: fish, chicken, salad",
+              "emoji": "🥗",
+              "state": "hidden"
+            }
+          ],
           "state": "hidden"
         },
         {
-          "id": "g_2",
-          "text": "Uncountable: beef, bread, milk",
-          "emoji": "🍞",
-          "state": "hidden"
-        },
-        {
-          "id": "g_3",
-          "text": "Both: chicken, food, salad",
-          "emoji": "🥗",
-          "state": "hidden"
-        },
-        {
-          "id": "g_4",
-          "text": "Ex: I have bread and milk.",
-          "emoji": "🗣️",
+          "id": "g_offer",
+          "text": "Offering Choices",
+          "emoji": "🙋",
+          "children": [
+            {
+              "id": "g_o1",
+              "text": "Would you like A or B?",
+              "emoji": "🔄",
+              "state": "hidden"
+            },
+            {
+              "id": "g_o2",
+              "text": "Practice: I'd like a cup of tea.",
+              "emoji": "🍵",
+              "state": "hidden"
+            }
+          ],
           "state": "hidden"
         }
-      ]
+      ],
+      "state": "hidden"
     }
   ]
 };
+        if (!initialData.state) initialData.state = 'full';
 
         let treeData = null;
         let actionSteps = [];
@@ -713,6 +722,7 @@
         let activeNodeId = null;
         let clickedNodeId = null;
         let collapsedNodes = new Set(); // Tracks manually collapsed parent nodes
+        let showAllMode = 0; // 0: manual, 1: emoji, 2: keywords/full, 3: manual (back)
 
         // 2. Generate the Exact Sequence of Reveal Steps
         function generateSteps(node) {
@@ -749,14 +759,15 @@
         }
 
         // 3. Render Engine (Creates DOM elements recursively)
-        function renderNode(node) {
-            if (node.state === 'hidden') return null;
+        function renderNode(node, depth = 0) {
+            const state = node.state || 'hidden';
+            if (state === 'hidden') return null;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'mindmap-node-wrapper';
 
             const box = document.createElement('div');
-            box.className = `node-box ${node.state}`;
+            box.className = `node-box ${state} level-${depth}`;
             if (node.id === activeNodeId) {
                 box.id = 'active-node';
             }
@@ -766,7 +777,7 @@
 
             // Collapse Logic: Verify if all immediate children are revealed completely
             const hasChildren = node.children && node.children.length > 0;
-            const allChildrenFull = hasChildren && node.children.every(c => c.state === 'full');
+            const allChildrenFull = hasChildren && node.children.every(c => (c.state || 'hidden') === 'full');
             const isCollapsed = collapsedNodes.has(node.id);
             const hideChildren = isCollapsed && allChildrenFull;
 
@@ -790,9 +801,14 @@
                 };
             }
             
-            if (node.state === 'emoji') {
+            if (state === 'emoji') {
                 box.innerHTML = `<span class="node-content-emoji">${node.emoji}</span>`;
-            } else if (node.state === 'full') {
+            } else if (state === 'keywords') {
+                box.innerHTML = `
+                    <span class="node-content-emoji">${node.emoji}</span>
+                    <span class="node-content-keywords">${node.keywords || node.text}</span>
+                `;
+            } else if (state === 'full') {
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
                     <span class="node-content-text">${node.text}</span>
@@ -808,12 +824,12 @@
             wrapper.appendChild(box);
 
             // Render children only if they shouldn't be hidden
-            if (node.children && node.children.some(c => c.state !== 'hidden') && !hideChildren) {
+            if (node.children && node.children.some(c => (c.state || 'hidden') !== 'hidden') && !hideChildren) {
                 const childrenContainer = document.createElement('div');
                 childrenContainer.className = 'children-container';
                 
                 node.children.forEach(child => {
-                    const childElement = renderNode(child);
+                    const childElement = renderNode(child, depth + 1);
                     if (childElement) {
                         const childRow = document.createElement('div');
                         childRow.className = 'child-row';
@@ -830,7 +846,7 @@
         function renderDOM(manualToggle = false) {
             const container = document.getElementById('mindmap-container');
             container.innerHTML = ''; // Clear current tree
-            const domTree = renderNode(treeData);
+            const domTree = renderNode(treeData, 0);
             if (domTree) {
                 container.appendChild(domTree);
             }
@@ -908,7 +924,7 @@
             
             const isFinished = currentStepIndex >= actionSteps.length;
             nextBtn.disabled = isFinished;
-            showAllBtn.disabled = isFinished;
+            showAllBtn.disabled = false; // Always enabled for toggling modes
             
             // Update Progress Bar
             const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
@@ -938,6 +954,12 @@
         }
 
         function nextStep() {
+            if (showAllMode > 0) {
+                // Return to manual/progressive mode seamlessly
+                showAllMode = 0;
+                applyStepsUpTo(currentStepIndex);
+            }
+
             if (currentStepIndex < actionSteps.length) {
                 actionSteps[currentStepIndex]();
                 currentStepIndex++;
@@ -947,24 +969,54 @@
         }
 
         function prevStep() {
+            if (showAllMode > 0) {
+                // Return to manual mode
+                showAllMode = 0;
+                applyStepsUpTo(currentStepIndex);
+                return;
+            }
+
             if (currentStepIndex > 0) {
                 applyStepsUpTo(currentStepIndex - 1);
             }
         }
 
         function showAll() {
-            if (currentStepIndex < actionSteps.length) {
-                // Instantly execute all remaining steps
-                while (currentStepIndex < actionSteps.length) {
-                    actionSteps[currentStepIndex]();
-                    currentStepIndex++;
-                }
-                renderDOM();
-                updateButtons();
+            if (showAllMode === 0) showAllMode = 1;
+            else if (showAllMode === 1) showAllMode = 2;
+            else if (showAllMode === 2) {
+                // Return to manual/progressive mode
+                showAllMode = 0;
+                applyStepsUpTo(currentStepIndex);
+                return;
             }
+
+            let targetState = 'emoji';
+            if (showAllMode === 2) {
+                targetState = 'keywords';
+            }
+
+            function setNodeStateRecursively(node, state) {
+                // If keywords requested but not available, use full
+                if (state === 'keywords' && !node.keywords) {
+                    node.state = 'full';
+                } else {
+                    node.state = state;
+                }
+                
+                if (node.children) {
+                    node.children.forEach(child => setNodeStateRecursively(child, state));
+                }
+            }
+
+            // Apply target state directly to the tree
+            setNodeStateRecursively(treeData, targetState);
+            collapsedNodes.clear(); // Ensure nothing is hidden when toggling
+            renderDOM(true);
         }
 
         function resetMap() {
+            showAllMode = 0;
             collapsedNodes.clear(); // Ensure expanded states are cleared on reset
             applyStepsUpTo(0);
         }

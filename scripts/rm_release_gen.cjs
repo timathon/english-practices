@@ -27,6 +27,20 @@ function generateHtml(data) {
     const part = data.part || "";
     const treeData = data.tree || {};
 
+    // Preprocess tree to ensure all nodes have state: "hidden" except root
+    function preprocess(node, isRoot = false) {
+        if (!node) return;
+        if (!isRoot) {
+            node.state = 'hidden';
+        } else if (!node.state) {
+            node.state = 'full';
+        }
+        if (node.children) {
+            node.children.forEach(child => preprocess(child, false));
+        }
+    }
+    preprocess(treeData, true);
+
     return template
         .replace(/{{PART}}/g, part)
         .replace(/{{LEVEL}}/g, level)

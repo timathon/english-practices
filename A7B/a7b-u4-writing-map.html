@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Writing Map for Unit 4</title>
+    <title>Writing Map</title>
     <style>
         :root {
             --primary-color: #10b981; /* Green theme for health/food */
@@ -184,7 +184,7 @@
 
         .node-box.emoji {
             background-color: var(--box-emoji);
-            border-color: #facc15;
+            border-color: var(--node-border, #facc15);
             min-width: 40px;
             justify-content: center;
             animation: bounceIn 0.4s ease-out;
@@ -193,7 +193,7 @@
         /* New State: Keywords */
         .node-box.keywords {
             background-color: var(--box-keywords);
-            border-color: #3b82f6; /* Blue border for intermediate state */
+            border-color: var(--node-border, #3b82f6);
             min-width: 100px;
             animation: slideIn 0.3s ease-out;
         }
@@ -395,10 +395,9 @@
 
     <header>
         <div class="header-left">
-            <!-- <a href="#" class="home-link" onclick="location.reload()" title="Reset Page">🏠</a> -->
-            <a href="index.html" class="home-link" title="Back to Home (回到首页)">🏠</a>
+            <a href="#" class="home-link" onclick="location.reload()" title="Reset Page">🏠</a>
             <div class="header-titles">
-                <h1>Writing Map for Unit 4</h1>
+                <h1>Writing Map</h1>
                 <p>Press Right Arrow (➡️) to reveal: Emoji -> Keywords -> Sentence</p>
             </div>
         </div>
@@ -739,7 +738,7 @@
             treeData = cloneData(initialData);
             actionSteps = [];
             activeNodeId = treeData.id;
-            document.getElementById('showAllBtn').title = "Toggle Show All Mode (显示全部)";
+            document.getElementById('showAllBtn').title = "Show Emoji version";
 
             // Add initial step to reveal the root node's full text
             actionSteps.push(() => {
@@ -791,8 +790,15 @@
         }
 
         function showAll() {
-            showAllMode++;
-            if (showAllMode > 3) showAllMode = 1; // cycle: 1 -> 2 -> 3 -> 1
+            if (showAllMode === 0) showAllMode = 1;
+            else if (showAllMode === 1) showAllMode = 2;
+            else if (showAllMode === 2) showAllMode = 3;
+            else if (showAllMode === 3) {
+                // Return to manual/progressive mode
+                showAllMode = 0;
+                applyStepsUpTo(currentStepIndex);
+                return;
+            }
 
             let targetState = 'emoji';
             let title = "Show Concise version";
@@ -802,7 +808,7 @@
                 title = "Show Full version";
             } else if (showAllMode === 3) {
                 targetState = 'full';
-                title = "Show Emoji version";
+                title = "Back to Manual";
             }
 
             document.getElementById('showAllBtn').title = title;
