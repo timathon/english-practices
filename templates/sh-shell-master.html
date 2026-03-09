@@ -469,17 +469,20 @@
             const logs = this.getSessionLogs(); logs.unshift(log); 
             localStorage.setItem(ID_A + "-session_logs{{STORAGE_SUFFIX}}", JSON.stringify(logs));
         },
-        cacheAudio: async function(url) {
+        cacheAudio: async function(url, force = false) {
             if (!url) return;
             const baseUrl = url.split('?')[0];
             const baseHash = this.getHash(baseUrl);
             const cacheKey = "ep-audio-" + baseHash;
             
-            const cached = await db.get(cacheKey);
-            if (cached) return cached.blob;
+            if (!force) {
+                const cached = await db.get(cacheKey);
+                if (cached) return cached.blob;
+            }
 
             try {
-                const resp = await fetch(url);
+                const fetchUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+                const resp = await fetch(fetchUrl);
                 if (!resp.ok) return null;
                 const contentType = resp.headers.get('Content-Type');
                 if (!contentType || !contentType.startsWith('audio/')) return null;
