@@ -166,7 +166,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const uniqueWords = [...new Set(allWords)];
     const wordTasks = uniqueWords.map(word => {
         const hash = crypto.createHash('md5').update(word).digest('hex');
-        const r2Key = `ep/sh/${folderName}/${unitName}/${hash}.mp3`;
+        const r2Key = `ep/${folderName}/${hash}.mp3`;
         return { word, r2Key, hash };
     });
 

@@ -123,7 +123,7 @@ except Exception as e:
             // Removed silenceremove filter which was likely causing empty 237B files
             execSync(`ffmpeg -i "${combinedWav}" -ss ${startTime} -to ${endTime} -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
             
-            const r2Key = `ep/sh/${book}/${unit}/${hash}.mp3`;
+            const r2Key = `ep/${book}/${hash}.mp3`;
             await s3Client.send(new PutObjectCommand({
                 Bucket: BUCKET_NAME,
                 Key: r2Key,
