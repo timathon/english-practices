@@ -12,6 +12,7 @@
             --line-color: #cbd5e1;
             --box-empty: #e2e8f0;
             --box-emoji: #fef08a;
+            --box-keywords: #dbeafe; /* Light blue for keywords */
             --box-full: #ffffff;
             --text-main: #1e293b;
         }
@@ -144,10 +145,10 @@
 
         .node-box {
             border-radius: 12px;
-            padding: 12px 20px;
+            padding: var(--node-pad, 12px 20px);
             margin: 0;
-            font-size: 1.1rem;
-            font-weight: 500;
+            font-size: var(--node-fs, 1.1rem);
+            font-weight: var(--node-fw, 500);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             z-index: 2;
@@ -181,20 +182,40 @@
 
         .node-box.emoji {
             background-color: var(--box-emoji);
-            border-color: #facc15;
+            border-color: var(--node-border, #facc15);
             min-width: 40px;
             justify-content: center;
             animation: bounceIn 0.4s ease-out;
         }
 
+        /* New State: Keywords */
+        .node-box.keywords {
+            background-color: var(--box-keywords);
+            border-color: var(--node-border, #3b82f6);
+            min-width: 100px;
+            animation: slideIn 0.3s ease-out;
+        }
+
         .node-box.full {
             background-color: var(--box-full);
-            border-color: var(--primary-color);
+            border-color: var(--node-border, var(--primary-color));
             min-width: 120px;
         }
 
+        /* Level Hierarchy Variables */
+        .node-box.level-0 { --node-fs: 1.25rem; --node-pad: 14px 24px; --node-fw: 700; --node-border: #6366f1; }
+        .node-box.level-1 { --node-fs: 1.1rem; --node-pad: 12px 20px; --node-fw: 600; --node-border: #10b981; }
+        .node-box.level-2 { --node-fs: 1rem; --node-pad: 10px 16px; --node-fw: 500; --node-border: #0ea5e9; }
+        .node-box.level-3 { --node-fs: 0.95rem; --node-pad: 8px 14px; --node-fw: 400; --node-border: #8b5cf6; }
+        .node-box.level-4 { --node-fs: 0.9rem; --node-pad: 6px 12px; --node-fw: 400; --node-border: #f59e0b; }
+
         .node-content-emoji {
             font-size: 1.4rem;
+        }
+
+        .node-content-keywords {
+            color: #1d4ed8; /* Dark blue to match the box theme */
+            font-weight: 700;
         }
 
         .node-content-text {
@@ -395,6 +416,11 @@
             0% { transform: scale(0.8); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateX(-10px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
         }
 
         @keyframes clickFlicker {
@@ -730,6 +756,7 @@
     }
   ]
 };
+        if (!initialData.state) initialData.state = 'full';
 
         let treeData = null;
         let actionSteps = [];
@@ -737,6 +764,8 @@
         let activeNodeId = null;
         let clickedNodeId = null;
         let collapsedNodes = new Set(); // Tracks manually collapsed parent nodes
+        let savedCollapsedNodes = null; // To restore after showAll mode
+        let showAllMode = 0; // 0: manual, 1: emoji, 2: keywords/full, 3: manual (back)
 
         // 2. Generate the Exact Sequence of Reveal Steps
         function generateSteps(node) {
@@ -773,14 +802,15 @@
         }
 
         // 3. Render Engine (Creates DOM elements recursively)
-        function renderNode(node) {
-            if (node.state === 'hidden') return null;
+        function renderNode(node, depth = 0) {
+            const state = node.state || 'hidden';
+            if (state === 'hidden') return null;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'mindmap-node-wrapper';
 
             const box = document.createElement('div');
-            box.className = `node-box ${node.state}`;
+            box.className = `node-box ${state} level-${depth}`;
             if (node.id === activeNodeId) {
                 box.id = 'active-node';
             }
@@ -790,7 +820,7 @@
 
             // Collapse Logic: Verify if all immediate children are revealed completely
             const hasChildren = node.children && node.children.length > 0;
-            const allChildrenFull = hasChildren && node.children.every(c => c.state === 'full');
+            const allChildrenFull = hasChildren && node.children.every(c => (c.state || 'hidden') === 'full');
             const isCollapsed = collapsedNodes.has(node.id);
             const hideChildren = isCollapsed && allChildrenFull;
 
@@ -814,9 +844,14 @@
                 };
             }
             
-            if (node.state === 'emoji') {
+            if (state === 'emoji') {
                 box.innerHTML = `<span class="node-content-emoji">${node.emoji}</span>`;
-            } else if (node.state === 'full') {
+            } else if (state === 'keywords') {
+                box.innerHTML = `
+                    <span class="node-content-emoji">${node.emoji}</span>
+                    <span class="node-content-keywords">${node.keywords || node.text}</span>
+                `;
+            } else if (state === 'full') {
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
                     <span class="node-content-text">${node.text}</span>
@@ -832,12 +867,12 @@
             wrapper.appendChild(box);
 
             // Render children only if they shouldn't be hidden
-            if (node.children && node.children.some(c => c.state !== 'hidden') && !hideChildren) {
+            if (node.children && node.children.some(c => (c.state || 'hidden') !== 'hidden') && !hideChildren) {
                 const childrenContainer = document.createElement('div');
                 childrenContainer.className = 'children-container';
                 
                 node.children.forEach(child => {
-                    const childElement = renderNode(child);
+                    const childElement = renderNode(child, depth + 1);
                     if (childElement) {
                         const childRow = document.createElement('div');
                         childRow.className = 'child-row';
@@ -854,7 +889,7 @@
         function renderDOM(manualToggle = false) {
             const container = document.getElementById('mindmap-container');
             container.innerHTML = ''; // Clear current tree
-            const domTree = renderNode(treeData);
+            const domTree = renderNode(treeData, 0);
             if (domTree) {
                 container.appendChild(domTree);
             }
@@ -932,7 +967,7 @@
             
             const isFinished = currentStepIndex >= actionSteps.length;
             nextBtn.disabled = isFinished;
-            showAllBtn.disabled = isFinished;
+            showAllBtn.disabled = false; // Always enabled for toggling modes
             
             // Update Progress Bar
             const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
@@ -962,6 +997,17 @@
         }
 
         function nextStep() {
+            if (showAllMode > 0) {
+                // Return to manual/progressive mode seamlessly
+                showAllMode = 0;
+                if (savedCollapsedNodes) {
+                    collapsedNodes = savedCollapsedNodes;
+                    savedCollapsedNodes = null;
+                }
+                applyStepsUpTo(currentStepIndex);
+                return;
+            }
+
             if (currentStepIndex < actionSteps.length) {
                 actionSteps[currentStepIndex]();
                 currentStepIndex++;
@@ -971,24 +1017,65 @@
         }
 
         function prevStep() {
+            if (showAllMode > 0) {
+                // Return to manual mode
+                showAllMode = 0;
+                if (savedCollapsedNodes) {
+                    collapsedNodes = savedCollapsedNodes;
+                    savedCollapsedNodes = null;
+                }
+                applyStepsUpTo(currentStepIndex);
+                return;
+            }
+
             if (currentStepIndex > 0) {
                 applyStepsUpTo(currentStepIndex - 1);
             }
         }
 
         function showAll() {
-            if (currentStepIndex < actionSteps.length) {
-                // Instantly execute all remaining steps
-                while (currentStepIndex < actionSteps.length) {
-                    actionSteps[currentStepIndex]();
-                    currentStepIndex++;
+            if (showAllMode === 0) {
+                savedCollapsedNodes = new Set(collapsedNodes);
+                showAllMode = 1;
+            } else if (showAllMode === 1) {
+                showAllMode = 2;
+            } else if (showAllMode === 2) {
+                // Return to manual/progressive mode
+                showAllMode = 0;
+                if (savedCollapsedNodes) {
+                    collapsedNodes = savedCollapsedNodes;
+                    savedCollapsedNodes = null;
                 }
-                renderDOM();
-                updateButtons();
+                applyStepsUpTo(currentStepIndex);
+                return;
             }
+
+            let targetState = 'emoji';
+            if (showAllMode === 2) {
+                targetState = 'keywords';
+            }
+
+            function setNodeStateRecursively(node, state) {
+                // If keywords requested but not available, use full
+                if (state === 'keywords' && !node.keywords) {
+                    node.state = 'full';
+                } else {
+                    node.state = state;
+                }
+                
+                if (node.children) {
+                    node.children.forEach(child => setNodeStateRecursively(child, state));
+                }
+            }
+
+            // Apply target state directly to the tree
+            setNodeStateRecursively(treeData, targetState);
+            collapsedNodes.clear(); // Ensure nothing is hidden when toggling
+            renderDOM(true);
         }
 
         function resetMap() {
+            showAllMode = 0;
             collapsedNodes.clear(); // Ensure expanded states are cleared on reset
             applyStepsUpTo(0);
         }

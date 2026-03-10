@@ -148,7 +148,7 @@ async function interactive() {
 
     for (const task of filesToProcess) {
         const inputJson = path.join('data', task.folder, task.file);
-        const outputHtml = path.join('release', task.folder, task.file.replace(".json", ".html"));
+        const outputHtml = path.join(task.folder, task.file.replace(".json", ".html"));
         await generate(inputJson, outputHtml);
     }
     
