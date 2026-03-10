@@ -1031,29 +1031,32 @@
 
         function renderDOM(manualToggle = false) {
             const container = document.getElementById('mindmap-container');
+            
+            // Save scroll positions if we want to preserve them
+            const savedScrollTop = container.scrollTop;
+            const savedScrollLeft = container.scrollLeft;
+
             container.innerHTML = '';
             const domTree = renderNode(treeData, 0);
             if (domTree) {
                 container.appendChild(domTree);
             }
 
-            // Auto-scroll logic
+            if (manualToggle) {
+                // Restore scroll positions when switching modes or toggling collapse
+                container.scrollTop = savedScrollTop;
+                container.scrollLeft = savedScrollLeft;
+                return;
+            }
+
+            // Auto-scroll logic (only for progressive steps)
             const activeEl = document.getElementById('active-node');
             if (activeEl) {
                 const containerRect = container.getBoundingClientRect();
                 const activeRect = activeEl.getBoundingClientRect();
 
                 let shouldScrollToTop = true;
-                if (manualToggle) {
-                    let current = activeEl.closest('.child-row');
-                    while (current) {
-                        if (current.previousElementSibling) {
-                            shouldScrollToTop = false;
-                            break;
-                        }
-                        current = current.parentElement.closest('.child-row');
-                    }
-                }
+                // (manualToggle check removed here as we return early above)
 
                 let targetScrollTop = container.scrollTop;
 
