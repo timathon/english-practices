@@ -24,17 +24,24 @@
         
         /* Stats Display */
         .stats-bar {
+            position: sticky;
+            top: 10px;
+            z-index: 1500;
             text-align: center;
             font-size: 0.9em;
             color: #666;
             margin-bottom: 15px;
-            background: #f8f9fa;
-            padding: 5px 10px;
+            background: rgba(248, 249, 250, 0.9);
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
             border-radius: 20px;
             display: inline-block;
             margin-left: 50%;
             transform: translateX(-50%);
             white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s;
         }
         .stats-bar b { color: #2c3e50; }
         .stats-bar.updated {
@@ -44,7 +51,7 @@
         @keyframes stats-highlight {
             0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); border-color: #3498db; }
             50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); border-color: #3498db; }
-            100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); border-color: transparent; }
+            100% { transform: translateX(-50%) scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.05); }
         }
 
         /* Floating Scroll Buttons */
@@ -378,10 +385,11 @@
             <h1 style="margin: 0;">Vocabulary Guide</h1>
         </div>
         <h2>Grade 6 Semester 2 Module 2</h2>
-        <div class="stats-bar" id="stats-display">
-            Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
-        </div>
     </header>
+
+    <div class="stats-bar" id="stats-display">
+        Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
+    </div>
 
     <div class="controls-container desktop-only">
         <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
@@ -481,7 +489,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Look, there are some ducks on the pond."
+                "There are some ducks on the pond."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“胖的”——胖胖的鸭子喜欢在池塘（pond）里游泳。</div>
         </div>
@@ -501,7 +509,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Hey, there are some dark clouds in the sky."
+                "There are some dark clouds in the sky."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“大客”——夜晚大客车在黑暗（dark）中行驶。</div>
         </div>
@@ -581,7 +589,7 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It will be cold and windy in Xi'an..."
+                "It will be cold and windy in Xi'an."
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：wind(风) + y(形容词后缀，表示多...的)——多风的。</div>
         </div>
@@ -676,7 +684,7 @@
             }
         };
 
-        const vocabData = [{"word":"breakfast","ipa":"/ˈbrekfəst/","meaning":"早餐","syllable_type":"break-fast","comparison":"breakfast vs fast","page_number":"8","context_sentence":"I'm going to get up and have breakfast.","memorization_hook":"词根词缀法：break(打破) + fast(禁食)——打破一整夜的禁食，所以第一顿饭是早餐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/95ce25423a6c0f5eb332739e18452b6b.mp3"},{"word":"lunch","ipa":"/lʌntʃ/","meaning":"午餐","syllable_type":"闭音节 (Closed)","comparison":"lunch vs bunch","page_number":"8","context_sentence":"You are going to have lunch!","memorization_hook":"谐音记忆法：“兰奇”——我的朋友兰奇中午总是吃得很丰盛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/b29fdfde601396a6b065f4ccdce0791e.mp3"},{"word":"pond","ipa":"/pɒnd/","meaning":"池塘","syllable_type":"闭音节 (Closed)","comparison":"pond vs fond","page_number":"9","context_sentence":"Look, there are some ducks on the pond.","memorization_hook":"谐音记忆法：“胖的”——胖胖的鸭子喜欢在池塘（pond）里游泳。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/a70c3f3450fb605c5bb9bf4ecb1b3195.mp3"},{"word":"dark","ipa":"/dɑːk/","meaning":"黑暗的；深色的","syllable_type":"r控制音节 (R-Controlled)","comparison":"dark vs park","page_number":"9","context_sentence":"Hey, there are some dark clouds in the sky.","memorization_hook":"谐音记忆法：“大客”——夜晚大客车在黑暗（dark）中行驶。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/b1574723106d8cb48e519ea802b50d5e.mp3"},{"word":"dry","ipa":"/draɪ/","meaning":"干的","syllable_type":"开音节 (Open)","comparison":"dry vs try","page_number":"9","context_sentence":"It's dry over there.","memorization_hook":"谐音记忆法：“拽”——下雨了，快把外面晾干（dry）的衣服拽回来！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/74ce8a25dd2bee2604cfd77ebd0ef32c.mp3"},{"word":"tomorrow","ipa":"/təˈmɒrəʊ/","meaning":"明天","syllable_type":"to-mor-row","comparison":"tomorrow vs borrow","page_number":"11","context_sentence":"Let's look at the weather tomorrow.","memorization_hook":"词缀分词法：to(去向) + morrow(次日)——去向新的一天就是明天。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/24f6b66055442da044fb0a4ff986c875.mp3"},{"word":"weather","ipa":"/ˈweðə/","meaning":"天气","syllable_type":"weath-er","comparison":"weather vs feather","page_number":"11","context_sentence":"Let's look at the weather tomorrow.","memorization_hook":"谐音记忆法：“外热”——今天的天气（weather）真是外边太热了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/24f6b66055442da044fb0a4ff986c875.mp3"},{"word":"windy","ipa":"/ˈwɪndi/","meaning":"多风的","syllable_type":"win-dy","comparison":"windy vs window","page_number":"11","context_sentence":"It will be cold and windy in Xi'an...","memorization_hook":"词根词缀法：wind(风) + y(形容词后缀，表示多...的)——多风的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/686fe3c93e8afd14eac933fd20ab8d40.mp3"},{"word":"winner","ipa":"/ˈwɪnə/","meaning":"赢家；获胜者","syllable_type":"win-ner","comparison":"winner vs dinner","page_number":"12","context_sentence":"I'm going to play chess and I'll be the winner!","memorization_hook":"词根词缀法：win(赢) + n + er(人)——赢得比赛的人就是获胜者。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/39d9a8eb17d57faa85ebef24d1af9b3f.mp3"},{"word":"half past","ipa":"","meaning":"……点半","syllable_type":"half past","comparison":"half past vs past","page_number":"9","context_sentence":"At half past twelve.","memorization_hook":"联想记忆法：half(一半) + past(经过)——时间走过了一个小时的一半，就是半点钟。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/de50aa2652b2931e9b9d7a3f6a307667.mp3"}];
+        const vocabData = [{"word":"breakfast","ipa":"/ˈbrekfəst/","meaning":"早餐","syllable_type":"break-fast","comparison":"breakfast vs fast","page_number":"8","context_sentence":"I'm going to get up and have breakfast.","memorization_hook":"词根词缀法：break(打破) + fast(禁食)——打破一整夜的禁食，所以第一顿饭是早餐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/95ce25423a6c0f5eb332739e18452b6b.mp3"},{"word":"lunch","ipa":"/lʌntʃ/","meaning":"午餐","syllable_type":"闭音节 (Closed)","comparison":"lunch vs bunch","page_number":"8","context_sentence":"You are going to have lunch!","memorization_hook":"谐音记忆法：“兰奇”——我的朋友兰奇中午总是吃得很丰盛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/b29fdfde601396a6b065f4ccdce0791e.mp3"},{"word":"pond","ipa":"/pɒnd/","meaning":"池塘","syllable_type":"闭音节 (Closed)","comparison":"pond vs fond","page_number":"9","context_sentence":"There are some ducks on the pond.","memorization_hook":"谐音记忆法：“胖的”——胖胖的鸭子喜欢在池塘（pond）里游泳。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/de25fb30ecb55d27e93152da004be5c9.mp3"},{"word":"dark","ipa":"/dɑːk/","meaning":"黑暗的；深色的","syllable_type":"r控制音节 (R-Controlled)","comparison":"dark vs park","page_number":"9","context_sentence":"There are some dark clouds in the sky.","memorization_hook":"谐音记忆法：“大客”——夜晚大客车在黑暗（dark）中行驶。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/611f7a3b5545d543fd3eb28cdafef01e.mp3"},{"word":"dry","ipa":"/draɪ/","meaning":"干的","syllable_type":"开音节 (Open)","comparison":"dry vs try","page_number":"9","context_sentence":"It's dry over there.","memorization_hook":"谐音记忆法：“拽”——下雨了，快把外面晾干（dry）的衣服拽回来！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/74ce8a25dd2bee2604cfd77ebd0ef32c.mp3"},{"word":"tomorrow","ipa":"/təˈmɒrəʊ/","meaning":"明天","syllable_type":"to-mor-row","comparison":"tomorrow vs borrow","page_number":"11","context_sentence":"Let's look at the weather tomorrow.","memorization_hook":"词缀分词法：to(去向) + morrow(次日)——去向新的一天就是明天。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/24f6b66055442da044fb0a4ff986c875.mp3"},{"word":"weather","ipa":"/ˈweðə/","meaning":"天气","syllable_type":"weath-er","comparison":"weather vs feather","page_number":"11","context_sentence":"Let's look at the weather tomorrow.","memorization_hook":"谐音记忆法：“外热”——今天的天气（weather）真是外边太热了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/24f6b66055442da044fb0a4ff986c875.mp3"},{"word":"windy","ipa":"/ˈwɪndi/","meaning":"多风的","syllable_type":"win-dy","comparison":"windy vs window","page_number":"11","context_sentence":"It will be cold and windy in Xi'an.","memorization_hook":"词根词缀法：wind(风) + y(形容词后缀，表示多...的)——多风的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/32324d3fbabd743bfa50c3443d825355.mp3"},{"word":"winner","ipa":"/ˈwɪnə/","meaning":"赢家；获胜者","syllable_type":"win-ner","comparison":"winner vs dinner","page_number":"12","context_sentence":"I'm going to play chess and I'll be the winner!","memorization_hook":"词根词缀法：win(赢) + n + er(人)——赢得比赛的人就是获胜者。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/39d9a8eb17d57faa85ebef24d1af9b3f.mp3"},{"word":"half past","ipa":"","meaning":"……点半","syllable_type":"half past","comparison":"half past vs past","page_number":"9","context_sentence":"At half past twelve.","memorization_hook":"联想记忆法：half(一半) + past(经过)——时间走过了一个小时的一半，就是半点钟。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/de50aa2652b2931e9b9d7a3f6a307667.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
