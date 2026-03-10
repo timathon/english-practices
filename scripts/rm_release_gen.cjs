@@ -27,9 +27,16 @@ function generateHtml(data) {
     const part = data.part || "";
     const treeData = data.tree || {};
 
-    // Preprocess tree to ensure all nodes have state: "hidden" except root
+    // Preprocess tree to ensure all nodes have IDs and state: "hidden" except root
+    let nodeCounter = 0;
     function preprocess(node, isRoot = false) {
         if (!node) return;
+        
+        // Ensure every node has an ID for tracking/collapsing
+        if (!node.id) {
+            node.id = `node_${++nodeCounter}`;
+        }
+
         if (!isRoot) {
             node.state = 'hidden';
         } else if (!node.state) {
