@@ -140,6 +140,87 @@
             justify-content: flex-start;
         }
 
+        /* Mode Slider Styles */
+        .mode-slider-container {
+            position: fixed;
+            z-index: 100;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--line-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 220px;
+            transition: all 0.3s ease;
+        }
+
+        .mode-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .mode-labels span {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .mode-labels span.active {
+            color: var(--primary-color);
+        }
+
+        #modeSlider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            cursor: pointer;
+        }
+
+        #modeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #modeSlider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Desktop Positioning */
+        @media (min-width: 769px) {
+            .mode-slider-container {
+                top: 90px;
+                right: 24px;
+                opacity: 0.5;
+            }
+            .mode-slider-container:hover {
+                opacity: 1;
+                transform: translateY(-2px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+        }
+
         /* Mindmap Tree CSS */
         .mindmap-node-wrapper {
             display: flex;
@@ -368,8 +449,18 @@
                 font-size: 1.5rem;
             }
 
+            .mode-slider-container {
+                bottom: 100px;
+                left: 20px;
+                right: 20px;
+                width: auto;
+                opacity: 1;
+                background-color: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(8px);
+            }
+
             main {
-                padding: 1rem 1rem 6rem 1rem;
+                padding: 1rem 1rem 12rem 1rem;
             }
 
             .mindmap-node-wrapper {
@@ -520,12 +611,21 @@
             <button id="resetBtn" onclick="resetMap()" title="Reset (重置)">🔄</button>
             <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
             <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
-            <button id="showAllBtn" onclick="showAll()" title="Toggle Show All (显示全部)">👁️</button>
         </div>
         <div class="progress-container">
             <div class="progress-bar" id="progressBar"></div>
         </div>
     </header>
+
+    <div class="mode-slider-container">
+        <div class="mode-labels">
+            <span onclick="updateMode(0)">Manual</span>
+            <span onclick="updateMode(1)">Emoji</span>
+            <span onclick="updateMode(2)">Key Words</span>
+            <span onclick="updateMode(3)">Sentence</span>
+        </div>
+        <input type="range" id="modeSlider" min="0" max="3" value="0" step="1" oninput="updateMode(this.value)">
+    </div>
 
     <main id="mindmap-container">
         <!-- Rendered by JS -->
@@ -657,7 +757,7 @@
         let clickedNodeId = null;
         let collapsedNodes = new Set();
         let savedCollapsedNodes = null; // To restore after showAll mode
-        let showAllMode = 0; // 0: progressive, 1: emoji, 2: keywords, 3: full
+        let showAllMode = 0; // 0: progressive (Manual), 1: emoji, 2: keywords, 3: full
 
         // 2. Step Generation Logic (Empty -> Emoji -> Keywords -> Full -> Children)
         function generateSteps(node) {
@@ -845,13 +945,10 @@
         function updateButtons() {
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
-            const showAllBtn = document.getElementById('showAllBtn');
 
             prevBtn.disabled = currentStepIndex === 0;
             const isFinished = currentStepIndex >= actionSteps.length;
             nextBtn.disabled = isFinished;
-
-            // showAllBtn is NEVER disabled now.
 
             const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
             document.getElementById('progressBar').style.width = `${progress}%`;
@@ -861,7 +958,6 @@
             treeData = cloneData(initialData);
             actionSteps = [];
             activeNodeId = treeData.id;
-            document.getElementById('showAllBtn').title = "Show Emoji version";
 
             // Add initial step to reveal the root node's full text
             actionSteps.push(() => {
@@ -883,12 +979,7 @@
         function nextStep() {
             if (showAllMode > 0) {
                 // Return to progressive mode seamlessly
-                showAllMode = 0;
-                if (savedCollapsedNodes) {
-                    collapsedNodes = savedCollapsedNodes;
-                    savedCollapsedNodes = null;
-                }
-                applyStepsUpTo(currentStepIndex);
+                updateMode(0);
                 return;
             }
 
@@ -902,13 +993,8 @@
 
         function prevStep() {
             if (showAllMode > 0) {
-                // Return to progressive mode, back one step
-                showAllMode = 0;
-                if (savedCollapsedNodes) {
-                    collapsedNodes = savedCollapsedNodes;
-                    savedCollapsedNodes = null;
-                }
-                applyStepsUpTo(currentStepIndex);
+                // Return to progressive mode
+                updateMode(0);
                 return;
             }
 
@@ -917,37 +1003,41 @@
             }
         }
 
-        function showAll() {
-            if (showAllMode === 0) {
-                savedCollapsedNodes = new Set(collapsedNodes);
-                showAllMode = 1;
-            } else if (showAllMode === 1) {
-                showAllMode = 2;
-            } else if (showAllMode === 2) {
-                showAllMode = 3;
-            } else if (showAllMode === 3) {
+        function updateMode(val) {
+            const newMode = parseInt(val);
+            const slider = document.getElementById('modeSlider');
+            slider.value = newMode;
+            
+            // Update labels
+            const labels = document.querySelectorAll('.mode-labels span');
+            labels.forEach((label, i) => {
+                label.classList.toggle('active', i === newMode);
+            });
+
+            if (newMode === 0) {
                 // Return to manual/progressive mode
-                showAllMode = 0;
-                if (savedCollapsedNodes) {
-                    collapsedNodes = savedCollapsedNodes;
-                    savedCollapsedNodes = null;
+                if (showAllMode !== 0) {
+                    showAllMode = 0;
+                    if (savedCollapsedNodes) {
+                        collapsedNodes = savedCollapsedNodes;
+                        savedCollapsedNodes = null;
+                    }
+                    applyStepsUpTo(currentStepIndex);
                 }
-                applyStepsUpTo(currentStepIndex);
                 return;
             }
 
-            let targetState = 'emoji';
-            let title = "Show Concise version";
+            if (showAllMode === 0) {
+                savedCollapsedNodes = new Set(collapsedNodes);
+            }
+            showAllMode = newMode;
 
+            let targetState = 'emoji';
             if (showAllMode === 2) {
                 targetState = 'keywords';
-                title = "Show Full version";
             } else if (showAllMode === 3) {
                 targetState = 'full';
-                title = "Back to Manual";
             }
-
-            document.getElementById('showAllBtn').title = title;
 
             function setNodeStateRecursively(node, state) {
                 // If the node doesn't have keywords (like root), default to full text
@@ -969,7 +1059,7 @@
         }
 
         function resetMap() {
-            showAllMode = 0;
+            updateMode(0);
             collapsedNodes.clear();
             applyStepsUpTo(0);
         }

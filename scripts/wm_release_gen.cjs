@@ -6,6 +6,7 @@ const readline = require('readline');
  * Writing Map Release Generator
  * Converts writing map JSON data into a formatted interactive HTML mindmap.
  * Uses templates/wm-shell-master.html as the base shell.
+ * Includes a 4-state mode slider: Manual, Emoji, Key Words, Sentence.
  * 
  * Usage: node scripts/wm_release_gen.cjs [input_json_path] [output_html_path]
  */
