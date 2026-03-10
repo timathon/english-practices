@@ -113,66 +113,24 @@ function getHtmlFilesInDirectory(directory) {
     return htmlFiles;
 }
 
-function generateLatestSection(files) {
-    const sortedFiles = [...files].sort((a, b) => b.mtime - a.mtime).slice(0, 10);
-    let html = '    <div class="section">\n';
-    html += '        <h2>Latest Practices</h2>\n';
-    html += '        <ul id="latest-list">\n';
-    for (const f of sortedFiles) {
-        html += `            <li><a href="${f.path}">${f.name}</a></li>\n`;
-    }
-    html += '        </ul>\n';
-    html += '    </div>';
-    return html;
-}
-
-function buildTree(files) {
-    const tree = {};
+function generateSubfolderList(files) {
+    const folderCounts = {};
     for (const f of files) {
         const parts = f.path.split(path.sep);
-        let current = tree;
-        for (let i = 0; i < parts.length - 1; i++) {
-            const part = parts[i];
-            if (!current[part]) current[part] = {};
-            current = current[part];
-        }
-        if (!current.__files__) current.__files__ = [];
-        current.__files__.push(f);
-    }
-    return tree;
-}
-
-function renderTree(tree) {
-    let lines = [];
-    const keys = Object.keys(tree).filter(k => k !== '__files__').sort();
-
-    for (const name of keys) {
-        lines.push(`    <li><span class="folder folder-toggle">${name}</span> <span class="file-count"></span>`);
-        lines.push('<ul class="collapsed">');
-        lines = lines.concat(renderTree(tree[name]));
-        lines.push('</ul>');
-        lines.push('    </li>');
-    }
-
-    if (tree.__files__) {
-        const sortedFiles = [...tree.__files__].sort(naturalCompare);
-        for (const f of sortedFiles) {
-            lines.push(`    <li><a href="${f.path}">${f.name}</a></li>`);
+        if (parts.length > 1) {
+            const folder = parts[0];
+            folderCounts[folder] = (folderCounts[folder] || 0) + 1;
         }
     }
-    return lines;
-}
 
-function generateTreeSection(files) {
-    const tree = buildTree(files);
-    const treeContent = renderTree(tree);
-    let html = '    <div class="section">\n';
-    html += '        <h2>All Practices (Tree View)</h2>\n';
-    html += '        <div class="tree">\n';
-    html += '<ul>\n';
-    html += treeContent.join('\n');
-    html += '\n</ul>\n';
-    html += '        </div>\n';
+    const folders = Object.keys(folderCounts).sort();
+    let html = '    <div class=section>\n';
+    html += '        <h2>Practice Categories</h2>\n';
+    html += '        <ul>\n';
+    for (const folder of folders) {
+        html += `            <li><a href="${folder}/index.html">${folder}</a> <i>(${folderCounts[folder]} practices)</i></li>\n`;
+    }
+    html += '        </ul>\n';
     html += '    </div>';
     return html;
 }
@@ -323,8 +281,7 @@ function generateFolderIndex(folderPath, title) {
 }
 
 function generateFullIndex(filePath, files, title, backLink = null) {
-    const latestHtml = generateLatestSection(files);
-    const treeHtml = generateTreeSection(files);
+    const subfolderListHtml = generateSubfolderList(files);
     const backHtml = backLink ? `<p><a href="${backLink}">Back to Main Site</a></p>` : "";
 
     const html = `<!DOCTYPE html>
@@ -362,32 +319,14 @@ function generateFullIndex(filePath, files, title, backLink = null) {
         a {
             text-decoration: none;
             color: #0366d6;
+            font-weight: bold;
         }
         a:hover {
             text-decoration: underline;
         }
-        /* Tree styles */
-        .tree ul {
-            padding-left: 20px;
-        }
-        .tree li {
-            position: relative;
-        }
-        .folder {
-            font-weight: bold;
-            color: #444;
-            cursor: pointer;
-        }
-        .folder-toggle {
-            cursor: pointer;
-        }
-        .file-count {
-            font-weight: normal;
-            font-style: italic;
-            color: #888;
-        }
-        .collapsed {
-            display: none;
+        i {
+            color: #666;
+            font-size: 0.9em;
         }
     </style>
 </head>
@@ -395,47 +334,8 @@ function generateFullIndex(filePath, files, title, backLink = null) {
     <h1>${title}</h1>
     ${backHtml}
 
-${latestHtml}
+    ${subfolderListHtml}
 
-${treeHtml}
-
-    <script>
-        function saveLastFolder(path) {
-            localStorage.setItem('last-folder-' + window.location.pathname, path);
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const folders = document.querySelectorAll('.folder-toggle');
-            const lastFolder = localStorage.getItem('last-folder-' + window.location.pathname);
-
-            folders.forEach(folder => {
-                const sublist = folder.nextElementSibling.nextElementSibling;
-                if (sublist && sublist.tagName === 'UL') {
-                    const fileCount = sublist.children.length;
-                    const fileCountSpan = folder.nextElementSibling;
-                    fileCountSpan.textContent = \`(\${fileCount} files)\`;
-
-                    // Simple way to get the folder "path" or name
-                    const folderName = folder.textContent;
-                    if (folderName === lastFolder) {
-                        sublist.classList.remove('collapsed');
-                        // Expand parents too if it was nested (though here tree is shallow)
-                    }
-
-                    folder.addEventListener('click', () => {
-                        sublist.classList.toggle('collapsed');
-                        if (!sublist.classList.contains('collapsed')) {
-                            saveLastFolder(folderName);
-                        } else if (localStorage.getItem('last-folder-' + window.location.pathname) === folderName) {
-                            localStorage.removeItem('last-folder-' + window.location.pathname);
-                        }
-                    });
-                }
-            });
-
-            // Also handle links in Latest section if possible, though they are flat
-        });
-    </script>
 </body>
 </html>`;
     fs.writeFileSync(filePath, html);
