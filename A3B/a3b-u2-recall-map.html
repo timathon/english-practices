@@ -137,6 +137,88 @@
             justify-content: flex-start;
         }
 
+        /* Mode Slider Styles */
+        .mode-slider-container {
+            position: fixed;
+            z-index: 100;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--line-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 200px;
+            transition: all 0.3s ease;
+        }
+
+        .mode-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .mode-labels span {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .mode-labels span.active {
+            color: var(--primary-color);
+        }
+
+        #modeSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            cursor: pointer;
+        }
+
+        #modeSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #modeSlider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Desktop Positioning */
+        @media (min-width: 769px) {
+            .mode-slider-container {
+                top: 90px;
+                right: 24px;
+                opacity: 0.5;
+            }
+            .mode-slider-container:hover {
+                opacity: 1;
+                transform: translateY(-2px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+        }
+
         /* Mindmap Tree CSS */
         .mindmap-node-wrapper {
             display: flex;
@@ -298,7 +380,7 @@
             display: none;
         }
 
-        /* Mobile Accordion View */
+        /* Mobile View Adjustments */
         @media (max-width: 768px) {
             header {
                 padding: 0.75rem 1rem;
@@ -331,8 +413,18 @@
                 font-size: 1.5rem;
             }
 
+            .mode-slider-container {
+                bottom: 100px;
+                left: 20px;
+                right: 20px;
+                width: auto;
+                opacity: 1;
+                background-color: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(8px);
+            }
+
             main {
-                padding: 1rem 1rem 6rem 1rem; /* Extra bottom padding for controls */
+                padding: 1rem 1rem 16rem 1rem;
             }
 
             .mindmap-node-wrapper {
@@ -465,10 +557,18 @@
             <button id="resetBtn" onclick="resetMap()" title="Reset (重置)">🔄</button>
             <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
             <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
-            <button id="showAllBtn" onclick="showAll()" title="Show All (显示全部)">👁️</button>
         </div>
         <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
     </header>
+
+    <div class="mode-slider-container">
+        <div class="mode-labels">
+            <span onclick="updateMode(0)">Manual</span>
+            <span onclick="updateMode(1)">Emoji</span>
+            <span onclick="updateMode(2)">Key Words</span>
+        </div>
+        <input type="range" id="modeSlider" min="0" max="2" value="0" step="1" oninput="updateMode(this.value)">
+    </div>
 
     <main id="mindmap-container">
         <!-- Rendered by JS -->
@@ -887,7 +987,7 @@
         let clickedNodeId = null;
         let collapsedNodes = new Set(); // Tracks manually collapsed parent nodes
         let savedCollapsedNodes = null; // To restore after showAll mode
-        let showAllMode = 0; // 0: manual, 1: emoji, 2: keywords/full, 3: manual (back)
+        let showAllMode = 0; // 0: manual, 1: emoji, 2: keywords/full
 
         // 2. Generate the Exact Sequence of Reveal Steps
         function generateSteps(node) {
@@ -1010,10 +1110,22 @@
 
         function renderDOM(manualToggle = false) {
             const container = document.getElementById('mindmap-container');
+            
+            // Save scroll positions if we want to preserve them
+            const savedScrollTop = container.scrollTop;
+            const savedScrollLeft = container.scrollLeft;
+
             container.innerHTML = ''; // Clear current tree
             const domTree = renderNode(treeData, 0);
             if (domTree) {
                 container.appendChild(domTree);
+            }
+
+            if (manualToggle) {
+                // Restore scroll positions when switching modes or toggling collapse
+                container.scrollTop = savedScrollTop;
+                container.scrollLeft = savedScrollLeft;
+                return;
             }
 
             // Auto-scroll logic: Keep the active node near the top of the container
@@ -1022,18 +1134,8 @@
                 const containerRect = container.getBoundingClientRect();
                 const activeRect = activeEl.getBoundingClientRect();
                 
-                // If it's a manual toggle, check if this node is preceded by a sibling to maintain position
                 let shouldScrollToTop = true;
-                if (manualToggle) {
-                    let current = activeEl.closest('.child-row');
-                    while (current) {
-                        if (current.previousElementSibling) {
-                            shouldScrollToTop = false;
-                            break;
-                        }
-                        current = current.parentElement.closest('.child-row');
-                    }
-                }
+                // (manualToggle check removed here as we return early above)
 
                 let targetScrollTop = container.scrollTop;
 
@@ -1083,13 +1185,11 @@
         function updateButtons() {
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
-            const showAllBtn = document.getElementById('showAllBtn');
 
             prevBtn.disabled = currentStepIndex === 0;
             
             const isFinished = currentStepIndex >= actionSteps.length;
             nextBtn.disabled = isFinished;
-            showAllBtn.disabled = false; // Always enabled for toggling modes
             
             // Update Progress Bar
             const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
@@ -1121,12 +1221,7 @@
         function nextStep() {
             if (showAllMode > 0) {
                 // Return to manual/progressive mode seamlessly
-                showAllMode = 0;
-                if (savedCollapsedNodes) {
-                    collapsedNodes = savedCollapsedNodes;
-                    savedCollapsedNodes = null;
-                }
-                applyStepsUpTo(currentStepIndex);
+                updateMode(0);
                 return;
             }
 
@@ -1141,12 +1236,7 @@
         function prevStep() {
             if (showAllMode > 0) {
                 // Return to manual mode
-                showAllMode = 0;
-                if (savedCollapsedNodes) {
-                    collapsedNodes = savedCollapsedNodes;
-                    savedCollapsedNodes = null;
-                }
-                applyStepsUpTo(currentStepIndex);
+                updateMode(0);
                 return;
             }
 
@@ -1155,22 +1245,34 @@
             }
         }
 
-        function showAll() {
-            if (showAllMode === 0) {
-                savedCollapsedNodes = new Set(collapsedNodes);
-                showAllMode = 1;
-            } else if (showAllMode === 1) {
-                showAllMode = 2;
-            } else if (showAllMode === 2) {
+        function updateMode(val) {
+            const newMode = parseInt(val);
+            const slider = document.getElementById('modeSlider');
+            slider.value = newMode;
+            
+            // Update labels
+            const labels = document.querySelectorAll('.mode-labels span');
+            labels.forEach((label, i) => {
+                label.classList.toggle('active', i === newMode);
+            });
+
+            if (newMode === 0) {
                 // Return to manual/progressive mode
-                showAllMode = 0;
-                if (savedCollapsedNodes) {
-                    collapsedNodes = savedCollapsedNodes;
-                    savedCollapsedNodes = null;
+                if (showAllMode !== 0) {
+                    showAllMode = 0;
+                    if (savedCollapsedNodes) {
+                        collapsedNodes = savedCollapsedNodes;
+                        savedCollapsedNodes = null;
+                    }
+                    applyStepsUpTo(currentStepIndex);
                 }
-                applyStepsUpTo(currentStepIndex);
                 return;
             }
+
+            if (showAllMode === 0) {
+                savedCollapsedNodes = new Set(collapsedNodes);
+            }
+            showAllMode = newMode;
 
             let targetState = 'emoji';
             if (showAllMode === 2) {
@@ -1197,7 +1299,7 @@
         }
 
         function resetMap() {
-            showAllMode = 0;
+            updateMode(0);
             collapsedNodes.clear(); // Ensure expanded states are cleared on reset
             applyStepsUpTo(0);
         }
@@ -1221,6 +1323,12 @@
                 if (!btn.disabled) {
                     prevStep();
                 }
+            } else if (e.code === 'KeyA') {
+                e.preventDefault();
+                if (showAllMode > 0) updateMode(showAllMode - 1);
+            } else if (e.code === 'KeyD') {
+                e.preventDefault();
+                if (showAllMode < 2) updateMode(showAllMode + 1);
             }
         });
 
