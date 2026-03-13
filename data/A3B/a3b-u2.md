@@ -87,14 +87,22 @@ Which is the best body part?
 The best body part
 [VISUAL: A comic story featuring a girl named Nana asleep in bed, dreaming about her body parts talking to her.]
 
-Mouth: "I'm the best!"
+Body part A: "I'm the best!"
+Body part B: "No, I'm the best!"
+
 Nana: "Hello, who is there?"
-Nose: "No, I'm the best! I help you smell."
-Mouth: "Sorry, Nana. We are your body parts. Who is the best for you?"
+
+All body parts: "Sorry, Nana. We are your body parts. Who is the best for you?"
 Nana: "Well..."
+
 Ears: "You've got two ears. We help you hear."
 Eyes: "You've got two eyes. We help you see."
+
+Nose: "I help you smell."
 Mouth: "I help you talk and eat."
+
+
+
 
 Story time 18
 
@@ -102,12 +110,13 @@ Story time 18
 
 [VISUAL: Five students standing in a line, holding up paper cutouts of body parts (ears, nose, tongue/mouth, eyes) as if acting out a play.]
 
-Hands: "And me..."
-Feet: "And me..."
-Legs: "And me..."
-Arms: "And me..."
+Other body parts: "And me..."
+Other body parts: "And me..."
+Other body parts: "And me..."
+Other body parts: "And me..."
+
 Nana: "Hey! Please stop! You are all important to me. You are a team."
-Body Parts: "You're right! Let's work together for Nana!"
+All body parts: "You're right! Let's work together for Nana!"
 
 2 Read again and complete.
 
