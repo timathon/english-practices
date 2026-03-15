@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recall Map: Unit 5</title>
+    <title>Writing Map: Unit 6</title>
     <style>
         :root {
-            --primary-color: #4f46e5;
-            --primary-hover: #4338ca;
+            --primary-color: #10b981;
+            /* Green theme for health/food */
+            --primary-hover: #059669;
             --bg-color: #f8fafc;
             --line-color: #cbd5e1;
             --box-empty: #e2e8f0;
             --box-emoji: #fef08a;
-            --box-keywords: #dbeafe; /* Light blue for keywords */
+            --box-keywords: #dbeafe;
+            /* Light blue for keywords */
             --box-full: #ffffff;
             --text-main: #1e293b;
         }
@@ -31,7 +34,7 @@
 
         header {
             background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
@@ -57,14 +60,14 @@
             background-color: white;
             border: 1px solid var(--line-color);
             transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             color: var(--text-main);
         }
 
         .home-link:hover {
             background-color: var(--bg-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .header-titles h1 {
@@ -97,7 +100,7 @@
             justify-content: center;
             background-color: white;
             color: var(--text-main);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             border: 1px solid var(--line-color);
             padding: 0;
         }
@@ -105,7 +108,7 @@
         .controls button:hover:not(:disabled) {
             background-color: var(--bg-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .controls button#nextBtn {
@@ -149,7 +152,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            width: 200px;
+            width: 220px;
             transition: all 0.3s ease;
         }
 
@@ -234,12 +237,14 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             z-index: 2;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             border: 2px solid transparent;
             min-height: 28px;
+            max-width: 450px;
+            line-height: 1.5;
         }
 
         .node-box.collapsible {
@@ -247,12 +252,12 @@
         }
 
         .node-box.collapsible:hover {
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
             transform: translateY(-2px);
             border-color: var(--primary-color);
         }
 
-        /* States */
+        /* Learning States */
         .node-box.empty {
             background-color: var(--box-empty);
             border-style: dashed;
@@ -285,18 +290,49 @@
         }
 
         /* Level Hierarchy Variables */
-        .node-box.level-0 { --node-fs: 1.25rem; --node-pad: 14px 24px; --node-fw: 700; --node-border: #6366f1; }
-        .node-box.level-1 { --node-fs: 1.1rem; --node-pad: 12px 20px; --node-fw: 600; --node-border: #10b981; }
-        .node-box.level-2 { --node-fs: 1rem; --node-pad: 10px 16px; --node-fw: 500; --node-border: #0ea5e9; }
-        .node-box.level-3 { --node-fs: 0.95rem; --node-pad: 8px 14px; --node-fw: 400; --node-border: #8b5cf6; }
-        .node-box.level-4 { --node-fs: 0.9rem; --node-pad: 6px 12px; --node-fw: 400; --node-border: #f59e0b; }
+        .node-box.level-0 {
+            --node-fs: 1.25rem;
+            --node-pad: 14px 24px;
+            --node-fw: 700;
+            --node-border: #6366f1;
+        }
+
+        .node-box.level-1 {
+            --node-fs: 1.1rem;
+            --node-pad: 12px 20px;
+            --node-fw: 600;
+            --node-border: #10b981;
+        }
+
+        .node-box.level-2 {
+            --node-fs: 1rem;
+            --node-pad: 10px 16px;
+            --node-fw: 500;
+            --node-border: #0ea5e9;
+        }
+
+        .node-box.level-3 {
+            --node-fs: 0.95rem;
+            --node-pad: 8px 14px;
+            --node-fw: 400;
+            --node-border: #8b5cf6;
+        }
+
+        .node-box.level-4 {
+            --node-fs: 0.9rem;
+            --node-pad: 6px 12px;
+            --node-fw: 400;
+            --node-border: #f59e0b;
+        }
 
         .node-content-emoji {
-            font-size: 1.4rem;
+            font-size: 1.3em;
+            flex-shrink: 0;
         }
 
         .node-content-keywords {
-            color: #1d4ed8; /* Dark blue to match the box theme */
+            color: #1d4ed8;
+            /* Dark blue to match the box theme */
             font-weight: 700;
         }
 
@@ -315,6 +351,7 @@
             border: 1px solid var(--line-color);
             display: inline-flex;
             align-items: center;
+            flex-shrink: 0;
         }
 
         /* Connectors */
@@ -400,7 +437,7 @@
                 left: 0;
                 right: 0;
                 background-color: white;
-                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
                 padding: 1rem;
                 justify-content: center;
                 gap: 1.5rem;
@@ -450,48 +487,37 @@
                 position: relative;
             }
 
-            /* Horizontal branch */
             .child-row::before {
-                content: "";
-                position: absolute;
                 left: -12px;
                 top: 24px;
                 width: 12px;
                 height: 2px;
-                background-color: var(--line-color);
             }
 
-            /* Vertical trunk segments */
             .child-row::after {
-                display: block;
-                content: "";
-                position: absolute;
                 left: -12px;
                 top: 0;
                 bottom: 0;
                 width: 2px;
-                background-color: var(--line-color);
             }
 
-            /* Fill the gap to the parent node */
             .child-row:first-child::after {
                 top: -10px;
             }
 
-            /* Terminate at the last branch */
             .child-row:last-child::after {
                 bottom: auto;
                 height: 24px;
             }
 
-            /* Single child case */
             .child-row:first-child:last-child::after {
+                display: block;
                 top: -10px;
                 height: 34px;
             }
 
             .node-box {
-                font-size: 1rem;
+                font-size: calc(var(--node-fs, 1.1rem) * 0.9);
                 padding: 10px 16px;
                 max-width: calc(100vw - 80px);
                 word-break: break-word;
@@ -500,24 +526,53 @@
 
         /* Animations */
         @keyframes popIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 0.8; }
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
         }
 
         @keyframes bounceIn {
-            0% { transform: scale(0.8); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(0.8);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         @keyframes slideIn {
-            0% { transform: translateX(-10px); opacity: 0; }
-            100% { transform: translateX(0); opacity: 1; }
+            0% {
+                transform: translateX(-10px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         @keyframes clickFlicker {
-            0% { box-shadow: 0 0 0 6px rgba(79, 70, 229, 0.4); transform: scale(1.02); }
-            100% { box-shadow: 0 4px 6px rgba(0,0,0,0.05); transform: scale(1); }
+            0% {
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.4);
+                transform: scale(1.02);
+            }
+
+            100% {
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                transform: scale(1);
+            }
         }
 
         .node-box.clicked-flicker {
@@ -533,23 +588,23 @@
             bottom: 0;
             left: 0;
         }
-        
+
         .progress-bar {
             height: 100%;
             background-color: var(--primary-color);
             width: 0%;
             transition: width 0.3s ease;
         }
-
     </style>
 </head>
+
 <body>
 
     <header>
         <div class="header-left">
             <a href="index.html" class="home-link" title="Back to Home (回到首页)">🏠</a>
             <div class="header-titles">
-                <h1>Recall Map: Unit 5</h1>
+                <h1>Writing Map: Unit 6 <span style="font-weight: normal; opacity: 0.7;">Section B Activity 1b</span></h1>
                 <p>Grade 7 Semester 2</p>
             </div>
         </div>
@@ -558,7 +613,9 @@
             <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
             <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
         </div>
-        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
     </header>
 
     <div class="mode-slider-container">
@@ -566,8 +623,9 @@
             <span onclick="updateMode(0)">Manual</span>
             <span onclick="updateMode(1)">Emoji</span>
             <span onclick="updateMode(2)">Key Words</span>
+            <span onclick="updateMode(3)">Sentence</span>
         </div>
-        <input type="range" id="modeSlider" min="0" max="2" value="0" step="1" oninput="updateMode(this.value)">
+        <input type="range" id="modeSlider" min="0" max="3" value="0" step="1" oninput="updateMode(this.value)">
     </div>
 
     <main id="mindmap-container">
@@ -575,91 +633,71 @@
     </main>
 
     <script>
-        // 1. Define the Mindmap Data Structure
+        // 1. Data Structure with Keywords & Sentences
         const initialData = {
   "id": "root",
-  "text": "Here and Now",
-  "emoji": "🌍",
-  "state": "emoji",
+  "text": "Mount Huangshan Trip",
+  "emoji": "⛰️",
   "children": [
     {
-      "id": "stories",
-      "text": "Stories (3 Stories)",
-      "emoji": "📖",
+      "id": "c1",
+      "text": "6:35 - 7:22: Arrival & First Impressions",
+      "emoji": "🕒",
+      "keywords": "arrival, impressions",
       "children": [
         {
-          "id": "story1",
-          "text": "Jane's Phone Call",
-          "emoji": "☎️",
+          "id": "h1",
+          "text": "Helen: We're here at Mount Huangshan!",
+          "emoji": "👩‍🎨",
+          "keywords": "Helen, here",
           "children": [
             {
-              "id": "s1_1",
-              "text": "Jane: Making zongzi in Guangzhou",
-              "emoji": "🥟",
+              "id": "h1_1",
+              "text": "The clouds look amazing. It feels like a magical place.",
+              "emoji": "☁️",
+              "keywords": "clouds, magical",
+              "children": [],
               "state": "hidden"
             },
             {
-              "id": "s1_2",
-              "text": "Dad: Washing the car",
-              "emoji": "🧽",
-              "state": "hidden"
-            },
-            {
-              "id": "s1_3",
-              "text": "Mum: Gardening, feeling better",
-              "emoji": "🌻",
+              "id": "h1_2",
+              "text": "The trees and rocks look like a part of a painting.",
+              "emoji": "🌲",
+              "keywords": "trees, painting",
+              "children": [],
               "state": "hidden"
             }
           ],
           "state": "hidden"
         },
         {
-          "id": "story2",
-          "text": "Different Time Zones",
-          "emoji": "⏰",
+          "id": "p1",
+          "text": "Peter: Today I'm visiting Mount Huangshan with my family.",
+          "emoji": "👦",
+          "keywords": "Peter, visiting",
           "children": [
             {
-              "id": "s2_1",
-              "text": "Chongqing: Night, enjoying hot pot",
-              "emoji": "🍲",
+              "id": "p1_1",
+              "text": "I'm not really enjoying the experience.",
+              "emoji": "😒",
+              "keywords": "not, enjoying",
+              "children": [],
               "state": "hidden"
             },
             {
-              "id": "s2_2",
-              "text": "Nairobi: Afternoon, seeing giraffes",
-              "emoji": "🦒",
+              "id": "p1_2",
+              "text": "Everything looks grey, and you can't see much because of the heavy fog.",
+              "emoji": "🌫️",
+              "keywords": "grey, fog",
+              "children": [],
               "state": "hidden"
             },
             {
-              "id": "s2_3",
-              "text": "New York: Morning, busy subway",
-              "emoji": "🚇",
-              "state": "hidden"
-            }
-          ],
-          "state": "hidden"
-        },
-        {
-          "id": "story3",
-          "text": "Visiting New Places",
-          "emoji": "✈️",
-          "children": [
-            {
-              "id": "s3_1",
-              "text": "Paris: Eiffel Tower, tourists",
-              "emoji": "🗼",
-              "state": "hidden"
-            },
-            {
-              "id": "s3_2",
-              "text": "Canada: Niagara Falls, getting wet",
-              "emoji": "🌊",
-              "state": "hidden"
-            },
-            {
-              "id": "s3_3",
-              "text": "Thailand: Beach, learning to surf",
-              "emoji": "🏄",
+              "id": "p1_3",
+              "text": "The ground is very wet, so we have to climb slowly.",
+              "emoji": "💦",
+              "keywords": "wet, slowly",
+              "children": [],
               "state": "hidden"
             }
           ],
@@ -669,270 +707,248 @@
       "state": "hidden"
     },
     {
-      "id": "vocab",
-      "text": "Key Vocabulary",
-      "emoji": "📚",
+      "id": "c2",
+      "text": "9:15 - 9:18: At the Rest Area",
+      "emoji": "🥤",
+      "keywords": "rest, area",
       "children": [
         {
-          "id": "v_verbs",
-          "text": "Verbs (Actions)",
-          "emoji": "🏃",
+          "id": "h2",
+          "text": "Helen: We're at a rest area now.",
+          "emoji": "👩‍🎨",
+          "keywords": "rest, area",
           "children": [
             {
-              "id": "v_v1",
-              "text": "rush (冲;奔)",
-              "emoji": "💨",
+              "id": "h2_1",
+              "text": "Climbing is hard, but we're making good progress.",
+              "emoji": "🧗",
+              "keywords": "hard, progress",
+              "children": [],
               "state": "hidden"
             },
             {
-              "id": "v_v2",
-              "text": "shine (发光)",
+              "id": "h2_2",
+              "text": "Although the weather is bad, many people here are still in high spirits.",
+              "emoji": "🥳",
+              "keywords": "bad weather, high spirits",
+              "children": [],
+              "state": "hidden"
+            },
+            {
+              "id": "h2_3",
+              "text": "I don't think my brother Peter is enjoying the experience very much, so I'm encouraging him.",
+              "emoji": "🤝",
+              "keywords": "Peter, encouraging",
+              "children": [],
+              "state": "hidden"
+            }
+          ],
+          "state": "hidden"
+        },
+        {
+          "id": "p2",
+          "text": "Peter: Climbing is tiring!",
+          "emoji": "👦",
+          "keywords": "climbing, tiring",
+          "children": [
+            {
+              "id": "p2_1",
+              "text": "My shoes are all wet and dirty too.",
+              "emoji": "👟",
+              "keywords": "shoes, dirty",
+              "children": [],
+              "state": "hidden"
+            },
+            {
+              "id": "p2_2",
+              "text": "There are many other tourists at this rest area, but they don't seem tired at all.",
+              "emoji": "👥",
+              "keywords": "tourists, not tired",
+              "children": [],
+              "state": "hidden"
+            },
+            {
+              "id": "p2_3",
+              "text": "Instead, they're talking and laughing! My sister Helen is also in high spirits.",
+              "emoji": "😂",
+              "keywords": "laughing, spirits",
+              "children": [],
+              "state": "hidden"
+            }
+          ],
+          "state": "hidden"
+        }
+      ],
+      "state": "hidden"
+    },
+    {
+      "id": "c3",
+      "text": "10:36 - 10:40: At Bright Peak",
+      "emoji": "🚩",
+      "keywords": "Bright Peak",
+      "children": [
+        {
+          "id": "h3",
+          "text": "Helen: The sun is shining through the clouds!",
+          "emoji": "👩‍🎨",
+          "keywords": "sun, shining",
+          "children": [
+            {
+              "id": "h3_1",
+              "text": "It's a lovely sight. I'm so glad we're here at Bright Peak.",
               "emoji": "✨",
-              "state": "hidden"
-            },
-            {
-              "id": "v_v3",
-              "text": "explain (解释)",
-              "emoji": "🗣️",
-              "state": "hidden"
-            },
-            {
-              "id": "v_v4",
-              "text": "happen (发生)",
-              "emoji": "❓",
-              "state": "hidden"
-            },
-            {
-              "id": "v_v5",
-              "text": "skate (滑冰)",
-              "emoji": "⛸️",
+              "keywords": "lovely, glad",
+              "children": [],
               "state": "hidden"
             }
           ],
           "state": "hidden"
         },
         {
-          "id": "v_nouns",
-          "text": "Nouns (Things)",
-          "emoji": "📦",
+          "id": "p3",
+          "text": "Peter: We're here at Bright Peak.",
+          "emoji": "👦",
+          "keywords": "Peter, Bright Peak",
           "children": [
             {
-              "id": "v_n1",
-              "text": "subway (地铁)",
-              "emoji": "🚇",
+              "id": "p3_1",
+              "text": "Mount Huangshan is beautiful in the sunlight.",
+              "emoji": "📸",
+              "keywords": "beautiful, sunlight",
+              "children": [],
               "state": "hidden"
             },
             {
-              "id": "v_n2",
-              "text": "passenger (乘客)",
-              "emoji": "🧳",
-              "state": "hidden"
-            },
-            {
-              "id": "v_n3",
-              "text": "festival (节日)",
-              "emoji": "🎉",
-              "state": "hidden"
-            },
-            {
-              "id": "v_n4",
-              "text": "message (消息)",
-              "emoji": "✉️",
-              "state": "hidden"
-            },
-            {
-              "id": "v_n5",
-              "text": "time zone (时区)",
-              "emoji": "🗺️",
+              "id": "p3_2",
+              "text": "I'm tired and hungry, but it feels good to be at the top!",
+              "emoji": "🍎",
+              "keywords": "hungry, top",
+              "children": [],
               "state": "hidden"
             }
           ],
-          "state": "hidden"
-        },
-        {
-          "id": "v_phrases",
-          "text": "Phrases (Expressions)",
-          "emoji": "🔗",
-          "children": [
-            {
-              "id": "v_p1",
-              "text": "in a hurry (匆忙)",
-              "emoji": "⏳",
-              "state": "hidden"
-            },
-            {
-              "id": "v_p2",
-              "text": "right now (现在)",
-              "emoji": "⏱️",
-              "state": "hidden"
-            },
-            {
-              "id": "v_p3",
-              "text": "hold on (等一等)",
-              "emoji": "📞",
-              "state": "hidden"
-            },
-            {
-              "id": "v_p4",
-              "text": "take part in (参加)",
-              "emoji": "🙋",
-              "state": "hidden"
-            },
-            {
-              "id": "v_p5",
-              "text": "look forward to (盼望)",
-              "emoji": "🤩",
-              "state": "hidden"
-            }
-          ],
-          "state": "hidden"
-        }
-      ],
-      "state": "hidden"
-    },
-    {
-      "id": "grammar",
-      "text": "Grammar: Present Continuous",
-      "emoji": "✍️",
-      "children": [
-        {
-          "id": "g_1",
-          "text": "am / is / are + v-ing",
-          "emoji": "🔄",
-          "state": "hidden"
-        },
-        {
-          "id": "g_2",
-          "text": "Example: I'm doing my homework.",
-          "emoji": "📝",
-          "state": "hidden"
-        },
-        {
-          "id": "g_3",
-          "text": "Example: What are they doing?",
-          "emoji": "🗣️",
           "state": "hidden"
         }
       ],
       "state": "hidden"
     }
-  ]
+  ],
+  "state": "emoji"
 };
-        if (!initialData.state) initialData.state = 'full';
 
         let treeData = null;
         let actionSteps = [];
         let currentStepIndex = 0;
         let activeNodeId = null;
         let clickedNodeId = null;
-        let collapsedNodes = new Set(); // Tracks manually collapsed parent nodes
+        let collapsedNodes = new Set();
         let savedCollapsedNodes = null; // To restore after showAll mode
-        let showAllMode = 0; // 0: manual, 1: emoji, 2: keywords/full
+        let showAllMode = 0; // 0: progressive (Manual), 1: emoji, 2: keywords, 3: full
 
-        // 2. Generate the Exact Sequence of Reveal Steps
+        // 2. Step Generation Logic (Empty -> Emoji -> Keywords -> Full -> Children)
         function generateSteps(node) {
             if (!node.children || node.children.length === 0) return;
 
-            // STEP 1: Draw all empty boxes for this specific level to show structure
+            // STEP A: Show empty box outline for the structure
             actionSteps.push(() => {
                 node.children.forEach(child => child.state = 'empty');
-                activeNodeId = node.children[0].id; // Point focus to the first newly added box
+                activeNodeId = node.children[0].id;
             });
 
-            // STEP 2: For each child node, reveal Emoji -> Text -> Recurse into its children
+            // STEP B: For each child, reveal through states progressively
             node.children.forEach(child => {
-                // Reveal Emoji Hint
+
+                // 1. Reveal Emoji Hint
                 actionSteps.push(() => {
                     child.state = 'emoji';
                     activeNodeId = child.id;
                 });
-                
-                // Reveal Full Text
+
+                // 2. Reveal Simple Words / Keywords (if they exist)
+                if (child.keywords) {
+                    actionSteps.push(() => {
+                        child.state = 'keywords';
+                        activeNodeId = child.id;
+                    });
+                }
+
+                // 3. Reveal Full Sentence
                 actionSteps.push(() => {
                     child.state = 'full';
                     activeNodeId = child.id;
                 });
 
-                // Recurse to build sub-level steps
+                // 4. Recurse to generate steps for this child's sub-nodes
                 generateSteps(child);
             });
         }
 
-        // Deep clone data to allow resetting
         function cloneData(data) {
             return JSON.parse(JSON.stringify(data));
         }
 
-        // 3. Render Engine (Creates DOM elements recursively)
+        // 3. Render Engine
         function renderNode(node, depth = 0) {
-            const state = node.state || 'hidden';
-            if (state === 'hidden') return null;
+            if (node.state === 'hidden') return null;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'mindmap-node-wrapper';
 
             const box = document.createElement('div');
-            box.className = `node-box ${state} level-${depth}`;
-            if (node.id === activeNodeId) {
-                box.id = 'active-node';
-            }
-            if (node.id === clickedNodeId) {
-                box.classList.add('clicked-flicker');
-            }
+            box.className = `node-box ${node.state} level-${depth}`;
 
-            // Collapse Logic: Verify if all immediate children are revealed completely
+            if (node.id === activeNodeId) box.id = 'active-node';
+            if (node.id === clickedNodeId) box.classList.add('clicked-flicker');
+
+            // Collapse Logic
             const hasChildren = node.children && node.children.length > 0;
-            const allChildrenFull = hasChildren && node.children.every(c => (c.state || 'hidden') === 'full');
+            const allChildrenFull = hasChildren && node.children.every(c => c.state === 'full');
             const isCollapsed = collapsedNodes.has(node.id);
             const hideChildren = isCollapsed && allChildrenFull;
 
-            // Make parent interactive if children are fully shown
             if (allChildrenFull) {
                 box.classList.add('collapsible');
-                box.title = isCollapsed ? "Click to expand (点击展开)" : "Click to collapse (点击折叠)";
+                box.title = isCollapsed ? "Click to expand" : "Click to collapse";
                 box.onclick = (e) => {
                     e.stopPropagation();
                     clickedNodeId = node.id;
                     if (collapsedNodes.has(node.id)) {
-                        // Expanding: We want to focus on its FIRST child
                         collapsedNodes.delete(node.id);
                         activeNodeId = node.children[0].id;
                     } else {
-                        // Collapsing: We want to focus on the PARENT node itself
                         collapsedNodes.add(node.id);
                         activeNodeId = node.id;
                     }
                     renderDOM(true);
                 };
             }
-            
-            if (state === 'emoji') {
+
+            // Render Content based on current Learning State
+            if (node.state === 'emoji') {
                 box.innerHTML = `<span class="node-content-emoji">${node.emoji}</span>`;
-            } else if (state === 'keywords') {
+            } else if (node.state === 'keywords') {
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-keywords">${node.keywords || node.text}</span>
+                    <span class="node-content-keywords">${node.keywords}</span>
                 `;
-            } else if (state === 'full') {
+            } else if (node.state === 'full') {
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
                     <span class="node-content-text">${node.text}</span>
                 `;
-                
-                // Display the indicator if children are currently hidden
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
                 }
             }
-            // If 'empty', innerHTML remains blank by design
+            // (If state is 'empty', inner HTML intentionally blank)
 
             wrapper.appendChild(box);
 
-            // Render children only if they shouldn't be hidden
-            if (node.children && node.children.some(c => (c.state || 'hidden') !== 'hidden') && !hideChildren) {
+            // Render children
+            if (node.children && node.children.some(c => c.state !== 'hidden') && !hideChildren) {
                 const childrenContainer = document.createElement('div');
                 childrenContainer.className = 'children-container';
-                
+
                 node.children.forEach(child => {
                     const childElement = renderNode(child, depth + 1);
                     if (childElement) {
@@ -955,7 +971,7 @@
             const savedScrollTop = container.scrollTop;
             const savedScrollLeft = container.scrollLeft;
 
-            container.innerHTML = ''; // Clear current tree
+            container.innerHTML = '';
             const domTree = renderNode(treeData, 0);
             if (domTree) {
                 container.appendChild(domTree);
@@ -968,38 +984,32 @@
                 return;
             }
 
-            // Auto-scroll logic: Keep the active node near the top of the container
+            // Auto-scroll logic (only for progressive steps)
             const activeEl = document.getElementById('active-node');
             if (activeEl) {
                 const containerRect = container.getBoundingClientRect();
                 const activeRect = activeEl.getBoundingClientRect();
-                
+
                 let shouldScrollToTop = true;
                 // (manualToggle check removed here as we return early above)
 
                 let targetScrollTop = container.scrollTop;
 
                 if (shouldScrollToTop) {
-                    // Calculate scroll position giving it ~60px padding from the top edge of the main view
                     targetScrollTop = activeRect.top - containerRect.top + container.scrollTop - 60;
                 } else {
-                    // Try to show as many children as possible if they are out of view at the bottom
                     const childrenContainer = activeEl.closest('.children-container');
                     if (childrenContainer) {
                         const lastChildRow = childrenContainer.lastElementChild;
                         const lastChildBox = lastChildRow ? lastChildRow.querySelector('.node-box') : null;
-                        
+
                         if (lastChildBox) {
                             const lastRect = lastChildBox.getBoundingClientRect();
                             const bottomThreshold = containerRect.bottom - 60;
-                            
+
                             if (lastRect.bottom > bottomThreshold) {
-                                // Calculate scroll to bring last child to bottom
                                 const neededScroll = lastRect.bottom - bottomThreshold;
                                 targetScrollTop = container.scrollTop + neededScroll;
-                                
-                                // But don't scroll so far that the first child (activeEl) goes out of view at top
-                                // First child should stay at least 60px from top if possible
                                 const maxScroll = activeRect.top - containerRect.top + container.scrollTop - 60;
                                 targetScrollTop = Math.min(targetScrollTop, maxScroll);
                             }
@@ -1013,7 +1023,6 @@
                     behavior: 'smooth'
                 });
             } else {
-                // Fallback: Just keep horizontal focus right
                 container.scrollTo({
                     left: container.scrollWidth,
                     behavior: 'smooth'
@@ -1021,17 +1030,15 @@
             }
         }
 
-        // 4. Interaction Controllers
+        // 4. Action Controllers
         function updateButtons() {
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
 
             prevBtn.disabled = currentStepIndex === 0;
-            
             const isFinished = currentStepIndex >= actionSteps.length;
             nextBtn.disabled = isFinished;
-            
-            // Update Progress Bar
+
             const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
             document.getElementById('progressBar').style.width = `${progress}%`;
         }
@@ -1040,7 +1047,7 @@
             treeData = cloneData(initialData);
             actionSteps = [];
             activeNodeId = treeData.id;
-            
+
             // Add initial step to reveal the root node's full text
             actionSteps.push(() => {
                 treeData.state = 'full';
@@ -1053,14 +1060,14 @@
             for (let i = 0; i < currentStepIndex; i++) {
                 actionSteps[i]();
             }
-            
+
             renderDOM();
             updateButtons();
         }
 
         function nextStep() {
             if (showAllMode > 0) {
-                // Return to manual/progressive mode seamlessly
+                // Return to progressive mode seamlessly
                 updateMode(0);
                 return;
             }
@@ -1075,7 +1082,7 @@
 
         function prevStep() {
             if (showAllMode > 0) {
-                // Return to manual mode
+                // Return to progressive mode
                 updateMode(0);
                 return;
             }
@@ -1117,16 +1124,18 @@
             let targetState = 'emoji';
             if (showAllMode === 2) {
                 targetState = 'keywords';
+            } else if (showAllMode === 3) {
+                targetState = 'full';
             }
 
             function setNodeStateRecursively(node, state) {
-                // If keywords requested but not available, use full
+                // If the node doesn't have keywords (like root), default to full text
                 if (state === 'keywords' && !node.keywords) {
                     node.state = 'full';
                 } else {
                     node.state = state;
                 }
-                
+
                 if (node.children) {
                     node.children.forEach(child => setNodeStateRecursively(child, state));
                 }
@@ -1140,38 +1149,34 @@
 
         function resetMap() {
             updateMode(0);
-            collapsedNodes.clear(); // Ensure expanded states are cleared on reset
+            collapsedNodes.clear();
             applyStepsUpTo(0);
         }
 
-        // Initialize on Load
+        // Listen for user input
         window.onload = () => {
             resetMap();
         };
 
-        // Add keyboard support (Spacebar or Right Arrow to advance, Left Arrow to go back)
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' || e.code === 'ArrowRight') {
-                e.preventDefault(); // Prevent page scrolling on space
+                e.preventDefault();
                 const btn = document.getElementById('nextBtn');
-                if (!btn.disabled) {
-                    nextStep();
-                }
+                if (!btn.disabled) nextStep();
             } else if (e.code === 'ArrowLeft') {
                 e.preventDefault();
                 const btn = document.getElementById('prevBtn');
-                if (!btn.disabled) {
-                    prevStep();
-                }
+                if (!btn.disabled) prevStep();
             } else if (e.code === 'KeyA') {
                 e.preventDefault();
                 if (showAllMode > 0) updateMode(showAllMode - 1);
             } else if (e.code === 'KeyD') {
                 e.preventDefault();
-                if (showAllMode < 2) updateMode(showAllMode + 1);
+                if (showAllMode < 3) updateMode(showAllMode + 1);
             }
         });
 
     </script>
 </body>
+
 </html>

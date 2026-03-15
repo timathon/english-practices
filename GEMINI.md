@@ -43,16 +43,23 @@ This document defines the rules for extracting and converting textbook data into
 **Source:** `*-vocab-guide.json`
 **Target:** `*-spelling-hero.json` (Save in the same folder as source)
 
-- **Filter:** Only process single words. Skip any items containing spaces.
+- **Filter:** Only process single words. Skip any items containing spaces (phrases).
 - **Word Type:** Determine `single-syllable` or `multi-syllable` from the `syllable_type` field.
 - **Chunking Logic:**
   - **Single-Syllable:** Split by phonics graphemes (e.g., "cat" -> c, a, t; "boat" -> b, oa, t).
   - **Multi-Syllable:** Split by standard syllables (e.g., "animal" -> an, i, mal).
 - **Distractors:** Provide 2 phonetically or visually similar distractors for each chunk (3 options total).
 - **Randomization:** Shuffle the `options` array for every chunk.
-- **Mapping:**
-  - Copy `level` exactly.
+- **Structure:**
+  - `level`: e.g., "Grade 7 Semester 2 - Unit 5".
   - `title`: "Spelling Master".
+  - `spelling_words`: Array of word objects.
+    - `word`: The English word.
+    - `meaning`: Chinese translation from `vocab-guide`.
+    - `type`: `single-syllable` or `multi-syllable`.
+    - `chunks`: Array of chunk objects.
+      - `correct`: The correct chunk string.
+      - `options`: Array of 3 shuffled options.
 
 ## 4. Sentence Architect (SA)
 **Source:** Textbook PDF or extracted Markdown (e.g., `data/A3B/a3b-u2.md`).
@@ -80,7 +87,7 @@ This document defines the rules for extracting and converting textbook data into
 **Source:** Textbook PDF or extracted Markdown (e.g., `data/A3B/a3b-u2.md`).
 **Target:** `*-recall-map.json` (Save in the same folder as source)
 
-- **Structure:** Hierarchical mindmap tree (root -> children).
+- **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`).
 - **Core Branches:** 
   - **Stories:** Summary of reading passages into "Memory Keys" (1-5 words).
   - **Vocabulary:** Grouped into "Verbs (Actions)", "Nouns (Things)", and "Phrases (Expressions)".
@@ -104,12 +111,13 @@ This document defines the rules for extracting and converting textbook data into
   - "Speed Up" -> `*-writing-map-3-speed-up.json`
   - "Section B Activity 1b" -> `*-writing-map-b1b.json`
   - "Section B Activity 2a" -> `*-writing-map-b2a.json`
-- **Structure:** Recursive mindmap tree (root -> children).
+- **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts).
 - **Node Rules:**
   - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`).
   - `text`: **Exact verbatim text** from the passage (escape double quotes).
   - `emoji`: One highly relevant emoji mnemonic per node.
-  - `keywords`: 2-5 short trigger words acting as hints (not for `root`).
+  - `keywords`: A **comma-separated string** of 2-5 trigger words acting as hints (e.g., `"huge, storm"`, not for `root`).
+  - `children`: Recursive array of child nodes (empty array `[]` for leaf nodes).
 - **Metadata:**
   - `level`: e.g., "Grade 3 Semester 2".
   - `part`: e.g., "Unit 2".
