@@ -1,0 +1,5 @@
+Model essays of My Story of Growth 
+
+Last summer, I took part in a robot competition at my school and I was the driver. We practised at the weekend. At first, I was not good at controlling the robot, and I was not happy. But my teacher and teammates were very kind and helpful. After a lot of practice, I got better at it. In the end, we won the competition! I learnt that we should never give up when we face difficulties. I felt really great. It was the feeling of growing up.
+
+Last winter, I took part in a programming competition in the city. I practised at the weekend. At first, I was not good at it and I felt bad. But my teacher and friends were very helpful. After a lot of practice, I got much better. In the end, I won the competition! I learnt that we should never give up when we face difficulties. I felt really great. It was the feeling of growing up.
