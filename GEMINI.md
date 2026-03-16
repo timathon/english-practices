@@ -11,9 +11,11 @@ This document defines the rules for extracting and converting textbook data into
   - Extract **every item** from the appendix vocabulary list (found at the end of the Markdown).
   - Identify up to **10 extra** difficult words or phrases (e.g., "has got", "have got", "Good work", "What's up", "work together").
 - **Data Points:**
+  - `unit_vocabulary`: Array of extracted vocabulary objects.
   - `page_number`: Extract from the `--- PRINTED PAGE X ---` markers. If a page is `Unnumbered`, infer its number based on the surrounding pages (e.g., if it precedes page 15, it is 14).
   - `context_sentence`: Find the exact sentence from the dialogue or text.
   - `ipa`: Standard British (UK) IPA for single words.
+  - `comparison`: A 'word vs distractor' string for visual or phonetic comparison (e.g., 'winner vs winter', 'hill vs pill').
   - `syllable_type`: 
     - Single-syllable: 闭音节 (Closed), 开音节 (Open), 相对开音节 (VCe), 元音字母组合音节 (Vowel Team), r控制音节 (R-Controlled), 辅音+le音节 (C-le).
     - Multi-syllable: Exact syllable breakdown (e.g., `an-i-mal`).
@@ -34,8 +36,12 @@ This document defines the rules for extracting and converting textbook data into
   - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 3 distractors.
 - **Answer Randomization:** Correct answer index must be randomized (0-3).
 - **Structure:** Group questions into Challenges of exactly **10 questions** each.
+  - Each challenge must have a unique `id` and a relevant emoji `icon`.
 - **Mapping:**
   - Copy `level` exactly.
+  - `word`: The English word/phrase from `vocab-guide`.
+  - `meaning`: The Chinese meaning from `vocab-guide`.
+  - `context_sentence`: Include the verbatim sentence from `vocab-guide`.
   - Rename `memorization_hook` to `hint`.
   - `title`: "Vocab Master".
 
@@ -44,6 +50,7 @@ This document defines the rules for extracting and converting textbook data into
 **Target:** `*-spelling-hero.json` (Save in the same folder as source)
 
 - **Filter:** Only process single words. Skip any items containing spaces (phrases).
+- **Word Count:** **Every** single word from the `unit_vocabulary` must be included in the `spelling_words` array.
 - **Word Type:** Determine `single-syllable` or `multi-syllable` from the `syllable_type` field.
 - **Chunking Logic:**
   - **Single-Syllable:** Split by phonics graphemes (e.g., "cat" -> c, a, t; "boat" -> b, oa, t).
@@ -65,7 +72,7 @@ This document defines the rules for extracting and converting textbook data into
 **Source:** Textbook PDF or extracted Markdown (e.g., `data/A3B/a3b-u2.md`).
 **Target:** `*-sentence-architect.json` (Save in the same folder as source)
 
-- **Challenge Volume:** exactly **5 Challenges** per unit; **10 sentences** per challenge (50 sentences total).
+- **Challenge Volume:** exactly **5 Challenges** per unit; **10 items** per challenge (50 sentences total).
 - **Challenge Metadata:** Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`) and a relevant emoji `icon`.
 - **Textbook Fidelity:** Preserve exact wording and contractions (e.g., "isn't", "don't").
 - **British English:** Default to British English spelling (e.g., "colour", "favourite").
@@ -75,7 +82,7 @@ This document defines the rules for extracting and converting textbook data into
   - `primaryColor` / `primaryColorDark`: Hex codes (avoid red/reddish tones; prefer blues, greens, or purples).
   - `storageSuffix`: Unique per unit (e.g., `"_g3s2_u2"`).
   - `passcode`: 5-letter string from the first letter of each challenge title in order.
-- **Data Points per Sentence:**
+- **Data Points per Item (under `data` array):**
   - `en`: Primary English sentence.
   - `cn`: Chinese translation.
   - `hint`: Concise bilingual grammar clue.
@@ -106,7 +113,7 @@ This document defines the rules for extracting and converting textbook data into
 **Sections:** "Start Up", "Speed Up", "Section B Activity 1b", "Section B Activity 2a".
 **Target:** `*-writing-map-[prefix]-[section-slug].json` (Save in the same folder as source)
 
-- **Naming Convention:**
+- **Naming Convention (Standardized for all books):**
   - "Start Up" -> `*-writing-map-2-start-up.json`
   - "Speed Up" -> `*-writing-map-3-speed-up.json`
   - "Section B Activity 1b" -> `*-writing-map-b1b.json`

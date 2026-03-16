@@ -309,7 +309,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     // 1. Audio Generation Logic (Only check R2 if not in Skip mode)
     if (audioMode !== '1') {
         const existingHashes = new Set();
-        const allItems = data.challenges.flatMap(c => c.data || []);
+        const allItems = data.challenges.flatMap(c => c.sentences || c.data || []);
 
         if (audioMode === '2') {
             console.log(`Checking existing audio files for ${allItems.length} items...`);
@@ -326,7 +326,8 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
 
         for (const challenge of data.challenges) {
             const tasksToGenerate = [];
-            for (const item of challenge.data) {
+            const items = challenge.sentences || challenge.data || [];
+            for (const item of items) {
                 if (item.en) {
                     const hash = crypto.createHash('md5').update(item.en).digest('hex');
                     if (audioMode === '3' || !existingHashes.has(hash)) {
@@ -342,7 +343,8 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
 
     // 2. Apply Audio URLs (Base URLs only, versioning handled by browser-side refresh)
     for (const challenge of data.challenges) {
-        for (const item of challenge.data) {
+        const items = challenge.sentences || challenge.data || [];
+        for (const item of items) {
             if (item.en) {
                 item.audio = getAudioUrl(item.en, bookName, unitName);
             }
