@@ -36,14 +36,18 @@ This document defines the rules for extracting and converting textbook data into
   - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 3 distractors.
 - **Answer Randomization:** Correct answer index must be randomized (0-3).
 - **Structure:** Group questions into Challenges of exactly **10 questions** each.
-  - Each challenge must have a unique `id` and a relevant emoji `icon`.
-- **Mapping:**
+  - Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`), a `title` (e.g., `"Challenge 1"`), and a relevant emoji `icon`.
+- **Mapping (Required for EVERY question):**
   - Copy `level` exactly.
   - `word`: The English word/phrase from `vocab-guide`.
   - `meaning`: The Chinese meaning from `vocab-guide`.
   - `context_sentence`: Include the verbatim sentence from `vocab-guide`.
-  - Rename `memorization_hook` to `hint`.
+  - `hint`: Rename `memorization_hook` from `vocab-guide` to `hint`.
   - `title`: "Vocab Master".
+  - `type`: `Cloze`, `Cn2En`, or `En2Cn`.
+  - `prompt`: The question prompt.
+  - `options`: 4 shuffled options.
+  - `answer`: Index of the correct option (0-3).
 
 ## 3. Spelling Hero (SH)
 **Source:** `*-vocab-guide.json`
