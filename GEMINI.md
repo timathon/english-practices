@@ -92,6 +92,8 @@ This document defines the rules for extracting and converting textbook data into
   - `hint`: Concise bilingual grammar clue.
   - `noise`: 2-3 relevant distractor words not in the sentence.
   - `accept`: Array of valid grammatical variations.
+    - **Natural Variations:** Include common word-order variations that use the *exact same words* (e.g., "Together the two of us played" -> "The two of us played together").
+    - **No Expanded Contractions:** Do NOT include expanded forms of contractions in `accept` (e.g., if `en` is "it's...", do not add "it is..." to `accept`) because the user constructs sentences from discrete word blocks and won't have the individual words to form the expansion.
 - **IPA Dictionary:** Populate `ipaDict` with IPA for key/difficult words only.
 
 ## 5. Recall Map (RM)
