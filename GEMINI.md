@@ -127,7 +127,7 @@ This document defines the rules for extracting and converting textbook data into
 - **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts).
 - **Node Rules:**
   - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`).
-  - `text`: **Exact verbatim text** from the passage (escape double quotes).
+  - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence**.
   - `emoji`: One highly relevant emoji mnemonic per node.
   - `keywords`: A **comma-separated string** of 2-5 trigger words acting as hints (e.g., `"huge, storm"`, not for `root`).
   - `children`: Recursive array of child nodes (empty array `[]` for leaf nodes).
