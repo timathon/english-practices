@@ -35,8 +35,10 @@ This document defines the rules for extracting and converting textbook data into
   - `Cn2En`: Prompt is Chinese `meaning`. Options: Correct English + 3 distractors.
   - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 3 distractors.
 - **Answer Randomization:** Correct answer index must be randomized (0-3).
-- **Structure:** Group questions into Challenges of exactly **10 questions** each.
-  - Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`), a `title` (e.g., `"Challenge 1"`), and a relevant emoji `icon`.
+- **Structure:** 
+  - A top-level object with `level`, `title` (always `"Vocab Master"`), and `challenges` (an array).
+  - Group questions into Challenges of exactly **10 questions** each.
+  - Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`), a `title` (e.g., `"Challenge 1"`), a relevant emoji `icon`, and an array of 10 question objects under the key `questions`.
 - **Mapping (Required for EVERY question):**
   - Copy `level` exactly.
   - `word`: The English word/phrase from `vocab-guide`.
