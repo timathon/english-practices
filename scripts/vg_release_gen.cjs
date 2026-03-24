@@ -360,7 +360,8 @@ async function interactive() {
 
     for (const task of filesToProcess) {
         const inputJson = path.join('data', task.folder, task.file);
-        const outputHtml = path.join('release', task.folder, task.file.replace(".json", ".html"));
+        // Save to root/{book}/filename.html, e.g. root/A7A/a7a-u3-vocab-guide.html
+        const outputHtml = path.join(task.folder.toUpperCase(), task.file.replace(".json", ".html"));
         await generate(inputJson, outputHtml, aMode);
     }
 }

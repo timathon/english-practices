@@ -40,7 +40,6 @@ This document defines the rules for extracting and converting textbook data into
   - Group questions into Challenges of exactly **10 questions** each.
   - Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`), a `title` (e.g., `"Challenge 1"`), a relevant emoji `icon`, and an array of 10 question objects under the key `questions`.
 - **Mapping (Required for EVERY question):**
-  - Copy `level` exactly.
   - `word`: The English word/phrase from `vocab-guide`.
   - `meaning`: The Chinese meaning from `vocab-guide`.
   - `context_sentence`: Include the verbatim sentence from `vocab-guide`.
@@ -124,6 +123,7 @@ This document defines the rules for extracting and converting textbook data into
 - **Naming Convention (Standardized for all books):**
   - "Start Up" -> `*-writing-map-2-start-up.json`
   - "Speed Up" -> `*-writing-map-3-speed-up.json`
+  - "Section A Activity 2a" -> `*-writing-map-a2a.json`
   - "Section B Activity 1b" -> `*-writing-map-b1b.json`
   - "Section B Activity 2a" -> `*-writing-map-b2a.json`
 - **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts).

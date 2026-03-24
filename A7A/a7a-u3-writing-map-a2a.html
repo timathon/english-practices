@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recall Map: Unit 2</title>
+    <title>Writing Map: Unit 3</title>
     <style>
         :root {
-            --primary-color: #4f46e5;
-            --primary-hover: #4338ca;
+            --primary-color: #10b981;
+            /* Green theme for health/food */
+            --primary-hover: #059669;
             --bg-color: #f8fafc;
             --line-color: #cbd5e1;
             --box-empty: #e2e8f0;
             --box-emoji: #fef08a;
-            --box-keywords: #dbeafe; /* Light blue for keywords */
+            --box-keywords: #dbeafe;
+            /* Light blue for keywords */
             --box-full: #ffffff;
             --text-main: #1e293b;
         }
@@ -31,7 +34,7 @@
 
         header {
             background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
@@ -57,14 +60,14 @@
             background-color: white;
             border: 1px solid var(--line-color);
             transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             color: var(--text-main);
         }
 
         .home-link:hover {
             background-color: var(--bg-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .header-titles h1 {
@@ -97,7 +100,7 @@
             justify-content: center;
             background-color: white;
             color: var(--text-main);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             border: 1px solid var(--line-color);
             padding: 0;
         }
@@ -105,7 +108,7 @@
         .controls button:hover:not(:disabled) {
             background-color: var(--bg-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .controls button#nextBtn {
@@ -149,7 +152,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            width: 200px;
+            width: 220px;
             transition: all 0.3s ease;
         }
 
@@ -234,12 +237,14 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             z-index: 2;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             border: 2px solid transparent;
             min-height: 28px;
+            max-width: 450px;
+            line-height: 1.5;
         }
 
         .node-box.collapsible {
@@ -247,12 +252,12 @@
         }
 
         .node-box.collapsible:hover {
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
             transform: translateY(-2px);
             border-color: var(--primary-color);
         }
 
-        /* States */
+        /* Learning States */
         .node-box.empty {
             background-color: var(--box-empty);
             border-style: dashed;
@@ -285,18 +290,49 @@
         }
 
         /* Level Hierarchy Variables */
-        .node-box.level-0 { --node-fs: 1.25rem; --node-pad: 14px 24px; --node-fw: 700; --node-border: #6366f1; }
-        .node-box.level-1 { --node-fs: 1.1rem; --node-pad: 12px 20px; --node-fw: 600; --node-border: #10b981; }
-        .node-box.level-2 { --node-fs: 1rem; --node-pad: 10px 16px; --node-fw: 500; --node-border: #0ea5e9; }
-        .node-box.level-3 { --node-fs: 0.95rem; --node-pad: 8px 14px; --node-fw: 400; --node-border: #8b5cf6; }
-        .node-box.level-4 { --node-fs: 0.9rem; --node-pad: 6px 12px; --node-fw: 400; --node-border: #f59e0b; }
+        .node-box.level-0 {
+            --node-fs: 1.25rem;
+            --node-pad: 14px 24px;
+            --node-fw: 700;
+            --node-border: #6366f1;
+        }
+
+        .node-box.level-1 {
+            --node-fs: 1.1rem;
+            --node-pad: 12px 20px;
+            --node-fw: 600;
+            --node-border: #10b981;
+        }
+
+        .node-box.level-2 {
+            --node-fs: 1rem;
+            --node-pad: 10px 16px;
+            --node-fw: 500;
+            --node-border: #0ea5e9;
+        }
+
+        .node-box.level-3 {
+            --node-fs: 0.95rem;
+            --node-pad: 8px 14px;
+            --node-fw: 400;
+            --node-border: #8b5cf6;
+        }
+
+        .node-box.level-4 {
+            --node-fs: 0.9rem;
+            --node-pad: 6px 12px;
+            --node-fw: 400;
+            --node-border: #f59e0b;
+        }
 
         .node-content-emoji {
-            font-size: 1.4rem;
+            font-size: 1.3em;
+            flex-shrink: 0;
         }
 
         .node-content-keywords {
-            color: #1d4ed8; /* Dark blue to match the box theme */
+            color: #1d4ed8;
+            /* Dark blue to match the box theme */
             font-weight: 700;
         }
 
@@ -315,6 +351,7 @@
             border: 1px solid var(--line-color);
             display: inline-flex;
             align-items: center;
+            flex-shrink: 0;
         }
 
         /* Connectors */
@@ -400,7 +437,7 @@
                 left: 0;
                 right: 0;
                 background-color: white;
-                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
                 padding: 1rem;
                 justify-content: center;
                 gap: 1.5rem;
@@ -450,48 +487,37 @@
                 position: relative;
             }
 
-            /* Horizontal branch */
             .child-row::before {
-                content: "";
-                position: absolute;
                 left: -12px;
                 top: 24px;
                 width: 12px;
                 height: 2px;
-                background-color: var(--line-color);
             }
 
-            /* Vertical trunk segments */
             .child-row::after {
-                display: block;
-                content: "";
-                position: absolute;
                 left: -12px;
                 top: 0;
                 bottom: 0;
                 width: 2px;
-                background-color: var(--line-color);
             }
 
-            /* Fill the gap to the parent node */
             .child-row:first-child::after {
                 top: -10px;
             }
 
-            /* Terminate at the last branch */
             .child-row:last-child::after {
                 bottom: auto;
                 height: 24px;
             }
 
-            /* Single child case */
             .child-row:first-child:last-child::after {
+                display: block;
                 top: -10px;
                 height: 34px;
             }
 
             .node-box {
-                font-size: 1rem;
+                font-size: calc(var(--node-fs, 1.1rem) * 0.9);
                 padding: 10px 16px;
                 max-width: calc(100vw - 80px);
                 word-break: break-word;
@@ -500,24 +526,53 @@
 
         /* Animations */
         @keyframes popIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 0.8; }
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
         }
 
         @keyframes bounceIn {
-            0% { transform: scale(0.8); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(0.8);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         @keyframes slideIn {
-            0% { transform: translateX(-10px); opacity: 0; }
-            100% { transform: translateX(0); opacity: 1; }
+            0% {
+                transform: translateX(-10px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         @keyframes clickFlicker {
-            0% { box-shadow: 0 0 0 6px rgba(79, 70, 229, 0.4); transform: scale(1.02); }
-            100% { box-shadow: 0 4px 6px rgba(0,0,0,0.05); transform: scale(1); }
+            0% {
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.4);
+                transform: scale(1.02);
+            }
+
+            100% {
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                transform: scale(1);
+            }
         }
 
         .node-box.clicked-flicker {
@@ -533,23 +588,23 @@
             bottom: 0;
             left: 0;
         }
-        
+
         .progress-bar {
             height: 100%;
             background-color: var(--primary-color);
             width: 0%;
             transition: width 0.3s ease;
         }
-
     </style>
 </head>
+
 <body>
 
     <header>
         <div class="header-left">
             <a href="index.html" class="home-link" title="Back to Home (回到首页)">🏠</a>
             <div class="header-titles">
-                <h1>Recall Map: Unit 2</h1>
+                <h1>Writing Map: Unit 3 <span style="font-weight: normal; opacity: 0.7;">Section A Activity 2a</span></h1>
                 <p>Grade 7 Semester 1</p>
             </div>
         </div>
@@ -558,7 +613,9 @@
             <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
             <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
         </div>
-        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
     </header>
 
     <div class="mode-slider-container">
@@ -566,8 +623,9 @@
             <span onclick="updateMode(0)">Manual</span>
             <span onclick="updateMode(1)">Emoji</span>
             <span onclick="updateMode(2)">Key Words</span>
+            <span onclick="updateMode(3)">Sentence</span>
         </div>
-        <input type="range" id="modeSlider" min="0" max="2" value="0" step="1" oninput="updateMode(this.value)">
+        <input type="range" id="modeSlider" min="0" max="3" value="0" step="1" oninput="updateMode(this.value)">
     </div>
 
     <main id="mindmap-container">
@@ -575,390 +633,241 @@
     </main>
 
     <script>
-        // 1. Define the Mindmap Data Structure
+        // 1. Data Structure with Keywords & Sentences
         const initialData = {
   "id": "root",
-  "text": "Unit 2: We're Family!",
-  "emoji": "👨‍👩‍👧‍👦",
-  "state": "emoji",
+  "text": "Peter's New Classroom",
+  "emoji": "🏫",
   "children": [
     {
-      "id": "stories",
-      "text": "Stories (故事)",
-      "emoji": "📖",
-      "state": "hidden",
+      "id": "q1",
+      "text": "What's your new classroom like, Peter?",
+      "emoji": "👩",
+      "keywords": "new classroom, like",
       "children": [
         {
-          "id": "s1",
-          "text": "Lily's Family from Ireland (莉莉的家庭)",
-          "emoji": "🇮🇪",
+          "id": "a1",
+          "text": "It's large.",
+          "emoji": "📏",
+          "keywords": "large",
           "children": [
             {
-              "id": "s1_1",
-              "text": "Lily (pink hat 👒)",
-              "emoji": "👧",
+              "id": "a1_1",
+              "text": "There are 40 student desks in the room.",
+              "emoji": "🪑",
+              "keywords": "40 student desks",
+              "children": [],
               "state": "hidden"
             },
             {
-              "id": "s1_2",
-              "text": "Dad Fred (tennis 🎾)",
-              "emoji": "👨",
-              "state": "hidden"
-            },
-            {
-              "id": "s1_3",
-              "text": "Mum Jane (stories 📚)",
-              "emoji": "👩",
-              "state": "hidden"
-            },
-            {
-              "id": "s1_4",
-              "text": "Sam (chess ♟️)",
-              "emoji": "👦",
-              "state": "hidden"
-            },
-            {
-              "id": "s1_5",
-              "text": "Oscar (pet dog 🐶)",
-              "emoji": "🐕",
-              "state": "hidden"
-            }
-          ],
-          "state": "hidden"
-        },
-        {
-          "id": "s2",
-          "text": "Family Ties in Names (姓名中的亲情)",
-          "emoji": "📛",
-          "children": [
-            {
-              "id": "s2_1",
-              "text": "Alan Luke Wood",
-              "emoji": "👤",
-              "state": "hidden"
-            },
-            {
-              "id": "s2_2",
-              "text": "First/Middle/Last Name",
-              "emoji": "🔤",
-              "state": "hidden"
-            },
-            {
-              "id": "s2_3",
-              "text": "Junior vs Senior (respect)",
-              "emoji": "👴",
-              "state": "hidden"
-            },
-            {
-              "id": "s2_4",
-              "text": "Changing Surnames (marry)",
-              "emoji": "👰",
+              "id": "a1_2",
+              "text": "And a teacher's desk in front of the blackboard.",
+              "emoji": "👩‍🏫",
+              "keywords": "teacher's desk, in front of",
+              "children": [],
               "state": "hidden"
             }
           ],
           "state": "hidden"
         }
-      ]
+      ],
+      "state": "hidden"
     },
     {
-      "id": "grammar",
-      "text": "Grammar Focus (语法)",
-      "emoji": "⚙️",
-      "state": "hidden",
+      "id": "q2",
+      "text": "Where do you sit?",
+      "emoji": "❓",
+      "keywords": "where, sit",
       "children": [
         {
-          "id": "g1",
-          "text": "Simple Present (一般现在时)",
-          "emoji": "🕙",
-          "children": [
-            {
-              "id": "g1_1",
-              "text": "Do you often play?",
-              "emoji": "❓",
-              "state": "hidden"
-            },
-            {
-              "id": "g1_2",
-              "text": "Does he spend time?",
-              "emoji": "❓",
-              "state": "hidden"
-            },
-            {
-              "id": "g1_3",
-              "text": "Yes, I do / No, he doesn't",
-              "emoji": "✅",
-              "state": "hidden"
-            }
-          ],
-          "state": "hidden"
-        },
-        {
-          "id": "g2",
-          "text": "Possessive 's (所有格)",
-          "emoji": "🔑",
-          "children": [
-            {
-              "id": "g2_1",
-              "text": "My mother's piano",
-              "emoji": "🎹",
-              "state": "hidden"
-            },
-            {
-              "id": "g2_2",
-              "text": "Jack and Sarah's son",
-              "emoji": "👪",
-              "state": "hidden"
-            },
-            {
-              "id": "g2_3",
-              "text": "Whose are they?",
-              "emoji": "🔎",
-              "state": "hidden"
-            }
-          ],
+          "id": "a2",
+          "text": "I sit in the middle of the classroom.",
+          "emoji": "📍",
+          "keywords": "middle",
+          "children": [],
           "state": "hidden"
         }
-      ]
+      ],
+      "state": "hidden"
     },
     {
-      "id": "vocab",
-      "text": "Vocabulary (词汇)",
-      "emoji": "🔤",
-      "state": "hidden",
+      "id": "q3",
+      "text": "What's special in your classroom?",
+      "emoji": "✨",
+      "keywords": "special",
       "children": [
         {
-          "id": "v_members",
-          "text": "Family Members (成员)",
-          "emoji": "👥",
+          "id": "a3",
+          "text": "There's a smart whiteboard next to the blackboard.",
+          "emoji": "🖥️",
+          "keywords": "smart whiteboard, next to",
           "children": [
             {
-              "id": "v1",
-              "text": "grandparent (祖父母)",
-              "emoji": "👴",
-              "state": "hidden"
-            },
-            {
-              "id": "v2",
-              "text": "husband (丈夫)",
-              "emoji": "👨",
-              "state": "hidden"
-            },
-            {
-              "id": "v3",
-              "text": "aunt (阿姨/姑姑)",
-              "emoji": "👩",
-              "state": "hidden"
-            },
-            {
-              "id": "v4",
-              "text": "uncle (叔叔/舅舅)",
-              "emoji": "👦",
-              "state": "hidden"
-            },
-            {
-              "id": "v5",
-              "text": "cousin (堂/表兄弟姐妹)",
-              "emoji": "🧒",
-              "state": "hidden"
-            },
-            {
-              "id": "v6",
-              "text": "grandchild (孙辈)",
-              "emoji": "👶",
-              "state": "hidden"
-            }
-          ],
-          "state": "hidden"
-        },
-        {
-          "id": "v_actions",
-          "text": "Activities (活动)",
-          "emoji": "🏸",
-          "children": [
-            {
-              "id": "v7",
-              "text": "play ping-pong (打乒乓球)",
-              "emoji": "🏓",
-              "state": "hidden"
-            },
-            {
-              "id": "v8",
-              "text": "go hiking (去远足)",
-              "emoji": "🥾",
-              "state": "hidden"
-            },
-            {
-              "id": "v9",
-              "text": "play chess (下棋)",
-              "emoji": "♟️",
-              "state": "hidden"
-            },
-            {
-              "id": "v10",
-              "text": "play the violin (拉小提琴)",
-              "emoji": "🎻",
-              "state": "hidden"
-            },
-            {
-              "id": "v11",
-              "text": "spend time (花时间)",
-              "emoji": "⌛",
-              "state": "hidden"
-            }
-          ],
-          "state": "hidden"
-        },
-        {
-          "id": "v_desc",
-          "text": "Descriptions (描述)",
-          "emoji": "✨",
-          "children": [
-            {
-              "id": "v12",
-              "text": "handsome (英俊的)",
-              "emoji": "🤵",
-              "state": "hidden"
-            },
-            {
-              "id": "v13",
-              "text": "funny (滑稽的)",
-              "emoji": "🤡",
-              "state": "hidden"
-            },
-            {
-              "id": "v14",
-              "text": "different (不同的)",
-              "emoji": "🌗",
-              "state": "hidden"
-            },
-            {
-              "id": "v15",
-              "text": "really/very (非常)",
-              "emoji": "🔥",
+              "id": "a3_1",
+              "text": "Oh, and there's another blackboard at the back of the classroom.",
+              "emoji": "🔙",
+              "keywords": "another blackboard, at the back",
+              "children": [
+                {
+                  "id": "a3_2",
+                  "text": "Yes, we put up important notices there.",
+                  "emoji": "📌",
+                  "keywords": "important notices, put up",
+                  "children": [],
+                  "state": "hidden"
+                }
+              ],
               "state": "hidden"
             }
           ],
           "state": "hidden"
         }
-      ]
+      ],
+      "state": "hidden"
+    },
+    {
+      "id": "q4",
+      "text": "Are there any lockers in the classroom?",
+      "emoji": "🔓",
+      "keywords": "any lockers",
+      "children": [
+        {
+          "id": "a4",
+          "text": "No, there aren't.",
+          "emoji": "❌",
+          "keywords": "no, aren't",
+          "children": [
+            {
+              "id": "a4_1",
+              "text": "We put our things in the desk drawers.",
+              "emoji": "📥",
+              "keywords": "things, desk drawers",
+              "children": [],
+              "state": "hidden"
+            }
+          ],
+          "state": "hidden"
+        }
+      ],
+      "state": "hidden"
     }
-  ]
+  ],
+  "state": "emoji"
 };
-        if (!initialData.state) initialData.state = 'full';
 
         let treeData = null;
         let actionSteps = [];
         let currentStepIndex = 0;
         let activeNodeId = null;
         let clickedNodeId = null;
-        let collapsedNodes = new Set(); // Tracks manually collapsed parent nodes
+        let collapsedNodes = new Set();
         let savedCollapsedNodes = null; // To restore after showAll mode
-        let showAllMode = 0; // 0: manual, 1: emoji, 2: keywords/full
+        let showAllMode = 0; // 0: progressive (Manual), 1: emoji, 2: keywords, 3: full
 
-        // 2. Generate the Exact Sequence of Reveal Steps
+        // 2. Step Generation Logic (Empty -> Emoji -> Keywords -> Full -> Children)
         function generateSteps(node) {
             if (!node.children || node.children.length === 0) return;
 
-            // STEP 1: Draw all empty boxes for this specific level to show structure
+            // STEP A: Show empty box outline for the structure
             actionSteps.push(() => {
                 node.children.forEach(child => child.state = 'empty');
-                activeNodeId = node.children[0].id; // Point focus to the first newly added box
+                activeNodeId = node.children[0].id;
             });
 
-            // STEP 2: For each child node, reveal Emoji -> Text -> Recurse into its children
+            // STEP B: For each child, reveal through states progressively
             node.children.forEach(child => {
-                // Reveal Emoji Hint
+
+                // 1. Reveal Emoji Hint
                 actionSteps.push(() => {
                     child.state = 'emoji';
                     activeNodeId = child.id;
                 });
-                
-                // Reveal Full Text
+
+                // 2. Reveal Simple Words / Keywords (if they exist)
+                if (child.keywords) {
+                    actionSteps.push(() => {
+                        child.state = 'keywords';
+                        activeNodeId = child.id;
+                    });
+                }
+
+                // 3. Reveal Full Sentence
                 actionSteps.push(() => {
                     child.state = 'full';
                     activeNodeId = child.id;
                 });
 
-                // Recurse to build sub-level steps
+                // 4. Recurse to generate steps for this child's sub-nodes
                 generateSteps(child);
             });
         }
 
-        // Deep clone data to allow resetting
         function cloneData(data) {
             return JSON.parse(JSON.stringify(data));
         }
 
-        // 3. Render Engine (Creates DOM elements recursively)
+        // 3. Render Engine
         function renderNode(node, depth = 0) {
-            const state = node.state || 'hidden';
-            if (state === 'hidden') return null;
+            if (node.state === 'hidden') return null;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'mindmap-node-wrapper';
 
             const box = document.createElement('div');
-            box.className = `node-box ${state} level-${depth}`;
-            if (node.id === activeNodeId) {
-                box.id = 'active-node';
-            }
-            if (node.id === clickedNodeId) {
-                box.classList.add('clicked-flicker');
-            }
+            box.className = `node-box ${node.state} level-${depth}`;
 
-            // Collapse Logic: Verify if all immediate children are revealed completely
+            if (node.id === activeNodeId) box.id = 'active-node';
+            if (node.id === clickedNodeId) box.classList.add('clicked-flicker');
+
+            // Collapse Logic
             const hasChildren = node.children && node.children.length > 0;
-            const allChildrenFull = hasChildren && node.children.every(c => (c.state || 'hidden') === 'full');
+            const allChildrenFull = hasChildren && node.children.every(c => c.state === 'full');
             const isCollapsed = collapsedNodes.has(node.id);
             const hideChildren = isCollapsed && allChildrenFull;
 
-            // Make parent interactive if children are fully shown
             if (allChildrenFull) {
                 box.classList.add('collapsible');
-                box.title = isCollapsed ? "Click to expand (点击展开)" : "Click to collapse (点击折叠)";
+                box.title = isCollapsed ? "Click to expand" : "Click to collapse";
                 box.onclick = (e) => {
                     e.stopPropagation();
                     clickedNodeId = node.id;
                     if (collapsedNodes.has(node.id)) {
-                        // Expanding: We want to focus on its FIRST child
                         collapsedNodes.delete(node.id);
                         activeNodeId = node.children[0].id;
                     } else {
-                        // Collapsing: We want to focus on the PARENT node itself
                         collapsedNodes.add(node.id);
                         activeNodeId = node.id;
                     }
                     renderDOM(true);
                 };
             }
-            
-            if (state === 'emoji') {
+
+            // Render Content based on current Learning State
+            if (node.state === 'emoji') {
                 box.innerHTML = `<span class="node-content-emoji">${node.emoji}</span>`;
-            } else if (state === 'keywords') {
+            } else if (node.state === 'keywords') {
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-keywords">${node.keywords || node.text}</span>
+                    <span class="node-content-keywords">${node.keywords}</span>
                 `;
-            } else if (state === 'full') {
+            } else if (node.state === 'full') {
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
                     <span class="node-content-text">${node.text}</span>
                 `;
-                
-                // Display the indicator if children are currently hidden
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
                 }
             }
-            // If 'empty', innerHTML remains blank by design
+            // (If state is 'empty', inner HTML intentionally blank)
 
             wrapper.appendChild(box);
 
-            // Render children only if they shouldn't be hidden
-            if (node.children && node.children.some(c => (c.state || 'hidden') !== 'hidden') && !hideChildren) {
+            // Render children
+            if (node.children && node.children.some(c => c.state !== 'hidden') && !hideChildren) {
                 const childrenContainer = document.createElement('div');
                 childrenContainer.className = 'children-container';
-                
+
                 node.children.forEach(child => {
                     const childElement = renderNode(child, depth + 1);
                     if (childElement) {
@@ -981,7 +890,7 @@
             const savedScrollTop = container.scrollTop;
             const savedScrollLeft = container.scrollLeft;
 
-            container.innerHTML = ''; // Clear current tree
+            container.innerHTML = '';
             const domTree = renderNode(treeData, 0);
             if (domTree) {
                 container.appendChild(domTree);
@@ -994,38 +903,32 @@
                 return;
             }
 
-            // Auto-scroll logic: Keep the active node near the top of the container
+            // Auto-scroll logic (only for progressive steps)
             const activeEl = document.getElementById('active-node');
             if (activeEl) {
                 const containerRect = container.getBoundingClientRect();
                 const activeRect = activeEl.getBoundingClientRect();
-                
+
                 let shouldScrollToTop = true;
                 // (manualToggle check removed here as we return early above)
 
                 let targetScrollTop = container.scrollTop;
 
                 if (shouldScrollToTop) {
-                    // Calculate scroll position giving it ~60px padding from the top edge of the main view
                     targetScrollTop = activeRect.top - containerRect.top + container.scrollTop - 60;
                 } else {
-                    // Try to show as many children as possible if they are out of view at the bottom
                     const childrenContainer = activeEl.closest('.children-container');
                     if (childrenContainer) {
                         const lastChildRow = childrenContainer.lastElementChild;
                         const lastChildBox = lastChildRow ? lastChildRow.querySelector('.node-box') : null;
-                        
+
                         if (lastChildBox) {
                             const lastRect = lastChildBox.getBoundingClientRect();
                             const bottomThreshold = containerRect.bottom - 60;
-                            
+
                             if (lastRect.bottom > bottomThreshold) {
-                                // Calculate scroll to bring last child to bottom
                                 const neededScroll = lastRect.bottom - bottomThreshold;
                                 targetScrollTop = container.scrollTop + neededScroll;
-                                
-                                // But don't scroll so far that the first child (activeEl) goes out of view at top
-                                // First child should stay at least 60px from top if possible
                                 const maxScroll = activeRect.top - containerRect.top + container.scrollTop - 60;
                                 targetScrollTop = Math.min(targetScrollTop, maxScroll);
                             }
@@ -1039,7 +942,6 @@
                     behavior: 'smooth'
                 });
             } else {
-                // Fallback: Just keep horizontal focus right
                 container.scrollTo({
                     left: container.scrollWidth,
                     behavior: 'smooth'
@@ -1047,17 +949,15 @@
             }
         }
 
-        // 4. Interaction Controllers
+        // 4. Action Controllers
         function updateButtons() {
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
 
             prevBtn.disabled = currentStepIndex === 0;
-            
             const isFinished = currentStepIndex >= actionSteps.length;
             nextBtn.disabled = isFinished;
-            
-            // Update Progress Bar
+
             const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
             document.getElementById('progressBar').style.width = `${progress}%`;
         }
@@ -1066,7 +966,7 @@
             treeData = cloneData(initialData);
             actionSteps = [];
             activeNodeId = treeData.id;
-            
+
             // Add initial step to reveal the root node's full text
             actionSteps.push(() => {
                 treeData.state = 'full';
@@ -1079,14 +979,14 @@
             for (let i = 0; i < currentStepIndex; i++) {
                 actionSteps[i]();
             }
-            
+
             renderDOM();
             updateButtons();
         }
 
         function nextStep() {
             if (showAllMode > 0) {
-                // Return to manual/progressive mode seamlessly
+                // Return to progressive mode seamlessly
                 updateMode(0);
                 return;
             }
@@ -1101,7 +1001,7 @@
 
         function prevStep() {
             if (showAllMode > 0) {
-                // Return to manual mode
+                // Return to progressive mode
                 updateMode(0);
                 return;
             }
@@ -1143,16 +1043,18 @@
             let targetState = 'emoji';
             if (showAllMode === 2) {
                 targetState = 'keywords';
+            } else if (showAllMode === 3) {
+                targetState = 'full';
             }
 
             function setNodeStateRecursively(node, state) {
-                // If keywords requested but not available, use full
+                // If the node doesn't have keywords (like root), default to full text
                 if (state === 'keywords' && !node.keywords) {
                     node.state = 'full';
                 } else {
                     node.state = state;
                 }
-                
+
                 if (node.children) {
                     node.children.forEach(child => setNodeStateRecursively(child, state));
                 }
@@ -1166,38 +1068,34 @@
 
         function resetMap() {
             updateMode(0);
-            collapsedNodes.clear(); // Ensure expanded states are cleared on reset
+            collapsedNodes.clear();
             applyStepsUpTo(0);
         }
 
-        // Initialize on Load
+        // Listen for user input
         window.onload = () => {
             resetMap();
         };
 
-        // Add keyboard support (Spacebar or Right Arrow to advance, Left Arrow to go back)
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' || e.code === 'ArrowRight') {
-                e.preventDefault(); // Prevent page scrolling on space
+                e.preventDefault();
                 const btn = document.getElementById('nextBtn');
-                if (!btn.disabled) {
-                    nextStep();
-                }
+                if (!btn.disabled) nextStep();
             } else if (e.code === 'ArrowLeft') {
                 e.preventDefault();
                 const btn = document.getElementById('prevBtn');
-                if (!btn.disabled) {
-                    prevStep();
-                }
+                if (!btn.disabled) prevStep();
             } else if (e.code === 'KeyA') {
                 e.preventDefault();
                 if (showAllMode > 0) updateMode(showAllMode - 1);
             } else if (e.code === 'KeyD') {
                 e.preventDefault();
-                if (showAllMode < 2) updateMode(showAllMode + 1);
+                if (showAllMode < 3) updateMode(showAllMode + 1);
             }
         });
 
     </script>
 </body>
+
 </html>

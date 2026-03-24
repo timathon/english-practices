@@ -46,6 +46,7 @@ async function run() {
     const pythonScript = `
 import wave
 import sys
+import json
 from google import genai
 from google.genai import types
 
@@ -65,11 +66,28 @@ try:
             )
         )
     )
+    
+    if not response.candidates or not response.candidates[0].content:
+        print("❌ ERROR: No candidates or content in response.")
+        print(f"Response: {response}")
+        sys.exit(1)
+
+    audio_data = None
+    for part in response.candidates[0].content.parts:
+        if part.inline_data:
+            audio_data = part.inline_data.data
+            break
+            
+    if not audio_data:
+        print("❌ ERROR: No audio data found in response parts.")
+        print(f"Response: {response}")
+        sys.exit(1)
+
     with wave.open("${combinedWav}", "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
         wf.setframerate(24000)
-        wf.writeframes(response.candidates[0].content.parts[0].inline_data.data)
+        wf.writeframes(audio_data)
     print("SUCCESS")
 except Exception as e:
     print(f"FAILED: {e}", file=sys.stderr)

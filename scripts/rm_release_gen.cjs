@@ -27,6 +27,20 @@ function generateHtml(data) {
     const part = data.part || "";
     const treeData = data.tree || {};
 
+    // Sort main branches: stories -> grammar -> vocab
+    if (treeData.children) {
+        const orderMap = {
+            'stories': 1,
+            'grammar': 2,
+            'vocab': 3
+        };
+        treeData.children.sort((a, b) => {
+            const orderA = orderMap[a.id] || 99;
+            const orderB = orderMap[b.id] || 99;
+            return orderA - orderB;
+        });
+    }
+
     // Preprocess tree to ensure all nodes have IDs and state: "hidden" except root
     let nodeCounter = 0;
     function preprocess(node, isRoot = false) {
