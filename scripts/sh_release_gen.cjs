@@ -212,20 +212,12 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
             audio: wordToAudioMap[sw.word]
         });
         // Mode 2: Word Soup
-        const correctChunks = sw.chunks.map(c => c.correct);
-        let bricks = [...correctChunks];
-        
-        // Add distractors
-        const allOptions = sw.chunks.flatMap(c => c.options.filter(opt => opt !== c.correct));
-        const extraBricks = allOptions.sort(() => Math.random() - 0.5).slice(0, Math.max(0, 8 - bricks.length));
-        bricks = [...bricks, ...extraBricks].sort(() => Math.random() - 0.5);
-
         questions.push({
             type: 'soup',
             word: sw.word,
             cn: sw.meaning,
-            bricks: bricks,
-            answer: correctChunks,
+            correctChunks: sw.chunks.map(c => c.correct),
+            distractors: sw.chunks.flatMap(c => c.options.filter(opt => opt !== c.correct)),
             audio: wordToAudioMap[sw.word]
         });
     });

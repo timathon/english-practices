@@ -397,7 +397,8 @@
             currentChallenge: null, queue: [], mistakeQueue: [],
             currentIndex: 0, currentObj: null, userSelection: [], 
             activeSlot: 0, locked: false, scoreLog: [], 
-            isRedemption: false, settings: { autoplay: true, sfx: true }
+            isRedemption: false, settings: { autoplay: true, sfx: true },
+            currentBricks: null, shuffledOptionsCache: []
         },
         audio: null,
         audioObjectURL: null,
@@ -546,6 +547,8 @@
             this.state.userSelection = [];
             this.state.activeSlot = 0;
             this.state.locked = false;
+            this.state.currentBricks = null;
+            this.state.shuffledOptionsCache = [];
 
             document.getElementById("prompt-cn").innerText = q.cn;
             document.getElementById("feedback-area").className = "feedback-area";
@@ -581,7 +584,13 @@
             const grid = document.getElementById("options-grid");
             grid.innerHTML = "";
             const currentChunk = this.state.currentObj.chunks[this.state.activeSlot];
-            currentChunk.options.forEach(opt => {
+            
+            if (!this.state.shuffledOptionsCache[this.state.activeSlot]) {
+                this.state.shuffledOptionsCache[this.state.activeSlot] = [...currentChunk.options].sort(() => Math.random() - 0.5);
+            }
+            const options = this.state.shuffledOptionsCache[this.state.activeSlot];
+
+            options.forEach(opt => {
                 const btn = document.createElement("button");
                 btn.className = `option-btn ${this.state.userSelection[this.state.activeSlot] === opt ? 'selected' : ''}`;
                 btn.innerText = opt;
@@ -600,15 +609,22 @@
             this.updateCheckBtn();
         },
         renderSoup: function() {
-            const pool = document.getElementById("brick-pool");
-            pool.innerHTML = "";
-            this.state.currentObj.bricks.forEach((brick, i) => {
+            const q = this.state.currentObj;
+            if (!this.state.currentBricks) {
+                const correct = q.correctChunks;
+                const pool = [...q.distractors].sort(() => Math.random() - 0.5).slice(0, Math.max(0, 8 - correct.length));
+                this.state.currentBricks = [...correct, ...pool].sort(() => Math.random() - 0.5);
+            }
+
+            const poolEl = document.getElementById("brick-pool");
+            poolEl.innerHTML = "";
+            this.state.currentBricks.forEach((brick, i) => {
                 const div = document.createElement("div");
                 div.className = "brick";
                 if (this.state.userSelection.some(s => s.id === i)) div.classList.add("selected");
                 div.innerText = brick;
                 div.onclick = () => this.selectBrick(brick, i);
-                pool.appendChild(div);
+                poolEl.appendChild(div);
             });
             this.renderSoupAnswer();
         },
@@ -861,7 +877,7 @@
         updateSettings: function() {
             this.state.settings.autoplay = document.getElementById("autoplay-toggle").checked;
             this.state.settings.sfx = document.getElementById("sfx-toggle").checked;
-            this.safeSetItem(ID_A + "-settings", JSON.stringify(this.state.settings));
+            localStorage.setItem(ID_A + "-settings", JSON.stringify(this.state.settings));
         },
         goHome: function() { if (confirm("Quit?")) location.reload(); },
         

@@ -228,8 +228,8 @@ except Exception as e:
             allSilences.push({ start, end, duration: end - start });
         }
 
-        const silences = allSilences
-            .filter(s => s.start > 0.1)
+        const candidateSilences = allSilences.filter(s => s.start > 0.1);
+        const silences = candidateSilences
             .sort((a, b) => b.duration - a.duration)
             .slice(0, tasks.length)
             .sort((a, b) => a.start - b.start);
