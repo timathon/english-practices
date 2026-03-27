@@ -340,6 +340,14 @@
             color: #0f172a;
         }
 
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
         .collapsed-indicator {
             background-color: var(--box-empty);
             color: var(--text-main);
@@ -657,6 +665,7 @@
           "id": "p1_2",
           "text": "But others are not in a hurry! They are enjoying the city at night.",
           "emoji": "🌃",
+          "highlight": "But",
           "keywords": "not hurry, enjoying night",
           "children": [],
           "state": "hidden"
@@ -673,6 +682,7 @@
           "id": "p1_4",
           "text": "People are eating delicious food, such as Chongqing hot pot and noodles.",
           "emoji": "🍜",
+          "highlight": "such as",
           "keywords": "eating, hot pot, noodles",
           "children": [],
           "state": "hidden"
@@ -698,6 +708,7 @@
           "id": "p2_2",
           "text": "Some people are shopping for gifts, such as paintings and bags, in the markets.",
           "emoji": "🛍️",
+          "highlight": "such as",
           "keywords": "shopping gifts, markets",
           "children": [],
           "state": "hidden"
@@ -706,6 +717,7 @@
           "id": "p2_3",
           "text": "Many others are walking in the parks and looking at elephants and giraffes.",
           "emoji": "🐘",
+          "highlight": "Many others",
           "keywords": "walking parks, elephants, giraffes",
           "children": [],
           "state": "hidden"
@@ -731,6 +743,7 @@
           "id": "p3_1",
           "text": "It’s early, but the city is getting busy!",
           "emoji": "🏙️",
+          "highlight": "but",
           "keywords": "early, getting busy",
           "children": [],
           "state": "hidden"
@@ -763,6 +776,7 @@
           "id": "p3_5",
           "text": "Others are drinking coffee and eating breakfast in coffee shops.",
           "emoji": "☕",
+          "highlight": "Others",
           "keywords": "drinking coffee, eating breakfast",
           "children": [],
           "state": "hidden"
@@ -870,9 +884,28 @@
                     <span class="node-content-keywords">${node.keywords}</span>
                 `;
             } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-text">${node.text}</span>
+                    <span class="node-content-text">${displayedText}</span>
                 `;
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;

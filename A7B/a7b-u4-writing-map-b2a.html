@@ -340,6 +340,14 @@
             color: #0f172a;
         }
 
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
         .collapsed-indicator {
             background-color: var(--box-empty);
             color: var(--text-main);
@@ -659,12 +667,14 @@
           "emoji": "🥦",
           "keywords": "a lot of vegetables",
           "text": "I eat a lot of vegetables too.",
+          "highlight": "too",
           "children": [
             {
               "id": "g3",
               "emoji": "🥕",
               "keywords": "friends don't like, I eat all kinds",
               "text": "Some of my friends don't like carrots or other vegetables, and they don't eat them, but I eat all kinds of vegetables.",
+              "highlight": "but",
               "children": [],
               "state": "hidden"
             }
@@ -679,18 +689,21 @@
       "emoji": "🍩",
       "keywords": "bad habits too",
       "text": "However, I have some bad eating habits too.",
+      "highlight": "However, too",
       "children": [
         {
           "id": "b1",
           "emoji": "🥤",
           "keywords": "too many soft drinks",
           "text": "First, I drink too many soft drinks.",
+          "highlight": "First",
           "children": [
             {
               "id": "b1_1",
               "emoji": "😋",
               "keywords": "love, taste so good",
               "text": "I love soft drinks because they taste so good!",
+              "highlight": "because",
               "state": "hidden"
             },
             {
@@ -698,6 +711,7 @@
               "emoji": "🍬",
               "keywords": "a lot of sugar",
               "text": "But soft drinks usually have a lot of sugar.",
+              "highlight": "But",
               "state": "hidden"
             },
             {
@@ -715,12 +729,14 @@
           "emoji": "💧",
           "keywords": "not enough water",
           "text": "Second, I don't drink enough water.",
+          "highlight": "Second",
           "children": [
             {
               "id": "b2_1",
               "emoji": "🥵",
               "keywords": "drink when thirsty",
               "text": "I drink water when I am thirsty,",
+              "highlight": "when",
               "state": "hidden"
             },
             {
@@ -728,6 +744,7 @@
               "emoji": "💡",
               "keywords": "better before thirsty",
               "text": "but it's better to drink before I get thirsty.",
+              "highlight": "but, before",
               "state": "hidden"
             },
             {
@@ -735,6 +752,7 @@
               "emoji": "🔮",
               "keywords": "future, more water",
               "text": "In future, I should drink more water.",
+              "highlight": "In future",
               "state": "hidden"
             }
           ],
@@ -842,9 +860,28 @@
                     <span class="node-content-keywords">${node.keywords}</span>
                 `;
             } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-text">${node.text}</span>
+                    <span class="node-content-text">${displayedText}</span>
                 `;
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;

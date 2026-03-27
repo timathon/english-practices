@@ -340,6 +340,14 @@
             color: #0f172a;
         }
 
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
         .collapsed-indicator {
             background-color: var(--box-empty);
             color: var(--text-main);
@@ -674,6 +682,7 @@
           "id": "ask_yaming",
           "text": "Maybe it's Yaming's. Hi, Yaming! Is this your bat?",
           "emoji": "🙋",
+          "highlight": "Maybe",
           "keywords": "maybe, Yaming's, your bat",
           "children": [
             {
@@ -711,6 +720,7 @@
                   "id": "emma_freq",
                   "text": "Hardly ever. I'm not very good at it!",
                   "emoji": "😅",
+                  "highlight": "Hardly ever",
                   "keywords": "hardly ever, not good",
                   "children": [
                     {
@@ -734,6 +744,7 @@
           "id": "jim_habits",
           "text": "I seldom do, but I often play badminton.",
           "emoji": "🏸",
+          "highlight": "but",
           "keywords": "seldom, often, badminton",
           "children": [
             {
@@ -757,6 +768,7 @@
               "id": "suggestion",
               "text": "We should all play doubles sometime!",
               "emoji": "🤝",
+              "highlight": "sometime",
               "keywords": "all play doubles, sometime",
               "children": [],
               "state": "hidden"
@@ -867,9 +879,28 @@
                     <span class="node-content-keywords">${node.keywords}</span>
                 `;
             } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-text">${node.text}</span>
+                    <span class="node-content-text">${displayedText}</span>
                 `;
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;

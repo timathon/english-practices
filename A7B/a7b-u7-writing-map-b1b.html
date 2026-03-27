@@ -340,6 +340,14 @@
             color: #0f172a;
         }
 
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
         .collapsed-indicator {
             background-color: var(--box-empty);
             color: var(--text-main);
@@ -649,6 +657,7 @@
           "id": "p1_1",
           "text": "It was tiring but great fun!",
           "emoji": "😫",
+          "highlight": "but",
           "keywords": "tiring, fun",
           "children": [],
           "state": "hidden"
@@ -680,6 +689,7 @@
               "id": "p2_1_2",
               "text": "I was very interested because I usually only see them in the supermarket.",
               "emoji": "🛒",
+              "highlight": "because, usually only",
               "keywords": "supermarket, interested",
               "children": [],
               "state": "hidden"
@@ -694,18 +704,21 @@
       "id": "p3",
       "text": "Then we got straight to work!",
       "emoji": "💪",
+      "highlight": "Then",
       "keywords": "straight, work",
       "children": [
         {
           "id": "p3_1",
           "text": "First, we picked some strawberries.",
           "emoji": "🍓",
+          "highlight": "First",
           "keywords": "picked, strawberries",
           "children": [
             {
               "id": "p3_1_1",
               "text": "The work seemed easy, but it took time to get it right.",
               "emoji": "⏱️",
+              "highlight": "but",
               "keywords": "easy, time",
               "children": [],
               "state": "hidden"
@@ -714,6 +727,7 @@
               "id": "p3_1_2",
               "text": "Slowly, we filled many baskets.",
               "emoji": "🧺",
+              "highlight": "Slowly",
               "keywords": "slowly, filled, baskets",
               "children": [],
               "state": "hidden"
@@ -742,6 +756,7 @@
           "id": "p4_2",
           "text": "Finally, we watered the plants.",
           "emoji": "💧",
+          "highlight": "Finally",
           "keywords": "finally, watered",
           "children": [],
           "state": "hidden"
@@ -753,12 +768,14 @@
       "id": "p5",
       "text": "One thing I learnt today: Farming isn't easy!",
       "emoji": "💡",
+      "highlight": "One thing",
       "keywords": "learnt, farming, easy",
       "children": [
         {
           "id": "p5_1",
           "text": "It made me think of the saying, \"Every grain comes from hard work.\"",
           "emoji": "🌾",
+          "highlight": "saying",
           "keywords": "saying, grain, hard work",
           "children": [],
           "state": "hidden"
@@ -784,6 +801,7 @@
           "id": "p6_2",
           "text": "They certainly taste better when you work for them!",
           "emoji": "😋",
+          "highlight": "when",
           "keywords": "taste, better, work",
           "children": [],
           "state": "hidden"
@@ -795,6 +813,7 @@
       "id": "p7",
       "text": "Today was really a day to remember.",
       "emoji": "✨",
+      "highlight": "really",
       "keywords": "remember",
       "children": [],
       "state": "hidden"
@@ -899,9 +918,28 @@
                     <span class="node-content-keywords">${node.keywords}</span>
                 `;
             } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-text">${node.text}</span>
+                    <span class="node-content-text">${displayedText}</span>
                 `;
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;

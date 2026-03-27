@@ -340,6 +340,14 @@
             color: #0f172a;
         }
 
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
         .collapsed-indicator {
             background-color: var(--box-empty);
             color: var(--text-main);
@@ -660,6 +668,7 @@
       "id": "p2",
       "text": "First, we visited the museum.",
       "emoji": "🏛️",
+      "highlight": "First",
       "keywords": "first, visited, museum",
       "children": [
         {
@@ -682,6 +691,7 @@
           "id": "p2_3",
           "text": "The guide told us that they lived millions of years ago.",
           "emoji": "🕰️",
+          "highlight": "that",
           "keywords": "guide, millions, years",
           "children": [],
           "state": "hidden"
@@ -693,6 +703,7 @@
       "id": "p3",
       "text": "Then, we explored the geopark.",
       "emoji": "🔍",
+      "highlight": "Then",
       "keywords": "then, explored, geopark",
       "children": [
         {
@@ -707,6 +718,7 @@
           "id": "p3_2",
           "text": "They looked like old trees, but they felt like stones.",
           "emoji": "🪨",
+          "highlight": "but",
           "keywords": "trees, stones",
           "children": [],
           "state": "hidden"
@@ -715,6 +727,7 @@
           "id": "p3_3",
           "text": "It was really interesting to see them!",
           "emoji": "🤩",
+          "highlight": "really",
           "keywords": "really, interesting",
           "children": [],
           "state": "hidden"
@@ -726,6 +739,7 @@
       "id": "p4",
       "text": "One thing I learnt today: Fossils tell us about the past.",
       "emoji": "💡",
+      "highlight": "One thing",
       "keywords": "learnt, fossils, past",
       "children": [
         {
@@ -743,6 +757,7 @@
       "id": "p5",
       "text": "Today was really a day to remember.",
       "emoji": "🌟",
+      "highlight": "really",
       "keywords": "remember",
       "children": [],
       "state": "hidden"
@@ -847,9 +862,28 @@
                     <span class="node-content-keywords">${node.keywords}</span>
                 `;
             } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-text">${node.text}</span>
+                    <span class="node-content-text">${displayedText}</span>
                 `;
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;

@@ -340,6 +340,14 @@
             color: #0f172a;
         }
 
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
         .collapsed-indicator {
             background-color: var(--box-empty);
             color: var(--text-main);
@@ -649,6 +657,7 @@
           "id": "s1_1",
           "text": "Now it's ten o'clock in the morning, and I'm at People's Park.",
           "emoji": "🕙",
+          "highlight": "Now",
           "keywords": "10 AM, People's Park",
           "children": [],
           "state": "hidden"
@@ -657,6 +666,7 @@
           "id": "s1_2",
           "text": "Look, the sun is shining!",
           "emoji": "☀️",
+          "highlight": "Look",
           "keywords": "sun, shining",
           "children": [],
           "state": "hidden"
@@ -665,6 +675,7 @@
           "id": "s1_3",
           "text": "Let's take a look at  what people are doing.",
           "emoji": "👀",
+          "highlight": "Let's",
           "keywords": "look, people doing",
           "children": [],
           "state": "hidden"
@@ -673,6 +684,7 @@
           "id": "s1_4",
           "text": "On the lake, two people are talking in a small boat.",
           "emoji": "🚣",
+          "highlight": "On the lake",
           "keywords": "lake, talking, boat",
           "children": [],
           "state": "hidden"
@@ -681,6 +693,7 @@
           "id": "s1_5",
           "text": "Near the water, some people are running and exercising on the path.",
           "emoji": "🏃",
+          "highlight": "Near the water",
           "keywords": "water, running, exercising",
           "children": [],
           "state": "hidden"
@@ -689,6 +702,7 @@
           "id": "s1_6",
           "text": "Under the big tree, two friends are reading books quietly.",
           "emoji": "📖",
+          "highlight": "Under the big tree",
           "keywords": "tree, friends, reading",
           "children": [],
           "state": "hidden"
@@ -697,6 +711,7 @@
           "id": "s1_7",
           "text": "Not far from them, a man and a woman are drinking coffee under a colourful umbrella.",
           "emoji": "☕",
+          "highlight": "Not far from",
           "keywords": "man woman, drinking coffee",
           "children": [],
           "state": "hidden"
@@ -722,6 +737,7 @@
           "id": "s2_1",
           "text": "Now it's ten o'clock in the morning, and I'm at People's Park.",
           "emoji": "🕙",
+          "highlight": "Now",
           "keywords": "10 AM, People's Park",
           "children": [],
           "state": "hidden"
@@ -730,6 +746,7 @@
           "id": "s2_2",
           "text": "Look, the sun is shining!",
           "emoji": "☀️",
+          "highlight": "Look",
           "keywords": "sun, shining",
           "children": [],
           "state": "hidden"
@@ -738,6 +755,7 @@
           "id": "s2_3",
           "text": "Let's take a look at  all the fun activities here!",
           "emoji": "🎉",
+          "highlight": "Let's",
           "keywords": "look, fun activities",
           "children": [],
           "state": "hidden"
@@ -746,6 +764,7 @@
           "id": "s2_4",
           "text": "On the grass, a mother and a father are playing with their baby.",
           "emoji": "👨‍👩‍👧",
+          "highlight": "On the grass",
           "keywords": "grass, mother, father, baby",
           "children": [],
           "state": "hidden"
@@ -754,6 +773,7 @@
           "id": "s2_5",
           "text": "Near a small tent, two girls are having a picnic.",
           "emoji": "⛺",
+          "highlight": "Near a small tent",
           "keywords": "tent, girls, picnic",
           "children": [],
           "state": "hidden"
@@ -762,6 +782,7 @@
           "id": "s2_6",
           "text": "On the right, a man is playing the guitar on a bench, and a woman is listening to him.",
           "emoji": "🎸",
+          "highlight": "On the right",
           "keywords": "guitar, woman listening",
           "children": [],
           "state": "hidden"
@@ -770,6 +791,7 @@
           "id": "s2_7",
           "text": "Down the path, two people are riding bikes, and a man and a woman are walking their dog.",
           "emoji": "🚲",
+          "highlight": "Down the path",
           "keywords": "riding bikes, walking dog",
           "children": [],
           "state": "hidden"
@@ -885,9 +907,28 @@
                     <span class="node-content-keywords">${node.keywords}</span>
                 `;
             } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-text">${node.text}</span>
+                    <span class="node-content-text">${displayedText}</span>
                 `;
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;

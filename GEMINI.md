@@ -132,11 +132,25 @@ This document defines the rules for extracting and converting textbook data into
   - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence**.
   - `emoji`: One highly relevant emoji mnemonic per node.
   - `keywords`: A **comma-separated string** of 2-5 trigger words acting as hints (e.g., `"huge, storm"`, not for `root`).
+  - `highlight`: (Optional) A **comma-separated string** of glue words or transition phrases to be highlighted in the browser (e.g., `"However, but, For example"`). Use `...` for split patterns.
   - `children`: Recursive array of child nodes (empty array `[]` for leaf nodes).
 - **Metadata:**
   - `level`: e.g., "Grade 3 Semester 2".
   - `part`: e.g., "Unit 2".
   - `section`: The section name (e.g., "Start Up").
+
+## 7. Model Writing Map (MWM)
+**Source:** `*-writing-task.md` (and the corresponding `*.md` unit data).
+**Target:** `*-writing-map-model-1.json` and `*-writing-map-model-2.json`
+
+- **Content Strategy:** Generate two versions of a model essay answering the prompt in `writing-task.md`.
+  - **Model 1 (Basic):** Use simple, direct sentences (SVO). Focus on clarity and core vocabulary from the unit.
+  - **Model 2 (Advanced):** An advanced extension of Model 1. Use the same topic and structure but incorporate compound/complex sentences (e.g., relative clauses, `because`, `although`) and cohesive devices (e.g., `For example`, `As a result`, `In addition`).
+- **Highlighting:** As per **Section 6**, add a `highlight` field to any node containing "glue words" or key transition phrases.
+- **Textbook Alignment:** Ensure all vocabulary and grammar points remain within the level defined by the unit's Markdown file.
+- **Structure:** Follow the standard hierarchical tree structure defined in **Section 6 (Writing Map)**.
+- **Metadata:**
+  - `section`: "Model Essay 1" or "Model Essay 2".
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Crucially, do NOT use any text found within `VISUAL` or `LAYOUT` markers (e.g., `*[*VISUAL: ...*]*` or `*[*LAYOUT: ...*]*`) as source material for practice items, sentences, or contexts.**
 ---

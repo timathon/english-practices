@@ -340,6 +340,14 @@
             color: #0f172a;
         }
 
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
         .collapsed-indicator {
             background-color: var(--box-empty);
             color: var(--text-main);
@@ -661,6 +669,7 @@
               "id": "xt3",
               "text": "My skateboard is really cool, and so are theirs.",
               "emoji": "😎",
+              "highlight": "really, so are theirs",
               "keywords": "cool, theirs",
               "children": [],
               "state": "hidden"
@@ -693,6 +702,7 @@
               "id": "xt5",
               "text": "Some tricks are difficult, but once you succeed, you feel great!",
               "emoji": "✨",
+              "highlight": "but, once",
               "keywords": "difficult, succeed, feel great",
               "children": [],
               "state": "hidden"
@@ -701,6 +711,7 @@
               "id": "xt6",
               "text": "I like skateboarding because it keeps me fit.",
               "emoji": "💪",
+              "highlight": "because",
               "keywords": "keeps me fit",
               "children": [],
               "state": "hidden"
@@ -725,6 +736,7 @@
               "id": "j1",
               "text": "This year, my goal is to be really fit.",
               "emoji": "✨",
+              "highlight": "really",
               "keywords": "goal, fit",
               "children": [],
               "state": "hidden"
@@ -749,6 +761,7 @@
               "id": "j3",
               "text": "But my favourite way of keeping fit is to use an exercise app to work out.",
               "emoji": "⭐",
+              "highlight": "But",
               "keywords": "favourite way, app",
               "children": [],
               "state": "hidden"
@@ -781,6 +794,7 @@
               "id": "j6",
               "text": "My friends use the app too.",
               "emoji": "👫",
+              "highlight": "too",
               "keywords": "friends use app",
               "children": [],
               "state": "hidden"
@@ -789,6 +803,7 @@
               "id": "j7",
               "text": "We have fun when we keep fit together!",
               "emoji": "🎉",
+              "highlight": "when",
               "keywords": "fun, together",
               "children": [],
               "state": "hidden"
@@ -813,6 +828,7 @@
               "id": "s1",
               "text": "I'm in my school's baseball club, so I play baseball quite often.",
               "emoji": "🏫",
+              "highlight": "so",
               "keywords": "baseball club, often",
               "children": [],
               "state": "hidden"
@@ -853,6 +869,7 @@
               "id": "s4",
               "text": "The other teams are great, but I think ours is the best!",
               "emoji": "🥇",
+              "highlight": "but",
               "keywords": "ours, best",
               "children": [],
               "state": "hidden"
@@ -861,6 +878,7 @@
               "id": "s6",
               "text": "We also exercise a lot because it keeps us fit and helps us play better.",
               "emoji": "💪",
+              "highlight": "also, because",
               "keywords": "keeps us fit, play better",
               "children": [],
               "state": "hidden"
@@ -869,6 +887,7 @@
               "id": "s7",
               "text": "Baseball also builds team spirit.",
               "emoji": "✨",
+              "highlight": "also",
               "keywords": "builds team spirit",
               "children": [],
               "state": "hidden"
@@ -877,6 +896,7 @@
               "id": "s8",
               "text": "All of us are good friends, both on and off the field.",
               "emoji": "👬",
+              "highlight": "both on and off",
               "keywords": "good friends",
               "children": [],
               "state": "hidden"
@@ -995,9 +1015,28 @@
                     <span class="node-content-keywords">${node.keywords}</span>
                 `;
             } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-text">${node.text}</span>
+                    <span class="node-content-text">${displayedText}</span>
                 `;
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
