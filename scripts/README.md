@@ -4,35 +4,41 @@ This folder contains the core automation logic for the English Practices platfor
 
 ---
 
-## 🚀 Release Generators
+## 🚀 Release Generators (V2 - Recommended)
 
-These scripts convert raw JSON content into production-ready, interactive HTML files.
+These scripts utilize the unified `tts-gen-cut-save.cjs` module for robust audio generation with **RPM rate limiting (< 3 RPM)** and **punctuation isolation** (sentences with internal punctuation are processed individually to ensure perfect cutting).
 
-### 1. Sentence Architect (`sa_release_gen.cjs`)
+### 1. Sentence Architect (`sa_release_gen-2.cjs`)
 Generates sentence-building exercises with XOR encryption and integrated TTS.
 - **Input:** `*-sentence-architect.json`
 - **Template:** `templates/sa-shell-master.html`
-- **Usage:** `node scripts/sa_release_gen.cjs` (Interactive)
+- **Usage:** `node scripts/sa_release_gen-2.cjs` (Interactive)
 
-### 2. Spelling Hero (`sh_release_gen.cjs`)
-Creates interactive spelling challenges (Linear & Word Soup modes).
+### 2. Spelling Hero (`sh_release_gen-2.cjs`)
+Creates interactive spelling challenges. All words in a unit are processed in one TTS batch for efficiency.
 - **Input:** `*-spelling-hero.json`
 - **Template:** `templates/sh-shell-master.html`
-- **Usage:** `node scripts/sh_release_gen.cjs` (Interactive)
+- **Usage:** `node scripts/sh_release_gen-2.cjs` (Interactive)
 
-### 3. Vocab Master (`vm_release_gen.cjs`)
+### 3. Vocab Master (`vm_release_gen-2.cjs`)
 Generates vocabulary challenges with progress tracking and mistake review.
 - **Input:** `*-vocab-master.json`
 - **Template:** `templates/vm-shell-master.html`
-- **Usage:** `node scripts/vm_release_gen.cjs` (Interactive)
+- **Usage:** `node scripts/vm_release_gen-2.cjs` (Interactive)
 
-### 4. Vocabulary Guide (`vg_release_gen.cjs`)
+### 4. Vocabulary Guide (`vg_release_gen-2.cjs`)
 Produces print-optimized vocabulary guides with textbook references.
 - **Input:** `*-vocab-guide.json`
 - **Template:** `templates/vocab-guide.html`
-- **Usage:** `node scripts/vg_release_gen.cjs` (Interactive)
+- **Usage:** `node scripts/vg_release_gen-2.cjs` (Interactive)
 
-### 5. Recall Map (`rm_release_gen.cjs`)
+### 5. Writing Map (`wm_release_gen.cjs`)
+Converts hierarchical data into interactive mindmap trees. (Note: Currently no audio integration).
+- **Input:** `*-writing-map-*.json`
+- **Template:** `templates/wm-shell-master.html`
+- **Usage:** `node scripts/wm_release_gen.cjs` (Interactive)
+
+### 6. Recall Map (`rm_release_gen.cjs`)
 Converts hierarchical data into interactive mindmap/recall exercises.
 - **Input:** `*-recall-map.json`
 - **Template:** `templates/rm-shell-master.html`
@@ -44,7 +50,7 @@ Converts hierarchical data into interactive mindmap/recall exercises.
 
 Tools for handling speech synthesis and R2 storage.
 
-- **`tts-gen-cut.cjs`**: Shared core utility for batch TTS (Gemini API) and automatic silence-based cutting (FFmpeg). Used by generators.
+- **`tts-gen-cut-save.cjs`**: The **core unified utility** for batch TTS (Gemini API), automatic silence-based cutting (FFmpeg), and direct R2 upload. Optimized to skip silence detection for single-item batches.
 - **`tts-download.cjs`**: Downloads existing audio from R2 to local `temp/` for inspection or manual editing.
 - **`upload_sfx.cjs`**: Utility to upload sound effects (correct/error) to the unified `ep/sfx/` folder.
 - **`remove_bad_mp3.cjs`**: Helps identify and remove corrupted or unwanted audio files from local batches and R2.
@@ -78,4 +84,4 @@ AWS_SECRET_ACCESS_KEY=your_secret  # For Cloudflare R2
 ### Storage Structure (R2)
 All audio is stored in a unified, normalized structure:
 `ep/{book}/{md5_hash}.mp3`
-*(Note: Book names are stripped of numeric suffixes like -1, -2 for global sharing)*
+*(Note: Book names are lowercase and stripped of numeric unit suffixes for global sharing)*
