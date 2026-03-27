@@ -137,6 +137,6 @@ This document defines the rules for extracting and converting textbook data into
   - `level`: e.g., "Grade 3 Semester 2".
   - `part`: e.g., "Unit 2".
   - `section`: The section name (e.g., "Start Up").
-
 ---
-**Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file.
+**Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Crucially, do NOT use any text found within `VISUAL` or `LAYOUT` markers (e.g., `*[*VISUAL: ...*]*` or `*[*LAYOUT: ...*]*`) as source material for practice items, sentences, or contexts.**
+---
