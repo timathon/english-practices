@@ -66,7 +66,8 @@ from google.genai import types
 client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
 
 def get_tts():
-    for attempt in range(3):
+    max_retries = 5
+    for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
                 model="gemini-2.5-flash-preview-tts",
@@ -84,11 +85,14 @@ def get_tts():
             )
             return response
         except Exception as e:
-            if "500" in str(e) and attempt < 2:
-                time.sleep(2)
+            err_str = str(e)
+            if ("500" in err_str or "Internal Server Error" in err_str) and attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 2
+                print(f"Retrying after 500 error (attempt {attempt + 1}/{max_retries})...", file=sys.stderr)
+                time.sleep(wait_time)
                 continue
-            if "429" in str(e): print("MARK_QUOTA_EXHAUSTED")
-            print(f"FAILED: {e}", file=sys.stderr)
+            if "429" in err_str: print("MARK_QUOTA_EXHAUSTED")
+            print(f"FAILED: {err_str}", file=sys.stderr)
             sys.exit(1)
 
 try:
