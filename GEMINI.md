@@ -78,7 +78,7 @@ This document defines the rules for extracting and converting textbook data into
 **Target:** `*-sentence-architect.json` (Save in the same folder as source)
 
 - **Challenge Volume:** exactly **5 Challenges** per unit; **10 items** per challenge (50 sentences total).
-- **Challenge Metadata:** Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`) and a relevant emoji `icon`.
+- **Challenge Metadata:** The top-level array for challenges must be named `challenges`. Each challenge object in this array must have a unique `id` (e.g., `"c1"`, `"c2"`), a `title` describing the challenge (e.g., `"General Stories"`), and a relevant emoji `icon`.
 - **Textbook Fidelity:** Preserve exact wording and contractions (e.g., "isn't", "don't").
 - **British English:** Default to British English spelling (e.g., "colour", "favourite").
 - **Metadata:**
@@ -87,7 +87,7 @@ This document defines the rules for extracting and converting textbook data into
   - `primaryColor` / `primaryColorDark`: Hex codes (avoid red/reddish tones; prefer blues, greens, or purples).
   - `storageSuffix`: Unique per unit (e.g., `"_g3s2_u2"`).
   - `passcode`: 5-letter string from the first letter of each challenge title in order.
-- **Data Points per Item (under `data` array):**
+- **Data Points per Item (under the `data` array of each challenge):**
   - `en`: Primary English sentence.
   - `cn`: Chinese translation.
   - `hint`: Concise bilingual grammar clue.

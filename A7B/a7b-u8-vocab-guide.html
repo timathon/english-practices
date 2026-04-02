@@ -1,0 +1,2159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Unit 8 Vocabulary Guide</title>
+    <style>
+        /* Compact A4 Print Optimization */
+        @page { size: A4; margin: 10mm; } 
+        body { 
+            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            color: #333; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: #fff;
+            padding: 15px; 
+            box-sizing: border-box;
+            position: relative;
+        }
+        h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
+        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-top: 0; }
+        
+        /* Stats Display */
+        .stats-bar {
+            position: sticky;
+            top: 10px;
+            z-index: 1500;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+            background: rgba(248, 249, 250, 0.9);
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .stats-bar b { color: #2c3e50; }
+        .stats-bar.updated {
+            animation: stats-highlight 0.5s ease-out;
+        }
+
+        @keyframes stats-highlight {
+            0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); border-color: #3498db; }
+            50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); border-color: #3498db; }
+            100% { transform: translateX(-50%) scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.05); }
+        }
+
+        /* Floating Scroll Buttons */
+        .scroll-btns {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .scroll-btn {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        .scroll-btn:hover {
+            opacity: 1;
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        .scroll-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* Responsive Grid Layout */
+        .vocab-grid {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vocab-item { 
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .vocab-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .vocab-item {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Desktop vs Mobile Display Logic */
+        .mobile-only { display: none !important; }
+        .desktop-only { display: flex !important; }
+
+        @media (max-width: 600px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { display: flex !important; }
+
+            .mobile-controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid #eee;
+                padding: 8px 12px;
+                display: flex;
+                justify-content: space-around;
+                gap: 8px;
+                z-index: 2000;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            }
+
+            .mobile-btn {
+                flex: 1;
+                border: none;
+                background: none;
+                padding: 6px 4px;
+                border-radius: 8px;
+                color: #555;
+                font-size: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                transition: background 0.2s;
+            }
+            .mobile-btn .btn-icon { font-size: 18px; margin-bottom: 2px; }
+            .mobile-btn:active { background: #f0f0f0; }
+            
+            #m-sort-btn { color: #3498db; }
+            #m-cn-btn { color: #e91e63; }
+            #m-hidden-btn { color: #9b59b6; }
+            #m-reset-btn { color: #e67e22; }
+            #m-refresh-btn { color: #1abc9c; }
+            
+            .scroll-btns {
+                right: 15px !important;
+                bottom: 110px !important;
+            }
+            body {
+                padding-bottom: 70px; 
+            }
+        }
+
+        /* Compact Vocab Cards */
+        .vocab-item { 
+            page-break-inside: avoid; 
+            break-inside: avoid;
+            padding: 15px; 
+            border: 1px solid #eee; 
+            border-radius: 10px; 
+            background-color: #fafafa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out, filter 0.2s, box-shadow 0.2s;
+        }
+        .vocab-item.is-hidden-state {
+            opacity: 0.4;
+            filter: grayscale(0.8);
+        }
+        .vocab-item.hide-cn .details:first-of-type .value {
+            display: none;
+        }
+        .vocab-item.hide-cn .details:first-of-type .cn-placeholder {
+            display: inline;
+            color: #3498db;
+            cursor: pointer;
+            font-style: italic;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+        .vocab-item .cn-placeholder {
+            display: none;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .value {
+            display: inline !important;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .cn-placeholder {
+            display: none !important;
+        }
+        .vocab-item.is-hidden-state:not(.force-show) {
+            display: none;
+        }
+        .vocab-item.fading-out {
+            opacity: 0 !important;
+            height: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top-width: 0 !important;
+            border-bottom-width: 0 !important;
+            pointer-events: none;
+        }
+
+        .item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hide-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .word-ipa { font-size: 0.7em; color: #7f8c8d; font-weight: normal; margin-left: 8px; font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif; }
+        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; line-height: 1.2; display: inline-flex; align-items: center; }
+        .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
+        .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
+        .value { flex-grow: 1; }
+        
+        /* Tighter inner boxes */
+        .context-box { 
+            background-color: #fff; 
+            border-left: 4px solid #f39c12; 
+            padding: 8px 12px; 
+            margin: 10px 0; 
+            font-size: 1.1em;
+            font-style: italic; 
+            color: #555;
+            border-radius: 0 4px 4px 0;
+        }
+        .hook-box { 
+            background-color: #e8f8f5; 
+            border-left: 4px solid #1abc9c; 
+            padding: 8px 12px; 
+            font-size: 0.95em;
+            border-radius: 0 4px 4px 0;
+        }
+        @media (min-width: 600px) {
+            .hook-box { margin-top: auto; }
+        }
+        .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
+
+        .play-btn {
+            background: var(--white, #fff);
+            border: 1px solid #eee;
+            border-bottom: 3px solid #ddd;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 5px;
+            vertical-align: middle;
+            transition: all 0.1s;
+            padding: 0;
+        }
+        .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
+        .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
+
+        /* Floating Controls */
+        .controls-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .control-btn {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 110px;
+        }
+        .control-btn:hover { transform: scale(1.05); }
+        .control-btn:active { transform: scale(0.95); }
+
+        #sort-toggle { background: #3498db; }
+        #sort-toggle:hover { background: #2980b9; }
+
+        #toggle-cn { background: #e91e63; }
+        #toggle-cn:hover { background: #d81b60; }
+
+        #show-hidden-toggle { background: #9b59b6; }
+        #show-hidden-toggle:hover { background: #8e44ad; }
+        #show-hidden-toggle.active { background: #2c3e50; }
+
+        #refresh-cache { background: #1abc9c; }
+        #refresh-cache:hover { background: #16a085; }
+        #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+
+        #reset-hidden { background: #e67e22 !important; }
+        #reset-hidden:hover { background: #d35400 !important; }
+
+        @media print {
+            @page { margin: 8mm; }
+            body { padding: 0; font-size: 11px; color: #000; line-height: 1.2; }
+            header { border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; text-align: center; }
+            header a { display: none; }
+            header div { display: inline !important; min-height: 0 !important; margin: 0 !important; }
+            h1 { display: inline; font-size: 1.4em; margin: 0; }
+            h2 { display: inline; font-size: 1.2em; border: none; padding: 0; margin-left: 15px; }
+            
+            .vocab-grid { 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 6px; 
+            }
+            .vocab-item { 
+                padding: 6px 8px; 
+                box-shadow: none; 
+                border: 0.5pt solid #bbb;
+                background: #fff;
+                border-radius: 5px;
+                min-height: 0;
+                display: flex; /* Remove !important to allow display: none from .is-hidden-state */
+                opacity: 1 !important;
+                filter: none !important;
+            }
+            .vocab-item.is-hidden-state { display: none !important; } /* Ensure hidden items stay hidden in print */
+
+            .word-title { font-size: 1.25em; margin-bottom: 4px; padding-bottom: 2px; color: #000; }
+            .page-badge { font-size: 0.7em; padding: 1px 4px; }
+            .details { margin-bottom: 2px; font-size: 0.95em; line-height: 1.2; }
+            .label { width: auto; font-size: 0.85em; margin-right: 3px; color: #444; }
+            .value { font-weight: 400; }
+            
+            .context-box { 
+                margin: 2px 0; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #fdfaf5;
+            }
+            .hook-box { 
+                margin-top: 1px; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #f5fdfc;
+            }
+            
+            .controls-container, .mobile-controls, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 5px;">
+            <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
+            <h1 style="margin: 0;">Vocabulary Guide</h1>
+        </div>
+        <h2>Grade 7 Semester 2</h2>
+    </header>
+
+    <div class="stats-bar" id="stats-display">
+        Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
+    </div>
+
+    <div class="controls-container desktop-only">
+        <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button id="toggle-cn" class="control-btn" onclick="app.toggleCN()">
+            <span class="cn-text">Hide CN</span>
+        </button>
+        <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
+
+    <div class="mobile-controls mobile-only">
+        <button class="mobile-btn" onclick="toggleSort()" id="m-sort-btn">
+            <span class="btn-icon sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleCN()" id="m-cn-btn">
+            <span class="btn-icon cn-icon">㊙️</span>
+            <span class="cn-text">Hide CN</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleShowHiddenMode()" id="m-hidden-btn">
+            <span class="btn-icon hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.resetHidden()" id="m-reset-btn">
+            <span class="btn-icon reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
+            <span class="btn-icon refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
+
+    <div class="vocab-grid" id="vocab-container">
+        
+        <div class="vocab-item" data-word="agree with" data-index="0">
+            <h2 class="word-title">
+                <span>1. agree with<span class="word-ipa">əˈɡriː wɪð</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P55</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">赞成; 同意</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">agree with vs complain about</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Do you agree with what the fisherman and his wife did?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> a大+gree绿+with和：大绿和别人都**同意**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="upon" data-index="1">
+            <h2 class="word-title">
+                <span>2. upon<span class="word-ipa">/əˈpɒn/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P57</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">在......上</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">u-pon</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">upon vs up</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "At last, fortune smiles upon us!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> up上+on在：就在......之**上**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="once upon a time" data-index="2">
+            <h2 class="word-title">
+                <span>3. once upon a time<span class="word-ipa">wʌns əˈpɒn ə taɪm</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P57</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">从前; 很久以前</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">once upon a time vs right now</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Once upon a time, an emperor liked clothes very much."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 故事的经典开头：**从前**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="bite" data-index="3">
+            <h2 class="word-title">
+                <span>4. bite<span class="word-ipa">/baɪt/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P58</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">咬; 咬伤</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">bite vs bike</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "The mouse bit through the net."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> bit成小块需要去**咬**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="bite through" data-index="4">
+            <h2 class="word-title">
+                <span>5. bite through<span class="word-ipa">baɪt θruː</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P58</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">咬穿</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">bite through vs pass through</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "He bit through the net and set the lion free!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> bite咬+through穿过：**咬穿**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="net" data-index="5">
+            <h2 class="word-title">
+                <span>6. net<span class="word-ipa">/net/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P58</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">网; 网状物</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">net vs nut</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Later, a hunter caught the lion in a net."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> Internet互联网的**网**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="hunter" data-index="6">
+            <h2 class="word-title">
+                <span>7. hunter<span class="word-ipa">/ˈhʌntə(r)/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P58</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">猎人; 搜寻者</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">hunt-er</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">hunter vs winter</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Later, a hunter caught the lion in a net."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> hunt打猎+er人=**猎人**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="promise" data-index="7">
+            <h2 class="word-title">
+                <span>8. promise<span class="word-ipa">/ˈprɒmɪs/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P58</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">承诺; 保证</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">prom-ise</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">promise vs premise</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "The mouse promised to help the lion."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> pro向前+miss送：提前送出的话就是**承诺**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="long ago" data-index="8">
+            <h2 class="word-title">
+                <span>9. long ago<span class="word-ipa">lɒŋ əˈɡəʊ</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P58</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">很久以前</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">long ago vs recently</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Long ago, a farmer lost his horse."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> long很长+ago以前=**很久以前**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="war" data-index="9">
+            <h2 class="word-title">
+                <span>10. war<span class="word-ipa">/wɔː(r)/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P58</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">战争</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">r控制音节 (R-Controlled)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">war vs car</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "The farmer's son didn't have to join the war."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“我”：**战争**中我们要保护我。</div>
+        </div>
+
+        <div class="vocab-item" data-word="neighbour" data-index="10">
+            <h2 class="word-title">
+                <span>11. neighbour<span class="word-ipa">/ˈneɪbə(r)/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P58</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(10)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">邻居</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">neigh-bour</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">neighbour vs member</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "His neighbours said, 'How unlucky!'"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“内部”：内部旁边的人是**邻居**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="wise" data-index="11">
+            <h2 class="word-title">
+                <span>12. wise<span class="word-ipa">/waɪz/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P58</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(11)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">明智的; 高明的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">wise vs wife</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Was the farmer wise?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 想要win赢就要很**明智的**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="emperor" data-index="12">
+            <h2 class="word-title">
+                <span>13. emperor<span class="word-ipa">/ˈempərə(r)/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(12)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">皇帝</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">em-per-or</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">emperor vs empty</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Once upon a time, an emperor liked clothes very much."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> empire帝国的统治者是**皇帝**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="lie" data-index="13">
+            <h2 class="word-title">
+                <span>14. lie<span class="word-ipa">/laɪ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(13)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">撒谎; 谎言</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">开音节 (Open)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">lie vs die</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Two brothers came and lied to him."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 长鼻子就是因为爱**撒谎**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="pretend" data-index="14">
+            <h2 class="word-title">
+                <span>15. pretend<span class="word-ipa">/prɪˈtend/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(14)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">假装; 伪装</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pre-tend</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">pretend vs extend</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "They pretended to make the clothes."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> pre前+tend伸展：在人前伸出假面具**假装**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="official" data-index="15">
+            <h2 class="word-title">
+                <span>16. official<span class="word-ipa">/əˈfɪʃl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(15)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">官员; 高级职员</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">of-fi-cial</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">official vs office</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "The emperor's officials couldn't see the clothes."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 在office办公室工作的人是**官员**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="silly" data-index="16">
+            <h2 class="word-title">
+                <span>17. silly<span class="word-ipa">/ˈsɪli/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(16)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">愚蠢的; 傻的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sil-ly</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">silly vs hill</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "No one wanted to look silly."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“洗礼”：需要被洗礼因为太**傻的**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="decide" data-index="17">
+            <h2 class="word-title">
+                <span>18. decide<span class="word-ipa">/dɪˈsaɪd/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(17)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">决定</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">de-cide</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">decide vs inside</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "The emperor decided to show everyone his new clothes."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> de向下+cide切：一刀切下去做**决定**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="praise" data-index="18">
+            <h2 class="word-title">
+                <span>19. praise<span class="word-ipa">/preɪz/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(18)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">赞美; 表扬</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">praise vs raise</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "People in the street praised them."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 被raise举高高就是得到了**表扬**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="afraid" data-index="19">
+            <h2 class="word-title">
+                <span>20. afraid<span class="word-ipa">/əˈfreɪd/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(19)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">害怕的; 担心的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">a-fraid</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">afraid vs train</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "They were afraid to look silly too!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> a一个+fraid谐音飞的：看到飞的虫子很**害怕的**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="suddenly" data-index="20">
+            <h2 class="word-title">
+                <span>21. suddenly<span class="word-ipa">/ˈsʌdənli/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(20)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">突然地; 出乎意料地</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sud-den-ly</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">suddenly vs sadly</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Suddenly, a boy shouted, 'Look! The emperor has no clothes on!'"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sudden突然+ly地：**突然地**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="at first" data-index="21">
+            <h2 class="word-title">
+                <span>22. at first<span class="word-ipa">æt fɜːst</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P60</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(21)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">起初; 最初</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">at first vs at last</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Why did the people in the street praise the clothes at first?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> first第一名：**起初**排在最前面。</div>
+        </div>
+
+        <div class="vocab-item" data-word="truth" data-index="22">
+            <h2 class="word-title">
+                <span>23. truth<span class="word-ipa">/truːθ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P60</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(22)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">真相; 事实</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">truth vs trust</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Why do you think the boy told the truth?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> true真实的+th名词后缀=**真相**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="tell the truth" data-index="23">
+            <h2 class="word-title">
+                <span>24. tell the truth<span class="word-ipa">tel ðə truːθ</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P60</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(23)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">说实话</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">tell the truth vs tell a lie</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "They stopped laughing when a boy told the truth."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> tell告诉+truth事实：**说实话**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="make money" data-index="24">
+            <h2 class="word-title">
+                <span>25. make money<span class="word-ipa">meɪk ˈmʌni</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P60</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(24)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">赚钱</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">make money vs spend money</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "We can make a lot of money by lying to the emperor."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> make制造+money钱：**赚钱**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="true" data-index="25">
+            <h2 class="word-title">
+                <span>26. true<span class="word-ipa">/truː/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P60</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(25)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">符合事实的; 真正的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">true vs tree</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "That can't be true!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 发音就是“出”，出来的就是**真正的**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="hate" data-index="26">
+            <h2 class="word-title">
+                <span>27. hate<span class="word-ipa">/heɪt/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P60</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(26)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">不喜欢; 厌恶; 讨厌</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">hate vs late</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "I hate to be different."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“黑他”：**讨厌**一个人就要黑他。</div>
+        </div>
+
+        <div class="vocab-item" data-word="get out" data-index="27">
+            <h2 class="word-title">
+                <span>28. get out<span class="word-ipa">ɡet aʊt</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P61</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(27)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">逃脱; 离开</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">get out vs get in</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "It bit through the net, and the lion got out."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> get得到+out出=**离开**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="king" data-index="28">
+            <h2 class="word-title">
+                <span>29. king<span class="word-ipa">/kɪŋ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P61</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(28)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">君主; 国王</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">king vs sing</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Once upon a time, a king asked an artist to paint him a horse."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> King就是扑克牌里的老K：**国王**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="artist" data-index="29">
+            <h2 class="word-title">
+                <span>30. artist<span class="word-ipa">/ˈɑːtɪst/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P61</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(29)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">美术家; 艺术家</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ar-tist</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">artist vs art</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Once upon a time, a king asked an artist to paint him a horse."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> art艺术+ist人=**艺术家**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="anyone" data-index="30">
+            <h2 class="word-title">
+                <span>31. anyone<span class="word-ipa">/ˈeniwʌn/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(30)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">任何人; 某个人</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">an-y-one</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">anyone vs everyone</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "If anyone set me free, I would kill them."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> any任何+one人=**任何人**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="instead of" data-index="31">
+            <h2 class="word-title">
+                <span>32. instead of<span class="word-ipa">ɪnˈsted ɒv</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(31)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">而不是; 代替</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">instead of vs in front of</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "I would kill them instead of giving them anything."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> in在里面+stead地方：站在别人的地方**代替**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="succeed in doing sth" data-index="32">
+            <h2 class="word-title">
+                <span>33. succeed in doing sth<span class="word-ipa">səkˈsiːd ɪn ˈduːɪŋ</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(32)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">成功做成某事</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">succeed in vs fail in</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Would the fisherman succeed in saving himself?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> succeed成功+in在=**成功做成某事**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="himself" data-index="33">
+            <h2 class="word-title">
+                <span>34. himself<span class="word-ipa">/hɪmˈself/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(33)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">他自己; 他本人</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">him-self</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">himself vs herself</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Would the fisherman succeed in saving himself?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> him他+self自己=**他自己**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="quickly" data-index="34">
+            <h2 class="word-title">
+                <span>35. quickly<span class="word-ipa">/ˈkwɪkli/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P61</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(34)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">快速地; 很快</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">quick-ly</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">quickly vs slowly</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Quickly, the artist painted a beautiful picture of a horse."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> quick快+ly地=**快速地**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="smile" data-index="35">
+            <h2 class="word-title">
+                <span>36. smile<span class="word-ipa">/smaɪl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P61</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(35)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">微笑</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">smile vs smell</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "The artist smiled and took the king to his house."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> S是弯弯的嘴角：**微笑**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="all over" data-index="36">
+            <h2 class="word-title">
+                <span>37. all over<span class="word-ipa">ɔːl ˈəʊvə</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P61</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(36)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">到处; 遍及</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">all over vs game over</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "There were paintings of horses all over!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> all全部+over翻过：全翻遍了就是**到处**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="ugly" data-index="37">
+            <h2 class="word-title">
+                <span>38. ugly<span class="word-ipa">/ˈʌɡli/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(37)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">丑陋的; 难看的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ug-ly</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">ugly vs early</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "What an ugly duckling!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“阿哥里”：丑阿哥里最**丑陋的**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="duckling" data-index="38">
+            <h2 class="word-title">
+                <span>39. duckling<span class="word-ipa">/ˈdʌklɪŋ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(38)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">小鸭子</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">duck-ling</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">duckling vs duck</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Five of the ducklings were small and yellow."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> duck鸭子+ling小=**小鸭子**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="real" data-index="39">
+            <h2 class="word-title">
+                <span>40. real<span class="word-ipa">/riːəl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(39)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">真的; 真正的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">real vs read</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Is the ugly duckling a real duck?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“锐哦”：这个钻戒很锐，是**真的**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="laugh at" data-index="40">
+            <h2 class="word-title">
+                <span>41. laugh at<span class="word-ipa">lɑːf æt</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(40)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">嘲笑</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">laugh at vs smile at</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "But the other ducklings still laughed at him."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> laugh笑+at对着=**嘲笑**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="go away" data-index="41">
+            <h2 class="word-title">
+                <span>42. go away<span class="word-ipa">ɡəʊ əˈweɪ</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(41)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">走开</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">go away vs go up</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "But the other ducklings still laughed at him and told him to go away."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> go走+away远=**走开**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="search" data-index="42">
+            <h2 class="word-title">
+                <span>43. search<span class="word-ipa">/sɜːtʃ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(42)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">寻找; 搜寻</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">r控制音节 (R-Controlled)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">search vs teach</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "So he decided to search for a new home."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sea海+rch找：在海里捞针去**寻找**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="search for" data-index="43">
+            <h2 class="word-title">
+                <span>44. search for<span class="word-ipa">sɜːtʃ fɔː(r)</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(43)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">寻找</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">search for vs look for</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "So he decided to search for a new home."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> search搜寻+for为了：**寻找**目的物。</div>
+        </div>
+
+        <div class="vocab-item" data-word="hen" data-index="44">
+            <h2 class="word-title">
+                <span>45. hen<span class="word-ipa">/hen/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(44)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">母鸡</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">hen vs pen</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "One day, the duckling met a cat and a hen."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 和pen钢笔一起记，用钢笔画**母鸡**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="hopefully" data-index="45">
+            <h2 class="word-title">
+                <span>46. hopefully<span class="word-ipa">/ˈhəʊpfəli/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(45)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">有希望地</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">hope-ful-ly</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">hopefully vs careful</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "May I stay with you? he asked hopefully."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> hope希望+fully满满地=**有希望地**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="purr" data-index="46">
+            <h2 class="word-title">
+                <span>47. purr<span class="word-ipa">/pɜː(r)/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(46)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">发出呼噜声</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">r控制音节 (R-Controlled)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">purr vs pure</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "They did not like him because he could not purr or lay eggs!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 拟声词：猫满足时发的**呼噜声**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="lay" data-index="47">
+            <h2 class="word-title">
+                <span>48. lay<span class="word-ipa">/leɪ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(47)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">下(蛋); 放置</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">开音节 (Open)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">lay vs play</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "They did not like him because he could not purr or lay eggs!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“累”：母鸡**下蛋**很累。</div>
+        </div>
+
+        <div class="vocab-item" data-word="swan" data-index="48">
+            <h2 class="word-title">
+                <span>49. swan<span class="word-ipa">/swɒn/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(48)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">天鹅</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">swan vs swim</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "There, he saw three beautiful swans with long necks and white feathers."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s湾+wan弯的脖子：脖子弯弯的**天鹅**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="feather" data-index="49">
+            <h2 class="word-title">
+                <span>50. feather<span class="word-ipa">/ˈfeðə(r)/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(49)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">羽毛</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">feath-er</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">feather vs weather</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "There, he saw three beautiful swans with long necks and white feathers."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 长得像father：鸟类爸爸有好看的**羽毛**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="to sb's surprise" data-index="50">
+            <h2 class="word-title">
+                <span>51. to sb's surprise<span class="word-ipa">tə sa mbɒdɪs səˈpraɪz</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P62</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(50)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">出乎某人的意料</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">to sb's surprise vs to sb's joy</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "The duckling looked down, and to his surprise, he saw that he was a beautiful white swan too!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> surprise惊喜：带来了出乎意料的**惊喜**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="size" data-index="51">
+            <h2 class="word-title">
+                <span>52. size<span class="word-ipa">/saɪz/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(51)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">大小; 尺寸</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">size vs side</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "How was the ugly duckling different from the other ducklings in size and colour?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 买衣服要看**尺寸** (size)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="believe" data-index="52">
+            <h2 class="word-title">
+                <span>53. believe<span class="word-ipa">/bɪˈliːv/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(52)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">相信; 认为</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">be-lieve</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">believe vs belief</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "I couldn't believe my eyes!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 中间有lie谎言，但还是需要去**相信**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="only if" data-index="53">
+            <h2 class="word-title">
+                <span>54. only if<span class="word-ipa">ˈəʊnli ɪf</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(53)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">只有</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">only if vs if only</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "You are welcome here only if you can purr or lay eggs."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> only只+if如果=**只有**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="fisherman" data-index="54">
+            <h2 class="word-title">
+                <span>55. fisherman<span class="word-ipa">/ˈfɪʃəmən/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(54)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">渔夫</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">fish-er-man</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">fisherman vs fish</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Once upon a time, a fisherman caught a bottle in his fishing net."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> fish鱼+er人+man男人=**渔夫**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="fishing" data-index="55">
+            <h2 class="word-title">
+                <span>56. fishing<span class="word-ipa">/ˈfɪʃɪŋ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(55)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">钓鱼; 捕鱼</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">fish-ing</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">fishing vs wishing</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Once upon a time, a fisherman caught a bottle in his fishing net."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> fish鱼+ing现在分词=**捕鱼**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="come out" data-index="56">
+            <h2 class="word-title">
+                <span>57. come out<span class="word-ipa">kʌm aʊt</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(56)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">出现; 出来</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">come out vs go out</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "A great cloud came out and became a genie!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> come来+out外=**出来**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="genie" data-index="57">
+            <h2 class="word-title">
+                <span>58. genie<span class="word-ipa">/ˈdʒiːni/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(57)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">妖怪; 鬼精灵</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ge-nie</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">genie vs genius</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "A great cloud came out and became a genie!"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 灯神**精灵**也是魔法天才 (genius)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="die" data-index="58">
+            <h2 class="word-title">
+                <span>59. die<span class="word-ipa">/daɪ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(58)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">死亡; 消失</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">开音节 (Open)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">die vs dead</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Prepare to die! shouted the genie."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“带”走：人被死神带走了就是**死亡**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="make a promise" data-index="59">
+            <h2 class="word-title">
+                <span>60. make a promise<span class="word-ipa">meɪk ə ˈprɒmɪs</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(59)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">许下诺言</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">make a promise vs keep a promise</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "A long time ago, I made a promise."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> make制造+promise承诺=**许下诺言**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="someone" data-index="60">
+            <h2 class="word-title">
+                <span>61. someone<span class="word-ipa">/ˈsʌmwʌn/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(60)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">某人; 有人</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">some-one</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">someone vs anyone</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "If someone set me free, I would make them rich and powerful."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> some一些+one人=指代**某个人**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="set" data-index="61">
+            <h2 class="word-title">
+                <span>62. set<span class="word-ipa">/set/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(61)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">使处于某种状况; 置放</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">set vs sit</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "If someone set me free, I would make them rich and powerful."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音“设”：设置好，就是**置放**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="set... free" data-index="62">
+            <h2 class="word-title">
+                <span>63. set... free<span class="word-ipa">set friː</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(62)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">释放</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">set free vs cut free</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "If someone set me free, I would make them rich and powerful."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> set设置+free自由状态=**释放**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="rich" data-index="63">
+            <h2 class="word-title">
+                <span>64. rich<span class="word-ipa">/rɪtʃ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(63)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">富有的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">rich vs poor</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "If someone set me free, I would make them rich and powerful."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 日吃海喝的人肯定是非常**富有的**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="powerful" data-index="64">
+            <h2 class="word-title">
+                <span>65. powerful<span class="word-ipa">/ˈpaʊəfl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(64)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">强大的; 有影响力的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pow-er-ful</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">powerful vs careful</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "If someone set me free, I would make them rich and powerful."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> power力量+ful满满的=**强大的**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="in the end" data-index="65">
+            <h2 class="word-title">
+                <span>66. in the end<span class="word-ipa">ɪn ði end</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P63</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(65)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">最后; 终究</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">in the end vs at the end</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "What would happen in the end?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> end结束：走到尽头就是**最后**。</div>
+        </div>
+
+        <div class="vocab-item" data-word="hans christian andersen" data-index="66">
+            <h2 class="word-title">
+                <span>67. Hans Christian Andersen<span class="word-ipa">hænz ˈkrɪstʃən ˈændəsən</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(66)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">汉斯·克里斯蒂安·安徒生</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Phrase</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">Andersen vs Anderson</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Here's The Emperor's New Clothes by Hans Christian Andersen."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 世界童话之王：**安徒生**。</div>
+        </div>
+    </div>
+
+    <div class="scroll-btns">
+        <button class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="To Top">▲</button>
+        <button class="scroll-btn" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="To Bottom">▼</button>
+    </div>
+
+    <script>
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function() {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function(id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function(id, blob, meta) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, meta, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
+        const vocabData = [{"word":"agree with","meaning":"赞成; 同意","page_number":"55","ipa":"əˈɡriː wɪð","comparison":"agree with vs complain about","syllable_type":"Phrase","memorization_hook":"a大+gree绿+with和：大绿和别人都**同意**。","context_sentence":"Do you agree with what the fisherman and his wife did?","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/586bd32fdc249c4acd51b9e5a6cd0baa.mp3"},{"word":"upon","meaning":"在......上","page_number":"57","ipa":"/əˈpɒn/","comparison":"upon vs up","syllable_type":"u-pon","memorization_hook":"up上+on在：就在......之**上**。","context_sentence":"At last, fortune smiles upon us!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/ba1a399ca19cce702e3bdc06bf1afa32.mp3"},{"word":"once upon a time","meaning":"从前; 很久以前","page_number":"57","ipa":"wʌns əˈpɒn ə taɪm","comparison":"once upon a time vs right now","syllable_type":"Phrase","memorization_hook":"故事的经典开头：**从前**。","context_sentence":"Once upon a time, an emperor liked clothes very much.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/46a485fa6d75d0085ecfb9e46b07f505.mp3"},{"word":"bite","meaning":"咬; 咬伤","page_number":"58","ipa":"/baɪt/","comparison":"bite vs bike","syllable_type":"相对开音节 (VCe)","memorization_hook":"bit成小块需要去**咬**。","context_sentence":"The mouse bit through the net.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/b70fc5c6912685d7e375eb6dad5745f1.mp3"},{"word":"bite through","meaning":"咬穿","page_number":"58","ipa":"baɪt θruː","comparison":"bite through vs pass through","syllable_type":"Phrase","memorization_hook":"bite咬+through穿过：**咬穿**。","context_sentence":"He bit through the net and set the lion free!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/e1ec9bad68d33db3ddf8a4bfd47b4708.mp3"},{"word":"net","meaning":"网; 网状物","page_number":"58","ipa":"/net/","comparison":"net vs nut","syllable_type":"闭音节 (Closed)","memorization_hook":"Internet互联网的**网**。","context_sentence":"Later, a hunter caught the lion in a net.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/29dea9f22b6e371d7b2c12e9a89809f3.mp3"},{"word":"hunter","meaning":"猎人; 搜寻者","page_number":"58","ipa":"/ˈhʌntə(r)/","comparison":"hunter vs winter","syllable_type":"hunt-er","memorization_hook":"hunt打猎+er人=**猎人**。","context_sentence":"Later, a hunter caught the lion in a net.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/29dea9f22b6e371d7b2c12e9a89809f3.mp3"},{"word":"promise","meaning":"承诺; 保证","page_number":"58","ipa":"/ˈprɒmɪs/","comparison":"promise vs premise","syllable_type":"prom-ise","memorization_hook":"pro向前+miss送：提前送出的话就是**承诺**。","context_sentence":"The mouse promised to help the lion.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/7f89ba1d03e159c046d7d45cfa823d8e.mp3"},{"word":"long ago","meaning":"很久以前","page_number":"58","ipa":"lɒŋ əˈɡəʊ","comparison":"long ago vs recently","syllable_type":"Phrase","memorization_hook":"long很长+ago以前=**很久以前**。","context_sentence":"Long ago, a farmer lost his horse.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/fe7cbb92389945095a33c77bd79a3f45.mp3"},{"word":"war","meaning":"战争","page_number":"58","ipa":"/wɔː(r)/","comparison":"war vs car","syllable_type":"r控制音节 (R-Controlled)","memorization_hook":"谐音“我”：**战争**中我们要保护我。","context_sentence":"The farmer's son didn't have to join the war.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/f21a8253e464ada109f633f8a8c79fae.mp3"},{"word":"neighbour","meaning":"邻居","page_number":"58","ipa":"/ˈneɪbə(r)/","comparison":"neighbour vs member","syllable_type":"neigh-bour","memorization_hook":"谐音“内部”：内部旁边的人是**邻居**。","context_sentence":"His neighbours said, 'How unlucky!'","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/c66078d750628609dc51405d81550dbe.mp3"},{"word":"wise","meaning":"明智的; 高明的","page_number":"58","ipa":"/waɪz/","comparison":"wise vs wife","syllable_type":"相对开音节 (VCe)","memorization_hook":"想要win赢就要很**明智的**。","context_sentence":"Was the farmer wise?","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/5aaeb6cf51e2f6d4adbe6ff0c8a6df3d.mp3"},{"word":"emperor","meaning":"皇帝","page_number":"59","ipa":"/ˈempərə(r)/","comparison":"emperor vs empty","syllable_type":"em-per-or","memorization_hook":"empire帝国的统治者是**皇帝**。","context_sentence":"Once upon a time, an emperor liked clothes very much.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/46a485fa6d75d0085ecfb9e46b07f505.mp3"},{"word":"lie","meaning":"撒谎; 谎言","page_number":"59","ipa":"/laɪ/","comparison":"lie vs die","syllable_type":"开音节 (Open)","memorization_hook":"长鼻子就是因为爱**撒谎**。","context_sentence":"Two brothers came and lied to him.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/40cfdaa9091a0d1d946f94d14cafcd93.mp3"},{"word":"pretend","meaning":"假装; 伪装","page_number":"59","ipa":"/prɪˈtend/","comparison":"pretend vs extend","syllable_type":"pre-tend","memorization_hook":"pre前+tend伸展：在人前伸出假面具**假装**。","context_sentence":"They pretended to make the clothes.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/826e5559fe36a538a5e7699913f90ab7.mp3"},{"word":"official","meaning":"官员; 高级职员","page_number":"59","ipa":"/əˈfɪʃl/","comparison":"official vs office","syllable_type":"of-fi-cial","memorization_hook":"在office办公室工作的人是**官员**。","context_sentence":"The emperor's officials couldn't see the clothes.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/a6ae3bb14cea758ee9fbd435d120eb16.mp3"},{"word":"silly","meaning":"愚蠢的; 傻的","page_number":"59","ipa":"/ˈsɪli/","comparison":"silly vs hill","syllable_type":"sil-ly","memorization_hook":"谐音“洗礼”：需要被洗礼因为太**傻的**。","context_sentence":"No one wanted to look silly.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/146185827330d39f3606735c3913b091.mp3"},{"word":"decide","meaning":"决定","page_number":"59","ipa":"/dɪˈsaɪd/","comparison":"decide vs inside","syllable_type":"de-cide","memorization_hook":"de向下+cide切：一刀切下去做**决定**。","context_sentence":"The emperor decided to show everyone his new clothes.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/69e4f049b414531e6ef6447135fc2a69.mp3"},{"word":"praise","meaning":"赞美; 表扬","page_number":"59","ipa":"/preɪz/","comparison":"praise vs raise","syllable_type":"元音字母组合音节 (Vowel Team)","memorization_hook":"被raise举高高就是得到了**表扬**。","context_sentence":"People in the street praised them.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/3ffcbf2a2bf3cedd0af4e8a5276071bb.mp3"},{"word":"afraid","meaning":"害怕的; 担心的","page_number":"59","ipa":"/əˈfreɪd/","comparison":"afraid vs train","syllable_type":"a-fraid","memorization_hook":"a一个+fraid谐音飞的：看到飞的虫子很**害怕的**。","context_sentence":"They were afraid to look silly too!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/1169cf76683232534a802224657600a6.mp3"},{"word":"suddenly","meaning":"突然地; 出乎意料地","page_number":"59","ipa":"/ˈsʌdənli/","comparison":"suddenly vs sadly","syllable_type":"sud-den-ly","memorization_hook":"sudden突然+ly地：**突然地**。","context_sentence":"Suddenly, a boy shouted, 'Look! The emperor has no clothes on!'","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/24f3d771ee69f18b98fd5d8eaac6d9c2.mp3"},{"word":"at first","meaning":"起初; 最初","page_number":"60","ipa":"æt fɜːst","comparison":"at first vs at last","syllable_type":"Phrase","memorization_hook":"first第一名：**起初**排在最前面。","context_sentence":"Why did the people in the street praise the clothes at first?","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/17af9782004ba6665f53e0f6307bb409.mp3"},{"word":"truth","meaning":"真相; 事实","page_number":"60","ipa":"/truːθ/","comparison":"truth vs trust","syllable_type":"闭音节 (Closed)","memorization_hook":"true真实的+th名词后缀=**真相**。","context_sentence":"Why do you think the boy told the truth?","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/d50e066878b2e9eab73b012d28df389e.mp3"},{"word":"tell the truth","meaning":"说实话","page_number":"60","ipa":"tel ðə truːθ","comparison":"tell the truth vs tell a lie","syllable_type":"Phrase","memorization_hook":"tell告诉+truth事实：**说实话**。","context_sentence":"They stopped laughing when a boy told the truth.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/3b5fe34fef5462dee9bfafee155ebe24.mp3"},{"word":"make money","meaning":"赚钱","page_number":"60","ipa":"meɪk ˈmʌni","comparison":"make money vs spend money","syllable_type":"Phrase","memorization_hook":"make制造+money钱：**赚钱**。","context_sentence":"We can make a lot of money by lying to the emperor.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/f90622e18558e2f78e2bf21011acb1b0.mp3"},{"word":"true","meaning":"符合事实的; 真正的","page_number":"60","ipa":"/truː/","comparison":"true vs tree","syllable_type":"元音字母组合音节 (Vowel Team)","memorization_hook":"发音就是“出”，出来的就是**真正的**。","context_sentence":"That can't be true!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/a628779f4b5d7760eff7eb787cdf2982.mp3"},{"word":"hate","meaning":"不喜欢; 厌恶; 讨厌","page_number":"60","ipa":"/heɪt/","comparison":"hate vs late","syllable_type":"相对开音节 (VCe)","memorization_hook":"谐音“黑他”：**讨厌**一个人就要黑他。","context_sentence":"I hate to be different.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/05cdb2be361cc9c30c28bf639b04dbbf.mp3"},{"word":"get out","meaning":"逃脱; 离开","page_number":"61","ipa":"ɡet aʊt","comparison":"get out vs get in","syllable_type":"Phrase","memorization_hook":"get得到+out出=**离开**。","context_sentence":"It bit through the net, and the lion got out.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/29fce84cc5d633d5e0ce45e7f62a6e29.mp3"},{"word":"king","meaning":"君主; 国王","page_number":"61","ipa":"/kɪŋ/","comparison":"king vs sing","syllable_type":"闭音节 (Closed)","memorization_hook":"King就是扑克牌里的老K：**国王**。","context_sentence":"Once upon a time, a king asked an artist to paint him a horse.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/f011096fa413cb44a39ae4e788ad232e.mp3"},{"word":"artist","meaning":"美术家; 艺术家","page_number":"61","ipa":"/ˈɑːtɪst/","comparison":"artist vs art","syllable_type":"ar-tist","memorization_hook":"art艺术+ist人=**艺术家**。","context_sentence":"Once upon a time, a king asked an artist to paint him a horse.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/f011096fa413cb44a39ae4e788ad232e.mp3"},{"word":"anyone","meaning":"任何人; 某个人","page_number":"63","ipa":"/ˈeniwʌn/","comparison":"anyone vs everyone","syllable_type":"an-y-one","memorization_hook":"any任何+one人=**任何人**。","context_sentence":"If anyone set me free, I would kill them.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/763663cdef5ab640adbeeed4ea7dddef.mp3"},{"word":"instead of","meaning":"而不是; 代替","page_number":"63","ipa":"ɪnˈsted ɒv","comparison":"instead of vs in front of","syllable_type":"Phrase","memorization_hook":"in在里面+stead地方：站在别人的地方**代替**。","context_sentence":"I would kill them instead of giving them anything.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/88b9385b63f8f932e0f1e2f54a973d25.mp3"},{"word":"succeed in doing sth","meaning":"成功做成某事","page_number":"63","ipa":"səkˈsiːd ɪn ˈduːɪŋ","comparison":"succeed in vs fail in","syllable_type":"Phrase","memorization_hook":"succeed成功+in在=**成功做成某事**。","context_sentence":"Would the fisherman succeed in saving himself?","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/76efda2e5fee0131180815b668f8efac.mp3"},{"word":"himself","meaning":"他自己; 他本人","page_number":"63","ipa":"/hɪmˈself/","comparison":"himself vs herself","syllable_type":"him-self","memorization_hook":"him他+self自己=**他自己**。","context_sentence":"Would the fisherman succeed in saving himself?","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/76efda2e5fee0131180815b668f8efac.mp3"},{"word":"quickly","meaning":"快速地; 很快","page_number":"61","ipa":"/ˈkwɪkli/","comparison":"quickly vs slowly","syllable_type":"quick-ly","memorization_hook":"quick快+ly地=**快速地**。","context_sentence":"Quickly, the artist painted a beautiful picture of a horse.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/12367dacd0e1d644415d0c0a3edf646a.mp3"},{"word":"smile","meaning":"微笑","page_number":"61","ipa":"/smaɪl/","comparison":"smile vs smell","syllable_type":"相对开音节 (VCe)","memorization_hook":"S是弯弯的嘴角：**微笑**。","context_sentence":"The artist smiled and took the king to his house.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/51d9e2d233c48342f0b04359c427dad3.mp3"},{"word":"all over","meaning":"到处; 遍及","page_number":"61","ipa":"ɔːl ˈəʊvə","comparison":"all over vs game over","syllable_type":"Phrase","memorization_hook":"all全部+over翻过：全翻遍了就是**到处**。","context_sentence":"There were paintings of horses all over!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/616b8bf93d8bf32726d1ea3672b8c0be.mp3"},{"word":"ugly","meaning":"丑陋的; 难看的","page_number":"62","ipa":"/ˈʌɡli/","comparison":"ugly vs early","syllable_type":"ug-ly","memorization_hook":"谐音“阿哥里”：丑阿哥里最**丑陋的**。","context_sentence":"What an ugly duckling!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/515336e010cd722fd0851c8565bbe5a7.mp3"},{"word":"duckling","meaning":"小鸭子","page_number":"62","ipa":"/ˈdʌklɪŋ/","comparison":"duckling vs duck","syllable_type":"duck-ling","memorization_hook":"duck鸭子+ling小=**小鸭子**。","context_sentence":"Five of the ducklings were small and yellow.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/48be2a98653c9a56085f2f5510c9aa58.mp3"},{"word":"real","meaning":"真的; 真正的","page_number":"62","ipa":"/riːəl/","comparison":"real vs read","syllable_type":"元音字母组合音节 (Vowel Team)","memorization_hook":"谐音“锐哦”：这个钻戒很锐，是**真的**。","context_sentence":"Is the ugly duckling a real duck?","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/b271043fdcfcbf03e25e29f3fbb90c14.mp3"},{"word":"laugh at","meaning":"嘲笑","page_number":"62","ipa":"lɑːf æt","comparison":"laugh at vs smile at","syllable_type":"Phrase","memorization_hook":"laugh笑+at对着=**嘲笑**。","context_sentence":"But the other ducklings still laughed at him.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/173f91de9eb47986a0ca166c7b27dc27.mp3"},{"word":"go away","meaning":"走开","page_number":"62","ipa":"ɡəʊ əˈweɪ","comparison":"go away vs go up","syllable_type":"Phrase","memorization_hook":"go走+away远=**走开**。","context_sentence":"But the other ducklings still laughed at him and told him to go away.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/ce1e0ae03ad73a60e4326eb1c4657971.mp3"},{"word":"search","meaning":"寻找; 搜寻","page_number":"62","ipa":"/sɜːtʃ/","comparison":"search vs teach","syllable_type":"r控制音节 (R-Controlled)","memorization_hook":"sea海+rch找：在海里捞针去**寻找**。","context_sentence":"So he decided to search for a new home.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/ae38f0d33461778cfa46043deec4e28b.mp3"},{"word":"search for","meaning":"寻找","page_number":"62","ipa":"sɜːtʃ fɔː(r)","comparison":"search for vs look for","syllable_type":"Phrase","memorization_hook":"search搜寻+for为了：**寻找**目的物。","context_sentence":"So he decided to search for a new home.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/ae38f0d33461778cfa46043deec4e28b.mp3"},{"word":"hen","meaning":"母鸡","page_number":"62","ipa":"/hen/","comparison":"hen vs pen","syllable_type":"闭音节 (Closed)","memorization_hook":"和pen钢笔一起记，用钢笔画**母鸡**。","context_sentence":"One day, the duckling met a cat and a hen.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/a23e9178c5c36678ce67b01826e85644.mp3"},{"word":"hopefully","meaning":"有希望地","page_number":"62","ipa":"/ˈhəʊpfəli/","comparison":"hopefully vs careful","syllable_type":"hope-ful-ly","memorization_hook":"hope希望+fully满满地=**有希望地**。","context_sentence":"May I stay with you? he asked hopefully.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/15d9be28fd2976573627072ad4950c74.mp3"},{"word":"purr","meaning":"发出呼噜声","page_number":"62","ipa":"/pɜː(r)/","comparison":"purr vs pure","syllable_type":"r控制音节 (R-Controlled)","memorization_hook":"拟声词：猫满足时发的**呼噜声**。","context_sentence":"They did not like him because he could not purr or lay eggs!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/22381302bf8534ab75e4e0f330ab7e0a.mp3"},{"word":"lay","meaning":"下(蛋); 放置","page_number":"62","ipa":"/leɪ/","comparison":"lay vs play","syllable_type":"开音节 (Open)","memorization_hook":"谐音“累”：母鸡**下蛋**很累。","context_sentence":"They did not like him because he could not purr or lay eggs!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/22381302bf8534ab75e4e0f330ab7e0a.mp3"},{"word":"swan","meaning":"天鹅","page_number":"62","ipa":"/swɒn/","comparison":"swan vs swim","syllable_type":"闭音节 (Closed)","memorization_hook":"s湾+wan弯的脖子：脖子弯弯的**天鹅**。","context_sentence":"There, he saw three beautiful swans with long necks and white feathers.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/e2936493b53c9aec3c7767d8a8b866dc.mp3"},{"word":"feather","meaning":"羽毛","page_number":"62","ipa":"/ˈfeðə(r)/","comparison":"feather vs weather","syllable_type":"feath-er","memorization_hook":"长得像father：鸟类爸爸有好看的**羽毛**。","context_sentence":"There, he saw three beautiful swans with long necks and white feathers.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/e2936493b53c9aec3c7767d8a8b866dc.mp3"},{"word":"to sb's surprise","meaning":"出乎某人的意料","page_number":"62","ipa":"tə sa mbɒdɪs səˈpraɪz","comparison":"to sb's surprise vs to sb's joy","syllable_type":"Phrase","memorization_hook":"surprise惊喜：带来了出乎意料的**惊喜**。","context_sentence":"The duckling looked down, and to his surprise, he saw that he was a beautiful white swan too!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/a197e8ceae69c4f9a919804a8bcc0545.mp3"},{"word":"size","meaning":"大小; 尺寸","page_number":"63","ipa":"/saɪz/","comparison":"size vs side","syllable_type":"相对开音节 (VCe)","memorization_hook":"买衣服要看**尺寸** (size)。","context_sentence":"How was the ugly duckling different from the other ducklings in size and colour?","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/284ad7d91801b46772609e43dbeb7942.mp3"},{"word":"believe","meaning":"相信; 认为","page_number":"63","ipa":"/bɪˈliːv/","comparison":"believe vs belief","syllable_type":"be-lieve","memorization_hook":"中间有lie谎言，但还是需要去**相信**。","context_sentence":"I couldn't believe my eyes!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/0e33f20aa08b3888f1f80a406f9c75ba.mp3"},{"word":"only if","meaning":"只有","page_number":"63","ipa":"ˈəʊnli ɪf","comparison":"only if vs if only","syllable_type":"Phrase","memorization_hook":"only只+if如果=**只有**。","context_sentence":"You are welcome here only if you can purr or lay eggs.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/8bc230bf527f1f0c843dfaa34596085e.mp3"},{"word":"fisherman","meaning":"渔夫","page_number":"63","ipa":"/ˈfɪʃəmən/","comparison":"fisherman vs fish","syllable_type":"fish-er-man","memorization_hook":"fish鱼+er人+man男人=**渔夫**。","context_sentence":"Once upon a time, a fisherman caught a bottle in his fishing net.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/f001910dabc4865b1a71a66dfa74a199.mp3"},{"word":"fishing","meaning":"钓鱼; 捕鱼","page_number":"63","ipa":"/ˈfɪʃɪŋ/","comparison":"fishing vs wishing","syllable_type":"fish-ing","memorization_hook":"fish鱼+ing现在分词=**捕鱼**。","context_sentence":"Once upon a time, a fisherman caught a bottle in his fishing net.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/f001910dabc4865b1a71a66dfa74a199.mp3"},{"word":"come out","meaning":"出现; 出来","page_number":"63","ipa":"kʌm aʊt","comparison":"come out vs go out","syllable_type":"Phrase","memorization_hook":"come来+out外=**出来**。","context_sentence":"A great cloud came out and became a genie!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/aa5c5710d983bdee78c911bd9205bfe5.mp3"},{"word":"genie","meaning":"妖怪; 鬼精灵","page_number":"63","ipa":"/ˈdʒiːni/","comparison":"genie vs genius","syllable_type":"ge-nie","memorization_hook":"灯神**精灵**也是魔法天才 (genius)。","context_sentence":"A great cloud came out and became a genie!","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/aa5c5710d983bdee78c911bd9205bfe5.mp3"},{"word":"die","meaning":"死亡; 消失","page_number":"63","ipa":"/daɪ/","comparison":"die vs dead","syllable_type":"开音节 (Open)","memorization_hook":"谐音“带”走：人被死神带走了就是**死亡**。","context_sentence":"Prepare to die! shouted the genie.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/48742f83b35e2049fe44cd13be0c3030.mp3"},{"word":"make a promise","meaning":"许下诺言","page_number":"63","ipa":"meɪk ə ˈprɒmɪs","comparison":"make a promise vs keep a promise","syllable_type":"Phrase","memorization_hook":"make制造+promise承诺=**许下诺言**。","context_sentence":"A long time ago, I made a promise.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/485c29ee91c1a92d9b702eba4b98c2ea.mp3"},{"word":"someone","meaning":"某人; 有人","page_number":"63","ipa":"/ˈsʌmwʌn/","comparison":"someone vs anyone","syllable_type":"some-one","memorization_hook":"some一些+one人=指代**某个人**。","context_sentence":"If someone set me free, I would make them rich and powerful.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/6c057b8a8c1176ee11e0c5bb4700cef9.mp3"},{"word":"set","meaning":"使处于某种状况; 置放","page_number":"63","ipa":"/set/","comparison":"set vs sit","syllable_type":"闭音节 (Closed)","memorization_hook":"谐音“设”：设置好，就是**置放**。","context_sentence":"If someone set me free, I would make them rich and powerful.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/6c057b8a8c1176ee11e0c5bb4700cef9.mp3"},{"word":"set... free","meaning":"释放","page_number":"63","ipa":"set friː","comparison":"set free vs cut free","syllable_type":"Phrase","memorization_hook":"set设置+free自由状态=**释放**。","context_sentence":"If someone set me free, I would make them rich and powerful.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/6c057b8a8c1176ee11e0c5bb4700cef9.mp3"},{"word":"rich","meaning":"富有的","page_number":"63","ipa":"/rɪtʃ/","comparison":"rich vs poor","syllable_type":"闭音节 (Closed)","memorization_hook":"日吃海喝的人肯定是非常**富有的**。","context_sentence":"If someone set me free, I would make them rich and powerful.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/6c057b8a8c1176ee11e0c5bb4700cef9.mp3"},{"word":"powerful","meaning":"强大的; 有影响力的","page_number":"63","ipa":"/ˈpaʊəfl/","comparison":"powerful vs careful","syllable_type":"pow-er-ful","memorization_hook":"power力量+ful满满的=**强大的**。","context_sentence":"If someone set me free, I would make them rich and powerful.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/6c057b8a8c1176ee11e0c5bb4700cef9.mp3"},{"word":"in the end","meaning":"最后; 终究","page_number":"63","ipa":"ɪn ði end","comparison":"in the end vs at the end","syllable_type":"Phrase","memorization_hook":"end结束：走到尽头就是**最后**。","context_sentence":"What would happen in the end?","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/88987296cc6154322d085ec941be472a.mp3"},{"word":"Hans Christian Andersen","meaning":"汉斯·克里斯蒂安·安徒生","page_number":"59","ipa":"hænz ˈkrɪstʃən ˈændəsən","comparison":"Andersen vs Anderson","syllable_type":"Phrase","memorization_hook":"世界童话之王：**安徒生**。","context_sentence":"Here's The Emperor's New Clothes by Hans Christian Andersen.","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/071dbdd0c7de04703c878a546b662a60.mp3"}];
+
+        let isAlphabetical = false;
+        const container = document.getElementById('vocab-container');
+        const items = Array.from(container.getElementsByClassName('vocab-item'));
+        
+        function toggleSort() {
+            isAlphabetical = !isAlphabetical;
+            const textEls = document.querySelectorAll('.sort-text');
+            const iconEls = document.querySelectorAll('.sort-icon');
+
+            if (isAlphabetical) {
+                items.sort((a, b) => a.dataset.word.localeCompare(b.dataset.word));
+                textEls.forEach(el => el.innerText = "Textbook Order");
+                iconEls.forEach(el => el.innerText = "📖");
+            } else {
+                items.sort((a, b) => parseInt(a.dataset.index) - parseInt(b.dataset.index));
+                textEls.forEach(el => el.innerText = "Sort A-Z");
+                iconEls.forEach(el => el.innerText = "🔤");
+            }
+
+            // Clear and re-append sorted items
+            container.innerHTML = '';
+            items.forEach(item => container.appendChild(item));
+        }
+
+        const app = {
+            currentAudio: null,
+            audioObjectURL: null,
+            hiddenWords: new Set(),
+            showHiddenMode: false,
+            hideCNMode: true,
+            unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 7 Semester 2").substring(0, 16),
+
+            init: async function() {
+                // Apply default CN visibility
+                if (this.hideCNMode) {
+                    const textEls = document.querySelectorAll('.cn-text');
+                    const iconEls = document.querySelectorAll('.cn-icon');
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.add('hide-cn'));
+                }
+
+                // Load hidden words from localStorage
+                const stored = localStorage.getItem(this.unitKey);
+                if (stored) {
+                    try {
+                        const indices = JSON.parse(stored);
+                        this.hiddenWords = new Set(indices);
+                    } catch(e) { console.error("Failed to parse hidden words", e); }
+                }
+
+                // Apply initial state to cards
+                items.forEach(item => {
+                    const idx = parseInt(item.dataset.index);
+                    if (this.hiddenWords.has(idx)) {
+                        item.classList.add('is-hidden-state');
+                        const cb = item.querySelector('.hide-checkbox');
+                        if (cb) cb.checked = true;
+                    }
+                });
+
+                this.updateStats();
+
+                // Preload audio
+                vocabData.forEach(item => {
+                    if (item.audio) {
+                        this.cacheAudio(item.audio);
+                    }
+                });
+
+                // Cleanup legacy localStorage audio cache
+                setTimeout(() => {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                    key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                    key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                    key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                }, 2000);
+            },
+
+            getHash: function(str) {
+                return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            },
+
+            updateStats: function() {
+                const total = vocabData.length;
+                const hidden = this.hiddenWords.size;
+                const shown = total - hidden;
+                
+                const display = document.getElementById('stats-display');
+                if (display) {
+                    display.innerHTML = `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+                    display.classList.remove('updated');
+                    void display.offsetWidth; // Force reflow
+                    display.classList.add('updated');
+                }
+            },
+
+            toggleWordHidden: function(index) {
+                const item = items.find(it => parseInt(it.dataset.index) === index);
+                if (!item) return;
+
+                if (this.hiddenWords.has(index)) {
+                    this.hiddenWords.delete(index);
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                } else {
+                    this.hiddenWords.add(index);
+                    
+                    const isMobile = window.innerWidth <= 600;
+                    if (this.showHiddenMode || !isMobile) {
+                        // Instant hide for desktop or when in "Show Hidden" mode
+                        item.classList.add('is-hidden-state');
+                    } else {
+                        // Mobile: Smooth collapse animation
+                        const h = item.offsetHeight;
+                        item.style.height = h + 'px';
+                        item.offsetHeight; // Force reflow
+                        item.classList.add('fading-out');
+                        
+                        setTimeout(() => {
+                            if (this.hiddenWords.has(index)) {
+                                item.classList.add('is-hidden-state');
+                                item.classList.remove('fading-out');
+                                item.style.height = '';
+                            }
+                        }, 500);
+                    }
+                }
+
+                // Persist
+                localStorage.setItem(this.unitKey, JSON.stringify(Array.from(this.hiddenWords)));
+                this.updateStats();
+            },
+
+            toggleShowHiddenMode: function() {
+                this.showHiddenMode = !this.showHiddenMode;
+                const desktopBtn = document.getElementById('show-hidden-toggle');
+                const textEls = document.querySelectorAll('.hidden-text');
+                const iconEls = document.querySelectorAll('.hidden-icon');
+
+                if (this.showHiddenMode) {
+                    if (desktopBtn) desktopBtn.classList.add('active');
+                    textEls.forEach(el => el.innerText = "Hide Learnt");
+                    iconEls.forEach(el => el.innerText = "🙈");
+                    items.forEach(item => item.classList.add('force-show'));
+                } else {
+                    if (desktopBtn) desktopBtn.classList.remove('active');
+                    textEls.forEach(el => el.innerText = "Show Hidden");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.remove('force-show'));
+                }
+            },
+
+            resetHidden: function() {
+                if (!confirm("Are you sure you want to reset all hidden words?")) return;
+                
+                this.hiddenWords.clear();
+                localStorage.removeItem(this.unitKey);
+                
+                items.forEach(item => {
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                    const cb = item.querySelector('.hide-checkbox');
+                    if (cb) cb.checked = false;
+                });
+                
+                this.updateStats();
+            },
+
+            toggleCN: function() {
+                this.hideCNMode = !this.hideCNMode;
+                const textEls = document.querySelectorAll('.cn-text');
+                const iconEls = document.querySelectorAll('.cn-icon');
+
+                if (this.hideCNMode) {
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => {
+                        item.classList.add('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                } else {
+                    textEls.forEach(el => el.innerText = "Hide CN");
+                    iconEls.forEach(el => el.innerText = "㊙️");
+                    items.forEach(item => {
+                        item.classList.remove('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                }
+            },
+
+            showItemCN: function(el) {
+                if (!this.hideCNMode) return;
+                const item = el.closest('.vocab-item');
+                if (item) {
+                    item.classList.toggle('force-show-cn');
+                }
+            },
+
+            cacheAudio: async function(url, force = false) {
+                if (!url) return;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                
+                if (!force) {
+                    const cached = await db.get(cacheKey);
+                    if (cached) return cached.blob;
+                }
+
+                try {
+                    const fetchUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+                    const resp = await fetch(fetchUrl);
+                    if (!resp.ok) return null;
+                    const contentType = resp.headers.get('Content-Type');
+                    if (!contentType || !contentType.startsWith('audio/')) return null;
+                    const lastModified = resp.headers.get('Last-Modified');
+                    const blob = await resp.blob();
+                    const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                    await db.set(cacheKey, blob, meta);
+                    return blob;
+                } catch(e) { console.error("Cache failed", e); }
+            },
+
+            refreshCache: async function() {
+                const desktopBtn = document.getElementById('refresh-cache');
+                const textEls = document.querySelectorAll('.refresh-text');
+                
+                if (desktopBtn && desktopBtn.classList.contains('loading')) return;
+
+                if (desktopBtn) desktopBtn.classList.add('loading');
+                textEls.forEach(el => el.innerText = "Checking...");
+                let updatedCount = 0;
+
+                try {
+                    for (const item of vocabData) {
+                        if (!item.audio) continue;
+                        
+                        const url = item.audio;
+                        const baseUrl = url.split('?')[0];
+                        const baseHash = this.getHash(baseUrl);
+                        const cacheKey = "ep-audio-" + baseHash;
+                        const cached = await db.get(cacheKey);
+                        const currentVersion = cached?.meta?.lastModified || 0;
+
+                        try {
+                            const headUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+                            const response = await fetch(headUrl, { method: 'HEAD' });
+                            const lastModifiedStr = response.headers.get('Last-Modified');
+                            if (lastModifiedStr) {
+                                const lastModified = new Date(lastModifiedStr).getTime();
+                                if (lastModified > currentVersion) {
+                                    await this.cacheAudio(url, true);
+                                    updatedCount++;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Failed to check ${item.word}`, e);
+                        }
+                    }
+                    alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+                } finally {
+                    if (desktopBtn) desktopBtn.classList.remove('loading');
+                    textEls.forEach(el => el.innerText = "Refresh 🔊");
+                }
+            },
+
+            playAudio: async function(btn) {
+                const card = btn.closest('.vocab-item');
+                const index = parseInt(card.dataset.index);
+                const url = vocabData[index].audio;
+                if (!url) return;
+
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                    document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
+                }
+                
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
+
+                this.currentAudio = new Audio(source);
+                btn.disabled = true;
+
+                const cleanup = () => {
+                    btn.disabled = false;
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+
+                this.currentAudio.onended = cleanup;
+                this.currentAudio.onerror = cleanup;
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    cleanup();
+                });
+            }
+        };
+
+        // Initialize and preload
+        window.addEventListener('load', () => {
+            app.init();
+        });
+    </script>
+
+</body>
+</html>
