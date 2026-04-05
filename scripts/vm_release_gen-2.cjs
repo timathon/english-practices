@@ -222,7 +222,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
                 if (isGeminiQuotaExhausted) break;
 
                 // Detect punctuation in the middle
-                const hasInternalPunctuation = /[,:;!?]/.test(task.context_sentence.trim().slice(0, -1));
+                const hasInternalPunctuation = /[,:;!?\-]/.test(task.context_sentence.trim().slice(0, -1));
 
                 if (hasInternalPunctuation) {
                     await flushBatch(currentBatch);

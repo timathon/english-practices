@@ -18,7 +18,7 @@ function resolvePath(p) {
     return path.isAbsolute(p) ? p : path.resolve(BASE_DIR, p);
 }
 
-function generateHtml(data) {
+function generateHtml(data, jsonPath) {
     if (!fs.existsSync(TEMPLATE_PATH)) {
         throw new Error(`Template not found at ${TEMPLATE_PATH}`);
     }
@@ -28,6 +28,23 @@ function generateHtml(data) {
     const part = data.part || "Unit Practice";
     const section = data.section || "";
     const treeData = data.tree || data; // Handle both nested tree and direct root object
+
+    // Logic to find writing prompt
+    let writingPrompt = "";
+    if (jsonPath.includes('-model-')) {
+        let mdPath = "";
+        if (jsonPath.includes('-model-x')) {
+            mdPath = jsonPath.replace(/-writing-map-model-x-?\d*\.json$/, '-writing-task-x.md');
+        } else {
+            mdPath = jsonPath.replace(/-writing-map-model-?\d*\.json$/, '-writing-task.md');
+        }
+
+        if (fs.existsSync(mdPath)) {
+            writingPrompt = fs.readFileSync(mdPath, 'utf8')
+                .replace(/\n/g, '<br>')
+                .replace(/"/g, '&quot;');
+        }
+    }
 
     // Preprocess tree to ensure all nodes have IDs and state: "hidden" except root
     let nodeCounter = 0;
@@ -54,6 +71,7 @@ function generateHtml(data) {
         .replace(/{{PART}}/g, part)
         .replace(/{{LEVEL}}/g, level)
         .replace(/{{SECTION}}/g, section)
+        .replace(/{{WRITING_PROMPT}}/g, writingPrompt)
         .replace(/{{TREE_DATA}}/g, JSON.stringify(treeData, null, 2));
 }
 
@@ -69,7 +87,7 @@ async function generate(jsonPath, outputPath) {
 
         console.log(`Processing ${jsonPath}...`);
         const jsonData = JSON.parse(fs.readFileSync(absoluteInputPath, 'utf8'));
-        const htmlContent = generateHtml(jsonData);
+        const htmlContent = generateHtml(jsonData, absoluteInputPath);
 
         const outputDir = path.dirname(absoluteOutputPath);
         if (!fs.existsSync(outputDir)) {

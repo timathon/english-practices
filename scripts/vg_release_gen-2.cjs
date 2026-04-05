@@ -149,8 +149,8 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
                 for (const task of uniqueTasks) {
                     if (isGeminiQuotaExhausted) break;
 
-                    // Detect punctuation in the middle (comma, colon, semicolon, exclamation, question mark)
-                    const hasInternalPunctuation = /[,:;!?]/.test(task.context_sentence.trim().slice(0, -1));
+                    // Detect punctuation in the middle (comma, colon, semicolon, exclamation, question mark, hyphen)
+                    const hasInternalPunctuation = /[,:;!?\-]/.test(task.context_sentence.trim().slice(0, -1));
 
                     if (hasInternalPunctuation) {
                         // Flush existing batch if any

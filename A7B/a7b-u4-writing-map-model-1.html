@@ -131,6 +131,64 @@
             transform: none;
         }
 
+        .controls button#promptBtn {
+            background-color: #fef9c3;
+            border-color: #facc15;
+            display: none; /* Hidden by default, shown if prompt exists */
+        }
+
+        .controls button#promptBtn:hover {
+            background-color: #fef08a;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #64748b;
+        }
+
+        .modal-body {
+            line-height: 1.6;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        .modal-body h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
         main {
             flex: 1;
             overflow: auto;
@@ -617,6 +675,7 @@
             </div>
         </div>
         <div class="controls">
+            <button id="promptBtn" onclick="showWritingPrompt()" title="Writing Prompt (写作要求)">📝</button>
             <button id="resetBtn" onclick="resetMap()" title="Reset (重置)">🔄</button>
             <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
             <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
@@ -634,6 +693,17 @@
             <span onclick="updateMode(3)">Sentence</span>
         </div>
         <input type="range" id="modeSlider" min="0" max="3" value="0" step="1" oninput="updateMode(this.value)">
+    </div>
+
+    <!-- Modal for Writing Prompt -->
+    <div id="promptModal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body">
+                <h3>Writing Task Prompt</h3>
+                <div id="promptText"></div>
+            </div>
+        </div>
     </div>
 
     <main id="mindmap-container">
@@ -712,6 +782,7 @@
     }
   ]
 };
+        const writingPrompt = "假如你是李华，你的英国好友 Tom 来信，说他想了解中国家庭的饮食情况。请根据以下提示写一封回信，介绍你家的日常饮食习惯，以此来展示中国饮食文化的多样性，可适当发挥。<br><br>参考词汇：oil-splashed noodles 油泼面；chopsticks 筷子<br><br>要求：<br>1. 语句通顺，句子连贯，书写工整；<br>2. 文中不得出现任何真实信息（姓名、校名和地名等）；<br>3. 词数不少于 60，开头和结尾已给出，不计入总词数。<br><br>Dear Tom,<br><br>How's it going? I'm very glad to share my family's eating habits with you.<br><br>__________________________________________________________________<br>__________________________________________________________________<br>__________________________________________________________________<br><br>What about your eating habits? Can you tell me something about them?<br><br>Yours,<br>Li Hua";
 
         let treeData = null;
         let actionSteps = [];
@@ -1049,8 +1120,22 @@
             applyStepsUpTo(0);
         }
 
+        // Modal Functions
+        function showWritingPrompt() {
+            if (!writingPrompt) return;
+            document.getElementById('promptText').innerHTML = writingPrompt;
+            document.getElementById('promptModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('promptModal').style.display = 'none';
+        }
+
         // Listen for user input
         window.onload = () => {
+            if (writingPrompt) {
+                document.getElementById('promptBtn').style.display = 'flex';
+            }
             resetMap();
         };
 

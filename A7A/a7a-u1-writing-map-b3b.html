@@ -131,6 +131,64 @@
             transform: none;
         }
 
+        .controls button#promptBtn {
+            background-color: #fef9c3;
+            border-color: #facc15;
+            display: none; /* Hidden by default, shown if prompt exists */
+        }
+
+        .controls button#promptBtn:hover {
+            background-color: #fef08a;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #64748b;
+        }
+
+        .modal-body {
+            line-height: 1.6;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        .modal-body h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
         main {
             flex: 1;
             overflow: auto;
@@ -338,6 +396,14 @@
 
         .node-content-text {
             color: #0f172a;
+        }
+
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
         }
 
         .collapsed-indicator {
@@ -609,6 +675,7 @@
             </div>
         </div>
         <div class="controls">
+            <button id="promptBtn" onclick="showWritingPrompt()" title="Writing Prompt (写作要求)">📝</button>
             <button id="resetBtn" onclick="resetMap()" title="Reset (重置)">🔄</button>
             <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
             <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
@@ -626,6 +693,17 @@
             <span onclick="updateMode(3)">Sentence</span>
         </div>
         <input type="range" id="modeSlider" min="0" max="3" value="0" step="1" oninput="updateMode(this.value)">
+    </div>
+
+    <!-- Modal for Writing Prompt -->
+    <div id="promptModal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body">
+                <h3>Writing Task Prompt</h3>
+                <div id="promptText"></div>
+            </div>
+        </div>
     </div>
 
     <main id="mindmap-container">
@@ -743,6 +821,7 @@
   ],
   "state": "emoji"
 };
+        const writingPrompt = "";
 
         let treeData = null;
         let actionSteps = [];
@@ -840,9 +919,28 @@
                     <span class="node-content-keywords">${node.keywords}</span>
                 `;
             } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-text">${node.text}</span>
+                    <span class="node-content-text">${displayedText}</span>
                 `;
                 if (hideChildren) {
                     box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
@@ -1061,8 +1159,22 @@
             applyStepsUpTo(0);
         }
 
+        // Modal Functions
+        function showWritingPrompt() {
+            if (!writingPrompt) return;
+            document.getElementById('promptText').innerHTML = writingPrompt;
+            document.getElementById('promptModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('promptModal').style.display = 'none';
+        }
+
         // Listen for user input
         window.onload = () => {
+            if (writingPrompt) {
+                document.getElementById('promptBtn').style.display = 'flex';
+            }
             resetMap();
         };
 
