@@ -40,6 +40,7 @@ This document defines the rules for extracting and converting textbook data into
   - Group questions into Challenges of exactly **10 questions** each.
   - Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`), a `title` (e.g., `"Challenge 1"`), a relevant emoji `icon`, and an array of 10 question objects under the key `questions`.
 - **Mapping (Required for EVERY question):**
+  - `id`: A unique 8-character alphanumeric string generated for this specific question (e.g., "v8k2m9p1").
   - `word`: The English word/phrase from `vocab-guide`.
   - `meaning`: The Chinese meaning from `vocab-guide`.
   - `context_sentence`: Include the verbatim sentence from `vocab-guide`.
@@ -66,6 +67,7 @@ This document defines the rules for extracting and converting textbook data into
   - `level`: e.g., "Grade 7 Semester 2 - Unit 5".
   - `title`: "Spelling Master".
   - `spelling_words`: Array of word objects.
+    - `id`: A unique 8-character alphanumeric string generated for this specific word.
     - `word`: The English word.
     - `meaning`: Chinese translation from `vocab-guide`.
     - `type`: `single-syllable` or `multi-syllable`.
@@ -88,6 +90,7 @@ This document defines the rules for extracting and converting textbook data into
   - `storageSuffix`: Unique per unit (e.g., `"_g3s2_u2"`).
   - `passcode`: 5-letter string from the first letter of each challenge title in order.
 - **Data Points per Item (under the `data` array of each challenge):**
+  - `id`: A unique 8-character alphanumeric string generated for this specific sentence (e.g., "s4h9x1b2").
   - `en`: Primary English sentence.
   - `cn`: Chinese translation.
   - `hint`: Concise bilingual grammar clue.
@@ -115,21 +118,34 @@ This document defines the rules for extracting and converting textbook data into
   - `part`: e.g., "Unit 2".
   - `state`: Root node MUST have `"state": "emoji"`. Other nodes default to `"state": "hidden"` (based on `a3b-u1` example).
 
-## 6. Writing Map (WM)
+## 6. Text Navigator (TN)
 **Source:** Textbook PDF or extracted Markdown (e.g., `data/A3B/a3b-u2.md`).
-**Sections:** "Start Up", "Speed Up", "Section B Activity 1b", "Section B Activity 2a".
-**Target:** `*-writing-map-[prefix]-[section-slug].json` (Save in the same folder as source)
+**Sections:**
+  - **A3A - A5B:** "Start Up", "Speed Up".
+  - **A7A - A8B:** "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".
+  - **A6B:** "Unit 1 Activity 2", "Unit 2 Activity 2".
+**Target:** `*-text-navigator-[prefix]-[section-slug].json` (Save in the same folder as source)
 
-- **Naming Convention (Standardized for all books):**
-  - "Start Up" -> `*-writing-map-2-start-up.json`
-  - "Speed Up" -> `*-writing-map-3-speed-up.json`
-  - "Section A Activity 2a" -> `*-writing-map-a2a.json`
-  - "Section B Activity 1b" -> `*-writing-map-b1b.json`
-  - "Section B Activity 2a" -> `*-writing-map-b2a.json`
+- **Naming Convention:**
+  - **A3A - A5B:**
+    - "Start Up" -> `*-text-navigator-2-start-up.json`
+    - "Speed Up" -> `*-text-navigator-3-speed-up.json`
+  - **A7A - A8B:**
+    - "Section A Activity 2a" -> `*-text-navigator-a2a.json`
+    - "Section B Activity 1b" -> `*-text-navigator-b1b.json`
+    - "Section B Activity 2a" -> `*-text-navigator-b2a.json`
+  - **A6B (Modules):**
+    - "Unit 1 Activity 2" -> `*-text-navigator-u1a2.json`
+    - "Unit 2 Activity 2" -> `*-text-navigator-u2a2.json`
 - **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts).
 - **Node Rules:**
   - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`).
   - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence**.
+  - `cn`: Chinese translation of the sentence.
+  - `notes`: Brief explanations of difficult vocabulary, expressions, or grammar points.
+  - `statement`: A simple true/false statement in Chinese about the sentence's grammar or vocabulary.
+  - `answer`: (Boolean) The correct answer for the statement (`true` or `false`).
+  - `explanation`: Concise Chinese explanation for the true/false statement.
   - `emoji`: One highly relevant emoji mnemonic per node.
   - `keywords`: A **comma-separated string** of 2-5 trigger words acting as hints (e.g., `"huge, storm"`, not for `root`).
   - `highlight`: (Optional) A **comma-separated string** of glue words or transition phrases to be highlighted in the browser (e.g., `"However, but, For example"`). Use `...` for split patterns.

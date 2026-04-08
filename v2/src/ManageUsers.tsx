@@ -1,0 +1,208 @@
+import React, { useState, useEffect } from 'react'
+import { useSession } from './lib/auth'
+
+export function ManageUsers() {
+  const { data: session } = useSession()
+  const [users, setUsers] = useState<any[]>([])
+  const [textbooks, setTextbooks] = useState<string[]>([])
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [msg, setMsg] = useState('')
+  const [editingUserId, setEditingUserId] = useState<string | null>(null)
+  const [editingTextbooks, setEditingTextbooks] = useState<Set<string>>(new Set())
+
+  const fetchUsers = async () => {
+    const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + '/api/admin/users', { credentials: 'include' })
+    if (res.ok) {
+        setUsers(await res.json())
+    }
+  }
+
+  const fetchTextbooks = async () => {
+    const res = await fetch((import.meta.env.BASE_URL || '/v2/') + 'textbooks.json')
+    if (res.ok) {
+        setTextbooks(await res.json())
+    }
+  }
+
+  useEffect(() => {
+    if (session?.user?.role === 'admin') {
+      fetchUsers()
+      fetchTextbooks()
+    }
+  }, [session])
+
+  if (!session) return <div>Please login.</div>
+  if (session.user.role !== 'admin') return <div>Unauthorized. Admin access required.</div>
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMsg('')
+    const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + '/api/admin/users', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ username, password })
+    })
+    const data = await res.json()
+    if (data.user) {
+        setMsg(`Success: Created user ${data.user.username}`)
+        setUsername('')
+        setPassword('')
+        fetchUsers()
+    } else {
+        setMsg(`Error: ${JSON.stringify(data)}`)
+    }
+  }
+
+  const handleRemoveUser = async (id: string) => {
+    if (!window.confirm("Are you sure you want to remove this user?")) return;
+    const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + `/api/admin/users/${id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    if (res.ok) {
+       fetchUsers();
+    } else {
+       setMsg("Failed to remove user");
+    }
+  }
+
+  const startEdit = (user: any) => {
+      setEditingUserId(user.id)
+      setEditingTextbooks(new Set(user.textbooks || []))
+  }
+
+  const toggleTextbook = (tb: string) => {
+      setEditingTextbooks(prev => {
+          const next = new Set(prev)
+          if (next.has(tb)) next.delete(tb)
+          else next.add(tb)
+          return next
+      })
+  }
+
+  const saveTextbooks = async (id: string) => {
+      const tbArray = Array.from(editingTextbooks)
+      const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + `/api/admin/users/${id}/textbooks`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ textbooks: tbArray })
+      })
+      if (res.ok) {
+          setEditingUserId(null)
+          fetchUsers()
+      } else {
+          alert('Failed to save access rights')
+      }
+  }
+
+  return (
+    <div style={{ maxWidth: 800, margin: '20px auto' }}>
+      <h2>Manage Users</h2>
+
+      <div style={{ background: '#f9f9f9', padding: 20, marginBottom: 20, border: '1px solid #ccc', borderRadius: 8 }}>
+        <h3>Add User</h3>
+        {msg && <div style={{ color: msg.startsWith('Error') ? 'red' : 'green', marginBottom: 10 }}>{msg}</div>}
+        <form onSubmit={handleAddUser} style={{ display: 'flex', gap: 10 }}>
+            <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                required
+                style={{ padding: 8 }}
+            />
+            <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                style={{ padding: 8 }}
+            />
+            <button type="submit" style={{ padding: '8px 16px', background: '#0366d6', color: 'white', border: 'none', borderRadius: 4 }}>Add Student</button>
+        </form>
+      </div>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <thead>
+            <tr style={{ borderBottom: '2px solid #ccc' }}>
+                <th style={{ padding: 10 }}>Username</th>
+                <th style={{ padding: 10 }}>Role</th>
+                <th style={{ padding: 10 }}>Textbooks</th>
+                <th style={{ padding: 10 }}>Joined</th>
+                <th style={{ padding: 10 }}>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {users.map(u => (
+                <React.Fragment key={u.id}>
+                <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: 10 }}>{u.username}</td>
+                    <td style={{ padding: 10 }}>{u.role}</td>
+                    <td style={{ padding: 10 }}>
+                        {u.role === 'admin' ? (
+                            <span style={{ fontSize: '0.9em', color: '#8b0000', fontWeight: 'bold' }}>All Access</span>
+                        ) : Array.isArray(u.textbooks) && u.textbooks.length > 0 ? (
+                            <span style={{ fontSize: '0.9em', color: '#555' }}>{u.textbooks.join(', ')}</span>
+                        ) : (
+                            <span style={{ fontSize: '0.9em', color: '#999', fontStyle: 'italic' }}>None</span>
+                        )}
+                    </td>
+                    <td style={{ padding: 10 }}>{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td style={{ padding: 10, display: 'flex', gap: 5 }}>
+                        {u.role !== 'admin' ? (
+                            <>
+                                <button 
+                                    onClick={() => editingUserId === u.id ? setEditingUserId(null) : startEdit(u)}
+                                    style={{ padding: '4px 8px', background: '#e1e4e8', color: '#333', border: '1px solid #ccc', borderRadius: 4, cursor: 'pointer' }}
+                                >
+                                    {editingUserId === u.id ? 'Cancel' : 'Edit Access'}
+                                </button>
+                                <button 
+                                  onClick={() => handleRemoveUser(u.id)}
+                                  style={{ padding: '4px 8px', background: 'red', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                                >
+                                  Remove
+                                </button>
+                            </>
+                        ) : (
+                            <span style={{ color: '#999', fontStyle: 'italic', fontSize: '0.9em' }}>Built-in</span>
+                        )}
+                    </td>
+                </tr>
+                {editingUserId === u.id && (
+                    <tr style={{ background: '#f5f8fa', borderBottom: '2px solid #ccc' }}>
+                        <td colSpan={5} style={{ padding: '15px 20px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: 10 }}>Select Accessible Textbooks:</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 15, marginBottom: 15 }}>
+                                {textbooks.map(tb => (
+                                    <label key={tb} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={editingTextbooks.has(tb)}
+                                            onChange={() => toggleTextbook(tb)} 
+                                        /> {tb}
+                                    </label>
+                                ))}
+                            </div>
+                            <button 
+                                onClick={() => saveTextbooks(u.id)}
+                                style={{ padding: '6px 12px', background: '#28a745', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                            >
+                                Save Changes
+                            </button>
+                        </td>
+                    </tr>
+                )}
+                </React.Fragment>
+            ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}

@@ -1,0 +1,1 @@
+ALTER TABLE `practice_records` ADD `unfinished` integer DEFAULT false NOT NULL;

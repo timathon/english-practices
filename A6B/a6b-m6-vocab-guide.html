@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grade 6 Semester 2 Module 6 Vocabulary Guide</title>
+    <style>
+        /* Compact A4 Print Optimization */
+        @page { size: A4; margin: 10mm; } 
+        body { 
+            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            color: #333; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: #fff;
+            padding: 15px; 
+            box-sizing: border-box;
+            position: relative;
+        }
+        h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
+        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-top: 0; }
+        
+        /* Stats Display */
+        .stats-bar {
+            position: sticky;
+            top: 10px;
+            z-index: 1500;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+            background: rgba(248, 249, 250, 0.9);
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .stats-bar b { color: #2c3e50; }
+        .stats-bar.updated {
+            animation: stats-highlight 0.5s ease-out;
+        }
+
+        @keyframes stats-highlight {
+            0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); border-color: #3498db; }
+            50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); border-color: #3498db; }
+            100% { transform: translateX(-50%) scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.05); }
+        }
+
+        /* Floating Scroll Buttons */
+        .scroll-btns {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .scroll-btn {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        .scroll-btn:hover {
+            opacity: 1;
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        .scroll-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* Responsive Grid Layout */
+        .vocab-grid {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vocab-item { 
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .vocab-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .vocab-item {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Desktop vs Mobile Display Logic */
+        .mobile-only { display: none !important; }
+        .desktop-only { display: flex !important; }
+
+        @media (max-width: 600px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { display: flex !important; }
+
+            .mobile-controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid #eee;
+                padding: 8px 12px;
+                display: flex;
+                justify-content: space-around;
+                gap: 8px;
+                z-index: 2000;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            }
+
+            .mobile-btn {
+                flex: 1;
+                border: none;
+                background: none;
+                padding: 6px 4px;
+                border-radius: 8px;
+                color: #555;
+                font-size: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                transition: background 0.2s;
+            }
+            .mobile-btn .btn-icon { font-size: 18px; margin-bottom: 2px; }
+            .mobile-btn:active { background: #f0f0f0; }
+            
+            #m-sort-btn { color: #3498db; }
+            #m-cn-btn { color: #e91e63; }
+            #m-hidden-btn { color: #9b59b6; }
+            #m-reset-btn { color: #e67e22; }
+            #m-refresh-btn { color: #1abc9c; }
+            
+            .scroll-btns {
+                right: 15px !important;
+                bottom: 110px !important;
+            }
+            body {
+                padding-bottom: 70px; 
+            }
+        }
+
+        /* Compact Vocab Cards */
+        .vocab-item { 
+            page-break-inside: avoid; 
+            break-inside: avoid;
+            padding: 15px; 
+            border: 1px solid #eee; 
+            border-radius: 10px; 
+            background-color: #fafafa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out, filter 0.2s, box-shadow 0.2s;
+        }
+        .vocab-item.is-hidden-state {
+            opacity: 0.4;
+            filter: grayscale(0.8);
+        }
+        .vocab-item.hide-cn .details:first-of-type .value {
+            display: none;
+        }
+        .vocab-item.hide-cn .details:first-of-type .cn-placeholder {
+            display: inline;
+            color: #3498db;
+            cursor: pointer;
+            font-style: italic;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+        .vocab-item .cn-placeholder {
+            display: none;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .value {
+            display: inline !important;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .cn-placeholder {
+            display: none !important;
+        }
+        .vocab-item.is-hidden-state:not(.force-show) {
+            display: none;
+        }
+        .vocab-item.fading-out {
+            opacity: 0 !important;
+            height: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top-width: 0 !important;
+            border-bottom-width: 0 !important;
+            pointer-events: none;
+        }
+
+        .item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hide-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .word-ipa { font-size: 0.7em; color: #7f8c8d; font-weight: normal; margin-left: 8px; font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif; }
+        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; line-height: 1.2; display: inline-flex; align-items: center; }
+        .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
+        .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
+        .value { flex-grow: 1; }
+        
+        /* Tighter inner boxes */
+        .context-box { 
+            background-color: #fff; 
+            border-left: 4px solid #f39c12; 
+            padding: 8px 12px; 
+            margin: 10px 0; 
+            font-size: 1.1em;
+            font-style: italic; 
+            color: #555;
+            border-radius: 0 4px 4px 0;
+        }
+        .hook-box { 
+            background-color: #e8f8f5; 
+            border-left: 4px solid #1abc9c; 
+            padding: 8px 12px; 
+            font-size: 0.95em;
+            border-radius: 0 4px 4px 0;
+        }
+        @media (min-width: 600px) {
+            .hook-box { margin-top: auto; }
+        }
+        .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
+
+        .play-btn {
+            background: var(--white, #fff);
+            border: 1px solid #eee;
+            border-bottom: 3px solid #ddd;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 5px;
+            vertical-align: middle;
+            transition: all 0.1s;
+            padding: 0;
+        }
+        .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
+        .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
+
+        /* Floating Controls */
+        .controls-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .control-btn {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 110px;
+        }
+        .control-btn:hover { transform: scale(1.05); }
+        .control-btn:active { transform: scale(0.95); }
+
+        #sort-toggle { background: #3498db; }
+        #sort-toggle:hover { background: #2980b9; }
+
+        #toggle-cn { background: #e91e63; }
+        #toggle-cn:hover { background: #d81b60; }
+
+        #show-hidden-toggle { background: #9b59b6; }
+        #show-hidden-toggle:hover { background: #8e44ad; }
+        #show-hidden-toggle.active { background: #2c3e50; }
+
+        #refresh-cache { background: #1abc9c; }
+        #refresh-cache:hover { background: #16a085; }
+        #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+
+        #reset-hidden { background: #e67e22 !important; }
+        #reset-hidden:hover { background: #d35400 !important; }
+
+        @media print {
+            @page { margin: 8mm; }
+            body { padding: 0; font-size: 11px; color: #000; line-height: 1.2; }
+            header { border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; text-align: center; }
+            header a { display: none; }
+            header div { display: inline !important; min-height: 0 !important; margin: 0 !important; }
+            h1 { display: inline; font-size: 1.4em; margin: 0; }
+            h2 { display: inline; font-size: 1.2em; border: none; padding: 0; margin-left: 15px; }
+            
+            .vocab-grid { 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 6px; 
+            }
+            .vocab-item { 
+                padding: 6px 8px; 
+                box-shadow: none; 
+                border: 0.5pt solid #bbb;
+                background: #fff;
+                border-radius: 5px;
+                min-height: 0;
+                display: flex; /* Remove !important to allow display: none from .is-hidden-state */
+                opacity: 1 !important;
+                filter: none !important;
+            }
+            .vocab-item.is-hidden-state { display: none !important; } /* Ensure hidden items stay hidden in print */
+
+            .word-title { font-size: 1.25em; margin-bottom: 4px; padding-bottom: 2px; color: #000; }
+            .page-badge { font-size: 0.7em; padding: 1px 4px; }
+            .details { margin-bottom: 2px; font-size: 0.95em; line-height: 1.2; }
+            .label { width: auto; font-size: 0.85em; margin-right: 3px; color: #444; }
+            .value { font-weight: 400; }
+            
+            .context-box { 
+                margin: 2px 0; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #fdfaf5;
+            }
+            .hook-box { 
+                margin-top: 1px; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #f5fdfc;
+            }
+            
+            .controls-container, .mobile-controls, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 5px;">
+            <a href="index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
+            <h1 style="margin: 0;">Vocabulary Guide</h1>
+        </div>
+        <h2>Grade 6 Semester 2 Module 6</h2>
+    </header>
+
+    <div class="stats-bar" id="stats-display">
+        Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
+    </div>
+
+    <div class="controls-container desktop-only">
+        <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button id="toggle-cn" class="control-btn" onclick="app.toggleCN()">
+            <span class="cn-text">Hide CN</span>
+        </button>
+        <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
+
+    <div class="mobile-controls mobile-only">
+        <button class="mobile-btn" onclick="toggleSort()" id="m-sort-btn">
+            <span class="btn-icon sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleCN()" id="m-cn-btn">
+            <span class="btn-icon cn-icon">㊙️</span>
+            <span class="cn-text">Hide CN</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleShowHiddenMode()" id="m-hidden-btn">
+            <span class="btn-icon hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.resetHidden()" id="m-reset-btn">
+            <span class="btn-icon reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
+            <span class="btn-icon refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
+
+    <div class="vocab-grid" id="vocab-container">
+        
+        <div class="vocab-item" data-word="spaceship" data-index="0">
+            <h2 class="word-title">
+                <span>1. spaceship<span class="word-ipa">/ˈspeɪsʃɪp/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P33</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">宇宙飞船</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">space-ship</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">space (空间) + ship (船)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Then they decided to make a paper spaceship together."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合词：太空(space)里的船(ship)就是宇宙飞船。</div>
+        </div>
+
+        <div class="vocab-item" data-word="space travel" data-index="1">
+            <h2 class="word-title">
+                <span>2. space travel<span class="word-ipa">/ˈspeɪs trævl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P32</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">太空旅行</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">N/A</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">space (太空) + travel (旅行)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "It was a book about space travel."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合词：在太空(space)进行的旅行(travel)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="taikonaut" data-index="2">
+            <h2 class="word-title">
+                <span>3. taikonaut<span class="word-ipa">/ˈtaɪkənɔːt/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P35</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">中国航天员</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">tai-ko-naut</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">astronaut (宇航员)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "In 2003, it took a Chinese taikonaut into space for the first time."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 源自汉语拼音「太空」(taikong)，专指中国航天员。</div>
+        </div>
+
+        <div class="vocab-item" data-word="national flag" data-index="3">
+            <h2 class="word-title">
+                <span>4. national flag<span class="word-ipa">/ˈnæʃnəl flæɡ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P35</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">国旗</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">na-tion-al flag</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">national (国家的) + flag (旗帜)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "It took the national flag of China and some seeds too."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合词：代表国家的(national)旗帜(flag)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="seed" data-index="4">
+            <h2 class="word-title">
+                <span>5. seed<span class="word-ipa">/siːd/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P35</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">种子</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">seen (看见)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "It took the national flag of China and some seeds too."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：在泥土里待着的(seed)就是种子。</div>
+        </div>
+
+        <div class="vocab-item" data-word="birthday" data-index="5">
+            <h2 class="word-title">
+                <span>6. birthday<span class="word-ipa">/ˈbɜːθdeɪ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P32</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">生日</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">birth-day</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">birth (出生) + day (日子)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "It was Daming's birthday yesterday."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 组合词：出生(birth)的那天(day)就是生日。</div>
+        </div>
+
+        <div class="vocab-item" data-word="present" data-index="6">
+            <h2 class="word-title">
+                <span>7. present<span class="word-ipa">/ˈpreznt/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P32</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">礼物</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pre-sent</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">parent (父母)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Simon's mum bought him a present too."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：陪送(present)礼物的过程很开心。</div>
+        </div>
+
+        <div class="vocab-item" data-word="yesterday" data-index="7">
+            <h2 class="word-title">
+                <span>8. yesterday<span class="word-ipa">/ˈjestədeɪ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P32</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">昨天</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">yes-ter-day</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">tomorrow (明天)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "It was Daming's birthday yesterday."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 分段记忆：yes (是) + ter (特) + day (天) -> 是特别的一天。</div>
+        </div>
+
+        <div class="vocab-item" data-word="interested" data-index="8">
+            <h2 class="word-title">
+                <span>9. interested<span class="word-ipa">/ˈɪntrəstɪd/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P32</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">感兴趣的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">in-ter-est-ed</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">interest (兴趣)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Daming is very interested in space travel."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：因特瑞斯体得(interested)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="decide" data-index="9">
+            <h2 class="word-title">
+                <span>10. decide<span class="word-ipa">/dɪˈsaɪd/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P33</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">决定</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">de-cide</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">divide (分开)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Then they decided to make a paper spaceship together."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：底塞得(decide)，心里底定，塞得满满的决定。</div>
+        </div>
+
+        <div class="vocab-item" data-word="finish" data-index="10">
+            <h2 class="word-title">
+                <span>11. finish<span class="word-ipa">/ˈfɪnɪʃ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P33</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(10)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">完成</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">fin-ish</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">fish (鱼)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Daming and Simon finished the book."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：费尼实(finish)，费了力气终于搞实了，完成了。</div>
+        </div>
+
+        <div class="vocab-item" data-word="together" data-index="11">
+            <h2 class="word-title">
+                <span>12. together<span class="word-ipa">/təˈɡeðə/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P33</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(11)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">一起</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">to-geth-er</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">weather (天气)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Then they decided to make a paper spaceship together."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 拆分记忆：to (去) + get (得到) + her (她) -> 两个去见她，大家在一起。</div>
+        </div>
+
+        <div class="vocab-item" data-word="around" data-index="12">
+            <h2 class="word-title">
+                <span>13. around<span class="word-ipa">/əˈraʊnd/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P36</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(12)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">围绕</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">a-round</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">round (圆)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "The earth goes around the sun."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 拆分记忆：a + round (圆) -> 绕着圆转。</div>
+        </div>
+
+        <div class="vocab-item" data-word="earth" data-index="13">
+            <h2 class="word-title">
+                <span>14. earth<span class="word-ipa">/ɜːθ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P32</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(13)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">地球</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">r控制音节 (R-Controlled)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">birth (出生)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "What did you buy on the earth?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆：人类出生(birth)在地球(earth)上。</div>
+        </div>
+
+        <div class="vocab-item" data-word="model" data-index="14">
+            <h2 class="word-title">
+                <span>15. model<span class="word-ipa">/ˈmɒdl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P35</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(14)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">模型</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">mo-del</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">modern (现代的)</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Daming and Simon made a model of a Chinese spaceship."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆：猫兜(model)，模型装在猫兜里。</div>
+        </div>
+    </div>
+
+    <div class="scroll-btns">
+        <button class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="To Top">▲</button>
+        <button class="scroll-btn" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="To Bottom">▼</button>
+    </div>
+
+    <script>
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function() {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function(id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function(id, blob, meta) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, meta, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
+        const vocabData = [{"word":"spaceship","ipa":"/ˈspeɪsʃɪp/","meaning":"宇宙飞船","syllable_type":"space-ship","comparison":"space (空间) + ship (船)","page_number":"33","context_sentence":"Then they decided to make a paper spaceship together.","memorization_hook":"组合词：太空(space)里的船(ship)就是宇宙飞船。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/3bb4629ef0be9d8298d21337f3731f9c.mp3"},{"word":"space travel","ipa":"/ˈspeɪs trævl/","meaning":"太空旅行","syllable_type":"N/A","comparison":"space (太空) + travel (旅行)","page_number":"32","context_sentence":"It was a book about space travel.","memorization_hook":"组合词：在太空(space)进行的旅行(travel)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/d7644158fb422f6a15e8af3dd98acee1.mp3"},{"word":"taikonaut","ipa":"/ˈtaɪkənɔːt/","meaning":"中国航天员","syllable_type":"tai-ko-naut","comparison":"astronaut (宇航员)","page_number":"35","context_sentence":"In 2003, it took a Chinese taikonaut into space for the first time.","memorization_hook":"源自汉语拼音「太空」(taikong)，专指中国航天员。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/02095dbdbe574495da505251b7dc62ab.mp3"},{"word":"national flag","ipa":"/ˈnæʃnəl flæɡ/","meaning":"国旗","syllable_type":"na-tion-al flag","comparison":"national (国家的) + flag (旗帜)","page_number":"35","context_sentence":"It took the national flag of China and some seeds too.","memorization_hook":"组合词：代表国家的(national)旗帜(flag)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/f35031f8b9107ff50a7d753e6ba7e5b9.mp3"},{"word":"seed","ipa":"/siːd/","meaning":"种子","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"seen (看见)","page_number":"35","context_sentence":"It took the national flag of China and some seeds too.","memorization_hook":"联想记忆：在泥土里待着的(seed)就是种子。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/f35031f8b9107ff50a7d753e6ba7e5b9.mp3"},{"word":"birthday","ipa":"/ˈbɜːθdeɪ/","meaning":"生日","syllable_type":"birth-day","comparison":"birth (出生) + day (日子)","page_number":"32","context_sentence":"It was Daming's birthday yesterday.","memorization_hook":"组合词：出生(birth)的那天(day)就是生日。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/41adb5f610701588ef9ce5526dbf0759.mp3"},{"word":"present","ipa":"/ˈpreznt/","meaning":"礼物","syllable_type":"pre-sent","comparison":"parent (父母)","page_number":"32","context_sentence":"Simon's mum bought him a present too.","memorization_hook":"谐音记忆：陪送(present)礼物的过程很开心。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/f2660f72d7efadbc86e086bb34a089f9.mp3"},{"word":"yesterday","ipa":"/ˈjestədeɪ/","meaning":"昨天","syllable_type":"yes-ter-day","comparison":"tomorrow (明天)","page_number":"32","context_sentence":"It was Daming's birthday yesterday.","memorization_hook":"分段记忆：yes (是) + ter (特) + day (天) -> 是特别的一天。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/41adb5f610701588ef9ce5526dbf0759.mp3"},{"word":"interested","ipa":"/ˈɪntrəstɪd/","meaning":"感兴趣的","syllable_type":"in-ter-est-ed","comparison":"interest (兴趣)","page_number":"32","context_sentence":"Daming is very interested in space travel.","memorization_hook":"谐音记忆：因特瑞斯体得(interested)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/23ea6433842979f3deb4610b5a0337fb.mp3"},{"word":"decide","ipa":"/dɪˈsaɪd/","meaning":"决定","syllable_type":"de-cide","comparison":"divide (分开)","page_number":"33","context_sentence":"Then they decided to make a paper spaceship together.","memorization_hook":"谐音记忆：底塞得(decide)，心里底定，塞得满满的决定。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/3bb4629ef0be9d8298d21337f3731f9c.mp3"},{"word":"finish","ipa":"/ˈfɪnɪʃ/","meaning":"完成","syllable_type":"fin-ish","comparison":"fish (鱼)","page_number":"33","context_sentence":"Daming and Simon finished the book.","memorization_hook":"谐音记忆：费尼实(finish)，费了力气终于搞实了，完成了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/02b9e3f6f314e5d79cfbdb07cc58fc87.mp3"},{"word":"together","ipa":"/təˈɡeðə/","meaning":"一起","syllable_type":"to-geth-er","comparison":"weather (天气)","page_number":"33","context_sentence":"Then they decided to make a paper spaceship together.","memorization_hook":"拆分记忆：to (去) + get (得到) + her (她) -> 两个去见她，大家在一起。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/3bb4629ef0be9d8298d21337f3731f9c.mp3"},{"word":"around","ipa":"/əˈraʊnd/","meaning":"围绕","syllable_type":"a-round","comparison":"round (圆)","page_number":"36","context_sentence":"The earth goes around the sun.","memorization_hook":"拆分记忆：a + round (圆) -> 绕着圆转。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/a5c07585e0e53dc555de660d0e5648a9.mp3"},{"word":"earth","ipa":"/ɜːθ/","meaning":"地球","syllable_type":"r控制音节 (R-Controlled)","comparison":"birth (出生)","page_number":"32","context_sentence":"What did you buy on the earth?","memorization_hook":"联想记忆：人类出生(birth)在地球(earth)上。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/c44509935bedf468952ccb503a7ae1a5.mp3"},{"word":"model","ipa":"/ˈmɒdl/","meaning":"模型","syllable_type":"mo-del","comparison":"modern (现代的)","page_number":"35","context_sentence":"Daming and Simon made a model of a Chinese spaceship.","memorization_hook":"谐音记忆：猫兜(model)，模型装在猫兜里。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/df2af645329059bcaeda68630ed3f502.mp3"}];
+
+        let isAlphabetical = false;
+        const container = document.getElementById('vocab-container');
+        const items = Array.from(container.getElementsByClassName('vocab-item'));
+        
+        function toggleSort() {
+            isAlphabetical = !isAlphabetical;
+            const textEls = document.querySelectorAll('.sort-text');
+            const iconEls = document.querySelectorAll('.sort-icon');
+
+            if (isAlphabetical) {
+                items.sort((a, b) => a.dataset.word.localeCompare(b.dataset.word));
+                textEls.forEach(el => el.innerText = "Textbook Order");
+                iconEls.forEach(el => el.innerText = "📖");
+            } else {
+                items.sort((a, b) => parseInt(a.dataset.index) - parseInt(b.dataset.index));
+                textEls.forEach(el => el.innerText = "Sort A-Z");
+                iconEls.forEach(el => el.innerText = "🔤");
+            }
+
+            // Clear and re-append sorted items
+            container.innerHTML = '';
+            items.forEach(item => container.appendChild(item));
+        }
+
+        const app = {
+            currentAudio: null,
+            audioObjectURL: null,
+            hiddenWords: new Set(),
+            showHiddenMode: false,
+            hideCNMode: true,
+            unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 6 Semester 2 Module 6").substring(0, 16),
+
+            init: async function() {
+                // Apply default CN visibility
+                if (this.hideCNMode) {
+                    const textEls = document.querySelectorAll('.cn-text');
+                    const iconEls = document.querySelectorAll('.cn-icon');
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.add('hide-cn'));
+                }
+
+                // Load hidden words from localStorage
+                const stored = localStorage.getItem(this.unitKey);
+                if (stored) {
+                    try {
+                        const indices = JSON.parse(stored);
+                        this.hiddenWords = new Set(indices);
+                    } catch(e) { console.error("Failed to parse hidden words", e); }
+                }
+
+                // Apply initial state to cards
+                items.forEach(item => {
+                    const idx = parseInt(item.dataset.index);
+                    if (this.hiddenWords.has(idx)) {
+                        item.classList.add('is-hidden-state');
+                        const cb = item.querySelector('.hide-checkbox');
+                        if (cb) cb.checked = true;
+                    }
+                });
+
+                this.updateStats();
+
+                // Preload audio
+                vocabData.forEach(item => {
+                    if (item.audio) {
+                        this.cacheAudio(item.audio);
+                    }
+                });
+
+                // Cleanup legacy localStorage audio cache
+                setTimeout(() => {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                    key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                    key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                    key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                }, 2000);
+            },
+
+            getHash: function(str) {
+                return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            },
+
+            updateStats: function() {
+                const total = vocabData.length;
+                const hidden = this.hiddenWords.size;
+                const shown = total - hidden;
+                
+                const display = document.getElementById('stats-display');
+                if (display) {
+                    display.innerHTML = `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+                    display.classList.remove('updated');
+                    void display.offsetWidth; // Force reflow
+                    display.classList.add('updated');
+                }
+            },
+
+            toggleWordHidden: function(index) {
+                const item = items.find(it => parseInt(it.dataset.index) === index);
+                if (!item) return;
+
+                if (this.hiddenWords.has(index)) {
+                    this.hiddenWords.delete(index);
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                } else {
+                    this.hiddenWords.add(index);
+                    
+                    const isMobile = window.innerWidth <= 600;
+                    if (this.showHiddenMode || !isMobile) {
+                        // Instant hide for desktop or when in "Show Hidden" mode
+                        item.classList.add('is-hidden-state');
+                    } else {
+                        // Mobile: Smooth collapse animation
+                        const h = item.offsetHeight;
+                        item.style.height = h + 'px';
+                        item.offsetHeight; // Force reflow
+                        item.classList.add('fading-out');
+                        
+                        setTimeout(() => {
+                            if (this.hiddenWords.has(index)) {
+                                item.classList.add('is-hidden-state');
+                                item.classList.remove('fading-out');
+                                item.style.height = '';
+                            }
+                        }, 500);
+                    }
+                }
+
+                // Persist
+                localStorage.setItem(this.unitKey, JSON.stringify(Array.from(this.hiddenWords)));
+                this.updateStats();
+            },
+
+            toggleShowHiddenMode: function() {
+                this.showHiddenMode = !this.showHiddenMode;
+                const desktopBtn = document.getElementById('show-hidden-toggle');
+                const textEls = document.querySelectorAll('.hidden-text');
+                const iconEls = document.querySelectorAll('.hidden-icon');
+
+                if (this.showHiddenMode) {
+                    if (desktopBtn) desktopBtn.classList.add('active');
+                    textEls.forEach(el => el.innerText = "Hide Learnt");
+                    iconEls.forEach(el => el.innerText = "🙈");
+                    items.forEach(item => item.classList.add('force-show'));
+                } else {
+                    if (desktopBtn) desktopBtn.classList.remove('active');
+                    textEls.forEach(el => el.innerText = "Show Hidden");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.remove('force-show'));
+                }
+            },
+
+            resetHidden: function() {
+                if (!confirm("Are you sure you want to reset all hidden words?")) return;
+                
+                this.hiddenWords.clear();
+                localStorage.removeItem(this.unitKey);
+                
+                items.forEach(item => {
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                    const cb = item.querySelector('.hide-checkbox');
+                    if (cb) cb.checked = false;
+                });
+                
+                this.updateStats();
+            },
+
+            toggleCN: function() {
+                this.hideCNMode = !this.hideCNMode;
+                const textEls = document.querySelectorAll('.cn-text');
+                const iconEls = document.querySelectorAll('.cn-icon');
+
+                if (this.hideCNMode) {
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => {
+                        item.classList.add('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                } else {
+                    textEls.forEach(el => el.innerText = "Hide CN");
+                    iconEls.forEach(el => el.innerText = "㊙️");
+                    items.forEach(item => {
+                        item.classList.remove('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                }
+            },
+
+            showItemCN: function(el) {
+                if (!this.hideCNMode) return;
+                const item = el.closest('.vocab-item');
+                if (item) {
+                    item.classList.toggle('force-show-cn');
+                }
+            },
+
+            cacheAudio: async function(url, force = false) {
+                if (!url) return;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                
+                if (!force) {
+                    const cached = await db.get(cacheKey);
+                    if (cached) return cached.blob;
+                }
+
+                try {
+                    const fetchUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+                    const resp = await fetch(fetchUrl);
+                    if (!resp.ok) return null;
+                    const contentType = resp.headers.get('Content-Type');
+                    if (!contentType || !contentType.startsWith('audio/')) return null;
+                    const lastModified = resp.headers.get('Last-Modified');
+                    const blob = await resp.blob();
+                    const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                    await db.set(cacheKey, blob, meta);
+                    return blob;
+                } catch(e) { console.error("Cache failed", e); }
+            },
+
+            refreshCache: async function() {
+                const desktopBtn = document.getElementById('refresh-cache');
+                const textEls = document.querySelectorAll('.refresh-text');
+                
+                if (desktopBtn && desktopBtn.classList.contains('loading')) return;
+
+                if (desktopBtn) desktopBtn.classList.add('loading');
+                textEls.forEach(el => el.innerText = "Checking...");
+                let updatedCount = 0;
+
+                try {
+                    for (const item of vocabData) {
+                        if (!item.audio) continue;
+                        
+                        const url = item.audio;
+                        const baseUrl = url.split('?')[0];
+                        const baseHash = this.getHash(baseUrl);
+                        const cacheKey = "ep-audio-" + baseHash;
+                        const cached = await db.get(cacheKey);
+                        const currentVersion = cached?.meta?.lastModified || 0;
+
+                        try {
+                            const headUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+                            const response = await fetch(headUrl, { method: 'HEAD' });
+                            const lastModifiedStr = response.headers.get('Last-Modified');
+                            if (lastModifiedStr) {
+                                const lastModified = new Date(lastModifiedStr).getTime();
+                                if (lastModified > currentVersion) {
+                                    await this.cacheAudio(url, true);
+                                    updatedCount++;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Failed to check ${item.word}`, e);
+                        }
+                    }
+                    alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+                } finally {
+                    if (desktopBtn) desktopBtn.classList.remove('loading');
+                    textEls.forEach(el => el.innerText = "Refresh 🔊");
+                }
+            },
+
+            playAudio: async function(btn) {
+                const card = btn.closest('.vocab-item');
+                const index = parseInt(card.dataset.index);
+                const url = vocabData[index].audio;
+                if (!url) return;
+
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                    document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
+                }
+                
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
+
+                this.currentAudio = new Audio(source);
+                btn.disabled = true;
+
+                const cleanup = () => {
+                    btn.disabled = false;
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+
+                this.currentAudio.onended = cleanup;
+                this.currentAudio.onerror = cleanup;
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    cleanup();
+                });
+            }
+        };
+
+        // Initialize and preload
+        window.addEventListener('load', () => {
+            app.init();
+        });
+    </script>
+
+</body>
+</html>

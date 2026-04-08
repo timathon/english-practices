@@ -68,7 +68,7 @@ function cleanRedundantPdfs() {
  */
 function getHtmlFiles(baseDir = '.') {
     const htmlFiles = [];
-    const exclude = ['.git', 'scripts', 'data', 'templates', 'release', 'temp', 'node_modules'];
+    const exclude = ['.git', 'scripts', 'data', 'templates', 'release', 'temp', 'node_modules', 'v2', 'api'];
 
     const walk = (dir) => {
         const items = fs.readdirSync(dir);
@@ -349,7 +349,7 @@ function main() {
     generateFullIndex('index.html', files, 'English Practices');
 
     // Generate index.html for root subfolders
-    const excludeFolders = ['.git', 'scripts', 'release', 'data', 'templates', 'temp', 'node_modules'];
+    const excludeFolders = ['.git', 'scripts', 'release', 'data', 'templates', 'temp', 'node_modules', 'v2', 'api'];
     const subfolders = fs.readdirSync('.').filter(d => {
         const stat = fs.statSync(d);
         return stat.isDirectory() && !d.startsWith('.') && !excludeFolders.includes(d);
@@ -357,6 +357,13 @@ function main() {
 
     for (const folder of subfolders) {
         generateFolderIndex(folder, `${folder} Practices`);
+    }
+
+    // Export textbook list for the dynamic React V2 application
+    const textbooksPath = path.join('v2', 'public', 'textbooks.json');
+    if (fs.existsSync('v2/public')) {
+        fs.writeFileSync(textbooksPath, JSON.stringify(subfolders, null, 2));
+        console.log(`Generated dynamic dataset list: ${textbooksPath}`);
     }
 }
 

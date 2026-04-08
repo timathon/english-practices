@@ -52,7 +52,8 @@ async function getAudioBatch(tasks, book, options = {}) {
     
     // Normalize tasks to extract text
     const sentences = tasks.map(t => t.text || t.context_sentence || t.word || t.en);
-    const combinedText = sentences.join(separator) + separator;
+    const ttsSentences = sentences.map(text => text.replace(/Shenzhou V/g, 'Shenzhou <sub alias="five">V</sub>'));
+    const combinedText = ttsSentences.join(separator) + separator;
     
     console.log(`TTS Batch Request [ID: ${batchId}, Type: ${type}]: ${tasks.length} items.`);
 
