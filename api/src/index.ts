@@ -187,7 +187,8 @@ app.get('/api/practices', async (c) => {
       textbook: practice.textbook,
       unit: practice.unit,
       type: practice.type,
-      title: practice.title
+      title: practice.title,
+      content: practice.content
   }).from(practice)
   
   if (session.user.role === 'admin') {

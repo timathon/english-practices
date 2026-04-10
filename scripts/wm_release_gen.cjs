@@ -97,7 +97,7 @@ function generateHtml(data, jsonPath) {
         .replace(/{{LEVEL}}/g, level)
         .replace(/{{SECTION}}/g, section)
         .replace(/{{WRITING_PROMPT}}/g, writingPrompt)
-        .replace(/{{TREE_DATA}}/g, JSON.stringify(treeData, null, 2));
+        .replace(/{{[ \t]*TREE_DATA[ \t]*}}/g, JSON.stringify(treeData, null, 2));
 }
 
 async function generate(jsonPath, outputPath, audioMode = '1') {
