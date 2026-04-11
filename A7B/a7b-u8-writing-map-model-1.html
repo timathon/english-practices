@@ -28,8 +28,14 @@
             padding: 0;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        @media (min-width: 769px) {
+            body {
+                height: 100vh;
+                overflow: hidden;
+            }
         }
 
         header {
@@ -40,6 +46,8 @@
             justify-content: space-between;
             align-items: center;
             z-index: 10;
+            position: sticky;
+            top: 0;
         }
 
         .header-left {
@@ -134,7 +142,8 @@
         .controls button#promptBtn {
             background-color: #fef9c3;
             border-color: #facc15;
-            display: none; /* Hidden by default, shown if prompt exists */
+            display: none;
+            /* Hidden by default, shown if prompt exists */
         }
 
         .controls button#promptBtn:hover {
@@ -191,11 +200,17 @@
 
         main {
             flex: 1;
-            overflow: auto;
             padding: 3rem;
             display: flex;
             align-items: flex-start;
             justify-content: flex-start;
+            overflow: visible;
+        }
+
+        @media (min-width: 769px) {
+            main {
+                overflow: auto;
+            }
         }
 
         /* Mode Slider Styles */
@@ -210,7 +225,8 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            width: 220px;
+            width: 260px;
+            justify-content: center;
             transition: all 0.3s ease;
         }
 
@@ -233,7 +249,8 @@
             color: var(--primary-color);
         }
 
-        #modeSlider {
+        #modeSlider,
+        #depthSlider {
             -webkit-appearance: none;
             appearance: none;
             width: 100%;
@@ -244,7 +261,8 @@
             cursor: pointer;
         }
 
-        #modeSlider::-webkit-slider-thumb {
+        #modeSlider::-webkit-slider-thumb,
+        #depthSlider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
             width: 18px;
@@ -253,17 +271,18 @@
             background: var(--primary-color);
             cursor: pointer;
             border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        #modeSlider::-moz-range-thumb {
+        #modeSlider::-moz-range-thumb,
+        #depthSlider::-moz-range-thumb {
             width: 18px;
             height: 18px;
             border-radius: 50%;
             background: var(--primary-color);
             cursor: pointer;
             border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         /* Desktop Positioning */
@@ -273,6 +292,12 @@
                 right: 24px;
                 opacity: 0.5;
             }
+
+            .mode-slider-container.depth-slider-container {
+                top: 90px;
+                right: 340px;
+            }
+
             .mode-slider-container:hover {
                 opacity: 1;
                 transform: translateY(-2px);
@@ -347,6 +372,89 @@
             min-width: 120px;
         }
 
+        /* Action Buttons & Tooltips */
+        .node-actions {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            position: relative;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+        }
+
+        .action-btn:hover {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        .action-btn .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            min-width: 160px;
+            max-width: 280px;
+            z-index: 1000;
+            margin-bottom: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            text-align: left;
+            font-weight: 400;
+            line-height: 1.4;
+        }
+
+        .action-btn .tooltip.visible {
+            display: block;
+        }
+
+        .action-btn .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+
+        @media (max-width: 640px) {
+            .action-btn .tooltip {
+                max-width: 85vw;
+            }
+        }
+
         /* Level Hierarchy Variables */
         .node-box.level-0 {
             --node-fs: 1.25rem;
@@ -407,18 +515,20 @@
         }
 
         .collapsed-indicator {
-            background-color: var(--box-empty);
-            color: var(--text-main);
+            background-color: var(--primary-color);
+            color: white;
             border-radius: 12px;
             padding: 2px 8px;
             font-size: 0.85rem;
             margin-left: 10px;
             font-weight: 600;
-            border: 1px solid var(--line-color);
+            border: 1px solid var(--primary-hover);
             display: inline-flex;
             align-items: center;
-            flex-shrink: 0;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
 
         /* Connectors */
         .children-container {
@@ -526,6 +636,10 @@
                 backdrop-filter: blur(8px);
             }
 
+            .mode-slider-container.depth-slider-container {
+                bottom: 180px;
+            }
+
             main {
                 padding: 1rem 1rem 16rem 1rem;
             }
@@ -541,6 +655,10 @@
                 padding-left: 0;
                 margin-top: 10px;
                 position: relative;
+            }
+
+            .children-container .node-content-text {
+                font-size: 1.15rem;
             }
 
             .children-container::before {
@@ -645,6 +763,37 @@
             animation: clickFlicker 0.5s ease-out;
         }
 
+        @keyframes breathe {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .node-box.playing {
+            animation: breathe 2s infinite ease-in-out;
+            z-index: 10;
+        }
+
+        .node-box.node-box-active {
+            z-index: 500 !important;
+        }
+
+        .btn-separator {
+            width: 1px;
+            height: 24px;
+            background-color: var(--line-color);
+            margin: 0 4px;
+            align-self: center;
+        }
+
         /* Progress Bar */
         .progress-container {
             width: 100%;
@@ -676,6 +825,8 @@
         </div>
         <div class="controls">
             <button id="promptBtn" onclick="showWritingPrompt()" title="Writing Prompt (写作要求)">📝</button>
+            <button id="playAllBtn" onclick="togglePlayAll()" title="Play All (顺序播放)" style="display: none;">🔊</button>
+            <div id="playAllSeparator" class="btn-separator" style="display: none;"></div>
             <button id="resetBtn" onclick="resetMap()" title="Reset (重置)">🔄</button>
             <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
             <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
@@ -695,6 +846,37 @@
         <input type="range" id="modeSlider" min="0" max="3" value="0" step="1" oninput="updateMode(this.value)">
     </div>
 
+    <div class="mode-slider-container depth-slider-container">
+        <div class="mode-labels" id="depthLabels">
+            <!-- Dynamically populated -->
+        </div>
+        <input type="range" id="depthSlider" min="0" max="5" value="5" step="1" oninput="updateDepth(this.value)">
+    </div>
+
+    <!-- Modal for Questions -->
+    <div id="questionModal" class="modal-overlay" onclick="closeQuestionModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeQuestionModal()">×</button>
+            <div class="modal-body">
+                <h3 id="questionTitle">True or False Statement</h3>
+                <div id="questionStatement" style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 500;"></div>
+                <div class="question-options" style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <button onclick="checkAnswer(true)" class="choice-btn"
+                        style="flex: 1; background-color: #ecfdf5; border: 2px solid #10b981; color: #065f46; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">TRUE
+                        (正确)</button>
+                    <button onclick="checkAnswer(false)" class="choice-btn"
+                        style="flex: 1; background-color: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">FALSE
+                        (错误)</button>
+                </div>
+                <div id="questionFeedback"
+                    style="display: none; padding: 15px; border-radius: 8px; margin-top: 10px; line-height: 1.5;">
+                    <div id="feedbackText" style="font-weight: 700; margin-bottom: 8px;"></div>
+                    <div id="explanationText" style="color: #4b5563;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal for Writing Prompt -->
     <div id="promptModal" class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -711,6 +893,109 @@
     </main>
 
     <script>
+        // 0. Audio Caching (IndexedDB)
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function () {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function (id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function (id, blob, lastModified) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, lastModified, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
+        const AudioCacheManager = {
+            blobUrls: new Map(),
+
+            getAudio: async function (url) {
+                if (!url) return null;
+
+                const cached = await db.get(url);
+                const now = Date.now();
+
+                try {
+                    // Check if there's a newer version
+                    const headResponse = await fetch(`${url}?t=${now}`, { method: 'HEAD', cache: 'no-cache' });
+                    const remoteLastModified = headResponse.headers.get('Last-Modified');
+
+                    if (cached && remoteLastModified && cached.lastModified === remoteLastModified) {
+                        // Cache is still valid, update timestamp and return
+                        await db.set(url, cached.blob, cached.lastModified);
+                        return this._getBlobUrl(url, cached.blob);
+                    }
+
+                    // Not cached or newer version available, download it
+                    console.log(`Fetching fresh audio: ${url}`);
+                    const response = await fetch(`${url}?t=${now}`, { cache: 'no-cache' });
+                    const blob = await response.blob();
+                    const newLastModified = response.headers.get('Last-Modified') || remoteLastModified;
+
+                    await db.set(url, blob, newLastModified);
+                    return this._refreshBlobUrl(url, blob);
+                } catch (e) {
+                    console.error("Audio cache check failed:", e);
+                    if (cached) return this._getBlobUrl(url, cached.blob);
+                    return url; // Fallback to raw URL
+                }
+            },
+
+            _getBlobUrl: function (id, blob) {
+                if (this.blobUrls.has(id)) return this.blobUrls.get(id);
+                const url = URL.createObjectURL(blob);
+                this.blobUrls.set(id, url);
+                return url;
+            },
+
+            _refreshBlobUrl: function (id, blob) {
+                if (this.blobUrls.has(id)) {
+                    URL.revokeObjectURL(this.blobUrls.get(id));
+                }
+                const url = URL.createObjectURL(blob);
+                this.blobUrls.set(id, url);
+                return url;
+            },
+
+            preloadAll: async function (nodes) {
+                console.log("Preloading audio...");
+                const tasks = nodes.filter(n => n.audio).map(n => this.getAudio(n.audio));
+                await Promise.all(tasks);
+                console.log("Preload complete.");
+            }
+        };
+
         // 1. Data Structure with Keywords & Sentences
         const initialData = {
   "id": "root",
@@ -732,9 +1017,11 @@
           "highlight": "and",
           "keywords": "mouse walked by, woke him up",
           "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/3e5946e190506093fcd148d67901367b.mp3",
           "state": "hidden"
         }
       ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/fd5eaa014b11815268d1ac8ca19851ad.mp3",
       "state": "hidden"
     },
     {
@@ -757,12 +1044,15 @@
               "highlight": "and",
               "keywords": "laughed, let it go",
               "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/22a1641cbcf5e19e08577f0b261eb3ff.mp3",
               "state": "hidden"
             }
           ],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/1282a5fb7eb573fe4f334a8c81740b73.mp3",
           "state": "hidden"
         }
       ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/e61c8fd42ab6d5c3732e58e7d64bdb1e.mp3",
       "state": "hidden"
     },
     {
@@ -792,18 +1082,23 @@
                   "emoji": "🙏",
                   "keywords": "thanked the mouse",
                   "children": [],
+                  "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/d9e38fd90fe01e2b6e1f08bbaceb324d.mp3",
                   "state": "hidden"
                 }
               ],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/450ec5df8109ceb481acfa327f954dba.mp3",
               "state": "hidden"
             }
           ],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/c60ce8ec35ab8cbfbd379cb04d9dad1d.mp3",
           "state": "hidden"
         }
       ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/29dea9f22b6e371d7b2c12e9a89809f3.mp3",
       "state": "hidden"
     }
-  ]
+  ],
+  "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/bb45ee5ded92dbec45e3a54e18a621ba.mp3"
 };
         const writingPrompt = "假如你是李华，是阳光中学七年级的学生。你校英语社团正举办讲故事比赛，你打算参加。你选择了《伊索寓言》里的一则故事&quot;The Lion and the Mouse&quot;。请你根据图片和文字提示，写一篇短文叙述这个故事。<br><br>1.sleep; walk by<br>2.let...go; can help<br>3.catch; net<br>4.bite; get out<br><br>注意：<br>1.词数70左右。短文开头已给出，不计入总词数；<br>2.短文中不得出现真实姓名和校名。<br>This is a story about a lion and a mouse.";
 
@@ -815,8 +1110,92 @@
         let collapsedNodes = new Set();
         let savedCollapsedNodes = null; // To restore after showAll mode
         let showAllMode = 0; // 0: progressive (Manual), 1: emoji, 2: keywords, 3: full
+        let maxDepthVisible = 5; // Default
+        let maxTreeDepth = 0;
+
+        let isPlayingAll = false;
+        let playAllQueue = [];
+        let currentPlayIndex = -1;
+
+        let activeBoxEl = null;
+        let activeWrappers = []; // Now an array to hold all ancestor wrappers
+        let actionsTimeout = null;
+
+        function refreshActionsTimeout() {
+            if (!activeBoxEl) return;
+            if (actionsTimeout) clearTimeout(actionsTimeout);
+            
+            const box = activeBoxEl;
+            const wrappers = [...activeWrappers];
+            
+            actionsTimeout = setTimeout(() => {
+                if (activeBoxEl === box) {
+                    const actions = box.querySelector('.node-actions');
+                    if (actions) actions.remove();
+                    box.classList.remove('node-box-active');
+                    wrappers.forEach(w => w.classList.remove('active-wrapper'));
+                    activeBoxEl = null;
+                    activeWrappers = [];
+                    actionsTimeout = null;
+                }
+            }, 3000);
+        }
+
+        function findNodeById(node, id) {
+            if (node.id === id) return node;
+            if (node.children) {
+                for (const child of node.children) {
+                    const found = findNodeById(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
 
         // 2. Step Generation Logic (Empty -> Emoji -> Keywords -> Full -> Children)
+        function getMaxDepth(node, currentDepth = 0) {
+            if (!node.children || node.children.length === 0) return currentDepth;
+            return Math.max(...node.children.map(child => getMaxDepth(child, currentDepth + 1)));
+        }
+
+        function initDepthSlider() {
+            maxTreeDepth = getMaxDepth(initialData);
+            const slider = document.getElementById('depthSlider');
+            const labels = document.getElementById('depthLabels');
+            slider.max = maxTreeDepth;
+            slider.value = maxTreeDepth;
+            maxDepthVisible = maxTreeDepth;
+
+            labels.innerHTML = '';
+            for (let i = 0; i <= maxTreeDepth; i++) {
+                const span = document.createElement('span');
+                span.innerText = `L${i}`;
+                span.onclick = () => updateDepth(i);
+                labels.appendChild(span);
+            }
+            updateDepthLabels(maxTreeDepth);
+
+            const depthContainer = document.querySelector('.depth-slider-container');
+            if (depthContainer) {
+                depthContainer.style.display = showAllMode === 0 ? 'none' : 'flex';
+            }
+            updatePlayAllVisibility();
+        }
+
+        function updateDepth(val) {
+            maxDepthVisible = parseInt(val);
+            document.getElementById('depthSlider').value = maxDepthVisible;
+            updateDepthLabels(maxDepthVisible);
+            renderDOM(true);
+            updatePlayAllVisibility();
+        }
+
+        function updateDepthLabels(val) {
+            const labels = document.querySelectorAll('#depthLabels span');
+            labels.forEach((label, i) => {
+                label.classList.toggle('active', i === val);
+            });
+        }
         function generateSteps(node) {
             if (!node.children || node.children.length === 0) return;
 
@@ -860,7 +1239,8 @@
 
         // 3. Render Engine
         function renderNode(node, depth = 0) {
-            if (node.state === 'hidden') return null;
+            const isManualMode = showAllMode === 0;
+            if (node.state === 'hidden' || (!isManualMode && depth > maxDepthVisible)) return null;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'mindmap-node-wrapper';
@@ -868,16 +1248,42 @@
             const box = document.createElement('div');
             box.className = `node-box ${node.state} level-${depth}`;
 
-            if (node.id === activeNodeId) box.id = 'active-node';
+            if (node.id === activeNodeId) {
+                if (isPlayingAll) {
+                    box.classList.add('playing');
+                    box.id = 'playing-node';
+                } else {
+                    box.id = 'active-node';
+                }
+            }
             if (node.id === clickedNodeId) box.classList.add('clicked-flicker');
+
+            // Play from here if playing all
+            if (isPlayingAll && node.state !== 'empty') {
+                box.style.cursor = 'pointer';
+                box.onclick = (e) => {
+                    e.stopPropagation();
+                    const index = playAllQueue.findIndex(n => n.id === node.id);
+                    if (index !== -1) {
+                        currentPlayIndex = index;
+                        if (lastAudio) {
+                            lastAudio.pause();
+                            lastAudio = null;
+                        }
+                        window.speechSynthesis.cancel();
+                        playNextInQueue();
+                    }
+                };
+            }
 
             // Collapse Logic
             const hasChildren = node.children && node.children.length > 0;
             const allChildrenFull = hasChildren && node.children.every(c => c.state === 'full');
             const isCollapsed = collapsedNodes.has(node.id);
-            const hideChildren = isCollapsed && allChildrenFull;
+            const isDepthLimited = !isManualMode && depth >= maxDepthVisible;
+            const hideChildren = (isCollapsed && allChildrenFull) || (isDepthLimited && hasChildren);
 
-            if (allChildrenFull) {
+            if (allChildrenFull && showAllMode !== 3 && !isDepthLimited) {
                 box.classList.add('collapsible');
                 box.title = isCollapsed ? "Click to expand" : "Click to collapse";
                 box.onclick = (e) => {
@@ -924,13 +1330,61 @@
                 }
                 box.innerHTML = `
                     <span class="node-content-emoji">${node.emoji}</span>
-                    <span class="node-content-text">${displayedText}</span>
+                    <span class="node-content-text" style="flex:1;">${displayedText}</span>
                 `;
-                if (hideChildren) {
-                    box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
-                }
+
+                // Add click listener to show actions on the fly (overlay)
+                const existingOnClick = box.onclick;
+                box.onclick = (e) => {
+                    if (existingOnClick) existingOnClick(e);
+                    
+                    // Cleanup previous actions if they exist
+                    if (activeBoxEl) {
+                        const prevActions = activeBoxEl.querySelector('.node-actions');
+                        if (prevActions) prevActions.remove();
+                        activeBoxEl.classList.remove('node-box-active');
+                        activeWrappers.forEach(w => w.classList.remove('active-wrapper'));
+                        if (actionsTimeout) clearTimeout(actionsTimeout);
+                        
+                        if (activeBoxEl === box) {
+                            activeBoxEl = null;
+                            activeWrappers = [];
+                            return; // Clicked again to hide
+                        }
+                    }
+
+                    const actions = document.createElement('div');
+                    actions.className = 'node-actions';
+                    actions.onclick = (e) => {
+                        e.stopPropagation();
+                    };
+                    actions.innerHTML = `
+                        <button class="action-btn" onclick="playAudio('${node.id}', event); refreshActionsTimeout();" title="Play Audio">🔊</button>
+                        ${node.cn ? `<button class="action-btn" onclick="toggleTooltip(this, event); refreshActionsTimeout();" title="Translation">CN<span class="tooltip">${node.cn}</span></button>` : ''}
+                        ${node.notes ? `<button class="action-btn" onclick="toggleTooltip(this, event); refreshActionsTimeout();" title="Notes">💡<span class="tooltip">${node.notes}</span></button>` : ''}
+                        ${node.statement ? `<button class="action-btn" onclick="showQuestion('${node.id}', event); refreshActionsTimeout();" title="Question">❓</button>` : ''}
+                    `;
+                    box.appendChild(actions);
+                    box.classList.add('node-box-active');
+                    
+                    // Apply active-wrapper to all ancestor mindmap-node-wrappers for stacking safety
+                    activeWrappers = [];
+                    let parent = box.parentElement;
+                    while (parent && parent !== document.body) {
+                        if (parent.classList.contains('mindmap-node-wrapper')) {
+                            parent.classList.add('active-wrapper');
+                            activeWrappers.push(parent);
+                        }
+                        parent = parent.parentElement;
+                    }
+                    
+                    activeBoxEl = box;
+                    refreshActionsTimeout();
+                };            }
+
+            if (hideChildren && node.state !== 'empty' && node.state !== 'hidden') {
+                box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
             }
-            // (If state is 'empty', inner HTML intentionally blank)
 
             wrapper.appendChild(box);
 
@@ -956,7 +1410,7 @@
 
         function renderDOM(manualToggle = false) {
             const container = document.getElementById('mindmap-container');
-            
+
             // Save scroll positions if we want to preserve them
             const savedScrollTop = container.scrollTop;
             const savedScrollLeft = container.scrollLeft;
@@ -1021,6 +1475,220 @@
         }
 
         // 4. Action Controllers
+        let lastAudio = null;
+        async function playAudio(nodeId, event) {
+            if (event) event.stopPropagation();
+            const node = findNodeById(treeData, nodeId);
+            if (!node) return;
+
+            if (lastAudio) {
+                lastAudio.pause();
+                lastAudio = null;
+            }
+
+            if (node.audio) {
+                try {
+                    const audioUrl = await AudioCacheManager.getAudio(node.audio);
+                    const audio = new Audio(audioUrl);
+                    lastAudio = audio;
+                    audio.play().catch(err => {
+                        console.error("Audio playback failed:", err);
+                        speak(node.text);
+                    });
+                } catch (err) {
+                    speak(node.text);
+                }
+            } else {
+                speak(node.text);
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-GB'; // British English
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleTooltip(btn, event) {
+            if (event) event.stopPropagation();
+            const tooltip = btn.querySelector('.tooltip');
+            if (!tooltip) return;
+            
+            // Hide all other tooltips first
+            document.querySelectorAll('.tooltip.visible').forEach(t => {
+                if (t !== tooltip) t.classList.remove('visible');
+            });
+
+            tooltip.classList.toggle('visible');
+
+            if (tooltip.classList.contains('visible')) {
+                // Auto hide after 5 seconds
+                if (btn._tooltipTimeout) clearTimeout(btn._tooltipTimeout);
+                btn._tooltipTimeout = setTimeout(() => {
+                    tooltip.classList.remove('visible');
+                }, 5000);
+            }
+        }
+        function collectVisibleNodes(node, depth = 0, list = []) {
+            if (node.state === 'hidden' || depth > maxDepthVisible) return list;
+            list.push(node);
+            if (node.children && depth < maxDepthVisible && !collapsedNodes.has(node.id)) {
+                node.children.forEach(child => collectVisibleNodes(child, depth + 1, list));
+            }
+            return list;
+        }
+
+        async function togglePlayAll() {
+            if (isPlayingAll) {
+                stopPlayAll();
+                return;
+            }
+
+            const btn = document.getElementById('playAllBtn');
+            btn.innerText = '⏹️';
+            isPlayingAll = true;
+
+            playAllQueue = collectVisibleNodes(treeData);
+            currentPlayIndex = 0;
+
+            playNextInQueue();
+        }
+
+        function stopPlayAll() {
+            isPlayingAll = false;
+            if (lastAudio) {
+                lastAudio.pause();
+                lastAudio = null;
+            }
+            window.speechSynthesis.cancel();
+
+            const btn = document.getElementById('playAllBtn');
+            btn.innerText = '🔊';
+
+            renderDOM(true);
+        }
+
+        async function playNextInQueue() {
+            if (!isPlayingAll || currentPlayIndex >= playAllQueue.length) {
+                stopPlayAll();
+                return;
+            }
+
+            const node = playAllQueue[currentPlayIndex];
+            activeNodeId = node.id;
+            renderDOM(true); // Highlights current node with 'playing' class via renderNode logic
+
+            // Auto scroll to current node
+            const el = document.getElementById('playing-node');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            await playNodeAudioAsync(node);
+
+            if (isPlayingAll) {
+                currentPlayIndex++;
+                setTimeout(playNextInQueue, 500); // Small gap between sentences
+            }
+        }
+
+        async function playNodeAudioAsync(node) {
+            if (node.audio) {
+                try {
+                    const audioUrl = await AudioCacheManager.getAudio(node.audio);
+                    return new Promise((resolve) => {
+                        const audio = new Audio(audioUrl);
+                        lastAudio = audio;
+                        audio.onended = resolve;
+                        audio.onerror = () => {
+                            speakAsync(node.text).then(resolve);
+                        };
+                        audio.play().catch(err => {
+                            speakAsync(node.text).then(resolve);
+                        });
+                    });
+                } catch (err) {
+                    console.error("Cache fetch failed, falling back to TTS:", err);
+                    await speakAsync(node.text);
+                }
+            } else {
+                await speakAsync(node.text);
+            }
+        }
+
+        function speakAsync(text) {
+            return new Promise((resolve) => {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-GB';
+                    utterance.onend = resolve;
+                    utterance.onerror = resolve;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    resolve();
+                }
+            });
+        }
+
+        function updatePlayAllVisibility() {
+            const isVisible = showAllMode === 3 && maxDepthVisible === maxTreeDepth;
+            document.getElementById('playAllBtn').style.display = isVisible ? 'flex' : 'none';
+            document.getElementById('playAllSeparator').style.display = isVisible ? 'block' : 'none';
+            if (!isVisible && isPlayingAll) stopPlayAll();
+
+            if (showAllMode === 3) {
+                // Preload visible nodes in the background
+                const visibleNodes = collectVisibleNodes(treeData);
+                AudioCacheManager.preloadAll(visibleNodes);
+            }
+        }
+
+        let currentQuestionNode = null;
+        function showQuestion(nodeId, event) {
+            if (event) event.stopPropagation();
+            const node = findNodeById(treeData, nodeId);
+            if (!node || !node.statement) return;
+
+            currentQuestionNode = node;
+            document.getElementById('questionStatement').innerText = node.statement;
+            document.getElementById('questionFeedback').style.display = 'none';
+            document.getElementById('questionModal').style.display = 'flex';
+        }
+
+        function checkAnswer(userChoice) {
+            if (!currentQuestionNode) return;
+
+            const isCorrect = userChoice === currentQuestionNode.answer;
+            const feedback = document.getElementById('questionFeedback');
+            const feedbackText = document.getElementById('feedbackText');
+            const explanationText = document.getElementById('explanationText');
+
+            feedback.style.display = 'block';
+            feedback.style.backgroundColor = isCorrect ? '#ecfdf5' : '#fef2f2';
+            feedback.style.border = `1px solid ${isCorrect ? '#10b981' : '#ef4444'}`;
+
+            feedbackText.innerText = isCorrect ? "✅ Correct! (正确)" : "❌ Incorrect (错误)";
+            feedbackText.style.color = isCorrect ? "#065f46" : "#991b1b";
+
+            explanationText.innerText = currentQuestionNode.explanation || "";
+        }
+
+        function closeQuestionModal() {
+            document.getElementById('questionModal').style.display = 'none';
+            currentQuestionNode = null;
+        }
+
+        // Global click listener to hide tooltips when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.action-btn')) {
+                document.querySelectorAll('.tooltip.visible').forEach(t => {
+                    t.classList.remove('visible');
+                });
+            }
+        });
+
         function updateButtons() {
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
@@ -1059,6 +1727,7 @@
             if (showAllMode > 0) {
                 // Return to progressive mode seamlessly
                 updateMode(0);
+                updatePlayAllVisibility();
                 return;
             }
 
@@ -1067,6 +1736,7 @@
                 currentStepIndex++;
                 renderDOM();
                 updateButtons();
+                updatePlayAllVisibility();
             }
         }
 
@@ -1074,11 +1744,13 @@
             if (showAllMode > 0) {
                 // Return to progressive mode
                 updateMode(0);
+                updatePlayAllVisibility();
                 return;
             }
 
             if (currentStepIndex > 0) {
                 applyStepsUpTo(currentStepIndex - 1);
+                updatePlayAllVisibility();
             }
         }
 
@@ -1086,14 +1758,20 @@
             const newMode = parseInt(val);
             const slider = document.getElementById('modeSlider');
             slider.value = newMode;
-            
+
             // Update labels
-            const labels = document.querySelectorAll('.mode-labels span');
+            const labels = document.querySelectorAll('.mode-labels:not(#depthLabels) span');
             labels.forEach((label, i) => {
                 label.classList.toggle('active', i === newMode);
             });
 
+            const depthContainer = document.querySelector('.depth-slider-container');
+            if (depthContainer) {
+                depthContainer.style.display = newMode === 0 ? 'none' : 'flex';
+            }
+
             if (newMode === 0) {
+
                 // Return to manual/progressive mode
                 if (showAllMode !== 0) {
                     showAllMode = 0;
@@ -1135,12 +1813,14 @@
             setNodeStateRecursively(treeData, targetState);
             collapsedNodes.clear(); // Ensure nothing is hidden when toggling
             renderDOM(true);
+            updatePlayAllVisibility();
         }
 
         function resetMap() {
             updateMode(0);
             collapsedNodes.clear();
             applyStepsUpTo(0);
+            updatePlayAllVisibility();
         }
 
         // Modal Functions
@@ -1159,6 +1839,7 @@
             if (writingPrompt) {
                 document.getElementById('promptBtn').style.display = 'flex';
             }
+            initDepthSlider();
             resetMap();
         };
 
