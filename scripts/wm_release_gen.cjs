@@ -55,15 +55,32 @@ function generateHtml(data, jsonPath) {
 
     // Logic to find writing prompt
     let writingPrompt = "";
-    if (jsonPath.includes('-model-')) {
+    if (jsonPath.includes('-writing-map-')) {
         let mdPath = "";
+        
+        // 1. Try -model-x pattern: map-model-x-1.json -> task-x.md
         if (jsonPath.includes('-model-x')) {
             mdPath = jsonPath.replace(/-writing-map-model-x-?\d*\.json$/, '-writing-task-x.md');
-        } else {
-            mdPath = jsonPath.replace(/-writing-map-model-?\d*\.json$/, '-writing-task.md');
+        }
+        
+        // 2. Try standard model pattern if not found: map-model-1.json -> task.md
+        if (!mdPath || !fs.existsSync(mdPath)) {
+            if (jsonPath.includes('-model-')) {
+                mdPath = jsonPath.replace(/-writing-map-model-?\d*\.json$/, '-writing-task.md');
+            }
         }
 
-        if (fs.existsSync(mdPath)) {
+        // 3. Try generic writing task pattern if still not found
+        if (!mdPath || !fs.existsSync(mdPath)) {
+            mdPath = jsonPath.replace(/-writing-map-.+\.json$/, '-writing-task.md');
+        }
+
+        // 4. Try same filename with .md extension as final fallback
+        if (!mdPath || !fs.existsSync(mdPath)) {
+            mdPath = jsonPath.replace(/\.json$/, '.md');
+        }
+
+        if (mdPath && fs.existsSync(mdPath)) {
             writingPrompt = fs.readFileSync(mdPath, 'utf8')
                 .replace(/\n/g, '<br>')
                 .replace(/"/g, '&quot;');
