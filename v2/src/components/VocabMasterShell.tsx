@@ -170,7 +170,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                headers: { 'Content-Type': 'application/json' },
                credentials: 'include',
                body: JSON.stringify({ 
-                   unit: `${unit} (${activeChallenge.title})`, 
+                   unit: `${practiceId} (${activeChallenge.title})`, 
                    score: scorePercent,
                    unfinished: !isFinished
                })
@@ -262,7 +262,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    }
    
    const getStats = (challengeTitle: string) => {
-       const u = `${unit} (${challengeTitle})`
+       const u = `${practiceId} (${challengeTitle})`
        const logs = practiceRecords.filter(r => r.unit === u)
 
        const todayStr = new Date().toLocaleDateString()
@@ -286,7 +286,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
            <div className="vm-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
                <div className="vm-screen">
                    <div className="vm-header">
-                       <Link to="/dashboard" style={{ position: 'absolute', left: 0, top: 0, textDecoration: 'none', color: '#666', fontSize: '1.2rem' }}>← Back</Link>
+                       <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, textDecoration: 'none', color: '#666', fontSize: '1.2rem' }}>← Back</Link>
                        <h1>{data.title}</h1>
                        <h2>{data.level}</h2>
                    </div>
@@ -319,7 +319,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                                                <span className="vm-stat-label">TODAY</span>
                                                <span className="vm-stat-val">{s.todayRuns} Runs | Best: {s.todayBest}%</span>
                                            </div>
-                                           <div className="vm-stat-row" style={{ cursor: 'pointer', marginTop: '6px' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${c.title}`, logs: s.lifeLogs })}>
+                                           <div className="vm-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${c.title}`, logs: s.lifeLogs })}>
                                                <span className="vm-stat-label">LIFETIME</span>
                                                <span className="vm-stat-val">{s.lifeRuns} Runs | Best: {s.lifeBest}%</span>
                                            </div>
@@ -343,9 +343,19 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                                    {historyModal.logs.map((log: any, i: number) => {
                                        const d = new Date(log.createdAt);
                                        const isUnfinished = log.unfinished ? ' (Unfinished)' : '';
+                                       const now = new Date();
+                                       const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                       const logMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                                       const diffDays = Math.round((todayMidnight.getTime() - logMidnight.getTime()) / 86400000);
+                                       const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                       let dateLabel: string;
+                                       if (diffDays === 0) dateLabel = historyModal.title.startsWith('LIFETIME') ? 'Today ' + timeStr : timeStr;
+                                       else if (diffDays === 1) dateLabel = 'Yesterday ' + timeStr;
+                                       else if (diffDays <= 6) dateLabel = diffDays + ' days ago ' + timeStr;
+                                       else dateLabel = d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
                                        return (
                                            <li key={log.id || i} className="vm-history-item">
-                                               <span className="vm-history-date">{d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                               <span className="vm-history-date">{dateLabel}</span>
                                                <span className="vm-history-score" style={{ color: log.score >= 80 ? 'var(--primary)' : 'inherit' }}>
                                                    {log.score}%{isUnfinished}
                                                </span>

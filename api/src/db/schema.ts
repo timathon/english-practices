@@ -56,7 +56,8 @@ export const practiceRecords = sqliteTable("practice_records", {
     unit: text("unit").notNull(),
     score: integer("score").notNull(),
     unfinished: integer("unfinished", { mode: "boolean" }).default(false).notNull(),
-    createdAt: integer("createdAt", { mode: "timestamp" }).notNull()
+    createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull()
 });
 
 export const practice = sqliteTable("practice", {

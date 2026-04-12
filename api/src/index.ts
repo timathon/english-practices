@@ -150,7 +150,8 @@ app.post('/api/records', async (c) => {
     unit: body.unit,
     score: body.score,
     unfinished: body.unfinished !== undefined ? body.unfinished : false,
-    createdAt: new Date()
+    createdAt: new Date(),
+    updatedAt: new Date()
   });
 
   return c.json({ success: true, id });
@@ -169,7 +170,8 @@ app.put('/api/records/:id', async (c) => {
   // but eq(practiceRecords.id, id) alone handles it in this simple environment setup
   await db.update(practiceRecords).set({
       score: body.score,
-      unfinished: body.unfinished !== undefined ? body.unfinished : false
+      unfinished: body.unfinished !== undefined ? body.unfinished : false,
+      updatedAt: new Date()
   })
   .where(eq(practiceRecords.id, id));
 

@@ -55,7 +55,9 @@
 /* ── Book sections ─────────────────────────────────────────── */
 .db-books {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
   gap: 40px;
 }
 
@@ -63,6 +65,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  max-width: 480px;
 }
 
 .db-book-header {
@@ -110,19 +114,12 @@
   display: flex;
   flex-direction: column;
   /* push cards down so the tab has space to sit above */
-  margin-top: 14px;
   border-radius: 0 10px 10px 10px;
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--card-bg); /* Match active tab background */
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: box-shadow 0.18s, transform 0.18s;
   overflow: visible;
   position: relative;
-}
-
-.db-unit-card:hover {
-  box-shadow: var(--shadow);
-  transform: translateY(-2px);
 }
 
 /* Folder tab ─ sits above the card top-left */
@@ -148,6 +145,16 @@
 /* Card body */
 .db-unit-body {
   padding: 14px 12px 10px;
+  animation: switchTab 0.15s ease-out;
+}
+
+@keyframes switchTab {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 /* ── Practice list ─────────────────────────────────────────── */
@@ -253,4 +260,67 @@
 .db-admin-btn:hover {
   background: #a00000;
   opacity: 0.95;
+}
+
+/* ── Stats Table ───────────────────────────────────────────── */
+.db-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.db-stats-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.db-stats-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card-bg);
+}
+
+.db-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.db-stats-table th,
+.db-stats-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 480px) {
+  .db-stats-table {
+    font-size: 0.72rem;
+  }
+  .db-stats-table th,
+  .db-stats-table td {
+    padding: 8px 4px;
+  }
+}
+
+.db-stats-table th {
+  font-weight: 600;
+  color: var(--text-h);
+  background: rgba(0, 0, 0, 0.02);
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .db-stats-table th {
+    background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+.db-stats-table tr:last-child td {
+  border-bottom: none;
 }
