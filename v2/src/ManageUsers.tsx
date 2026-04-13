@@ -9,6 +9,8 @@ export function ManageUsers() {
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState('')
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
+  const [resettingUserId, setResettingUserId] = useState<string | null>(null)
+  const [newPassword, setNewPassword] = useState('')
   const [editingTextbooks, setEditingTextbooks] = useState<Set<string>>(new Set())
 
   const fetchUsers = async () => {
@@ -19,21 +21,21 @@ export function ManageUsers() {
   }
 
   const fetchTextbooks = async () => {
-    const res = await fetch((import.meta.env.BASE_URL || '/v2/') + 'textbooks.json')
+    const res = await fetch(`${import.meta.env.BASE_URL.slice(0, -1) || ''}/textbooks.json`)
     if (res.ok) {
         setTextbooks(await res.json())
     }
   }
 
   useEffect(() => {
-    if (session?.user?.role === 'admin') {
+    if ((session?.user as any)?.role === 'admin') {
       fetchUsers()
       fetchTextbooks()
     }
   }, [session])
 
   if (!session) return <div>Please login.</div>
-  if (session.user.role !== 'admin') return <div>Unauthorized. Admin access required.</div>
+  if ((session.user as any).role !== 'admin') return <div>Unauthorized. Admin access required.</div>
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -100,6 +102,27 @@ export function ManageUsers() {
       }
   }
 
+  const handleResetPassword = async (id: string) => {
+      if (!newPassword || newPassword.length < 6) {
+          alert('Password must be at least 6 characters');
+          return;
+      }
+      const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + `/api/admin/users/${id}/password`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ password: newPassword })
+      })
+      if (res.ok) {
+          setResettingUserId(null)
+          setNewPassword('')
+          setMsg('Successfully reset password')
+      } else {
+          const err = await res.json()
+          alert('Failed: ' + (err.error || 'Unknown error'))
+      }
+  }
+
   return (
     <div style={{ maxWidth: 800, margin: '20px auto' }}>
       <h2>Manage Users</h2>
@@ -158,10 +181,22 @@ export function ManageUsers() {
                         {u.role !== 'admin' ? (
                             <>
                                 <button 
-                                    onClick={() => editingUserId === u.id ? setEditingUserId(null) : startEdit(u)}
+                                    onClick={() => {
+                                        setResettingUserId(null)
+                                        editingUserId === u.id ? setEditingUserId(null) : startEdit(u)
+                                    }}
                                     style={{ padding: '4px 8px', background: '#e1e4e8', color: '#333', border: '1px solid #ccc', borderRadius: 4, cursor: 'pointer' }}
                                 >
                                     {editingUserId === u.id ? 'Cancel' : 'Edit Access'}
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        setEditingUserId(null)
+                                        resettingUserId === u.id ? setResettingUserId(null) : setResettingUserId(u.id)
+                                    }}
+                                    style={{ padding: '4px 8px', background: '#e1e4e8', color: '#333', border: '1px solid #ccc', borderRadius: 4, cursor: 'pointer' }}
+                                >
+                                    {resettingUserId === u.id ? 'Cancel' : 'Reset Pwd'}
                                 </button>
                                 <button 
                                   onClick={() => handleRemoveUser(u.id)}
@@ -196,6 +231,28 @@ export function ManageUsers() {
                             >
                                 Save Changes
                             </button>
+                        </td>
+                    </tr>
+                )}
+                {resettingUserId === u.id && (
+                    <tr style={{ background: '#fff4f4', borderBottom: '2px solid #ccc' }}>
+                        <td colSpan={5} style={{ padding: '15px 20px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: 10 }}>Set New Password for {u.username}:</div>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <input 
+                                    type="password" 
+                                    placeholder="New Password" 
+                                    value={newPassword}
+                                    onChange={e => setNewPassword(e.target.value)}
+                                    style={{ padding: '8px' }}
+                                />
+                                <button 
+                                    onClick={() => handleResetPassword(u.id)}
+                                    style={{ padding: '6px 12px', background: '#d73a49', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                                >
+                                    Confirm Reset
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 )}

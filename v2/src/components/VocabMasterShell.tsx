@@ -34,7 +34,6 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const [showFeedback, setShowFeedback] = useState(false)
    const [isCorrectFeedback, setIsCorrectFeedback] = useState(false)
    const [continueDisabled, setContinueDisabled] = useState(false)
-   const [trackerSync, setTrackerSync] = useState(0)
    const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
    const [practiceRecords, setPracticeRecords] = useState<any[]>([])
    const [historyModal, setHistoryModal] = useState<{title: string, logs: any[]} | null>(null)
@@ -60,7 +59,6 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
        if (!hasConsumed) return;
        
-       setTrackerSync(prev => prev + 1)
        setActiveChallenge(c)
        setActiveRecordId(null)
        
@@ -89,7 +87,6 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const loadQuestion = (currentQueue: any[], currentMistakes: any[], index: number, redemption: boolean) => {
        let nextQ = null
        let isRedemp = redemption
-       let displayIndex = index
 
        if (index < currentQueue.length) { 
            nextQ = currentQueue[index]

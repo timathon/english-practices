@@ -19,9 +19,8 @@ export function SignIn() {
           setError(ctx.error.message)
         },
         onSuccess() {
-           window.location.href = '/v2/dashboard'
-        }
-      }
+          window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/dashboard`
+        }      }
     }
 
     if (isEmail) {

@@ -15,11 +15,11 @@ export function SignUp() {
       email,
       password,
       fetchOptions: {
-        onError(ctx) {
+        onError(ctx: any) {
           setError(ctx.error.message)
         },
         onSuccess() {
-          window.location.href = '/v2/dashboard'
+          window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/dashboard`
         }
       }
     })

@@ -4,7 +4,7 @@ import { SignIn } from './SignIn'
 import { Dashboard } from './Dashboard'
 import { ManageUsers } from './ManageUsers'
 import { PracticeShell } from './components/PracticeShell'
-import { useSession, signOut, signIn } from './lib/auth'
+import { useSession, signOut } from './lib/auth'
 import './App.css'
 
 function Navigation({ session }: { session: any }) {
@@ -47,27 +47,18 @@ function Navigation({ session }: { session: any }) {
           {!session ? (
             <>
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/signin">Sign In</Link>
-              <a 
+              <Link 
                 className="nav-item danger"
-                href="/v2/admin-login" 
-                onClick={async (e) => {
-                    if (import.meta.env.DEV) {
-                        e.preventDefault();
-                        await signIn.username({
-                            username: 'adminx',
-                            password: 'adminy'
-                        })
-                        window.location.href = '/v2/dashboard'
-                    }
-                }} 
+                to="/signin"
+                onClick={() => setIsMenuOpen(false)}
               >
                   Admin Login
-              </a>
+              </Link>
             </>
           ) : (
             <>
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/dashboard">Dashboard</Link>
-              {session.user.role === 'admin' && (
+              {(session.user as any).role === 'admin' && (
                   <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
               )}
               <div className="nav-divider"></div>
@@ -79,7 +70,7 @@ function Navigation({ session }: { session: any }) {
                 onClick={async () => {
                   setIsMenuOpen(false);
                   await signOut()
-                  window.location.href = '/v2/signin'
+                  window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`
                 }}
                 style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
               >
@@ -99,7 +90,7 @@ function App() {
   if (isPending) return <div style={{ padding: 20 }}>Loading...</div>
 
   return (
-    <BrowserRouter basename="/v2">
+    <BrowserRouter basename={import.meta.env.BASE_URL.slice(0, -1) || ''}>
       <Navigation session={session} />
       <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
         <Routes>

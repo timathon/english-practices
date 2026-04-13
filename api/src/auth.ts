@@ -4,10 +4,11 @@ import { username } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "./db/schema";
 
-export const getAuth = (dbBinding: D1Database) => {
+export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string) => {
     return betterAuth({
-        baseURL: "http://localhost:8787",
-        trustedOrigins: ["http://localhost:5173", "http://127.0.0.1:5173", "https://timathon.github.io"],
+        secret,
+        baseURL: baseURL || "https://epapi.vibequizzing.com",
+        trustedOrigins: ["http://localhost:5173", "http://127.0.0.1:5173", "https://timathon.github.io", "https://epv2.vibequizzing.com", "http://epv2.vibequizzing.com"],
         database: drizzleAdapter(drizzle(dbBinding), {
             provider: "sqlite",
             schema: {
@@ -35,7 +36,13 @@ export const getAuth = (dbBinding: D1Database) => {
         ],
         emailAndPassword: {
             enabled: true,
-            minPasswordLength: 6
+            minPasswordLength: 6,
+            password: {
+                hashOptions: {
+                    memoryCost: 512,
+                    iterations: 1
+                }
+            }
         }
     });
 };
