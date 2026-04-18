@@ -314,18 +314,44 @@ async function interactive() {
     const folders = fs.readdirSync(dataDir).filter(f => fs.statSync(path.join(dataDir, f)).isDirectory());
     const selectedFolders = await checkboxSelector('Select folders to process:', folders);
     if (selectedFolders.length === 0) return;
+
     let filesToProcess = [];
+
+    const getFilesFromFolder = (folderName) => {
+        const folderPath = path.join(dataDir, folderName);
+        const results = [];
+        const entries = fs.readdirSync(folderPath);
+        
+        entries.forEach(entry => {
+            const fullPath = path.join(folderPath, entry);
+            const stats = fs.statSync(fullPath);
+            if (stats.isDirectory()) {
+                const subFiles = fs.readdirSync(fullPath).filter(f => f.endsWith('-sentence-architect.json'));
+                subFiles.forEach(subFile => {
+                    results.push(path.join(entry, subFile));
+                });
+            } else if (entry.endsWith('-sentence-architect.json')) {
+                results.push(entry);
+            }
+        });
+        return results;
+    };
+
     if (selectedFolders.length === 1) {
-        const folderPath = path.join(dataDir, selectedFolders[0]);
-        const allFiles = fs.readdirSync(folderPath).filter(f => f.endsWith('-sentence-architect.json'));
-        const selectedFiles = await checkboxSelector(`Select files in ${selectedFolders[0]}:`, allFiles, true);
-        filesToProcess = selectedFiles.map(f => ({ folder: selectedFolders[0], file: f }));
+        const folder = selectedFolders[0];
+        const allFiles = getFilesFromFolder(folder);
+        const selectedFiles = await checkboxSelector(`Select files in ${folder}:`, allFiles, true);
+        filesToProcess = selectedFiles.map(f => ({ folder, file: f }));
     } else {
         selectedFolders.forEach(folder => {
-            const folderPath = path.join(dataDir, folder);
-            const files = fs.readdirSync(folderPath).filter(f => f.endsWith('-sentence-architect.json'));
+            const files = getFilesFromFolder(folder);
             filesToProcess.push(...files.map(f => ({ folder, file: f })));
         });
+    }
+
+    if (filesToProcess.length === 0) {
+        console.log("No JSON files found to process.");
+        return;
     }
 
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -335,8 +361,11 @@ async function interactive() {
     const vMonthsIdx = await question('\nValidity: 1. 3 [default], 2. 6, 3. 12: ');
     const aMode = await question('\nAudio: 1. Skip [default], 2. Missing, 3. Regenerate: ') || '1';
     rl.close();
+
     for (const task of filesToProcess) {
-        await generate(path.join('data', task.folder, task.file), typeIdx === '2' ? 'builtin' : 'post', path.join('release', typeIdx === '2' ? 'builtin' : 'post', task.folder, task.file.replace(".json", ".html")), uCountIdx === '2' ? 6 : (uCountIdx === '3' ? 10 : 3), vMonthsIdx === '2' ? 6 : (vMonthsIdx === '3' ? 12 : 3), aMode);
+        const inputJson = path.join('data', task.folder, task.file);
+        const outputHtml = path.join('release', typeIdx === '2' ? 'builtin' : 'post', task.folder, task.file.replace(".json", ".html"));
+        await generate(inputJson, typeIdx === '2' ? 'builtin' : 'post', outputHtml, uCountIdx === '2' ? 6 : (uCountIdx === '3' ? 10 : 3), vMonthsIdx === '2' ? 6 : (vMonthsIdx === '3' ? 12 : 3), aMode);
     }
 }
 

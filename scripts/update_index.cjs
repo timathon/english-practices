@@ -93,23 +93,35 @@ function getHtmlFiles(baseDir = '.') {
 }
 
 /**
- * Gets HTML files in a specific directory (non-recursive).
+ * Gets HTML files in a specific directory, including one level of subdirectories.
  */
 function getHtmlFilesInDirectory(directory) {
     const htmlFiles = [];
     if (!fs.existsSync(directory)) return htmlFiles;
-    const items = fs.readdirSync(directory);
-    for (const item of items) {
-        const fullPath = path.join(directory, item);
-        const stat = fs.statSync(fullPath);
-        if (!stat.isDirectory() && item.endsWith('.html') && item !== 'index.html') {
-            htmlFiles.push({
-                path: item,
-                name: item,
-                mtime: stat.mtimeMs
-            });
+    
+    const scanDir = (dir, relPathPrefix = '') => {
+        const items = fs.readdirSync(dir);
+        for (const item of items) {
+            const fullPath = path.join(dir, item);
+            const stat = fs.statSync(fullPath);
+            const relPath = path.join(relPathPrefix, item);
+            
+            if (stat.isDirectory()) {
+                // Only go one level deep from the main folder
+                if (relPathPrefix === '') {
+                    scanDir(fullPath, item);
+                }
+            } else if (item.endsWith('.html') && item !== 'index.html') {
+                htmlFiles.push({
+                    path: relPath,
+                    name: item,
+                    mtime: stat.mtimeMs
+                });
+            }
         }
-    }
+    };
+
+    scanDir(directory);
     return htmlFiles;
 }
 
@@ -142,7 +154,9 @@ function generateFolderIndex(folderPath, title) {
     const groups = {};
     for (const f of sortedFiles) {
         // Group by unit/module prefix like A7B-U1 or a6b-m1
-        const match = f.name.match(/^([a-zA-Z0-9]+-[uUmM]\d+)/i);
+        // Also look at the subfolder name if it exists (e.g. "a-think1-u10/...")
+        const namePart = f.path.split(path.sep).pop();
+        const match = namePart.match(/^([a-zA-Z0-9]+-[uUmM]\d+)/i);
         const unit = match ? match[1].toUpperCase() : 'General';
         if (!groups[unit]) groups[unit] = [];
         groups[unit].push(f);
@@ -236,7 +250,7 @@ function generateFolderIndex(folderPath, title) {
 </head>
 <body>
     <h1>${title}</h1>
-    <p><a href="../index.html">Back to Main Index</a></p>
+    <p><a href="../index.html">← Back to Parent Index</a></p>
     <div class="section">
         <h2>Files in this folder</h2>
         ${listHtml}
@@ -345,24 +359,43 @@ function main() {
     cleanRedundantPdfs();
 
     // Generate main index.html
-    const files = getHtmlFiles('.');
-    generateFullIndex('index.html', files, 'English Practices');
+    const allFiles = getHtmlFiles('.');
+    generateFullIndex('index.html', allFiles, 'English Practices');
 
-    // Generate index.html for root subfolders
+    // Recursively generate index.html for folders
     const excludeFolders = ['.git', 'scripts', 'release', 'data', 'templates', 'temp', 'node_modules', 'v2', 'api'];
-    const subfolders = fs.readdirSync('.').filter(d => {
-        const stat = fs.statSync(d);
-        return stat.isDirectory() && !d.startsWith('.') && !excludeFolders.includes(d);
-    });
+    
+    const walkFolders = (dir) => {
+        const items = fs.readdirSync(dir).filter(d => {
+            const fullPath = path.join(dir, d);
+            const stat = fs.statSync(fullPath);
+            return stat.isDirectory() && !d.startsWith('.') && !excludeFolders.includes(d);
+        });
 
-    for (const folder of subfolders) {
-        generateFolderIndex(folder, `${folder} Practices`);
-    }
+        for (const folder of items) {
+            const folderPath = path.join(dir, folder);
+            
+            // Check if this folder or any of its subfolders contain .html files (other than index.html)
+            const htmlFiles = getHtmlFilesInDirectory(folderPath);
+            if (htmlFiles.length > 0) {
+                generateFolderIndex(folderPath, `${folderPath} Practices`);
+            }
+            
+            // Recurse
+            walkFolders(folderPath);
+        }
+    };
+
+    walkFolders('.');
 
     // Export textbook list for the dynamic React V2 application
     const textbooksPath = path.join('v2', 'public', 'textbooks.json');
     if (fs.existsSync('v2/public')) {
-        fs.writeFileSync(textbooksPath, JSON.stringify(subfolders, null, 2));
+        const rootFolders = fs.readdirSync('.').filter(d => {
+            const stat = fs.statSync(d);
+            return stat.isDirectory() && !d.startsWith('.') && !excludeFolders.includes(d);
+        });
+        fs.writeFileSync(textbooksPath, JSON.stringify(rootFolders, null, 2));
         console.log(`Generated dynamic dataset list: ${textbooksPath}`);
     }
 }

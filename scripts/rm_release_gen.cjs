@@ -138,19 +138,39 @@ async function interactive() {
     if (selectedFolders.length === 0) return;
 
     let filesToProcess = [];
+
+    const getFilesFromFolder = (folderName) => {
+        const folderPath = path.join(dataDir, folderName);
+        const results = [];
+        const entries = fs.readdirSync(folderPath);
+        
+        entries.forEach(entry => {
+            const fullPath = path.join(folderPath, entry);
+            const stats = fs.statSync(fullPath);
+            if (stats.isDirectory()) {
+                const subFiles = fs.readdirSync(fullPath).filter(f => f.endsWith('-recall-map.json'));
+                subFiles.forEach(subFile => {
+                    results.push(path.join(entry, subFile));
+                });
+            } else if (entry.endsWith('-recall-map.json')) {
+                results.push(entry);
+            }
+        });
+        return results;
+    };
+
     if (selectedFolders.length === 1) {
-        const folderPath = path.join(dataDir, selectedFolders[0]);
-        const allFiles = fs.readdirSync(folderPath).filter(f => f.endsWith('-recall-map.json'));
+        const folder = selectedFolders[0];
+        const allFiles = getFilesFromFolder(folder);
         if (allFiles.length === 0) {
-            console.log(`No recall-map.json files found in ${selectedFolders[0]}.`);
+            console.log(`No recall-map.json files found in ${folder}.`);
             process.exit(0);
         }
-        const selectedFiles = await checkboxSelector(`Select files in ${selectedFolders[0]}:`, allFiles, true);
-        filesToProcess = selectedFiles.map(f => ({ folder: selectedFolders[0], file: f }));
+        const selectedFiles = await checkboxSelector(`Select files in ${folder}:`, allFiles, true);
+        filesToProcess = selectedFiles.map(f => ({ folder, file: f }));
     } else {
         selectedFolders.forEach(folder => {
-            const folderPath = path.join(dataDir, folder);
-            const files = fs.readdirSync(folderPath).filter(f => f.endsWith('-recall-map.json'));
+            const files = getFilesFromFolder(folder);
             filesToProcess.push(...files.map(f => ({ folder, file: f })));
         });
     }
