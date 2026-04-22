@@ -8,6 +8,7 @@ export const user = sqliteTable("user", {
   displayUsername: text("displayUsername"),
   role: text("role").default("user"),
   textbooks: text("textbooks", { mode: "json" }).$type<string[]>(),
+  subscriptionExpiry: integer("subscriptionExpiry", { mode: "timestamp" }),
   emailVerified: integer("emailVerified", { mode: "boolean" }).notNull(),
   image: text("image"),
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),

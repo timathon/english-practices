@@ -12,7 +12,6 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
         database: drizzleAdapter(drizzle(dbBinding), {
             provider: "sqlite",
             schema: {
-                ...schema,
                 user: schema.user,
                 session: schema.session,
                 account: schema.account,
@@ -28,6 +27,10 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
                 textbooks: {
                     type: "string[]",
                     defaultValue: []
+                },
+                subscriptionExpiry: {
+                    type: "date",
+                    required: false
                 }
             }
         },
@@ -39,8 +42,9 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
             minPasswordLength: 6,
             password: {
                 hashOptions: {
-                    memoryCost: 512,
-                    iterations: 1
+                    memoryCost: 256, // Lower memory cost
+                    iterations: 1,
+                    parallelism: 1
                 }
             }
         }

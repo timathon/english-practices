@@ -45,16 +45,7 @@ function Navigation({ session }: { session: any }) {
         <div className="nav-menu">
           <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/">Home</Link>
           {!session ? (
-            <>
-              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/signin">Sign In</Link>
-              <Link 
-                className="nav-item danger"
-                to="/signin"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                  Admin Login
-              </Link>
-            </>
+            <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/signin">Sign In</Link>
           ) : (
             <>
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/dashboard">Dashboard</Link>
@@ -96,7 +87,7 @@ function App() {
         <Routes>
           <Route path="/" element={
             <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-              <h1>Welcome to English Practices V2</h1>
+              <h1>Welcome to English Practices V2.1</h1>
               <p>This is the new interactive platform. Ask your teacher for an account!</p>
             </div>
           } />

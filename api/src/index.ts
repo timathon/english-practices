@@ -18,19 +18,34 @@ const allowedOrigins = [
   'http://epv2.vibequizzing.com'
 ]
 
+app.use('*', async (c, next) => {
+  console.log(`[${c.req.method}] ${c.req.url}`);
+  await next();
+})
+
 app.use('/api/*', cors({
-  origin: (origin) => {
-    return allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  origin: (origin, c) => {
+    if (allowedOrigins.includes(origin)) return origin;
+    return allowedOrigins[3]; // Default to epv2.vibequizzing.com
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Origin', 'Content-Type', 'Accept', 'Authorization'],
-  credentials: true
+  allowHeaders: ['Origin', 'Content-Type', 'Accept', 'Authorization', 'x-requested-with'],
+  credentials: true,
+  exposeHeaders: ['Set-Cookie']
 }))
 
 app.onError((err, c) => {
   console.error("Worker Error:", err.message);
   console.error("Stack:", err.stack);
-  return c.text('Internal Server Error', 500);
+  
+  // Set CORS headers for error responses
+  const origin = c.req.header('Origin')
+  if (origin && allowedOrigins.includes(origin)) {
+    c.header('Access-Control-Allow-Origin', origin)
+    c.header('Access-Control-Allow-Credentials', 'true')
+  }
+  
+  return c.text('Internal Server Error: ' + err.message, 500);
 })
 
 // Auth handler
@@ -41,7 +56,7 @@ app.all('/api/auth/*', (c) => {
 
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, desc } from 'drizzle-orm'
-import { practiceRecords, user, practice, account } from './db/schema'
+import { practiceRecords, user, practice, account, session as sessionTable } from './db/schema'
 
 app.get('/api/me', async (c) => {
   const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
@@ -91,6 +106,7 @@ app.get('/api/admin/users', async (c) => {
       username: user.username,
       role: user.role,
       textbooks: user.textbooks,
+      subscriptionExpiry: user.subscriptionExpiry,
       createdAt: user.createdAt
   }).from(user)
   return c.json(users)
@@ -123,21 +139,39 @@ app.delete('/api/admin/users/:id', async (c) => {
   
   const idString = c.req.param('id')
   const db = drizzle(c.env.DB)
+
+  // Delete related records first to avoid foreign key constraint errors
+  try {
+    await db.delete(sessionTable).where(eq(sessionTable.userId, idString))
+    await db.delete(account).where(eq(account.userId, idString))
+    await db.delete(practiceRecords).where(eq(practiceRecords.userId, idString))
+  } catch (err) {
+    console.warn("Minor: Cleanup of related records failed:", err);
+  }
+
   await db.delete(user).where(eq(user.id, idString))
   return c.json({ success: true })
 })
 
 app.put('/api/admin/users/:id/textbooks', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
-  if (!session || session.user.role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
-  
-  const idString = c.req.param('id')
-  const { textbooks } = await c.req.json()
-  const db = drizzle(c.env.DB)
-  
-  await db.update(user).set({ textbooks }).where(eq(user.id, idString))
-  return c.json({ success: true })
+  try {
+    const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+    if (!session || session.user.role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+    
+    const idString = c.req.param('id')
+    const { textbooks, subscriptionExpiry } = await c.req.json()
+    const db = drizzle(c.env.DB)
+    
+    await db.update(user).set({ 
+      textbooks,
+      subscriptionExpiry: subscriptionExpiry ? new Date(subscriptionExpiry) : null
+    }).where(eq(user.id, idString))
+    return c.json({ success: true })
+  } catch (err: any) {
+    console.error("Update User Access Error:", err.message);
+    return c.json({ error: err.message }, 500);
+  }
 })
 
 app.put('/api/admin/users/:id/password', async (c) => {
@@ -191,8 +225,9 @@ app.put('/api/admin/users/:id/password', async (c) => {
       // Clean up temp user
       try {
           // @ts-ignore
-          await db.delete(session).where(eq(session.userId, tempUserId));
+          await db.delete(sessionTable).where(eq(sessionTable.userId, tempUserId));
           await db.delete(account).where(eq(account.userId, tempUserId));
+          await db.delete(practiceRecords).where(eq(practiceRecords.userId, tempUserId));
           await db.delete(user).where(eq(user.id, tempUserId));
       } catch (cleanupErr: any) {
           console.warn("Minor: Shadow Hashing cleanup failed:", cleanupErr.message);
@@ -300,6 +335,11 @@ app.get('/api/practices', async (c) => {
       return c.json(practices)
   }
   
+  const expiry = (session.user as any).subscriptionExpiry;
+  if (expiry && new Date(expiry) < new Date()) {
+      return c.json([]);
+  }
+  
   const allowed = (session.user as any).textbooks || [];
   return c.json(practices.filter(p => allowed.includes(p.textbook)))
 })
@@ -315,8 +355,15 @@ app.get('/api/practices/:id', async (c) => {
   const item = data[0]
   
   if (!item) return c.json({ error: 'Not found' }, 404)
-  if (session.user.role !== 'admin' && !((session.user as any).textbooks || []).includes(item.textbook)) {
-      return c.json({ error: 'Forbidden' }, 403)
+  
+  if (session.user.role !== 'admin') {
+      const expiry = (session.user as any).subscriptionExpiry;
+      if (expiry && new Date(expiry) < new Date()) {
+          return c.json({ error: 'Subscription expired' }, 403)
+      }
+      if (!((session.user as any).textbooks || []).includes(item.textbook)) {
+          return c.json({ error: 'Forbidden' }, 403)
+      }
   }
   
   return c.json(item)
