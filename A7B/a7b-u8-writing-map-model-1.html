@@ -370,6 +370,7 @@
             background-color: var(--box-full);
             border-color: var(--node-border, var(--primary-color));
             min-width: 120px;
+            cursor: pointer;
         }
 
         /* Action Buttons & Tooltips */
@@ -1121,23 +1122,26 @@
         let activeWrappers = []; // Now an array to hold all ancestor wrappers
         let actionsTimeout = null;
 
+        function closeActions() {
+            if (!activeBoxEl) return;
+            if (actionsTimeout) clearTimeout(actionsTimeout);
+            
+            const actions = activeBoxEl.querySelector('.node-actions');
+            if (actions) actions.remove();
+            activeBoxEl.classList.remove('node-box-active');
+            activeWrappers.forEach(w => w.classList.remove('active-wrapper'));
+            
+            activeBoxEl = null;
+            activeWrappers = [];
+            actionsTimeout = null;
+        }
+
         function refreshActionsTimeout() {
             if (!activeBoxEl) return;
             if (actionsTimeout) clearTimeout(actionsTimeout);
             
-            const box = activeBoxEl;
-            const wrappers = [...activeWrappers];
-            
             actionsTimeout = setTimeout(() => {
-                if (activeBoxEl === box) {
-                    const actions = box.querySelector('.node-actions');
-                    if (actions) actions.remove();
-                    box.classList.remove('node-box-active');
-                    wrappers.forEach(w => w.classList.remove('active-wrapper'));
-                    activeBoxEl = null;
-                    activeWrappers = [];
-                    actionsTimeout = null;
-                }
+                closeActions();
             }, 3000);
         }
 
@@ -1336,21 +1340,18 @@
                 // Add click listener to show actions on the fly (overlay)
                 const existingOnClick = box.onclick;
                 box.onclick = (e) => {
+                    e.stopPropagation(); // Prevent global closeActions from firing
                     if (existingOnClick) existingOnClick(e);
                     
+                    // Toggle current node: if it's already active, close it
+                    if (activeBoxEl === box) {
+                        closeActions();
+                        return;
+                    }
+
                     // Cleanup previous actions if they exist
                     if (activeBoxEl) {
-                        const prevActions = activeBoxEl.querySelector('.node-actions');
-                        if (prevActions) prevActions.remove();
-                        activeBoxEl.classList.remove('node-box-active');
-                        activeWrappers.forEach(w => w.classList.remove('active-wrapper'));
-                        if (actionsTimeout) clearTimeout(actionsTimeout);
-                        
-                        if (activeBoxEl === box) {
-                            activeBoxEl = null;
-                            activeWrappers = [];
-                            return; // Clicked again to hide
-                        }
+                        closeActions();
                     }
 
                     const actions = document.createElement('div');
@@ -1380,7 +1381,8 @@
                     
                     activeBoxEl = box;
                     refreshActionsTimeout();
-                };            }
+                };
+            }
 
             if (hideChildren && node.state !== 'empty' && node.state !== 'hidden') {
                 box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
@@ -1409,6 +1411,7 @@
         }
 
         function renderDOM(manualToggle = false) {
+            closeActions(); // Close any active overlays before re-rendering
             const container = document.getElementById('mindmap-container');
 
             // Save scroll positions if we want to preserve them
@@ -1842,6 +1845,16 @@
             initDepthSlider();
             resetMap();
         };
+
+        // Global click listener to close actions
+        function handleGlobalClick(e) {
+            if (activeBoxEl && !activeBoxEl.contains(e.target)) {
+                closeActions();
+            }
+        }
+        window.addEventListener('mousedown', handleGlobalClick);
+        window.addEventListener('pointerdown', handleGlobalClick);
+        window.addEventListener('touchstart', handleGlobalClick);
 
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' || e.code === 'ArrowRight') {

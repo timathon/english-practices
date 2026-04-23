@@ -153,11 +153,21 @@ function generateFolderIndex(folderPath, title) {
     
     const groups = {};
     for (const f of sortedFiles) {
-        // Group by unit/module prefix like A7B-U1 or a6b-m1
-        // Also look at the subfolder name if it exists (e.g. "b-think1-u10/...")
-        const namePart = f.path.split(path.sep).pop();
-        const match = namePart.match(/^([a-zA-Z0-9]+-[uUmM]\d+)/i);
-        const unit = match ? match[1].toUpperCase() : 'General';
+        // Group by subfolder if it exists, otherwise by unit/module prefix
+        const parts = f.path.split(path.sep);
+        let unit = 'General';
+        
+        if (parts.length > 1) {
+            // It's in a subfolder, use the subfolder name as the group
+            unit = parts[0];
+        } else {
+            // It's in the root of the folder, try to find a unit prefix
+            const match = parts[0].match(/^([a-zA-Z0-9]+-[uUmM]\d+)/i);
+            if (match) {
+                unit = match[1].toUpperCase();
+            }
+        }
+        
         if (!groups[unit]) groups[unit] = [];
         groups[unit].push(f);
     }
