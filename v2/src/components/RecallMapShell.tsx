@@ -19,7 +19,7 @@ interface RecallMapShellProps {
   practiceId: string
 }
 
-export function RecallMapShell({ data, practiceId }: RecallMapShellProps) {
+export function RecallMapShell({ data }: Omit<RecallMapShellProps, 'practiceId'>) {
   const [treeData, setTreeData] = useState<Node>(() => JSON.parse(JSON.stringify(data.tree)))
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [actionSteps, setActionSteps] = useState<(() => void)[]>([])
@@ -95,7 +95,7 @@ export function RecallMapShell({ data, practiceId }: RecallMapShellProps) {
     setActionSteps(() => steps)
     
     // Start with root visible if it was full in data or just run first step
-    applyStepsUpTo(1, steps)
+    applyStepsUpTo(1)
   }, [data.tree])
 
   const findNode = (root: Node, id: string): Node | null => {
@@ -109,7 +109,7 @@ export function RecallMapShell({ data, practiceId }: RecallMapShellProps) {
     return null
   }
 
-  const applyStepsUpTo = (targetIndex: number, stepsSource = actionSteps) => {
+  const applyStepsUpTo = (targetIndex: number) => {
     const newTree = JSON.parse(JSON.stringify(data.tree))
     newTree.state = 'hidden' // Reset root
     
@@ -233,7 +233,6 @@ export function RecallMapShell({ data, practiceId }: RecallMapShellProps) {
     setShowAllMode(val)
     setCollapsedNodes(new Set())
 
-    const targetState = val === 1 ? 'emoji' : 'full' // val 2 is keywords/full
 
     setTreeData(prev => {
       const newTree = JSON.parse(JSON.stringify(prev))

@@ -28,7 +28,7 @@ export function PracticeShell() {
     }
 
     if (practice.type === 'recall-map') {
-        return <RecallMapShell data={practice.content} practiceId={practice.id} />
+        return <RecallMapShell data={practice.content} />
     }
 
     if (practice.type === 'vocab-guide') {
