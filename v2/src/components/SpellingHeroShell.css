@@ -1,0 +1,226 @@
+/* ===== SpellingHeroShell ===== */
+.sh-container {
+    --primary: #58cc02;
+    --primary-dark: #46a302;
+    --secondary: #1cb0f6;
+    --secondary-dark: #1185ba;
+    --warning: #ffc800;
+    --warning-dark: #e5b400;
+    --danger: #ff4b4b;
+    --danger-dark: #d33131;
+    --neutral: #e5e5e5;
+    --text: #4b4b4b;
+    --white: #ffffff;
+    --bg: #f0f2f5;
+
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    width: 100%;
+    max-width: 600px;
+    margin: 20px auto;
+    background: var(--white);
+    flex-grow: 1;
+    min-height: 90vh;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+}
+
+@media (max-width: 600px) {
+    .sh-container {
+        margin: 0;
+        min-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+        max-width: none;
+    }
+}
+
+.sh-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    flex-grow: 1;
+}
+
+/* ---- Home Screen ---- */
+.sh-header { text-align: center; margin-bottom: 20px; position: relative; }
+.sh-header h1 { color: var(--primary); margin: 0; font-size: 1.8rem; }
+@media (max-width: 480px) { .sh-header h1 { font-size: 1.4rem; } }
+.sh-header h2 { font-size: 1.1rem; color: #999; margin-top: 5px; font-weight: normal; }
+
+.sh-challenge-grid { display: grid; gap: 15px; overflow-y: auto; padding-bottom: 60px; }
+.sh-challenge-card {
+    background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+    border-radius: 16px; padding: 15px; cursor: pointer; transition: border-color 0.1s;
+}
+.sh-challenge-card:hover { background-color: #fafafa; border-color: #ccc; }
+.sh-challenge-card:active { transform: translateY(2px); }
+.sh-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.sh-card-title { font-size: 1.1rem; font-weight: bold; margin: 0; }
+.sh-card-stats {
+    font-size: 0.8rem; color: #777; display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px; background: #f8f9fa; padding: 6px 10px; border-radius: 10px; border: 1px solid #eee;
+}
+.sh-stat-row { display: flex; flex-direction: column; align-items: flex-start; }
+.sh-stat-row:last-child { align-items: flex-end; }
+.sh-stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+.sh-stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
+.sh-start-btn {
+    background-color: var(--primary); color: white; border: none; border-radius: 8px;
+    padding: 6px 16px; font-weight: bold; cursor: pointer; font-size: 0.9rem;
+    border-bottom: 4px solid var(--primary-dark); transition: transform 0.1s;
+}
+.sh-start-btn:active { transform: translateY(2px); border-bottom-width: 1px; }
+
+/* ---- Game Screen Top Bar ---- */
+.sh-top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; height: 40px; }
+.sh-close-btn { font-size: 1.5rem; cursor: pointer; color: #ccc; background: none; border: none; flex-shrink: 0; width: 30px; }
+.sh-progress-container {
+    flex-grow: 1; margin: 0 15px; height: 12px; background-color: var(--neutral);
+    border-radius: 6px; display: flex; overflow: hidden;
+}
+.sh-progress-segment { flex-grow: 1; border-right: 1px solid var(--white); transition: background-color 0.3s; }
+.sh-progress-segment.green { background-color: var(--primary); }
+.sh-progress-segment.red { background-color: var(--danger); }
+.sh-progress-segment.active {
+    z-index: 10; border-radius: 4px;
+    animation: sh-breathing 1.5s ease-in-out infinite;
+}
+
+/* ---- Question Area ---- */
+.sh-question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+
+.sh-prompt-cn { font-size: 1.8rem; color: #333; font-weight: bold; text-align: center; margin-bottom: 25px; }
+
+.sh-type-badge {
+    text-align: center; font-size: 0.75rem; color: #aaa; font-weight: bold;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;
+}
+
+/* ---- Linear (Slot Machine) UI ---- */
+.sh-slots-container {
+    display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; flex-wrap: wrap;
+}
+.sh-slot {
+    min-width: 52px; height: 56px; border: 3px solid var(--neutral); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;
+    cursor: pointer; background: var(--white); transition: all 0.2s; padding: 0 6px;
+}
+.sh-slot.active { border-color: var(--secondary); background: #f0f9ff; transform: scale(1.08); }
+.sh-slot.filled { border-color: var(--primary); color: var(--primary-dark); }
+.sh-slot.correct { border-color: var(--primary); background: #d7ffb8; color: var(--primary-dark); }
+.sh-slot.wrong { border-color: var(--danger); background: #ffdfe0; color: var(--danger-dark); }
+
+.sh-options-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.sh-option-btn {
+    padding: 14px 8px; border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+    border-radius: 12px; background: white; font-size: 1.15rem; font-weight: bold; cursor: pointer;
+    color: var(--text); transition: all 0.1s; text-align: center;
+}
+.sh-option-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+.sh-option-btn.selected { background: var(--secondary); color: white; border-color: var(--secondary-dark); }
+
+/* ---- Soup (Brick Pool) UI ---- */
+.sh-soup-answer {
+    min-height: 70px; border: 2px solid var(--neutral); border-radius: 12px;
+    background: #fafafa; margin-bottom: 20px;
+    display: flex; flex-wrap: wrap; gap: 8px; padding: 12px;
+    align-items: center; justify-content: center;
+}
+.sh-soup-answer.shake { animation: sh-shake 0.4s; }
+
+.sh-brick-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 10px; }
+.sh-brick {
+    background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+    border-radius: 12px; padding: 10px 16px; font-size: 1.2rem; font-weight: bold;
+    cursor: pointer; color: var(--text); transition: all 0.1s;
+}
+.sh-brick:active { transform: translateY(2px); border-bottom-width: 2px; }
+.sh-brick.used { background: var(--neutral); color: transparent; border-color: transparent; pointer-events: none; }
+.sh-brick-answer {
+    background: var(--white); border: 2px solid var(--secondary); border-bottom: 4px solid var(--secondary-dark);
+    border-radius: 12px; padding: 10px 16px; font-size: 1.2rem; font-weight: bold;
+    color: var(--secondary-dark); cursor: pointer; transition: all 0.1s;
+}
+.sh-brick-answer:hover { border-color: var(--danger); color: var(--danger-dark); }
+
+/* ---- Feedback ---- */
+.sh-feedback-area {
+    min-height: 80px; margin-bottom: 10px; padding: 12px 15px; border-radius: 12px; text-align: center;
+    visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+.sh-feedback-area.visible { visibility: visible; }
+.sh-feedback-area.correct { background-color: #d7ffb8; }
+.sh-feedback-area.wrong { background-color: #ffdfe0; }
+.sh-feedback-title { margin: 0 0 4px 0; font-size: 1.1rem; }
+.sh-feedback-word { margin: 0; font-size: 1.6rem; font-weight: bold; }
+
+.sh-play-btn {
+    background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+    border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; margin-right: 8px; vertical-align: middle; transition: all 0.1s;
+}
+.sh-play-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+.sh-play-btn svg { width: 20px; height: 20px; fill: var(--secondary); }
+
+/* ---- Footer ---- */
+.sh-footer-action { padding-top: 15px; border-top: 2px solid var(--neutral); }
+.sh-check-btn {
+    width: 100%; padding: 15px; border-radius: 16px; font-size: 1.2rem; font-weight: bold;
+    color: white; background-color: var(--primary); border: none; border-bottom: 5px solid var(--primary-dark);
+    cursor: pointer; text-transform: uppercase;
+}
+.sh-check-btn:active { transform: translateY(2px); border-bottom-width: 3px; }
+.sh-check-btn:disabled { background-color: var(--neutral); border-bottom-color: #ccc; color: #999; cursor: not-allowed; transform: none; }
+.sh-check-btn.continue { background-color: var(--secondary); border-bottom-color: var(--secondary-dark); }
+.sh-check-btn.wrong { background-color: var(--danger); border-bottom-color: var(--danger-dark); animation: sh-shake 0.4s; }
+
+/* ---- Complete Screen ---- */
+.sh-complete-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; flex-grow: 1; padding: 40px 20px;
+}
+.sh-score-display { color: var(--primary); font-size: 4rem; font-weight: bold; margin: 0; }
+.sh-complete-subtitle { color: #999; font-size: 1.2rem; margin: 10px 0 30px; }
+
+/* ---- Modals ---- */
+.sh-modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.sh-modal-content {
+    background: var(--white); border-radius: 16px; padding: 25px;
+    width: 90%; max-width: 320px; max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+.sh-modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;
+}
+.sh-modal-title { margin: 0; font-size: 1.2rem; }
+.sh-modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #666; }
+.sh-history-list { list-style: none; padding: 0; margin: 0; }
+.sh-history-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid #eee;
+}
+.sh-history-item:last-child { border-bottom: none; }
+.sh-history-date { color: #666; font-size: 0.85rem; }
+.sh-history-score { font-weight: bold; font-size: 1.05rem; }
+
+/* ---- Animations ---- */
+@keyframes sh-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes sh-breathing {
+    0% { transform: scaleY(1); opacity: 0.8; }
+    50% { transform: scaleY(1.4); opacity: 1; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+    100% { transform: scaleY(1); opacity: 0.8; }
+}
+@keyframes sh-pop { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }

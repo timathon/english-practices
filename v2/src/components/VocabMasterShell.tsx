@@ -283,7 +283,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
            <div className="vm-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
                <div className="vm-screen">
                    <div className="vm-header">
-                       <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, textDecoration: 'none', color: '#666', fontSize: '1.2rem' }}>← Back</Link>
+                       <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, fontSize: '1.5rem', textDecoration: 'none' }}>🏠</Link>
                        <h1>{data.title}</h1>
                        <h2>{data.level}</h2>
                    </div>

@@ -145,7 +145,8 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                       let total = 0;
                       let avg = 0;
                       const isVM = p.type.toLowerCase().includes('vocab-master');
-                      
+                      const isSH = p.type.toLowerCase().includes('spelling-hero');
+
                       if (isVM && p.content?.challenges) {
                         total = p.content.challenges.length;
                         let sumMax = 0;
@@ -157,6 +158,26 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                           }
                         }
                         if (doneCount > 0) avg = Math.round(sumMax / doneCount);
+                      }
+
+                      if (isSH && p.content?.spelling_words) {
+                        const wordCount = p.content.spelling_words.length;
+                        total = Math.ceil((wordCount * 2) / 10);
+                        try {
+                          const raw = localStorage.getItem(`sh-stats-${p.id}`);
+                          if (raw) {
+                            const allStats = JSON.parse(raw);
+                            let sumBest = 0;
+                            for (let i = 1; i <= total; i++) {
+                              const s = allStats[`ch-${i}`];
+                              if (s && s.lifetime.attempts > 0) {
+                                doneCount++;
+                                sumBest += s.lifetime.best;
+                              }
+                            }
+                            if (doneCount > 0) avg = Math.round(sumBest / doneCount);
+                          }
+                        } catch {}
                       }
 
                       const getGrade = (a: number) => {
@@ -181,12 +202,15 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                           <Link to={`/practice/${p.id}`} className="db-practice-link">
                             <span className="db-practice-icon">{getIcon(p.type)}</span>
                             <span className="db-practice-name">{formatType(p.type)}</span>
-                            {isVM && total > 0 && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}>
+                            {(isVM || isSH) && total > 0 && (
+                              <div 
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
+                                title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}
+                              >
                                 <div style={{ position: 'relative', width: '48px', height: '18px', background: 'var(--code-bg)', borderRadius: '4px', border: '1px solid var(--border)', overflow: 'hidden' }}>
                                   <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${percent}%`, background: getProgressColor(percent), opacity: 0.4, transition: 'width 0.3s ease, background-color 0.3s ease' }} />
                                   <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                                    {percent}%
+                                    {doneCount}/{total}
                                   </div>
                                 </div>
                                 {doneCount > 0 && (

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { VocabMasterShell } from './VocabMasterShell'
 import { RecallMapShell } from './RecallMapShell'
 import { VocabGuideShell } from './VocabGuideShell'
+import { SpellingHeroShell } from './SpellingHeroShell'
 
 export function PracticeShell() {
     const { id } = useParams()
@@ -32,6 +33,10 @@ export function PracticeShell() {
 
     if (practice.type === 'vocab-guide') {
         return <VocabGuideShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} />
+    }
+
+    if (practice.type === 'spelling-hero') {
+        return <SpellingHeroShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} />
     }
     
     return (
