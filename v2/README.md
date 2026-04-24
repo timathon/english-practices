@@ -4,8 +4,15 @@ The modern interactive platform for English learning, built with React, TypeScri
 
 ## Features
 
-- **Interactive Practices**: Supports various exercise types (Vocab Master, Spelling Hero, Sentence Architect, etc.).
-- **User Dashboard**: Students can view and access their assigned textbooks.
+- **Interactive Practices**: Native implementations of core exercise types:
+    - ✅ **Vocab Master**: Shuffled quizzes with Cloze, En2Cn, and Cn2En modes.
+    - ✅ **Recall Map**: Interactive mindmaps with progressive reveal and mobile vertical views.
+    - ✅ **Vocab Guide**: Comprehensive study cards with natural scrolling and centered body layout.
+    - 🚧 *Upcoming*: Spelling Hero, Sentence Architect.
+- **User Dashboard**:
+    - Natural numeric sorting for modules (M1, M2... M10).
+    - Progress tracking with letter grades (S, A, B, C, F).
+    - Daily activity tracking and usage analytics.
 - **Admin Panel**:
     - **User Management**: Create student accounts and reset passwords.
     - **Access Control**: Grant specific textbook permissions per user.
@@ -14,11 +21,12 @@ The modern interactive platform for English learning, built with React, TypeScri
 
 ## Tech Stack
 
-- **Framework**: React 18
+- **Framework**: React 19
 - **Language**: TypeScript
 - **Bundler**: Vite
 - **Auth Client**: Better-Auth
-- **Styling**: Vanilla CSS
+- **Styling**: Vanilla CSS (Scoped component styles)
+- **Charts**: Recharts
 
 ## Development
 
