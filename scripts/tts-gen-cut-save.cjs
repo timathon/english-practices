@@ -67,34 +67,46 @@ from google.genai import types
 client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
 
 def get_tts():
-    max_retries = 5
-    for attempt in range(max_retries):
-        try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash-preview-tts",
-                contents="Say clearly: ${combinedText.replace(/"/g, '\\"')}",
-                config=types.GenerateContentConfig(
-                    responseModalities=["AUDIO"],
-                    speechConfig=types.SpeechConfig(
-                        voiceConfig=types.VoiceConfig(
-                            prebuiltVoiceConfig=types.PrebuiltVoiceConfig(
-                                voiceName="${voiceName}"
+    models = ["gemini-2.5-flash-preview-tts", "gemini-3.1-flash-tts-preview"]
+    for model_name in models:
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents="Say clearly: ${combinedText.replace(/"/g, '\\"')}",
+                    config=types.GenerateContentConfig(
+                        responseModalities=["AUDIO"],
+                        speechConfig=types.SpeechConfig(
+                            voiceConfig=types.VoiceConfig(
+                                prebuiltVoiceConfig=types.PrebuiltVoiceConfig(
+                                    voiceName="${voiceName}"
+                                )
                             )
                         )
                     )
                 )
-            )
-            return response
-        except Exception as e:
-            err_str = str(e)
-            if ("500" in err_str or "Internal Server Error" in err_str) and attempt < max_retries - 1:
-                wait_time = (attempt + 1) * 2
-                print(f"Retrying after 500 error (attempt {attempt + 1}/{max_retries})...", file=sys.stderr)
-                time.sleep(wait_time)
-                continue
-            if "429" in err_str: print("MARK_QUOTA_EXHAUSTED")
-            print(f"FAILED: {err_str}", file=sys.stderr)
-            sys.exit(1)
+                return response
+            except Exception as e:
+                err_str = str(e)
+                if ("500" in err_str or "Internal Server Error" in err_str) and attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 2
+                    print(f"Retrying {model_name} after 500 error (attempt {attempt + 1}/{max_retries})...", file=sys.stderr)
+                    time.sleep(wait_time)
+                    continue
+                
+                if "429" in err_str:
+                    if model_name == models[0]:
+                        print("SWITCHING_TO_3_1")
+                        break # Try next model
+                    else:
+                        print("MARK_QUOTA_EXHAUSTED")
+                        print(f"FAILED: {err_str}", file=sys.stderr)
+                        sys.exit(1)
+                
+                print(f"FAILED {model_name}: {err_str}", file=sys.stderr)
+                sys.exit(1)
+    sys.exit(1)
 
 try:
     response = get_tts()
@@ -114,6 +126,9 @@ except Exception as e:
     try {
         const pyOutput = execSync(`python3 "${tempPy}"`).toString();
         if (pyOutput.includes("MARK_QUOTA_EXHAUSTED")) quotaExhausted = true;
+        if (pyOutput.includes("SWITCHING_TO_3_1")) {
+            console.log("\x1b[36m%s\x1b[1m%s\x1b[22m\x1b[0m", "ℹ️ Gemini 2.5 Flash TTS quota exhausted. Switched to ", "Gemini 3.1 Flash TTS");
+        }
 
         if (tasks.length === 1) {
             const task = tasks[0];
@@ -182,8 +197,13 @@ except Exception as e:
         }
         return { success: true, quotaExhausted };
     } catch (err) {
+        const output = err.stdout ? err.stdout.toString() : "";
+        if (output.includes("MARK_QUOTA_EXHAUSTED")) quotaExhausted = true;
+        if (output.includes("SWITCHING_TO_3_1")) {
+            console.log("\x1b[36m%s\x1b[1m%s\x1b[22m\x1b[0m", "ℹ️ Gemini 2.5 Flash TTS quota exhausted. Switched to ", "Gemini 3.1 Flash TTS");
+        }
         console.error("Batch TTS processing failed:", err.message);
-        return { success: false, reason: "ERROR", error: err.message };
+        return { success: false, reason: "ERROR", error: err.message, quotaExhausted };
     } finally {
         if (fs.existsSync(tempPy)) fs.unlinkSync(tempPy);
     }
