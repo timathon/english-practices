@@ -40,7 +40,7 @@ function saveLastUnit(tb: string, unit: string) {
 }
 
 function BookSection({ tb, units, records, initialUnit }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string }) {
-  const unitKeys = Object.keys(units).sort()
+  const unitKeys = Object.keys(units).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
   const [activeUnit, setActiveUnit] = useState<string>(() => {
     // Priority: router-state (just navigated back) > localStorage > first unit
     if (initialUnit && unitKeys.includes(initialUnit)) { saveLastUnit(tb, initialUnit); return initialUnit }
@@ -61,7 +61,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
   }, [units, activeUnit, unitKeys])
 
   if (unitKeys.length === 0) return null
-  const items = units[activeUnit]?.sort((a: any, b: any) => a.title.localeCompare(b.title)) || []
+  const items = units[activeUnit]?.sort((a: any, b: any) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })) || []
 
   return (
     <section className="db-book">
@@ -328,7 +328,7 @@ export function Dashboard() {
         <div className="db-empty">No textbooks assigned. Please contact your administrator.</div>
       ) : (
         <div className="db-books">
-          {Object.keys(grouped).sort().map(tb => (
+          {Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).map(tb => (
             <BookSection 
               key={tb} 
               tb={tb} 

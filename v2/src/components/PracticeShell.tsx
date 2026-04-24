@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { VocabMasterShell } from './VocabMasterShell'
+import { RecallMapShell } from './RecallMapShell'
 
 export function PracticeShell() {
     const { id } = useParams()
@@ -22,6 +23,10 @@ export function PracticeShell() {
     
     if (practice.type === 'vocab-master') {
         return <VocabMasterShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
+    if (practice.type === 'recall-map') {
+        return <RecallMapShell data={practice.content} practiceId={practice.id} />
     }
     
     return (
