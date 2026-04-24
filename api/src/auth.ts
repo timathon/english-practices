@@ -41,8 +41,9 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
             enabled: true,
             minPasswordLength: 6,
             password: {
+                // @ts-ignore
                 hashOptions: {
-                    memoryCost: 256, // Lower memory cost
+                    memoryCost: 64, // Extremely low to stay under 50ms CPU limit
                     iterations: 1,
                     parallelism: 1
                 }

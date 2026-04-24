@@ -24,8 +24,8 @@ app.use('*', async (c, next) => {
 })
 
 app.use('/api/*', cors({
-  origin: (origin, c) => {
-    if (allowedOrigins.includes(origin)) return origin;
+  origin: (origin) => {
+    if (allowedOrigins.includes(origin || '')) return origin;
     return allowedOrigins[3]; // Default to epv2.vibequizzing.com
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -97,7 +97,7 @@ app.post('/api/setup', async (c) => {
 app.get('/api/admin/users', async (c) => {
   const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
-  if (!session || session.user.role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+  if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
   const db = drizzle(c.env.DB)
   const users = await db.select({
@@ -115,7 +115,7 @@ app.get('/api/admin/users', async (c) => {
 app.post('/api/admin/users', async (c) => {
   const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
-  if (!session || session.user.role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+  if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
 
   const body = await c.req.json()
   const req = new Request("http://localhost/api/auth/sign-up/email", {
@@ -135,7 +135,7 @@ app.post('/api/admin/users', async (c) => {
 app.delete('/api/admin/users/:id', async (c) => {
   const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
-  if (!session || session.user.role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+  if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
   const idString = c.req.param('id')
   const db = drizzle(c.env.DB)
@@ -157,7 +157,7 @@ app.put('/api/admin/users/:id/textbooks', async (c) => {
   try {
     const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
-    if (!session || session.user.role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+    if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
     
     const idString = c.req.param('id')
     const { textbooks, subscriptionExpiry } = await c.req.json()
@@ -177,7 +177,7 @@ app.put('/api/admin/users/:id/textbooks', async (c) => {
 app.put('/api/admin/users/:id/password', async (c) => {
   const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
-  if (!session || session.user.role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+  if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
   const userId = c.req.param('id')
   const { password: newPassword } = await c.req.json()
@@ -331,7 +331,8 @@ app.get('/api/practices', async (c) => {
       content: practice.content
   }).from(practice)
   
-  if (session.user.role === 'admin') {
+  const userRole = (session.user as any).role?.toLowerCase();
+  if (userRole === 'admin') {
       return c.json(practices)
   }
   
@@ -340,8 +341,16 @@ app.get('/api/practices', async (c) => {
       return c.json([]);
   }
   
-  const allowed = (session.user as any).textbooks || [];
-  return c.json(practices.filter(p => allowed.includes(p.textbook)))
+  let allowed = (session.user as any).textbooks || [];
+  if (typeof allowed === 'string') {
+      try {
+          allowed = JSON.parse(allowed);
+      } catch {
+          allowed = [];
+      }
+  }
+  
+  return c.json(practices.filter(p => Array.isArray(allowed) && allowed.includes(p.textbook)))
 })
 
 app.get('/api/practices/:id', async (c) => {
@@ -356,7 +365,7 @@ app.get('/api/practices/:id', async (c) => {
   
   if (!item) return c.json({ error: 'Not found' }, 404)
   
-  if (session.user.role !== 'admin') {
+  if ((session.user as any).role !== 'admin') {
       const expiry = (session.user as any).subscriptionExpiry;
       if (expiry && new Date(expiry) < new Date()) {
           return c.json({ error: 'Subscription expired' }, 403)
@@ -372,7 +381,7 @@ app.get('/api/practices/:id', async (c) => {
 app.post('/api/admin/practices', async (c) => {
   const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
-  if (!session || session.user.role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+  if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
 
   const body = await c.req.json()
   const db = drizzle(c.env.DB)

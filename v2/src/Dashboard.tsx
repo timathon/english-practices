@@ -243,13 +243,21 @@ export function Dashboard() {
   const returnState = location.state as { textbook?: string; unit?: string } | null
   const [practices, setPractices] = useState<any[]>([])
   const [records, setRecords] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (session) {
+      setLoading(true)
       fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + '/api/practices', { credentials: 'include' })
         .then(res => res.json())
-        .then(data => { if (Array.isArray(data)) setPractices(data) })
-        .catch(console.error)
+        .then(data => { 
+          if (Array.isArray(data)) setPractices(data)
+          setLoading(false)
+        })
+        .catch(e => {
+          console.error(e)
+          setLoading(false)
+        })
         
       fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + '/api/records', { credentials: 'include' })
         .then(res => res.json())
@@ -348,7 +356,9 @@ export function Dashboard() {
         </div>
       </div>
 
-      {Object.keys(grouped).length === 0 ? (
+      {loading ? (
+        <div className="db-empty">Loading textbooks...</div>
+      ) : Object.keys(grouped).length === 0 ? (
         <div className="db-empty">No textbooks assigned. Please contact your administrator.</div>
       ) : (
         <div className="db-books">
