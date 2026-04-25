@@ -4,7 +4,6 @@ const { execSync } = require('child_process');
 
 /**
  * Natural sort key generator.
- * Splitting strings into parts of digits and non-digits.
  */
 function naturalSortKey(s) {
     if (typeof s === 'object' && s !== null && s.name) {
@@ -47,12 +46,9 @@ function cleanRedundantPdfs() {
                     console.log(`Removing redundant PDF: ${pdfPath}`);
                     try {
                         fs.unlinkSync(pdfPath);
-                        // Attempt to remove from git index just in case it was staged
                         try {
                             execSync(`git rm --cached "${pdfPath}"`, { stdio: 'ignore' });
-                        } catch (e) {
-                            // Ignore git errors
-                        }
+                        } catch (e) {}
                     } catch (e) {
                         console.error(`Error removing ${pdfPath}: ${e.message}`);
                     }
@@ -64,53 +60,46 @@ function cleanRedundantPdfs() {
 }
 
 /**
- * Gets all HTML files recursively, excluding certain directories.
+ * Removes index.html files that are deeper than level 1 (textbook folder).
  */
-function getHtmlFiles(baseDir = '.') {
-    const htmlFiles = [];
-    const exclude = ['.git', 'scripts', 'data', 'templates', 'release', 'temp', 'node_modules', 'v2', 'api'];
-
-    const walk = (dir) => {
+function cleanRedundantIndices() {
+    const exclude = ['.git', 'node_modules', 'temp', 'v2', 'api', 'data', 'scripts'];
+    const walk = (dir, depth = 0) => {
         const items = fs.readdirSync(dir);
         for (const item of items) {
-            if (exclude.includes(item)) continue;
             const fullPath = path.join(dir, item);
             const stat = fs.statSync(fullPath);
             if (stat.isDirectory()) {
-                walk(fullPath);
-            } else if (item.endsWith('.html') && item !== 'index.html') {
-                const relPath = path.relative(baseDir, fullPath);
-                htmlFiles.push({
-                    path: relPath,
-                    name: item,
-                    mtime: stat.mtimeMs
-                });
+                if (exclude.includes(item)) continue;
+                walk(fullPath, depth + 1);
+            } else if (item === 'index.html') {
+                if (depth > 1) {
+                    console.log(`Removing redundant index: ${fullPath}`);
+                    fs.unlinkSync(fullPath);
+                }
             }
         }
     };
-    walk(baseDir);
-    return htmlFiles;
+    walk('.');
 }
 
 /**
- * Gets HTML files in a specific directory, including one level of subdirectories.
+ * Gets HTML files in a specific directory recursively.
  */
-function getHtmlFilesInDirectory(directory) {
+function getHtmlFilesInDirectory(directory, excludeDirs = []) {
     const htmlFiles = [];
     if (!fs.existsSync(directory)) return htmlFiles;
     
     const scanDir = (dir, relPathPrefix = '') => {
         const items = fs.readdirSync(dir);
         for (const item of items) {
+            if (excludeDirs.includes(item)) continue;
             const fullPath = path.join(dir, item);
             const stat = fs.statSync(fullPath);
             const relPath = path.join(relPathPrefix, item);
             
             if (stat.isDirectory()) {
-                // Only go one level deep from the main folder
-                if (relPathPrefix === '') {
-                    scanDir(fullPath, item);
-                }
+                scanDir(fullPath, relPath);
             } else if (item.endsWith('.html') && item !== 'index.html') {
                 htmlFiles.push({
                     path: relPath,
@@ -125,74 +114,58 @@ function getHtmlFilesInDirectory(directory) {
     return htmlFiles;
 }
 
-function generateSubfolderList(files) {
-    const folderCounts = {};
-    for (const f of files) {
-        const parts = f.path.split(path.sep);
-        if (parts.length > 1) {
-            const folder = parts[0];
-            folderCounts[folder] = (folderCounts[folder] || 0) + 1;
-        }
-    }
-
-    const folders = Object.keys(folderCounts).sort();
-    let html = '    <div class=section>\n';
-    html += '        <h2>Practice Categories</h2>\n';
-    html += '        <ul>\n';
-    for (const folder of folders) {
-        html += `            <li><a href="${folder}/index.html">${folder}</a> <i>(${folderCounts[folder]} practices)</i></li>\n`;
-    }
-    html += '        </ul>\n';
-    html += '    </div>';
-    return html;
-}
-
-function generateFolderIndex(folderPath, title) {
-    const files = getHtmlFilesInDirectory(folderPath);
+function generateRecursiveIndex(folderPath, title, isRoot = false) {
+    const exclude = ['.git', 'scripts', 'data', 'templates', 'release', 'temp', 'node_modules', 'v2', 'api'];
+    const files = getHtmlFilesInDirectory(folderPath, isRoot ? exclude : []);
     const sortedFiles = [...files].sort(naturalCompare);
     
-    const groups = {};
+    // Build Tree
+    const root = { folders: {}, files: [] };
     for (const f of sortedFiles) {
-        // Group by subfolder if it exists, otherwise by unit/module prefix
         const parts = f.path.split(path.sep);
-        let unit = 'General';
-        
-        if (parts.length > 1) {
-            // It's in a subfolder, use the subfolder name as the group
-            unit = parts[0];
-        } else {
-            // It's in the root of the folder, try to find a unit prefix
-            const match = parts[0].match(/^([a-zA-Z0-9]+-[uUmM]\d+)/i);
-            if (match) {
-                unit = match[1].toUpperCase();
+        let current = root;
+        for (let i = 0; i < parts.length - 1; i++) {
+            const folderName = parts[i];
+            if (!current.folders[folderName]) {
+                current.folders[folderName] = { folders: {}, files: [] };
             }
+            current = current.folders[folderName];
         }
-        
-        if (!groups[unit]) groups[unit] = [];
-        groups[unit].push(f);
+        current.files.push(f);
     }
 
-    const groupKeys = Object.keys(groups).sort(naturalCompare);
-    
-    let listHtml = '<div class="tree"><ul>\n';
-    for (const unit of groupKeys) {
-        const unitFiles = groups[unit];
-        if (unit === 'General' && groupKeys.length === 1) {
-            // If only general, render flat list
-            for (const f of unitFiles) {
-                listHtml += `            <li><a href="${f.path}">${f.name}</a></li>\n`;
+    function renderNode(node, name, depth = 0) {
+        let html = '';
+        const folderNames = Object.keys(node.folders).sort(naturalCompare);
+        const nodeFiles = [...node.files].sort(naturalCompare);
+        
+        if (depth === 0) {
+            for (const folderName of folderNames) {
+                html += renderNode(node.folders[folderName], folderName, depth + 1);
+            }
+            for (const f of nodeFiles) {
+                html += `            <li><a href="${f.path}">${f.name}</a></li>\n`;
             }
         } else {
-            listHtml += `            <li><span class="folder folder-toggle" data-unit="${unit}">${unit}</span> <span class="file-count"></span>\n`;
-            listHtml += '                <ul class="collapsed">\n';
-            for (const f of unitFiles) {
-                listHtml += `                    <li><a href="${f.path}" onclick="saveLastUnit('${unit}')">${f.name}</a></li>\n`;
+            const folderID = name.toUpperCase().replace(/\s+/g, '-');
+            html += `            <li><span class="folder folder-toggle" data-unit="${folderID}">${name}</span> <span class="file-count"></span>\n`;
+            html += '                <ul class="collapsed">\n';
+            
+            for (const folderName of folderNames) {
+                html += renderNode(node.folders[folderName], folderName, depth + 1);
             }
-            listHtml += '                </ul>\n';
-            listHtml += '            </li>\n';
+            for (const f of nodeFiles) {
+                html += `                    <li><a href="${f.path}" onclick="saveLastUnit('${folderID}')">${f.name}</a></li>\n`;
+            }
+            
+            html += '                </ul>\n';
+            html += '            </li>\n';
         }
+        return html;
     }
-    listHtml += '        </ul></div>';
+
+    const listHtml = '<div class="tree"><ul>\n' + renderNode(root, '', 0) + '        </ul></div>';
+    const backLink = isRoot ? "" : '<p><a href="../index.html">← Back to Parent Index</a></p>';
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -229,6 +202,7 @@ function generateFolderIndex(folderPath, title) {
         a {
             text-decoration: none;
             color: #0366d6;
+            font-weight: bold;
         }
         a:hover {
             text-decoration: underline;
@@ -260,9 +234,9 @@ function generateFolderIndex(folderPath, title) {
 </head>
 <body>
     <h1>${title}</h1>
-    <p><a href="../index.html">← Back to Parent Index</a></p>
+    ${backLink}
     <div class="section">
-        <h2>Files in this folder</h2>
+        <h2>Files and Folders</h2>
         ${listHtml}
     </div>
 
@@ -278,13 +252,23 @@ function generateFolderIndex(folderPath, title) {
             folders.forEach(folder => {
                 const sublist = folder.nextElementSibling.nextElementSibling;
                 if (sublist && sublist.tagName === 'UL') {
-                    const fileCount = sublist.children.length;
+                    const fileCount = Array.from(sublist.children).reduce((acc, child) => {
+                        if (child.querySelector('a')) return acc + 1;
+                        if (child.querySelector('.folder-toggle')) return acc + 1;
+                        return acc;
+                    }, 0);
+                    
                     const fileCountSpan = folder.nextElementSibling;
-                    fileCountSpan.textContent = \`(\${fileCount} files)\`;
+                    fileCountSpan.textContent = \`(\${fileCount} items)\`;
 
                     const unit = folder.getAttribute('data-unit');
                     if (unit === lastUnit) {
                         sublist.classList.remove('collapsed');
+                        let parent = sublist.parentElement;
+                        while (parent && parent.tagName !== 'BODY') {
+                            if (parent.tagName === 'UL') parent.classList.remove('collapsed');
+                            parent = parent.parentElement;
+                        }
                     }
 
                     folder.addEventListener('click', () => {
@@ -304,108 +288,31 @@ function generateFolderIndex(folderPath, title) {
     fs.writeFileSync(path.join(folderPath, 'index.html'), html);
 }
 
-function generateFullIndex(filePath, files, title, backLink = null) {
-    const subfolderListHtml = generateSubfolderList(files);
-    const backHtml = backLink ? `<p><a href="${backLink}">Back to Main Site</a></p>` : "";
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title} Index</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            color: #333;
-        }
-        h1, h2 {
-            color: #2c3e50;
-        }
-        .section {
-            margin-bottom: 40px;
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #eee;
-        }
-        ul {
-            list-style-type: none;
-            padding-left: 0;
-        }
-        li {
-            margin-bottom: 8px;
-        }
-        a {
-            text-decoration: none;
-            color: #0366d6;
-            font-weight: bold;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        i {
-            color: #666;
-            font-size: 0.9em;
-        }
-    </style>
-</head>
-<body>
-    <h1>${title}</h1>
-    ${backHtml}
-
-    ${subfolderListHtml}
-
-</body>
-</html>`;
-    fs.writeFileSync(filePath, html);
-}
-
 function main() {
     cleanRedundantPdfs();
+    cleanRedundantIndices();
 
-    // Generate main index.html
-    const allFiles = getHtmlFiles('.');
-    generateFullIndex('index.html', allFiles, 'English Practices');
+    // Generate main root index.html using the recursive tree view
+    generateRecursiveIndex('.', 'English Practices', true);
 
-    // Recursively generate index.html for folders
+    // Generate index.html for each textbook folder
     const excludeFolders = ['.git', 'scripts', 'release', 'data', 'templates', 'temp', 'node_modules', 'v2', 'api'];
-    
-    const walkFolders = (dir) => {
-        const items = fs.readdirSync(dir).filter(d => {
-            const fullPath = path.join(dir, d);
-            const stat = fs.statSync(fullPath);
-            return stat.isDirectory() && !d.startsWith('.') && !excludeFolders.includes(d);
-        });
+    const items = fs.readdirSync('.').filter(d => {
+        const stat = fs.statSync(d);
+        return stat.isDirectory() && !d.startsWith('.') && !excludeFolders.includes(d);
+    });
 
-        for (const folder of items) {
-            const folderPath = path.join(dir, folder);
-            
-            // Check if this folder or any of its subfolders contain .html files (other than index.html)
-            const htmlFiles = getHtmlFilesInDirectory(folderPath);
-            if (htmlFiles.length > 0) {
-                generateFolderIndex(folderPath, `${folderPath} Practices`);
-            }
-            
-            // Recurse
-            walkFolders(folderPath);
+    for (const folder of items) {
+        const htmlFiles = getHtmlFilesInDirectory(folder);
+        if (htmlFiles.length > 0) {
+            generateRecursiveIndex(folder, `${folder} Practices`);
         }
-    };
+    }
 
-    walkFolders('.');
-
-    // Export textbook list for the dynamic React V2 application
+    // Export textbook list for V2 app
     const textbooksPath = path.join('v2', 'public', 'textbooks.json');
     if (fs.existsSync('v2/public')) {
-        const rootFolders = fs.readdirSync('.').filter(d => {
-            const stat = fs.statSync(d);
-            return stat.isDirectory() && !d.startsWith('.') && !excludeFolders.includes(d);
-        });
-        fs.writeFileSync(textbooksPath, JSON.stringify(rootFolders, null, 2));
+        fs.writeFileSync(textbooksPath, JSON.stringify(items, null, 2));
         console.log(`Generated dynamic dataset list: ${textbooksPath}`);
     }
 }

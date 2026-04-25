@@ -33,6 +33,7 @@
         a {
             text-decoration: none;
             color: #0366d6;
+            font-weight: bold;
         }
         a:hover {
             text-decoration: underline;
@@ -66,14 +67,26 @@
     <h1>C-GIU Practices</h1>
     <p><a href="../index.html">← Back to Parent Index</a></p>
     <div class="section">
-        <h2>Files in this folder</h2>
+        <h2>Files and Folders</h2>
         <div class="tree"><ul>
-            <li><a href="c-giu-7-sentence-architect.html">c-giu-7-sentence-architect.html</a></li>
-            <li><a href="c-giu-7-vocab-guide.html">c-giu-7-vocab-guide.html</a></li>
-            <li><a href="c-giu-7-vocab-master.html">c-giu-7-vocab-master.html</a></li>
-            <li><a href="c-giu-8-sentence-architect.html">c-giu-8-sentence-architect.html</a></li>
-            <li><a href="c-giu-8-vocab-guide.html">c-giu-8-vocab-guide.html</a></li>
-            <li><a href="c-giu-8-vocab-master.html">c-giu-8-vocab-master.html</a></li>
+            <li><span class="folder folder-toggle" data-unit="C-GIU-6-10">c-giu-6-10</span> <span class="file-count"></span>
+                <ul class="collapsed">
+            <li><span class="folder folder-toggle" data-unit="C-GIU-7">c-giu-7</span> <span class="file-count"></span>
+                <ul class="collapsed">
+                    <li><a href="c-giu-6-10/c-giu-7/c-giu-7-sentence-architect.html" onclick="saveLastUnit('C-GIU-7')">c-giu-7-sentence-architect.html</a></li>
+                    <li><a href="c-giu-6-10/c-giu-7/c-giu-7-vocab-guide.html" onclick="saveLastUnit('C-GIU-7')">c-giu-7-vocab-guide.html</a></li>
+                    <li><a href="c-giu-6-10/c-giu-7/c-giu-7-vocab-master.html" onclick="saveLastUnit('C-GIU-7')">c-giu-7-vocab-master.html</a></li>
+                </ul>
+            </li>
+            <li><span class="folder folder-toggle" data-unit="C-GIU-8">c-giu-8</span> <span class="file-count"></span>
+                <ul class="collapsed">
+                    <li><a href="c-giu-6-10/c-giu-8/c-giu-8-sentence-architect.html" onclick="saveLastUnit('C-GIU-8')">c-giu-8-sentence-architect.html</a></li>
+                    <li><a href="c-giu-6-10/c-giu-8/c-giu-8-vocab-guide.html" onclick="saveLastUnit('C-GIU-8')">c-giu-8-vocab-guide.html</a></li>
+                    <li><a href="c-giu-6-10/c-giu-8/c-giu-8-vocab-master.html" onclick="saveLastUnit('C-GIU-8')">c-giu-8-vocab-master.html</a></li>
+                </ul>
+            </li>
+                </ul>
+            </li>
         </ul></div>
     </div>
 
@@ -89,13 +102,23 @@
             folders.forEach(folder => {
                 const sublist = folder.nextElementSibling.nextElementSibling;
                 if (sublist && sublist.tagName === 'UL') {
-                    const fileCount = sublist.children.length;
+                    const fileCount = Array.from(sublist.children).reduce((acc, child) => {
+                        if (child.querySelector('a')) return acc + 1;
+                        if (child.querySelector('.folder-toggle')) return acc + 1;
+                        return acc;
+                    }, 0);
+                    
                     const fileCountSpan = folder.nextElementSibling;
-                    fileCountSpan.textContent = `(${fileCount} files)`;
+                    fileCountSpan.textContent = `(${fileCount} items)`;
 
                     const unit = folder.getAttribute('data-unit');
                     if (unit === lastUnit) {
                         sublist.classList.remove('collapsed');
+                        let parent = sublist.parentElement;
+                        while (parent && parent.tagName !== 'BODY') {
+                            if (parent.tagName === 'UL') parent.classList.remove('collapsed');
+                            parent = parent.parentElement;
+                        }
                     }
 
                     folder.addEventListener('click', () => {

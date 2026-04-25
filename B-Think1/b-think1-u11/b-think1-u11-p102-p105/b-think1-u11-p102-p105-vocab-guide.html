@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vocabulary Study Vocabulary Guide</title>
+    <style>
+        /* Compact A4 Print Optimization */
+        @page { size: A4; margin: 10mm; } 
+        body { 
+            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            color: #333; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: #fff;
+            padding: 15px; 
+            box-sizing: border-box;
+            position: relative;
+        }
+        h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
+        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-top: 0; }
+        
+        /* Stats Display */
+        .stats-bar {
+            position: sticky;
+            top: 10px;
+            z-index: 1500;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+            background: rgba(248, 249, 250, 0.9);
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .stats-bar b { color: #2c3e50; }
+        .stats-bar.updated {
+            animation: stats-highlight 0.5s ease-out;
+        }
+
+        @keyframes stats-highlight {
+            0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); border-color: #3498db; }
+            50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); border-color: #3498db; }
+            100% { transform: translateX(-50%) scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.05); }
+        }
+
+        /* Floating Scroll Buttons */
+        .scroll-btns {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .scroll-btn {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        .scroll-btn:hover {
+            opacity: 1;
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        .scroll-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* Responsive Grid Layout */
+        .vocab-grid {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vocab-item { 
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .vocab-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .vocab-item {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Desktop vs Mobile Display Logic */
+        .mobile-only { display: none !important; }
+        .desktop-only { display: flex !important; }
+
+        @media (max-width: 600px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { display: flex !important; }
+
+            .mobile-controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid #eee;
+                padding: 8px 12px;
+                display: flex;
+                justify-content: space-around;
+                gap: 8px;
+                z-index: 2000;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            }
+
+            .mobile-btn {
+                flex: 1;
+                border: none;
+                background: none;
+                padding: 6px 4px;
+                border-radius: 8px;
+                color: #555;
+                font-size: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                transition: background 0.2s;
+            }
+            .mobile-btn .btn-icon { font-size: 18px; margin-bottom: 2px; }
+            .mobile-btn:active { background: #f0f0f0; }
+            
+            #m-sort-btn { color: #3498db; }
+            #m-cn-btn { color: #e91e63; }
+            #m-hidden-btn { color: #9b59b6; }
+            #m-reset-btn { color: #e67e22; }
+            #m-refresh-btn { color: #1abc9c; }
+            
+            .scroll-btns {
+                right: 15px !important;
+                bottom: 110px !important;
+            }
+            body {
+                padding-bottom: 70px; 
+            }
+        }
+
+        /* Compact Vocab Cards */
+        .vocab-item { 
+            page-break-inside: avoid; 
+            break-inside: avoid;
+            padding: 15px; 
+            border: 1px solid #eee; 
+            border-radius: 10px; 
+            background-color: #fafafa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out, filter 0.2s, box-shadow 0.2s;
+        }
+        .vocab-item.is-hidden-state {
+            opacity: 0.4;
+            filter: grayscale(0.8);
+        }
+        .vocab-item.hide-cn .details:first-of-type .value {
+            display: none;
+        }
+        .vocab-item.hide-cn .details:first-of-type .cn-placeholder {
+            display: inline;
+            color: #3498db;
+            cursor: pointer;
+            font-style: italic;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+        .vocab-item .cn-placeholder {
+            display: none;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .value {
+            display: inline !important;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .cn-placeholder {
+            display: none !important;
+        }
+        .vocab-item.is-hidden-state:not(.force-show) {
+            display: none;
+        }
+        .vocab-item.fading-out {
+            opacity: 0 !important;
+            height: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top-width: 0 !important;
+            border-bottom-width: 0 !important;
+            pointer-events: none;
+        }
+
+        .item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hide-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .word-ipa { font-size: 0.7em; color: #7f8c8d; font-weight: normal; margin-left: 8px; font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif; }
+        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; line-height: 1.2; display: inline-flex; align-items: center; }
+        .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
+        .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
+        .value { flex-grow: 1; }
+        
+        /* Tighter inner boxes */
+        .context-box { 
+            background-color: #fff; 
+            border-left: 4px solid #f39c12; 
+            padding: 8px 12px; 
+            margin: 10px 0; 
+            font-size: 1.1em;
+            font-style: italic; 
+            color: #555;
+            border-radius: 0 4px 4px 0;
+        }
+        .hook-box { 
+            background-color: #e8f8f5; 
+            border-left: 4px solid #1abc9c; 
+            padding: 8px 12px; 
+            font-size: 0.95em;
+            border-radius: 0 4px 4px 0;
+        }
+        @media (min-width: 600px) {
+            .hook-box { margin-top: auto; }
+        }
+        .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
+
+        .play-btn {
+            background: var(--white, #fff);
+            border: 1px solid #eee;
+            border-bottom: 3px solid #ddd;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 5px;
+            vertical-align: middle;
+            transition: all 0.1s;
+            padding: 0;
+        }
+        .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
+        .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
+
+        /* Floating Controls */
+        .controls-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .control-btn {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 110px;
+        }
+        .control-btn:hover { transform: scale(1.05); }
+        .control-btn:active { transform: scale(0.95); }
+
+        #sort-toggle { background: #3498db; }
+        #sort-toggle:hover { background: #2980b9; }
+
+        #toggle-cn { background: #e91e63; }
+        #toggle-cn:hover { background: #d81b60; }
+
+        #show-hidden-toggle { background: #9b59b6; }
+        #show-hidden-toggle:hover { background: #8e44ad; }
+        #show-hidden-toggle.active { background: #2c3e50; }
+
+        #refresh-cache { background: #1abc9c; }
+        #refresh-cache:hover { background: #16a085; }
+        #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+
+        #reset-hidden { background: #e67e22 !important; }
+        #reset-hidden:hover { background: #d35400 !important; }
+
+        @media print {
+            @page { margin: 8mm; }
+            body { padding: 0; font-size: 11px; color: #000; line-height: 1.2; }
+            header { border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; text-align: center; }
+            header a { display: none; }
+            header div { display: inline !important; min-height: 0 !important; margin: 0 !important; }
+            h1 { display: inline; font-size: 1.4em; margin: 0; }
+            h2 { display: inline; font-size: 1.2em; border: none; padding: 0; margin-left: 15px; }
+            
+            .vocab-grid { 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 6px; 
+            }
+            .vocab-item { 
+                padding: 6px 8px; 
+                box-shadow: none; 
+                border: 0.5pt solid #bbb;
+                background: #fff;
+                border-radius: 5px;
+                min-height: 0;
+                display: flex; /* Remove !important to allow display: none from .is-hidden-state */
+                opacity: 1 !important;
+                filter: none !important;
+            }
+            .vocab-item.is-hidden-state { display: none !important; } /* Ensure hidden items stay hidden in print */
+
+            .word-title { font-size: 1.25em; margin-bottom: 4px; padding-bottom: 2px; color: #000; }
+            .page-badge { font-size: 0.7em; padding: 1px 4px; }
+            .details { margin-bottom: 2px; font-size: 0.95em; line-height: 1.2; }
+            .label { width: auto; font-size: 0.85em; margin-right: 3px; color: #444; }
+            .value { font-weight: 400; }
+            
+            .context-box { 
+                margin: 2px 0; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #fdfaf5;
+            }
+            .hook-box { 
+                margin-top: 1px; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #f5fdfc;
+            }
+            
+            .controls-container, .mobile-controls, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 5px;">
+            <a href="../../index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
+            <h1 style="margin: 0;">Vocabulary Guide</h1>
+        </div>
+        <h2>Vocabulary Study</h2>
+    </header>
+
+    <div class="stats-bar" id="stats-display">
+        Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
+    </div>
+
+    <div class="controls-container desktop-only">
+        <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button id="toggle-cn" class="control-btn" onclick="app.toggleCN()">
+            <span class="cn-text">Hide CN</span>
+        </button>
+        <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
+
+    <div class="mobile-controls mobile-only">
+        <button class="mobile-btn" onclick="toggleSort()" id="m-sort-btn">
+            <span class="btn-icon sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleCN()" id="m-cn-btn">
+            <span class="btn-icon cn-icon">㊙️</span>
+            <span class="cn-text">Hide CN</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleShowHiddenMode()" id="m-hidden-btn">
+            <span class="btn-icon hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.resetHidden()" id="m-reset-btn">
+            <span class="btn-icon reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
+            <span class="btn-icon refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
+
+    <div class="vocab-grid" id="vocab-container">
+        
+        <div class="vocab-item" data-word="arm" data-index="0">
+            <h2 class="word-title">
+                <span>1. arm<span class="word-ipa">/ɑːm/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P102</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">手臂</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">arm vs farm</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Label the picture with the words in the list: arm, leg, mouth..."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 长长的手臂(arm)可以抱住农场(farm)的小羊。</div>
+        </div>
+
+        <div class="vocab-item" data-word="mouth" data-index="1">
+            <h2 class="word-title">
+                <span>2. mouth<span class="word-ipa">/maʊθ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P102</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">嘴巴</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">mouth vs mouse</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "When you eat a meal, you use your mouth."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 嘴巴(mouth)张得大，像一只小老鼠(mouse)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="muscle" data-index="2">
+            <h2 class="word-title">
+                <span>3. muscle<span class="word-ipa">/ˈmʌsl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P102</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">肌肉</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">mus-cle</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">muscle vs musical</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Our muscles will not be as strong as now."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 强壮的肌肉(muscle)需要经常锻炼。</div>
+        </div>
+
+        <div class="vocab-item" data-word="finger" data-index="3">
+            <h2 class="word-title">
+                <span>4. finger<span class="word-ipa">/ˈfɪŋɡə/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P102</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">手指</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">fin-ger</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">finger vs singer</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Our fingers will get longer."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 歌唱家(singer)用灵活的手指(finger)弹琴。</div>
+        </div>
+
+        <div class="vocab-item" data-word="thumb" data-index="4">
+            <h2 class="word-title">
+                <span>5. thumb<span class="word-ipa">/θʌm/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P102</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">拇指</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">thumb vs jump</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "A points to the hair, G to the thumb."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 竖起大拇指(thumb)，因为你跳(jump)得高。</div>
+        </div>
+
+        <div class="vocab-item" data-word="ankle" data-index="5">
+            <h2 class="word-title">
+                <span>6. ankle<span class="word-ipa">/ˈæŋkl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P104</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">脚踝</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">an-kle</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">ankle vs uncle</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "I think I've got a problem with my ankle."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 叔叔(uncle)走路时不小心扭伤了脚踝(ankle)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="elbow" data-index="6">
+            <h2 class="word-title">
+                <span>7. elbow<span class="word-ipa">/ˈelbəʊ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P104</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">手肘</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">el-bow</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">elbow vs below</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Match the words with the photos: ankle, back, elbow..."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 手肘(elbow)在肩膀的下面(below)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="shoulder" data-index="7">
+            <h2 class="word-title">
+                <span>8. shoulder<span class="word-ipa">/ˈʃəʊldə/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P104</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">肩膀</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">shoul-der</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">shoulder vs soldier</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "My shoulder hurts."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 士兵(soldier)的肩膀(shoulder)很宽阔。</div>
+        </div>
+
+        <div class="vocab-item" data-word="stomach" data-index="8">
+            <h2 class="word-title">
+                <span>9. stomach<span class="word-ipa">/ˈstʌmək/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P104</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">胃；肚子</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">stom-ach</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">stomach vs match</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "My stomach really isn't too good this morning."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 看比赛(match)时太紧张，肚子(stomach)痛。</div>
+        </div>
+
+        <div class="vocab-item" data-word="throat" data-index="9">
+            <h2 class="word-title">
+                <span>10. throat<span class="word-ipa">/θrəʊt/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P104</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">喉咙</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">throat vs boat</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "B: A chin/throat."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 在船(boat)上大声喊，喊哑了喉咙(throat)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="tongue" data-index="10">
+            <h2 class="word-title">
+                <span>11. tongue<span class="word-ipa">/tʌŋ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P104</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(10)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">舌头</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">tongue vs young</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Don't eat so quickly you'll bite your tongue."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 年轻(young)人喜欢吐舌头(tongue)做鬼脸。</div>
+        </div>
+
+        <div class="vocab-item" data-word="backache" data-index="11">
+            <h2 class="word-title">
+                <span>12. backache<span class="word-ipa">/ˈbækeɪk/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P105</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(11)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">背痛</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">back-ache</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">backache vs headache</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Now I've got backache."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 长时间坐着会背痛(backache)，还会头痛(headache)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="technology" data-index="12">
+            <h2 class="word-title">
+                <span>13. technology<span class="word-ipa">/tekˈnɒlədʒi/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P103</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(12)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">科技</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">tech-nol-o-gy</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">technology vs technician</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "The main reason is that we have more and more technology."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 科技(technology)改变了我们的生活。</div>
+        </div>
+
+        <div class="vocab-item" data-word="possibility" data-index="13">
+            <h2 class="word-title">
+                <span>14. possibility<span class="word-ipa">/ˌpɒsəˈbɪləti/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P103</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(13)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">可能性</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">pos-si-bil-i-ty</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">possibility vs possible</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Well, no one can be 100 per cent sure, but here are some possibilities."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 一切皆有可能(possibility)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="physical work" data-index="14">
+            <h2 class="word-title">
+                <span>15. physical work<span class="word-ipa">/ˈfɪzɪkl wɜːk/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P103</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(14)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">体力活</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">phys-i-cal work</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">physical vs physics</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Our muscles will not be as strong because we won't do a lot of physical work."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 做体力活(physical work)能强身健体。</div>
+        </div>
+
+        <div class="vocab-item" data-word="disappear" data-index="15">
+            <h2 class="word-title">
+                <span>16. disappear<span class="word-ipa">/ˌdɪsəˈpɪə/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P103</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(15)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">消失</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">dis-ap-pear</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">disappear vs appear</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "So it will probably disappear some time in the future."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 魔术师让兔子消失(disappear)了。</div>
+        </div>
+
+        <div class="vocab-item" data-word="keep fit" data-index="16">
+            <h2 class="word-title">
+                <span>17. keep fit<span class="word-ipa">/kiːp fɪt/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P103</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(16)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">保持健康</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">keep fit</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">fit vs sit</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "You don't have to do sport to be healthy and keep fit."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 不要总坐着(sit)，要运动来保持健康(keep fit)。</div>
+        </div>
+
+        <div class="vocab-item" data-word="headache" data-index="17">
+            <h2 class="word-title">
+                <span>18. headache<span class="word-ipa">/ˈhedeɪk/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P105</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(17)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">头痛</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">head-ache</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">headache vs head</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "Who can you talk to about a headache?"
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 头(head)痛(ache)真难受。</div>
+        </div>
+
+        <div class="vocab-item" data-word="stomach ache" data-index="18">
+            <h2 class="word-title">
+                <span>19. stomach ache<span class="word-ipa">/ˈstʌmək eɪk/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P105</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(18)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">胃痛</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">stom-ach ache</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">stomach ache vs toothache</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "LOOK! stomach ache, ear ache..."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 肚子(stomach)痛(ache)得打滚。</div>
+        </div>
+
+        <div class="vocab-item" data-word="ear ache" data-index="19">
+            <h2 class="word-title">
+                <span>20. ear ache<span class="word-ipa">/ˈɪəreɪk/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P105</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(19)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">耳痛</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ear ache</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">ear ache vs ear</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "LOOK! stomach ache, ear ache..."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 耳朵(ear)痛(ache)影响听力。</div>
+        </div>
+
+        <div class="vocab-item" data-word="toothache" data-index="20">
+            <h2 class="word-title">
+                <span>21. toothache<span class="word-ipa">/ˈtuːθeɪk/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P105</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(20)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">牙痛</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">tooth-ache</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">toothache vs tooth</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                "LOOK! stomach ache, ear ache, headache, toothache."
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 牙(tooth)痛(ache)不是病，痛起来真要命。</div>
+        </div>
+    </div>
+
+    <div class="scroll-btns">
+        <button class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="To Top">▲</button>
+        <button class="scroll-btn" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="To Bottom">▼</button>
+    </div>
+
+    <script>
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function() {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function(id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function(id, blob, meta) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, meta, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
+        const vocabData = [{"word":"arm","meaning":"手臂","page_number":102,"context_sentence":"Label the picture with the words in the list: arm, leg, mouth...","ipa":"/ɑːm/","comparison":"arm vs farm","syllable_type":"闭音节","memorization_hook":"长长的手臂(arm)可以抱住农场(farm)的小羊。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/a7c66191e63618bc7a3e3dcff1fbebaa.mp3"},{"word":"mouth","meaning":"嘴巴","page_number":102,"context_sentence":"When you eat a meal, you use your mouth.","ipa":"/maʊθ/","comparison":"mouth vs mouse","syllable_type":"元音字母组合音节","memorization_hook":"嘴巴(mouth)张得大，像一只小老鼠(mouse)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/493458482bfe829c935ad4acaca96275.mp3"},{"word":"muscle","meaning":"肌肉","page_number":102,"context_sentence":"Our muscles will not be as strong as now.","ipa":"/ˈmʌsl/","comparison":"muscle vs musical","syllable_type":"mus-cle","memorization_hook":"强壮的肌肉(muscle)需要经常锻炼。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/1a86e1af90e6da847031e384bf082c14.mp3"},{"word":"finger","meaning":"手指","page_number":102,"context_sentence":"Our fingers will get longer.","ipa":"/ˈfɪŋɡə/","comparison":"finger vs singer","syllable_type":"fin-ger","memorization_hook":"歌唱家(singer)用灵活的手指(finger)弹琴。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/51cc0d69731c75e6e19b0e2320d7a361.mp3"},{"word":"thumb","meaning":"拇指","page_number":102,"context_sentence":"A points to the hair, G to the thumb.","ipa":"/θʌm/","comparison":"thumb vs jump","syllable_type":"闭音节","memorization_hook":"竖起大拇指(thumb)，因为你跳(jump)得高。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/d29bb2ac2347b1312dd3f30975d0dcf0.mp3"},{"word":"ankle","meaning":"脚踝","page_number":104,"context_sentence":"I think I've got a problem with my ankle.","ipa":"/ˈæŋkl/","comparison":"ankle vs uncle","syllable_type":"an-kle","memorization_hook":"叔叔(uncle)走路时不小心扭伤了脚踝(ankle)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/eecb13498b75ff485cd5796acdd76a2e.mp3"},{"word":"elbow","meaning":"手肘","page_number":104,"context_sentence":"Match the words with the photos: ankle, back, elbow...","ipa":"/ˈelbəʊ/","comparison":"elbow vs below","syllable_type":"el-bow","memorization_hook":"手肘(elbow)在肩膀的下面(below)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/fdacb01205d4fa85518f0b01d69001f5.mp3"},{"word":"shoulder","meaning":"肩膀","page_number":104,"context_sentence":"My shoulder hurts.","ipa":"/ˈʃəʊldə/","comparison":"shoulder vs soldier","syllable_type":"shoul-der","memorization_hook":"士兵(soldier)的肩膀(shoulder)很宽阔。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/14da4a67110c071b42de162306b3fc9f.mp3"},{"word":"stomach","meaning":"胃；肚子","page_number":104,"context_sentence":"My stomach really isn't too good this morning.","ipa":"/ˈstʌmək/","comparison":"stomach vs match","syllable_type":"stom-ach","memorization_hook":"看比赛(match)时太紧张，肚子(stomach)痛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/72fa6952838d9c0349ae3b140eb804fc.mp3"},{"word":"throat","meaning":"喉咙","page_number":104,"context_sentence":"B: A chin/throat.","ipa":"/θrəʊt/","comparison":"throat vs boat","syllable_type":"元音字母组合音节","memorization_hook":"在船(boat)上大声喊，喊哑了喉咙(throat)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/f0f4a4d9e47c5ca6f296fae083a62654.mp3"},{"word":"tongue","meaning":"舌头","page_number":104,"context_sentence":"Don't eat so quickly you'll bite your tongue.","ipa":"/tʌŋ/","comparison":"tongue vs young","syllable_type":"闭音节","memorization_hook":"年轻(young)人喜欢吐舌头(tongue)做鬼脸。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/ba9e2578129feb5b96aabb93a9b25d98.mp3"},{"word":"backache","meaning":"背痛","page_number":105,"context_sentence":"Now I've got backache.","ipa":"/ˈbækeɪk/","comparison":"backache vs headache","syllable_type":"back-ache","memorization_hook":"长时间坐着会背痛(backache)，还会头痛(headache)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/bcdc2ac0e4837b1a5516846fa04066a0.mp3"},{"word":"technology","meaning":"科技","page_number":103,"context_sentence":"The main reason is that we have more and more technology.","ipa":"/tekˈnɒlədʒi/","comparison":"technology vs technician","syllable_type":"tech-nol-o-gy","memorization_hook":"科技(technology)改变了我们的生活。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/3268249b1ddd77ed89b285c7e64bf4e6.mp3"},{"word":"possibility","meaning":"可能性","page_number":103,"context_sentence":"Well, no one can be 100 per cent sure, but here are some possibilities.","ipa":"/ˌpɒsəˈbɪləti/","comparison":"possibility vs possible","syllable_type":"pos-si-bil-i-ty","memorization_hook":"一切皆有可能(possibility)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/ae4912985dcfbd98308fa435e1bad6b2.mp3"},{"word":"physical work","meaning":"体力活","page_number":103,"context_sentence":"Our muscles will not be as strong because we won't do a lot of physical work.","ipa":"/ˈfɪzɪkl wɜːk/","comparison":"physical vs physics","syllable_type":"phys-i-cal work","memorization_hook":"做体力活(physical work)能强身健体。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/bd87d900f60e047e849b003d649ca286.mp3"},{"word":"disappear","meaning":"消失","page_number":103,"context_sentence":"So it will probably disappear some time in the future.","ipa":"/ˌdɪsəˈpɪə/","comparison":"disappear vs appear","syllable_type":"dis-ap-pear","memorization_hook":"魔术师让兔子消失(disappear)了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/c88c610951bcf833b9d350664851e5cc.mp3"},{"word":"keep fit","meaning":"保持健康","page_number":103,"context_sentence":"You don't have to do sport to be healthy and keep fit.","ipa":"/kiːp fɪt/","comparison":"fit vs sit","syllable_type":"keep fit","memorization_hook":"不要总坐着(sit)，要运动来保持健康(keep fit)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/599790742addb2bbb703e895b76c4359.mp3"},{"word":"headache","meaning":"头痛","page_number":105,"context_sentence":"Who can you talk to about a headache?","ipa":"/ˈhedeɪk/","comparison":"headache vs head","syllable_type":"head-ache","memorization_hook":"头(head)痛(ache)真难受。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/043f4af6d73d3d37c079854cd3385d34.mp3"},{"word":"stomach ache","meaning":"胃痛","page_number":105,"context_sentence":"LOOK! stomach ache, ear ache...","ipa":"/ˈstʌmək eɪk/","comparison":"stomach ache vs toothache","syllable_type":"stom-ach ache","memorization_hook":"肚子(stomach)痛(ache)得打滚。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/d3f2934fa8eeca309fcbc1c1b651a4d4.mp3"},{"word":"ear ache","meaning":"耳痛","page_number":105,"context_sentence":"LOOK! stomach ache, ear ache...","ipa":"/ˈɪəreɪk/","comparison":"ear ache vs ear","syllable_type":"ear ache","memorization_hook":"耳朵(ear)痛(ache)影响听力。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/d3f2934fa8eeca309fcbc1c1b651a4d4.mp3"},{"word":"toothache","meaning":"牙痛","page_number":105,"context_sentence":"LOOK! stomach ache, ear ache, headache, toothache.","ipa":"/ˈtuːθeɪk/","comparison":"toothache vs tooth","syllable_type":"tooth-ache","memorization_hook":"牙(tooth)痛(ache)不是病，痛起来真要命。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/e0568fab304b013f0b048c582237b17c.mp3"}];
+
+        let isAlphabetical = false;
+        const container = document.getElementById('vocab-container');
+        const items = Array.from(container.getElementsByClassName('vocab-item'));
+        
+        function toggleSort() {
+            isAlphabetical = !isAlphabetical;
+            const textEls = document.querySelectorAll('.sort-text');
+            const iconEls = document.querySelectorAll('.sort-icon');
+
+            if (isAlphabetical) {
+                items.sort((a, b) => a.dataset.word.localeCompare(b.dataset.word));
+                textEls.forEach(el => el.innerText = "Textbook Order");
+                iconEls.forEach(el => el.innerText = "📖");
+            } else {
+                items.sort((a, b) => parseInt(a.dataset.index) - parseInt(b.dataset.index));
+                textEls.forEach(el => el.innerText = "Sort A-Z");
+                iconEls.forEach(el => el.innerText = "🔤");
+            }
+
+            // Clear and re-append sorted items
+            container.innerHTML = '';
+            items.forEach(item => container.appendChild(item));
+        }
+
+        const app = {
+            currentAudio: null,
+            audioObjectURL: null,
+            hiddenWords: new Set(),
+            showHiddenMode: false,
+            hideCNMode: true,
+            unitKey: "ep-vg-hidden-" + btoa(document.title + "Vocabulary Study").substring(0, 16),
+
+            init: async function() {
+                // Apply default CN visibility
+                if (this.hideCNMode) {
+                    const textEls = document.querySelectorAll('.cn-text');
+                    const iconEls = document.querySelectorAll('.cn-icon');
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.add('hide-cn'));
+                }
+
+                // Load hidden words from localStorage
+                const stored = localStorage.getItem(this.unitKey);
+                if (stored) {
+                    try {
+                        const indices = JSON.parse(stored);
+                        this.hiddenWords = new Set(indices);
+                    } catch(e) { console.error("Failed to parse hidden words", e); }
+                }
+
+                // Apply initial state to cards
+                items.forEach(item => {
+                    const idx = parseInt(item.dataset.index);
+                    if (this.hiddenWords.has(idx)) {
+                        item.classList.add('is-hidden-state');
+                        const cb = item.querySelector('.hide-checkbox');
+                        if (cb) cb.checked = true;
+                    }
+                });
+
+                this.updateStats();
+
+                // Preload audio
+                vocabData.forEach(item => {
+                    if (item.audio) {
+                        this.cacheAudio(item.audio);
+                    }
+                });
+
+                // Cleanup legacy localStorage audio cache
+                setTimeout(() => {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                    key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                    key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                    key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                }, 2000);
+            },
+
+            getHash: function(str) {
+                return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            },
+
+            updateStats: function() {
+                const total = vocabData.length;
+                const hidden = this.hiddenWords.size;
+                const shown = total - hidden;
+                
+                const display = document.getElementById('stats-display');
+                if (display) {
+                    display.innerHTML = `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+                    display.classList.remove('updated');
+                    void display.offsetWidth; // Force reflow
+                    display.classList.add('updated');
+                }
+            },
+
+            toggleWordHidden: function(index) {
+                const item = items.find(it => parseInt(it.dataset.index) === index);
+                if (!item) return;
+
+                if (this.hiddenWords.has(index)) {
+                    this.hiddenWords.delete(index);
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                } else {
+                    this.hiddenWords.add(index);
+                    
+                    const isMobile = window.innerWidth <= 600;
+                    if (this.showHiddenMode || !isMobile) {
+                        // Instant hide for desktop or when in "Show Hidden" mode
+                        item.classList.add('is-hidden-state');
+                    } else {
+                        // Mobile: Smooth collapse animation
+                        const h = item.offsetHeight;
+                        item.style.height = h + 'px';
+                        item.offsetHeight; // Force reflow
+                        item.classList.add('fading-out');
+                        
+                        setTimeout(() => {
+                            if (this.hiddenWords.has(index)) {
+                                item.classList.add('is-hidden-state');
+                                item.classList.remove('fading-out');
+                                item.style.height = '';
+                            }
+                        }, 500);
+                    }
+                }
+
+                // Persist
+                localStorage.setItem(this.unitKey, JSON.stringify(Array.from(this.hiddenWords)));
+                this.updateStats();
+            },
+
+            toggleShowHiddenMode: function() {
+                this.showHiddenMode = !this.showHiddenMode;
+                const desktopBtn = document.getElementById('show-hidden-toggle');
+                const textEls = document.querySelectorAll('.hidden-text');
+                const iconEls = document.querySelectorAll('.hidden-icon');
+
+                if (this.showHiddenMode) {
+                    if (desktopBtn) desktopBtn.classList.add('active');
+                    textEls.forEach(el => el.innerText = "Hide Learnt");
+                    iconEls.forEach(el => el.innerText = "🙈");
+                    items.forEach(item => item.classList.add('force-show'));
+                } else {
+                    if (desktopBtn) desktopBtn.classList.remove('active');
+                    textEls.forEach(el => el.innerText = "Show Hidden");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.remove('force-show'));
+                }
+            },
+
+            resetHidden: function() {
+                if (!confirm("Are you sure you want to reset all hidden words?")) return;
+                
+                this.hiddenWords.clear();
+                localStorage.removeItem(this.unitKey);
+                
+                items.forEach(item => {
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                    const cb = item.querySelector('.hide-checkbox');
+                    if (cb) cb.checked = false;
+                });
+                
+                this.updateStats();
+            },
+
+            toggleCN: function() {
+                this.hideCNMode = !this.hideCNMode;
+                const textEls = document.querySelectorAll('.cn-text');
+                const iconEls = document.querySelectorAll('.cn-icon');
+
+                if (this.hideCNMode) {
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => {
+                        item.classList.add('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                } else {
+                    textEls.forEach(el => el.innerText = "Hide CN");
+                    iconEls.forEach(el => el.innerText = "㊙️");
+                    items.forEach(item => {
+                        item.classList.remove('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                }
+            },
+
+            showItemCN: function(el) {
+                if (!this.hideCNMode) return;
+                const item = el.closest('.vocab-item');
+                if (item) {
+                    item.classList.toggle('force-show-cn');
+                }
+            },
+
+            cacheAudio: async function(url, force = false) {
+                if (!url) return;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                
+                if (!force) {
+                    const cached = await db.get(cacheKey);
+                    if (cached) return cached.blob;
+                }
+
+                try {
+                    const fetchUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+                    const resp = await fetch(fetchUrl);
+                    if (!resp.ok) return null;
+                    const contentType = resp.headers.get('Content-Type');
+                    if (!contentType || !contentType.startsWith('audio/')) return null;
+                    const lastModified = resp.headers.get('Last-Modified');
+                    const blob = await resp.blob();
+                    const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                    await db.set(cacheKey, blob, meta);
+                    return blob;
+                } catch(e) { console.error("Cache failed", e); }
+            },
+
+            refreshCache: async function() {
+                const desktopBtn = document.getElementById('refresh-cache');
+                const textEls = document.querySelectorAll('.refresh-text');
+                
+                if (desktopBtn && desktopBtn.classList.contains('loading')) return;
+
+                if (desktopBtn) desktopBtn.classList.add('loading');
+                textEls.forEach(el => el.innerText = "Checking...");
+                let updatedCount = 0;
+
+                try {
+                    for (const item of vocabData) {
+                        if (!item.audio) continue;
+                        
+                        const url = item.audio;
+                        const baseUrl = url.split('?')[0];
+                        const baseHash = this.getHash(baseUrl);
+                        const cacheKey = "ep-audio-" + baseHash;
+                        const cached = await db.get(cacheKey);
+                        const currentVersion = cached?.meta?.lastModified || 0;
+
+                        try {
+                            const headUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+                            const response = await fetch(headUrl, { method: 'HEAD' });
+                            const lastModifiedStr = response.headers.get('Last-Modified');
+                            if (lastModifiedStr) {
+                                const lastModified = new Date(lastModifiedStr).getTime();
+                                if (lastModified > currentVersion) {
+                                    await this.cacheAudio(url, true);
+                                    updatedCount++;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Failed to check ${item.word}`, e);
+                        }
+                    }
+                    alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+                } finally {
+                    if (desktopBtn) desktopBtn.classList.remove('loading');
+                    textEls.forEach(el => el.innerText = "Refresh 🔊");
+                }
+            },
+
+            playAudio: async function(btn) {
+                const card = btn.closest('.vocab-item');
+                const index = parseInt(card.dataset.index);
+                const url = vocabData[index].audio;
+                if (!url) return;
+
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                    document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
+                }
+                
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
+
+                this.currentAudio = new Audio(source);
+                btn.disabled = true;
+
+                const cleanup = () => {
+                    btn.disabled = false;
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+
+                this.currentAudio.onended = cleanup;
+                this.currentAudio.onerror = cleanup;
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    cleanup();
+                });
+            }
+        };
+
+        // Initialize and preload
+        window.addEventListener('load', () => {
+            app.init();
+        });
+    </script>
+
+</body>
+</html>

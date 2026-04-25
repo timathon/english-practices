@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Navigator: Unit 8</title>
+    <style>
+        :root {
+            --primary-color: #10b981;
+            /* Green theme for health/food */
+            --primary-hover: #059669;
+            --bg-color: #f8fafc;
+            --line-color: #cbd5e1;
+            --box-empty: #e2e8f0;
+            --box-emoji: #fef08a;
+            --box-keywords: #dbeafe;
+            /* Light blue for keywords */
+            --box-full: #ffffff;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        @media (min-width: 769px) {
+            body {
+                height: 100vh;
+                overflow: hidden;
+            }
+        }
+
+        header {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            position: sticky;
+            top: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .home-link {
+            text-decoration: none;
+            font-size: 1.25rem;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: white;
+            border: 1px solid var(--line-color);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            color: var(--text-main);
+        }
+
+        .home-link:hover {
+            background-color: var(--bg-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-titles h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .header-titles p {
+            margin: 0.25rem 0 0 0;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .controls button {
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--line-color);
+            padding: 0;
+        }
+
+        .controls button:hover:not(:disabled) {
+            background-color: var(--bg-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls button#nextBtn {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .controls button#nextBtn:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+        }
+
+        .controls button:disabled {
+            background-color: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+            border-color: #e2e8f0;
+            opacity: 0.6;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .controls button#promptBtn {
+            background-color: #fef9c3;
+            border-color: #facc15;
+            display: none;
+            /* Hidden by default, shown if prompt exists */
+        }
+
+        .controls button#promptBtn:hover {
+            background-color: #fef08a;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #64748b;
+        }
+
+        .modal-body {
+            line-height: 1.6;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        .modal-body h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        main {
+            flex: 1;
+            padding: 3rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            overflow: visible;
+        }
+
+        @media (min-width: 769px) {
+            main {
+                overflow: auto;
+            }
+        }
+
+        /* Mode Slider Styles */
+        .mode-slider-container {
+            position: fixed;
+            z-index: 100;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--line-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 260px;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .mode-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .mode-labels span {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .mode-labels span.active {
+            color: var(--primary-color);
+        }
+
+        #modeSlider,
+        #depthSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            cursor: pointer;
+        }
+
+        #modeSlider::-webkit-slider-thumb,
+        #depthSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #modeSlider::-moz-range-thumb,
+        #depthSlider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Desktop Positioning */
+        @media (min-width: 769px) {
+            .mode-slider-container {
+                top: 90px;
+                right: 24px;
+                opacity: 0.5;
+            }
+
+            .mode-slider-container.depth-slider-container {
+                top: 90px;
+                right: 340px;
+            }
+
+            .mode-slider-container:hover {
+                opacity: 1;
+                transform: translateY(-2px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        /* Mindmap Tree CSS */
+        .mindmap-node-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .node-box {
+            border-radius: 12px;
+            padding: var(--node-pad, 12px 20px);
+            margin: 0;
+            font-size: var(--node-fs, 1.1rem);
+            font-weight: var(--node-fw, 500);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid transparent;
+            min-height: 28px;
+            max-width: 450px;
+            line-height: 1.5;
+        }
+
+        .node-box.collapsible {
+            cursor: pointer;
+        }
+
+        .node-box.collapsible:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            border-color: var(--primary-color);
+        }
+
+        /* Learning States */
+        .node-box.empty {
+            background-color: var(--box-empty);
+            border-style: dashed;
+            border-color: #94a3b8;
+            min-width: 80px;
+            opacity: 0.8;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .node-box.emoji {
+            background-color: var(--box-emoji);
+            border-color: var(--node-border, #facc15);
+            min-width: 40px;
+            justify-content: center;
+            animation: bounceIn 0.4s ease-out;
+        }
+
+        /* New State: Keywords */
+        .node-box.keywords {
+            background-color: var(--box-keywords);
+            border-color: var(--node-border, #3b82f6);
+            min-width: 100px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .node-box.full {
+            background-color: var(--box-full);
+            border-color: var(--node-border, var(--primary-color));
+            min-width: 120px;
+            cursor: pointer;
+        }
+
+        /* Action Buttons & Tooltips */
+        .node-actions {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            position: relative;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+        }
+
+        .action-btn:hover {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        .action-btn .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            min-width: 160px;
+            max-width: 280px;
+            z-index: 1000;
+            margin-bottom: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            text-align: left;
+            font-weight: 400;
+            line-height: 1.4;
+        }
+
+        .action-btn .tooltip.visible {
+            display: block;
+        }
+
+        .action-btn .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+
+        @media (max-width: 640px) {
+            .action-btn .tooltip {
+                max-width: 85vw;
+            }
+        }
+
+        /* Level Hierarchy Variables */
+        .node-box.level-0 {
+            --node-fs: 1.25rem;
+            --node-pad: 14px 24px;
+            --node-fw: 700;
+            --node-border: #6366f1;
+        }
+
+        .node-box.level-1 {
+            --node-fs: 1.1rem;
+            --node-pad: 12px 20px;
+            --node-fw: 600;
+            --node-border: #10b981;
+        }
+
+        .node-box.level-2 {
+            --node-fs: 1rem;
+            --node-pad: 10px 16px;
+            --node-fw: 500;
+            --node-border: #0ea5e9;
+        }
+
+        .node-box.level-3 {
+            --node-fs: 0.95rem;
+            --node-pad: 8px 14px;
+            --node-fw: 400;
+            --node-border: #8b5cf6;
+        }
+
+        .node-box.level-4 {
+            --node-fs: 0.9rem;
+            --node-pad: 6px 12px;
+            --node-fw: 400;
+            --node-border: #f59e0b;
+        }
+
+        .node-content-emoji {
+            font-size: 1.3em;
+            flex-shrink: 0;
+        }
+
+        .node-content-keywords {
+            color: #1d4ed8;
+            /* Dark blue to match the box theme */
+            font-weight: 700;
+        }
+
+        .node-content-text {
+            color: #0f172a;
+        }
+
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
+        .collapsed-indicator {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.85rem;
+            margin-left: 10px;
+            font-weight: 600;
+            border: 1px solid var(--primary-hover);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+
+        /* Connectors */
+        .children-container {
+            display: flex;
+            flex-direction: column;
+            margin-left: 30px;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .children-container::before {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            width: 30px;
+            height: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .child-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .child-row::before {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            width: 30px;
+            height: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .child-row::after {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+        }
+
+        .child-row:first-child::after {
+            top: 50%;
+        }
+
+        .child-row:last-child::after {
+            bottom: 50%;
+        }
+
+        .child-row:first-child:last-child::after {
+            display: none;
+        }
+
+        /* Mobile View Adjustments */
+        @media (max-width: 768px) {
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            .header-left {
+                gap: 0.75rem;
+            }
+
+            .header-titles h1 {
+                font-size: 1.25rem;
+            }
+
+            .controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: white;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+                padding: 1rem;
+                justify-content: center;
+                gap: 1.5rem;
+                z-index: 100;
+            }
+
+            .controls button {
+                width: 56px;
+                height: 56px;
+                font-size: 1.5rem;
+            }
+
+            .mode-slider-container {
+                bottom: 100px;
+                left: 20px;
+                right: 20px;
+                width: auto;
+                opacity: 1;
+                background-color: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(8px);
+            }
+
+            .mode-slider-container.depth-slider-container {
+                bottom: 180px;
+            }
+
+            main {
+                padding: 1rem 1rem 16rem 1rem;
+            }
+
+            .mindmap-node-wrapper {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+
+            .children-container {
+                margin-left: 20px;
+                padding-left: 0;
+                margin-top: 10px;
+                position: relative;
+            }
+
+            .children-container .node-content-text {
+                font-size: 1.15rem;
+            }
+
+            .children-container::before {
+                display: none;
+            }
+
+            .child-row {
+                padding: 8px 0;
+                width: 100%;
+                position: relative;
+            }
+
+            .child-row::before {
+                left: -12px;
+                top: 24px;
+                width: 12px;
+                height: 2px;
+            }
+
+            .child-row::after {
+                left: -12px;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+            }
+
+            .child-row:first-child::after {
+                top: -10px;
+            }
+
+            .child-row:last-child::after {
+                bottom: auto;
+                height: 24px;
+            }
+
+            .child-row:first-child:last-child::after {
+                display: block;
+                top: -10px;
+                height: 34px;
+            }
+
+            .node-box {
+                font-size: calc(var(--node-fs, 1.1rem) * 0.9);
+                padding: 10px 16px;
+                max-width: calc(100vw - 80px);
+                word-break: break-word;
+            }
+        }
+
+        /* Animations */
+        @keyframes popIn {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.8);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideIn {
+            0% {
+                transform: translateX(-10px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes clickFlicker {
+            0% {
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.4);
+                transform: scale(1.02);
+            }
+
+            100% {
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                transform: scale(1);
+            }
+        }
+
+        .node-box.clicked-flicker {
+            animation: clickFlicker 0.5s ease-out;
+        }
+
+        @keyframes breathe {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .node-box.playing {
+            animation: breathe 2s infinite ease-in-out;
+            z-index: 10;
+        }
+
+        .node-box.node-box-active {
+            z-index: 500 !important;
+        }
+
+        .btn-separator {
+            width: 1px;
+            height: 24px;
+            background-color: var(--line-color);
+            margin: 0 4px;
+            align-self: center;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background-color: #e2e8f0;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-left">
+            <a href="../index.html" class="home-link" title="Back to Home (回到首页)">🏠</a>
+            <div class="header-titles">
+                <h1>Text Navigator: Unit 8 <span style="font-weight: normal; opacity: 0.7;">Section A Activity 2a</span></h1>
+                <p>Grade 7 Semester 2</p>
+            </div>
+        </div>
+        <div class="controls">
+            <button id="promptBtn" onclick="showWritingPrompt()" title="Writing Prompt (写作要求)">📝</button>
+            <button id="playAllBtn" onclick="togglePlayAll()" title="Play All (顺序播放)" style="display: none;">🔊</button>
+            <div id="playAllSeparator" class="btn-separator" style="display: none;"></div>
+            <button id="resetBtn" onclick="resetMap()" title="Reset (重置)">🔄</button>
+            <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
+            <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+    </header>
+
+    <div class="mode-slider-container">
+        <div class="mode-labels">
+            <span onclick="updateMode(0)">Manual</span>
+            <span onclick="updateMode(1)">Emoji</span>
+            <span onclick="updateMode(2)">Key Words</span>
+            <span onclick="updateMode(3)">Sentence</span>
+        </div>
+        <input type="range" id="modeSlider" min="0" max="3" value="0" step="1" oninput="updateMode(this.value)">
+    </div>
+
+    <div class="mode-slider-container depth-slider-container">
+        <div class="mode-labels" id="depthLabels">
+            <!-- Dynamically populated -->
+        </div>
+        <input type="range" id="depthSlider" min="0" max="5" value="5" step="1" oninput="updateDepth(this.value)">
+    </div>
+
+    <!-- Modal for Questions -->
+    <div id="questionModal" class="modal-overlay" onclick="closeQuestionModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeQuestionModal()">×</button>
+            <div class="modal-body">
+                <h3 id="questionTitle">True or False Statement</h3>
+                <div id="questionStatement" style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 500;"></div>
+                <div class="question-options" style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <button onclick="checkAnswer(true)" class="choice-btn"
+                        style="flex: 1; background-color: #ecfdf5; border: 2px solid #10b981; color: #065f46; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">TRUE
+                        (正确)</button>
+                    <button onclick="checkAnswer(false)" class="choice-btn"
+                        style="flex: 1; background-color: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">FALSE
+                        (错误)</button>
+                </div>
+                <div id="questionFeedback"
+                    style="display: none; padding: 15px; border-radius: 8px; margin-top: 10px; line-height: 1.5;">
+                    <div id="feedbackText" style="font-weight: 700; margin-bottom: 8px;"></div>
+                    <div id="explanationText" style="color: #4b5563;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Writing Prompt -->
+    <div id="promptModal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body">
+                <h3>Writing Task Prompt</h3>
+                <div id="promptText"></div>
+            </div>
+        </div>
+    </div>
+
+    <main id="mindmap-container">
+        <!-- Rendered by JS -->
+    </main>
+
+    <script>
+        // 0. Audio Caching (IndexedDB)
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function () {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function (id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function (id, blob, lastModified) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, lastModified, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
+        const AudioCacheManager = {
+            blobUrls: new Map(),
+
+            getAudio: async function (url) {
+                if (!url) return null;
+
+                const cached = await db.get(url);
+                const now = Date.now();
+
+                try {
+                    // Check if there's a newer version
+                    const headResponse = await fetch(`${url}?t=${now}`, { method: 'HEAD', cache: 'no-cache' });
+                    const remoteLastModified = headResponse.headers.get('Last-Modified');
+
+                    if (cached && remoteLastModified && cached.lastModified === remoteLastModified) {
+                        // Cache is still valid, update timestamp and return
+                        await db.set(url, cached.blob, cached.lastModified);
+                        return this._getBlobUrl(url, cached.blob);
+                    }
+
+                    // Not cached or newer version available, download it
+                    console.log(`Fetching fresh audio: ${url}`);
+                    const response = await fetch(`${url}?t=${now}`, { cache: 'no-cache' });
+                    const blob = await response.blob();
+                    const newLastModified = response.headers.get('Last-Modified') || remoteLastModified;
+
+                    await db.set(url, blob, newLastModified);
+                    return this._refreshBlobUrl(url, blob);
+                } catch (e) {
+                    console.error("Audio cache check failed:", e);
+                    if (cached) return this._getBlobUrl(url, cached.blob);
+                    return url; // Fallback to raw URL
+                }
+            },
+
+            _getBlobUrl: function (id, blob) {
+                if (this.blobUrls.has(id)) return this.blobUrls.get(id);
+                const url = URL.createObjectURL(blob);
+                this.blobUrls.set(id, url);
+                return url;
+            },
+
+            _refreshBlobUrl: function (id, blob) {
+                if (this.blobUrls.has(id)) {
+                    URL.revokeObjectURL(this.blobUrls.get(id));
+                }
+                const url = URL.createObjectURL(blob);
+                this.blobUrls.set(id, url);
+                return url;
+            },
+
+            preloadAll: async function (nodes) {
+                console.log("Preloading audio...");
+                const tasks = nodes.filter(n => n.audio).map(n => this.getAudio(n.audio));
+                await Promise.all(tasks);
+                console.log("Preload complete.");
+            }
+        };
+
+        // 1. Data Structure with Keywords & Sentences
+        const initialData = {
+  "id": "root",
+  "text": "The Emperor's New Clothes",
+  "emoji": "👑",
+  "state": "emoji",
+  "children": [
+    {
+      "id": "p1",
+      "text": "Once upon a time, an emperor liked clothes very much.",
+      "cn": "从前，有一位皇帝非常喜欢衣服。",
+      "notes": "Once upon a time 是讲故事时常用的开头。",
+      "statement": "liked 是 like 的过去分词，不能作谓语。",
+      "answer": false,
+      "explanation": "liked 在这里是过去式，在句中作谓语。",
+      "emoji": "⏳",
+      "highlight": "Once upon a time",
+      "keywords": "emperor, liked clothes",
+      "children": [
+        {
+          "id": "p1_1",
+          "text": "He wanted to buy some new clothes.",
+          "cn": "他想买一些新衣服。",
+          "notes": "wanted to do sth. 想要做某事。",
+          "statement": "wanted to buy 中的 to buy 是动词不定式。",
+          "answer": true,
+          "explanation": "want 后面接不定式 to do 做宾语。",
+          "emoji": "🛍️",
+          "keywords": "buy, new clothes",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/d28e9c1964e59888663c2cb590f91566.mp3",
+          "state": "hidden"
+        }
+      ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/46a485fa6d75d0085ecfb9e46b07f505.mp3",
+      "state": "hidden"
+    },
+    {
+      "id": "p2",
+      "text": "Two brothers came and lied to him, 'We can make wonderful clothes!'",
+      "cn": "两个兄弟来了，并对他撒了谎：'我们可以做奇妙的衣服！'",
+      "notes": "lied 是 lie 的过去式。",
+      "statement": "lied 的原形是 lay。",
+      "answer": false,
+      "explanation": "lied（撒谎）的原形是 lie；lay 的过去式是 laid。",
+      "emoji": "👨‍👦",
+      "keywords": "brothers, lied, wonderful clothes",
+      "children": [
+        {
+          "id": "p2_1",
+          "text": "'But only clever people can see them!'",
+          "cn": "'但是只有聪明的人才能看见它们！'",
+          "notes": "clever 意为'聪明的'。",
+          "statement": "clever 是形容词，在句中修饰 people。",
+          "answer": true,
+          "explanation": "形容词常用来修饰名词。",
+          "emoji": "🧠",
+          "highlight": "But",
+          "keywords": "only clever, see them",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/46f4cb39271059d1287f69e1e8d0210d.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p2_2",
+          "text": "They pretended to make the clothes.",
+          "cn": "他们假装在做衣服。",
+          "notes": "pretended 意为'假装'。",
+          "statement": "pretended 的原形是 pretend。",
+          "answer": true,
+          "explanation": "这是规则动词，过去式加 -ed。",
+          "emoji": "🎭",
+          "keywords": "pretended, make clothes",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/826e5559fe36a538a5e7699913f90ab7.mp3",
+          "state": "hidden"
+        }
+      ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/8d54fbd8c9b5da51fb099f1117420e13.mp3",
+      "state": "hidden"
+    },
+    {
+      "id": "p3",
+      "text": "The emperor's officials couldn't see the clothes, but they said, 'What lovely clothes!'",
+      "cn": "皇帝的官员们看不见衣服，但是他们说：'多么可爱的衣服啊！'",
+      "notes": "officials 意为'官员'。",
+      "statement": "couldn't 是 can't 的过去式否定形式。",
+      "answer": true,
+      "explanation": "could 是 can 的过去式。",
+      "emoji": "👨‍💼",
+      "highlight": "but",
+      "keywords": "officials, couldn't see, said lovely",
+      "children": [
+        {
+          "id": "p3_1",
+          "text": "The emperor couldn't see anything either, but he said, 'They're beautiful!'",
+          "cn": "皇帝也看不见任何东西，但是他说：'它们真漂亮！'",
+          "notes": "either 用于否定句末，表示'也'。",
+          "statement": "either 在这里的意思是“也”，用于肯定句末。",
+          "answer": false,
+          "explanation": "either 表示“也”时，通常用于否定句末；肯定句末用 too。",
+          "emoji": "🙈",
+          "highlight": "either, but",
+          "keywords": "emperor couldn't see, said beautiful",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/eaa92a0085cad1de7d3546778fef522e.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p3_2",
+          "text": "No one wanted to look silly.",
+          "cn": "没有人想让自己显得愚蠢。",
+          "notes": "silly 意为'愚蠢的'。",
+          "statement": "silly 是形容词，在 look 后面作表语。",
+          "answer": true,
+          "explanation": "look 是连系动词，后面接形容词作表语。",
+          "emoji": "🤫",
+          "keywords": "No one, look silly",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/146185827330d39f3606735c3913b091.mp3",
+          "state": "hidden"
+        }
+      ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/9b5e932e907f20cc47aa61309a55e7f8.mp3",
+      "state": "hidden"
+    },
+    {
+      "id": "p4",
+      "text": "The emperor decided to show everyone his new clothes.",
+      "cn": "皇帝决定向大家展示他的新衣服。",
+      "notes": "decided to do sth. 决定做某事。",
+      "statement": "show 是名词，表示“展览”。",
+      "answer": false,
+      "explanation": "在这里 show 是动词，表示“展示”。",
+      "emoji": "🚶",
+      "keywords": "emperor, show everyone",
+      "children": [
+        {
+          "id": "p4_1",
+          "text": "People in the street praised them.",
+          "cn": "街上的人们都在赞美它们。",
+          "notes": "praised 意为'赞美'。",
+          "statement": "praised 是 praise 的过去式。",
+          "answer": true,
+          "explanation": "符合一般过去时的动词变化规则。",
+          "emoji": "👏",
+          "keywords": "People, praised them",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/3ffcbf2a2bf3cedd0af4e8a5276071bb.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p4_2",
+          "text": "They were afraid to look silly too!",
+          "cn": "他们也害怕显得愚蠢！",
+          "notes": "afraid 意为'害怕的'。",
+          "statement": "afraid 是动词，表示“害怕”。",
+          "answer": false,
+          "explanation": "afraid 是形容词，常与 be 动词连用。",
+          "emoji": "😨",
+          "highlight": "too",
+          "keywords": "afraid, look silly",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/1169cf76683232534a802224657600a6.mp3",
+          "state": "hidden"
+        }
+      ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/69e4f049b414531e6ef6447135fc2a69.mp3",
+      "state": "hidden"
+    },
+    {
+      "id": "p5",
+      "text": "Suddenly, a boy shouted, 'Look! The emperor has no clothes on!'",
+      "cn": "突然，一个男孩喊道：'看！皇帝没穿衣服！'",
+      "notes": "shouted 意为'大声喊叫'。",
+      "statement": "Suddenly 是副词，修饰整个句子。",
+      "answer": true,
+      "explanation": "-ly 结尾的单词通常是副词。",
+      "emoji": "👦",
+      "highlight": "Suddenly",
+      "keywords": "boy shouted, no clothes on",
+      "children": [
+        {
+          "id": "p5_1",
+          "text": "Everyone looked at one another.",
+          "cn": "大家互相看了看。",
+          "notes": "one another 意为'互相'。",
+          "statement": "one another 表示“三者或三者以上之间的互相”。",
+          "answer": true,
+          "explanation": "each other 常指两者之间，one another 常指三者或以上。",
+          "emoji": "👀",
+          "keywords": "Everyone, looked",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/6a0c6ffd2936ede916f22491acba911e.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p5_2",
+          "text": "They started laughing.",
+          "cn": "他们开始哈哈大笑。",
+          "notes": "started laughing 开始大笑。",
+          "statement": "laughing 是动词 laugh 的现在分词形式。",
+          "answer": true,
+          "explanation": "start doing sth. 表示开始做某事，laughing 在此作宾语。",
+          "emoji": "😂",
+          "keywords": "started laughing",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/d3e2f9dc8d386909a76bc8d284e4afa8.mp3",
+          "state": "hidden"
+        }
+      ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/24f3d771ee69f18b98fd5d8eaac6d9c2.mp3",
+      "state": "hidden"
+    }
+  ],
+  "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a7b/e03cb1cc9ea686a1277d06bb02b1551c.mp3"
+};
+        const writingPrompt = "";
+
+        let treeData = null;
+        let actionSteps = [];
+        let currentStepIndex = 0;
+        let activeNodeId = null;
+        let clickedNodeId = null;
+        let collapsedNodes = new Set();
+        let savedCollapsedNodes = null; // To restore after showAll mode
+        let showAllMode = 0; // 0: progressive (Manual), 1: emoji, 2: keywords, 3: full
+        let maxDepthVisible = 5; // Default
+        let maxTreeDepth = 0;
+
+        let isPlayingAll = false;
+        let playAllQueue = [];
+        let currentPlayIndex = -1;
+
+        let activeBoxEl = null;
+        let activeWrappers = []; // Now an array to hold all ancestor wrappers
+        let actionsTimeout = null;
+
+        function closeActions() {
+            if (!activeBoxEl) return;
+            if (actionsTimeout) clearTimeout(actionsTimeout);
+            
+            const actions = activeBoxEl.querySelector('.node-actions');
+            if (actions) actions.remove();
+            activeBoxEl.classList.remove('node-box-active');
+            activeWrappers.forEach(w => w.classList.remove('active-wrapper'));
+            
+            activeBoxEl = null;
+            activeWrappers = [];
+            actionsTimeout = null;
+        }
+
+        function refreshActionsTimeout() {
+            if (!activeBoxEl) return;
+            if (actionsTimeout) clearTimeout(actionsTimeout);
+            
+            actionsTimeout = setTimeout(() => {
+                closeActions();
+            }, 3000);
+        }
+
+        function findNodeById(node, id) {
+            if (node.id === id) return node;
+            if (node.children) {
+                for (const child of node.children) {
+                    const found = findNodeById(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        // 2. Step Generation Logic (Empty -> Emoji -> Keywords -> Full -> Children)
+        function getMaxDepth(node, currentDepth = 0) {
+            if (!node.children || node.children.length === 0) return currentDepth;
+            return Math.max(...node.children.map(child => getMaxDepth(child, currentDepth + 1)));
+        }
+
+        function initDepthSlider() {
+            maxTreeDepth = getMaxDepth(initialData);
+            const slider = document.getElementById('depthSlider');
+            const labels = document.getElementById('depthLabels');
+            slider.max = maxTreeDepth;
+            slider.value = maxTreeDepth;
+            maxDepthVisible = maxTreeDepth;
+
+            labels.innerHTML = '';
+            for (let i = 0; i <= maxTreeDepth; i++) {
+                const span = document.createElement('span');
+                span.innerText = `L${i}`;
+                span.onclick = () => updateDepth(i);
+                labels.appendChild(span);
+            }
+            updateDepthLabels(maxTreeDepth);
+
+            const depthContainer = document.querySelector('.depth-slider-container');
+            if (depthContainer) {
+                depthContainer.style.display = showAllMode === 0 ? 'none' : 'flex';
+            }
+            updatePlayAllVisibility();
+        }
+
+        function updateDepth(val) {
+            maxDepthVisible = parseInt(val);
+            document.getElementById('depthSlider').value = maxDepthVisible;
+            updateDepthLabels(maxDepthVisible);
+            renderDOM(true);
+            updatePlayAllVisibility();
+        }
+
+        function updateDepthLabels(val) {
+            const labels = document.querySelectorAll('#depthLabels span');
+            labels.forEach((label, i) => {
+                label.classList.toggle('active', i === val);
+            });
+        }
+        function generateSteps(node) {
+            if (!node.children || node.children.length === 0) return;
+
+            // STEP A: Show empty box outline for the structure
+            actionSteps.push(() => {
+                node.children.forEach(child => child.state = 'empty');
+                activeNodeId = node.children[0].id;
+            });
+
+            // STEP B: For each child, reveal through states progressively
+            node.children.forEach(child => {
+
+                // 1. Reveal Emoji Hint
+                actionSteps.push(() => {
+                    child.state = 'emoji';
+                    activeNodeId = child.id;
+                });
+
+                // 2. Reveal Simple Words / Keywords (if they exist)
+                if (child.keywords) {
+                    actionSteps.push(() => {
+                        child.state = 'keywords';
+                        activeNodeId = child.id;
+                    });
+                }
+
+                // 3. Reveal Full Sentence
+                actionSteps.push(() => {
+                    child.state = 'full';
+                    activeNodeId = child.id;
+                });
+
+                // 4. Recurse to generate steps for this child's sub-nodes
+                generateSteps(child);
+            });
+        }
+
+        function cloneData(data) {
+            return JSON.parse(JSON.stringify(data));
+        }
+
+        // 3. Render Engine
+        function renderNode(node, depth = 0) {
+            const isManualMode = showAllMode === 0;
+            if (node.state === 'hidden' || (!isManualMode && depth > maxDepthVisible)) return null;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mindmap-node-wrapper';
+
+            const box = document.createElement('div');
+            box.className = `node-box ${node.state} level-${depth}`;
+
+            if (node.id === activeNodeId) {
+                if (isPlayingAll) {
+                    box.classList.add('playing');
+                    box.id = 'playing-node';
+                } else {
+                    box.id = 'active-node';
+                }
+            }
+            if (node.id === clickedNodeId) box.classList.add('clicked-flicker');
+
+            // Play from here if playing all
+            if (isPlayingAll && node.state !== 'empty') {
+                box.style.cursor = 'pointer';
+                box.onclick = (e) => {
+                    e.stopPropagation();
+                    const index = playAllQueue.findIndex(n => n.id === node.id);
+                    if (index !== -1) {
+                        currentPlayIndex = index;
+                        if (lastAudio) {
+                            lastAudio.pause();
+                            lastAudio = null;
+                        }
+                        window.speechSynthesis.cancel();
+                        playNextInQueue();
+                    }
+                };
+            }
+
+            // Collapse Logic
+            const hasChildren = node.children && node.children.length > 0;
+            const allChildrenFull = hasChildren && node.children.every(c => c.state === 'full');
+            const isCollapsed = collapsedNodes.has(node.id);
+            const isDepthLimited = !isManualMode && depth >= maxDepthVisible;
+            const hideChildren = (isCollapsed && allChildrenFull) || (isDepthLimited && hasChildren);
+
+            if (allChildrenFull && showAllMode !== 3 && !isDepthLimited) {
+                box.classList.add('collapsible');
+                box.title = isCollapsed ? "Click to expand" : "Click to collapse";
+                box.onclick = (e) => {
+                    e.stopPropagation();
+                    clickedNodeId = node.id;
+                    if (collapsedNodes.has(node.id)) {
+                        collapsedNodes.delete(node.id);
+                        activeNodeId = node.children[0].id;
+                    } else {
+                        collapsedNodes.add(node.id);
+                        activeNodeId = node.id;
+                    }
+                    renderDOM(true);
+                };
+            }
+
+            // Render Content based on current Learning State
+            if (node.state === 'emoji') {
+                box.innerHTML = `<span class="node-content-emoji">${node.emoji}</span>`;
+            } else if (node.state === 'keywords') {
+                box.innerHTML = `
+                    <span class="node-content-emoji">${node.emoji}</span>
+                    <span class="node-content-keywords">${node.keywords}</span>
+                `;
+            } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
+                box.innerHTML = `
+                    <span class="node-content-emoji">${node.emoji}</span>
+                    <span class="node-content-text" style="flex:1;">${displayedText}</span>
+                `;
+
+                // Add click listener to show actions on the fly (overlay)
+                const existingOnClick = box.onclick;
+                box.onclick = (e) => {
+                    e.stopPropagation(); // Prevent global closeActions from firing
+                    if (existingOnClick) existingOnClick(e);
+                    
+                    // Toggle current node: if it's already active, close it
+                    if (activeBoxEl === box) {
+                        closeActions();
+                        return;
+                    }
+
+                    // Cleanup previous actions if they exist
+                    if (activeBoxEl) {
+                        closeActions();
+                    }
+
+                    const actions = document.createElement('div');
+                    actions.className = 'node-actions';
+                    actions.onclick = (e) => {
+                        e.stopPropagation();
+                    };
+                    actions.innerHTML = `
+                        <button class="action-btn" onclick="playAudio('${node.id}', event); refreshActionsTimeout();" title="Play Audio">🔊</button>
+                        ${node.cn ? `<button class="action-btn" onclick="toggleTooltip(this, event); refreshActionsTimeout();" title="Translation">CN<span class="tooltip">${node.cn}</span></button>` : ''}
+                        ${node.notes ? `<button class="action-btn" onclick="toggleTooltip(this, event); refreshActionsTimeout();" title="Notes">💡<span class="tooltip">${node.notes}</span></button>` : ''}
+                        ${node.statement ? `<button class="action-btn" onclick="showQuestion('${node.id}', event); refreshActionsTimeout();" title="Question">❓</button>` : ''}
+                    `;
+                    box.appendChild(actions);
+                    box.classList.add('node-box-active');
+                    
+                    // Apply active-wrapper to all ancestor mindmap-node-wrappers for stacking safety
+                    activeWrappers = [];
+                    let parent = box.parentElement;
+                    while (parent && parent !== document.body) {
+                        if (parent.classList.contains('mindmap-node-wrapper')) {
+                            parent.classList.add('active-wrapper');
+                            activeWrappers.push(parent);
+                        }
+                        parent = parent.parentElement;
+                    }
+                    
+                    activeBoxEl = box;
+                    refreshActionsTimeout();
+                };
+            }
+
+            if (hideChildren && node.state !== 'empty' && node.state !== 'hidden') {
+                box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
+            }
+
+            wrapper.appendChild(box);
+
+            // Render children
+            if (node.children && node.children.some(c => c.state !== 'hidden') && !hideChildren) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children-container';
+
+                node.children.forEach(child => {
+                    const childElement = renderNode(child, depth + 1);
+                    if (childElement) {
+                        const childRow = document.createElement('div');
+                        childRow.className = 'child-row';
+                        childRow.appendChild(childElement);
+                        childrenContainer.appendChild(childRow);
+                    }
+                });
+                wrapper.appendChild(childrenContainer);
+            }
+
+            return wrapper;
+        }
+
+        function renderDOM(manualToggle = false) {
+            closeActions(); // Close any active overlays before re-rendering
+            const container = document.getElementById('mindmap-container');
+
+            // Save scroll positions if we want to preserve them
+            const savedScrollTop = container.scrollTop;
+            const savedScrollLeft = container.scrollLeft;
+
+            container.innerHTML = '';
+            const domTree = renderNode(treeData, 0);
+            if (domTree) {
+                container.appendChild(domTree);
+            }
+
+            if (manualToggle) {
+                // Restore scroll positions when switching modes or toggling collapse
+                container.scrollTop = savedScrollTop;
+                container.scrollLeft = savedScrollLeft;
+                return;
+            }
+
+            // Auto-scroll logic (only for progressive steps)
+            const activeEl = document.getElementById('active-node');
+            if (activeEl) {
+                const containerRect = container.getBoundingClientRect();
+                const activeRect = activeEl.getBoundingClientRect();
+
+                let shouldScrollToTop = true;
+                // (manualToggle check removed here as we return early above)
+
+                let targetScrollTop = container.scrollTop;
+
+                if (shouldScrollToTop) {
+                    targetScrollTop = activeRect.top - containerRect.top + container.scrollTop - 60;
+                } else {
+                    const childrenContainer = activeEl.closest('.children-container');
+                    if (childrenContainer) {
+                        const lastChildRow = childrenContainer.lastElementChild;
+                        const lastChildBox = lastChildRow ? lastChildRow.querySelector('.node-box') : null;
+
+                        if (lastChildBox) {
+                            const lastRect = lastChildBox.getBoundingClientRect();
+                            const bottomThreshold = containerRect.bottom - 60;
+
+                            if (lastRect.bottom > bottomThreshold) {
+                                const neededScroll = lastRect.bottom - bottomThreshold;
+                                targetScrollTop = container.scrollTop + neededScroll;
+                                const maxScroll = activeRect.top - containerRect.top + container.scrollTop - 60;
+                                targetScrollTop = Math.min(targetScrollTop, maxScroll);
+                            }
+                        }
+                    }
+                }
+
+                container.scrollTo({
+                    left: container.scrollWidth,
+                    top: Math.max(0, targetScrollTop),
+                    behavior: 'smooth'
+                });
+            } else {
+                container.scrollTo({
+                    left: container.scrollWidth,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // 4. Action Controllers
+        let lastAudio = null;
+        async function playAudio(nodeId, event) {
+            if (event) event.stopPropagation();
+            const node = findNodeById(treeData, nodeId);
+            if (!node) return;
+
+            if (lastAudio) {
+                lastAudio.pause();
+                lastAudio = null;
+            }
+
+            if (node.audio) {
+                try {
+                    const audioUrl = await AudioCacheManager.getAudio(node.audio);
+                    const audio = new Audio(audioUrl);
+                    lastAudio = audio;
+                    audio.play().catch(err => {
+                        console.error("Audio playback failed:", err);
+                        speak(node.text);
+                    });
+                } catch (err) {
+                    speak(node.text);
+                }
+            } else {
+                speak(node.text);
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-GB'; // British English
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleTooltip(btn, event) {
+            if (event) event.stopPropagation();
+            const tooltip = btn.querySelector('.tooltip');
+            if (!tooltip) return;
+            
+            // Hide all other tooltips first
+            document.querySelectorAll('.tooltip.visible').forEach(t => {
+                if (t !== tooltip) t.classList.remove('visible');
+            });
+
+            tooltip.classList.toggle('visible');
+
+            if (tooltip.classList.contains('visible')) {
+                // Auto hide after 5 seconds
+                if (btn._tooltipTimeout) clearTimeout(btn._tooltipTimeout);
+                btn._tooltipTimeout = setTimeout(() => {
+                    tooltip.classList.remove('visible');
+                }, 5000);
+            }
+        }
+        function collectVisibleNodes(node, depth = 0, list = []) {
+            if (node.state === 'hidden' || depth > maxDepthVisible) return list;
+            list.push(node);
+            if (node.children && depth < maxDepthVisible && !collapsedNodes.has(node.id)) {
+                node.children.forEach(child => collectVisibleNodes(child, depth + 1, list));
+            }
+            return list;
+        }
+
+        async function togglePlayAll() {
+            if (isPlayingAll) {
+                stopPlayAll();
+                return;
+            }
+
+            const btn = document.getElementById('playAllBtn');
+            btn.innerText = '⏹️';
+            isPlayingAll = true;
+
+            playAllQueue = collectVisibleNodes(treeData);
+            currentPlayIndex = 0;
+
+            playNextInQueue();
+        }
+
+        function stopPlayAll() {
+            isPlayingAll = false;
+            if (lastAudio) {
+                lastAudio.pause();
+                lastAudio = null;
+            }
+            window.speechSynthesis.cancel();
+
+            const btn = document.getElementById('playAllBtn');
+            btn.innerText = '🔊';
+
+            renderDOM(true);
+        }
+
+        async function playNextInQueue() {
+            if (!isPlayingAll || currentPlayIndex >= playAllQueue.length) {
+                stopPlayAll();
+                return;
+            }
+
+            const node = playAllQueue[currentPlayIndex];
+            activeNodeId = node.id;
+            renderDOM(true); // Highlights current node with 'playing' class via renderNode logic
+
+            // Auto scroll to current node
+            const el = document.getElementById('playing-node');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            await playNodeAudioAsync(node);
+
+            if (isPlayingAll) {
+                currentPlayIndex++;
+                setTimeout(playNextInQueue, 500); // Small gap between sentences
+            }
+        }
+
+        async function playNodeAudioAsync(node) {
+            if (node.audio) {
+                try {
+                    const audioUrl = await AudioCacheManager.getAudio(node.audio);
+                    return new Promise((resolve) => {
+                        const audio = new Audio(audioUrl);
+                        lastAudio = audio;
+                        audio.onended = resolve;
+                        audio.onerror = () => {
+                            speakAsync(node.text).then(resolve);
+                        };
+                        audio.play().catch(err => {
+                            speakAsync(node.text).then(resolve);
+                        });
+                    });
+                } catch (err) {
+                    console.error("Cache fetch failed, falling back to TTS:", err);
+                    await speakAsync(node.text);
+                }
+            } else {
+                await speakAsync(node.text);
+            }
+        }
+
+        function speakAsync(text) {
+            return new Promise((resolve) => {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-GB';
+                    utterance.onend = resolve;
+                    utterance.onerror = resolve;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    resolve();
+                }
+            });
+        }
+
+        function updatePlayAllVisibility() {
+            const isVisible = showAllMode === 3 && maxDepthVisible === maxTreeDepth;
+            document.getElementById('playAllBtn').style.display = isVisible ? 'flex' : 'none';
+            document.getElementById('playAllSeparator').style.display = isVisible ? 'block' : 'none';
+            if (!isVisible && isPlayingAll) stopPlayAll();
+
+            if (showAllMode === 3) {
+                // Preload visible nodes in the background
+                const visibleNodes = collectVisibleNodes(treeData);
+                AudioCacheManager.preloadAll(visibleNodes);
+            }
+        }
+
+        let currentQuestionNode = null;
+        function showQuestion(nodeId, event) {
+            if (event) event.stopPropagation();
+            const node = findNodeById(treeData, nodeId);
+            if (!node || !node.statement) return;
+
+            currentQuestionNode = node;
+            document.getElementById('questionStatement').innerText = node.statement;
+            document.getElementById('questionFeedback').style.display = 'none';
+            document.getElementById('questionModal').style.display = 'flex';
+        }
+
+        function checkAnswer(userChoice) {
+            if (!currentQuestionNode) return;
+
+            const isCorrect = userChoice === currentQuestionNode.answer;
+            const feedback = document.getElementById('questionFeedback');
+            const feedbackText = document.getElementById('feedbackText');
+            const explanationText = document.getElementById('explanationText');
+
+            feedback.style.display = 'block';
+            feedback.style.backgroundColor = isCorrect ? '#ecfdf5' : '#fef2f2';
+            feedback.style.border = `1px solid ${isCorrect ? '#10b981' : '#ef4444'}`;
+
+            feedbackText.innerText = isCorrect ? "✅ Correct! (正确)" : "❌ Incorrect (错误)";
+            feedbackText.style.color = isCorrect ? "#065f46" : "#991b1b";
+
+            explanationText.innerText = currentQuestionNode.explanation || "";
+        }
+
+        function closeQuestionModal() {
+            document.getElementById('questionModal').style.display = 'none';
+            currentQuestionNode = null;
+        }
+
+        // Global click listener to hide tooltips when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.action-btn')) {
+                document.querySelectorAll('.tooltip.visible').forEach(t => {
+                    t.classList.remove('visible');
+                });
+            }
+        });
+
+        function updateButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            prevBtn.disabled = currentStepIndex === 0;
+            const isFinished = currentStepIndex >= actionSteps.length;
+            nextBtn.disabled = isFinished;
+
+            const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        function applyStepsUpTo(targetIndex) {
+            treeData = cloneData(initialData);
+            actionSteps = [];
+            activeNodeId = treeData.id;
+
+            // Add initial step to reveal the root node's full text
+            actionSteps.push(() => {
+                treeData.state = 'full';
+                activeNodeId = treeData.id;
+            });
+
+            generateSteps(treeData);
+
+            currentStepIndex = targetIndex;
+            for (let i = 0; i < currentStepIndex; i++) {
+                actionSteps[i]();
+            }
+
+            renderDOM();
+            updateButtons();
+        }
+
+        function nextStep() {
+            if (showAllMode > 0) {
+                // Return to progressive mode seamlessly
+                updateMode(0);
+                updatePlayAllVisibility();
+                return;
+            }
+
+            if (currentStepIndex < actionSteps.length) {
+                actionSteps[currentStepIndex]();
+                currentStepIndex++;
+                renderDOM();
+                updateButtons();
+                updatePlayAllVisibility();
+            }
+        }
+
+        function prevStep() {
+            if (showAllMode > 0) {
+                // Return to progressive mode
+                updateMode(0);
+                updatePlayAllVisibility();
+                return;
+            }
+
+            if (currentStepIndex > 0) {
+                applyStepsUpTo(currentStepIndex - 1);
+                updatePlayAllVisibility();
+            }
+        }
+
+        function updateMode(val) {
+            const newMode = parseInt(val);
+            const slider = document.getElementById('modeSlider');
+            slider.value = newMode;
+
+            // Update labels
+            const labels = document.querySelectorAll('.mode-labels:not(#depthLabels) span');
+            labels.forEach((label, i) => {
+                label.classList.toggle('active', i === newMode);
+            });
+
+            const depthContainer = document.querySelector('.depth-slider-container');
+            if (depthContainer) {
+                depthContainer.style.display = newMode === 0 ? 'none' : 'flex';
+            }
+
+            if (newMode === 0) {
+
+                // Return to manual/progressive mode
+                if (showAllMode !== 0) {
+                    showAllMode = 0;
+                    if (savedCollapsedNodes) {
+                        collapsedNodes = savedCollapsedNodes;
+                        savedCollapsedNodes = null;
+                    }
+                    applyStepsUpTo(currentStepIndex);
+                }
+                return;
+            }
+
+            if (showAllMode === 0) {
+                savedCollapsedNodes = new Set(collapsedNodes);
+            }
+            showAllMode = newMode;
+
+            let targetState = 'emoji';
+            if (showAllMode === 2) {
+                targetState = 'keywords';
+            } else if (showAllMode === 3) {
+                targetState = 'full';
+            }
+
+            function setNodeStateRecursively(node, state) {
+                // If the node doesn't have keywords (like root), default to full text
+                if (state === 'keywords' && !node.keywords) {
+                    node.state = 'full';
+                } else {
+                    node.state = state;
+                }
+
+                if (node.children) {
+                    node.children.forEach(child => setNodeStateRecursively(child, state));
+                }
+            }
+
+            // Apply target state directly to the tree
+            setNodeStateRecursively(treeData, targetState);
+            collapsedNodes.clear(); // Ensure nothing is hidden when toggling
+            renderDOM(true);
+            updatePlayAllVisibility();
+        }
+
+        function resetMap() {
+            updateMode(0);
+            collapsedNodes.clear();
+            applyStepsUpTo(0);
+            updatePlayAllVisibility();
+        }
+
+        // Modal Functions
+        function showWritingPrompt() {
+            if (!writingPrompt) return;
+            document.getElementById('promptText').innerHTML = writingPrompt;
+            document.getElementById('promptModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('promptModal').style.display = 'none';
+        }
+
+        // Listen for user input
+        window.onload = () => {
+            if (writingPrompt) {
+                document.getElementById('promptBtn').style.display = 'flex';
+            }
+            initDepthSlider();
+            resetMap();
+        };
+
+        // Global click listener to close actions
+        function handleGlobalClick(e) {
+            if (activeBoxEl && !activeBoxEl.contains(e.target)) {
+                closeActions();
+            }
+        }
+        window.addEventListener('mousedown', handleGlobalClick);
+        window.addEventListener('pointerdown', handleGlobalClick);
+        window.addEventListener('touchstart', handleGlobalClick);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowRight') {
+                e.preventDefault();
+                const btn = document.getElementById('nextBtn');
+                if (!btn.disabled) nextStep();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                const btn = document.getElementById('prevBtn');
+                if (!btn.disabled) prevStep();
+            } else if (e.code === 'KeyA') {
+                e.preventDefault();
+                if (showAllMode > 0) updateMode(showAllMode - 1);
+            } else if (e.code === 'KeyD') {
+                e.preventDefault();
+                if (showAllMode < 3) updateMode(showAllMode + 1);
+            }
+        });
+
+    </script>
+</body>
+
+</html>
