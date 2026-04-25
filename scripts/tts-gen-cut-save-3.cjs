@@ -137,9 +137,11 @@ except Exception as e:
     try {
         while (timeoutsCount < MAX_TIMEOUTS && !success) {
             try {
+                // If this is a retry due to insufficient pauses, delete the old wav to ensure a fresh one
+                if (fs.existsSync(combinedWav)) fs.unlinkSync(combinedWav);
+
                 // 60 seconds timeout per attempt
                 execSync(`python3 "${tempPy}" > "${pyLog}" 2>&1`, { timeout: 60000 });
-                success = true;
                 
                 const pyOutput = fs.readFileSync(pyLog, 'utf8');
                 if (pyOutput.includes("MARK_QUOTA_EXHAUSTED")) quotaExhausted = true;
@@ -163,6 +165,7 @@ except Exception as e:
                         ContentType: "audio/mpeg",
                     }));
                     task.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
+                    success = true;
                 } else {
                     const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=${silenceThreshold}:d=0.8" -f null - 2>&1`).toString();
                     const allSilences = [];
@@ -175,7 +178,7 @@ except Exception as e:
                     const candidateSilences = allSilences.filter(s => s.start > 0.1);
                     
                     if (candidateSilences.length < tasks.length) {
-                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length}). Retrying...`);
+                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length}). Retrying attempt ${timeoutsCount + 2}/${MAX_TIMEOUTS}...`);
                         timeoutsCount++;
                         if (timeoutsCount >= MAX_TIMEOUTS) {
                             console.error("❌ CRITICAL: Failed to get enough pauses after 3 attempts. Terminating.");
@@ -220,6 +223,7 @@ except Exception as e:
                         task.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
                         startTime = endTime;
                     }
+                    success = true;
                 }
                 return { success: true, quotaExhausted };
             } catch (err) {
