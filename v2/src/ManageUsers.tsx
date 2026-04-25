@@ -75,7 +75,12 @@ export function ManageUsers() {
 
   const startEdit = (user: any) => {
       setEditingUserId(user.id)
-      setEditingTextbooks(new Set(user.textbooks || []))
+      let tbs = user.textbooks || []
+      if (typeof tbs === 'string') {
+          try { tbs = JSON.parse(tbs) } catch { tbs = [] }
+      }
+      if (!Array.isArray(tbs)) tbs = []
+      setEditingTextbooks(new Set(tbs))
       setEditingExpiry(user.subscriptionExpiry ? new Date(user.subscriptionExpiry).toISOString().split('T')[0] : '')
   }
 
@@ -176,11 +181,19 @@ export function ManageUsers() {
                     <td style={{ padding: 10 }}>
                         {u.role === 'admin' ? (
                             <span style={{ fontSize: '0.9em', color: '#8b0000', fontWeight: 'bold' }}>All Access</span>
-                        ) : Array.isArray(u.textbooks) && u.textbooks.length > 0 ? (
-                            <span style={{ fontSize: '0.9em', color: '#555' }}>{u.textbooks.join(', ')}</span>
-                        ) : (
-                            <span style={{ fontSize: '0.9em', color: '#999', fontStyle: 'italic' }}>None</span>
-                        )}
+                        ) : (() => {
+                            let tbs = u.textbooks || []
+                            if (typeof tbs === 'string') {
+                                try { tbs = JSON.parse(tbs) } catch { tbs = [] }
+                            }
+                            if (!Array.isArray(tbs)) tbs = []
+                            const filtered = tbs.filter((t: string) => t && t !== '[' && t !== ']' && t !== ' ' && t !== ',')
+                            return filtered.length > 0 ? (
+                                <span style={{ fontSize: '0.9em', color: '#555' }}>{filtered.join(', ')}</span>
+                            ) : (
+                                <span style={{ fontSize: '0.9em', color: '#999', fontStyle: 'italic' }}>None</span>
+                            )
+                        })()}
                     </td>
                     <td style={{ padding: 10 }}>
                         {u.subscriptionExpiry ? (

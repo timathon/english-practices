@@ -18,10 +18,13 @@ const allowedOrigins = [
   'http://epv2.vibequizzing.com'
 ]
 
-app.use('*', async (c, next) => {
-  console.log(`[${c.req.method}] ${c.req.url}`);
-  await next();
-})
+let authInstance: any = null;
+const getCachedAuth = (env: Bindings) => {
+  if (!authInstance) {
+    authInstance = getAuth(env.DB, env.BETTER_AUTH_SECRET, env.BETTER_AUTH_URL);
+  }
+  return authInstance;
+};
 
 app.use('/api/*', cors({
   origin: (origin) => {
@@ -50,7 +53,7 @@ app.onError((err, c) => {
 
 // Auth handler
 app.all('/api/auth/*', (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   return auth.handler(c.req.raw)
 })
 
@@ -59,7 +62,7 @@ import { eq, desc } from 'drizzle-orm'
 import { practiceRecords, user, practice, account, session as sessionTable } from './db/schema'
 
 app.get('/api/me', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({
     headers: c.req.raw.headers
   });
@@ -71,7 +74,7 @@ app.get('/api/me', async (c) => {
 
 app.post('/api/setup', async (c) => {
   try {
-    const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+    const auth = getCachedAuth(c.env)
     const db = drizzle(c.env.DB)
     const existing = await db.select().from(user).where(eq(user.username, "adminx"))
     if (existing.length > 0) return c.json({ msg: "Already set up" })
@@ -95,7 +98,7 @@ app.post('/api/setup', async (c) => {
 })
 
 app.get('/api/admin/users', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
@@ -109,31 +112,46 @@ app.get('/api/admin/users', async (c) => {
       subscriptionExpiry: user.subscriptionExpiry,
       createdAt: user.createdAt
   }).from(user)
-  return c.json(users)
+  
+  const parsedUsers = users.map(u => {
+      let tbs = u.textbooks;
+      if (typeof tbs === 'string') {
+          try { tbs = JSON.parse(tbs) } catch { tbs = [] }
+      }
+      return { ...u, textbooks: tbs };
+  });
+
+  return c.json(parsedUsers)
 })
 
 app.post('/api/admin/users', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
 
-  const body = await c.req.json()
-  const req = new Request("http://localhost/api/auth/sign-up/email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-          email: `${body.username}@system.local`,
-          password: body.password,
-          name: body.username,
-          username: body.username
-      })
-  })
-  const res = await auth.handler(req)
-  return c.json(await res.json())
+  try {
+    const body = await c.req.json()
+    if (!body.username || !body.password) {
+      return c.json({ error: 'Username and password are required' }, 400)
+    }
+
+    const res = await auth.api.signUpEmail({
+        body: {
+            email: `${body.username}@system.local`,
+            password: body.password,
+            name: body.username,
+            username: body.username
+        } as any
+    })
+    return c.json(res)
+  } catch (err: any) {
+    console.error("Create User Error:", err.message)
+    return c.json({ error: err.message || 'Internal Server Error' }, 500)
+  }
 })
 
 app.delete('/api/admin/users/:id', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
@@ -155,7 +173,7 @@ app.delete('/api/admin/users/:id', async (c) => {
 
 app.put('/api/admin/users/:id/textbooks', async (c) => {
   try {
-    const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+    const auth = getCachedAuth(c.env)
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
     if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
     
@@ -175,7 +193,7 @@ app.put('/api/admin/users/:id/textbooks', async (c) => {
 })
 
 app.put('/api/admin/users/:id/password', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
@@ -260,7 +278,7 @@ app.put('/api/admin/users/:id/password', async (c) => {
 })
 
 app.get('/api/records', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
@@ -272,7 +290,7 @@ app.get('/api/records', async (c) => {
 })
 
 app.post('/api/records', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
@@ -296,7 +314,7 @@ app.post('/api/records', async (c) => {
 })
 
 app.put('/api/records/:id', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
@@ -317,7 +335,7 @@ app.put('/api/records/:id', async (c) => {
 })
 
 app.get('/api/practices', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
   if (!session) return c.json({ error: 'Unauthorized' }, 401)
   
@@ -354,7 +372,7 @@ app.get('/api/practices', async (c) => {
 })
 
 app.get('/api/practices/:id', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
   if (!session) return c.json({ error: 'Unauthorized' }, 401)
 
@@ -379,7 +397,7 @@ app.get('/api/practices/:id', async (c) => {
 })
 
 app.post('/api/admin/practices', async (c) => {
-  const auth = getAuth(c.env.DB, c.env.BETTER_AUTH_SECRET, c.env.BETTER_AUTH_URL)
+  const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
 
