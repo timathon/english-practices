@@ -384,5 +384,28 @@ async function interactive() {
 }
 
 const args = process.argv.slice(2);
-if (args.length === 0) interactive();
-else if (args.length >= 3) generate(args[0], args[1], args[2], 3, 3, args.includes('--regenerate') ? '3' : (args.includes('--skip-audio') ? '1' : '2'));
+if (args.length === 0) {
+    interactive();
+} else {
+    let inputJson = args[0];
+    let type = args[1] || 'post';
+    let outputHtml = args[2];
+    let userCount = 3;
+    let validity = 3;
+    let audioMode = '2';
+
+    args.forEach(arg => {
+        if (arg.startsWith('--user=')) userCount = parseInt(arg.split('=')[1]);
+        if (arg.startsWith('--validity=')) validity = parseInt(arg.split('=')[1]);
+        if (arg.startsWith('--audioMode=')) audioMode = arg.split('=')[1];
+    });
+
+    if (args.includes('--regenerate')) audioMode = '3';
+    if (args.includes('--skip-audio')) audioMode = '1';
+
+    if (inputJson && type && outputHtml) {
+        generate(inputJson, type, outputHtml, userCount, validity, audioMode);
+    } else {
+        console.error("Usage: node scripts/sh_release_gen-3.cjs [inputJson] [type] [outputHtml] [--user=10] [--validity=3]");
+    }
+}
