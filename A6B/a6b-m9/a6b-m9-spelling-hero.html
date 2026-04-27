@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spelling Master - Spelling Hero</title>
+    <style>
+        :root {
+            --primary: #58cc02;
+            --primary-dark: #46a302;
+            --secondary: #1cb0f6;
+            --secondary-dark: #1185ba;
+            --warning: #ffc800;
+            --warning-dark: #e5b400;
+            --danger: #ff4b4b;
+            --danger-dark: #d33131;
+            --neutral: #e5e5e5;
+            --text: #4b4b4b;
+            --white: #ffffff;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; user-select: none;
+        }
+
+        /* --- AUTH CSS SLOT START --- */
+        
+        /* --- AUTH CSS SLOT END --- */
+
+        #app {
+            width: 100%; max-width: 600px;
+            background: var(--white); min-height: 100vh;
+            position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: none; flex-direction: column;
+        }
+
+        @media (min-width: 600px) {
+            #app { min-height: 90vh; border-radius: 20px; overflow: hidden; }
+        }
+
+        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; flex-grow: 1; }
+        .screen.active { display: flex; }
+
+        header { text-align: center; margin-bottom: 20px; position: relative; }
+        h1 { color: var(--primary); margin: 0; font-size: 2rem; }
+        @media (max-width: 480px) { h1 { font-size: 1.4rem; } }
+        h2 { font-size: 1.1rem; color: #999; margin-top: 5px; font-weight: normal; }
+
+        .challenge-grid { display: grid; gap: 15px; overflow-y: auto; padding-bottom: 80px; }
+        .challenge-card {
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 16px; padding: 15px; cursor: pointer; transition: transform 0.1s, border-color 0.1s;
+        }
+        .challenge-card:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .challenge-card:hover { background-color: #fafafa; border-color: #ccc; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .card-title { font-size: 1.1rem; font-weight: bold; margin: 0; }
+        .card-stats { 
+            font-size: 0.8rem; color: #777; display: flex; justify-content: space-between; align-items: center;
+            margin-top: 10px; background: #f8f9fa; padding: 10px 12px; border-radius: 12px; border: 1px solid #eee;
+        }
+        .stat-row { display: flex; flex-direction: column; align-items: flex-start; }
+        .stat-row:last-child { align-items: flex-end; }
+        .stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+        .stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
+        .stat-row { display: flex; flex-direction: column; align-items: flex-start; }
+        .stat-row:last-child { align-items: flex-end; }
+        .stat-label { font-weight: bold; color: #aaa; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+        .stat-val { color: var(--text); font-weight: 600; font-size: 0.9rem; }
+        .footer-links { text-align: center; margin-top: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .text-link { background: none; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: underline; }
+        .text-link.danger { color: var(--danger); }
+        .text-link.muted { color: #999; }
+
+        .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; height: 40px; }
+        .close-btn { font-size: 1.5rem; cursor: pointer; color: #ccc; background: none; border: none; flex-shrink: 0; width: 30px; }
+        .progress-container {
+            flex-grow: 1; margin: 0 15px; height: 12px; background-color: var(--neutral);
+            border-radius: 6px; display: flex; overflow: hidden;
+        }
+        .progress-segment { flex-grow: 1; border-right: 1px solid var(--white); }
+        .progress-segment.green { background-color: var(--primary); }
+        .progress-segment.yellow { background-color: var(--warning); }
+        .progress-segment.red { background-color: var(--danger); }
+
+        .question-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .prompt-container { text-align: center; margin-bottom: 20px; }
+        .prompt-cn { font-size: 1.5rem; color: #333; font-weight: bold; margin-bottom: 5px; }
+        
+        /* Slot Machine (Linear) UI */
+        .slots-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+        .slot {
+            width: 60px; height: 60px; border: 3px solid var(--neutral); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: bold;
+            cursor: pointer; background: var(--white); transition: all 0.2s;
+        }
+        .slot.active { border-color: var(--secondary); background: #f0f9ff; transform: scale(1.1); }
+        .slot.filled { border-color: var(--primary); color: var(--primary-dark); }
+        
+        .options-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .option-btn {
+            padding: 15px; border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 12px; background: white; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+            transition: all 0.1s;
+        }
+        .option-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .option-btn.selected { background: var(--secondary); color: white; border-color: var(--secondary-dark); }
+
+        /* Word Soup UI */
+        .answer-area {
+            min-height: 70px; border-top: 2px solid var(--neutral); border-bottom: 2px solid var(--neutral);
+            background: #fafafa; margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 8px; padding: 15px;
+            align-items: center; justify-content: center; border-radius: 8px;
+        }
+        .brick-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .brick {
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 12px; padding: 10px 18px; font-size: 1.3rem; font-weight: bold; cursor: pointer;
+            color: var(--text); transition: all 0.1s;
+        }
+        .brick:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .brick.selected { background: var(--neutral); color: transparent; border-color: transparent; pointer-events: none; }
+        .brick-answer {
+            background: var(--white); border: 2px solid var(--secondary); border-bottom: 4px solid var(--secondary-dark);
+            border-radius: 12px; padding: 10px 18px; font-size: 1.3rem; font-weight: bold; color: var(--secondary-dark);
+            cursor: pointer;
+        }
+
+        .footer-action { padding-top: 20px; border-top: 2px solid var(--neutral); }
+        .check-btn {
+            width: 100%; padding: 15px; border-radius: 16px; font-size: 1.2rem; font-weight: bold;
+            color: white; background-color: var(--primary); border: none; border-bottom: 5px solid var(--primary-dark);
+            cursor: pointer; text-transform: uppercase;
+        }
+        .check-btn:active { transform: translateY(2px); border-bottom-width: 3px; }
+        .check-btn:disabled { background-color: var(--neutral); border-bottom-color: #ccc; color: #999; cursor: not-allowed; transform: none; }
+        .check-btn.wrong { background-color: var(--danger); border-bottom-color: var(--danger-dark); animation: shake 0.5s; }
+
+        .feedback-area {
+            height: 100px; margin-bottom: 10px; padding: 10px; border-radius: 12px; text-align: center;
+            visibility: hidden; display: flex; flex-direction: column; justify-content: center;
+        }
+        .feedback-area.visible { visibility: visible; }
+        .feedback-area.correct { background-color: #d7ffb8; }
+        .feedback-area.wrong { background-color: #ffdfe0; }
+
+        .play-btn {
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 50%; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; margin-right: 8px; vertical-align: middle; transition: all 0.1s;
+        }
+        .play-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .play-btn svg { width: 24px; height: 24px; fill: var(--secondary); }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .modal-content {
+            background: white; width: 90%; max-width: 500px; max-height: 80vh; border-radius: 20px;
+            padding: 20px; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .log-list { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; }
+        .mistake-item { padding: 12px; border-bottom: 1px solid #eee; }
+
+        .settings-fab {
+            width: 36px; height: 36px;
+            background: var(--white); border: 2px solid var(--neutral); border-bottom: 4px solid var(--neutral);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; cursor: pointer; z-index: 998;
+        }
+
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        
+        /* Refresh Cache Button */
+        #refresh-cache {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: #1abc9c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        #refresh-cache:hover {
+            background: #16a085;
+            transform: scale(1.05);
+        }
+        #refresh-cache:active {
+            transform: scale(0.95);
+        }
+        #refresh-cache.loading {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        .confetti {
+            position: fixed; width: 10px; height: 10px; background-color: #f00;
+            z-index: 3000; top: 50%; left: 50%; border-radius: 2px;
+            pointer-events: none;
+            animation: burst 3s ease-out forwards;
+        }
+        @keyframes burst {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            30% { transform: translate(var(--x), var(--y)) scale(1); opacity: 1; }
+            100% { transform: translate(var(--x), 100vh) scale(0.5) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+
+
+<div id="app">
+    <div id="home-screen" class="screen active">
+        <header>
+            <div style="display: flex; align-items: center; justify-content: center; position: relative; height: 40px;">
+                <a href="../index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
+                <h1>Spelling Master</h1>
+                <button class="settings-fab" onclick="app.toggleSettings()" style="position: absolute; right: 0;">⚙️</button>
+            </div>
+            <h2 style="margin-top: 15px;">Grade 6 Semester 2 - Module 9</h2>
+        </header>
+        <div class="challenge-grid" id="challenge-list"></div>
+        <div class="footer-links">
+            <button class="text-link danger" onclick="app.showMistakes()">⚠ Review My Mistakes</button>
+            <button class="text-link muted" onclick="app.showScoreHistory()">View score history</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="top-bar">
+            <button class="close-btn" onclick="app.goHome()">✕</button>
+            <div class="progress-container" id="progress-bar"></div>
+            <button class="settings-fab" onclick="app.toggleSettings()">⚙️</button>
+        </div>
+        <div class="question-area">
+            <div class="prompt-container">
+                <div class="prompt-cn" id="prompt-cn"></div>
+            </div>
+            
+            <div id="linear-ui" style="display: none;">
+                <div class="slots-container" id="slots-container"></div>
+                <div class="options-grid" id="options-grid"></div>
+            </div>
+
+            <div id="soup-ui" style="display: none;">
+                <div class="answer-area" id="soup-answer"></div>
+                <div class="brick-pool" id="brick-pool"></div>
+            </div>
+        </div>
+
+        <div id="feedback-area" class="feedback-area">
+            <h3 id="feedback-title" style="margin:0"></h3>
+            <div style="display:flex; align-items:center; justify-content:center; margin-top:5px;">
+                <button id="play-btn" class="play-btn" onclick="app.playAudio()">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <p id="feedback-msg" style="margin:0; font-size: 1.5rem; font-weight: bold;"></p>
+            </div>
+        </div>
+
+        <div class="footer-action">
+            <button id="check-btn" class="check-btn" onclick="app.checkAnswer()">Check</button>
+            <button id="next-btn" class="check-btn" onclick="app.nextQuestion()" style="display:none; background-color: var(--secondary); border-bottom-color: var(--secondary-dark);">Continue</button>
+        </div>
+    </div>
+
+    <div id="mistakes-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="color:var(--danger)">My Mistakes</h2>
+                <button onclick="app.closeMistakes()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="mistakes-list"></div>
+            <div style="text-align: right;">
+                <button class="text-link danger" onclick="app.clearMistakes()">Clear Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Score History</h2>
+                <button onclick="app.closeScoreHistory()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div class="log-list" id="history-list"></div>
+            <div style="text-align: right; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                <button class="text-link danger" onclick="app.clearHistory()">Teacher: Clear All Data</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button onclick="app.toggleSettings()" class="close-btn" style="color:#333">✕</button>
+            </div>
+            <div style="padding: 15px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <span>Auto-play audio</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoplay-toggle" onchange="app.updateSettings()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div style="padding: 15px 0; display: flex; justify-content: space-between; align-items: center;">
+                <span>Sound effects</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="sfx-toggle" onchange="app.updateSettings()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <button id="refresh-cache" onclick="app.refreshCache()">
+        <span id="refresh-text">Refresh 🔊</span>
+    </button>
+</div>
+
+<script>
+    const db = {
+        name: 'ep-audio-cache',
+        version: 1,
+        instance: null,
+        open: function() {
+            return new Promise((resolve, reject) => {
+                if (this.instance) return resolve(this.instance);
+                const request = indexedDB.open(this.name, this.version);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('audio')) {
+                        db.createObjectStore('audio', { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    this.instance = e.target.result;
+                    resolve(this.instance);
+                };
+                request.onerror = (e) => reject(e);
+            });
+        },
+        get: async function(id) {
+            const db = await this.open();
+            return new Promise((resolve) => {
+                const transaction = db.transaction('audio', 'readonly');
+                const store = transaction.objectStore('audio');
+                const request = store.get(id);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => resolve(null);
+            });
+        },
+        set: async function(id, blob, meta) {
+            const db = await this.open();
+            return new Promise((resolve) => {
+                const transaction = db.transaction('audio', 'readwrite');
+                const store = transaction.objectStore('audio');
+                store.put({ id, blob, meta, timestamp: Date.now() });
+                transaction.oncomplete = () => resolve(true);
+                transaction.onerror = () => resolve(false);
+            });
+        }
+    };
+
+    const encryptedChallenges = "hqZxgrn/acm+tX7a//Fxn7SpP47/53Gotbw/h7izNI797HHH/7QwhLP/acktQt1E//Fxj7ypMsnnhijJqaQjjv/ncYe0szaKr/9/yaqyIY//53GctK47yfH/MIX/53EMeEC1b2L/f8m+tSaFtq5x0YamcYiyryGOvqlx0f+qccf/siOftLI9mP/nCMmq/3/Jq/9/ybD/DpbxpnGIsq8hjr6pcdH/tHHH/7Ijn7SyPZj/5wjJtP9/ybj/f8mo/w6W8aZxiLKvIY6+qXHR/647yfH/PJuptDyFrv9psP+uO8nx/zCD//Fxn7X/DpaA8XGKqLk6hP/ncYOpqSOY5/J8m6i/fo6/7WfbuOk2ir7tN9++7GOK7bw1j7i/NY7t6jHZu7ljxa/vfY+4q3yOrfIy3b/wPtLy72SO6us2jeu/Zdvp7WOPu+ow3b+4N42/5WPc7ORij+vzPpvu/y7Hpv8nkq24cdH/rjyerf9/yaqyIY//53GctK47yfH/MIX/53EMeEC1b2L/f8m+siGZuL4nqLWoPYCu/2mw/6pxx/+0ccf/rjvJgPFxj7SuJ5m8vieEr65x0Yb/Jcnx/z7J8f82yfH/Jsnx/zCD//Fxn7X/Dsf/vCaPtLJx0f+1J5+trmnE8q0mifC4Mdvp7TbfuLww27npMNrtvGOKu7k2ibu4Y9y/7zWP7fMh2fO5Np3yuCPEvOsxxrDkfNnquGTduLtlievtZ9vtuTXcvusxjrm7MdPt6mLS7LllxbCtYMmg8SjJqaQjjv/ncYe0szaKr/9/yaqyIY//53Gbr7Q+iq+kccf/vj3J5/+2W1I4/k06R9fJ8f8wg6izOJj/5wiQ/748ma+4MJ//53Gbr7Rxx/+yI5+0sj2Y/+cIya2vOsnx/yOZuP9/ya2vKsmAoH+Q/748ma+4MJ//53GGvP9/ybKtJ4KysyDJ54Zxhrz/f8mwuHHH/7A8yYCgf5D/vjyZr7gwn//ncZmk/3/Jsq0ngrKzIMnnhnGZpP9/ya+4Ksnx/yGC/4AutvH/Mp65tDzJ5/87n6mtINHy8iOev/A2ie3pY47puDKI7blniOztMtu8uzeOv7s22+q/YY257X2Z7/M3jqvyNpvyvGWJ8LBqxO7lZYm/vGaK6Lkw37u8MNns6DDSvrtjieS8YdK/7mbZ87Aj2P+gf5D/qSqbuP9pya6yJpv/8XGcsq83yef/I5m0sDKZpP9/yb6zcdH/OONkOHD1DEdZccf/vjyZr7gwn561JoW2rnHRhv8jmbT/f8mwvHHH/68qyYDxcY+0rieZvL4nhK+ucdGG/yOZuP9/ya2vKsnx/z6O//FxhrL/f8mvuCrJ8f8hgv+Af8m8qDeCsv9pybWpJ5uu53zEragxxri/Y9/tuGeOvL5jj+m+Ytu87TKNubgxjbjtZInvuzfb869hxbm4JcS4rXyK679+huTyYNPrvzGK6Lxmj77pNYq+72LevuQwje2/aorv5DHY6O99hq3ucZbxpnGfpK02yef/P4KzuDKZ//FxnLKvN8nn/z6Orq4yjLj/f8m+s3HR/zrGcjV108nx/zCDqLM4mP/nCJD/vjyZr7gwn//ncYa4rnHH/7Ijn7SyPZj/5wjJsLggyfH/Poqu/3/JsLQgyYCgf5D/vjyZr7gwn//ncZi8ujbJ8f88m6m0PIWu/2mw/64yjLj/f8mutDSO//FxmLi5NI7/gC628f8ynrm0PMnn/zufqa0g0fLyI56/8DaJ7eljjum4MojtuWeI7O0y27y7N46/uzbb6r9hjbntfZnv8zeOq/I2m/K8ZYnwsGrE6uU23O7sY9nquWuNuehjjrnrZ9nu6WOJ6r5qiuvuMdjzsCPY/6B/kP+pKpu4/2nJrrImm//xcZyyrzfJ5/8+jq6uMoy4/3/JvrNx0f86xnI1ddPJ8f8whK+vNoipnjues7YgyeeGcYa4rnHH/64yjLj/Dsf/uTqYqa8yiKmyIZj/5wjJsLwgyfH/PoKu/3/JrrQ0jv/xcZi4uTSO/4B/ybyoN4Ky/2nJtaknm67nfMStqDHGuL9j3+24Z468vmOP6b5i27ztMo25uDGNuO1kie+7N9vzr2HFubglxLitfIrrv36G5PJk07jqYNrt72SP5bs33u24N93p72Df7b9kiOS8Zdi/7n2Gre5xlvGmcZ+krTbJ5/8/grO4Mpn/8XGcsq83yef/OI64rXHH/749yef/t1RAOsZy//FxiLWoPYCu/2mwpv8whK+vNoip/2nJtv9/ybKtJ4KysyDJ54ZxgP/xcYj/8XGa/4Aux6b/MISvrzaIqf9pybi4ccf/siOftLI9mP/nCMm4uHHH/7gyyfH/Oo7/gC7Hpv8whK+vNoip/2nJrf9/ybKtJ4KysyDJ54Zxm//xcYn/8XGf/4AutvH/Mp65tDzJ5/87n6mtINHy8iOev/A2ie3pY47puDKI7blniOztMtu8uzeOv7s22+q/YY257X2Z7/M3jqvyNpvyvGWJ8LBqxOzlMIi762KP6O5gievtY4m/u2aK5Otg2OjkYdnuuzbf87Aj2P+gf5D/qSqbuP9pya6yJpv/8XGcsq83yef/OI64rXHH/749yef/t1RAOsZy//FxiLKvIY6+qRCDqLM4mP/nCMm2/3/JuLhxx/+tcbbx/zeCrqkhir6pPJmu/2mw/75xx/+sccf/uDLJ8f86jv/xcYn/8XGf/4B/ybyoN4Ky/2nJtaknm67nfMStqDHGuL9j3+24Z468vmOP6b5i27ztMo25uDGNuO1kie+7N9vzr2HFubglxLitfIrrv36G5PJi076+Nd3suWbY7r9l2+2/MY3ovGrd7u5m0u/vYI246X2Gre5xlvGmcZ+krTbJ5/8/grO4Mpn/8XGcsq83yef/NYSvuCWOr/9/yb6zcdH/O+NTNWLPyfH/MIOosziY/+cIkP++PJmvuDCf/+dxjbKvccf/siOftLI9mP/nCMm7siHJ8f81iq//f8m7qCHJgKB/kP++PJmvuDCf/+dxjqv/f8myrSeCsrMgyeeGcY6r/3/JtKtxx/+8JcmAoH+Q/748ma+4MJ//53GOr/9/ybKtJ4KysyDJ54Zxjq//f8myr3HH/6ghyYCgDsf/vCaPtLJx0f+1J5+trmnE8q0mifC4Mdvp7TbfuLww27npMNrtvGOKu7k2ibu4Y9y/7zWP7fMh2fO5Np3yuCPEvOsxxrDkfI/qvDXS5Ok12rvsNo3lv2aO7r82ieS7ZI2/7GDSu+hkxbCtYMmg8SjJqaQjjv/ncZiyqCPJ8f8khK+5cdH/uzyZuKs2mf/xcYiz/2nJO23rA2JBccf/vjyZr7gwn561JoW2rnHRhv81hK//f8m4q3HH/7ghyYDxcY+0rieZvL4nhK+ucdGG/zWKr/9/ybuoIcnx/zqd//Fxiqv/f8myr3HH/6ghyYDxcYqouTqE/+dxg6mpI5jn8nybqL9+jr/tZ9u46TaKvu03377sY4rtvDWPuL81ju3qMdm7uWPFr+99j7irfI6t8jLdv/A+0vK5ZIq75Grfu+w12ri7a4nouGCJuL9qjeq7Mdru5DXe6vM+m+7/Lrag8SjJtLlx0f++O8bv/3/JqbQnh7j/acmetTKHsbg9jLj9Ycnx/zqIsrNx0f8tzGVy/3/Jubwniv/nCJD/qSqbuP9pybG0PY68r3HH/6o8mbn/acm3sirJ8f8whf/ncQ9kTbtdfv9/yb61JoW2rnHRhqZxiLKvIY6+qXHR/7dxx/+yI5+0sj2Y/+cIybf/f8m6/3/JpP8OlvGmcYiyryGOvqlx0f+yKsnx/zybqbQ8ha7/abD/sirJ8f88gv/xcYqk/w6WgPFxiqi5OoT/53GDqakjmOfyfJuov36Ov+1n27jpNoq+7Tffvuxjiu28NY+4vzWO7eox2bu5Y8Wv732PuKt8jq3yMt2/8D7S8r5hiOW4ZNLlvDaIv75h3bnlZY7p5WPe7Oxnie3uMN7s8z6b7v8ux6b/J5KtuHHR/648nq3/f8mqsiGP/+dxgbKkccf/vj3J5/+3Uk015Uj/8XGIsq8hjr6pEIOosziY/+cIybf/f8mypHG28f83gq6pIYq+qTyZrv9psP+6ccf/pHHH/7I6yfH/MpL/gH/JvKg3grL/acm1qSebrud8xK2oMca4v2Pf7bhnjry+Y4/pvmLbvO0yjbm4MY247WSJ77s32/OvYcW5uCXEuK18iuu/fobk8jDZvuU23OTlMo6+vzDZ67lr3bjpa9vo7GLfv+1giOjsfYat7nGW8aZxn6StNsnn/z+Cs7gymf/xcZyyrzfJ5/81nqmoIY7/8XGIs/9pyTht1Q1AeHHH/747nrO2IMnnhijJvrIhmbi+J8nn/zWe//FxhK2pOoSzrnHRhv81nv/xcY24qnHH/7s8hP+ALsem/zCEr682iKn/acmpqCGO//FxhK2pOoSzrnHRhv8nnq+4ccf/vjuOr/9/ya6oIY7/gC628f8ynrm0PMnn/zufqa0g0fLyI56/8DaJ7eljjum4MojtuWeI7O0y27y7N46/uzbb6r9hjbntfZnv8zeOq/I2m/K8ZYnwsGrEubxq2+q8Yonlu2TfuOtq2e+5ati/7WHeuLgwjb/lZtnzsCPY/6B/kP+pKpu4/2nJrrImm//xcZyyrzfJ5/81nqmoIY7/8XGIs/9pyTht1Q1AeHHH/748ma+4MJ+etSaFtq5x0Yb/NZ7/8XGfqK82yYDxcY+0rieZvL4nhK+ucdGG/zWOqv9/ybuyPMnx/zCDuK9xx/+uJpm4/w7H/7wmj7SycdH/tSefra5pxPKtJonwuDHb6e0237i8MNu56TDa7bxjiru5Nom7uGPcv+81j+3zIdnzuTad8rgjxLzrMcaw5HyPvORj3LzsMdO76meO6+Rh2bnkYInt72aOuL41ieXoYcWwrWDJoPEoyamkI47/53GHtLM2iq//f8mqsiGP/+dxnLKzN46vuyaH//FxiLP/ack5Z9UPZVC7Xmo6yW//8XGItag9gK7/abCm/zCEr682iKn/acmqsj3J8f88m6m0PIWu/2mw/6o8hf/xcZy8s3HH/6o2hf+ALsem/zCEr682iKn/acm5uCHJ8f88m6m0PIWu/2mw/7k2mf/xcY+0r3HH/7kymf+ALsem/zCEr682iKn/acm7qD/J8f88m6m0PIWu/2mw/7smh//xcY2osT/J8f81hLH/DpaA8XGKqLk6hP/ncYOpqSOY5/J8m6i/fo6/7WfbuOk2ir7tN9++7GOK7bw1j7i/NY7t6jHZu7ljxa/vfY+4q3yOrfIy3b/wPtLy5DXd7eUyiri5YNjpvzbYv+ow276+Z9Psv2vd6ehrirnzPpvu/y7Hpv8nkq24cdH/rjyerf9/yaqyIY//53GcsrM3jq+7Jof/8XGIs/9pyTln1Q9lULteajrJb//xcYiyryGOvqkQg6izOJj/5wjJqrI9yfH/N46v/3/Ju6g/yYDxcY+0rieZvL4nhK+ucdGG/ySKs/9/yaq4Pcnx/zeCr/9/ybm8Icnx/zWesbFxx/+7PIf/gH/JvKg3grL/acm1qSebrud8xK2oMca4v2Pf7bhnjry+Y4/pvmLbvO0yjbm4MY247WSJ77s32/OvYcW5uCXEuK18iuu/fobk8mqN6+1riry4N9ju6TGO7r9kiO2+MN/l7DHT6+lm07y5fYat7nGW8aZxn6StNsnn/z+Cs7gymf/xcZyyrzfJ5/87iq2tOoW4riDJ8f8whf/ncQ5kZbRNUv9/yb61JoW2rnHRhqZxiLKvIY6+qXHR/7Uym//xcYStqTqEs65x0Yb/O4qt/3/JtbgjyfH/O4Kt/w6W8aZxiLKvIY6+qXHR/606yfH/PJuptDyFrv9psP+tOsnx/yOS//Fxm7j/DpbxpnGIsq8hjr6pcdH/szaYrv9/ybKtJ4KysyDJ54ZxhbiuIMnx/z+Orq5xx/+zNpiurnG2oIB/ybyoN4Ky/2nJtaknm67nfMStqDHGuL9j3+24Z468vmOP6b5i27ztMo25uDGNuO1kie+7N9vzr2HFubglxLitfIrrv36G5PJl0ui4Y93r6Gba6e4w27nrMNjsuGfcuO5m3ejoa9ru732Gre5xlvGmcZ+krTbJ5/8ghKitccf/qjyZuf9pybW8I5u0szaYrv9/yb6zcdH/OOpTOnvcyfH/MISvrzaIqZ47nrO2IMnnhnGDvK1xx/+tOsnx/z2Orq5xtvH/N4KuqSGKvqk8ma7/abD/tTab//Fxg7Stccf/rSrJ8f8jjv/xcYe4riDJ8f89jq6uIMmA8XGKqLk6hP/ncYOpqSOY5/J8m6i/fo6/7WfbuOk2ir7tN9++7GOK7bw1j7i/NY7t6jHZu7ljxa/vfY+4q3yOrfIy3b/wPtLy62reuO1l3ejoYt/uvmOP675g2rjpZI7u6GXe6OVi2O/zPpvu/y7Hpv8nkq24cdH/sTqFuLwhyfH/JISvuXHR/6o7iqn/f8m+s3HR/zj3cTlk28nx/zCDqLM4mP/nCJD/vjyZr7gwn//ncZy1/3/Jsq0ngrKzIMnnhnGctf9/yar/f8m1/w6W8aZxiLKvIY6+qXHR/7xxx/+yI5+0sj2Y/+cIybz/f8my/3/JqP8OlvGmcYiyryGOvqlx0f+pccf/siOftLI9mP/nCMmp/3/Juf9/ya3/DpaA8XGKqLk6hP/ncYOpqSOY5/J8m6i/fo6/7WfbuOk2ir7tN9++7GOK7bw1j7i/NY7t6jHZu7ljxa/vfY+4q3yOrfIy3b/wPtLy6TLZ7e9rjr64MojouGKN6blh3u+4MtruvmTauL42iOvzPpvu/y7Hpv8nkq24cdH/rjyerf9/yaqyIY//53GctbwnyfH/MIX/53EOeUe3UlX/f8m+siGZuL4nqLWoPYCu/2mw/6o7yfH/Msnx/yfJgPFxj7SuJ5m8vieEr65x0Yb/JMnx/zvJ8f88yfH/Jsnx/zfJ8f8jyYDxcYqouTqE/+dxg6mpI5jn8nybqL9+jr/tZ9u46TaKvu03377sY4rtvDWPuL81ju3qMdm7uWPFr+99j7irfI6t8jLdv/A+0vLpMtnt72uOvrgyiOi4Yo3puWHe77gy2u6+ZNq4vjaI6/M+m+7/Lrag8SjJtLlx0f++O8bu/3/JqbQnh7j/acmetTKHsbg9jLj9YMnx/zqIsrNx0f8tzHFd/3/Jubwniv/nCJD/qSqbuP9pybG0PY68r3HH/6o8mbn/acm6sjyPv6Q2yfH/MIX/53EOW1C7TFz/f8m+tSaFtq5x0YamcYiyryGOvqlx0f+6PIS5/3/Jsq0ngrKzIMnnhnGMsrI3yfH/NJ65/3/Ju7I8j/+ALsem/zCEr682iKn/acm/pDbJ8f88m6m0PIWu/2mw/78qjv/xcYmk/3/Jv6gqyYCgDsf/vCaPtLJx0f+1J5+trmnE8q0mifC4Mdvp7TbfuLww27npMNrtvGOKu7k2ibu4Y9y/7zWP7fMh2fO5Np3yuCPEvOsxxrDkfN3kuzKKv+th3eXuZtvv5Gbe6O03juq5ZtPqvzDY7+43xbCtYMmg8SjJqaQjjv/ncZiyqCPJ8f8khK+5cdH/ujyEub8qjv/xcYiz/2nJOFveA3pcccf/vjyZr7gwn561JoW2rnHRhv80hLK5ccf/vyqO/4B/ybm0IJ+vvDCfsq8gyeeGcYyouXHH/7s8hLn/f8m/pHHH/78mkv+Af8m8qDeCsv9pybWpJ5uu53zEragxxri/Y9/tuGeOvL5jj+m+Ytu87TKNubgxjbjtZInvuzfb869hxbm4JcS4rXyK679+huTyZdK7vDKJ6+9l0+7oY9nk6Gbe7bk23Lnoa9y/vmDZ7rl9hq3ucZbxpnGfpK02yef/P4KzuDKZ//FxnLKvN8nn/z2KqLo7n6T/f8m+s3HR/zvkczttxwxHWXHH/747nrO2IMnnhijJvrIhmbi+J8nn/z2KqLo7yfH/PJuptDyFrv9psP+zMp66tXHH/7MynP/xcYWyr3G2oPEoyb6yIZm4vifJ5/8nkv/xcYStqTqEs65x0Yb/J5L/8XGftLhxx/+pOsmAoA7H/7wmj7SycdH/tSefra5pxPKtJonwuDHb6e0237i8MNu56TDa7bxjiru5Nom7uGPcv+81j+3zIdnzuTad8rgjxLzrMcaw5HyPv7hq3+jpNtK55WXY7Llr3+y+YdLo5WqKuexm3uzlZcWwrWDJoPEoyamkI47/53GYsqgjyfH/JISvuXHR/7Mynrq1J5L/8XGIs/9pyTtqyw1tSbRxWf9/yb6yIZm4vieotag9gK7/abD/szKeurVxx/+pKsmA8XGPtK4nmby+J4SvrnHRhv89iqr/f8mzsiHJ8f8ngrj/f8mptHG28f8ynrm0PMnn/zufqa0g0fLyI56/8DaJ7eljjum4MojtuWeI7O0y27y7N46/uzbb6r9hjbntfZnv8zeOq/I2m/K8ZYnwsGrEub820unoZ47kuWvd7uw30+nsMNnk6GvSvLli3ujsa93zsCPY/6B/kP+pKpu4/2nJsbQ9jryvccf/qjyZuf9pybGyJY6xpHHH/749yef/tmRyOttaOkfXyfH/MIOosziY/+cIkP++PJmvuDCf/+dxh7KrNsnx/zybqbQ8ha7/abD/sTyduP9/ybGyJcnx/z+eq/8OlvGmcYiyryGOvqlx0f+xKsnx/zybqbQ8ha7/abD/sSrJ8f8/jqT/f8mxtHG2oIB/ybyoN4Ky/2nJtaknm67nfMStqDHGuL9j3+24Z468vmOP6b5i27ztMo25uDGNuO1kie+7N9vzr2HFubglxLitfIrrv36G5PJj3ey7MYrovzeNvu1k3b+/ZNjr72Xa6+tl07m4a9y+5X2Gre5xlvGmcZ+krTbJ5/8ghKitccf/qjyZuf9pybGyJY6xpHHH/749yef/tmRyOttaOkfXyfH/MISvrzaIqZ47nrO2IMnnhnGHsqs2yfH/P5L/gH/JubQgn6+8MJ+yryDJ54Zxh7Krccf/sSad//Fxh7ikccf/sTrJgPFxiqi5OoT/53GDqakjmOfyfJuov36Ov+1n27jpNoq+7Tffvuxjiu28NY+4vzWO7eox2bu5Y8Wv732PuKt8jq3yMt2/8D7S8u1l2ru/Mt6/uTWI7eplib/qYN3v62Ld6+trj7jlZIjl8z6b7v8ux6b/J5KtuHHR/7E6hbi8Icnx/ySEr7lx0f+pMp66tSfJ8f8whf/ncQ1IRHPDNWLUDlNmtldS9HHH/747nrO2IMnnhijJvrIhmbi+J8nn/yfJ8f88m6m0PIWu/2mw/6lxx/+5ccf/rXG2oPEoyb6yIZm4vifJ5/8ynrq1ccf/siOftLI9mP/nCMm8qDSD//FxhKi6O8nx/zyZurVxtqDxKMm+siGZuL4nyef/J8nx/zybqbQ8ha7/abD/qXHH/7lxx/+tcbaggH/JvKg3grL/acm1qSebrud8xK2oMca4v2Pf7bhnjry+Y4/pvmLbvO0yjbm4MY247WSJ77s32/OvYcW5uCXEuK18iuu/fobk8jaIuOQwirnvMtO77DaIvug307y+atLk6Gra6ewx2L/kfYat7nGW8aZxn6StNsnn/yCEqK1xx/+qPJm5/2nJqbwmjLWpccf/vj3J5/+1fkT9ewNiWrZlZjjvZPT/f8m+siGZuL4nqLWoPYCu/2mw/6lxx/+8Joy1/3/Jqf8Ox/+5OpiprzKIqbIhmP/nCMm5/3/Jrf9/ybKoNIP/8XGEr7o7yfH/N8nx/yPJgPFxiqi5OoT/53GDqakjmOfyfJuov36Ov+1n27jpNoq+7Tffvuxjiu28NY+4vzWO7eox2bu5Y8Wv732PuKt8jq3yMt2/8D7S8rgwjuS+Mo/vvGuN7LgwiOi5a4q+5GrS6ORi3+y/YInk8z6b7v8ux6b/J5KtuHHR/7E6hbi8Icnx/ySEr7lx0f+7PJm6uCfJ8f8whf/ncQ5iRbtFbf9/yb61JoW2rnHRhqZxiLKvIY6+qXHR/7s8mf/xcYStqTqEs65x0Yb/NYSv/3/Ju7whyfH/NZ6v/w6W8aZxiLKvIY6+qXHR/7o2n//xcYStqTqEs65x0Yb/NI6p/3/JurInyfH/NIqp/w6WgPFxiqi5OoT/53GDqakjmOfyfJuov36Ov+1n27jpNoq+7Tffvuxjiu28NY+4vzWO7eox2bu5Y8Wv732PuKt8jq3yMt2/8D7S8r5i3eW8YYm+62TYv7hq27jqZtjk7zfS7+xq3uTvYNy+8z6b7v8ux6b/J5KtuHHR/648nq3/f8mqsiGP/+dxjbKvNI6p/3/JvrNx0f847HM1c+PJ8f8whK+vNoipnjues7YgyeeGcY2yr3HH/7o2n/+Af8m5tCCfr7wwn7KvIMnnhnGNvK9xx/+7Jpn/8XGMsqlxx/+6Mp//gH/JvKg3grL/acm1qSebrud8xK2oMca4v2Pf7bhnjry+Y4/pvmLbvO0yjbm4MY247WSJ77s32/OvYcW5uCXEuK18iuu/fobk8jDa6+Uy2b++ZdzuvzbS7bhk3u7kYY/k72LS6ORh2Oq+fYat7nGWgKB/kP+0N8nn/zCD8Olxx/+pOp+xuHHR/547irGxNoW6uHPf//Fxgr6yPcnn/6N0R11xx/+5Mp+8/2mwpv8nkq24cdH/sTqFuLwhyfH/JISvuXHR/7EmiLb/f8m+s3HR/zXsezttx8nx/zCDqLM4mP/nCJD/vjyZr7gwn//ncYf/8XGErak6hLOucdGG/z/J8f8hyfH/PcmAoH+Q/748ma+4MJ//53Ge//FxhK2pOoSzrnHRhv8myfH/PMnx/zLJgKB/kP++PJmvuDCf/+dxiLb/f8myrSeCsrMgyeeGcYi2/3/Jtv9/yb7/DpaA8XGKqLk6hP/ncYOpqSOY5/J8m6i/fo6/7WfbuOk2ir7tN9++7GOK7bw1j7i/NY7t6jHZu7ljxa/vfY+4q3yOrfIy3b/wPtLy5WXcvulh2Oi+ZI/ovDGJuLs32b/lMom55GGJ6Oo107zzPpvu/y7Hpv8nkq24cdH/rjyerf9/yaqyIY//53GHqL44yfH/MIX/53EDYk21W0n/f8m+siGZuL4nqLWoPYCu/2mw/7Fxx/+occf/vjjJgPFxj7SuJ5m8vieEr65x0Yb/Icnx/z3J8f88yfH/Msnx/zjJ8f8wyYDxcYqouTqE/+dxg6mpI5jn8nybqL9+jr/tZ9u46TaKvu03377sY4rtvDWPuL81ju3qMdm7uWPFr+99j7irfI6t8jLdv/A+0vLlZdy+6WHY6L5kj+i8MYm4uzfZv+UyibnkYYno6jXTvPM+m+7/Lsem/yeSrbhx0f+xOoW4vCHJ8f8khK+5cdH/szaKr7EqyfH/MIX/53EOWn23UlP/f8m+tSaFtq5x0YamcYiyryGOvqlx0f+zNoqv/3/Jsq0ngrKzIMnnhnGFuLwhyfH/PY64r3HH/7Mymbj/DpbxpnGIsq8hjr6pcdH/sSrJ8f88m6m0PIWu/2mw/7EqyfH/P46k/3/JsbRxtqCAf8m8qDeCsv9pybWpJ5uu53zEragxxri/Y9/tuGeOvL5jj+m+Ytu87TKNubgxjbjtZInvuzfb869hxbm4JcS4rXyK679+huTyMN++72COvORiiLy7YdvqvGqNuOxj2ujra9Po7WbZ6uR9hq3ucZbxpnGfpK02yef/IISorXHH/6o8mbn/acmzuDKZsaRxx/++Pcnn/7ZsfTnqZf/xcYiyryGOvqkQg6izOJj/5wjJs7gymf/xcYek/w7H/7k6mKmvMoipsiGY/+cIybO4Npn/8XGFvK82yfH/P46k/3/JsbRxtvH/Mp65tDzJ5/87n6mtINHy8iOev/A2ie3pY47puDKI7blniOztMtu8uzeOv7s22+q/YY257X2Z7/M3jqvyNpvyvGWJ8LBqxL7pMNnuuDLS7L4yje/tZIrkuzba7exm3eXlZtvo72TS87Aj2P+gf5D/qSqbuP9pybG0PY68r3HH/6o8mbn/acmqtCCD//FxiLP/ack6eM4NWWJxx/++O56ztiDJ54Yoyb6yIZm4vifJ5/8kyfH/PJuptDyFrv9psP+qccf/q3HH/7BxtqDxKMm+siGZuL4nyef/Osnx/zybqbQ8ha7/abD/tHHH/7hxx/+ocbag8SjJvrIhmbi+J8nn/yCD//FxhK2pOoSzrnHRhv8gg//xcYi1/3/JqbVxtqCAf8m8qDeCsv9pybWpJ5uu53zEragxxri/Y9/tuGeOvL5jj+m+Ytu87TKNubgxjbjtZInvuzfb869hxbm4JcS4rXyK679+huTyYdy46mWOu+sx3e3pY9u5u2SI6782j7u/a9vq7Grauet9hq3ucZbxpnGfpK02yef/IISorXHH/6o8mbn/acmqtCCD//FxiLP/ack6eM4NWWJxx/++PJmvuDCfnrUmhbaucdGG/yTJ8f86yfH/IIP/gH/JubQgn6+8MJ+yryDJ54Zxnf/xcYb/8XGO//Fxnv/xcYi1/3/JqbVxtvH/Mp65tDzJ5/87n6mtINHy8iOev/A2ie3pY47puDKI7blniOztMtu8uzeOv7s22+q/YY257X2Z7/M3jqvyNpvyvGWJ8LBqxO/qNtzruDXdv+tj3+3tN43qvmWJuLk1ieXtZNrk7Dfd87Aj2P+gf5D/qSqbuP9pybG0PY68r3HH/6o8mbn/acmtrzqGvK8qyfH/MIX/53EObVK2Rns6yW//8XGItag9gK7/abCm/zCEr682iKn/acmtrzrJ8f88m6m0PIWu/2mw/60hgv/xcZuvuHHH/60hkv+ALsem/zCEr682iKn/acmwvHHH/7Ijn7SyPZj/5wjJsLxxx/+wNsnx/z6E/4Aux6b/MISvrzaIqf9pya+kccf/siOftLI9mP/nCMmvpHHH/682kv/xcZm0/w6WgPFxiqi5OoT/53GDqakjmOfyfJuov36Ov+1n27jpNoq+7Tffvuxjiu28NY+4vzWO7eox2bu5Y8Wv732PuKt8jq3yMt2/8D7S8u5r3b+/Mt686DeI6bsyiO/sZojkvjXbv+Qy2eS/YN7v8z6b7v8ux6b/J5KtuHHR/648nq3/f8mqsiGP/+dxm6+0PoqvpHHH/749yef/tltSOP5NOkfXyfH/MISvrzaIqZ47nrO2IMnnhnGbr7Rxx/+wMsnx/yGS/4B/ybm0IJ+vvDCfsq8gyeeGcZuvuHHH/60hkv/xcYa4/3/JsLJxx/+vNpL/8XGZtP8Ox/+8Jo+0snHR/7Unn62uacTyrSaJ8Lgx2+ntNt+4vDDbuekw2u28Y4q7uTaJu7hj3L/vNY/t8yHZ87k2nfK4I8S86zHGsOR82OXrMYm86DLeub5njby+YdrovmqIu+0x0rzvaonu6GHFsK1gyaDxKMmppCOO/+dxh7SzNoqv/3/JqrIhj//ncYa4riCKurhxx/++Pcnn/7R+RDX7a//xcYi1qD2Arv9psKb/MISvrzaIqf9pybC4IMnx/zybqbQ8ha7/abD/sDaY//Fxhryuccf/sDqY/4Aux6b/MISvrzaIqf9pya68NI7/8XGErak6hLOucdGG/yCKurhxx/+uOoy4/3/Jrrg3jLj/DpaA8XGKqLk6hP/ncYOpqSOY5/J8m6i/fo6/7WfbuOk2ir7tN9++7GOK7bw1j7i/NY7t6jHZu7ljxa/vfY+4q3yOrfIy3b/wPtLy6muO6u5i2+/qN9O7uWbbuLll3+/uZ9u/6jDSvOtgie7zPpvu/y7Hpv8nkq24cdH/rjyerf9/yaqyIY//53GGuK4girq4ccf/vj3J5/+0fkQ1+2v/8XGIsq8hjr6pEIOosziY/+cIybC4IMnx/yCKurhxtvH/N4KuqSGKvqk8ma7/abD/sDKY//FxhrSuccf/rjqMuP9/ya64N4y4/w7H/7wmj7SycdH/tSefra5pxPKtJonwuDHb6e0237i8MNu56TDa7bxjiru5Nom7uGPcv+81j+3zIdnzuTad8rgjxLzrMcaw5Hzc5bhk2OztYdy55TWP6O02j+vpYdjp7THcvuQy3e6/YMWwrWDJoIAutg==";
+    let challenges = [];
+
+    function _0x4f2a(cipherText, key) {
+        const _0xb1 = new Uint8Array(4);
+        _0xb1[0] = key & 0xFF; _0xb1[1] = (key >> 8) & 0xFF;
+        _0xb1[2] = (key >> 16) & 0xFF; _0xb1[3] = (key >> 24) & 0xFF;
+        const _0xc2 = atob(cipherText);
+        const bytes = new Uint8Array(_0xc2.length);
+        for (let i = 0; i < _0xc2.length; i++) {
+            bytes[i] = _0xc2.charCodeAt(i) ^ _0xb1[i % 4];
+        }
+        return new TextDecoder().decode(bytes);
+    }
+
+    const app = {
+        state: {
+            currentChallenge: null, queue: [], mistakeQueue: [],
+            currentIndex: 0, currentObj: null, userSelection: [], 
+            activeSlot: 0, locked: false, scoreLog: [], 
+            isRedemption: false, settings: { autoplay: true, sfx: true },
+            currentBricks: null, shuffledOptionsCache: []
+        },
+        audio: null,
+        audioObjectURL: null,
+        sfx: {
+            correct: "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3",
+            wrong: "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3"
+        },
+        getHash: function(str) {
+            return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+        },
+        playSFX: async function(type) {
+            if (!this.state.settings.sfx) return;
+            const url = this.sfx[type];
+            const baseUrl = url.split('?')[0];
+            const baseHash = this.getHash(baseUrl);
+            const cacheKey = "ep-audio-" + baseHash;
+            const cached = await db.get(cacheKey);
+            
+            let source = url;
+            let objectURL = null;
+            if (cached && cached.blob) {
+                objectURL = URL.createObjectURL(cached.blob);
+                source = objectURL;
+            }
+            
+            const sound = new Audio(source);
+            sound.onended = () => { if (objectURL) URL.revokeObjectURL(objectURL); };
+            sound.onerror = () => { if (objectURL) URL.revokeObjectURL(objectURL); };
+            sound.play().catch(() => { if (objectURL) URL.revokeObjectURL(objectURL); });
+        },
+        init: async function() {
+            const saved = localStorage.getItem(ID_A + "-settings");
+            if (saved) Object.assign(this.state.settings, JSON.parse(saved));
+            document.getElementById("autoplay-toggle").checked = this.state.settings.autoplay;
+            document.getElementById("sfx-toggle").checked = this.state.settings.sfx;
+
+            // Cache SFX
+            this.cacheAudio(this.sfx.correct);
+            this.cacheAudio(this.sfx.wrong);
+
+            // Preload all challenges audio
+            challenges.forEach(c => {
+                if (c.data) c.data.forEach(item => this.cacheAudio(item.audio));
+            });
+
+            this.renderHome();
+
+            // Cleanup legacy localStorage audio cache
+            setTimeout(() => {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+            }, 2000);
+        },
+        getStats: function() { return JSON.parse(localStorage.getItem(ID_A + "-stats") || "{}"); },
+        saveStats: function(s) { localStorage.setItem(ID_A + "-stats", JSON.stringify(s)); },
+        getMistakes: function() { return JSON.parse(localStorage.getItem(ID_A + "-mistakes") || "[]"); },
+        saveMistakes: function(m) { localStorage.setItem(ID_A + "-mistakes", JSON.stringify(m)); },
+        getSessionLogs: function() { return JSON.parse(localStorage.getItem(ID_A + "-session_logs") || "[]"); },
+        saveSessionLog: function(log) { 
+            const logs = this.getSessionLogs(); logs.unshift(log); 
+            localStorage.setItem(ID_A + "-session_logs", JSON.stringify(logs));
+        },
+        cacheAudio: async function(url, force = false) {
+            if (!url) return;
+            const baseUrl = url.split('?')[0];
+            const baseHash = this.getHash(baseUrl);
+            const cacheKey = "ep-audio-" + baseHash;
+            
+            if (!force) {
+                const cached = await db.get(cacheKey);
+                if (cached) return cached.blob;
+            }
+
+            try {
+                const fetchUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+                const resp = await fetch(fetchUrl);
+                if (!resp.ok) return null;
+                const contentType = resp.headers.get('Content-Type');
+                if (!contentType || !contentType.startsWith('audio/')) return null;
+                const lastModified = resp.headers.get('Last-Modified');
+                const blob = await resp.blob();
+                const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                await db.set(cacheKey, blob, meta);
+                return blob;
+            } catch(e) { console.error("Cache failed", e); }
+        },
+        renderHome: function() {
+            document.getElementById("refresh-cache").style.display = "flex";
+            document.getElementById("home-screen").classList.add("active");
+            document.getElementById("game-screen").classList.remove("active");
+            const list = document.getElementById("challenge-list");
+            list.innerHTML = "";
+            const allStats = this.getStats();
+            const todayStr = new Date().toLocaleDateString();
+            challenges.forEach(c => {
+                let s = allStats[c.id] || { today: {date: todayStr, attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+                if(s.today.date !== todayStr) s.today = { date: todayStr, attempts: 0, best: 0 };
+                allStats[c.id] = s;
+                const div = document.createElement("div");
+                div.className = "challenge-card";
+                div.onclick = () => this.startChallenge(c.id);
+                div.innerHTML = `<div class="card-header"><div style="display:flex; align-items:center;"><span style="font-size:1.5rem; margin-right:10px;">${c.icon}</span><h3 class="card-title">${c.title}</h3></div><span style="color:var(--primary); font-weight:bold;">START</span></div><div class="card-stats"><div class="stat-row"><span class="stat-label">TODAY</span> <span class="stat-val">${s.today.attempts} Runs | Best: ${s.today.best}%</span></div><div class="stat-row"><span class="stat-label">LIFETIME</span> <span class="stat-val">${s.lifetime.attempts} Runs | Best: ${s.lifetime.best}%</span></div></div>`;
+                list.appendChild(div);
+            });
+            this.saveStats(allStats);
+        },
+        startChallenge: function(id) {
+            document.getElementById("refresh-cache").style.display = "none";
+            const c = challenges.find(x => x.id === id);
+            this.state.currentChallenge = c;
+            this.state.queue = [...c.data].sort(() => Math.random() - 0.5);
+            this.state.mistakeQueue = [];
+            this.state.currentIndex = 0;
+            this.state.scoreLog = new Array(c.data.length).fill(null);
+
+            // Preload all audio for this challenge
+            c.data.forEach(item => this.cacheAudio(item.audio));
+
+            document.getElementById("home-screen").classList.remove("active");
+            document.getElementById("game-screen").classList.add("active");
+            this.loadQuestion();
+        },
+        loadQuestion: function() {
+            let q = null;
+            if (this.state.currentIndex < this.state.queue.length) { 
+                q = this.state.queue[this.state.currentIndex]; 
+                this.state.isRedemption = false; 
+            } else if (this.state.mistakeQueue.length > 0) { 
+                q = this.state.mistakeQueue[0]; 
+                this.state.isRedemption = true; 
+            } else { 
+                this.finishGame(); 
+                return; 
+            }
+
+            this.state.currentObj = q;
+            this.state.userSelection = [];
+            this.state.activeSlot = 0;
+            this.state.locked = false;
+            this.state.currentBricks = null;
+            this.state.shuffledOptionsCache = [];
+
+            document.getElementById("prompt-cn").innerText = q.cn;
+            document.getElementById("feedback-area").className = "feedback-area";
+            document.getElementById("check-btn").style.display = "block";
+            document.getElementById("check-btn").disabled = true;
+            document.getElementById("check-btn").className = "check-btn";
+            document.getElementById("next-btn").style.display = "none";
+
+            if (q.type === 'linear') {
+                document.getElementById("linear-ui").style.display = "block";
+                document.getElementById("soup-ui").style.display = "none";
+                this.renderSlots();
+                this.renderOptions();
+            } else {
+                document.getElementById("linear-ui").style.display = "none";
+                document.getElementById("soup-ui").style.display = "block";
+                this.renderSoup();
+            }
+            this.renderProgress();
+        },
+        renderSlots: function() {
+            const container = document.getElementById("slots-container");
+            container.innerHTML = "";
+            this.state.currentObj.chunks.forEach((chunk, i) => {
+                const div = document.createElement("div");
+                div.className = `slot ${this.state.activeSlot === i ? 'active' : ''} ${this.state.userSelection[i] ? 'filled' : ''}`;
+                div.innerText = this.state.userSelection[i] || "?";
+                div.onclick = () => { if (!this.state.locked) { this.state.activeSlot = i; this.renderSlots(); this.renderOptions(); } };
+                container.appendChild(div);
+            });
+        },
+        renderOptions: function() {
+            const grid = document.getElementById("options-grid");
+            grid.innerHTML = "";
+            const currentChunk = this.state.currentObj.chunks[this.state.activeSlot];
+            
+            if (!this.state.shuffledOptionsCache[this.state.activeSlot]) {
+                this.state.shuffledOptionsCache[this.state.activeSlot] = [...currentChunk.options].sort(() => Math.random() - 0.5);
+            }
+            const options = this.state.shuffledOptionsCache[this.state.activeSlot];
+
+            options.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = `option-btn ${this.state.userSelection[this.state.activeSlot] === opt ? 'selected' : ''}`;
+                btn.innerText = opt;
+                btn.onclick = () => this.selectOption(opt);
+                grid.appendChild(btn);
+            });
+        },
+        selectOption: function(opt) {
+            if (this.state.locked) return;
+            this.state.userSelection[this.state.activeSlot] = opt;
+            if (this.state.activeSlot < this.state.currentObj.chunks.length - 1) {
+                this.state.activeSlot++;
+            }
+            this.renderSlots();
+            this.renderOptions();
+            this.updateCheckBtn();
+        },
+        renderSoup: function() {
+            const q = this.state.currentObj;
+            if (!this.state.currentBricks) {
+                const correct = q.correctChunks;
+                const pool = [...q.distractors].sort(() => Math.random() - 0.5).slice(0, Math.max(0, 8 - correct.length));
+                this.state.currentBricks = [...correct, ...pool].sort(() => Math.random() - 0.5);
+            }
+
+            const poolEl = document.getElementById("brick-pool");
+            poolEl.innerHTML = "";
+            this.state.currentBricks.forEach((brick, i) => {
+                const div = document.createElement("div");
+                div.className = "brick";
+                if (this.state.userSelection.some(s => s.id === i)) div.classList.add("selected");
+                div.innerText = brick;
+                div.onclick = () => this.selectBrick(brick, i);
+                poolEl.appendChild(div);
+            });
+            this.renderSoupAnswer();
+        },
+        selectBrick: function(text, id) {
+            if (this.state.locked) return;
+            this.state.userSelection.push({ text, id });
+            this.renderSoup();
+            this.updateCheckBtn();
+        },
+        removeBrick: function(idx) {
+            if (this.state.locked) return;
+            this.state.userSelection.splice(idx, 1);
+            this.renderSoup();
+            this.updateCheckBtn();
+        },
+        renderSoupAnswer: function() {
+            const area = document.getElementById("soup-answer");
+            area.innerHTML = "";
+            this.state.userSelection.forEach((s, i) => {
+                const div = document.createElement("div");
+                div.className = "brick-answer";
+                div.innerText = s.text;
+                div.onclick = () => this.removeBrick(i);
+                area.appendChild(div);
+            });
+        },
+        updateCheckBtn: function() {
+            const q = this.state.currentObj;
+            const isReady = q.type === 'linear' ? (this.state.userSelection.filter(Boolean).length === q.chunks.length) : (this.state.userSelection.length > 0);
+            document.getElementById("check-btn").disabled = !isReady;
+        },
+        checkAnswer: function() {
+            this.state.locked = true;
+            const q = this.state.currentObj;
+            let isCorrect = false;
+            let userResult = "";
+
+            if (q.type === 'linear') {
+                userResult = this.state.userSelection.join("");
+                isCorrect = userResult === q.word;
+            } else {
+                userResult = this.state.userSelection.map(s => s.text).join("");
+                isCorrect = userResult === q.word;
+            }
+
+            const feedback = document.getElementById("feedback-area");
+            const title = document.getElementById("feedback-title");
+            const msg = document.getElementById("feedback-msg");
+            const btn = document.getElementById("check-btn");
+
+            if (isCorrect) {
+                this.playSFX('correct');
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = 'green';
+                }
+                feedback.className = "feedback-area correct visible";
+                title.innerText = "Excellent!";
+                msg.innerText = q.word;
+                btn.className = "check-btn correct";
+                if (this.state.isRedemption) this.state.mistakeQueue.shift();
+            } else {
+                this.playSFX('wrong');
+                if (!this.state.isRedemption) {
+                    this.state.scoreLog[this.state.currentIndex] = 'red';
+                    this.state.mistakeQueue.push(this.state.currentObj);
+                    this.logMistake(q, userResult);
+                } else {
+                    // Move to the back of mistake queue
+                    this.state.mistakeQueue.push(this.state.mistakeQueue.shift());
+                }
+                feedback.className = "feedback-area wrong visible";
+                title.innerText = "Keep Trying!";
+                msg.innerText = q.word;
+                btn.className = "check-btn wrong";
+            }
+
+            if (this.state.settings.autoplay) this.playAudio(2);
+
+            btn.style.display = "none";
+            const nextBtn = document.getElementById("next-btn");
+            nextBtn.style.display = "block";
+            
+            let isLast = this.state.isRedemption ? (this.state.mistakeQueue.length === 0) : (this.state.currentIndex >= this.state.queue.length - 1 && this.state.mistakeQueue.length === 0);
+            nextBtn.innerText = isLast ? "Finish" : "Continue";
+
+            this.renderProgress();
+        },
+        nextQuestion: function() { 
+            if (!this.state.isRedemption) this.state.currentIndex++; 
+            this.loadQuestion(); 
+        },
+        playAudio: async function(times = 1) {
+            if (this.state.currentObj && this.state.currentObj.audio) {
+                if (this.audio) {
+                    this.audio.pause();
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                    this.audio.onended = null;
+                }
+                const url = this.state.currentObj.audio;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
+
+                this.audio = new Audio(source);
+                let count = 0;
+                const cleanup = () => {
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+                this.audio.onended = () => {
+                    count++;
+                    if (count < times) this.audio.play().catch(() => { cleanup(); });
+                    else cleanup();
+                };
+                this.audio.onerror = cleanup;
+                this.audio.play().catch(() => { cleanup(); });
+            }
+        },
+        refreshCache: async function() {
+            const btn = document.getElementById('refresh-cache');
+            const btnText = document.getElementById('refresh-text');
+            if (btn.classList.contains('loading')) return;
+
+            btn.classList.add('loading');
+            btnText.innerText = "Checking...";
+            let updatedCount = 0;
+
+            try {
+                const items = [];
+                challenges.forEach(c => {
+                    if (c.data) items.push(...c.data);
+                });
+
+                for (const item of items) {
+                    if (!item.audio) continue;
+                    
+                    const url = item.audio;
+                    const baseUrl = url.split('?')[0];
+                    const baseHash = this.getHash(baseUrl);
+                    const cacheKey = "ep-audio-" + baseHash;
+                    const cached = await db.get(cacheKey);
+                    const currentVersion = cached?.meta?.lastModified || 0;
+
+                    try {
+                        const headUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+                        const response = await fetch(headUrl, { method: 'HEAD' });
+                        const lastModifiedStr = response.headers.get('Last-Modified');
+                        if (lastModifiedStr) {
+                            const lastModified = new Date(lastModifiedStr).getTime();
+                            if (lastModified > currentVersion) {
+                                await this.cacheAudio(url, true);
+                                updatedCount++;
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Failed to check audio for ${item.word}`, e);
+                    }
+                }
+                alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+            } finally {
+                btn.classList.remove('loading');
+                btnText.innerText = "Refresh 🔊";
+            }
+        },
+        renderProgress: function() {
+            const bar = document.getElementById("progress-bar");
+            bar.innerHTML = "";
+            for (let i = 0; i < 10; i++) {
+                const seg = document.createElement("div");
+                seg.className = "progress-segment";
+                const s = this.state.scoreLog[i];
+                if (s) seg.classList.add(s);
+                bar.appendChild(seg);
+            }
+        },
+        finishGame: function() {
+            document.getElementById("refresh-cache").style.display = "none";
+            const correct = this.state.scoreLog.filter(s => s === 'green').length;
+            const total = Math.round((correct / this.state.scoreLog.length) * 100);
+            const allStats = this.getStats();
+            const cid = this.state.currentChallenge.id;
+            if (!allStats[cid]) allStats[cid] = { today: {date: new Date().toLocaleDateString(), attempts: 0, best: 0}, lifetime: {attempts: 0, best: 0} };
+            const s = allStats[cid];
+            s.today.attempts++; if (total > s.today.best) s.today.best = total;
+            s.lifetime.attempts++; if (total > s.lifetime.best) s.lifetime.best = total;
+            this.saveStats(allStats);
+            this.saveSessionLog({ date: new Date().toLocaleString(), challenge: this.state.currentChallenge.title, score: total });
+            
+            this.showCelebration(total);
+            document.getElementById("game-screen").innerHTML = `<div style="text-align:center; padding:40px;"><h1>${total}%</h1><h2>Challenge Complete!</h2><button onclick="location.reload()" class="check-btn">Finish</button></div>`;
+        },
+        logMistake: function(q, wrong) {
+            const ms = this.getMistakes();
+            ms.unshift({ word: q.word, cn: q.cn, wrong, timestamp: Date.now() });
+            this.saveMistakes(ms.slice(0, 50));
+        },
+        showMistakes: function() {
+            const ms = this.getMistakes();
+            const list = document.getElementById("mistakes-list");
+            list.innerHTML = ms.length ? "" : "<p style='text-align:center;'>No mistakes!</p>";
+            ms.forEach(m => {
+                const div = document.createElement("div");
+                div.className = "mistake-item";
+                div.innerHTML = `<p><strong>${m.cn}</strong>: ${m.word}</p><p style="color:var(--danger); font-size:0.9rem;">You wrote: ${m.wrong}</p>`;
+                list.appendChild(div);
+            });
+            document.getElementById("mistakes-modal").style.display = "flex";
+        },
+        closeMistakes: function() { document.getElementById("mistakes-modal").style.display = "none"; },
+        clearMistakes: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === "TEACHER") { localStorage.removeItem(ID_A + "-mistakes"); this.showMistakes(); }
+            else alert("Incorrect Passcode");
+        },
+        showScoreHistory: function() {
+            const list = this.getSessionLogs(); const container = document.getElementById("history-list"); container.innerHTML = "";
+            if(list.length === 0) container.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>No games played yet.</div>";
+            else list.forEach(l => {
+                const div = document.createElement("div"); div.className = "mistake-item";
+                div.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><strong style="color:#333;">${l.challenge}</strong><span style="font-weight:bold; color:var(--primary);">${l.score}%</span></div><div style="font-size:0.8rem; color:#999;">${l.date}</div>`;
+                container.appendChild(div);
+            });
+            document.getElementById("history-modal").style.display = "flex";
+        },
+        closeScoreHistory: function() { document.getElementById("history-modal").style.display = "none"; },
+        clearHistory: function() {
+            const code = prompt("Enter Teacher Passcode:");
+            if(code && code.toUpperCase() === "TEACHER") {
+                localStorage.removeItem(ID_A + "-stats");
+                localStorage.removeItem(ID_A + "-session_logs");
+                location.reload();
+            } else alert("Incorrect Passcode");
+        },
+        toggleSettings: function() {
+            const modal = document.getElementById("settings-modal");
+            modal.style.display = modal.style.display === "flex" ? "none" : "flex";
+        },
+        updateSettings: function() {
+            this.state.settings.autoplay = document.getElementById("autoplay-toggle").checked;
+            this.state.settings.sfx = document.getElementById("sfx-toggle").checked;
+            localStorage.setItem(ID_A + "-settings", JSON.stringify(this.state.settings));
+        },
+        goHome: function() { if (confirm("Quit?")) location.reload(); },
+        
+        showCelebration: function(score) {
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'];
+            const count = score >= 100 ? 100 : 30;
+            
+            const createPiece = () => {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * 40 + 20;
+                const tx = (Math.cos(angle) * velocity) + 'vw';
+                const ty = (Math.sin(angle) * velocity - 20) + 'vh';
+                
+                c.style.setProperty('--x', tx);
+                c.style.setProperty('--y', ty);
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.width = (Math.random() * 8 + 5) + 'px';
+                c.style.height = (Math.random() * 8 + 5) + 'px';
+                c.style.animationDuration = (Math.random() * 1 + 2) + 's';
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 3000);
+            };
+
+            for (let i = 0; i < count; i++) createPiece();
+            
+            if (score >= 100) {
+                setTimeout(() => { for (let i = 0; i < 40; i++) createPiece(); }, 400);
+                setTimeout(() => { for (let i = 0; i < 40; i++) createPiece(); }, 800);
+            }
+        },
+    };
+
+    const ID_A = "Q6n20zvQe14b2P6gu";
+    const builtInKey = "3948142045";
+
+    window.onload = function() { 
+        try {
+            challenges = JSON.parse(_0x4f2a(encryptedChallenges, builtInKey));
+            if (typeof app !== 'undefined' && app.init) {
+                app.init();
+                document.getElementById("app").style.display = "flex";
+            } else {
+                console.error("App not initialized correctly");
+            }
+        } catch(e) {
+            console.error("Initialization failed", e);
+        }
+    };
+</script>
+</body>
+</html>
