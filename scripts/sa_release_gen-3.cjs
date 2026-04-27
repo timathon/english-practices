@@ -2,10 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const crypto = require('crypto');
-const { S3Client, HeadObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, HeadObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getAudioBatch } = require('./tts-gen-cut-save-3.cjs');
 
-// Base directory is the project root (parent of scripts/)
+/**
+ * Sentence Architect Release Generator (V3)
+ * Converts sentence JSON data into a formatted interactive HTML.
+ * Uses templates/sa-shell-master.html as the base shell.
+ */
+
 const BASE_DIR = path.resolve(__dirname, '..');
 
 // R2 Configuration (for existence checks)
@@ -24,32 +29,50 @@ function resolvePath(p) {
     return path.isAbsolute(p) ? p : path.resolve(BASE_DIR, p);
 }
 
+function generateIndexHtml(title, items, backPath = null) {
+    const listItems = items.map(item => `<li><a href="${item.path}">${item.name}</a></li>`).join('\n            ');
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; color: #333; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        ul { list-style-type: none; padding-left: 0; }
+        li { margin-bottom: 10px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
+        a { text-decoration: none; color: #0366d6; font-weight: bold; display: block; }
+        a:hover { color: #005cc5; }
+        .back-link { margin-bottom: 20px; display: inline-block; color: #666; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    ${backPath ? `<a href="${backPath}" class="back-link">← Back</a>` : ""}
+    <h1>${title}</h1>
+    <ul>
+        ${listItems}
+    </ul>
+</body>
+</html>`;
+}
+
 function generateIDA() {
-    let digits = "";
-    while (true) {
-        const num = Math.floor(Math.random() * (9999999 - 1111111 + 1)) + 1111111;
-        const numStr = num.toString();
-        const sum = numStr.split("").reduce((a, b) => a + parseInt(b), 0);
-        if (sum % 7 === 0) {
-            digits = numStr;
-            break;
-        }
-    }
+    const digits = "0123456789";
     const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let randomLetters = "";
-    for (let i = 0; i < 8; i++) {
-        randomLetters += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    let result = new Array(15);
-    let digitIndices = [];
-    while (digitIndices.length < 7) {
+    const result = new Array(15);
+    const digitIndices = [];
+    while (digitIndices.length < 5) {
         const idx = Math.floor(Math.random() * 15);
         if (!digitIndices.includes(idx)) digitIndices.push(idx);
     }
+    const randomDigits = Array.from({length: 5}, () => digits[Math.floor(Math.random() * 10)]);
+    const randomLetters = Array.from({length: 10}, () => letters[Math.floor(Math.random() * 52)]);
+    
     digitIndices.sort((a, b) => a - b);
     let digitPointer = 0, letterPointer = 0;
     for (let i = 0; i < 15; i++) {
-        if (digitIndices.includes(i)) result[i] = digits[digitPointer++];
+        if (digitIndices.includes(i)) result[i] = randomDigits[digitPointer++];
         else result[i] = randomLetters[letterPointer++];
     }
     return result.join("");
@@ -84,39 +107,21 @@ function getTimestamp() {
 
 const currentRunTimestamp = getTimestamp();
 
-function generateIndexHtml(title, items, backPath = null) {
-    const listItems = items.map(item => `<li><a href="${item.path}">${item.name}</a></li>`).join('\n            ');
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
-    <style>
-        body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; color: #333; }
-        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        ul { list-style-type: none; padding-left: 0; }
-        li { margin-bottom: 10px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
-        a { text-decoration: none; color: #0366d6; font-weight: bold; display: block; }
-        a:hover { color: #005cc5; }
-        .back-link { margin-bottom: 20px; display: inline-block; color: #666; font-size: 0.9rem; }
-    </style>
-</head>
-<body>
-    ${backPath ? `<a href="${backPath}" class="back-link">← Back</a>` : ""}
-    <h1>${title}</h1>
-    <ul>
-        ${listItems}
-    </ul>
-</body>
-</html>`;
+function loadFragment(type) {
+    const fragmentPath = resolvePath(`templates/fragments/${type}.html`);
+    const content = fs.readFileSync(fragmentPath, 'utf8');
+    const sections = { CSS: "", UI: "", VARS: "", LOGIC: "" };
+    const parts = content.split(/<!-- (CSS|UI|VARS|LOGIC) -->/);
+    for (let i = 1; i < parts.length; i += 2) sections[parts[i]] = parts[i+1].trim();
+    return sections;
 }
 
 function rebuildIndexes() {
     const releaseDir = resolvePath('release');
     if (!fs.existsSync(releaseDir)) return;
-    const timestampFolders = fs.readdirSync(releaseDir).filter(f => /^\d{12}$/.test(f));
-    timestampFolders.forEach(ts => {
+    const timestamps = fs.readdirSync(releaseDir).filter(f => /^\d{12}$/.test(f)).sort().reverse();
+    
+    timestamps.forEach(ts => {
         const tsPath = path.join(releaseDir, ts);
         ["post", "builtin"].forEach(type => {
             const typePath = path.join(tsPath, type);
@@ -141,15 +146,6 @@ function getAudioUrl(sentence, book) {
 }
 
 let isGeminiQuotaExhausted = false;
-
-function loadFragment(type) {
-    const fragmentPath = resolvePath(`templates/fragments/${type}.html`);
-    const content = fs.readFileSync(fragmentPath, 'utf8');
-    const sections = { CSS: "", UI: "", VARS: "", LOGIC: "" };
-    const parts = content.split(/<!-- (CSS|UI|VARS|LOGIC) -->/);
-    for (let i = 1; i < parts.length; i += 2) sections[parts[i]] = parts[i+1].trim();
-    return sections;
-}
 
 async function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3, audioMode = '1') {
     const absoluteJsonPath = resolvePath(jsonPath);
@@ -199,17 +195,16 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
             }
         });
 
-        const uniqueTasks = Array.from(uniqueSentencesMap.values()).map(s => ({ en: s }));
+        const uniqueTasks = Array.from(uniqueSentencesMap.values()).map(s => ({ context_sentence: s }));
         
         if (uniqueTasks.length > 0) {
             console.log(`Processing ${uniqueTasks.length} unique audio tasks...`);
             let currentBatch = [];
-            const MIN_INTERVAL = 21000; // 21 seconds for < 3 RPM
+            const MIN_INTERVAL = 21000;
             let lastRequestTime = 0;
 
             const flushBatch = async (batch) => {
                 if (batch.length === 0 || isGeminiQuotaExhausted) return;
-                
                 const now = Date.now();
                 const timeSinceLast = now - lastRequestTime;
                 if (timeSinceLast < MIN_INTERVAL) {
@@ -217,7 +212,6 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
                     console.log(`Waiting ${waitTime / 1000}s to maintain RPM < 3...`);
                     await new Promise(r => setTimeout(r, waitTime));
                 }
-
                 lastRequestTime = Date.now();
                 const result = await getAudioBatch(batch, bookName);
                 if (result.quotaExhausted) isGeminiQuotaExhausted = true;
@@ -270,7 +264,7 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     let finalPath = resolvePath(outputPath);
     if (finalPath.startsWith(resolvePath('release'))) {
         const rel = path.relative(resolvePath('release'), finalPath);
-        if (!/^\d{12}[\/\\]/.test(rel)) finalPath = path.join(resolvePath('release'), currentRunTimestamp, rel);
+        if (!/^\d{12}[/\\]/.test(rel)) finalPath = path.join(resolvePath('release'), currentRunTimestamp, rel);
     }
     fs.mkdirSync(path.dirname(finalPath), { recursive: true });
     fs.writeFileSync(finalPath, html);
@@ -296,7 +290,7 @@ async function checkboxSelector(message, options, defaultSelected = false) {
             else if (key.ctrl && key.name === 'c') { cleanup(); process.exit(); }
             render();
         };
-        const cleanup = () => { process.stdin.removeListener('keypress', onKeyPress); process.stdin.setRawMode(false); process.stdin.pause(); process.stdout.write('\x1B[?25h\n'); };
+        const cleanup = () => { process.stdin.removeListener('keypress', onKeyPress); if (process.stdin.isTTY) process.stdin.setRawMode(false); process.stdin.pause(); process.stdout.write('\x1B[?25h\n'); };
         readline.emitKeypressEvents(process.stdin);
         if (process.stdin.isTTY) process.stdin.setRawMode(true);
         process.stdin.resume();
@@ -336,6 +330,7 @@ async function interactive() {
     if (selectedFolders.length === 1) {
         const folder = selectedFolders[0];
         const allFiles = getFilesFromFolder(folder);
+        if (allFiles.length === 0) return;
         const selectedFiles = await checkboxSelector(`Select files in ${folder}:`, allFiles, true);
         filesToProcess = selectedFiles.map(f => ({ folder, file: f }));
     } else {
@@ -366,8 +361,5 @@ async function interactive() {
 }
 
 const args = process.argv.slice(2);
-if (args.length === 0) interactive();
-else if (args.length >= 3) generate(args[0], args[1], args[2], 3, 3, args.includes('--regenerate') ? '3' : (args.includes('--skip-audio') ? '1' : '2'));
-gs = process.argv.slice(2);
 if (args.length === 0) interactive();
 else if (args.length >= 3) generate(args[0], args[1], args[2], 3, 3, args.includes('--regenerate') ? '3' : (args.includes('--skip-audio') ? '1' : '2'));
