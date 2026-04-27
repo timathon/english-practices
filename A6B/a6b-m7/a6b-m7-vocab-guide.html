@@ -249,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -277,6 +300,7 @@
             vertical-align: middle;
             transition: all 0.1s;
             padding: 0;
+            flex-shrink: 0;
         }
         .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
@@ -449,7 +473,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He spent about twenty-one hours in space."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He spent about twenty-one hours in space."</div>
+                    <div class="cn-sentence">他在太空度过了大约21小时。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 字母s加单词pent(被关起来的)，度过了一段时间。</div>
         </div>
@@ -469,7 +496,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He spent about twenty-one hours in space."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He spent about twenty-one hours in space."</div>
+                    <div class="cn-sentence">他在太空度过了大约21小时。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> a+bout(回合)，大约就是这个回合。</div>
         </div>
@@ -489,7 +519,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "In October 2003, my father flew into space in Shenzhou V."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"In October 2003, my father flew into space in Shenzhou V."</div>
+                    <div class="cn-sentence">2003年10月，我的父亲乘神舟五号飞入太空。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 飞行的过去式，把y变成了ew。</div>
         </div>
@@ -509,7 +542,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "In October 2003, my father flew into space in Shenzhou V."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"In October 2003, my father flew into space in Shenzhou V."</div>
+                    <div class="cn-sentence">2003年10月，我的父亲乘神舟五号飞入太空。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> Octo(八)原本是八月，后来变成了十月。</div>
         </div>
@@ -529,7 +565,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He also made a video in space."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He also made a video in space."</div>
+                    <div class="cn-sentence">他还在太空拍了一段录像。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> vi(看)+deo，就是可以看的录像。</div>
         </div>
@@ -549,7 +588,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I was very proud of him."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I was very proud of him."</div>
+                    <div class="cn-sentence">我为他感到非常自豪。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> p+round(圆)，骄傲得挺起了圆圆的胸膛。</div>
         </div>
@@ -569,7 +611,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I want to go into space someday too."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I want to go into space someday too."</div>
+                    <div class="cn-sentence">我也想有一天能进入太空。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> some(一些)+day(日子)，总会有那么一天。</div>
         </div>
@@ -589,7 +634,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Helen Keller was born in the US in 1880."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Helen Keller was born in the US in 1880."</div>
+                    <div class="cn-sentence">海伦·凯勒1880年出生于美国。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> b+orn(装饰)，出生时世界为我装饰。</div>
         </div>
@@ -609,7 +657,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "As a baby, she became blind and deaf."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"As a baby, she became blind and deaf."</div>
+                    <div class="cn-sentence">还是个婴儿时，她变得又盲又聋。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 字母a和s，作为一个词。</div>
         </div>
@@ -629,7 +680,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "As a baby, she became blind and deaf."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"As a baby, she became blind and deaf."</div>
+                    <div class="cn-sentence">还是个婴儿时，她变得又盲又聋。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> be+came(来)，变成了这样。</div>
         </div>
@@ -649,7 +703,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "She drew letters in Helen's hand and taught her to spell."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"She drew letters in Helen's hand and taught her to spell."</div>
+                    <div class="cn-sentence">她在海伦的手里画字母，教她拼写。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> let(让)+ter，让字母排好队。</div>
         </div>
@@ -669,7 +726,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "She drew letters in Helen's hand and taught her to spell."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"She drew letters in Helen's hand and taught her to spell."</div>
+                    <div class="cn-sentence">她在海伦的手里画字母，教她拼写。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s+pell(皮)，拼写单词要脱掉外皮看核心。</div>
         </div>
@@ -689,7 +749,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "She wrote a book about herself and travelled all over the world."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"She wrote a book about herself and travelled all over the world."</div>
+                    <div class="cn-sentence">她写了一本关于她自己的书，并走遍了全世界。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> her(她)+self(自己)。</div>
         </div>
@@ -709,7 +772,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "She wrote a book about herself and travelled all over the world."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"She wrote a book about herself and travelled all over the world."</div>
+                    <div class="cn-sentence">她写了一本关于她自己的书，并走遍了全世界。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> all(全部)+over(结束/上方)，遍及所有地方。</div>
         </div>
@@ -729,7 +795,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Helen lived to be eighty-seven."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Helen lived to be eighty-seven."</div>
+                    <div class="cn-sentence">海伦活到87岁。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> i在这个词里发短音/ɪ/，活着就是一种力量。</div>
         </div>
@@ -749,7 +818,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "She is a role model for blind people, and also for you and me."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"She is a role model for blind people, and also for you and me."</div>
+                    <div class="cn-sentence">她是盲人的榜样，也是你我的榜样。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> role(角色)+model(模型)，角色的模范。</div>
         </div>
@@ -769,7 +841,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "My father, Yang Liwei, is a taikonaut, and he is very famous."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"My father, Yang Liwei, is a taikonaut, and he is very famous."</div>
+                    <div class="cn-sentence">我的父亲杨利伟是一名航天员，他非常有名。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> tai(太空)+ko(人)+naut(船员)。</div>
         </div>
@@ -789,7 +864,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "My mother and I went to the airport to meet my father."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"My mother and I went to the airport to meet my father."</div>
+                    <div class="cn-sentence">我妈妈和我去机场接我父亲。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> air(空气)+port(港口)，飞机的港口。</div>
         </div>
@@ -809,7 +887,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "As a baby, she became blind and deaf."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"As a baby, she became blind and deaf."</div>
+                    <div class="cn-sentence">还是个婴儿时，她变得又盲又聋。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> b+line(线)+d，眼睛里只有黑线。</div>
         </div>
@@ -829,7 +910,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "As a baby, she became blind and deaf."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"As a baby, she became blind and deaf."</div>
+                    <div class="cn-sentence">还是个婴儿时，她变得又盲又聋。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> d+eat(吃)-t+f，耳朵被吃掉了。</div>
         </div>
@@ -884,7 +968,7 @@
             }
         };
 
-        const vocabData = [{"word":"spent","meaning":"(spend的过去式) 度过","ipa":"/spent/","context_sentence":"He spent about twenty-one hours in space.","page_number":39,"comparison":"spent vs spend","syllable_type":"闭音节 (Closed)","memorization_hook":"字母s加单词pent(被关起来的)，度过了一段时间。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/cc6efe64dfbddcd1afcf08582342b062.mp3"},{"word":"about","meaning":"大约","ipa":"/əˈbaʊt/","context_sentence":"He spent about twenty-one hours in space.","page_number":39,"comparison":"about vs out","syllable_type":"a-bout","memorization_hook":"a+bout(回合)，大约就是这个回合。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/cc6efe64dfbddcd1afcf08582342b062.mp3"},{"word":"flew","meaning":"(fly的过去式) 飞,飞行","ipa":"/fluː/","context_sentence":"In October 2003, my father flew into space in Shenzhou V.","page_number":39,"comparison":"flew vs flow","syllable_type":"元音字母组合音节 (Vowel Team)","memorization_hook":"飞行的过去式，把y变成了ew。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/6dd2b41ecc408451a5a6b30dbd512320.mp3"},{"word":"October","meaning":"十月","ipa":"/ɒkˈtəʊbə/","context_sentence":"In October 2003, my father flew into space in Shenzhou V.","page_number":39,"comparison":"October vs November","syllable_type":"Oc-to-ber","memorization_hook":"Octo(八)原本是八月，后来变成了十月。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/6dd2b41ecc408451a5a6b30dbd512320.mp3"},{"word":"video","meaning":"录像","ipa":"/ˈvɪdiəʊ/","context_sentence":"He also made a video in space.","page_number":39,"comparison":"video vs radio","syllable_type":"vid-e-o","memorization_hook":"vi(看)+deo，就是可以看的录像。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/a837571c0114405731adc7fd4a51c5d3.mp3"},{"word":"proud","meaning":"感到自豪的,感到骄傲的","ipa":"/praʊd/","context_sentence":"I was very proud of him.","page_number":39,"comparison":"proud vs loud","syllable_type":"元音字母组合音节 (Vowel Team)","memorization_hook":"p+round(圆)，骄傲得挺起了圆圆的胸膛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/91af54161bc15b867593d259602228f5.mp3"},{"word":"someday","meaning":"有朝一日","ipa":"/ˈsʌmdeɪ/","context_sentence":"I want to go into space someday too.","page_number":39,"comparison":"someday vs someone","syllable_type":"some-day","memorization_hook":"some(一些)+day(日子)，总会有那么一天。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/fc8f28f70754baa0d4f80ad76a719109.mp3"},{"word":"born","meaning":"出生,诞生","ipa":"/bɔːn/","context_sentence":"Helen Keller was born in the US in 1880.","page_number":41,"comparison":"born vs burn","syllable_type":"r控制音节 (R-Controlled)","memorization_hook":"b+orn(装饰)，出生时世界为我装饰。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/bcc154109e039c786abbbd3a9877f50c.mp3"},{"word":"as","meaning":"作为","ipa":"/æz/","context_sentence":"As a baby, she became blind and deaf.","page_number":41,"comparison":"as vs has","syllable_type":"闭音节 (Closed)","memorization_hook":"字母a和s，作为一个词。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/aeb64b4a9d6c7716e193cc1489fc53a7.mp3"},{"word":"became","meaning":"(become的过去式) 变成","ipa":"/bɪˈkeɪm/","context_sentence":"As a baby, she became blind and deaf.","page_number":41,"comparison":"became vs become","syllable_type":"be-came","memorization_hook":"be+came(来)，变成了这样。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/aeb64b4a9d6c7716e193cc1489fc53a7.mp3"},{"word":"letter","meaning":"字母","ipa":"/ˈletə/","context_sentence":"She drew letters in Helen's hand and taught her to spell.","page_number":41,"comparison":"letter vs better","syllable_type":"let-ter","memorization_hook":"let(让)+ter，让字母排好队。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/d9e506f51b9be7c45daf3a632eebb36c.mp3"},{"word":"spell","meaning":"拼写,拼出","ipa":"/spel/","context_sentence":"She drew letters in Helen's hand and taught her to spell.","page_number":41,"comparison":"spell vs shell","syllable_type":"闭音节 (Closed)","memorization_hook":"s+pell(皮)，拼写单词要脱掉外皮看核心。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/d9e506f51b9be7c45daf3a632eebb36c.mp3"},{"word":"herself","meaning":"她自己","ipa":"/hɜːˈself/","context_sentence":"She wrote a book about herself and travelled all over the world.","page_number":41,"comparison":"herself vs himself","syllable_type":"her-self","memorization_hook":"her(她)+self(自己)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/1e043514a8ff1aae92546d0bf9010fe1.mp3"},{"word":"all over","meaning":"到处,遍及,处处","ipa":"/ɔːl ˈəʊvə/","context_sentence":"She wrote a book about herself and travelled all over the world.","page_number":41,"comparison":"all over vs over all","syllable_type":"multi-syllable","memorization_hook":"all(全部)+over(结束/上方)，遍及所有地方。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/1e043514a8ff1aae92546d0bf9010fe1.mp3"},{"word":"live","meaning":"活着","ipa":"/lɪv/","context_sentence":"Helen lived to be eighty-seven.","page_number":41,"comparison":"live vs love","syllable_type":"相对开音节 (VCe)","memorization_hook":"i在这个词里发短音/ɪ/，活着就是一种力量。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/fd43fba7be549d7e7d30d4a7eaa39625.mp3"},{"word":"role model","meaning":"模范;榜样","ipa":"/rəʊl ˈmɒdl/","context_sentence":"She is a role model for blind people, and also for you and me.","page_number":41,"comparison":"role model vs real model","syllable_type":"multi-syllable","memorization_hook":"role(角色)+model(模型)，角色的模范。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/11e5b87022f237675b0d90f0be4a5b2a.mp3"},{"word":"taikonaut","meaning":"(中国的)太空人,宇航员","ipa":"/ˈtaɪkənɔːt/","context_sentence":"My father, Yang Liwei, is a taikonaut, and he is very famous.","page_number":38,"comparison":"taikonaut vs astronaut","syllable_type":"tai-ko-naut","memorization_hook":"tai(太空)+ko(人)+naut(船员)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/8fe073e64866e08e0fec8a50db299d3c.mp3"},{"word":"airport","meaning":"机场","ipa":"/ˈeəpɔːt/","context_sentence":"My mother and I went to the airport to meet my father.","page_number":39,"comparison":"airport vs airship","syllable_type":"air-port","memorization_hook":"air(空气)+port(港口)，飞机的港口。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/4de9c7a053ad34fc13aa15bba67540d9.mp3"},{"word":"blind","meaning":"瞎的,失明的","ipa":"/blaɪnd/","context_sentence":"As a baby, she became blind and deaf.","page_number":41,"comparison":"blind vs blond","syllable_type":"闭音节 (Closed)","memorization_hook":"b+line(线)+d，眼睛里只有黑线。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/aeb64b4a9d6c7716e193cc1489fc53a7.mp3"},{"word":"deaf","meaning":"聋的,失聪的","ipa":"/def/","context_sentence":"As a baby, she became blind and deaf.","page_number":41,"comparison":"deaf vs leaf","syllable_type":"元音字母组合音节 (Vowel Team)","memorization_hook":"d+eat(吃)-t+f，耳朵被吃掉了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/aeb64b4a9d6c7716e193cc1489fc53a7.mp3"}];
+        const vocabData = [{"word":"spent","meaning":"(spend的过去式) 度过","ipa":"/spent/","context_sentence":"He spent about twenty-one hours in space.","page_number":39,"comparison":"spent vs spend","syllable_type":"闭音节 (Closed)","memorization_hook":"字母s加单词pent(被关起来的)，度过了一段时间。","cn":"他在太空度过了大约21小时。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/cc6efe64dfbddcd1afcf08582342b062.mp3"},{"word":"about","meaning":"大约","ipa":"/əˈbaʊt/","context_sentence":"He spent about twenty-one hours in space.","page_number":39,"comparison":"about vs out","syllable_type":"a-bout","memorization_hook":"a+bout(回合)，大约就是这个回合。","cn":"他在太空度过了大约21小时。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/cc6efe64dfbddcd1afcf08582342b062.mp3"},{"word":"flew","meaning":"(fly的过去式) 飞,飞行","ipa":"/fluː/","context_sentence":"In October 2003, my father flew into space in Shenzhou V.","page_number":39,"comparison":"flew vs flow","syllable_type":"元音字母组合音节 (Vowel Team)","memorization_hook":"飞行的过去式，把y变成了ew。","cn":"2003年10月，我的父亲乘神舟五号飞入太空。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/6dd2b41ecc408451a5a6b30dbd512320.mp3"},{"word":"October","meaning":"十月","ipa":"/ɒkˈtəʊbə/","context_sentence":"In October 2003, my father flew into space in Shenzhou V.","page_number":39,"comparison":"October vs November","syllable_type":"Oc-to-ber","memorization_hook":"Octo(八)原本是八月，后来变成了十月。","cn":"2003年10月，我的父亲乘神舟五号飞入太空。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/6dd2b41ecc408451a5a6b30dbd512320.mp3"},{"word":"video","meaning":"录像","ipa":"/ˈvɪdiəʊ/","context_sentence":"He also made a video in space.","page_number":39,"comparison":"video vs radio","syllable_type":"vid-e-o","memorization_hook":"vi(看)+deo，就是可以看的录像。","cn":"他还在太空拍了一段录像。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/a837571c0114405731adc7fd4a51c5d3.mp3"},{"word":"proud","meaning":"感到自豪的,感到骄傲的","ipa":"/praʊd/","context_sentence":"I was very proud of him.","page_number":39,"comparison":"proud vs loud","syllable_type":"元音字母组合音节 (Vowel Team)","memorization_hook":"p+round(圆)，骄傲得挺起了圆圆的胸膛。","cn":"我为他感到非常自豪。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/91af54161bc15b867593d259602228f5.mp3"},{"word":"someday","meaning":"有朝一日","ipa":"/ˈsʌmdeɪ/","context_sentence":"I want to go into space someday too.","page_number":39,"comparison":"someday vs someone","syllable_type":"some-day","memorization_hook":"some(一些)+day(日子)，总会有那么一天。","cn":"我也想有一天能进入太空。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/fc8f28f70754baa0d4f80ad76a719109.mp3"},{"word":"born","meaning":"出生,诞生","ipa":"/bɔːn/","context_sentence":"Helen Keller was born in the US in 1880.","page_number":41,"comparison":"born vs burn","syllable_type":"r控制音节 (R-Controlled)","memorization_hook":"b+orn(装饰)，出生时世界为我装饰。","cn":"海伦·凯勒1880年出生于美国。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/bcc154109e039c786abbbd3a9877f50c.mp3"},{"word":"as","meaning":"作为","ipa":"/æz/","context_sentence":"As a baby, she became blind and deaf.","page_number":41,"comparison":"as vs has","syllable_type":"闭音节 (Closed)","memorization_hook":"字母a和s，作为一个词。","cn":"还是个婴儿时，她变得又盲又聋。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/aeb64b4a9d6c7716e193cc1489fc53a7.mp3"},{"word":"became","meaning":"(become的过去式) 变成","ipa":"/bɪˈkeɪm/","context_sentence":"As a baby, she became blind and deaf.","page_number":41,"comparison":"became vs become","syllable_type":"be-came","memorization_hook":"be+came(来)，变成了这样。","cn":"还是个婴儿时，她变得又盲又聋。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/aeb64b4a9d6c7716e193cc1489fc53a7.mp3"},{"word":"letter","meaning":"字母","ipa":"/ˈletə/","context_sentence":"She drew letters in Helen's hand and taught her to spell.","page_number":41,"comparison":"letter vs better","syllable_type":"let-ter","memorization_hook":"let(让)+ter，让字母排好队。","cn":"她在海伦的手里画字母，教她拼写。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/d9e506f51b9be7c45daf3a632eebb36c.mp3"},{"word":"spell","meaning":"拼写,拼出","ipa":"/spel/","context_sentence":"She drew letters in Helen's hand and taught her to spell.","page_number":41,"comparison":"spell vs shell","syllable_type":"闭音节 (Closed)","memorization_hook":"s+pell(皮)，拼写单词要脱掉外皮看核心。","cn":"她在海伦的手里画字母，教她拼写。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/d9e506f51b9be7c45daf3a632eebb36c.mp3"},{"word":"herself","meaning":"她自己","ipa":"/hɜːˈself/","context_sentence":"She wrote a book about herself and travelled all over the world.","page_number":41,"comparison":"herself vs himself","syllable_type":"her-self","memorization_hook":"her(她)+self(自己)。","cn":"她写了一本关于她自己的书，并走遍了全世界。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/1e043514a8ff1aae92546d0bf9010fe1.mp3"},{"word":"all over","meaning":"到处,遍及,处处","ipa":"/ɔːl ˈəʊvə/","context_sentence":"She wrote a book about herself and travelled all over the world.","page_number":41,"comparison":"all over vs over all","syllable_type":"multi-syllable","memorization_hook":"all(全部)+over(结束/上方)，遍及所有地方。","cn":"她写了一本关于她自己的书，并走遍了全世界。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/1e043514a8ff1aae92546d0bf9010fe1.mp3"},{"word":"live","meaning":"活着","ipa":"/lɪv/","context_sentence":"Helen lived to be eighty-seven.","page_number":41,"comparison":"live vs love","syllable_type":"相对开音节 (VCe)","memorization_hook":"i在这个词里发短音/ɪ/，活着就是一种力量。","cn":"海伦活到87岁。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/fd43fba7be549d7e7d30d4a7eaa39625.mp3"},{"word":"role model","meaning":"模范;榜样","ipa":"/rəʊl ˈmɒdl/","context_sentence":"She is a role model for blind people, and also for you and me.","page_number":41,"comparison":"role model vs real model","syllable_type":"multi-syllable","memorization_hook":"role(角色)+model(模型)，角色的模范。","cn":"她是盲人的榜样，也是你我的榜样。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/11e5b87022f237675b0d90f0be4a5b2a.mp3"},{"word":"taikonaut","meaning":"(中国的)太空人,宇航员","ipa":"/ˈtaɪkənɔːt/","context_sentence":"My father, Yang Liwei, is a taikonaut, and he is very famous.","page_number":38,"comparison":"taikonaut vs astronaut","syllable_type":"tai-ko-naut","memorization_hook":"tai(太空)+ko(人)+naut(船员)。","cn":"我的父亲杨利伟是一名航天员，他非常有名。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/8fe073e64866e08e0fec8a50db299d3c.mp3"},{"word":"airport","meaning":"机场","ipa":"/ˈeəpɔːt/","context_sentence":"My mother and I went to the airport to meet my father.","page_number":39,"comparison":"airport vs airship","syllable_type":"air-port","memorization_hook":"air(空气)+port(港口)，飞机的港口。","cn":"我妈妈和我去机场接我父亲。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/4de9c7a053ad34fc13aa15bba67540d9.mp3"},{"word":"blind","meaning":"瞎的,失明的","ipa":"/blaɪnd/","context_sentence":"As a baby, she became blind and deaf.","page_number":41,"comparison":"blind vs blond","syllable_type":"闭音节 (Closed)","memorization_hook":"b+line(线)+d，眼睛里只有黑线。","cn":"还是个婴儿时，她变得又盲又聋。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/aeb64b4a9d6c7716e193cc1489fc53a7.mp3"},{"word":"deaf","meaning":"聋的,失聪的","ipa":"/def/","context_sentence":"As a baby, she became blind and deaf.","page_number":41,"comparison":"deaf vs leaf","syllable_type":"元音字母组合音节 (Vowel Team)","memorization_hook":"d+eat(吃)-t+f，耳朵被吃掉了。","cn":"还是个婴儿时，她变得又盲又聋。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m7/aeb64b4a9d6c7716e193cc1489fc53a7.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -1076,14 +1160,24 @@
                         item.classList.add('hide-cn');
                         item.classList.remove('force-show-cn');
                     });
+                    document.body.classList.remove('show-sentences-cn');
                 } else {
                     textEls.forEach(el => el.innerText = "Hide CN");
                     iconEls.forEach(el => el.innerText = "㊙️");
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
+                    document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {

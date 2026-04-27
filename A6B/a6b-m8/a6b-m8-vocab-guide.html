@@ -249,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -277,6 +300,7 @@
             vertical-align: middle;
             transition: all 0.1s;
             padding: 0;
+            flex-shrink: 0;
         }
         .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
@@ -449,7 +473,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "They had cups on their heads."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"They had cups on their heads."</div>
+                    <div class="cn-sentence">他们头上顶着杯子。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 字母u像个小碗，用来喝水的cup</div>
         </div>
@@ -469,7 +496,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "They planned to play a baseball game."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"They planned to play a baseball game."</div>
+                    <div class="cn-sentence">他们计划打一场棒球比赛。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 计划plan，双写n加ed，变成了过去计划planned</div>
         </div>
@@ -489,7 +519,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "They planned to play a baseball game."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"They planned to play a baseball game."</div>
+                    <div class="cn-sentence">他们计划打一场棒球比赛。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> base(基地) + ball(球) = 棒球</div>
         </div>
@@ -509,7 +542,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Then they put the cups on their heads and laughed more."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Then they put the cups on their heads and laughed more."</div>
+                    <div class="cn-sentence">然后他们把杯子顶在头上，笑得更厉害了。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> more，more，我要更多</div>
         </div>
@@ -529,7 +565,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Sam smiled."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Sam smiled."</div>
+                    <div class="cn-sentence">萨姆笑了。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s + mile(英里)，微笑能传一英里</div>
         </div>
@@ -549,7 +588,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It's easy to make mistakes with English words."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It's easy to make mistakes with English words."</div>
+                    <div class="cn-sentence">英语单词很容易出错。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> mis(错误) + take(拿)，拿错了就是mistake</div>
         </div>
@@ -569,7 +611,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                ""I make lots of mistakes with Chinese words too," he said."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">""I make lots of mistakes with Chinese words too," he said."</div>
+                    <div class="cn-sentence">“我在汉语单词上也犯过很多错误，”他说。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> say变said，ai发/e/，开口说话said</div>
         </div>
@@ -589,7 +634,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Why are you wearing a raincoat?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Why are you wearing a raincoat?"</div>
+                    <div class="cn-sentence">你为什么要穿雨衣？</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> rain(雨) + coat(外套) = 雨衣</div>
         </div>
@@ -609,7 +657,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Because I'm happy."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Because I'm happy."</div>
+                    <div class="cn-sentence">因为我很快乐。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> be + cause(原因) = 因为</div>
         </div>
@@ -629,7 +680,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Because I'm happy."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Because I'm happy."</div>
+                    <div class="cn-sentence">因为我很快乐。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ha-ha笑，很happy</div>
         </div>
@@ -649,7 +703,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Because I'm sad."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Because I'm sad."</div>
+                    <div class="cn-sentence">因为我很悲伤。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s + ad(广告)，看到悲伤的广告很sad</div>
         </div>
@@ -669,7 +726,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Because I'm angry."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Because I'm angry."</div>
+                    <div class="cn-sentence">因为我很生气。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> an(一个) + gry(狗叫声)，像发怒的狗一样angry</div>
         </div>
@@ -689,7 +749,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Because I'm hungry."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Because I'm hungry."</div>
+                    <div class="cn-sentence">因为我饿了。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> hun(喊) + gry(狗叫)，饿得汪汪叫hungry</div>
         </div>
@@ -709,7 +772,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Why are you wearing a hat?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Why are you wearing a hat?"</div>
+                    <div class="cn-sentence">你为什么要戴帽子？</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> h + at，在那个地方戴帽子hat</div>
         </div>
@@ -729,7 +795,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Because it's going to be sunny."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Because it's going to be sunny."</div>
+                    <div class="cn-sentence">因为天要晴了。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sun(太阳) + ny，有太阳就是sunny</div>
         </div>
@@ -749,7 +818,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Because I'm going to the theatre."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Because I'm going to the theatre."</div>
+                    <div class="cn-sentence">因为我要去剧院。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> the + a + tre，去这个地方看戏theatre</div>
         </div>
@@ -769,7 +841,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Why is he tired?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Why is he tired?"</div>
+                    <div class="cn-sentence">他为什么累了？</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> tire(轮胎) + d，跑得像爆胎一样累tired</div>
         </div>
@@ -824,7 +899,7 @@
             }
         };
 
-        const vocabData = [{"word":"cup","meaning":"杯子","ipa":"/kʌp/","syllable_type":"闭音节 (Closed)","comparison":"cup vs cap","memorization_hook":"字母u像个小碗，用来喝水的cup","context_sentence":"They had cups on their heads.","page_number":44,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/5510bb1da3cb6a6fd8129b8773609974.mp3"},{"word":"planned","meaning":"计划 (plan的过去式)","ipa":"/plænd/","syllable_type":"闭音节 (Closed)","comparison":"planned vs played","memorization_hook":"计划plan，双写n加ed，变成了过去计划planned","context_sentence":"They planned to play a baseball game.","page_number":45,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/dcfbf97dd01f4ce6ae1519791c31c4ec.mp3"},{"word":"baseball","meaning":"棒球","ipa":"/ˈbeɪsbɔːl/","syllable_type":"base-ball","comparison":"baseball vs basketball","memorization_hook":"base(基地) + ball(球) = 棒球","context_sentence":"They planned to play a baseball game.","page_number":45,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/dcfbf97dd01f4ce6ae1519791c31c4ec.mp3"},{"word":"more","meaning":"更强烈地；更多","ipa":"/mɔː(r)/","syllable_type":"r控制音节 (R-Controlled)","comparison":"more vs door","memorization_hook":"more，more，我要更多","context_sentence":"Then they put the cups on their heads and laughed more.","page_number":45,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/f8dcbed9390e287e4c512700eaf5b762.mp3"},{"word":"smile","meaning":"微笑","ipa":"/smaɪl/","syllable_type":"相对开音节 (VCe)","comparison":"smile vs small","memorization_hook":"s + mile(英里)，微笑能传一英里","context_sentence":"Sam smiled.","page_number":45,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/6326c243bffef1ea629e1b00c330ac84.mp3"},{"word":"mistake","meaning":"错误","ipa":"/mɪˈsteɪk/","syllable_type":"mis-take","comparison":"mistake vs message","memorization_hook":"mis(错误) + take(拿)，拿错了就是mistake","context_sentence":"It's easy to make mistakes with English words.","page_number":45,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/31de9524a9e5efb8ae026c1fc23c051d.mp3"},{"word":"said","meaning":"说 (say的过去式)","ipa":"/sed/","syllable_type":"闭音节 (Closed)","comparison":"said vs sad","memorization_hook":"say变said，ai发/e/，开口说话said","context_sentence":"\"I make lots of mistakes with Chinese words too,\" he said.","page_number":45,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/2d92e0c76e5a3e9ef5d350a03fd34657.mp3"},{"word":"raincoat","meaning":"雨衣","ipa":"/ˈreɪnkəʊt/","syllable_type":"rain-coat","comparison":"raincoat vs jacket","memorization_hook":"rain(雨) + coat(外套) = 雨衣","context_sentence":"Why are you wearing a raincoat?","page_number":47,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/b996c8e230d891b18b3ccd40eaef9979.mp3"},{"word":"because","meaning":"因为","ipa":"/bɪˈkɒz/","syllable_type":"be-cause","comparison":"because vs before","memorization_hook":"be + cause(原因) = 因为","context_sentence":"Because I'm happy.","page_number":46,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/ee3df04b909c456bf8639926b1633702.mp3"},{"word":"happy","meaning":"开心的","ipa":"/ˈhæpi/","syllable_type":"hap-py","comparison":"happy vs heavy","memorization_hook":"ha-ha笑，很happy","context_sentence":"Because I'm happy.","page_number":46,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/ee3df04b909c456bf8639926b1633702.mp3"},{"word":"sad","meaning":"悲伤的","ipa":"/sæd/","syllable_type":"闭音节 (Closed)","comparison":"sad vs said","memorization_hook":"s + ad(广告)，看到悲伤的广告很sad","context_sentence":"Because I'm sad.","page_number":46,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/2a3be38a3282bed3b006896afbc43a3f.mp3"},{"word":"angry","meaning":"生气的","ipa":"/ˈæŋɡri/","syllable_type":"an-gry","comparison":"angry vs hungry","memorization_hook":"an(一个) + gry(狗叫声)，像发怒的狗一样angry","context_sentence":"Because I'm angry.","page_number":46,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/243f8ef886df383e8170509e203f020a.mp3"},{"word":"hungry","meaning":"饿的","ipa":"/ˈhʌŋɡri/","syllable_type":"hun-gry","comparison":"hungry vs angry","memorization_hook":"hun(喊) + gry(狗叫)，饿得汪汪叫hungry","context_sentence":"Because I'm hungry.","page_number":46,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/d10e9839dcbdd30b3e87ba0c65052210.mp3"},{"word":"hat","meaning":"帽子","ipa":"/hæt/","syllable_type":"闭音节 (Closed)","comparison":"hat vs hot","memorization_hook":"h + at，在那个地方戴帽子hat","context_sentence":"Why are you wearing a hat?","page_number":47,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/af59b9303f0511a3c4bed9aaab67d329.mp3"},{"word":"sunny","meaning":"晴朗的","ipa":"/ˈsʌni/","syllable_type":"sun-ny","comparison":"sunny vs funny","memorization_hook":"sun(太阳) + ny，有太阳就是sunny","context_sentence":"Because it's going to be sunny.","page_number":47,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/aef6e306b185180064cff7136df9b695.mp3"},{"word":"theatre","meaning":"剧院","ipa":"/ˈθɪətə(r)/","syllable_type":"thea-tre","comparison":"theatre vs teacher","memorization_hook":"the + a + tre，去这个地方看戏theatre","context_sentence":"Because I'm going to the theatre.","page_number":47,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/ac950d73796ca38bcc706a5db2b72505.mp3"},{"word":"tired","meaning":"累的","ipa":"/ˈtaɪəd/","syllable_type":"ti-red","comparison":"tired vs tried","memorization_hook":"tire(轮胎) + d，跑得像爆胎一样累tired","context_sentence":"Why is he tired?","page_number":48,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/7c57fb394532519e2f230e4094894df3.mp3"}];
+        const vocabData = [{"word":"cup","meaning":"杯子","ipa":"/kʌp/","syllable_type":"闭音节 (Closed)","comparison":"cup vs cap","memorization_hook":"字母u像个小碗，用来喝水的cup","context_sentence":"They had cups on their heads.","page_number":44,"cn":"他们头上顶着杯子。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/5510bb1da3cb6a6fd8129b8773609974.mp3"},{"word":"planned","meaning":"计划 (plan的过去式)","ipa":"/plænd/","syllable_type":"闭音节 (Closed)","comparison":"planned vs played","memorization_hook":"计划plan，双写n加ed，变成了过去计划planned","context_sentence":"They planned to play a baseball game.","page_number":45,"cn":"他们计划打一场棒球比赛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/dcfbf97dd01f4ce6ae1519791c31c4ec.mp3"},{"word":"baseball","meaning":"棒球","ipa":"/ˈbeɪsbɔːl/","syllable_type":"base-ball","comparison":"baseball vs basketball","memorization_hook":"base(基地) + ball(球) = 棒球","context_sentence":"They planned to play a baseball game.","page_number":45,"cn":"他们计划打一场棒球比赛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/dcfbf97dd01f4ce6ae1519791c31c4ec.mp3"},{"word":"more","meaning":"更强烈地；更多","ipa":"/mɔː(r)/","syllable_type":"r控制音节 (R-Controlled)","comparison":"more vs door","memorization_hook":"more，more，我要更多","context_sentence":"Then they put the cups on their heads and laughed more.","page_number":45,"cn":"然后他们把杯子顶在头上，笑得更厉害了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/f8dcbed9390e287e4c512700eaf5b762.mp3"},{"word":"smile","meaning":"微笑","ipa":"/smaɪl/","syllable_type":"相对开音节 (VCe)","comparison":"smile vs small","memorization_hook":"s + mile(英里)，微笑能传一英里","context_sentence":"Sam smiled.","page_number":45,"cn":"萨姆笑了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/6326c243bffef1ea629e1b00c330ac84.mp3"},{"word":"mistake","meaning":"错误","ipa":"/mɪˈsteɪk/","syllable_type":"mis-take","comparison":"mistake vs message","memorization_hook":"mis(错误) + take(拿)，拿错了就是mistake","context_sentence":"It's easy to make mistakes with English words.","page_number":45,"cn":"英语单词很容易出错。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/31de9524a9e5efb8ae026c1fc23c051d.mp3"},{"word":"said","meaning":"说 (say的过去式)","ipa":"/sed/","syllable_type":"闭音节 (Closed)","comparison":"said vs sad","memorization_hook":"say变said，ai发/e/，开口说话said","context_sentence":"\"I make lots of mistakes with Chinese words too,\" he said.","page_number":45,"cn":"“我在汉语单词上也犯过很多错误，”他说。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/2d92e0c76e5a3e9ef5d350a03fd34657.mp3"},{"word":"raincoat","meaning":"雨衣","ipa":"/ˈreɪnkəʊt/","syllable_type":"rain-coat","comparison":"raincoat vs jacket","memorization_hook":"rain(雨) + coat(外套) = 雨衣","context_sentence":"Why are you wearing a raincoat?","page_number":47,"cn":"你为什么要穿雨衣？","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/b996c8e230d891b18b3ccd40eaef9979.mp3"},{"word":"because","meaning":"因为","ipa":"/bɪˈkɒz/","syllable_type":"be-cause","comparison":"because vs before","memorization_hook":"be + cause(原因) = 因为","context_sentence":"Because I'm happy.","page_number":46,"cn":"因为我很快乐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/ee3df04b909c456bf8639926b1633702.mp3"},{"word":"happy","meaning":"开心的","ipa":"/ˈhæpi/","syllable_type":"hap-py","comparison":"happy vs heavy","memorization_hook":"ha-ha笑，很happy","context_sentence":"Because I'm happy.","page_number":46,"cn":"因为我很快乐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/ee3df04b909c456bf8639926b1633702.mp3"},{"word":"sad","meaning":"悲伤的","ipa":"/sæd/","syllable_type":"闭音节 (Closed)","comparison":"sad vs said","memorization_hook":"s + ad(广告)，看到悲伤的广告很sad","context_sentence":"Because I'm sad.","page_number":46,"cn":"因为我很悲伤。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/2a3be38a3282bed3b006896afbc43a3f.mp3"},{"word":"angry","meaning":"生气的","ipa":"/ˈæŋɡri/","syllable_type":"an-gry","comparison":"angry vs hungry","memorization_hook":"an(一个) + gry(狗叫声)，像发怒的狗一样angry","context_sentence":"Because I'm angry.","page_number":46,"cn":"因为我很生气。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/243f8ef886df383e8170509e203f020a.mp3"},{"word":"hungry","meaning":"饿的","ipa":"/ˈhʌŋɡri/","syllable_type":"hun-gry","comparison":"hungry vs angry","memorization_hook":"hun(喊) + gry(狗叫)，饿得汪汪叫hungry","context_sentence":"Because I'm hungry.","page_number":46,"cn":"因为我饿了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/d10e9839dcbdd30b3e87ba0c65052210.mp3"},{"word":"hat","meaning":"帽子","ipa":"/hæt/","syllable_type":"闭音节 (Closed)","comparison":"hat vs hot","memorization_hook":"h + at，在那个地方戴帽子hat","context_sentence":"Why are you wearing a hat?","page_number":47,"cn":"你为什么要戴帽子？","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/af59b9303f0511a3c4bed9aaab67d329.mp3"},{"word":"sunny","meaning":"晴朗的","ipa":"/ˈsʌni/","syllable_type":"sun-ny","comparison":"sunny vs funny","memorization_hook":"sun(太阳) + ny，有太阳就是sunny","context_sentence":"Because it's going to be sunny.","page_number":47,"cn":"因为天要晴了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/aef6e306b185180064cff7136df9b695.mp3"},{"word":"theatre","meaning":"剧院","ipa":"/ˈθɪətə(r)/","syllable_type":"thea-tre","comparison":"theatre vs teacher","memorization_hook":"the + a + tre，去这个地方看戏theatre","context_sentence":"Because I'm going to the theatre.","page_number":47,"cn":"因为我要去剧院。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/ac950d73796ca38bcc706a5db2b72505.mp3"},{"word":"tired","meaning":"累的","ipa":"/ˈtaɪəd/","syllable_type":"ti-red","comparison":"tired vs tried","memorization_hook":"tire(轮胎) + d，跑得像爆胎一样累tired","context_sentence":"Why is he tired?","page_number":48,"cn":"他为什么累了？","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m8/7c57fb394532519e2f230e4094894df3.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -1016,14 +1091,24 @@
                         item.classList.add('hide-cn');
                         item.classList.remove('force-show-cn');
                     });
+                    document.body.classList.remove('show-sentences-cn');
                 } else {
                     textEls.forEach(el => el.innerText = "Hide CN");
                     iconEls.forEach(el => el.innerText = "㊙️");
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
+                    document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {

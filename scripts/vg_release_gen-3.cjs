@@ -63,8 +63,8 @@ function generateHtml(data, book, indexPath = "index.html") {
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                <div class="sentence-wrapper">
-                    <div class="en-sentence" ${item.cn ? `data-cn="${item.cn}"` : ''}>"${item.context_sentence}"</div>
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"${item.context_sentence}"</div>
                     ${item.cn ? `<div class="cn-sentence">${item.cn}</div>` : ''}
                 </div>
             </div>

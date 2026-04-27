@@ -44,6 +44,7 @@ This document defines the rules for extracting and converting textbook data into
   - `word`: The English word/phrase from `vocab-guide`.
   - `meaning`: The Chinese meaning from `vocab-guide`.
   - `context_sentence`: Include the verbatim sentence from `vocab-guide`.
+  - `cn`: Include the Chinese translation of the `context_sentence` from `vocab-guide`.
   - `hint`: Rename `memorization_hook` from `vocab-guide` to `hint`.
   - `title`: "Vocab Master".
   - `type`: `Cloze`, `Cn2En`, or `En2Cn`.

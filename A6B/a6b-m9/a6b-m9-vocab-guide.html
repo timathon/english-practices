@@ -249,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -277,6 +300,7 @@
             vertical-align: middle;
             transition: all 0.1s;
             padding: 0;
+            flex-shrink: 0;
         }
         .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
@@ -449,7 +473,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Best wishes to you!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Best wishes to you!"</div>
+                    <div class="cn-sentence">给你的最美好的祝愿！</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> w + ish(鱼名后缀)，对着小鱼许个愿wish</div>
         </div>
@@ -469,7 +496,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "We're going to say goodbye to our primary school soon."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"We're going to say goodbye to our primary school soon."</div>
+                    <div class="cn-sentence">我们很快就要和小学告别了。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> primary(初级的) + school(学校) = 小学</div>
         </div>
@@ -489,7 +519,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Please write a message in this book."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Please write a message in this book."</div>
+                    <div class="cn-sentence">请在这本书上留言。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> mes(没) + sage(三个)，没留三个留言message</div>
         </div>
@@ -509,7 +542,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I'll keep it forever."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I'll keep it forever."</div>
+                    <div class="cn-sentence">我会永远保留它。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ee发长音，一直keep保留着</div>
         </div>
@@ -529,7 +565,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I'll keep it forever."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I'll keep it forever."</div>
+                    <div class="cn-sentence">我会永远保留它。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> for + ever(曾经)，永远在一起forever</div>
         </div>
@@ -549,7 +588,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "You brought us lots of joy."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"You brought us lots of joy."</div>
+                    <div class="cn-sentence">你给我们带来了很多欢乐。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> j + oy，joy就是大快乐</div>
         </div>
@@ -569,7 +611,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Good luck for the future!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Good luck for the future!"</div>
+                    <div class="cn-sentence">祝你未来好运！</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> fu(付) + ture(去)，付出才有美好的future</div>
         </div>
@@ -589,7 +634,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "You're a wonderful friend."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"You're a wonderful friend."</div>
+                    <div class="cn-sentence">你是一个了不起的朋友。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> wonder(奇迹) + ful(充满的) = 了不起的</div>
         </div>
@@ -609,7 +657,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Wishing you happiness every day."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Wishing you happiness every day."</div>
+                    <div class="cn-sentence">祝你天天开心。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> happy(开心) + ness(名词后缀) = 幸福</div>
         </div>
@@ -629,7 +680,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "What a lot of good wishes!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"What a lot of good wishes!"</div>
+                    <div class="cn-sentence">多么美好的祝愿啊！</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> What a lot of good wishes! 真是太棒了！</div>
         </div>
@@ -649,7 +703,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "We're going to say goodbye to our primary school soon."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"We're going to say goodbye to our primary school soon."</div>
+                    <div class="cn-sentence">我们很快就要和小学告别了。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> good(好) + bye(再见) = 告别</div>
         </div>
@@ -669,7 +726,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "You're a naughty but lovely boy."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"You're a naughty but lovely boy."</div>
+                    <div class="cn-sentence">你是一个淘气但可爱的男孩。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> n + au + ghty，淘气的孩子叫naughty</div>
         </div>
@@ -689,7 +749,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "You're a naughty but lovely boy."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"You're a naughty but lovely boy."</div>
+                    <div class="cn-sentence">你是一个淘气但可爱的男孩。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> love(爱) + ly，充满爱的lovely</div>
         </div>
@@ -709,7 +772,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "You taught me Chinese."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"You taught me Chinese."</div>
+                    <div class="cn-sentence">你教过我汉语。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> teach变taught，老师教过我taught</div>
         </div>
@@ -729,7 +795,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I'll never forget our time together."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I'll never forget our time together."</div>
+                    <div class="cn-sentence">我永远不会忘记我们在一起的时光。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> for(为了) + get(得到)，得到之后就forget</div>
         </div>
@@ -749,7 +818,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Good luck to you!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Good luck to you!"</div>
+                    <div class="cn-sentence">祝你好运！</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> l + uck，祝你好运good luck</div>
         </div>
@@ -769,7 +841,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It's nearly the end."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It's nearly the end."</div>
+                    <div class="cn-sentence">接近尾声了。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> near(近) + ly，几乎到终点了nearly</div>
         </div>
@@ -824,7 +899,7 @@
             }
         };
 
-        const vocabData = [{"word":"wish","meaning":"祝愿；愿望","ipa":"/wɪʃ/","syllable_type":"闭音节 (Closed)","comparison":"wish vs fish","memorization_hook":"w + ish(鱼名后缀)，对着小鱼许个愿wish","context_sentence":"Best wishes to you!","page_number":50,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/475690f4b9bf9392be3eea21136e0766.mp3"},{"word":"primary school","meaning":"小学","ipa":"/ˈpraɪməri skuːl/","syllable_type":"pri-ma-ry school","comparison":"primary school vs middle school","memorization_hook":"primary(初级的) + school(学校) = 小学","context_sentence":"We're going to say goodbye to our primary school soon.","page_number":50,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/0d74111b3f64a8ff398800fee2f3b4fe.mp3"},{"word":"message","meaning":"留言","ipa":"/ˈmesɪdʒ/","syllable_type":"mes-sage","comparison":"message vs mistake","memorization_hook":"mes(没) + sage(三个)，没留三个留言message","context_sentence":"Please write a message in this book.","page_number":50,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/47bdae9f4afcbc304b6e1060e40e51bb.mp3"},{"word":"keep","meaning":"保留","ipa":"/kiːp/","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"keep vs deep","memorization_hook":"ee发长音，一直keep保留着","context_sentence":"I'll keep it forever.","page_number":50,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/ce475f675cc2978a50dba44f3d04409f.mp3"},{"word":"forever","meaning":"永远","ipa":"/fəˈrevə(r)//","syllable_type":"for-ev-er","comparison":"forever vs fever","memorization_hook":"for + ever(曾经)，永远在一起forever","context_sentence":"I'll keep it forever.","page_number":50,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/ce475f675cc2978a50dba44f3d04409f.mp3"},{"word":"joy","meaning":"乐事；乐趣","ipa":"/dʒɔɪ/","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"joy vs boy","memorization_hook":"j + oy，joy就是大快乐","context_sentence":"You brought us lots of joy.","page_number":51,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/d5224d11e75461426144ba85c994ddcd.mp3"},{"word":"future","meaning":"将来","ipa":"/ˈfjuːtʃə(r)/","syllable_type":"fu-ture","comparison":"future vs picture","memorization_hook":"fu(付) + ture(去)，付出才有美好的future","context_sentence":"Good luck for the future!","page_number":51,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/2ee33e04c7c8d1dd9769e4638ec35072.mp3"},{"word":"wonderful","meaning":"了不起的；出色的","ipa":"/ˈwʌndəfl/","syllable_type":"won-der-ful","comparison":"wonderful vs beautiful","memorization_hook":"wonder(奇迹) + ful(充满的) = 了不起的","context_sentence":"You're a wonderful friend.","page_number":51,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/162ea0a736cff1e207ec3937d70b2d45.mp3"},{"word":"happiness","meaning":"幸福；愉快","ipa":"/ˈhæpinəs/","syllable_type":"hap-pi-ness","comparison":"happiness vs sadness","memorization_hook":"happy(开心) + ness(名词后缀) = 幸福","context_sentence":"Wishing you happiness every day.","page_number":53,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/9ee44f4428f6dc8d99d261136584e61e.mp3"},{"word":"what","meaning":"多么 (用于感叹句)","ipa":"/wɒt/","syllable_type":"闭音节 (Closed)","comparison":"what vs watch","memorization_hook":"What a lot of good wishes! 真是太棒了！","context_sentence":"What a lot of good wishes!","page_number":53,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/241e8b28733f8c847c384dcb03f2a758.mp3"},{"word":"goodbye","meaning":"再见","ipa":"/ˌɡʊdˈbaɪ/","syllable_type":"good-bye","comparison":"goodbye vs night","memorization_hook":"good(好) + bye(再见) = 告别","context_sentence":"We're going to say goodbye to our primary school soon.","page_number":50,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/0d74111b3f64a8ff398800fee2f3b4fe.mp3"},{"word":"naughty","meaning":"淘气的","ipa":"/ˈnɔːti/","syllable_type":"naugh-ty","comparison":"naughty vs nightly","memorization_hook":"n + au + ghty，淘气的孩子叫naughty","context_sentence":"You're a naughty but lovely boy.","page_number":51,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/86bb9d1e9b5f912d5d98a1f7f4ba0ca8.mp3"},{"word":"lovely","meaning":"可爱的","ipa":"/ˈlʌvli/","syllable_type":"love-ly","comparison":"lovely vs lonely","memorization_hook":"love(爱) + ly，充满爱的lovely","context_sentence":"You're a naughty but lovely boy.","page_number":51,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/86bb9d1e9b5f912d5d98a1f7f4ba0ca8.mp3"},{"word":"taught","meaning":"教 (teach的过去式)","ipa":"/tɔːt/","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"taught vs thought","memorization_hook":"teach变taught，老师教过我taught","context_sentence":"You taught me Chinese.","page_number":51,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/5531dcd6dc80cd697a5f1af8706dcf25.mp3"},{"word":"forget","meaning":"忘记","ipa":"/fəˈɡet/","syllable_type":"for-get","comparison":"forget vs format","memorization_hook":"for(为了) + get(得到)，得到之后就forget","context_sentence":"I'll never forget our time together.","page_number":51,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/03e922580b5745dc002fe798bf9736f8.mp3"},{"word":"luck","meaning":"运气；幸运","ipa":"/lʌk/","syllable_type":"闭音节 (Closed)","comparison":"luck vs duck","memorization_hook":"l + uck，祝你好运good luck","context_sentence":"Good luck to you!","page_number":50,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/f6f0d46a87a4ed7f85cec92046da207e.mp3"},{"word":"nearly","meaning":"几乎；差不多","ipa":"/ˈnɪəli/","syllable_type":"near-ly","comparison":"nearly vs really","memorization_hook":"near(近) + ly，几乎到终点了nearly","context_sentence":"It's nearly the end.","page_number":54,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/146b2689901555ad7adf994052585946.mp3"}];
+        const vocabData = [{"word":"wish","meaning":"祝愿；愿望","ipa":"/wɪʃ/","syllable_type":"闭音节 (Closed)","comparison":"wish vs fish","memorization_hook":"w + ish(鱼名后缀)，对着小鱼许个愿wish","context_sentence":"Best wishes to you!","page_number":50,"cn":"给你的最美好的祝愿！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/475690f4b9bf9392be3eea21136e0766.mp3"},{"word":"primary school","meaning":"小学","ipa":"/ˈpraɪməri skuːl/","syllable_type":"pri-ma-ry school","comparison":"primary school vs middle school","memorization_hook":"primary(初级的) + school(学校) = 小学","context_sentence":"We're going to say goodbye to our primary school soon.","page_number":50,"cn":"我们很快就要和小学告别了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/0d74111b3f64a8ff398800fee2f3b4fe.mp3"},{"word":"message","meaning":"留言","ipa":"/ˈmesɪdʒ/","syllable_type":"mes-sage","comparison":"message vs mistake","memorization_hook":"mes(没) + sage(三个)，没留三个留言message","context_sentence":"Please write a message in this book.","page_number":50,"cn":"请在这本书上留言。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/47bdae9f4afcbc304b6e1060e40e51bb.mp3"},{"word":"keep","meaning":"保留","ipa":"/kiːp/","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"keep vs deep","memorization_hook":"ee发长音，一直keep保留着","context_sentence":"I'll keep it forever.","page_number":50,"cn":"我会永远保留它。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/ce475f675cc2978a50dba44f3d04409f.mp3"},{"word":"forever","meaning":"永远","ipa":"/fəˈrevə(r)//","syllable_type":"for-ev-er","comparison":"forever vs fever","memorization_hook":"for + ever(曾经)，永远在一起forever","context_sentence":"I'll keep it forever.","page_number":50,"cn":"我会永远保留它。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/ce475f675cc2978a50dba44f3d04409f.mp3"},{"word":"joy","meaning":"乐事；乐趣","ipa":"/dʒɔɪ/","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"joy vs boy","memorization_hook":"j + oy，joy就是大快乐","context_sentence":"You brought us lots of joy.","page_number":51,"cn":"你给我们带来了很多欢乐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/d5224d11e75461426144ba85c994ddcd.mp3"},{"word":"future","meaning":"将来","ipa":"/ˈfjuːtʃə(r)/","syllable_type":"fu-ture","comparison":"future vs picture","memorization_hook":"fu(付) + ture(去)，付出才有美好的future","context_sentence":"Good luck for the future!","page_number":51,"cn":"祝你未来好运！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/2ee33e04c7c8d1dd9769e4638ec35072.mp3"},{"word":"wonderful","meaning":"了不起的；出色的","ipa":"/ˈwʌndəfl/","syllable_type":"won-der-ful","comparison":"wonderful vs beautiful","memorization_hook":"wonder(奇迹) + ful(充满的) = 了不起的","context_sentence":"You're a wonderful friend.","page_number":51,"cn":"你是一个了不起的朋友。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/162ea0a736cff1e207ec3937d70b2d45.mp3"},{"word":"happiness","meaning":"幸福；愉快","ipa":"/ˈhæpinəs/","syllable_type":"hap-pi-ness","comparison":"happiness vs sadness","memorization_hook":"happy(开心) + ness(名词后缀) = 幸福","context_sentence":"Wishing you happiness every day.","page_number":53,"cn":"祝你天天开心。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/9ee44f4428f6dc8d99d261136584e61e.mp3"},{"word":"what","meaning":"多么 (用于感叹句)","ipa":"/wɒt/","syllable_type":"闭音节 (Closed)","comparison":"what vs watch","memorization_hook":"What a lot of good wishes! 真是太棒了！","context_sentence":"What a lot of good wishes!","page_number":53,"cn":"多么美好的祝愿啊！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/241e8b28733f8c847c384dcb03f2a758.mp3"},{"word":"goodbye","meaning":"再见","ipa":"/ˌɡʊdˈbaɪ/","syllable_type":"good-bye","comparison":"goodbye vs night","memorization_hook":"good(好) + bye(再见) = 告别","context_sentence":"We're going to say goodbye to our primary school soon.","page_number":50,"cn":"我们很快就要和小学告别了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/0d74111b3f64a8ff398800fee2f3b4fe.mp3"},{"word":"naughty","meaning":"淘气的","ipa":"/ˈnɔːti/","syllable_type":"naugh-ty","comparison":"naughty vs nightly","memorization_hook":"n + au + ghty，淘气的孩子叫naughty","context_sentence":"You're a naughty but lovely boy.","page_number":51,"cn":"你是一个淘气但可爱的男孩。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/86bb9d1e9b5f912d5d98a1f7f4ba0ca8.mp3"},{"word":"lovely","meaning":"可爱的","ipa":"/ˈlʌvli/","syllable_type":"love-ly","comparison":"lovely vs lonely","memorization_hook":"love(爱) + ly，充满爱的lovely","context_sentence":"You're a naughty but lovely boy.","page_number":51,"cn":"你是一个淘气但可爱的男孩。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/86bb9d1e9b5f912d5d98a1f7f4ba0ca8.mp3"},{"word":"taught","meaning":"教 (teach的过去式)","ipa":"/tɔːt/","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"taught vs thought","memorization_hook":"teach变taught，老师教过我taught","context_sentence":"You taught me Chinese.","page_number":51,"cn":"你教过我汉语。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/5531dcd6dc80cd697a5f1af8706dcf25.mp3"},{"word":"forget","meaning":"忘记","ipa":"/fəˈɡet/","syllable_type":"for-get","comparison":"forget vs format","memorization_hook":"for(为了) + get(得到)，得到之后就forget","context_sentence":"I'll never forget our time together.","page_number":51,"cn":"我永远不会忘记我们在一起的时光。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/03e922580b5745dc002fe798bf9736f8.mp3"},{"word":"luck","meaning":"运气；幸运","ipa":"/lʌk/","syllable_type":"闭音节 (Closed)","comparison":"luck vs duck","memorization_hook":"l + uck，祝你好运good luck","context_sentence":"Good luck to you!","page_number":50,"cn":"祝你好运！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/f6f0d46a87a4ed7f85cec92046da207e.mp3"},{"word":"nearly","meaning":"几乎；差不多","ipa":"/ˈnɪəli/","syllable_type":"near-ly","comparison":"nearly vs really","memorization_hook":"near(近) + ly，几乎到终点了nearly","context_sentence":"It's nearly the end.","page_number":54,"cn":"接近尾声了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m9/146b2689901555ad7adf994052585946.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -1016,14 +1091,24 @@
                         item.classList.add('hide-cn');
                         item.classList.remove('force-show-cn');
                     });
+                    document.body.classList.remove('show-sentences-cn');
                 } else {
                     textEls.forEach(el => el.innerText = "Hide CN");
                     iconEls.forEach(el => el.innerText = "㊙️");
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
+                    document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {

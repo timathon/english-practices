@@ -1,4 +1,4 @@
-0. check the html folder and run release_gen on missing html(s) with 10 users and 3 months validity
+0. check the html folder and run release_gen on missing html(s) with builtin validation type, 10 users and 3 months validity
 1. run rm_release_gen.cjs [input_json] [output_html]
 2. run vg_release_gen-3.cjs [input_json] [output_html] --regenerate
 3. run vm_release_gen-3.cjs [input_json] [type] [output_html] tts for missing audio only
