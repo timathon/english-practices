@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grade 6 Semester 2 - Module 10 Vocabulary Guide</title>
+    <style>
+        /* Compact A4 Print Optimization */
+        @page { size: A4; margin: 10mm; } 
+        body { 
+            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-size: 14px; 
+            line-height: 1.5; 
+            color: #333; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: #fff;
+            padding: 15px; 
+            box-sizing: border-box;
+            position: relative;
+        }
+        h1 { text-align: center; font-size: 1.8em; color: #2c3e50; margin-bottom: 5px; }
+        h2 { text-align: center; font-size: 1.2em; color: #7f8c8d; font-weight: normal; border-bottom: 2px solid #3498db; padding-bottom: 15px; margin-top: 0; }
+        
+        /* Stats Display */
+        .stats-bar {
+            position: sticky;
+            top: 10px;
+            z-index: 1500;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+            background: rgba(248, 249, 250, 0.9);
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .stats-bar b { color: #2c3e50; }
+        .stats-bar.updated {
+            animation: stats-highlight 0.5s ease-out;
+        }
+
+        @keyframes stats-highlight {
+            0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); border-color: #3498db; }
+            50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); border-color: #3498db; }
+            100% { transform: translateX(-50%) scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.05); }
+        }
+
+        /* Floating Scroll Buttons */
+        .scroll-btns {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .scroll-btn {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        .scroll-btn:hover {
+            opacity: 1;
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        .scroll-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* Responsive Grid Layout */
+        .vocab-grid {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .vocab-item { 
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .vocab-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            .vocab-item {
+                margin-bottom: 0;
+            }
+        }
+
+        /* Desktop vs Mobile Display Logic */
+        .mobile-only { display: none !important; }
+        .desktop-only { display: flex !important; }
+
+        @media (max-width: 600px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { display: flex !important; }
+
+            .mobile-controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid #eee;
+                padding: 8px 12px;
+                display: flex;
+                justify-content: space-around;
+                gap: 8px;
+                z-index: 2000;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            }
+
+            .mobile-btn {
+                flex: 1;
+                border: none;
+                background: none;
+                padding: 6px 4px;
+                border-radius: 8px;
+                color: #555;
+                font-size: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                transition: background 0.2s;
+            }
+            .mobile-btn .btn-icon { font-size: 18px; margin-bottom: 2px; }
+            .mobile-btn:active { background: #f0f0f0; }
+            
+            #m-sort-btn { color: #3498db; }
+            #m-cn-btn { color: #e91e63; }
+            #m-hidden-btn { color: #9b59b6; }
+            #m-reset-btn { color: #e67e22; }
+            #m-refresh-btn { color: #1abc9c; }
+            
+            .scroll-btns {
+                right: 15px !important;
+                bottom: 110px !important;
+            }
+            body {
+                padding-bottom: 70px; 
+            }
+        }
+
+        /* Compact Vocab Cards */
+        .vocab-item { 
+            page-break-inside: avoid; 
+            break-inside: avoid;
+            padding: 15px; 
+            border: 1px solid #eee; 
+            border-radius: 10px; 
+            background-color: #fafafa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out, filter 0.2s, box-shadow 0.2s;
+        }
+        .vocab-item.is-hidden-state {
+            opacity: 0.4;
+            filter: grayscale(0.8);
+        }
+        .vocab-item.hide-cn .details:first-of-type .value {
+            display: none;
+        }
+        .vocab-item.hide-cn .details:first-of-type .cn-placeholder {
+            display: inline;
+            color: #3498db;
+            cursor: pointer;
+            font-style: italic;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+        .vocab-item .cn-placeholder {
+            display: none;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .value {
+            display: inline !important;
+        }
+        .vocab-item.force-show-cn .details:first-of-type .cn-placeholder {
+            display: none !important;
+        }
+        .vocab-item.is-hidden-state:not(.force-show) {
+            display: none;
+        }
+        .vocab-item.fading-out {
+            opacity: 0 !important;
+            height: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top-width: 0 !important;
+            border-bottom-width: 0 !important;
+            pointer-events: none;
+        }
+
+        .item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hide-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .word-title { font-size: 1.3em; color: #2980b9; margin: 0 0 10px 0; font-weight: bold; border-bottom: 1px dashed #ddd; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .word-ipa { font-size: 0.7em; color: #7f8c8d; font-weight: normal; margin-left: 8px; font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif; }
+        .page-badge { font-size: 0.6em; color: #999; font-weight: normal; background: #eee; padding: 2px 6px; border-radius: 4px; line-height: 1.2; display: inline-flex; align-items: center; }
+        .details { margin-bottom: 6px; display: flex; align-items: flex-start; }
+        .label { font-weight: bold; color: #555; flex-shrink: 0; width: 85px; font-size: 0.9em; } 
+        .value { flex-grow: 1; }
+        
+        /* Tighter inner boxes */
+        .context-box { 
+            background-color: #fff; 
+            border-left: 4px solid #f39c12; 
+            padding: 8px 12px; 
+            margin: 10px 0; 
+            font-size: 1.1em;
+            font-style: italic; 
+            color: #555;
+            border-radius: 0 4px 4px 0;
+        }
+        .hook-box { 
+            background-color: #e8f8f5; 
+            border-left: 4px solid #1abc9c; 
+            padding: 8px 12px; 
+            font-size: 0.95em;
+            border-radius: 0 4px 4px 0;
+        }
+        @media (min-width: 600px) {
+            .hook-box { margin-top: auto; }
+        }
+        .hook-label { font-weight: bold; color: #16a085; display: block; margin-bottom: 4px; }
+
+        .play-btn {
+            background: var(--white, #fff);
+            border: 1px solid #eee;
+            border-bottom: 3px solid #ddd;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 5px;
+            vertical-align: middle;
+            transition: all 0.1s;
+            padding: 0;
+        }
+        .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
+        .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
+        .play-btn svg { width: 14px; height: 14px; fill: #1cb0f6; }
+
+        /* Floating Controls */
+        .controls-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .control-btn {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 110px;
+        }
+        .control-btn:hover { transform: scale(1.05); }
+        .control-btn:active { transform: scale(0.95); }
+
+        #sort-toggle { background: #3498db; }
+        #sort-toggle:hover { background: #2980b9; }
+
+        #toggle-cn { background: #e91e63; }
+        #toggle-cn:hover { background: #d81b60; }
+
+        #show-hidden-toggle { background: #9b59b6; }
+        #show-hidden-toggle:hover { background: #8e44ad; }
+        #show-hidden-toggle.active { background: #2c3e50; }
+
+        #refresh-cache { background: #1abc9c; }
+        #refresh-cache:hover { background: #16a085; }
+        #refresh-cache.loading { opacity: 0.7; cursor: wait; }
+
+        #reset-hidden { background: #e67e22 !important; }
+        #reset-hidden:hover { background: #d35400 !important; }
+
+        @media print {
+            @page { margin: 8mm; }
+            body { padding: 0; font-size: 11px; color: #000; line-height: 1.2; }
+            header { border-bottom: 1px solid #3498db; padding-bottom: 5px; margin-bottom: 10px; text-align: center; }
+            header a { display: none; }
+            header div { display: inline !important; min-height: 0 !important; margin: 0 !important; }
+            h1 { display: inline; font-size: 1.4em; margin: 0; }
+            h2 { display: inline; font-size: 1.2em; border: none; padding: 0; margin-left: 15px; }
+            
+            .vocab-grid { 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 6px; 
+            }
+            .vocab-item { 
+                padding: 6px 8px; 
+                box-shadow: none; 
+                border: 0.5pt solid #bbb;
+                background: #fff;
+                border-radius: 5px;
+                min-height: 0;
+                display: flex; /* Remove !important to allow display: none from .is-hidden-state */
+                opacity: 1 !important;
+                filter: none !important;
+            }
+            .vocab-item.is-hidden-state { display: none !important; } /* Ensure hidden items stay hidden in print */
+
+            .word-title { font-size: 1.25em; margin-bottom: 4px; padding-bottom: 2px; color: #000; }
+            .page-badge { font-size: 0.7em; padding: 1px 4px; }
+            .details { margin-bottom: 2px; font-size: 0.95em; line-height: 1.2; }
+            .label { width: auto; font-size: 0.85em; margin-right: 3px; color: #444; }
+            .value { font-weight: 400; }
+            
+            .context-box { 
+                margin: 2px 0; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #fdfaf5;
+            }
+            .hook-box { 
+                margin-top: 1px; 
+                padding: 3px 6px; 
+                font-size: 0.95em; 
+                border-left-width: 2pt; 
+                background-color: #f5fdfc;
+            }
+            
+            .controls-container, .mobile-controls, .scroll-btns, .play-btn, .stats-bar, .hide-checkbox { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 50px; margin-bottom: 5px;">
+            <a href="../index.html" style="position: absolute; left: 0; font-size: 1.5rem; text-decoration: none;">🏠</a>
+            <h1 style="margin: 0;">Vocabulary Guide</h1>
+        </div>
+        <h2>Grade 6 Semester 2 - Module 10</h2>
+    </header>
+
+    <div class="stats-bar" id="stats-display">
+        Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
+    </div>
+
+    <div class="controls-container desktop-only">
+        <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button id="toggle-cn" class="control-btn" onclick="app.toggleCN()">
+            <span class="cn-text">Hide CN</span>
+        </button>
+        <button id="show-hidden-toggle" class="control-btn" onclick="app.toggleShowHiddenMode()">
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button id="reset-hidden" class="control-btn" onclick="app.resetHidden()">
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button id="refresh-cache" class="control-btn" onclick="app.refreshCache()">
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
+
+    <div class="mobile-controls mobile-only">
+        <button class="mobile-btn" onclick="toggleSort()" id="m-sort-btn">
+            <span class="btn-icon sort-icon">🔤</span>
+            <span class="sort-text">Sort A-Z</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleCN()" id="m-cn-btn">
+            <span class="btn-icon cn-icon">㊙️</span>
+            <span class="cn-text">Hide CN</span>
+        </button>
+        <button class="mobile-btn" onclick="app.toggleShowHiddenMode()" id="m-hidden-btn">
+            <span class="btn-icon hidden-icon">👁️</span>
+            <span class="hidden-text">Show Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.resetHidden()" id="m-reset-btn">
+            <span class="btn-icon reset-icon">🧹</span>
+            <span class="reset-text">Reset Hidden</span>
+        </button>
+        <button class="mobile-btn" onclick="app.refreshCache()" id="m-refresh-btn">
+            <span class="btn-icon refresh-icon">🔄</span>
+            <span class="refresh-text">Refresh 🔊</span>
+        </button>
+    </div>
+
+    <div class="vocab-grid" id="vocab-container">
+        
+        <div class="vocab-item" data-word="middle school" data-index="0">
+            <h2 class="word-title">
+                <span>1. middle school<span class="word-ipa">/ˈmɪdl skuːl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P56</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">中学</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">mid-dle school</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">middle school vs primary school</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我们打算在今年九月开始上中学。">"We're going to start middle school this September."</div>
+                    <div class="cn-sentence">我们打算在今年九月开始上中学。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> middle(中间) + school(学校) = 中学</div>
+        </div>
+
+        <div class="vocab-item" data-word="speech" data-index="1">
+            <h2 class="word-title">
+                <span>2. speech<span class="word-ipa">/spiːtʃ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P56</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">演说；演讲</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">speech vs peach</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="玲玲的告别演讲。">"A goodbye speech by Lingling."</div>
+                    <div class="cn-sentence">玲玲的告别演讲。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sp + eech(看)，大家看着你做演说speech</div>
+        </div>
+
+        <div class="vocab-item" data-word="classmate" data-index="2">
+            <h2 class="word-title">
+                <span>3. classmate<span class="word-ipa">/ˈklɑːsmeɪt/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P56</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">同班同学</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">class-mate</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">classmate vs classroom</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="亲爱的同学们，我们很快就要离开小学了。">"Dear classmates, we're going to leave our primary school soon."</div>
+                    <div class="cn-sentence">亲爱的同学们，我们很快就要离开小学了。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> class(班级) + mate(伙伴) = 同学</div>
+        </div>
+
+        <div class="vocab-item" data-word="leave" data-index="3">
+            <h2 class="word-title">
+                <span>4. leave<span class="word-ipa">/liːv/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P56</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">离开</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">leave vs leaf</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我们很快就要离开小学了。">"We're going to leave our primary school soon."</div>
+                    <div class="cn-sentence">我们很快就要离开小学了。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> lea(里) + ve(走)，从这里离开leave</div>
+        </div>
+
+        <div class="vocab-item" data-word="september" data-index="4">
+            <h2 class="word-title">
+                <span>5. September<span class="word-ipa">/sepˈtembə(r)/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P56</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">九月</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">Sep-tem-ber</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">September vs October</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我们打算在今年九月开始上中学。">"We're going to start middle school this September."</div>
+                    <div class="cn-sentence">我们打算在今年九月开始上中学。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> Sep + tem + ber，九月开学季</div>
+        </div>
+
+        <div class="vocab-item" data-word="excited" data-index="5">
+            <h2 class="word-title">
+                <span>6. excited<span class="word-ipa">/ɪkˈsaɪtɪd/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P56</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">激动的；兴奋的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ex-cit-ed</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">excited vs tired</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我很激动，也很难过。">"I'm excited, and also sad."</div>
+                    <div class="cn-sentence">我很激动，也很难过。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ex(出) + cit(喊) + ed，激动得喊出来excited</div>
+        </div>
+
+        <div class="vocab-item" data-word="geography" data-index="6">
+            <h2 class="word-title">
+                <span>7. geography<span class="word-ipa">/dʒiˈɒɡrəfi/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P57</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">地理</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">ge-og-ra-phy</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">geography vs geometry</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我打算学习地理。">"I'm going to study Geography."</div>
+                    <div class="cn-sentence">我打算学习地理。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> geo(地) + graphy(写/画) = 地理</div>
+        </div>
+
+        <div class="vocab-item" data-word="same" data-index="7">
+            <h2 class="word-title">
+                <span>8. same<span class="word-ipa">/seɪm/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P57</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">相同的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">same vs some</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="同时，我很遗憾要和你们说再见。">"At the same time, I'm very sad to say goodbye to you."</div>
+                    <div class="cn-sentence">同时，我很遗憾要和你们说再见。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s + ame，名字相同same</div>
+        </div>
+
+        <div class="vocab-item" data-word="spoke" data-index="8">
+            <h2 class="word-title">
+                <span>9. spoke<span class="word-ipa">/spəʊk/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P57</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">说 (speak的过去式)</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">相对开音节 (VCe)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">spoke vs smoke</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="四年前，他们只会说一点点汉语。">"Four years ago, they spoke only very little Chinese."</div>
+                    <div class="cn-sentence">四年前，他们只会说一点点汉语。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> speak变spoke，过去说过话spoke</div>
+        </div>
+
+        <div class="vocab-item" data-word="little" data-index="9">
+            <h2 class="word-title">
+                <span>10. little<span class="word-ipa">/ˈlɪtl/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P57</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">极少量的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">辅音+le音节 (C-le)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">little vs middle</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="他们只会说一点点汉语。">"They spoke only very little Chinese."</div>
+                    <div class="cn-sentence">他们只会说一点点汉语。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> lit + tle，一点点little</div>
+        </div>
+
+        <div class="vocab-item" data-word="practise" data-index="10">
+            <h2 class="word-title">
+                <span>11. practise<span class="word-ipa">/ˈpræktɪs/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P57</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(10)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">练习</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">prac-tise</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">practise vs practical</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="继续练习汉语。">"Keep on practising Chinese."</div>
+                    <div class="cn-sentence">继续练习汉语。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> prac(做) + tise(练习)，不断练习practise</div>
+        </div>
+
+        <div class="vocab-item" data-word="sometime" data-index="11">
+            <h2 class="word-title">
+                <span>12. sometime<span class="word-ipa">/ˈsʌmtaɪm/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P57</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(11)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">某个时候</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">some-time</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">sometime vs sometimes</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="以后有时间回中国看看！">"And come back to China sometime!"</div>
+                    <div class="cn-sentence">以后有时间回中国看看！</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> some(某个) + time(时间) = 某个时候</div>
+        </div>
+
+        <div class="vocab-item" data-word="each other" data-index="12">
+            <h2 class="word-title">
+                <span>13. each other<span class="word-ipa">/iːtʃ ˈʌðə(r)/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P57</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(12)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">互相；彼此</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">each oth-er</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">each other vs another</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="让我们给彼此写很多邮件吧！">"Let's write lots of emails to each other!"</div>
+                    <div class="cn-sentence">让我们给彼此写很多邮件吧！</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> each(每个) + other(另一个) = 互相</div>
+        </div>
+
+        <div class="vocab-item" data-word="chemistry" data-index="13">
+            <h2 class="word-title">
+                <span>14. chemistry<span class="word-ipa">/ˈkemɪstri/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(13)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">化学</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">chem-is-try</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">chemistry vs cherry</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我打算学习化学。">"I'm going to study Chemistry."</div>
+                    <div class="cn-sentence">我打算学习化学。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> chem(变) + is + try(试)，变化要尝试就是化学</div>
+        </div>
+
+        <div class="vocab-item" data-word="physics" data-index="14">
+            <h2 class="word-title">
+                <span>15. physics<span class="word-ipa">/ˈfɪzɪks/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(14)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">物理</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">phys-ics</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">physics vs physical</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我打算学习物理。">"I'm going to study Physics."</div>
+                    <div class="cn-sentence">我打算学习物理。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> phys(身体/物质) + ics(学科) = 物理</div>
+        </div>
+
+        <div class="vocab-item" data-word="history" data-index="15">
+            <h2 class="word-title">
+                <span>16. history<span class="word-ipa">/ˈhɪstri/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(15)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">历史</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">his-to-ry</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">history vs story</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我打算学习历史。">"I'm going to study History."</div>
+                    <div class="cn-sentence">我打算学习历史。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> his(他的) + story(故事) = 历史</div>
+        </div>
+
+        <div class="vocab-item" data-word="science" data-index="16">
+            <h2 class="word-title">
+                <span>17. science<span class="word-ipa">/ˈsaɪəns/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(16)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">科学</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sci-ence</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">science vs silence</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我打算学习科学。">"I'm going to study Science."</div>
+                    <div class="cn-sentence">我打算学习科学。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sci(知道) + ence，知道世界的奥秘就是科学</div>
+        </div>
+
+        <div class="vocab-item" data-word="french" data-index="17">
+            <h2 class="word-title">
+                <span>18. French<span class="word-ipa">/frentʃ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P59</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(17)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">法语</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">French vs fresh</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我打算学习法语。">"I'm going to study French."</div>
+                    <div class="cn-sentence">我打算学习法语。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> Fr(法国) + ench，法国的语言French</div>
+        </div>
+
+        <div class="vocab-item" data-word="different" data-index="18">
+            <h2 class="word-title">
+                <span>19. different<span class="word-ipa">/ˈdɪfrənt/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P56</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(18)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">不同的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">dif-fer-ent</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">different vs difficult</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper">
+                    <div class="en-sentence" data-cn="我们要上不同的学校。">"We're going to different schools."</div>
+                    <div class="cn-sentence">我们要上不同的学校。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> dif(分开) + fer(拿) + ent，拿开之后各不相同</div>
+        </div>
+    </div>
+
+    <div class="scroll-btns">
+        <button class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="To Top">▲</button>
+        <button class="scroll-btn" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="To Bottom">▼</button>
+    </div>
+
+    <script>
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function() {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function(id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function(id, blob, meta) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, meta, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
+        const vocabData = [{"word":"middle school","meaning":"中学","ipa":"/ˈmɪdl skuːl/","syllable_type":"mid-dle school","comparison":"middle school vs primary school","memorization_hook":"middle(中间) + school(学校) = 中学","context_sentence":"We're going to start middle school this September.","cn":"我们打算在今年九月开始上中学。","page_number":56,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/c4e655c9dc32bd70d4ea1c94419883ad.mp3"},{"word":"speech","meaning":"演说；演讲","ipa":"/spiːtʃ/","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"speech vs peach","memorization_hook":"sp + eech(看)，大家看着你做演说speech","context_sentence":"A goodbye speech by Lingling.","cn":"玲玲的告别演讲。","page_number":56,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/8fa39fc1d0823d828cf4fe32c0cbed57.mp3"},{"word":"classmate","meaning":"同班同学","ipa":"/ˈklɑːsmeɪt/","syllable_type":"class-mate","comparison":"classmate vs classroom","memorization_hook":"class(班级) + mate(伙伴) = 同学","context_sentence":"Dear classmates, we're going to leave our primary school soon.","cn":"亲爱的同学们，我们很快就要离开小学了。","page_number":56,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/34b240cf333f0910bce56851bd3a61b5.mp3"},{"word":"leave","meaning":"离开","ipa":"/liːv/","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"leave vs leaf","memorization_hook":"lea(里) + ve(走)，从这里离开leave","context_sentence":"We're going to leave our primary school soon.","cn":"我们很快就要离开小学了。","page_number":56,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/77b63ff7a89b11a72f892b62ede00b72.mp3"},{"word":"September","meaning":"九月","ipa":"/sepˈtembə(r)/","syllable_type":"Sep-tem-ber","comparison":"September vs October","memorization_hook":"Sep + tem + ber，九月开学季","context_sentence":"We're going to start middle school this September.","cn":"我们打算在今年九月开始上中学。","page_number":56,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/c4e655c9dc32bd70d4ea1c94419883ad.mp3"},{"word":"excited","meaning":"激动的；兴奋的","ipa":"/ɪkˈsaɪtɪd/","syllable_type":"ex-cit-ed","comparison":"excited vs tired","memorization_hook":"ex(出) + cit(喊) + ed，激动得喊出来excited","context_sentence":"I'm excited, and also sad.","cn":"我很激动，也很难过。","page_number":56,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/4e0cc5d779492e4d0bef03311f45aa4a.mp3"},{"word":"geography","meaning":"地理","ipa":"/dʒiˈɒɡrəfi/","syllable_type":"ge-og-ra-phy","comparison":"geography vs geometry","memorization_hook":"geo(地) + graphy(写/画) = 地理","context_sentence":"I'm going to study Geography.","cn":"我打算学习地理。","page_number":57,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/0cadd3129da92e2ca817dcd76ebc2f4f.mp3"},{"word":"same","meaning":"相同的","ipa":"/seɪm/","syllable_type":"相对开音节 (VCe)","comparison":"same vs some","memorization_hook":"s + ame，名字相同same","context_sentence":"At the same time, I'm very sad to say goodbye to you.","cn":"同时，我很遗憾要和你们说再见。","page_number":57,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/911ceba3273d93a8da8fd5e0bd831f10.mp3"},{"word":"spoke","meaning":"说 (speak的过去式)","ipa":"/spəʊk/","syllable_type":"相对开音节 (VCe)","comparison":"spoke vs smoke","memorization_hook":"speak变spoke，过去说过话spoke","context_sentence":"Four years ago, they spoke only very little Chinese.","cn":"四年前，他们只会说一点点汉语。","page_number":57,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/8ef68ea64fe089f8e13da9b1ef331465.mp3"},{"word":"little","meaning":"极少量的","ipa":"/ˈlɪtl/","syllable_type":"辅音+le音节 (C-le)","comparison":"little vs middle","memorization_hook":"lit + tle，一点点little","context_sentence":"They spoke only very little Chinese.","cn":"他们只会说一点点汉语。","page_number":57,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/8a2351d252dcc4dda987ead2d0626581.mp3"},{"word":"practise","meaning":"练习","ipa":"/ˈpræktɪs/","syllable_type":"prac-tise","comparison":"practise vs practical","memorization_hook":"prac(做) + tise(练习)，不断练习practise","context_sentence":"Keep on practising Chinese.","cn":"继续练习汉语。","page_number":57,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/35270ddb07711aec352a2193facd35b1.mp3"},{"word":"sometime","meaning":"某个时候","ipa":"/ˈsʌmtaɪm/","syllable_type":"some-time","comparison":"sometime vs sometimes","memorization_hook":"some(某个) + time(时间) = 某个时候","context_sentence":"And come back to China sometime!","cn":"以后有时间回中国看看！","page_number":57,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/a0f82334296db9ea12f6a9ea5fd8a7bd.mp3"},{"word":"each other","meaning":"互相；彼此","ipa":"/iːtʃ ˈʌðə(r)/","syllable_type":"each oth-er","comparison":"each other vs another","memorization_hook":"each(每个) + other(另一个) = 互相","context_sentence":"Let's write lots of emails to each other!","cn":"让我们给彼此写很多邮件吧！","page_number":57,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/97f2fdfeb8ff590fdc0d85613f007532.mp3"},{"word":"chemistry","meaning":"化学","ipa":"/ˈkemɪstri/","syllable_type":"chem-is-try","comparison":"chemistry vs cherry","memorization_hook":"chem(变) + is + try(试)，变化要尝试就是化学","context_sentence":"I'm going to study Chemistry.","cn":"我打算学习化学。","page_number":59,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/7013eb871ff5a0ba28e48e44f4ade000.mp3"},{"word":"physics","meaning":"物理","ipa":"/ˈfɪzɪks/","syllable_type":"phys-ics","comparison":"physics vs physical","memorization_hook":"phys(身体/物质) + ics(学科) = 物理","context_sentence":"I'm going to study Physics.","cn":"我打算学习物理。","page_number":59,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/69170a99f9cf757bb4b3eaf0fc215064.mp3"},{"word":"history","meaning":"历史","ipa":"/ˈhɪstri/","syllable_type":"his-to-ry","comparison":"history vs story","memorization_hook":"his(他的) + story(故事) = 历史","context_sentence":"I'm going to study History.","cn":"我打算学习历史。","page_number":59,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/a0bdd29852f4c2f4560735701e9368fc.mp3"},{"word":"science","meaning":"科学","ipa":"/ˈsaɪəns/","syllable_type":"sci-ence","comparison":"science vs silence","memorization_hook":"sci(知道) + ence，知道世界的奥秘就是科学","context_sentence":"I'm going to study Science.","cn":"我打算学习科学。","page_number":59,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/3bf9d530e8961432e5486161fbfbb49d.mp3"},{"word":"French","meaning":"法语","ipa":"/frentʃ/","syllable_type":"闭音节 (Closed)","comparison":"French vs fresh","memorization_hook":"Fr(法国) + ench，法国的语言French","context_sentence":"I'm going to study French.","cn":"我打算学习法语。","page_number":59,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/aa8de576fdb83007d7b521638364c400.mp3"},{"word":"different","meaning":"不同的","ipa":"/ˈdɪfrənt/","syllable_type":"dif-fer-ent","comparison":"different vs difficult","memorization_hook":"dif(分开) + fer(拿) + ent，拿开之后各不相同","context_sentence":"We're going to different schools.","cn":"我们要上不同的学校。","page_number":56,"audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m10/5138cb9a88f5939f77f68b30e8ae05e3.mp3"}];
+
+        let isAlphabetical = false;
+        const container = document.getElementById('vocab-container');
+        const items = Array.from(container.getElementsByClassName('vocab-item'));
+        
+        function toggleSort() {
+            isAlphabetical = !isAlphabetical;
+            const textEls = document.querySelectorAll('.sort-text');
+            const iconEls = document.querySelectorAll('.sort-icon');
+
+            if (isAlphabetical) {
+                items.sort((a, b) => a.dataset.word.localeCompare(b.dataset.word));
+                textEls.forEach(el => el.innerText = "Textbook Order");
+                iconEls.forEach(el => el.innerText = "📖");
+            } else {
+                items.sort((a, b) => parseInt(a.dataset.index) - parseInt(b.dataset.index));
+                textEls.forEach(el => el.innerText = "Sort A-Z");
+                iconEls.forEach(el => el.innerText = "🔤");
+            }
+
+            // Clear and re-append sorted items
+            container.innerHTML = '';
+            items.forEach(item => container.appendChild(item));
+        }
+
+        const app = {
+            currentAudio: null,
+            audioObjectURL: null,
+            hiddenWords: new Set(),
+            showHiddenMode: false,
+            hideCNMode: true,
+            unitKey: "ep-vg-hidden-" + btoa(document.title + "Grade 6 Semester 2 - Module 10").substring(0, 16),
+
+            init: async function() {
+                // Apply default CN visibility
+                if (this.hideCNMode) {
+                    const textEls = document.querySelectorAll('.cn-text');
+                    const iconEls = document.querySelectorAll('.cn-icon');
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.add('hide-cn'));
+                }
+
+                // Load hidden words from localStorage
+                const stored = localStorage.getItem(this.unitKey);
+                if (stored) {
+                    try {
+                        const indices = JSON.parse(stored);
+                        this.hiddenWords = new Set(indices);
+                    } catch(e) { console.error("Failed to parse hidden words", e); }
+                }
+
+                // Apply initial state to cards
+                items.forEach(item => {
+                    const idx = parseInt(item.dataset.index);
+                    if (this.hiddenWords.has(idx)) {
+                        item.classList.add('is-hidden-state');
+                        const cb = item.querySelector('.hide-checkbox');
+                        if (cb) cb.checked = true;
+                    }
+                });
+
+                this.updateStats();
+
+                // Preload audio
+                vocabData.forEach(item => {
+                    if (item.audio) {
+                        this.cacheAudio(item.audio);
+                    }
+                });
+
+                // Cleanup legacy localStorage audio cache
+                setTimeout(() => {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith("ep-vg-audio-") || key.startsWith("ep-vg-meta-") || 
+                                    key.startsWith("ep-sa-audio-") || key.startsWith("ep-sa-meta-") ||
+                                    key.startsWith("ep-sh-audio-") || key.startsWith("ep-sh-meta-") ||
+                                    key.startsWith("ep-vm-audio-") || key.startsWith("ep-vm-meta-"))) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                }, 2000);
+            },
+
+            getHash: function(str) {
+                return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
+            },
+
+            updateStats: function() {
+                const total = vocabData.length;
+                const hidden = this.hiddenWords.size;
+                const shown = total - hidden;
+                
+                const display = document.getElementById('stats-display');
+                if (display) {
+                    display.innerHTML = `Total: <b>${total}</b> | Shown: <b>${shown}</b> | Hidden: <b>${hidden}</b>`;
+                    display.classList.remove('updated');
+                    void display.offsetWidth; // Force reflow
+                    display.classList.add('updated');
+                }
+            },
+
+            toggleWordHidden: function(index) {
+                const item = items.find(it => parseInt(it.dataset.index) === index);
+                if (!item) return;
+
+                if (this.hiddenWords.has(index)) {
+                    this.hiddenWords.delete(index);
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                } else {
+                    this.hiddenWords.add(index);
+                    
+                    const isMobile = window.innerWidth <= 600;
+                    if (this.showHiddenMode || !isMobile) {
+                        // Instant hide for desktop or when in "Show Hidden" mode
+                        item.classList.add('is-hidden-state');
+                    } else {
+                        // Mobile: Smooth collapse animation
+                        const h = item.offsetHeight;
+                        item.style.height = h + 'px';
+                        item.offsetHeight; // Force reflow
+                        item.classList.add('fading-out');
+                        
+                        setTimeout(() => {
+                            if (this.hiddenWords.has(index)) {
+                                item.classList.add('is-hidden-state');
+                                item.classList.remove('fading-out');
+                                item.style.height = '';
+                            }
+                        }, 500);
+                    }
+                }
+
+                // Persist
+                localStorage.setItem(this.unitKey, JSON.stringify(Array.from(this.hiddenWords)));
+                this.updateStats();
+            },
+
+            toggleShowHiddenMode: function() {
+                this.showHiddenMode = !this.showHiddenMode;
+                const desktopBtn = document.getElementById('show-hidden-toggle');
+                const textEls = document.querySelectorAll('.hidden-text');
+                const iconEls = document.querySelectorAll('.hidden-icon');
+
+                if (this.showHiddenMode) {
+                    if (desktopBtn) desktopBtn.classList.add('active');
+                    textEls.forEach(el => el.innerText = "Hide Learnt");
+                    iconEls.forEach(el => el.innerText = "🙈");
+                    items.forEach(item => item.classList.add('force-show'));
+                } else {
+                    if (desktopBtn) desktopBtn.classList.remove('active');
+                    textEls.forEach(el => el.innerText = "Show Hidden");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => item.classList.remove('force-show'));
+                }
+            },
+
+            resetHidden: function() {
+                if (!confirm("Are you sure you want to reset all hidden words?")) return;
+                
+                this.hiddenWords.clear();
+                localStorage.removeItem(this.unitKey);
+                
+                items.forEach(item => {
+                    item.classList.remove('is-hidden-state');
+                    item.classList.remove('fading-out');
+                    item.style.height = '';
+                    const cb = item.querySelector('.hide-checkbox');
+                    if (cb) cb.checked = false;
+                });
+                
+                this.updateStats();
+            },
+
+            toggleCN: function() {
+                this.hideCNMode = !this.hideCNMode;
+                const textEls = document.querySelectorAll('.cn-text');
+                const iconEls = document.querySelectorAll('.cn-icon');
+
+                if (this.hideCNMode) {
+                    textEls.forEach(el => el.innerText = "Show CN");
+                    iconEls.forEach(el => el.innerText = "👁️");
+                    items.forEach(item => {
+                        item.classList.add('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                    document.body.classList.remove('show-sentences-cn');
+                } else {
+                    textEls.forEach(el => el.innerText = "Hide CN");
+                    iconEls.forEach(el => el.innerText = "㊙️");
+                    items.forEach(item => {
+                        item.classList.remove('hide-cn');
+                        item.classList.remove('force-show-cn');
+                    });
+                    document.body.classList.add('show-sentences-cn');
+                }
+            },
+
+            showItemCN: function(el) {
+                if (!this.hideCNMode) return;
+                const item = el.closest('.vocab-item');
+                if (item) {
+                    item.classList.toggle('force-show-cn');
+                }
+            },
+
+            cacheAudio: async function(url, force = false) {
+                if (!url) return;
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                
+                if (!force) {
+                    const cached = await db.get(cacheKey);
+                    if (cached) return cached.blob;
+                }
+
+                try {
+                    const fetchUrl = force ? `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}` : url;
+                    const resp = await fetch(fetchUrl);
+                    if (!resp.ok) return null;
+                    const contentType = resp.headers.get('Content-Type');
+                    if (!contentType || !contentType.startsWith('audio/')) return null;
+                    const lastModified = resp.headers.get('Last-Modified');
+                    const blob = await resp.blob();
+                    const meta = lastModified ? { lastModified: new Date(lastModified).getTime() } : {};
+                    await db.set(cacheKey, blob, meta);
+                    return blob;
+                } catch(e) { console.error("Cache failed", e); }
+            },
+
+            refreshCache: async function() {
+                const desktopBtn = document.getElementById('refresh-cache');
+                const textEls = document.querySelectorAll('.refresh-text');
+                
+                if (desktopBtn && desktopBtn.classList.contains('loading')) return;
+
+                if (desktopBtn) desktopBtn.classList.add('loading');
+                textEls.forEach(el => el.innerText = "Checking...");
+                let updatedCount = 0;
+
+                try {
+                    for (const item of vocabData) {
+                        if (!item.audio) continue;
+                        
+                        const url = item.audio;
+                        const baseUrl = url.split('?')[0];
+                        const baseHash = this.getHash(baseUrl);
+                        const cacheKey = "ep-audio-" + baseHash;
+                        const cached = await db.get(cacheKey);
+                        const currentVersion = cached?.meta?.lastModified || 0;
+
+                        try {
+                            const headUrl = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+                            const response = await fetch(headUrl, { method: 'HEAD' });
+                            const lastModifiedStr = response.headers.get('Last-Modified');
+                            if (lastModifiedStr) {
+                                const lastModified = new Date(lastModifiedStr).getTime();
+                                if (lastModified > currentVersion) {
+                                    await this.cacheAudio(url, true);
+                                    updatedCount++;
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Failed to check ${item.word}`, e);
+                        }
+                    }
+                    alert(`Refresh complete. Updated ${updatedCount} audio files.`);
+                } finally {
+                    if (desktopBtn) desktopBtn.classList.remove('loading');
+                    textEls.forEach(el => el.innerText = "Refresh 🔊");
+                }
+            },
+
+            playAudio: async function(btn) {
+                const card = btn.closest('.vocab-item');
+                const index = parseInt(card.dataset.index);
+                const url = vocabData[index].audio;
+                if (!url) return;
+
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                    document.querySelectorAll('.play-btn').forEach(b => b.disabled = false);
+                }
+                
+                const baseUrl = url.split('?')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
+
+                this.currentAudio = new Audio(source);
+                btn.disabled = true;
+
+                const cleanup = () => {
+                    btn.disabled = false;
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+
+                this.currentAudio.onended = cleanup;
+                this.currentAudio.onerror = cleanup;
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    cleanup();
+                });
+            }
+        };
+
+        // Initialize and preload
+        window.addEventListener('load', () => {
+            app.init();
+        });
+    </script>
+
+</body>
+</html>
+')[0];
+                const baseHash = this.getHash(baseUrl);
+                const cacheKey = "ep-audio-" + baseHash;
+                const cached = await db.get(cacheKey);
+                
+                let source = url;
+                if (cached && cached.blob) {
+                    this.audioObjectURL = URL.createObjectURL(cached.blob);
+                    source = this.audioObjectURL;
+                }
+
+                this.currentAudio = new Audio(source);
+                btn.disabled = true;
+
+                const cleanup = () => {
+                    btn.disabled = false;
+                    if (this.audioObjectURL) {
+                        URL.revokeObjectURL(this.audioObjectURL);
+                        this.audioObjectURL = null;
+                    }
+                };
+
+                this.currentAudio.onended = cleanup;
+                this.currentAudio.onerror = cleanup;
+
+                this.currentAudio.play().catch(e => {
+                    console.warn("Audio playback failed", e);
+                    cleanup();
+                });
+            }
+        };
+
+        // Initialize and preload
+        window.addEventListener('load', () => {
+            app.init();
+        });
+    </script>
+
+</body>
+</html>
