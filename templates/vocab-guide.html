@@ -249,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -684,9 +707,17 @@
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
                     document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {
@@ -781,46 +812,6 @@
                 }
                 
                 const baseUrl = url.split('?')[0];
-                const baseHash = this.getHash(baseUrl);
-                const cacheKey = "ep-audio-" + baseHash;
-                const cached = await db.get(cacheKey);
-                
-                let source = url;
-                if (cached && cached.blob) {
-                    this.audioObjectURL = URL.createObjectURL(cached.blob);
-                    source = this.audioObjectURL;
-                }
-
-                this.currentAudio = new Audio(source);
-                btn.disabled = true;
-
-                const cleanup = () => {
-                    btn.disabled = false;
-                    if (this.audioObjectURL) {
-                        URL.revokeObjectURL(this.audioObjectURL);
-                        this.audioObjectURL = null;
-                    }
-                };
-
-                this.currentAudio.onended = cleanup;
-                this.currentAudio.onerror = cleanup;
-
-                this.currentAudio.play().catch(e => {
-                    console.warn("Audio playback failed", e);
-                    cleanup();
-                });
-            }
-        };
-
-        // Initialize and preload
-        window.addEventListener('load', () => {
-            app.init();
-        });
-    </script>
-
-</body>
-</html>
-')[0];
                 const baseHash = this.getHash(baseUrl);
                 const cacheKey = "ep-audio-" + baseHash;
                 const cached = await db.get(cacheKey);
