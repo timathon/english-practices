@@ -177,8 +177,8 @@ except Exception as e:
                     }
                     const candidateSilences = allSilences.filter(s => s.start > 0.1);
                     
-                    if (candidateSilences.length < tasks.length) {
-                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length}). Retrying attempt ${timeoutsCount + 2}/${MAX_TIMEOUTS}...`);
+                    if (candidateSilences.length < tasks.length - 1) {
+                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length - 1} required). Retrying attempt ${timeoutsCount + 2}/${MAX_TIMEOUTS}...`);
                         timeoutsCount++;
                         if (timeoutsCount >= MAX_TIMEOUTS) {
                             console.error("❌ CRITICAL: Failed to get enough pauses after 3 attempts. Terminating.");
@@ -187,10 +187,11 @@ except Exception as e:
                         continue;
                     }
 
+                    const silencesCount = Math.min(candidateSilences.length, tasks.length);
                     const silences = candidateSilences
                         .map(s => ({ ...s, duration: s.end - s.start }))
                         .sort((a, b) => b.duration - a.duration)
-                        .slice(0, tasks.length)
+                        .slice(0, silencesCount)
                         .sort((a, b) => a.start - b.start);
 
                     console.log(`Detected ${allSilences.length} pauses (>1.0s), using ${silences.length} longest as separators.`);
@@ -205,7 +206,7 @@ except Exception as e:
                         const segmentMp3 = path.join(batchOutputDir, segmentFileName);
                         
                         const s = silences[i];
-                        const endTime = s ? (s.start + s.end) / 2 : (startTime + 15); 
+                        const endTime = s ? (s.start + s.end) / 2 : (i === tasks.length - 1 ? 99999 : startTime + 15); 
 
                         const segmentWav = path.join(batchOutputDir, `${String(i + 1).padStart(3, '0')}_temp.wav`);
                         execSync(`ffmpeg -i "${combinedWav}" -ss ${startTime} -to ${endTime} -c copy "${segmentWav}" -y -loglevel error`);

@@ -40,7 +40,7 @@ function getAudioUrl(text, bookName) {
     return `${PUBLIC_URL_BASE}/ep/${bookName}/${hash}.mp3`;
 }
 
-function generateHtml(data, jsonPath) {
+function generateHtml(data, jsonPath, indexPath = "index.html") {
     if (!fs.existsSync(TEMPLATE_PATH)) {
         throw new Error(`Template not found at ${TEMPLATE_PATH}`);
     }
@@ -100,7 +100,8 @@ function generateHtml(data, jsonPath) {
         .replace(/{{LEVEL}}/g, level)
         .replace(/{{SECTION}}/g, section)
         .replace(/{{WRITING_PROMPT}}/g, writingPrompt)
-        .replace(/{{[ \t]*TREE_DATA[ \t]*}}/g, JSON.stringify(treeData, null, 2));
+        .replace(/{{[ \t]*TREE_DATA[ \t]*}}/g, JSON.stringify(treeData, null, 2))
+        .replace(/{{INDEX_PATH}}/g, indexPath);
 }
 
 async function generate(jsonPath, outputPath, audioMode = '1') {
@@ -119,6 +120,11 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
 
         const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
         const bookName = folderName.replace(/-[0-9]+$/, '').toLowerCase();
+
+        // Calculate indexPath
+        const bookFolder = path.basename(path.dirname(path.dirname(absoluteInputPath)));
+        const bookRoot = path.join(BASE_DIR, bookFolder);
+        const indexPath = path.join(path.relative(path.dirname(absoluteOutputPath), bookRoot), 'index.html');
 
         if (audioMode !== '1' && !isGeminiQuotaExhausted) {
             const allNodes = [];
@@ -193,7 +199,7 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         }
         applyAudio(treeData);
 
-        const htmlContent = generateHtml(jsonData, absoluteInputPath);
+        const htmlContent = generateHtml(jsonData, absoluteInputPath, indexPath);
         const outputDir = path.dirname(absoluteOutputPath);
         if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
         fs.writeFileSync(absoluteOutputPath, htmlContent, 'utf8');

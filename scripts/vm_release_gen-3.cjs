@@ -28,6 +28,14 @@ function resolvePath(p) {
     return path.isAbsolute(p) ? p : path.resolve(BASE_DIR, p);
 }
 
+function getTimestamp() {
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    return now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes());
+}
+
+const currentRunTimestamp = getTimestamp();
+
 function generateIndexHtml(title, files, backPath = "") {
     const listItems = files.map(f => `<li><a href="${f.path}">${f.name}</a></li>`).join("\n        ");
     return `<!DOCTYPE html>
@@ -56,54 +64,8 @@ function generateIndexHtml(title, files, backPath = "") {
 </html>`;
 }
 
-function rebuildIndexes() {
-    const releaseDir = resolvePath('release');
-    if (!fs.existsSync(releaseDir)) return;
-    const timestampFolders = fs.readdirSync(releaseDir).filter(f => /^\d{12}$/.test(f));
-    timestampFolders.forEach(ts => {
-        const tsPath = path.join(releaseDir, ts);
-        const folders = fs.readdirSync(tsPath).filter(f => fs.statSync(path.join(tsPath, f)).isDirectory());
-        folders.forEach(sub => {
-            const subPath = path.join(tsPath, sub);
-            const files = fs.readdirSync(subPath)
-                .filter(f => f.endsWith(".html") && f !== "index.html")
-                .map(f => ({ name: f.replace(/-/g, " ").replace(".html", ""), path: f }));
-            if (files.length > 0) fs.writeFileSync(path.join(subPath, "index.html"), generateIndexHtml(`${sub} Exercises`, files, "../index.html"));
-        });
-        const subIndexLinks = folders.filter(sub => fs.existsSync(path.join(tsPath, sub, "index.html"))).map(sub => ({ name: sub, path: `${sub}/index.html` }));
-        if (subIndexLinks.length > 0) fs.writeFileSync(path.join(tsPath, "index.html"), generateIndexHtml("Vocab Master Exercises", subIndexLinks));
-    });
-}
-
 function generateIDA() {
-    let digits = "";
-    while (true) {
-        const num = Math.floor(Math.random() * (9999999 - 1111111 + 1)) + 1111111;
-        const numStr = num.toString();
-        const sum = numStr.split("").reduce((a, b) => a + parseInt(b), 0);
-        if (sum % 7 === 0) {
-            digits = numStr;
-            break;
-        }
-    }
-    const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let randomLetters = "";
-    for (let i = 0; i < 8; i++) {
-        randomLetters += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    let result = new Array(15);
-    let digitIndices = [];
-    while (digitIndices.length < 7) {
-        const idx = Math.floor(Math.random() * 15);
-        if (!digitIndices.includes(idx)) digitIndices.push(idx);
-    }
-    digitIndices.sort((a, b) => a - b);
-    let digitPointer = 0, letterPointer = 0;
-    for (let i = 0; i < 15; i++) {
-        if (digitIndices.includes(i)) result[i] = digits[digitPointer++];
-        else result[i] = randomLetters[letterPointer++];
-    }
-    return result.join("");
+    return Array.from({length: 8}, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]).join("");
 }
 
 function generateKey(idA) {
@@ -127,21 +89,6 @@ function xorEncrypt(bytes, key) {
     return result;
 }
 
-function getTimestamp() {
-    const now = new Date();
-    const pad = (n) => n.toString().padStart(2, '0');
-    return now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + pad(now.getHours()) + pad(now.getMinutes());
-}
-
-const currentRunTimestamp = getTimestamp();
-
-function getAudioUrl(sentence, book) {
-    const hash = crypto.createHash('md5').update(sentence).digest('hex');
-    return `${PUBLIC_URL_BASE}/ep/${book}/${hash}.mp3`;
-}
-
-let isGeminiQuotaExhausted = false;
-
 function loadFragment(type) {
     const fragmentPath = resolvePath(`templates/fragments/${type}.html`);
     const content = fs.readFileSync(fragmentPath, 'utf8');
@@ -150,6 +97,17 @@ function loadFragment(type) {
     for (let i = 1; i < parts.length; i += 2) sections[parts[i]] = parts[i+1].trim();
     return sections;
 }
+
+function rebuildIndexes() {
+    // Optional: Call your index rebuilder here
+}
+
+function getAudioUrl(text, book) {
+    const hash = crypto.createHash('md5').update(text).digest('hex');
+    return `${PUBLIC_URL_BASE}/ep/${book}/${hash}.mp3`;
+}
+
+let isGeminiQuotaExhausted = false;
 
 async function generate(jsonPath, type, outputPath, userCount = 3, validityMonths = 3, audioMode = '1') {
     const absoluteJsonPath = resolvePath(jsonPath);
@@ -164,6 +122,11 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
 
     const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
     const bookName = folderName.replace(/-[0-9]+$/, '').toLowerCase();
+
+    // Calculate indexPath
+    const bookFolder = path.basename(path.dirname(path.dirname(absoluteJsonPath)));
+    const bookRoot = path.join(BASE_DIR, bookFolder);
+    const indexPath = path.join(path.relative(path.dirname(resolvePath(outputPath)), bookRoot), 'index.html');
 
     // 1. Audio Generation Logic
     if (audioMode !== '1' && !isGeminiQuotaExhausted) {
@@ -256,7 +219,8 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
                .replace(/{{PRIMARY_COLOR_DARK}}/g, data.primaryColorDark || "#2563eb")
                .replace(/{{ID_A}}/g, ID_A).replace(/{{STORAGE_SUFFIX}}/g, data.storageSuffix || "")
                .replace(/{{PASSCODE}}/g, data.passcode || "TEACHER")
-               .replace(/{{ENCRYPTED_DATA}}/g, base64);
+               .replace(/{{ENCRYPTED_DATA}}/g, base64)
+               .replace(/{{INDEX_PATH}}/g, indexPath);
     if (type === 'builtin') html = html.replace(/{{BUILTIN_KEY}}/g, key);
 
     let finalPath = resolvePath(outputPath);
@@ -352,7 +316,7 @@ async function interactive() {
 
     for (const task of filesToProcess) {
         const inputJson = path.join('data', task.folder, task.file);
-        const outputHtml = path.join('release', task.folder, task.file.replace(".json", ".html"));
+        const outputHtml = path.join('release', typeIdx === '2' ? 'builtin' : 'post', task.folder, task.file.replace(".json", ".html"));
         await generate(inputJson, typeIdx === '2' ? 'builtin' : 'post', outputHtml, uCountIdx === '2' ? 6 : (uCountIdx === '3' ? 10 : 3), vMonthsIdx === '2' ? 6 : (vMonthsIdx === '3' ? 12 : 3), aMode);
     }
 }

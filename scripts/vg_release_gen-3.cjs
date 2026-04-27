@@ -1,19 +1,14 @@
 const fs = require('fs');
 const path = require('path');
-const readline = require('readline');
 const crypto = require('crypto');
 const { S3Client, HeadObjectCommand } = require("@aws-sdk/client-s3");
 const { getAudioBatch } = require('./tts-gen-cut-save-3.cjs');
-
-/**
- * Vocabulary Release Generator (V2)
- * Uses tts-gen-cut-save.cjs for audio processing.
- */
+const readline = require('readline');
 
 const BASE_DIR = path.resolve(__dirname, '..');
-const TEMPLATE_PATH = path.join(BASE_DIR, 'templates/vocab-guide.html');
+const TEMPLATE_PATH = path.resolve(BASE_DIR, 'templates/vocab-guide.html');
 
-// R2 Configuration (for existence checks)
+// R2 Configuration
 const s3Client = new S3Client({
     region: "auto",
     endpoint: "https://11927bf8264141e4f5b12471ea4d95d8.r2.cloudflarestorage.com",
@@ -29,14 +24,14 @@ function resolvePath(p) {
     return path.isAbsolute(p) ? p : path.resolve(BASE_DIR, p);
 }
 
-function getAudioUrl(sentence, book) {
-    const hash = crypto.createHash('md5').update(sentence).digest('hex');
+function getAudioUrl(text, book) {
+    const hash = crypto.createHash('md5').update(text).digest('hex');
     return `${PUBLIC_URL_BASE}/ep/${book}/${hash}.mp3`;
 }
 
 let isGeminiQuotaExhausted = false;
 
-function generateHtml(data, book) {
+function generateHtml(data, book, indexPath = "index.html") {
     if (!fs.existsSync(TEMPLATE_PATH)) {
         throw new Error(`Template not found at ${TEMPLATE_PATH}`);
     }
@@ -78,7 +73,8 @@ function generateHtml(data, book) {
         .replace(/{{TITLE}}/g, title)
         .replace(/{{LEVEL}}/g, level)
         .replace(/{{VOCAB_DATA}}/g, JSON.stringify(data.unit_vocabulary))
-        .replace(/{{ITEMS}}/g, itemsHtml);
+        .replace(/{{ITEMS}}/g, itemsHtml)
+        .replace(/{{INDEX_PATH}}/g, indexPath);
 }
 
 async function generate(jsonPath, outputPath, audioMode = '1') {
@@ -95,6 +91,11 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         const bookName = folderName.replace(/-[0-9]+$/, '').toLowerCase();
         const jsonData = JSON.parse(fs.readFileSync(absoluteInputPath, 'utf8'));
         const vocab = jsonData.unit_vocabulary;
+
+        // Calculate indexPath
+        const bookFolder = path.basename(path.dirname(path.dirname(absoluteInputPath)));
+        const bookRoot = path.join(BASE_DIR, bookFolder);
+        let indexPath = path.join(path.relative(path.dirname(absoluteOutputPath), bookRoot), 'index.html');
 
         if (audioMode !== '1' && !isGeminiQuotaExhausted) {
             const existingHashes = new Set();
@@ -164,7 +165,7 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
             }
         });
 
-        const htmlContent = generateHtml(jsonData, bookName);
+        const htmlContent = generateHtml(jsonData, bookName, indexPath);
         const outputDir = path.dirname(absoluteOutputPath);
         if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
         fs.writeFileSync(absoluteOutputPath, htmlContent, 'utf8');
@@ -218,7 +219,6 @@ async function interactive() {
             const fullPath = path.join(folderPath, entry);
             const stats = fs.statSync(fullPath);
             if (stats.isDirectory()) {
-                // One level deeper
                 const subFiles = fs.readdirSync(fullPath).filter(f => f.endsWith('-vocab-guide.json'));
                 subFiles.forEach(subFile => {
                     results.push(path.join(entry, subFile));

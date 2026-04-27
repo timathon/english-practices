@@ -164,6 +164,11 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
     const bookName = folderName.replace(/-[0-9]+$/, '').toLowerCase();
 
+    // Calculate indexPath
+    const bookFolder = path.basename(path.dirname(path.dirname(absoluteJsonPath)));
+    const bookRoot = path.join(BASE_DIR, bookFolder);
+    const indexPath = path.join(path.relative(path.dirname(resolvePath(outputPath)), bookRoot), 'index.html');
+
     // 1. Audio Generation Logic
     const wordToAudioMap = {};
     const allWords = data.spelling_words.map(w => w.word);
@@ -276,7 +281,8 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
                .replace(/{{ID_A}}/g, ID_A).replace(/{{STORAGE_SUFFIX}}/g, data.storageSuffix || "")
                .replace(/{{PASSCODE}}/g, data.passcode || "TEACHER")
                .replace(/{{IPA_DICT}}/g, JSON.stringify(data.ipaDict || {}))
-               .replace(/{{ENCRYPTED_DATA}}/g, base64);
+               .replace(/{{ENCRYPTED_DATA}}/g, base64)
+               .replace(/{{INDEX_PATH}}/g, indexPath);
     if (type === 'builtin') html = html.replace(/{{BUILTIN_KEY}}/g, key);
 
     let finalPath = resolvePath(outputPath);

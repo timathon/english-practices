@@ -17,7 +17,7 @@ function resolvePath(p) {
     return path.isAbsolute(p) ? p : path.resolve(BASE_DIR, p);
 }
 
-function generateHtml(data) {
+function generateHtml(data, indexPath = "index.html") {
     if (!fs.existsSync(TEMPLATE_PATH)) {
         throw new Error(`Template not found at ${TEMPLATE_PATH}`);
     }
@@ -65,7 +65,8 @@ function generateHtml(data) {
     return template
         .replace(/{{PART}}/g, part)
         .replace(/{{LEVEL}}/g, level)
-        .replace(/{{TREE_DATA}}/g, JSON.stringify(treeData, null, 2));
+        .replace(/{{TREE_DATA}}/g, JSON.stringify(treeData, null, 2))
+        .replace(/{{INDEX_PATH}}/g, indexPath);
 }
 
 async function generate(jsonPath, outputPath) {
@@ -80,7 +81,13 @@ async function generate(jsonPath, outputPath) {
 
         console.log(`Processing ${jsonPath}...`);
         const jsonData = JSON.parse(fs.readFileSync(absoluteInputPath, 'utf8'));
-        const htmlContent = generateHtml(jsonData);
+
+        // Calculate indexPath
+        const bookFolder = path.basename(path.dirname(path.dirname(absoluteInputPath)));
+        const bookRoot = path.join(BASE_DIR, bookFolder);
+        const indexPath = path.join(path.relative(path.dirname(absoluteOutputPath), bookRoot), 'index.html');
+
+        const htmlContent = generateHtml(jsonData, indexPath);
 
         const outputDir = path.dirname(absoluteOutputPath);
         if (!fs.existsSync(outputDir)) {
