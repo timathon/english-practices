@@ -24,17 +24,24 @@
         
         /* Stats Display */
         .stats-bar {
+            position: sticky;
+            top: 10px;
+            z-index: 1500;
             text-align: center;
             font-size: 0.9em;
             color: #666;
             margin-bottom: 15px;
-            background: #f8f9fa;
-            padding: 5px 10px;
+            background: rgba(248, 249, 250, 0.9);
+            backdrop-filter: blur(5px);
+            padding: 5px 15px;
             border-radius: 20px;
             display: inline-block;
             margin-left: 50%;
             transform: translateX(-50%);
             white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s;
         }
         .stats-bar b { color: #2c3e50; }
         .stats-bar.updated {
@@ -44,7 +51,7 @@
         @keyframes stats-highlight {
             0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); border-color: #3498db; }
             50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); border-color: #3498db; }
-            100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); border-color: transparent; }
+            100% { transform: translateX(-50%) scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.05); }
         }
 
         /* Floating Scroll Buttons */
@@ -242,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -270,6 +300,7 @@
             vertical-align: middle;
             transition: all 0.1s;
             padding: 0;
+            flex-shrink: 0;
         }
         .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
@@ -378,10 +409,11 @@
             <h1 style="margin: 0;">Vocabulary Guide</h1>
         </div>
         <h2>Grade 6 Semester 2 Module 1</h2>
-        <div class="stats-bar" id="stats-display">
-            Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
-        </div>
     </header>
+
+    <div class="stats-bar" id="stats-display">
+        Total: <b>0</b> | Shown: <b>0</b> | Hidden: <b>0</b>
+    </div>
 
     <div class="controls-container desktop-only">
         <button id="sort-toggle" class="control-btn" onclick="toggleSort()">
@@ -441,14 +473,17 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I want a hamburger."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I want a hamburger."</div>
+                    <div class="cn-sentence">我想要一个汉堡包。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：汉（ham）堡（bur）哥（ger）。</div>
         </div>
 
         <div class="vocab-item" data-word="hot dog" data-index="1">
             <h2 class="word-title">
-                <span>2. hot dog</span>
+                <span>2. hot dog<span class="word-ipa">/ˈhɒt dɒɡ/</span></span>
                 <div class="item-meta">
                     <span class="page-badge">P2</span>
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
@@ -461,7 +496,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I want a hot dog, please."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I want a hot dog, please."</div>
+                    <div class="cn-sentence">请给我一个热狗。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想/图像记忆法：一只感觉很热（hot）的狗（dog）变成了香肠。</div>
         </div>
@@ -481,7 +519,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Cashier says, 'Can I help you?'"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Cashier says, 'Can I help you?'"</div>
+                    <div class="cn-sentence">收银员说：“我能帮您吗？”</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：cash (现金) + ier (表人后缀) = 收现金的人。</div>
         </div>
@@ -501,7 +542,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I want a cola."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I want a cola."</div>
+                    <div class="cn-sentence">我想要一杯可乐。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：口渴啦（cola），买杯可乐喝。</div>
         </div>
@@ -516,12 +560,15 @@
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">美元</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">dol-lar</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">collar (衣领)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">dollar vs collar</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It's thirteen dollars and twenty-five cents."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It's thirteen dollars and twenty-five cents."</div>
+                    <div class="cn-sentence">是十三美元二十五美分。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：到了（dollar）美国要用美元。</div>
         </div>
@@ -536,12 +583,15 @@
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">美分</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">sent (发送，send的过去式)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">cent vs sent</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It's thirteen dollars and twenty-five cents."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It's thirteen dollars and twenty-five cents."</div>
+                    <div class="cn-sentence">是十三美元二十五美分。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆法：一美分（cent）被发送（sent）给了朋友。</div>
         </div>
@@ -556,12 +606,15 @@
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">享受</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">en-joy</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">joy (快乐)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">enjoy vs joy</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Enjoy your meal!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Enjoy your meal!"</div>
+                    <div class="cn-sentence">祝你用餐愉快！</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：en- (使) + joy (快乐) = 使人感到快乐，即享受。</div>
         </div>
@@ -576,12 +629,15 @@
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">一餐；膳食</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">meat (肉)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">meal vs meat</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Enjoy your meal!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Enjoy your meal!"</div>
+                    <div class="cn-sentence">祝你用餐愉快！</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：在秘鲁（meal）吃了一顿丰盛的晚餐。</div>
         </div>
@@ -596,12 +652,15 @@
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">小心的；仔细的</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">care-ful</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">care (关心；在意)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">careful vs care</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Be careful!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Be careful!"</div>
+                    <div class="cn-sentence">小心！</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：care (关心) + -ful (充满...的) = 充满关心的，就是小心的。</div>
         </div>
@@ -616,12 +675,15 @@
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">肉</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">meet (遇见)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">meat vs meet</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I want to eat some meat."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I want to eat some meat."</div>
+                    <div class="cn-sentence">我想吃点肉。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想/图像记忆法：外出遇见（meet）了一块好吃的肉（meat）。</div>
         </div>
@@ -636,12 +698,15 @@
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">奶酪</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">choose (选择)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">cheese vs choose</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "And I want a hot dog, please, with lots and lots of cheese."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"And I want a hot dog, please, with lots and lots of cheese."</div>
+                    <div class="cn-sentence">请给我一个带有很多很多奶酪的热狗。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：气死（cheese）老鼠了，因为吃不到高处的奶酪。</div>
         </div>
@@ -656,12 +721,15 @@
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">面条</span><span class="cn-placeholder">Click to show</span></div>
             <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">noo-dles</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">noodle (单数面条)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">noodles vs noodle</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I want noodles and a cola."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I want noodles and a cola."</div>
+                    <div class="cn-sentence">我想要面条和可乐。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：牛兜（noo-dle）里装满了面条。</div>
         </div>
@@ -681,7 +749,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Cashier: Can I help you?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Can I help you?"</div>
+                    <div class="cn-sentence">我能帮您吗？</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 场景联想：进入餐厅或商店时，服务员微笑迎宾的必备金句。</div>
         </div>
@@ -701,7 +772,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "How much is it?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"How much is it?"</div>
+                    <div class="cn-sentence">多少钱？</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 场景联想：结账时摸摸口袋问老板的实用句子。</div>
         </div>
@@ -721,7 +795,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Here you are."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Here you are."</div>
+                    <div class="cn-sentence">给你。</div>
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 场景联想：把钱递给收银员，或者把东西递给别人时的礼貌配套动作语。</div>
         </div>
@@ -776,7 +853,7 @@
             }
         };
 
-        const vocabData = [{"word":"hamburger","ipa":"/ˈhæmbɜːɡə/","meaning":"汉堡包","syllable_type":"ham-bur-ger","comparison":"ham (火腿)","page_number":"2","context_sentence":"I want a hamburger.","memorization_hook":"谐音记忆法：汉（ham）堡（bur）哥（ger）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/ff001f8fb89ee3a13289537493f55764.mp3"},{"word":"hot dog","ipa":"","meaning":"热狗","syllable_type":"hot dog","comparison":"hot (热) + dog (狗)","page_number":"2","context_sentence":"I want a hot dog, please.","memorization_hook":"联想/图像记忆法：一只感觉很热（hot）的狗（dog）变成了香肠。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/7b21357adeff6280dcd3c5e8e849425b.mp3"},{"word":"cashier","ipa":"/kæˈʃɪə/","meaning":"收银员","syllable_type":"cash-ier","comparison":"cash (现金)","page_number":"3","context_sentence":"Cashier says, 'Can I help you?'","memorization_hook":"词根词缀法：cash (现金) + ier (表人后缀) = 收现金的人。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/58d19b5acdb7e13359dcce66666111b0.mp3"},{"word":"cola","ipa":"/ˈkəʊlə/","meaning":"可乐","syllable_type":"co-la","comparison":"color (颜色)","page_number":"3","context_sentence":"I want a cola.","memorization_hook":"谐音记忆法：口渴啦（cola），买杯可乐喝。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/b6c316ab473002b1f0b43c16e658975b.mp3"},{"word":"dollar","ipa":"/ˈdɒlə/","meaning":"美元","syllable_type":"dol-lar","comparison":"collar (衣领)","page_number":"3","context_sentence":"It's thirteen dollars and twenty-five cents.","memorization_hook":"谐音记忆法：到了（dollar）美国要用美元。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/dd70bc00424cc6adf5bbbe23e9830df2.mp3"},{"word":"cent","ipa":"/sent/","meaning":"美分","syllable_type":"闭音节 (Closed)","comparison":"sent (发送，send的过去式)","page_number":"3","context_sentence":"It's thirteen dollars and twenty-five cents.","memorization_hook":"联想记忆法：一美分（cent）被发送（sent）给了朋友。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/dd70bc00424cc6adf5bbbe23e9830df2.mp3"},{"word":"enjoy","ipa":"/ɪnˈdʒɔɪ/","meaning":"享受","syllable_type":"en-joy","comparison":"joy (快乐)","page_number":"3","context_sentence":"Enjoy your meal!","memorization_hook":"词根词缀法：en- (使) + joy (快乐) = 使人感到快乐，即享受。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/de4ef317bb016be71975121a5e2212d2.mp3"},{"word":"meal","ipa":"/miːl/","meaning":"一餐；膳食","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"meat (肉)","page_number":"3","context_sentence":"Enjoy your meal!","memorization_hook":"谐音记忆法：在秘鲁（meal）吃了一顿丰盛的晚餐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/de4ef317bb016be71975121a5e2212d2.mp3"},{"word":"careful","ipa":"/ˈkeəfl/","meaning":"小心的；仔细的","syllable_type":"care-ful","comparison":"care (关心；在意)","page_number":"3","context_sentence":"Be careful!","memorization_hook":"词根词缀法：care (关心) + -ful (充满...的) = 充满关心的，就是小心的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/f81b25cf8f4c7340346d8b347936fd7d.mp3"},{"word":"meat","ipa":"/miːt/","meaning":"肉","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"meet (遇见)","page_number":"5","context_sentence":"I want to eat some meat.","memorization_hook":"联想/图像记忆法：外出遇见（meet）了一块好吃的肉（meat）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/d6d87312e457844ea10a5037c2c93d88.mp3"},{"word":"cheese","ipa":"/tʃiːz/","meaning":"奶酪","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"choose (选择)","page_number":"5","context_sentence":"And I want a hot dog, please, with lots and lots of cheese.","memorization_hook":"谐音记忆法：气死（cheese）老鼠了，因为吃不到高处的奶酪。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/8a478ced49ba16d1d0498b4ea821d29d.mp3"},{"word":"noodles","ipa":"/ˈnuːdlz/","meaning":"面条","syllable_type":"noo-dles","comparison":"noodle (单数面条)","page_number":"5","context_sentence":"I want noodles and a cola.","memorization_hook":"谐音记忆法：牛兜（noo-dle）里装满了面条。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/7f32e210b8ea7f5c2d9aebafb153a11f.mp3"},{"word":"Can I help you?","ipa":"","meaning":"请问需要点什么？/ 我能帮您吗？","syllable_type":"N/A","comparison":"N/A","page_number":"3","context_sentence":"Cashier: Can I help you?","memorization_hook":"场景联想：进入餐厅或商店时，服务员微笑迎宾的必备金句。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/8641a5a3ab3688fcc53109ea4f36910b.mp3"},{"word":"How much is it?","ipa":"","meaning":"多少钱？","syllable_type":"N/A","comparison":"N/A","page_number":"4","context_sentence":"How much is it?","memorization_hook":"场景联想：结账时摸摸口袋问老板的实用句子。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/6ca7524a641bc8a23f065e79b46be256.mp3"},{"word":"Here you are.","ipa":"","meaning":"给你。","syllable_type":"N/A","comparison":"N/A","page_number":"3","context_sentence":"Here you are.","memorization_hook":"场景联想：把钱递给收银员，或者把东西递给别人时的礼貌配套动作语。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/57403500decbf544b4f5d3639691234e.mp3"}];
+        const vocabData = [{"word":"hamburger","ipa":"/ˈhæmbɜːɡə/","meaning":"汉堡包","syllable_type":"ham-bur-ger","comparison":"ham (火腿)","page_number":"2","context_sentence":"I want a hamburger.","cn":"我想要一个汉堡包。","memorization_hook":"谐音记忆法：汉（ham）堡（bur）哥（ger）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/ff001f8fb89ee3a13289537493f55764.mp3"},{"word":"hot dog","ipa":"/ˈhɒt dɒɡ/","meaning":"热狗","syllable_type":"hot dog","comparison":"hot (热) + dog (狗)","page_number":"2","context_sentence":"I want a hot dog, please.","cn":"请给我一个热狗。","memorization_hook":"联想/图像记忆法：一只感觉很热（hot）的狗（dog）变成了香肠。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/7b21357adeff6280dcd3c5e8e849425b.mp3"},{"word":"cashier","ipa":"/kæˈʃɪə/","meaning":"收银员","syllable_type":"cash-ier","comparison":"cash (现金)","page_number":"3","context_sentence":"Cashier says, 'Can I help you?'","cn":"收银员说：“我能帮您吗？”","memorization_hook":"词根词缀法：cash (现金) + ier (表人后缀) = 收现金的人。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/58d19b5acdb7e13359dcce66666111b0.mp3"},{"word":"cola","ipa":"/ˈkəʊlə/","meaning":"可乐","syllable_type":"co-la","comparison":"color (颜色)","page_number":"3","context_sentence":"I want a cola.","cn":"我想要一杯可乐。","memorization_hook":"谐音记忆法：口渴啦（cola），买杯可乐喝。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/b6c316ab473002b1f0b43c16e658975b.mp3"},{"word":"dollar","ipa":"/ˈdɒlə/","meaning":"美元","syllable_type":"dol-lar","comparison":"dollar vs collar","page_number":"3","context_sentence":"It's thirteen dollars and twenty-five cents.","cn":"是十三美元二十五美分。","memorization_hook":"谐音记忆法：到了（dollar）美国要用美元。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/dd70bc00424cc6adf5bbbe23e9830df2.mp3"},{"word":"cent","ipa":"/sent/","meaning":"美分","syllable_type":"闭音节 (Closed)","comparison":"cent vs sent","page_number":"3","context_sentence":"It's thirteen dollars and twenty-five cents.","cn":"是十三美元二十五美分。","memorization_hook":"联想记忆法：一美分（cent）被发送（sent）给了朋友。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/dd70bc00424cc6adf5bbbe23e9830df2.mp3"},{"word":"enjoy","ipa":"/ɪnˈdʒɔɪ/","meaning":"享受","syllable_type":"en-joy","comparison":"enjoy vs joy","page_number":"3","context_sentence":"Enjoy your meal!","cn":"祝你用餐愉快！","memorization_hook":"词根词缀法：en- (使) + joy (快乐) = 使人感到快乐，即享受。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/de4ef317bb016be71975121a5e2212d2.mp3"},{"word":"meal","ipa":"/miːl/","meaning":"一餐；膳食","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"meal vs meat","page_number":"3","context_sentence":"Enjoy your meal!","cn":"祝你用餐愉快！","memorization_hook":"谐音记忆法：在秘鲁（meal）吃了一顿丰盛的晚餐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/de4ef317bb016be71975121a5e2212d2.mp3"},{"word":"careful","ipa":"/ˈkeəfl/","meaning":"小心的；仔细的","syllable_type":"care-ful","comparison":"careful vs care","page_number":"3","context_sentence":"Be careful!","cn":"小心！","memorization_hook":"词根词缀法：care (关心) + -ful (充满...的) = 充满关心的，就是小心的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/f81b25cf8f4c7340346d8b347936fd7d.mp3"},{"word":"meat","ipa":"/miːt/","meaning":"肉","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"meat vs meet","page_number":"5","context_sentence":"I want to eat some meat.","cn":"我想吃点肉。","memorization_hook":"联想/图像记忆法：外出遇见（meet）了一块好吃的肉（meat）。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/d6d87312e457844ea10a5037c2c93d88.mp3"},{"word":"cheese","ipa":"/tʃiːz/","meaning":"奶酪","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"cheese vs choose","page_number":"5","context_sentence":"And I want a hot dog, please, with lots and lots of cheese.","cn":"请给我一个带有很多很多奶酪的热狗。","memorization_hook":"谐音记忆法：气死（cheese）老鼠了，因为吃不到高处的奶酪。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/8a478ced49ba16d1d0498b4ea821d29d.mp3"},{"word":"noodles","ipa":"/ˈnuːdlz/","meaning":"面条","syllable_type":"noo-dles","comparison":"noodles vs noodle","page_number":"5","context_sentence":"I want noodles and a cola.","cn":"我想要面条和可乐。","memorization_hook":"谐音记忆法：牛兜（noo-dle）里装满了面条。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/7f32e210b8ea7f5c2d9aebafb153a11f.mp3"},{"word":"Can I help you?","ipa":"","meaning":"请问需要点什么？/ 我能帮您吗？","syllable_type":"N/A","comparison":"N/A","page_number":"3","context_sentence":"Can I help you?","cn":"我能帮您吗？","memorization_hook":"场景联想：进入餐厅或商店时，服务员微笑迎宾的必备金句。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/aa79a8418b99dc8362b574e44c685509.mp3"},{"word":"How much is it?","ipa":"","meaning":"多少钱？","syllable_type":"N/A","comparison":"N/A","page_number":"4","context_sentence":"How much is it?","cn":"多少钱？","memorization_hook":"场景联想：结账时摸摸口袋问老板的实用句子。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/6ca7524a641bc8a23f065e79b46be256.mp3"},{"word":"Here you are.","ipa":"","meaning":"给你。","syllable_type":"N/A","comparison":"N/A","page_number":"3","context_sentence":"Here you are.","cn":"给你。","memorization_hook":"场景联想：把钱递给收银员，或者把东西递给别人时的礼貌配套动作语。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m1/57403500decbf544b4f5d3639691234e.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -968,14 +1045,24 @@
                         item.classList.add('hide-cn');
                         item.classList.remove('force-show-cn');
                     });
+                    document.body.classList.remove('show-sentences-cn');
                 } else {
                     textEls.forEach(el => el.innerText = "Hide CN");
                     iconEls.forEach(el => el.innerText = "㊙️");
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
+                    document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {

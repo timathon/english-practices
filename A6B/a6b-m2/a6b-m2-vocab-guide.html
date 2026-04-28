@@ -249,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -277,6 +300,7 @@
             vertical-align: middle;
             transition: all 0.1s;
             padding: 0;
+            flex-shrink: 0;
         }
         .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
@@ -434,52 +458,81 @@
 
     <div class="vocab-grid" id="vocab-container">
         
-        <div class="vocab-item" data-word="breakfast" data-index="0">
+        <div class="vocab-item" data-word="later" data-index="0">
             <h2 class="word-title">
-                <span>1. breakfast<span class="word-ipa">/ˈbrekfəst/</span></span>
+                <span>1. later<span class="word-ipa">/ˈleɪtə/</span></span>
                 <div class="item-meta">
-                    <span class="page-badge">P8</span>
+                    <span class="page-badge">P9</span>
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(0)">
                 </div>
             </h2>
-            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">早餐</span><span class="cn-placeholder">Click to show</span></div>
-            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">break-fast</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">breakfast vs fast</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">后来，以后</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">la-ter</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">later vs late</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I'm going to get up and have breakfast."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Later..."</div>
+                    <div class="cn-sentence">后来……</div>
+                </div>
             </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：break(打破) + fast(禁食)——打破一整夜的禁食，所以第一顿饭是早餐。</div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：late (迟；晚) + -er (形容词比较级后缀) = 更晚一些，就是后来。</div>
         </div>
 
-        <div class="vocab-item" data-word="lunch" data-index="1">
+        <div class="vocab-item" data-word="to go" data-index="1">
             <h2 class="word-title">
-                <span>2. lunch<span class="word-ipa">/lʌntʃ/</span></span>
+                <span>2. to go</span>
                 <div class="item-meta">
-                    <span class="page-badge">P8</span>
+                    <span class="page-badge">P9</span>
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(1)">
                 </div>
             </h2>
-            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">午餐</span><span class="cn-placeholder">Click to show</span></div>
-            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">lunch vs bunch</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">剩余</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">N/A</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">to go vs go</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "You are going to have lunch!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"One hour to go!"</div>
+                    <div class="cn-sentence">还有一个小时！</div>
+                </div>
             </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“兰奇”——我的朋友兰奇中午总是吃得很丰盛。</div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 场景联想：在比赛或倒计时，还剩下多少时间可以用to go。</div>
         </div>
 
-        <div class="vocab-item" data-word="pond" data-index="2">
+        <div class="vocab-item" data-word="duck" data-index="2">
             <h2 class="word-title">
-                <span>3. pond<span class="word-ipa">/pɒnd/</span></span>
+                <span>3. duck<span class="word-ipa">/dʌk/</span></span>
                 <div class="item-meta">
                     <span class="page-badge">P9</span>
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(2)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">鸭子</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">duck vs luck</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Look, there are some ducks on the pond."</div>
+                    <div class="cn-sentence">看，池塘里有一些鸭子。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“大客”——大客车上坐着一群可爱的鸭子。</div>
+        </div>
+
+        <div class="vocab-item" data-word="pond" data-index="3">
+            <h2 class="word-title">
+                <span>4. pond<span class="word-ipa">/pɒnd/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P9</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
                 </div>
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">池塘</span><span class="cn-placeholder">Click to show</span></div>
@@ -489,37 +542,43 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "There are some ducks on the pond."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"There are some ducks on the pond."</div>
+                    <div class="cn-sentence">池塘里有一些鸭子。</div>
+                </div>
             </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“胖的”——胖胖的鸭子喜欢在池塘（pond）里游泳。</div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“胖的”——胖胖的鸭子喜欢在池塘里游泳。</div>
         </div>
 
-        <div class="vocab-item" data-word="dark" data-index="3">
+        <div class="vocab-item" data-word="cloud" data-index="4">
             <h2 class="word-title">
-                <span>4. dark<span class="word-ipa">/dɑːk/</span></span>
+                <span>5. cloud<span class="word-ipa">/klaʊd/</span></span>
                 <div class="item-meta">
                     <span class="page-badge">P9</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(3)">
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
                 </div>
             </h2>
-            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">黑暗的；深色的</span><span class="cn-placeholder">Click to show</span></div>
-            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">r控制音节 (R-Controlled)</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">dark vs park</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">云</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">cloud vs loud</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "There are some dark clouds in the sky."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Hey, there are some dark clouds in the sky."</div>
+                    <div class="cn-sentence">嘿，天空中有些乌云。</div>
+                </div>
             </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“大客”——夜晚大客车在黑暗（dark）中行驶。</div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“开灯”——云太多天黑了，得开灯。</div>
         </div>
 
-        <div class="vocab-item" data-word="dry" data-index="4">
+        <div class="vocab-item" data-word="dry" data-index="5">
             <h2 class="word-title">
-                <span>5. dry<span class="word-ipa">/draɪ/</span></span>
+                <span>6. dry<span class="word-ipa">/draɪ/</span></span>
                 <div class="item-meta">
                     <span class="page-badge">P9</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(4)">
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
                 </div>
             </h2>
             <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">干的</span><span class="cn-placeholder">Click to show</span></div>
@@ -529,109 +588,196 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It's dry over there."
-            </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“拽”——下雨了，快把外面晾干（dry）的衣服拽回来！</div>
-        </div>
-
-        <div class="vocab-item" data-word="tomorrow" data-index="5">
-            <h2 class="word-title">
-                <span>6. tomorrow<span class="word-ipa">/təˈmɒrəʊ/</span></span>
-                <div class="item-meta">
-                    <span class="page-badge">P11</span>
-                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(5)">
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It's dry over there."</div>
+                    <div class="cn-sentence">那边是干的。</div>
                 </div>
-            </h2>
-            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">明天</span><span class="cn-placeholder">Click to show</span></div>
-            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">to-mor-row</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">tomorrow vs borrow</span></div>
-            <div class="context-box">
-                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
-                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                </button>
-                "Let's look at the weather tomorrow."
             </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词缀分词法：to(去向) + morrow(次日)——去向新的一天就是明天。</div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆法：太阳出来了，把衣服晒干（dry）了。</div>
         </div>
 
-        <div class="vocab-item" data-word="weather" data-index="6">
+        <div class="vocab-item" data-word="look like" data-index="6">
             <h2 class="word-title">
-                <span>7. weather<span class="word-ipa">/ˈweðə/</span></span>
+                <span>7. look like</span>
                 <div class="item-meta">
-                    <span class="page-badge">P11</span>
+                    <span class="page-badge">P9</span>
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(6)">
                 </div>
             </h2>
-            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">天气</span><span class="cn-placeholder">Click to show</span></div>
-            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">weath-er</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">weather vs feather</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">看来好像</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">N/A</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">N/A</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Let's look at the weather tomorrow."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It looks like you're going to stay hungry, Simon!"</div>
+                    <div class="cn-sentence">西蒙，看来你得挨饿了！</div>
+                </div>
             </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“外热”——今天的天气（weather）真是外边太热了。</div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词组记忆：look (看) + like (像) = 看起来像……</div>
         </div>
 
-        <div class="vocab-item" data-word="windy" data-index="7">
+        <div class="vocab-item" data-word="stay" data-index="7">
             <h2 class="word-title">
-                <span>8. windy<span class="word-ipa">/ˈwɪndi/</span></span>
+                <span>8. stay<span class="word-ipa">/steɪ/</span></span>
                 <div class="item-meta">
-                    <span class="page-badge">P11</span>
+                    <span class="page-badge">P9</span>
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(7)">
                 </div>
             </h2>
-            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">多风的</span><span class="cn-placeholder">Click to show</span></div>
-            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">win-dy</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">windy vs window</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">保持，维持；逗留</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">stay vs play</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It will be cold and windy in Xi'an."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It looks like you're going to stay hungry, Simon!"</div>
+                    <div class="cn-sentence">西蒙，看来你得挨饿了！</div>
+                </div>
             </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：wind(风) + y(形容词后缀，表示多...的)——多风的。</div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“死爹”——别乱想，是死守（stay）在这里不走。</div>
         </div>
 
-        <div class="vocab-item" data-word="winner" data-index="8">
+        <div class="vocab-item" data-word="breakfast" data-index="8">
             <h2 class="word-title">
-                <span>9. winner<span class="word-ipa">/ˈwɪnə/</span></span>
+                <span>9. breakfast<span class="word-ipa">/ˈbrekfəst/</span></span>
                 <div class="item-meta">
-                    <span class="page-badge">P12</span>
+                    <span class="page-badge">P8</span>
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(8)">
                 </div>
             </h2>
-            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">赢家；获胜者</span><span class="cn-placeholder">Click to show</span></div>
-            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">win-ner</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">winner vs dinner</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">早餐</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">break-fast</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">breakfast vs fast</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I'm going to play chess and I'll be the winner!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I'm going to get up and have breakfast."</div>
+                    <div class="cn-sentence">我要起床吃早餐。</div>
+                </div>
             </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：win(赢) + n + er(人)——赢得比赛的人就是获胜者。</div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：break(打破) + fast(禁食)——打破一整夜的禁食。</div>
         </div>
 
-        <div class="vocab-item" data-word="half past" data-index="9">
+        <div class="vocab-item" data-word="lunch" data-index="9">
             <h2 class="word-title">
-                <span>10. half past</span>
+                <span>10. lunch<span class="word-ipa">/lʌntʃ/</span></span>
                 <div class="item-meta">
-                    <span class="page-badge">P9</span>
+                    <span class="page-badge">P8</span>
                     <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(9)">
                 </div>
             </h2>
-            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">……点半</span><span class="cn-placeholder">Click to show</span></div>
-            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">half past</span></div>
-            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">half past vs past</span></div>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">午餐</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">闭音节 (Closed)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">lunch vs bunch</span></div>
             <div class="context-box">
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "At half past twelve."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"You are going to have lunch!"</div>
+                    <div class="cn-sentence">你要吃午餐了！</div>
+                </div>
             </div>
-            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想记忆法：half(一半) + past(经过)——时间走过了一个小时的一半，就是半点钟。</div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“兰奇”——我的朋友兰奇中午总是吃得很丰盛。</div>
+        </div>
+
+        <div class="vocab-item" data-word="sunny" data-index="10">
+            <h2 class="word-title">
+                <span>11. sunny<span class="word-ipa">/ˈsʌni/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P11</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(10)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">晴朗的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">sun-ny</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">sunny vs sun</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It will be sunny in Harbin."</div>
+                    <div class="cn-sentence">哈尔滨明天将是晴天。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：sun (太阳) + -ny (形容词后缀) = 阳光灿烂的。</div>
+        </div>
+
+        <div class="vocab-item" data-word="cloudy" data-index="11">
+            <h2 class="word-title">
+                <span>12. cloudy<span class="word-ipa">/ˈklaʊdi/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P11</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(11)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">多云的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">clou-dy</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">cloudy vs cloud</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It will be cloudy in Tianjin."</div>
+                    <div class="cn-sentence">天津明天将是多云天气。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：cloud (云) + -dy (形容词后缀) = 多云的。</div>
+        </div>
+
+        <div class="vocab-item" data-word="snow" data-index="12">
+            <h2 class="word-title">
+                <span>13. snow<span class="word-ipa">/snəʊ/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P11</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(12)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">下雪；雪</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">元音字母组合音节 (Vowel Team)</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">snow vs show</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It will snow in Beijing."</div>
+                    <div class="cn-sentence">北京明天将下雪。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法：“死脑”——下雪天冻得脑壳痛。</div>
+        </div>
+
+        <div class="vocab-item" data-word="windy" data-index="13">
+            <h2 class="word-title">
+                <span>14. windy<span class="word-ipa">/ˈwɪndi/</span></span>
+                <div class="item-meta">
+                    <span class="page-badge">P11</span>
+                    <input type="checkbox" class="hide-checkbox" title="Mark as Learnt" onclick="app.toggleWordHidden(13)">
+                </div>
+            </h2>
+            <div class="details" onclick="app.showItemCN(this)"><span class="label">🇨🇳 中文释义:</span> <span class="value">有风的</span><span class="cn-placeholder">Click to show</span></div>
+            <div class="details"><span class="label">🎵 音节类型:</span> <span class="value">win-dy</span></div>
+            <div class="details"><span class="label">🔍 易混辨析:</span> <span class="value">windy vs wind</span></div>
+            <div class="context-box">
+                <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It will be cold and windy in Xi'an."</div>
+                    <div class="cn-sentence">西安明天将寒冷且有风。</div>
+                </div>
+            </div>
+            <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法：wind (风) + -dy (形容词后缀) = 有风的。</div>
         </div>
     </div>
 
@@ -684,7 +830,7 @@
             }
         };
 
-        const vocabData = [{"word":"breakfast","ipa":"/ˈbrekfəst/","meaning":"早餐","syllable_type":"break-fast","comparison":"breakfast vs fast","page_number":"8","context_sentence":"I'm going to get up and have breakfast.","memorization_hook":"词根词缀法：break(打破) + fast(禁食)——打破一整夜的禁食，所以第一顿饭是早餐。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/95ce25423a6c0f5eb332739e18452b6b.mp3"},{"word":"lunch","ipa":"/lʌntʃ/","meaning":"午餐","syllable_type":"闭音节 (Closed)","comparison":"lunch vs bunch","page_number":"8","context_sentence":"You are going to have lunch!","memorization_hook":"谐音记忆法：“兰奇”——我的朋友兰奇中午总是吃得很丰盛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/b29fdfde601396a6b065f4ccdce0791e.mp3"},{"word":"pond","ipa":"/pɒnd/","meaning":"池塘","syllable_type":"闭音节 (Closed)","comparison":"pond vs fond","page_number":"9","context_sentence":"There are some ducks on the pond.","memorization_hook":"谐音记忆法：“胖的”——胖胖的鸭子喜欢在池塘（pond）里游泳。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/de25fb30ecb55d27e93152da004be5c9.mp3"},{"word":"dark","ipa":"/dɑːk/","meaning":"黑暗的；深色的","syllable_type":"r控制音节 (R-Controlled)","comparison":"dark vs park","page_number":"9","context_sentence":"There are some dark clouds in the sky.","memorization_hook":"谐音记忆法：“大客”——夜晚大客车在黑暗（dark）中行驶。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/611f7a3b5545d543fd3eb28cdafef01e.mp3"},{"word":"dry","ipa":"/draɪ/","meaning":"干的","syllable_type":"开音节 (Open)","comparison":"dry vs try","page_number":"9","context_sentence":"It's dry over there.","memorization_hook":"谐音记忆法：“拽”——下雨了，快把外面晾干（dry）的衣服拽回来！","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/74ce8a25dd2bee2604cfd77ebd0ef32c.mp3"},{"word":"tomorrow","ipa":"/təˈmɒrəʊ/","meaning":"明天","syllable_type":"to-mor-row","comparison":"tomorrow vs borrow","page_number":"11","context_sentence":"Let's look at the weather tomorrow.","memorization_hook":"词缀分词法：to(去向) + morrow(次日)——去向新的一天就是明天。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/24f6b66055442da044fb0a4ff986c875.mp3"},{"word":"weather","ipa":"/ˈweðə/","meaning":"天气","syllable_type":"weath-er","comparison":"weather vs feather","page_number":"11","context_sentence":"Let's look at the weather tomorrow.","memorization_hook":"谐音记忆法：“外热”——今天的天气（weather）真是外边太热了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/24f6b66055442da044fb0a4ff986c875.mp3"},{"word":"windy","ipa":"/ˈwɪndi/","meaning":"多风的","syllable_type":"win-dy","comparison":"windy vs window","page_number":"11","context_sentence":"It will be cold and windy in Xi'an.","memorization_hook":"词根词缀法：wind(风) + y(形容词后缀，表示多...的)——多风的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/32324d3fbabd743bfa50c3443d825355.mp3"},{"word":"winner","ipa":"/ˈwɪnə/","meaning":"赢家；获胜者","syllable_type":"win-ner","comparison":"winner vs dinner","page_number":"12","context_sentence":"I'm going to play chess and I'll be the winner!","memorization_hook":"词根词缀法：win(赢) + n + er(人)——赢得比赛的人就是获胜者。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/39d9a8eb17d57faa85ebef24d1af9b3f.mp3"},{"word":"half past","ipa":"","meaning":"……点半","syllable_type":"half past","comparison":"half past vs past","page_number":"9","context_sentence":"At half past twelve.","memorization_hook":"联想记忆法：half(一半) + past(经过)——时间走过了一个小时的一半，就是半点钟。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b/de50aa2652b2931e9b9d7a3f6a307667.mp3"}];
+        const vocabData = [{"word":"later","ipa":"/ˈleɪtə/","meaning":"后来，以后","syllable_type":"la-ter","comparison":"later vs late","page_number":"9","context_sentence":"Later...","cn":"后来……","memorization_hook":"词根词缀法：late (迟；晚) + -er (形容词比较级后缀) = 更晚一些，就是后来。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/86bae6a328cbc56cb490b7a890cafc28.mp3"},{"word":"to go","ipa":"","meaning":"剩余","syllable_type":"N/A","comparison":"to go vs go","page_number":"9","context_sentence":"One hour to go!","cn":"还有一个小时！","memorization_hook":"场景联想：在比赛或倒计时，还剩下多少时间可以用to go。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/ed5b76ee5dd271dd1a70387af347d8be.mp3"},{"word":"duck","ipa":"/dʌk/","meaning":"鸭子","syllable_type":"闭音节 (Closed)","comparison":"duck vs luck","page_number":"9","context_sentence":"Look, there are some ducks on the pond.","cn":"看，池塘里有一些鸭子。","memorization_hook":"谐音记忆法：“大客”——大客车上坐着一群可爱的鸭子。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/a70c3f3450fb605c5bb9bf4ecb1b3195.mp3"},{"word":"pond","ipa":"/pɒnd/","meaning":"池塘","syllable_type":"闭音节 (Closed)","comparison":"pond vs fond","page_number":"9","context_sentence":"There are some ducks on the pond.","cn":"池塘里有一些鸭子。","memorization_hook":"谐音记忆法：“胖的”——胖胖的鸭子喜欢在池塘里游泳。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/de25fb30ecb55d27e93152da004be5c9.mp3"},{"word":"cloud","ipa":"/klaʊd/","meaning":"云","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"cloud vs loud","page_number":"9","context_sentence":"Hey, there are some dark clouds in the sky.","cn":"嘿，天空中有些乌云。","memorization_hook":"谐音记忆法：“开灯”——云太多天黑了，得开灯。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/b1574723106d8cb48e519ea802b50d5e.mp3"},{"word":"dry","ipa":"/draɪ/","meaning":"干的","syllable_type":"开音节 (Open)","comparison":"dry vs try","page_number":"9","context_sentence":"It's dry over there.","cn":"那边是干的。","memorization_hook":"联想记忆法：太阳出来了，把衣服晒干（dry）了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/74ce8a25dd2bee2604cfd77ebd0ef32c.mp3"},{"word":"look like","ipa":"","meaning":"看来好像","syllable_type":"N/A","comparison":"N/A","page_number":"9","context_sentence":"It looks like you're going to stay hungry, Simon!","cn":"西蒙，看来你得挨饿了！","memorization_hook":"词组记忆：look (看) + like (像) = 看起来像……","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/6e166c77d98a923826fe11dc3e639f66.mp3"},{"word":"stay","ipa":"/steɪ/","meaning":"保持，维持；逗留","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"stay vs play","page_number":"9","context_sentence":"It looks like you're going to stay hungry, Simon!","cn":"西蒙，看来你得挨饿了！","memorization_hook":"谐音记忆法：“死爹”——别乱想，是死守（stay）在这里不走。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/6e166c77d98a923826fe11dc3e639f66.mp3"},{"word":"breakfast","ipa":"/ˈbrekfəst/","meaning":"早餐","syllable_type":"break-fast","comparison":"breakfast vs fast","page_number":"8","context_sentence":"I'm going to get up and have breakfast.","cn":"我要起床吃早餐。","memorization_hook":"词根词缀法：break(打破) + fast(禁食)——打破一整夜的禁食。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/95ce25423a6c0f5eb332739e18452b6b.mp3"},{"word":"lunch","ipa":"/lʌntʃ/","meaning":"午餐","syllable_type":"闭音节 (Closed)","comparison":"lunch vs bunch","page_number":"8","context_sentence":"You are going to have lunch!","cn":"你要吃午餐了！","memorization_hook":"谐音记忆法：“兰奇”——我的朋友兰奇中午总是吃得很丰盛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/b29fdfde601396a6b065f4ccdce0791e.mp3"},{"word":"sunny","ipa":"/ˈsʌni/","meaning":"晴朗的","syllable_type":"sun-ny","comparison":"sunny vs sun","page_number":"11","context_sentence":"It will be sunny in Harbin.","cn":"哈尔滨明天将是晴天。","memorization_hook":"词根词缀法：sun (太阳) + -ny (形容词后缀) = 阳光灿烂的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/f4b0f46f8c23f0130141848bce99769e.mp3"},{"word":"cloudy","ipa":"/ˈklaʊdi/","meaning":"多云的","syllable_type":"clou-dy","comparison":"cloudy vs cloud","page_number":"11","context_sentence":"It will be cloudy in Tianjin.","cn":"天津明天将是多云天气。","memorization_hook":"词根词缀法：cloud (云) + -dy (形容词后缀) = 多云的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/a79b4f20bc81e89c64a792b0a62c85e6.mp3"},{"word":"snow","ipa":"/snəʊ/","meaning":"下雪；雪","syllable_type":"元音字母组合音节 (Vowel Team)","comparison":"snow vs show","page_number":"11","context_sentence":"It will snow in Beijing.","cn":"北京明天将下雪。","memorization_hook":"谐音记忆法：“死脑”——下雪天冻得脑壳痛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/41ca41ae6ba8f82a8256c40095d8cdf2.mp3"},{"word":"windy","ipa":"/ˈwɪndi/","meaning":"有风的","syllable_type":"win-dy","comparison":"windy vs wind","page_number":"11","context_sentence":"It will be cold and windy in Xi'an.","cn":"西安明天将寒冷且有风。","memorization_hook":"词根词缀法：wind (风) + -dy (形容词后缀) = 有风的。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/a6b-m2/32324d3fbabd743bfa50c3443d825355.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -876,14 +1022,24 @@
                         item.classList.add('hide-cn');
                         item.classList.remove('force-show-cn');
                     });
+                    document.body.classList.remove('show-sentences-cn');
                 } else {
                     textEls.forEach(el => el.innerText = "Hide CN");
                     iconEls.forEach(el => el.innerText = "㊙️");
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
+                    document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {
