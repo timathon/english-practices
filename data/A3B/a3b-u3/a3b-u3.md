@@ -196,8 +196,8 @@ Grandma: "Do you like apples?"
 Taotao: "No, I don't. I like grapes."
 Grandma: "OK. Let's get grapes."
 
-Taotao / Jiajia: "Thank you, Grandma and Grandpa."
-Grandparents: "Yummy! Let's get ready for lunch together, too!"
+Jiajia: "Thank you, Grandma and Grandpa."
+Taotao: "Yummy! Let's get ready for lunch together, too!"
 
 2 Read again and order.
 

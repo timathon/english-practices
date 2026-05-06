@@ -44,13 +44,13 @@ Start up
 1 Read and answer.
 What do the children make?
 
-Woman: "Good work, children! Let's make a snowman!"
+Dad: "Good work, children! Let's make a snowman!"
 Child 1: "Look! He has got a red mouth."
 Child 2: "Now, he has got a long nose."
 Child 3: "Oh, he hasn't got eyes."
 Child 4: "I've got two rocks! Now he has got two eyes."
 Child 5: "He's got long arms and big hands!"
-Woman: "Wow! You've got a cool snowman!"
+Mom: "Wow! You've got a cool snowman!"
 
 2 Read again and write [VISUAL: Checkmark icon] or "x".
 1 The snowman has got two ears.
