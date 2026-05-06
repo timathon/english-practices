@@ -139,8 +139,9 @@ One day he goes up a tree to study a mantis. He stays there and watches for a lo
 
 **Panel 5**
 **Man:** "Hey! You! Why are you up there?"
-**Fabre:** "I'm here to watch this mantis! It's so interesting!"
+**Fabre:** "I'm here to watch this mantis!"
 **Man:** "Why?"
+**Fabre:** It's so interesting!"
 
 **Panel 6**
 Fabre grows up. He writes many books about insects. People like reading them!
