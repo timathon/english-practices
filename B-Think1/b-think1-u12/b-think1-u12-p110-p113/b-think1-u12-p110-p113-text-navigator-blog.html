@@ -1,0 +1,2345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Navigator: Unit 12</title>
+    <style>
+        :root {
+            --primary-color: #10b981;
+            /* Green theme for health/food */
+            --primary-hover: #059669;
+            --bg-color: #f8fafc;
+            --line-color: #cbd5e1;
+            --box-empty: #e2e8f0;
+            --box-emoji: #fef08a;
+            --box-keywords: #dbeafe;
+            /* Light blue for keywords */
+            --box-full: #ffffff;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        @media (min-width: 769px) {
+            body {
+                height: 100vh;
+                overflow: hidden;
+            }
+        }
+
+        header {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            position: sticky;
+            top: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .home-link {
+            text-decoration: none;
+            font-size: 1.25rem;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: white;
+            border: 1px solid var(--line-color);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            color: var(--text-main);
+        }
+
+        .home-link:hover {
+            background-color: var(--bg-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-titles h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .header-titles p {
+            margin: 0.25rem 0 0 0;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .controls button {
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--line-color);
+            padding: 0;
+        }
+
+        .controls button:hover:not(:disabled) {
+            background-color: var(--bg-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls button#nextBtn {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .controls button#nextBtn:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+        }
+
+        .controls button:disabled {
+            background-color: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+            border-color: #e2e8f0;
+            opacity: 0.6;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .controls button#promptBtn {
+            background-color: #fef9c3;
+            border-color: #facc15;
+            display: none;
+            /* Hidden by default, shown if prompt exists */
+        }
+
+        .controls button#promptBtn:hover {
+            background-color: #fef08a;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #64748b;
+        }
+
+        .modal-body {
+            line-height: 1.6;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        .modal-body h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        main {
+            flex: 1;
+            padding: 3rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            overflow: visible;
+        }
+
+        @media (min-width: 769px) {
+            main {
+                overflow: auto;
+            }
+        }
+
+        /* Mode Slider Styles */
+        .mode-slider-container {
+            position: fixed;
+            z-index: 100;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--line-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 260px;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .mode-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .mode-labels span {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .mode-labels span.active {
+            color: var(--primary-color);
+        }
+
+        #modeSlider,
+        #depthSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            cursor: pointer;
+        }
+
+        #modeSlider::-webkit-slider-thumb,
+        #depthSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #modeSlider::-moz-range-thumb,
+        #depthSlider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Desktop Positioning */
+        @media (min-width: 769px) {
+            .mode-slider-container {
+                top: 90px;
+                right: 24px;
+                opacity: 0.5;
+            }
+
+            .mode-slider-container.depth-slider-container {
+                top: 90px;
+                right: 340px;
+            }
+
+            .mode-slider-container:hover {
+                opacity: 1;
+                transform: translateY(-2px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        /* Mindmap Tree CSS */
+        .mindmap-node-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .node-box {
+            border-radius: 12px;
+            padding: var(--node-pad, 12px 20px);
+            margin: 0;
+            font-size: var(--node-fs, 1.1rem);
+            font-weight: var(--node-fw, 500);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid transparent;
+            min-height: 28px;
+            max-width: 450px;
+            line-height: 1.5;
+        }
+
+        .node-box.collapsible {
+            cursor: pointer;
+        }
+
+        .node-box.collapsible:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            border-color: var(--primary-color);
+        }
+
+        /* Learning States */
+        .node-box.empty {
+            background-color: var(--box-empty);
+            border-style: dashed;
+            border-color: #94a3b8;
+            min-width: 80px;
+            opacity: 0.8;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .node-box.emoji {
+            background-color: var(--box-emoji);
+            border-color: var(--node-border, #facc15);
+            min-width: 40px;
+            justify-content: center;
+            animation: bounceIn 0.4s ease-out;
+        }
+
+        /* New State: Keywords */
+        .node-box.keywords {
+            background-color: var(--box-keywords);
+            border-color: var(--node-border, #3b82f6);
+            min-width: 100px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .node-box.full {
+            background-color: var(--box-full);
+            border-color: var(--node-border, var(--primary-color));
+            min-width: 120px;
+            cursor: pointer;
+        }
+
+        /* Action Buttons & Tooltips */
+        .node-actions {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            position: relative;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+        }
+
+        .action-btn:hover {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        .action-btn .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            min-width: 160px;
+            max-width: 280px;
+            z-index: 1000;
+            margin-bottom: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            text-align: left;
+            font-weight: 400;
+            line-height: 1.4;
+        }
+
+        .action-btn .tooltip.visible {
+            display: block;
+        }
+
+        .action-btn .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+
+        @media (max-width: 640px) {
+            .action-btn .tooltip {
+                max-width: 85vw;
+            }
+        }
+
+        /* Level Hierarchy Variables */
+        .node-box.level-0 {
+            --node-fs: 1.25rem;
+            --node-pad: 14px 24px;
+            --node-fw: 700;
+            --node-border: #6366f1;
+        }
+
+        .node-box.level-1 {
+            --node-fs: 1.1rem;
+            --node-pad: 12px 20px;
+            --node-fw: 600;
+            --node-border: #10b981;
+        }
+
+        .node-box.level-2 {
+            --node-fs: 1rem;
+            --node-pad: 10px 16px;
+            --node-fw: 500;
+            --node-border: #0ea5e9;
+        }
+
+        .node-box.level-3 {
+            --node-fs: 0.95rem;
+            --node-pad: 8px 14px;
+            --node-fw: 400;
+            --node-border: #8b5cf6;
+        }
+
+        .node-box.level-4 {
+            --node-fs: 0.9rem;
+            --node-pad: 6px 12px;
+            --node-fw: 400;
+            --node-border: #f59e0b;
+        }
+
+        .node-content-emoji {
+            font-size: 1.3em;
+            flex-shrink: 0;
+        }
+
+        .node-content-keywords {
+            color: #1d4ed8;
+            /* Dark blue to match the box theme */
+            font-weight: 700;
+        }
+
+        .node-content-text {
+            color: #0f172a;
+        }
+
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
+        .collapsed-indicator {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.85rem;
+            margin-left: 10px;
+            font-weight: 600;
+            border: 1px solid var(--primary-hover);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+
+        /* Connectors */
+        .children-container {
+            display: flex;
+            flex-direction: column;
+            margin-left: 30px;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .children-container::before {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            width: 30px;
+            height: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .child-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .child-row::before {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            width: 30px;
+            height: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .child-row::after {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+        }
+
+        .child-row:first-child::after {
+            top: 50%;
+        }
+
+        .child-row:last-child::after {
+            bottom: 50%;
+        }
+
+        .child-row:first-child:last-child::after {
+            display: none;
+        }
+
+        /* Mobile View Adjustments */
+        @media (max-width: 768px) {
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            .header-left {
+                gap: 0.75rem;
+            }
+
+            .header-titles h1 {
+                font-size: 1.25rem;
+            }
+
+            .controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: white;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+                padding: 1rem;
+                justify-content: center;
+                gap: 1.5rem;
+                z-index: 100;
+            }
+
+            .controls button {
+                width: 56px;
+                height: 56px;
+                font-size: 1.5rem;
+            }
+
+            .mode-slider-container {
+                bottom: 100px;
+                left: 20px;
+                right: 20px;
+                width: auto;
+                opacity: 1;
+                background-color: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(8px);
+            }
+
+            .mode-slider-container.depth-slider-container {
+                bottom: 180px;
+            }
+
+            main {
+                padding: 1rem 1rem 16rem 1rem;
+            }
+
+            .mindmap-node-wrapper {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+
+            .children-container {
+                margin-left: 20px;
+                padding-left: 0;
+                margin-top: 10px;
+                position: relative;
+            }
+
+            .children-container .node-content-text {
+                font-size: 1.15rem;
+            }
+
+            .children-container::before {
+                display: none;
+            }
+
+            .child-row {
+                padding: 8px 0;
+                width: 100%;
+                position: relative;
+            }
+
+            .child-row::before {
+                left: -12px;
+                top: 24px;
+                width: 12px;
+                height: 2px;
+            }
+
+            .child-row::after {
+                left: -12px;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+            }
+
+            .child-row:first-child::after {
+                top: -10px;
+            }
+
+            .child-row:last-child::after {
+                bottom: auto;
+                height: 24px;
+            }
+
+            .child-row:first-child:last-child::after {
+                display: block;
+                top: -10px;
+                height: 34px;
+            }
+
+            .node-box {
+                font-size: calc(var(--node-fs, 1.1rem) * 0.9);
+                padding: 10px 16px;
+                max-width: calc(100vw - 80px);
+                word-break: break-word;
+            }
+        }
+
+        /* Animations */
+        @keyframes popIn {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.8);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideIn {
+            0% {
+                transform: translateX(-10px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes clickFlicker {
+            0% {
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.4);
+                transform: scale(1.02);
+            }
+
+            100% {
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                transform: scale(1);
+            }
+        }
+
+        .node-box.clicked-flicker {
+            animation: clickFlicker 0.5s ease-out;
+        }
+
+        @keyframes breathe {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .node-box.playing {
+            animation: breathe 2s infinite ease-in-out;
+            z-index: 10;
+        }
+
+        .node-box.node-box-active {
+            z-index: 500 !important;
+        }
+
+        .btn-separator {
+            width: 1px;
+            height: 24px;
+            background-color: var(--line-color);
+            margin: 0 4px;
+            align-self: center;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background-color: #e2e8f0;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-left">
+            <a href="../../index.html" class="home-link" title="Back to Home (回到首页)">🏠</a>
+            <div class="header-titles">
+                <h1>Text Navigator: Unit 12 <span style="font-weight: normal; opacity: 0.7;">Ted's Travel Blog</span>
+                </h1>
+                <p>Think 1</p>
+            </div>
+        </div>
+        <div class="controls">
+            <button id="promptBtn" onclick="showWritingPrompt()" title="Writing Prompt (写作要求)">📝</button>
+            <button id="playAllBtn" onclick="togglePlayAll()" title="Play All (顺序播放)" style="display: none;">🔊</button>
+            <div id="playAllSeparator" class="btn-separator" style="display: none;"></div>
+            <button id="resetBtn" onclick="resetMap()" title="Reset (重置)">🔄</button>
+            <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
+            <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+    </header>
+
+    <div class="mode-slider-container">
+        <div class="mode-labels">
+            <span onclick="updateMode(0)">Manual</span>
+            <span onclick="updateMode(1)">Emoji</span>
+            <span onclick="updateMode(2)">Key Words</span>
+            <span onclick="updateMode(3)">Sentence</span>
+        </div>
+        <input type="range" id="modeSlider" min="0" max="3" value="0" step="1" oninput="updateMode(this.value)">
+    </div>
+
+    <div class="mode-slider-container depth-slider-container">
+        <div class="mode-labels" id="depthLabels">
+            <!-- Dynamically populated -->
+        </div>
+        <input type="range" id="depthSlider" min="0" max="5" value="5" step="1" oninput="updateDepth(this.value)">
+    </div>
+
+    <!-- Modal for Questions -->
+    <div id="questionModal" class="modal-overlay" onclick="closeQuestionModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeQuestionModal()">×</button>
+            <div class="modal-body">
+                <h3 id="questionTitle">True or False Statement</h3>
+                <div id="questionStatement" style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 500;"></div>
+                <div class="question-options" style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <button onclick="checkAnswer(true)" class="choice-btn"
+                        style="flex: 1; background-color: #ecfdf5; border: 2px solid #10b981; color: #065f46; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">TRUE
+                        (正确)</button>
+                    <button onclick="checkAnswer(false)" class="choice-btn"
+                        style="flex: 1; background-color: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">FALSE
+                        (错误)</button>
+                </div>
+                <div id="questionFeedback"
+                    style="display: none; padding: 15px; border-radius: 8px; margin-top: 10px; line-height: 1.5;">
+                    <div id="feedbackText" style="font-weight: 700; margin-bottom: 8px;"></div>
+                    <div id="explanationText" style="color: #4b5563;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Writing Prompt -->
+    <div id="promptModal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body">
+                <h3>Writing Task Prompt</h3>
+                <div id="promptText"></div>
+            </div>
+        </div>
+    </div>
+
+    <main id="mindmap-container">
+        <!-- Rendered by JS -->
+    </main>
+
+    <script>
+        // 0. Audio Caching (IndexedDB)
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function () {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function (id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function (id, blob, lastModified) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, lastModified, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
+        const AudioCacheManager = {
+            blobUrls: new Map(),
+
+            getAudio: async function (url) {
+                if (!url) return null;
+
+                const cached = await db.get(url);
+                const now = Date.now();
+
+                try {
+                    // Check if there's a newer version
+                    const headResponse = await fetch(`${url}?t=${now}`, { method: 'HEAD', cache: 'no-cache' });
+                    const remoteLastModified = headResponse.headers.get('Last-Modified');
+
+                    if (cached && remoteLastModified && cached.lastModified === remoteLastModified) {
+                        // Cache is still valid, update timestamp and return
+                        await db.set(url, cached.blob, cached.lastModified);
+                        return this._getBlobUrl(url, cached.blob);
+                    }
+
+                    // Not cached or newer version available, download it
+                    console.log(`Fetching fresh audio: ${url}`);
+                    const response = await fetch(`${url}?t=${now}`, { cache: 'no-cache' });
+                    const blob = await response.blob();
+                    const newLastModified = response.headers.get('Last-Modified') || remoteLastModified;
+
+                    await db.set(url, blob, newLastModified);
+                    return this._refreshBlobUrl(url, blob);
+                } catch (e) {
+                    console.error("Audio cache check failed:", e);
+                    if (cached) return this._getBlobUrl(url, cached.blob);
+                    return url; // Fallback to raw URL
+                }
+            },
+
+            _getBlobUrl: function (id, blob) {
+                if (this.blobUrls.has(id)) return this.blobUrls.get(id);
+                const url = URL.createObjectURL(blob);
+                this.blobUrls.set(id, url);
+                return url;
+            },
+
+            _refreshBlobUrl: function (id, blob) {
+                if (this.blobUrls.has(id)) {
+                    URL.revokeObjectURL(this.blobUrls.get(id));
+                }
+                const url = URL.createObjectURL(blob);
+                this.blobUrls.set(id, url);
+                return url;
+            },
+
+            preloadAll: async function (nodes) {
+                console.log("Preloading audio...");
+                const tasks = nodes.filter(n => n.audio).map(n => this.getAudio(n.audio));
+                await Promise.all(tasks);
+                console.log("Preload complete.");
+            }
+        };
+
+        // 1. Data Structure with Keywords & Sentences
+        const initialData = {
+            "id": "root",
+            "text": "The non-stop traveller",
+            "cn": "不停歇的旅行者",
+            "notes": "Title of the blog post.",
+            "statement": "这篇文章的标题是“不停歇的旅行者”。",
+            "answer": true,
+            "explanation": "标题位于文章开头，概括了主旨。",
+            "emoji": "🏔️",
+            "children": [
+                {
+                    "id": "p1",
+                    "text": "Hello to all my readers.",
+                    "cn": "各位读者好。",
+                    "notes": "Greeting.",
+                    "statement": "这是作者向读者打招呼。",
+                    "answer": true,
+                    "explanation": "Hello... 是标准的打招呼用语。",
+                    "emoji": "👋",
+                    "children": [
+                        {
+                            "id": "s1",
+                            "text": "This week, I've decided to write about travel.",
+                            "cn": "本周，我决定写写旅游。",
+                            "notes": "decide to do sth. 决定做某事；write about 描写，写关于...的内容。",
+                            "statement": "作者本周的主题是关于旅行的。",
+                            "answer": true,
+                            "explanation": "文中明确说 I've decided to write about travel。",
+                            "emoji": "✍️",
+                            "keywords": "this week, decided, travel",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/130848dcb0c85981ed0f2e67021b9a48.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s2",
+                            "text": "Perhaps, like me, you've always thought that travelling is something for rich people.",
+                            "cn": "也许，像我一样，你一直认为旅游是有钱人的事。",
+                            "notes": "rich people 富人；present perfect tense (have thought) 表示一直以来的想法。",
+                            "statement": "作者现在仍然认为旅游必须是很有钱的人才能做的事。",
+                            "answer": false,
+                            "explanation": "作者说“也许你像我（以前）一样这么想”，暗示现在想法变了。",
+                            "emoji": "💰",
+                            "keywords": "perhaps, rich people",
+                            "children": [
+                                {
+                                    "id": "s3",
+                                    "text": "Well, now I think I've been wrong all this time.",
+                                    "cn": "好吧，现在我认为我一直以来都错了。",
+                                    "notes": "all this time 一直以来；wrong 错误的。",
+                                    "statement": "作者承认自己之前的观点是错误的。",
+                                    "answer": true,
+                                    "explanation": "I've been wrong all this time 表明作者改变了看法。",
+                                    "emoji": "❌",
+                                    "keywords": "wrong, now",
+                                    "children": [],
+                                    "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/45e67d37df69c85d39bd3a8e5c8690f7.mp3",
+                                    "state": "hidden"
+                                },
+                                {
+                                    "id": "s4",
+                                    "text": "Why?",
+                                    "cn": "为什么呢？",
+                                    "notes": "Rhetorical question.",
+                                    "statement": "这是一个设问句，引出下文原因。",
+                                    "answer": true,
+                                    "explanation": "通过提问引导读者关注后续内容。",
+                                    "emoji": "❓",
+                                    "children": [
+                                        {
+                                            "id": "s5",
+                                            "text": "Well, I've discovered Nora Dunn.",
+                                            "cn": "嗯，我发现了一个叫 Nora Dunn 的人。",
+                                            "notes": "discover 发现。",
+                                            "statement": "Nora Dunn 是作者改变看法的关键原因。",
+                                            "answer": true,
+                                            "explanation": "因为发现了 Nora，作者才意识到旅游不一定需要很多钱。",
+                                            "emoji": "🔍",
+                                            "keywords": "discovered, Nora",
+                                            "children": [],
+                                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/6bf1aaaffbe24eb40ec100b5f779764a.mp3",
+                                            "state": "hidden"
+                                        },
+                                        {
+                                            "id": "s6",
+                                            "text": "Nora is one of a new kind of traveller - a professional world traveller.",
+                                            "cn": "Nora 是一种新型的旅行者——职业世界旅行者。",
+                                            "notes": "kind of 种类；professional 职业的。",
+                                            "statement": "Nora 是一名专业的旅行家。",
+                                            "answer": true,
+                                            "explanation": "professional world traveller 就是职业世界旅行者。",
+                                            "emoji": "🌎",
+                                            "keywords": "professional, traveller",
+                                            "children": [],
+                                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/0b2a09c12ffd799489cfe1bbf3e21901.mp3",
+                                            "state": "hidden"
+                                        },
+                                        {
+                                            "id": "s7",
+                                            "text": "She travels all the time.",
+                                            "cn": "她一直在旅行。",
+                                            "notes": "all the time 一直。",
+                                            "statement": "Nora 只是偶尔休假时去旅行。",
+                                            "answer": false,
+                                            "explanation": "all the time 说明旅行就是她的生活常态。",
+                                            "emoji": "✈️",
+                                            "keywords": "all the time",
+                                            "children": [],
+                                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/9eca6fbb068c9f80ff0d01d429c14e1c.mp3",
+                                            "state": "hidden"
+                                        }
+                                    ],
+                                    "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/2673ce8234cc65bf5d5e81743172700b.mp3",
+                                    "state": "hidden"
+                                }
+                            ],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/6875c44316b0bac21a70ef406459b47e.mp3",
+                            "state": "hidden"
+                        }
+                    ],
+                    "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/97f33f44fc9f775e5d441394ef76914c.mp3",
+                    "state": "hidden"
+                },
+                {
+                    "id": "p2",
+                    "text": "Nora is from Toronto, Canada and until she was 30, she had a business there.",
+                    "cn": "Nora 来自加拿大多伦多，30岁之前，她在那里有一份事业。",
+                    "notes": "until 直到...为止；business 生意。",
+                    "statement": "Nora 在30岁之前过着稳定的定居生活。",
+                    "answer": true,
+                    "explanation": "她在多伦多有自己的生意，直到30岁。",
+                    "emoji": "🇨🇦",
+                    "keywords": "Toronto, business",
+                    "children": [
+                        {
+                            "id": "s8",
+                            "text": "But then she made a big decision.",
+                            "cn": "但随后她做了一个重大的决定。",
+                            "notes": "make a decision 做出决定。",
+                            "statement": "这里 big decision 指的是放弃生意去环游世界。",
+                            "answer": true,
+                            "explanation": "根据上下文，这个决定改变了她的生活轨迹。",
+                            "emoji": "🤔",
+                            "keywords": "big decision",
+                            "highlight": "But then",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/7af25a66623a9eca58b95b68d06f01f2.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s9",
+                            "text": "Her dream was to travel the world and to do it before she got old!",
+                            "cn": "她的梦想是环游世界，并在变老之前实现它！",
+                            "notes": "dream 梦想；before 在...之前。",
+                            "statement": "Nora 想等老了退休后再环游世界。",
+                            "answer": false,
+                            "explanation": "她想在变老“之前” (before) 实现梦想。",
+                            "emoji": "💭",
+                            "keywords": "dream, before, old",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/b143015d93f2b64c5312d207bd8b9ff0.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s10",
+                            "text": "So she sold her business and got rid of her belongings.",
+                            "cn": "于是她卖掉了生意，处理掉了所有的财产。",
+                            "notes": "get rid of 摆脱，处理掉；belongings 财产。",
+                            "statement": "为了旅行，Nora 处理掉了自己在多伦多的资产和物品。",
+                            "answer": true,
+                            "explanation": "sold business 和 got rid of belongings 都是具体的处理行为。",
+                            "emoji": "📦",
+                            "keywords": "sold, belongings",
+                            "highlight": "So",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/831070537f6a586d3606d68c9008e657.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s11",
+                            "text": "And off she went.",
+                            "cn": "然后她就出发了。",
+                            "notes": "Off she went 倒装句，强调出发的动作。",
+                            "statement": "这句话标志着 Nora 旅程的开始。",
+                            "answer": true,
+                            "explanation": "这是一种生动的叙述方式。",
+                            "emoji": "🚶‍♀️",
+                            "highlight": "And",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/84921cc4e85a4dcd3dab541e7bb5fcf0.mp3",
+                            "state": "hidden"
+                        }
+                    ],
+                    "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/c15ab61bad4fd2c142242774dc55729a.mp3",
+                    "state": "hidden"
+                },
+                {
+                    "id": "p3",
+                    "text": "Nora hasn't got rich parents or anyone who gives her money.",
+                    "cn": "Nora 没有有钱的父母，也没有人给她钱。",
+                    "notes": "hasn't got 没有；rich 有钱的。",
+                    "statement": "Nora 的旅行资金来源于家人的支持。",
+                    "answer": false,
+                    "explanation": "文中明确说她没有有钱父母提供资金。",
+                    "emoji": "🚫",
+                    "keywords": "rich parents",
+                    "children": [
+                        {
+                            "id": "s12",
+                            "text": "And she doesn't have a high-paying job.",
+                            "cn": "她也没有高薪工作。",
+                            "notes": "high-paying 高薪的。",
+                            "statement": "Nora 即使不工作也能赚很多钱。",
+                            "answer": false,
+                            "explanation": "文中说她没有高薪工作。",
+                            "emoji": "💸",
+                            "keywords": "high-paying",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/24531d2859ca3622981de7b7a28b6ab7.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s13",
+                            "text": "But she's learned how to travel without spending lots of money.",
+                            "cn": "但她学会了如何在不花很多钱的情况下旅行。",
+                            "notes": "learn how to do sth. 学会如何做某事；without 没有。",
+                            "statement": "Nora 证明了没钱也可以通过某种方式旅行。",
+                            "answer": true,
+                            "explanation": "她学会了节省开支的旅行技巧。",
+                            "emoji": "💡",
+                            "keywords": "learned, without, money",
+                            "highlight": "But",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/76484481c73040f7dccfa48c72dc5ee7.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s14",
+                            "text": "Nora goes to a place and stays there for some time.",
+                            "cn": "Nora 去一个地方，然后在那里待上一段时间。",
+                            "notes": "stay 停留；for some time 一段时间。",
+                            "statement": "Nora 的旅行方式是走马观花式的，从不停留。",
+                            "answer": false,
+                            "explanation": "stays there for some time 说明她会深入体验一个地方。",
+                            "emoji": "🏠",
+                            "keywords": "goes, stays",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/27f7e0e8064b8264021b28df8ac555bd.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s15",
+                            "text": "She works to earn enough money to have a good time and to save a bit, then she moves on to another place.",
+                            "cn": "她边工作边赚钱，为了玩得开心并存点钱，然后她再前往另一个地方。",
+                            "notes": "earn money 赚钱；move on 继续前进。",
+                            "statement": "Nora 通过在当地工作来支付她的旅行费用。",
+                            "answer": true,
+                            "explanation": "这是她维持长期旅行的核心方法。",
+                            "emoji": "💼",
+                            "keywords": "works, earn, move on",
+                            "highlight": "then",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/2083a3bebc0368c7c3f9c8a2e31f5455.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s16",
+                            "text": "She prefers simple forms of transport like trains or buses, but of course there are times when planes are a necessity.",
+                            "cn": "她更喜欢简单的交通工具，比如火车或公共汽车，但当然也有必须坐飞机的时候。",
+                            "notes": "prefer 更喜欢；necessity 必需品。",
+                            "statement": "Nora 从来不坐飞机。",
+                            "answer": false,
+                            "explanation": "有时飞机也是必须的 (necessity)。",
+                            "emoji": "🚌",
+                            "keywords": "prefers, transport, necessity",
+                            "highlight": "but of course",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/68408ddfcb9af63266c2736e91fd64d4.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s17",
+                            "text": "And she writes from wherever she is, which earns her some money too.",
+                            "cn": "无论她在哪里，她都会写稿，这也能让她赚一些钱。",
+                            "notes": "wherever 无论哪里；earn 赚取。",
+                            "statement": "写作是 Nora 赚取旅费的途径之一。",
+                            "answer": true,
+                            "explanation": "which earns her some money 指代写作这件事。",
+                            "emoji": "💻",
+                            "keywords": "writes, wherever",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/4de000a9fad7f4775812dd651ab26d0b.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s18",
+                            "text": "She's done a lot of different jobs, including working in hotels and in restaurants.",
+                            "cn": "她做过很多不同的工作，包括在酒店和餐厅工作。",
+                            "notes": "including 包括；hotel 酒店；restaurant 餐厅。",
+                            "statement": "Nora 为了生存可以胜任多种不同的基础工作。",
+                            "answer": true,
+                            "explanation": "文中列举了酒店和餐厅作为例子。",
+                            "emoji": "🍽️",
+                            "keywords": "different jobs, including",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/c31c0734dce86d5b599440fe17202ae4.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s19",
+                            "text": "And she's learned things like cooking and meditation.",
+                            "cn": "她还学会了烹饪和冥想等技能。",
+                            "notes": "cooking 烹饪；meditation 冥想。",
+                            "statement": "旅行不仅是看风景，还让 Nora 掌握了新技能。",
+                            "answer": true,
+                            "explanation": "她学到了烹饪和冥想。",
+                            "emoji": "🧘‍♀️",
+                            "keywords": "learned, cooking, meditation",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/6db5bae4c0367c79518d5fd590d37506.mp3",
+                            "state": "hidden"
+                        }
+                    ],
+                    "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/204ff6c5c5f093f42f1a39b212904250.mp3",
+                    "state": "hidden"
+                },
+                {
+                    "id": "p4",
+                    "text": "So where has Nora been?",
+                    "cn": "那么 Nora 都去过哪里呢？",
+                    "notes": "Present perfect tense to ask about experiences.",
+                    "statement": "接下来的内容将介绍 Nora 的旅行足迹。",
+                    "answer": true,
+                    "explanation": "这是一个过渡性的提问。",
+                    "emoji": "🗺️",
+                    "highlight": "So",
+                    "children": [
+                        {
+                            "id": "s20",
+                            "text": "Well, everywhere!",
+                            "cn": "嗯，到处都去过！",
+                            "notes": "everywhere 表示范围极广。",
+                            "statement": "Nora 的足迹几乎遍布全球。",
+                            "answer": true,
+                            "explanation": "everywhere 强调了她旅行范围之大。",
+                            "emoji": "🌟",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/042a191691383b9ee10ee53f37b2f675.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s21",
+                            "text": "She's been to all five continents and she's travelled to over thirty countries.",
+                            "cn": "她去过所有五个大洲，游历了三十多个国家。",
+                            "notes": "continent 洲；over 超过。",
+                            "statement": "Nora 去过的国家数量还没有到30个。",
+                            "answer": false,
+                            "explanation": "over thirty countries 表示“超过30个”。",
+                            "emoji": "🌍",
+                            "keywords": "five continents, thirty countries",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/6501e4c67e1381f038644553a506fc10.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s22",
+                            "text": "All in six years!",
+                            "cn": "都在六年之内！",
+                            "notes": "Emphasis on time.",
+                            "statement": "Nora 在六年的时间里完成了这么多旅行。",
+                            "answer": true,
+                            "explanation": "文中明确说是 six years。",
+                            "emoji": "🕰️",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/8ba9a9ee46725f9ee1cacb884070caf8.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s23",
+                            "text": "She's taken a train across Canada and she's travelled by train from Portugal to Vietnam - an incredible journey.",
+                            "cn": "她坐火车横穿了加拿大，还坐火车从葡萄牙到了越南——一段不可思议的旅程。",
+                            "notes": "across 横穿；incredible 不可思议的。",
+                            "statement": "Nora 曾经尝试过超长距离的火车旅行。",
+                            "answer": true,
+                            "explanation": "从葡萄牙到越南是一段横跨欧亚大陆的长途旅行。",
+                            "emoji": "🚂",
+                            "keywords": "train, across, incredible",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/9e3aff27bb71d111f86832e3a27253fb.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s24",
+                            "text": "She's lived on a boat in the Caribbean and she's worked for her accommodation in Hawaii, Australia, New Zealand, Spain, England, Grenada and Switzerland, and a number of other places too.",
+                            "cn": "她在加勒比海的一艘船上生活过，还在夏威夷、澳大利亚、新西兰、西班牙、英国、格林纳达和瑞士等许多地方工作以换取住宿。",
+                            "notes": "accommodation 住宿；Caribbean 加勒比海。",
+                            "statement": "Nora 在瑞士也是通过工作来换取住宿的。",
+                            "answer": true,
+                            "explanation": "Switzerland 在 worked for her accommodation 的列表里。",
+                            "emoji": "⛵",
+                            "keywords": "boat, accommodation",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/7ac5ed3a02cdd93d769095ad560a9ab6.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s25",
+                            "text": "And she's been on television shows in three countries.",
+                            "cn": "她还在三个国家的电视节目中亮相。",
+                            "notes": "television show 电视节目。",
+                            "statement": "Nora 在一些国家已经成为了一个公众人物。",
+                            "answer": true,
+                            "explanation": "上电视节目说明她受到了一定的关注。",
+                            "emoji": "📺",
+                            "keywords": "television shows",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/4a5a8bd22603afb4f88508266dc9048a.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s26",
+                            "text": "She's had a lot of fantastic adventures, and she hasn't stopped finding new things!",
+                            "cn": "她有很多奇妙的冒险，而且她从未停止寻找新事物！",
+                            "notes": "fantastic 极好的；adventure 冒险。",
+                            "statement": "Nora 现在已经停止寻找新的东西了。",
+                            "answer": false,
+                            "explanation": "she hasn't stopped 说明探索还在继续。",
+                            "emoji": "🧗‍♀️",
+                            "keywords": "fantastic, adventures",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/aebdafe0ac48795b8ef97cd50a63a529.mp3",
+                            "state": "hidden"
+                        }
+                    ],
+                    "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/5224465fa44749bceeb601e074dd739b.mp3",
+                    "state": "hidden"
+                },
+                {
+                    "id": "p5",
+                    "text": "Some of her experiences have not been easy ones.",
+                    "cn": "她的一些经历并不轻松。",
+                    "notes": "not easy ones 困难的经历。",
+                    "statement": "Nora 的旅行生活中也包含挑战和灾难。",
+                    "answer": true,
+                    "explanation": "下文举例说明了她遇到的困难情况。",
+                    "emoji": "⛈️",
+                    "children": [
+                        {
+                            "id": "s27",
+                            "text": "In 2008 she helped people in Thailand and Burma after a cyclone hit their countries.",
+                            "cn": "2008年，在气旋袭击泰国和缅甸后，她帮助了那里的人们。",
+                            "notes": "cyclone 气旋；hit 袭击。",
+                            "statement": "Nora 曾在灾难发生后提供过志愿帮助。",
+                            "answer": true,
+                            "explanation": "she helped people 说明她参与了帮助。",
+                            "emoji": "🌪️",
+                            "keywords": "Thailand, Burma, cyclone",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/78b9731c337b8545d99abad9399a3d11.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s28",
+                            "text": "And in 2009 she helped to fight forest fires in Australia.",
+                            "cn": "2009年，她在澳大利亚协助扑灭森林火灾。",
+                            "notes": "forest fire 森林大火；fight 扑灭。",
+                            "statement": "Nora 在澳大利亚帮助当地人对抗火灾。",
+                            "answer": true,
+                            "explanation": "文中提到 she helped to fight forest fires in Australia。",
+                            "emoji": "🔥",
+                            "keywords": "forest fires, Australia",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/83a7b7ef487f10ffe5cab3604cf245a9.mp3",
+                            "state": "hidden"
+                        }
+                    ],
+                    "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/fe399d797efb3a740b0bcf422aec30a6.mp3",
+                    "state": "hidden"
+                },
+                {
+                    "id": "p6",
+                    "text": "So, she's seen a lot so far.",
+                    "cn": "所以，到目前为止她已经见识了很多。",
+                    "notes": "so far 到目前为止。",
+                    "statement": "作者对 Nora 的经历进行了总结。",
+                    "answer": true,
+                    "explanation": "这是一句总结性的话。",
+                    "emoji": "👁️",
+                    "highlight": "So",
+                    "children": [
+                        {
+                            "id": "s29",
+                            "text": "She's learned that full-time travel doesn't have to be expensive, and she knows now that there are plenty of ways to do it - so many ways, in fact, that she's started a website to tell other people about them.",
+                            "cn": "她了解到全职旅行不一定很昂贵，而且她现在知道有很多方法可以实现它——事实上，方法如此之多，以至于她创办了一个网站来告诉其他人。",
+                            "notes": "full-time 全职的；plenty of 许多；so...that... 如此...以至于...。",
+                            "statement": "Nora 认为只有有钱人才能全职旅行。",
+                            "answer": false,
+                            "explanation": "她学到了全职旅行“不一定” (doesn't have to be) 很贵。",
+                            "emoji": "🔗",
+                            "keywords": "full-time, expensive, website",
+                            "highlight": "in fact, so... that",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/4f5866de4934af5a43542fe1ddae15a2.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s30",
+                            "text": "It's theprofessionalhobo.com.",
+                            "cn": "网站是 theprofessionalhobo.com。",
+                            "notes": "URL of the website.",
+                            "statement": "Nora 的网站旨在分享如何职业化旅行。",
+                            "answer": true,
+                            "explanation": "hobo 在这里指代四处漂泊旅行的人。",
+                            "emoji": "🌐",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/935ea74f4f84c876cdcd25d9ae267053.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s31",
+                            "text": "I've seen lots of travel sites, and this is one of the best.",
+                            "cn": "我看过很多旅游网站，这是最好的网站之一。",
+                            "notes": "one of the best 最好的...之一。",
+                            "statement": "作者非常推荐这个网站。",
+                            "answer": true,
+                            "explanation": "this is one of the best 表达了极高的认可。",
+                            "emoji": "👍",
+                            "keywords": "travel sites, best",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/65d3aba57ed2ea1d8123cdbf2b59dbaf.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s32",
+                            "text": "Have a look.",
+                            "cn": "去看看吧。",
+                            "notes": "Imperative sentence for suggestion.",
+                            "statement": "作者建议读者亲自去看看网站。",
+                            "answer": true,
+                            "explanation": "have a look 是鼓励动作。",
+                            "emoji": "👀",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/a2854a2bb5f00be7a82151eabe542467.mp3",
+                            "state": "hidden"
+                        },
+                        {
+                            "id": "s33",
+                            "text": "Perhaps you'll be the next 'world traveller'?",
+                            "cn": "也许你就是下一个“世界旅行者”？",
+                            "notes": "Encouraging closing remark.",
+                            "statement": "作者鼓励读者也去尝试这种生活方式。",
+                            "answer": true,
+                            "explanation": "这是对读者的一种启发和激励。",
+                            "emoji": "🎒",
+                            "keywords": "next, world traveller",
+                            "children": [],
+                            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/60ca4f29b0309f73a1695df3c844a01c.mp3",
+                            "state": "hidden"
+                        }
+                    ],
+                    "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/df782c8c4355341fbd4635566260174c.mp3",
+                    "state": "hidden"
+                }
+            ],
+            "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p110-p113/26ceba92f4398bc106ac5b83071fb9cc.mp3",
+            "state": "emoji"
+        };
+        const writingPrompt = "";
+
+        let treeData = null;
+        let actionSteps = [];
+        let currentStepIndex = 0;
+        let activeNodeId = null;
+        let clickedNodeId = null;
+        let collapsedNodes = new Set();
+        let savedCollapsedNodes = null; // To restore after showAll mode
+        let showAllMode = 0; // 0: progressive (Manual), 1: emoji, 2: keywords, 3: full
+        let maxDepthVisible = 5; // Default
+        let maxTreeDepth = 0;
+
+        let isPlayingAll = false;
+        let playAllQueue = [];
+        let currentPlayIndex = -1;
+
+        let activeBoxEl = null;
+        let activeWrappers = []; // Now an array to hold all ancestor wrappers
+        let actionsTimeout = null;
+
+        function closeActions() {
+            if (!activeBoxEl) return;
+            if (actionsTimeout) clearTimeout(actionsTimeout);
+
+            const actions = activeBoxEl.querySelector('.node-actions');
+            if (actions) actions.remove();
+            activeBoxEl.classList.remove('node-box-active');
+            activeWrappers.forEach(w => w.classList.remove('active-wrapper'));
+
+            activeBoxEl = null;
+            activeWrappers = [];
+            actionsTimeout = null;
+        }
+
+        function refreshActionsTimeout() {
+            if (!activeBoxEl) return;
+            if (actionsTimeout) clearTimeout(actionsTimeout);
+
+            actionsTimeout = setTimeout(() => {
+                closeActions();
+            }, 3000);
+        }
+
+        function findNodeById(node, id) {
+            if (node.id === id) return node;
+            if (node.children) {
+                for (const child of node.children) {
+                    const found = findNodeById(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        // 2. Step Generation Logic (Empty -> Emoji -> Keywords -> Full -> Children)
+        function getMaxDepth(node, currentDepth = 0) {
+            if (!node.children || node.children.length === 0) return currentDepth;
+            return Math.max(...node.children.map(child => getMaxDepth(child, currentDepth + 1)));
+        }
+
+        function initDepthSlider() {
+            maxTreeDepth = getMaxDepth(initialData);
+            const slider = document.getElementById('depthSlider');
+            const labels = document.getElementById('depthLabels');
+            slider.max = maxTreeDepth;
+            slider.value = maxTreeDepth;
+            maxDepthVisible = maxTreeDepth;
+
+            labels.innerHTML = '';
+            for (let i = 0; i <= maxTreeDepth; i++) {
+                const span = document.createElement('span');
+                span.innerText = `L${i}`;
+                span.onclick = () => updateDepth(i);
+                labels.appendChild(span);
+            }
+            updateDepthLabels(maxTreeDepth);
+
+            const depthContainer = document.querySelector('.depth-slider-container');
+            if (depthContainer) {
+                depthContainer.style.display = showAllMode === 0 ? 'none' : 'flex';
+            }
+            updatePlayAllVisibility();
+        }
+
+        function updateDepth(val) {
+            maxDepthVisible = parseInt(val);
+            document.getElementById('depthSlider').value = maxDepthVisible;
+            updateDepthLabels(maxDepthVisible);
+            renderDOM(true);
+            updatePlayAllVisibility();
+        }
+
+        function updateDepthLabels(val) {
+            const labels = document.querySelectorAll('#depthLabels span');
+            labels.forEach((label, i) => {
+                label.classList.toggle('active', i === val);
+            });
+        }
+        function generateSteps(node) {
+            if (!node.children || node.children.length === 0) return;
+
+            // STEP A: Show empty box outline for the structure
+            actionSteps.push(() => {
+                node.children.forEach(child => child.state = 'empty');
+                activeNodeId = node.children[0].id;
+            });
+
+            // STEP B: For each child, reveal through states progressively
+            node.children.forEach(child => {
+
+                // 1. Reveal Emoji Hint
+                actionSteps.push(() => {
+                    child.state = 'emoji';
+                    activeNodeId = child.id;
+                });
+
+                // 2. Reveal Simple Words / Keywords (if they exist)
+                if (child.keywords) {
+                    actionSteps.push(() => {
+                        child.state = 'keywords';
+                        activeNodeId = child.id;
+                    });
+                }
+
+                // 3. Reveal Full Sentence
+                actionSteps.push(() => {
+                    child.state = 'full';
+                    activeNodeId = child.id;
+                });
+
+                // 4. Recurse to generate steps for this child's sub-nodes
+                generateSteps(child);
+            });
+        }
+
+        function cloneData(data) {
+            return JSON.parse(JSON.stringify(data));
+        }
+
+        // 3. Render Engine
+        function renderNode(node, depth = 0) {
+            const isManualMode = showAllMode === 0;
+            if (node.state === 'hidden' || (!isManualMode && depth > maxDepthVisible)) return null;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mindmap-node-wrapper';
+
+            const box = document.createElement('div');
+            box.className = `node-box ${node.state} level-${depth}`;
+
+            if (node.id === activeNodeId) {
+                if (isPlayingAll) {
+                    box.classList.add('playing');
+                    box.id = 'playing-node';
+                } else {
+                    box.id = 'active-node';
+                }
+            }
+            if (node.id === clickedNodeId) box.classList.add('clicked-flicker');
+
+            // Play from here if playing all
+            if (isPlayingAll && node.state !== 'empty') {
+                box.style.cursor = 'pointer';
+                box.onclick = (e) => {
+                    e.stopPropagation();
+                    const index = playAllQueue.findIndex(n => n.id === node.id);
+                    if (index !== -1) {
+                        currentPlayIndex = index;
+                        if (lastAudio) {
+                            lastAudio.pause();
+                            lastAudio = null;
+                        }
+                        window.speechSynthesis.cancel();
+                        playNextInQueue();
+                    }
+                };
+            }
+
+            // Collapse Logic
+            const hasChildren = node.children && node.children.length > 0;
+            const allChildrenFull = hasChildren && node.children.every(c => c.state === 'full');
+            const isCollapsed = collapsedNodes.has(node.id);
+            const isDepthLimited = !isManualMode && depth >= maxDepthVisible;
+            const hideChildren = (isCollapsed && allChildrenFull) || (isDepthLimited && hasChildren);
+
+            if (allChildrenFull && showAllMode !== 3 && !isDepthLimited) {
+                box.classList.add('collapsible');
+                box.title = isCollapsed ? "Click to expand" : "Click to collapse";
+                box.onclick = (e) => {
+                    e.stopPropagation();
+                    clickedNodeId = node.id;
+                    if (collapsedNodes.has(node.id)) {
+                        collapsedNodes.delete(node.id);
+                        activeNodeId = node.children[0].id;
+                    } else {
+                        collapsedNodes.add(node.id);
+                        activeNodeId = node.id;
+                    }
+                    renderDOM(true);
+                };
+            }
+
+            // Render Content based on current Learning State
+            if (node.state === 'emoji') {
+                box.innerHTML = `<span class="node-content-emoji">${node.emoji}</span>`;
+            } else if (node.state === 'keywords') {
+                box.innerHTML = `
+                    <span class="node-content-emoji">${node.emoji}</span>
+                    <span class="node-content-keywords">${node.keywords}</span>
+                `;
+            } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
+                box.innerHTML = `
+                    <span class="node-content-emoji">${node.emoji}</span>
+                    <span class="node-content-text" style="flex:1;">${displayedText}</span>
+                `;
+
+                // Add click listener to show actions on the fly (overlay)
+                const existingOnClick = box.onclick;
+                box.onclick = (e) => {
+                    e.stopPropagation(); // Prevent global closeActions from firing
+                    if (existingOnClick) existingOnClick(e);
+
+                    // Toggle current node: if it's already active, close it
+                    if (activeBoxEl === box) {
+                        closeActions();
+                        return;
+                    }
+
+                    // Cleanup previous actions if they exist
+                    if (activeBoxEl) {
+                        closeActions();
+                    }
+
+                    const actions = document.createElement('div');
+                    actions.className = 'node-actions';
+                    actions.onclick = (e) => {
+                        e.stopPropagation();
+                    };
+                    actions.innerHTML = `
+                        <button class="action-btn" onclick="playAudio('${node.id}', event); refreshActionsTimeout();" title="Play Audio">🔊</button>
+                        ${node.cn ? `<button class="action-btn" onclick="toggleTooltip(this, event); refreshActionsTimeout();" title="Translation">CN<span class="tooltip">${node.cn}</span></button>` : ''}
+                        ${node.notes ? `<button class="action-btn" onclick="toggleTooltip(this, event); refreshActionsTimeout();" title="Notes">💡<span class="tooltip">${node.notes}</span></button>` : ''}
+                        ${node.statement ? `<button class="action-btn" onclick="showQuestion('${node.id}', event); refreshActionsTimeout();" title="Question">❓</button>` : ''}
+                    `;
+                    box.appendChild(actions);
+                    box.classList.add('node-box-active');
+
+                    // Apply active-wrapper to all ancestor mindmap-node-wrappers for stacking safety
+                    activeWrappers = [];
+                    let parent = box.parentElement;
+                    while (parent && parent !== document.body) {
+                        if (parent.classList.contains('mindmap-node-wrapper')) {
+                            parent.classList.add('active-wrapper');
+                            activeWrappers.push(parent);
+                        }
+                        parent = parent.parentElement;
+                    }
+
+                    activeBoxEl = box;
+                    refreshActionsTimeout();
+                };
+            }
+
+            if (hideChildren && node.state !== 'empty' && node.state !== 'hidden') {
+                box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
+            }
+
+            wrapper.appendChild(box);
+
+            // Render children
+            if (node.children && node.children.some(c => c.state !== 'hidden') && !hideChildren) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children-container';
+
+                node.children.forEach(child => {
+                    const childElement = renderNode(child, depth + 1);
+                    if (childElement) {
+                        const childRow = document.createElement('div');
+                        childRow.className = 'child-row';
+                        childRow.appendChild(childElement);
+                        childrenContainer.appendChild(childRow);
+                    }
+                });
+                wrapper.appendChild(childrenContainer);
+            }
+
+            return wrapper;
+        }
+
+        function renderDOM(manualToggle = false) {
+            closeActions(); // Close any active overlays before re-rendering
+            const container = document.getElementById('mindmap-container');
+
+            // Save scroll positions if we want to preserve them
+            const savedScrollTop = container.scrollTop;
+            const savedScrollLeft = container.scrollLeft;
+
+            container.innerHTML = '';
+            const domTree = renderNode(treeData, 0);
+            if (domTree) {
+                container.appendChild(domTree);
+            }
+
+            if (manualToggle) {
+                // Restore scroll positions when switching modes or toggling collapse
+                container.scrollTop = savedScrollTop;
+                container.scrollLeft = savedScrollLeft;
+                return;
+            }
+
+            // Auto-scroll logic (only for progressive steps)
+            const activeEl = document.getElementById('active-node');
+            if (activeEl) {
+                const containerRect = container.getBoundingClientRect();
+                const activeRect = activeEl.getBoundingClientRect();
+
+                let shouldScrollToTop = true;
+                // (manualToggle check removed here as we return early above)
+
+                let targetScrollTop = container.scrollTop;
+
+                if (shouldScrollToTop) {
+                    targetScrollTop = activeRect.top - containerRect.top + container.scrollTop - 60;
+                } else {
+                    const childrenContainer = activeEl.closest('.children-container');
+                    if (childrenContainer) {
+                        const lastChildRow = childrenContainer.lastElementChild;
+                        const lastChildBox = lastChildRow ? lastChildRow.querySelector('.node-box') : null;
+
+                        if (lastChildBox) {
+                            const lastRect = lastChildBox.getBoundingClientRect();
+                            const bottomThreshold = containerRect.bottom - 60;
+
+                            if (lastRect.bottom > bottomThreshold) {
+                                const neededScroll = lastRect.bottom - bottomThreshold;
+                                targetScrollTop = container.scrollTop + neededScroll;
+                                const maxScroll = activeRect.top - containerRect.top + container.scrollTop - 60;
+                                targetScrollTop = Math.min(targetScrollTop, maxScroll);
+                            }
+                        }
+                    }
+                }
+
+                container.scrollTo({
+                    left: container.scrollWidth,
+                    top: Math.max(0, targetScrollTop),
+                    behavior: 'smooth'
+                });
+            } else {
+                container.scrollTo({
+                    left: container.scrollWidth,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // 4. Action Controllers
+        let lastAudio = null;
+        async function playAudio(nodeId, event) {
+            if (event) event.stopPropagation();
+            const node = findNodeById(treeData, nodeId);
+            if (!node) return;
+
+            if (lastAudio) {
+                lastAudio.pause();
+                lastAudio = null;
+            }
+
+            if (node.audio) {
+                try {
+                    const audioUrl = await AudioCacheManager.getAudio(node.audio);
+                    const audio = new Audio(audioUrl);
+                    lastAudio = audio;
+                    audio.play().catch(err => {
+                        console.error("Audio playback failed:", err);
+                        speak(node.text);
+                    });
+                } catch (err) {
+                    speak(node.text);
+                }
+            } else {
+                speak(node.text);
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-GB'; // British English
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleTooltip(btn, event) {
+            if (event) event.stopPropagation();
+            const tooltip = btn.querySelector('.tooltip');
+            if (!tooltip) return;
+
+            // Hide all other tooltips first
+            document.querySelectorAll('.tooltip.visible').forEach(t => {
+                if (t !== tooltip) t.classList.remove('visible');
+            });
+
+            tooltip.classList.toggle('visible');
+
+            if (tooltip.classList.contains('visible')) {
+                // Auto hide after 5 seconds
+                if (btn._tooltipTimeout) clearTimeout(btn._tooltipTimeout);
+                btn._tooltipTimeout = setTimeout(() => {
+                    tooltip.classList.remove('visible');
+                }, 5000);
+            }
+        }
+        function collectVisibleNodes(node, depth = 0, list = []) {
+            if (node.state === 'hidden' || depth > maxDepthVisible) return list;
+            list.push(node);
+            if (node.children && depth < maxDepthVisible && !collapsedNodes.has(node.id)) {
+                node.children.forEach(child => collectVisibleNodes(child, depth + 1, list));
+            }
+            return list;
+        }
+
+        async function togglePlayAll() {
+            if (isPlayingAll) {
+                stopPlayAll();
+                return;
+            }
+
+            const btn = document.getElementById('playAllBtn');
+            btn.innerText = '⏹️';
+            isPlayingAll = true;
+
+            playAllQueue = collectVisibleNodes(treeData);
+            currentPlayIndex = 0;
+
+            playNextInQueue();
+        }
+
+        function stopPlayAll() {
+            isPlayingAll = false;
+            if (lastAudio) {
+                lastAudio.pause();
+                lastAudio = null;
+            }
+            window.speechSynthesis.cancel();
+
+            const btn = document.getElementById('playAllBtn');
+            btn.innerText = '🔊';
+
+            renderDOM(true);
+        }
+
+        async function playNextInQueue() {
+            if (!isPlayingAll || currentPlayIndex >= playAllQueue.length) {
+                stopPlayAll();
+                return;
+            }
+
+            const node = playAllQueue[currentPlayIndex];
+            activeNodeId = node.id;
+            renderDOM(true); // Highlights current node with 'playing' class via renderNode logic
+
+            // Auto scroll to current node
+            const el = document.getElementById('playing-node');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            await playNodeAudioAsync(node);
+
+            if (isPlayingAll) {
+                currentPlayIndex++;
+                setTimeout(playNextInQueue, 500); // Small gap between sentences
+            }
+        }
+
+        async function playNodeAudioAsync(node) {
+            if (node.audio) {
+                try {
+                    const audioUrl = await AudioCacheManager.getAudio(node.audio);
+                    return new Promise((resolve) => {
+                        const audio = new Audio(audioUrl);
+                        lastAudio = audio;
+                        audio.onended = resolve;
+                        audio.onerror = () => {
+                            speakAsync(node.text).then(resolve);
+                        };
+                        audio.play().catch(err => {
+                            speakAsync(node.text).then(resolve);
+                        });
+                    });
+                } catch (err) {
+                    console.error("Cache fetch failed, falling back to TTS:", err);
+                    await speakAsync(node.text);
+                }
+            } else {
+                await speakAsync(node.text);
+            }
+        }
+
+        function speakAsync(text) {
+            return new Promise((resolve) => {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-GB';
+                    utterance.onend = resolve;
+                    utterance.onerror = resolve;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    resolve();
+                }
+            });
+        }
+
+        function updatePlayAllVisibility() {
+            const isVisible = showAllMode === 3 && maxDepthVisible === maxTreeDepth;
+            document.getElementById('playAllBtn').style.display = isVisible ? 'flex' : 'none';
+            document.getElementById('playAllSeparator').style.display = isVisible ? 'block' : 'none';
+            if (!isVisible && isPlayingAll) stopPlayAll();
+
+            if (showAllMode === 3) {
+                // Preload visible nodes in the background
+                const visibleNodes = collectVisibleNodes(treeData);
+                AudioCacheManager.preloadAll(visibleNodes);
+            }
+        }
+
+        let currentQuestionNode = null;
+        function showQuestion(nodeId, event) {
+            if (event) event.stopPropagation();
+            const node = findNodeById(treeData, nodeId);
+            if (!node || !node.statement) return;
+
+            currentQuestionNode = node;
+            document.getElementById('questionStatement').innerText = node.statement;
+            document.getElementById('questionFeedback').style.display = 'none';
+            document.getElementById('questionModal').style.display = 'flex';
+        }
+
+        function checkAnswer(userChoice) {
+            if (!currentQuestionNode) return;
+
+            const isCorrect = userChoice === currentQuestionNode.answer;
+            const feedback = document.getElementById('questionFeedback');
+            const feedbackText = document.getElementById('feedbackText');
+            const explanationText = document.getElementById('explanationText');
+
+            feedback.style.display = 'block';
+            feedback.style.backgroundColor = isCorrect ? '#ecfdf5' : '#fef2f2';
+            feedback.style.border = `1px solid ${isCorrect ? '#10b981' : '#ef4444'}`;
+
+            feedbackText.innerText = isCorrect ? "✅ Correct! (正确)" : "❌ Incorrect (错误)";
+            feedbackText.style.color = isCorrect ? "#065f46" : "#991b1b";
+
+            explanationText.innerText = currentQuestionNode.explanation || "";
+        }
+
+        function closeQuestionModal() {
+            document.getElementById('questionModal').style.display = 'none';
+            currentQuestionNode = null;
+        }
+
+        // Global click listener to hide tooltips when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.action-btn')) {
+                document.querySelectorAll('.tooltip.visible').forEach(t => {
+                    t.classList.remove('visible');
+                });
+            }
+        });
+
+        function updateButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            prevBtn.disabled = currentStepIndex === 0;
+            const isFinished = currentStepIndex >= actionSteps.length;
+            nextBtn.disabled = isFinished;
+
+            const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        function applyStepsUpTo(targetIndex) {
+            treeData = cloneData(initialData);
+            actionSteps = [];
+            activeNodeId = treeData.id;
+
+            // Add initial step to reveal the root node's full text
+            actionSteps.push(() => {
+                treeData.state = 'full';
+                activeNodeId = treeData.id;
+            });
+
+            generateSteps(treeData);
+
+            currentStepIndex = targetIndex;
+            for (let i = 0; i < currentStepIndex; i++) {
+                actionSteps[i]();
+            }
+
+            renderDOM();
+            updateButtons();
+        }
+
+        function nextStep() {
+            if (showAllMode > 0) {
+                // Return to progressive mode seamlessly
+                updateMode(0);
+                updatePlayAllVisibility();
+                return;
+            }
+
+            if (currentStepIndex < actionSteps.length) {
+                actionSteps[currentStepIndex]();
+                currentStepIndex++;
+                renderDOM();
+                updateButtons();
+                updatePlayAllVisibility();
+            }
+        }
+
+        function prevStep() {
+            if (showAllMode > 0) {
+                // Return to progressive mode
+                updateMode(0);
+                updatePlayAllVisibility();
+                return;
+            }
+
+            if (currentStepIndex > 0) {
+                applyStepsUpTo(currentStepIndex - 1);
+                updatePlayAllVisibility();
+            }
+        }
+
+        function updateMode(val) {
+            const newMode = parseInt(val);
+            const slider = document.getElementById('modeSlider');
+            slider.value = newMode;
+
+            // Update labels
+            const labels = document.querySelectorAll('.mode-labels:not(#depthLabels) span');
+            labels.forEach((label, i) => {
+                label.classList.toggle('active', i === newMode);
+            });
+
+            const depthContainer = document.querySelector('.depth-slider-container');
+            if (depthContainer) {
+                depthContainer.style.display = newMode === 0 ? 'none' : 'flex';
+            }
+
+            if (newMode === 0) {
+
+                // Return to manual/progressive mode
+                if (showAllMode !== 0) {
+                    showAllMode = 0;
+                    if (savedCollapsedNodes) {
+                        collapsedNodes = savedCollapsedNodes;
+                        savedCollapsedNodes = null;
+                    }
+                    applyStepsUpTo(currentStepIndex);
+                }
+                return;
+            }
+
+            if (showAllMode === 0) {
+                savedCollapsedNodes = new Set(collapsedNodes);
+            }
+            showAllMode = newMode;
+
+            let targetState = 'emoji';
+            if (showAllMode === 2) {
+                targetState = 'keywords';
+            } else if (showAllMode === 3) {
+                targetState = 'full';
+            }
+
+            function setNodeStateRecursively(node, state) {
+                // If the node doesn't have keywords (like root), default to full text
+                if (state === 'keywords' && !node.keywords) {
+                    node.state = 'full';
+                } else {
+                    node.state = state;
+                }
+
+                if (node.children) {
+                    node.children.forEach(child => setNodeStateRecursively(child, state));
+                }
+            }
+
+            // Apply target state directly to the tree
+            setNodeStateRecursively(treeData, targetState);
+            collapsedNodes.clear(); // Ensure nothing is hidden when toggling
+            renderDOM(true);
+            updatePlayAllVisibility();
+        }
+
+        function resetMap() {
+            updateMode(0);
+            collapsedNodes.clear();
+            applyStepsUpTo(0);
+            updatePlayAllVisibility();
+        }
+
+        // Modal Functions
+        function showWritingPrompt() {
+            if (!writingPrompt) return;
+            document.getElementById('promptText').innerHTML = writingPrompt;
+            document.getElementById('promptModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('promptModal').style.display = 'none';
+        }
+
+        // Listen for user input
+        window.onload = () => {
+            if (writingPrompt) {
+                document.getElementById('promptBtn').style.display = 'flex';
+            }
+            initDepthSlider();
+            resetMap();
+        };
+
+        // Global click listener to close actions
+        function handleGlobalClick(e) {
+            if (activeBoxEl && !activeBoxEl.contains(e.target)) {
+                closeActions();
+            }
+        }
+        window.addEventListener('mousedown', handleGlobalClick);
+        window.addEventListener('pointerdown', handleGlobalClick);
+        window.addEventListener('touchstart', handleGlobalClick);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowRight') {
+                e.preventDefault();
+                const btn = document.getElementById('nextBtn');
+                if (!btn.disabled) nextStep();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                const btn = document.getElementById('prevBtn');
+                if (!btn.disabled) prevStep();
+            } else if (e.code === 'KeyA') {
+                e.preventDefault();
+                if (showAllMode > 0) updateMode(showAllMode - 1);
+            } else if (e.code === 'KeyD') {
+                e.preventDefault();
+                if (showAllMode < 3) updateMode(showAllMode + 1);
+            }
+        });
+
+    </script>
+</body>
+
+</html>
