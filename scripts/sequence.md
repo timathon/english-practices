@@ -8,3 +8,9 @@
 7. run update_index.cjs
 
 Note: CLI defaults to 3 users and 3 months. Use Interactive Mode (run without arguments) for 10 users/3 months.
+
+### **Navigation & Directory Standards**
+- **Folder Structure:** Always organize exercises into `[book]/[unit]/[page-range]/` subdirectories (e.g., `B-Think1/b-think1-u12/b-think1-u12-p110-p113/`).
+- **Home Links:** All generated HTML exercises in nested subdirectories MUST point their "home" (🏠) link to the textbook-specific `index.html`. 
+  - For `unit/page-range/` depth, use `href="../../index.html"`.
+  - Always verify that the linked `index.html` exists in the target directory.
