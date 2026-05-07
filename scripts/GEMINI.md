@@ -78,6 +78,8 @@ node scripts/sh_release_gen-3.cjs [input_json_path] [type] [output_html_path] [f
 ### Example Execution
 ```bash
 node scripts/sh_release_gen-3.cjs data/B-Think1/b-think1-u11/b-think1-u11-p106-p109-spelling-hero.json post B-Think1/b-think1-u11/b-think1-u11-p106-p109-spelling-hero.html --regenerate
+# Or with builtin type:
+node scripts/sh_release_gen-3.cjs data/B-Think1/b-think1-u11/b-think1-u11-p106-p109-spelling-hero.json builtin B-Think1/b-think1-u11/b-think1-u11-p106-p109-spelling-hero.html
 ```
 
 ## Sentence Architect Generation (`sa_release_gen-3.cjs`)

@@ -60,14 +60,15 @@ Sun = Sunday
 What subject do Daming and Lingling love?
 
 *[*VISUAL: A comic strip showing Daming and Lingling over the course of several days at school.*]*
-**Daming:** "It's Wednesday. Only two days!"
+**Lingling:** "It's Wednesday. Only two days!"
 **Daming:** "It's Thursday! Only one day!"
+**Sam:** "You're happy! Why?"
 **Daming:** "It's Friday! We have art on Friday. We love art!"
 *[*VISUAL: The blackboard shows Thursday (Maths, Science) and Friday (Chinese, Art).*]*
-**Ms Li:** "Sorry, everyone. Ms Li is not well today."
+**Ms Wang:** "Sorry, everyone. Ms Li is not well today."
 **Daming:** "Oh... No art today!"
-**Lingling:** "Let's do something for Ms Li."
-**Daming:** "Good idea!"
+**Daming:** "Let's do something for Ms Li."
+**Lingling:** "Good idea!"
 *[*VISUAL: A greeting card created by the students.*]*
 > To Ms Li: Get well soon! Daming & Lingling
 
