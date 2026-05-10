@@ -95,7 +95,7 @@ This document defines the rules for extracting and converting textbook data into
   - `en`: Primary English sentence.
   - `cn`: Chinese translation.
   - `hint`: Concise bilingual grammar clue.
-  - `noise`: 2-3 relevant distractor words not in the sentence.
+  - `noise`: 2-3 relevant distractor words not in the sentence. **MUST NOT** include any words already present in the primary English sentence (`en`). Distractors should be related in theme or part-of-speech but distinct from the target words to avoid confusion or multiple correct answers with the provided blocks.
   - `accept`: Array of valid grammatical variations.
     - **Natural Variations:** Include common word-order variations that use the *exact same words* (e.g., "Together the two of us played" -> "The two of us played together").
     - **No Expanded Contractions:** Do NOT include expanded forms of contractions in `accept` (e.g., if `en` is "it's...", do not add "it is..." to `accept`) because the user constructs sentences from discrete word blocks and won't have the individual words to form the expansion.
