@@ -71,7 +71,11 @@ function generateHtml(data, jsonPath, indexPath = "index.html") {
             mdPath = jsonPath.replace(/\.json$/, '.md');
         }
         if (mdPath && fs.existsSync(mdPath)) {
-            writingPrompt = fs.readFileSync(mdPath, 'utf8')
+            let content = fs.readFileSync(mdPath, 'utf8');
+            // Strip the Model Essay section
+            content = content.split(/### Model Essay/i)[0].trim();
+            
+            writingPrompt = content
                 .replace(/\n/g, '<br>')
                 .replace(/"/g, '&quot;');
         }
