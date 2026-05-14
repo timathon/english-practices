@@ -1,0 +1,2274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Navigator: Pages 114-119</title>
+    <style>
+        :root {
+            --primary-color: #10b981;
+            /* Green theme for health/food */
+            --primary-hover: #059669;
+            --bg-color: #f8fafc;
+            --line-color: #cbd5e1;
+            --box-empty: #e2e8f0;
+            --box-emoji: #fef08a;
+            --box-keywords: #dbeafe;
+            /* Light blue for keywords */
+            --box-full: #ffffff;
+            --text-main: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        @media (min-width: 769px) {
+            body {
+                height: 100vh;
+                overflow: hidden;
+            }
+        }
+
+        header {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            position: sticky;
+            top: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .home-link {
+            text-decoration: none;
+            font-size: 1.25rem;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: white;
+            border: 1px solid var(--line-color);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            color: var(--text-main);
+        }
+
+        .home-link:hover {
+            background-color: var(--bg-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-titles h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .header-titles p {
+            margin: 0.25rem 0 0 0;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .controls button {
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--line-color);
+            padding: 0;
+        }
+
+        .controls button:hover:not(:disabled) {
+            background-color: var(--bg-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls button#nextBtn {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .controls button#nextBtn:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+        }
+
+        .controls button:disabled {
+            background-color: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+            border-color: #e2e8f0;
+            opacity: 0.6;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .controls button#promptBtn {
+            background-color: #fef9c3;
+            border-color: #facc15;
+            display: none;
+            /* Hidden by default, shown if prompt exists */
+        }
+
+        .controls button#promptBtn:hover {
+            background-color: #fef08a;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #64748b;
+        }
+
+        .modal-body {
+            line-height: 1.6;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        .modal-body h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        main {
+            flex: 1;
+            padding: 3rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            overflow: visible;
+        }
+
+        @media (min-width: 769px) {
+            main {
+                overflow: auto;
+            }
+        }
+
+        /* Mode Slider Styles */
+        .mode-slider-container {
+            position: fixed;
+            z-index: 100;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--line-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 260px;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .mode-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .mode-labels span {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .mode-labels span.active {
+            color: var(--primary-color);
+        }
+
+        #modeSlider,
+        #depthSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            cursor: pointer;
+        }
+
+        #modeSlider::-webkit-slider-thumb,
+        #depthSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #modeSlider::-moz-range-thumb,
+        #depthSlider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Desktop Positioning */
+        @media (min-width: 769px) {
+            .mode-slider-container {
+                top: 90px;
+                right: 24px;
+                opacity: 0.5;
+            }
+
+            .mode-slider-container.depth-slider-container {
+                top: 90px;
+                right: 340px;
+            }
+
+            .mode-slider-container:hover {
+                opacity: 1;
+                transform: translateY(-2px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        /* Mindmap Tree CSS */
+        .mindmap-node-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .node-box {
+            border-radius: 12px;
+            padding: var(--node-pad, 12px 20px);
+            margin: 0;
+            font-size: var(--node-fs, 1.1rem);
+            font-weight: var(--node-fw, 500);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid transparent;
+            min-height: 28px;
+            max-width: 450px;
+            line-height: 1.5;
+        }
+
+        .node-box.collapsible {
+            cursor: pointer;
+        }
+
+        .node-box.collapsible:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            border-color: var(--primary-color);
+        }
+
+        /* Learning States */
+        .node-box.empty {
+            background-color: var(--box-empty);
+            border-style: dashed;
+            border-color: #94a3b8;
+            min-width: 80px;
+            opacity: 0.8;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .node-box.emoji {
+            background-color: var(--box-emoji);
+            border-color: var(--node-border, #facc15);
+            min-width: 40px;
+            justify-content: center;
+            animation: bounceIn 0.4s ease-out;
+        }
+
+        /* New State: Keywords */
+        .node-box.keywords {
+            background-color: var(--box-keywords);
+            border-color: var(--node-border, #3b82f6);
+            min-width: 100px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .node-box.full {
+            background-color: var(--box-full);
+            border-color: var(--node-border, var(--primary-color));
+            min-width: 120px;
+            cursor: pointer;
+        }
+
+        /* Action Buttons & Tooltips */
+        .node-actions {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            position: relative;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+        }
+
+        .action-btn:hover {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        .action-btn .tooltip {
+            display: none;
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            min-width: 160px;
+            max-width: 280px;
+            z-index: 1000;
+            margin-bottom: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            text-align: left;
+            font-weight: 400;
+            line-height: 1.4;
+        }
+
+        .action-btn .tooltip.visible {
+            display: block;
+        }
+
+        .action-btn .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+
+        @media (max-width: 640px) {
+            .action-btn .tooltip {
+                max-width: 85vw;
+            }
+        }
+
+        /* Level Hierarchy Variables */
+        .node-box.level-0 {
+            --node-fs: 1.25rem;
+            --node-pad: 14px 24px;
+            --node-fw: 700;
+            --node-border: #6366f1;
+        }
+
+        .node-box.level-1 {
+            --node-fs: 1.1rem;
+            --node-pad: 12px 20px;
+            --node-fw: 600;
+            --node-border: #10b981;
+        }
+
+        .node-box.level-2 {
+            --node-fs: 1rem;
+            --node-pad: 10px 16px;
+            --node-fw: 500;
+            --node-border: #0ea5e9;
+        }
+
+        .node-box.level-3 {
+            --node-fs: 0.95rem;
+            --node-pad: 8px 14px;
+            --node-fw: 400;
+            --node-border: #8b5cf6;
+        }
+
+        .node-box.level-4 {
+            --node-fs: 0.9rem;
+            --node-pad: 6px 12px;
+            --node-fw: 400;
+            --node-border: #f59e0b;
+        }
+
+        .node-content-emoji {
+            font-size: 1.3em;
+            flex-shrink: 0;
+        }
+
+        .node-content-keywords {
+            color: #1d4ed8;
+            /* Dark blue to match the box theme */
+            font-weight: 700;
+        }
+
+        .node-content-text {
+            color: #0f172a;
+        }
+
+        .highlight {
+            color: #1d4ed8;
+            font-weight: 700;
+            background-color: #fef9c3;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
+        .collapsed-indicator {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.85rem;
+            margin-left: 10px;
+            font-weight: 600;
+            border: 1px solid var(--primary-hover);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+
+        /* Connectors */
+        .children-container {
+            display: flex;
+            flex-direction: column;
+            margin-left: 30px;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .children-container::before {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            width: 30px;
+            height: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .child-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .child-row::before {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            width: 30px;
+            height: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .child-row::after {
+            content: "";
+            position: absolute;
+            left: -30px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: var(--line-color);
+            z-index: 1;
+        }
+
+        .child-row:first-child::after {
+            top: 50%;
+        }
+
+        .child-row:last-child::after {
+            bottom: 50%;
+        }
+
+        .child-row:first-child:last-child::after {
+            display: none;
+        }
+
+        /* Mobile View Adjustments */
+        @media (max-width: 768px) {
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            .header-left {
+                gap: 0.75rem;
+            }
+
+            .header-titles h1 {
+                font-size: 1.25rem;
+            }
+
+            .controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: white;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+                padding: 1rem;
+                justify-content: center;
+                gap: 1.5rem;
+                z-index: 100;
+            }
+
+            .controls button {
+                width: 56px;
+                height: 56px;
+                font-size: 1.5rem;
+            }
+
+            .mode-slider-container {
+                bottom: 100px;
+                left: 20px;
+                right: 20px;
+                width: auto;
+                opacity: 1;
+                background-color: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(8px);
+            }
+
+            .mode-slider-container.depth-slider-container {
+                bottom: 180px;
+            }
+
+            main {
+                padding: 1rem 1rem 16rem 1rem;
+            }
+
+            .mindmap-node-wrapper {
+                flex-direction: column;
+                align-items: flex-start;
+                width: 100%;
+            }
+
+            .children-container {
+                margin-left: 20px;
+                padding-left: 0;
+                margin-top: 10px;
+                position: relative;
+            }
+
+            .children-container .node-content-text {
+                font-size: 1.15rem;
+            }
+
+            .children-container::before {
+                display: none;
+            }
+
+            .child-row {
+                padding: 8px 0;
+                width: 100%;
+                position: relative;
+            }
+
+            .child-row::before {
+                left: -12px;
+                top: 24px;
+                width: 12px;
+                height: 2px;
+            }
+
+            .child-row::after {
+                left: -12px;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+            }
+
+            .child-row:first-child::after {
+                top: -10px;
+            }
+
+            .child-row:last-child::after {
+                bottom: auto;
+                height: 24px;
+            }
+
+            .child-row:first-child:last-child::after {
+                display: block;
+                top: -10px;
+                height: 34px;
+            }
+
+            .node-box {
+                font-size: calc(var(--node-fs, 1.1rem) * 0.9);
+                padding: 10px 16px;
+                max-width: calc(100vw - 80px);
+                word-break: break-word;
+            }
+        }
+
+        /* Animations */
+        @keyframes popIn {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.8);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideIn {
+            0% {
+                transform: translateX(-10px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes clickFlicker {
+            0% {
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.4);
+                transform: scale(1.02);
+            }
+
+            100% {
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                transform: scale(1);
+            }
+        }
+
+        .node-box.clicked-flicker {
+            animation: clickFlicker 0.5s ease-out;
+        }
+
+        @keyframes breathe {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .node-box.playing {
+            animation: breathe 2s infinite ease-in-out;
+            z-index: 10;
+        }
+
+        .node-box.node-box-active {
+            z-index: 500 !important;
+        }
+
+        .btn-separator {
+            width: 1px;
+            height: 24px;
+            background-color: var(--line-color);
+            margin: 0 4px;
+            align-self: center;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background-color: #e2e8f0;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-left">
+            <a href="../../index.html" class="home-link" title="Back to Home (回到首页)">🏠</a>
+            <div class="header-titles">
+                <h1>Text Navigator: Pages 114-119 <span style="font-weight: normal; opacity: 0.7;">Hard Journeys</span></h1>
+                <p>Think 1 Unit 12</p>
+            </div>
+        </div>
+        <div class="controls">
+            <button id="promptBtn" onclick="showWritingPrompt()" title="Writing Prompt (写作要求)">📝</button>
+            <button id="playAllBtn" onclick="togglePlayAll()" title="Play All (顺序播放)" style="display: none;">🔊</button>
+            <div id="playAllSeparator" class="btn-separator" style="display: none;"></div>
+            <button id="resetBtn" onclick="resetMap()" title="Reset (重置)">🔄</button>
+            <button id="prevBtn" onclick="prevStep()" title="Previous Step (上一步)">◀️</button>
+            <button id="nextBtn" onclick="nextStep()" title="Next Step (下一步)">▶️</button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+    </header>
+
+    <div class="mode-slider-container">
+        <div class="mode-labels">
+            <span onclick="updateMode(0)">Manual</span>
+            <span onclick="updateMode(1)">Emoji</span>
+            <span onclick="updateMode(2)">Key Words</span>
+            <span onclick="updateMode(3)">Sentence</span>
+        </div>
+        <input type="range" id="modeSlider" min="0" max="3" value="0" step="1" oninput="updateMode(this.value)">
+    </div>
+
+    <div class="mode-slider-container depth-slider-container">
+        <div class="mode-labels" id="depthLabels">
+            <!-- Dynamically populated -->
+        </div>
+        <input type="range" id="depthSlider" min="0" max="5" value="5" step="1" oninput="updateDepth(this.value)">
+    </div>
+
+    <!-- Modal for Questions -->
+    <div id="questionModal" class="modal-overlay" onclick="closeQuestionModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeQuestionModal()">×</button>
+            <div class="modal-body">
+                <h3 id="questionTitle">True or False Statement</h3>
+                <div id="questionStatement" style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 500;"></div>
+                <div class="question-options" style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <button onclick="checkAnswer(true)" class="choice-btn"
+                        style="flex: 1; background-color: #ecfdf5; border: 2px solid #10b981; color: #065f46; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">TRUE
+                        (正确)</button>
+                    <button onclick="checkAnswer(false)" class="choice-btn"
+                        style="flex: 1; background-color: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">FALSE
+                        (错误)</button>
+                </div>
+                <div id="questionFeedback"
+                    style="display: none; padding: 15px; border-radius: 8px; margin-top: 10px; line-height: 1.5;">
+                    <div id="feedbackText" style="font-weight: 700; margin-bottom: 8px;"></div>
+                    <div id="explanationText" style="color: #4b5563;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Writing Prompt -->
+    <div id="promptModal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body">
+                <h3>Writing Task Prompt</h3>
+                <div id="promptText"></div>
+            </div>
+        </div>
+    </div>
+
+    <main id="mindmap-container">
+        <!-- Rendered by JS -->
+    </main>
+
+    <script>
+        // 0. Audio Caching (IndexedDB)
+        const db = {
+            name: 'ep-audio-cache',
+            version: 1,
+            instance: null,
+            open: function () {
+                return new Promise((resolve, reject) => {
+                    if (this.instance) return resolve(this.instance);
+                    const request = indexedDB.open(this.name, this.version);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('audio')) {
+                            db.createObjectStore('audio', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.instance = e.target.result;
+                        resolve(this.instance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            get: async function (id) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readonly');
+                    const store = transaction.objectStore('audio');
+                    const request = store.get(id);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => resolve(null);
+                });
+            },
+            set: async function (id, blob, lastModified) {
+                const db = await this.open();
+                return new Promise((resolve) => {
+                    const transaction = db.transaction('audio', 'readwrite');
+                    const store = transaction.objectStore('audio');
+                    store.put({ id, blob, lastModified, timestamp: Date.now() });
+                    transaction.oncomplete = () => resolve(true);
+                    transaction.onerror = () => resolve(false);
+                });
+            }
+        };
+
+        const AudioCacheManager = {
+            blobUrls: new Map(),
+
+            getAudio: async function (url) {
+                if (!url) return null;
+
+                const cached = await db.get(url);
+                const now = Date.now();
+
+                try {
+                    // Check if there's a newer version
+                    const headResponse = await fetch(`${url}?t=${now}`, { method: 'HEAD', cache: 'no-cache' });
+                    const remoteLastModified = headResponse.headers.get('Last-Modified');
+
+                    if (cached && remoteLastModified && cached.lastModified === remoteLastModified) {
+                        // Cache is still valid, update timestamp and return
+                        await db.set(url, cached.blob, cached.lastModified);
+                        return this._getBlobUrl(url, cached.blob);
+                    }
+
+                    // Not cached or newer version available, download it
+                    console.log(`Fetching fresh audio: ${url}`);
+                    const response = await fetch(`${url}?t=${now}`, { cache: 'no-cache' });
+                    const blob = await response.blob();
+                    const newLastModified = response.headers.get('Last-Modified') || remoteLastModified;
+
+                    await db.set(url, blob, newLastModified);
+                    return this._refreshBlobUrl(url, blob);
+                } catch (e) {
+                    console.error("Audio cache check failed:", e);
+                    if (cached) return this._getBlobUrl(url, cached.blob);
+                    return url; // Fallback to raw URL
+                }
+            },
+
+            _getBlobUrl: function (id, blob) {
+                if (this.blobUrls.has(id)) return this.blobUrls.get(id);
+                const url = URL.createObjectURL(blob);
+                this.blobUrls.set(id, url);
+                return url;
+            },
+
+            _refreshBlobUrl: function (id, blob) {
+                if (this.blobUrls.has(id)) {
+                    URL.revokeObjectURL(this.blobUrls.get(id));
+                }
+                const url = URL.createObjectURL(blob);
+                this.blobUrls.set(id, url);
+                return url;
+            },
+
+            preloadAll: async function (nodes) {
+                console.log("Preloading audio...");
+                const tasks = nodes.filter(n => n.audio).map(n => this.getAudio(n.audio));
+                await Promise.all(tasks);
+                console.log("Preload complete.");
+            }
+        };
+
+        // 1. Data Structure with Keywords & Sentences
+        const initialData = {
+  "id": "root",
+  "text": "Hard journeys for schoolchildren",
+  "emoji": "🌏",
+  "children": [
+    {
+      "id": "intro",
+      "text": "INTRODUCTION: The Reality for Many",
+      "emoji": "🚶",
+      "children": [
+        {
+          "id": "p1_1",
+          "text": "'How do you get to school?'",
+          "cn": "“你平时怎么去上学？”",
+          "emoji": "❓",
+          "notes": "Opening question to engage the reader.",
+          "statement": "The article starts with a question.",
+          "answer": true,
+          "explanation": "文章开头即是问句。",
+          "keywords": "how, school",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/8e2d3b6572df8876dda42120a92bd870.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p1_2",
+          "text": "This question often gets an answer like 'By bus' or 'I walk' or 'My parents take me by car'.",
+          "cn": "这个问题通常得到的答案是“坐公交车”、“走路”或“我父母开车送我”。",
+          "emoji": "🚗",
+          "notes": "Typical ways children go to school.",
+          "statement": "Most kids answer 'by helicopter'.",
+          "answer": false,
+          "explanation": "文中列举的是 'bus', 'walk', 'car'。",
+          "keywords": "bus, walk, car",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/6693410107f68a9dfeff6edc5a747599.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p1_3",
+          "text": "But not always - there are children in many different parts of the world who, every day, have to go on a difficult journey in order to get to their lessons.",
+          "cn": "但并非总是如此——在世界许多不同的地方，每天都有孩子为了上课而不得不进行一段艰难的旅程。",
+          "emoji": "🎒",
+          "notes": "Thesis statement: some journeys are hard.",
+          "statement": "All children have easy journeys to school.",
+          "answer": false,
+          "explanation": "文中说 'there are children... who... have to go on a difficult journey'。",
+          "keywords": "difficult journey, lessons",
+          "highlight": "But, in order to",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/52c1763a8ed4f87d20fb093ff260b0bd.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p1_4",
+          "text": "They travel for kilometres on foot, or by boat, bicycle, donkey or train.",
+          "cn": "他们徒步走几公里，或者坐船、骑自行车、骑驴或坐火车。",
+          "emoji": "🐪",
+          "notes": "Various modes of difficult transport.",
+          "statement": "They travel by donkey.",
+          "answer": true,
+          "explanation": "文中列出了 'donkey'。",
+          "keywords": "kilometres, donkey",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/82f5df492d58c4bf92bdafd7b02c6cef.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p1_5",
+          "text": "They cross deserts, mountains, rivers, snow and ice: for example, the children of the Iñupiat community in Alaska go to school and then come back when it is dark, in extremely cold temperatures.",
+          "cn": "他们穿过沙漠、大山、河流、冰雪：例如，阿拉斯加伊纽皮亚特社区的孩子们去上学，然后在天黑时回来，气温极低。",
+          "emoji": "❄️",
+          "notes": "Extreme environments.",
+          "statement": "Alaska is a warm place.",
+          "answer": false,
+          "explanation": "文中描述为 'extremely cold temperatures'。",
+          "keywords": "deserts, Alaska, cold",
+          "highlight": "for example",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/5d9ae2e34e1a97319770fd07025f3930.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p1_6",
+          "text": "And they are not the only ones - kids in many countries do this and more.",
+          "cn": "他们并不是唯一的——许多国家的孩子都在这样做，甚至更多。",
+          "emoji": "🌍",
+          "notes": "This is a global issue.",
+          "statement": "Only kids in Alaska have hard journeys.",
+          "answer": false,
+          "explanation": "文中说 'kids in many countries do this'。",
+          "keywords": "many countries",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/953ee8fd805e0f5e7a2dc409adfc7eb7.mp3",
+          "state": "hidden"
+        }
+      ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/7a8fc16c4e6e669596edec6712cd2112.mp3",
+      "state": "hidden"
+    },
+    {
+      "id": "cases",
+      "text": "CASE STUDIES: Around the World",
+      "emoji": "📍",
+      "children": [
+        {
+          "id": "indonesia_group",
+          "text": "INDONESIA: The Dangerous Bridge",
+          "emoji": "🇮🇩",
+          "children": [
+            {
+              "id": "p2_1",
+              "text": "These children in Indonesia have to cross a bridge ten metres above a dangerous river to get to their class on time.",
+              "cn": "印度尼西亚的这些孩子必须穿过一座位于危险河流上方10米处的桥，才能准时去上课。",
+              "emoji": "🌉",
+              "notes": "Focus on Indonesia.",
+              "statement": "The bridge is 10 metres high.",
+              "answer": true,
+              "explanation": "文中说是 'ten metres'。",
+              "keywords": "Indonesia, bridge, on time",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/e6878aae51dcd486c35f13ad49a1bb66.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p2_2",
+              "text": "(The bridge fell down in 2001 after very heavy rain.)",
+              "cn": "（这座桥在2001年大雨后倒塌了。）",
+              "emoji": "🌧️",
+              "notes": "Parenthetical historical context.",
+              "statement": "The bridge fell down because of rain.",
+              "answer": true,
+              "explanation": "文中说是因为 'heavy rain'。",
+              "keywords": "fell down, 2001, rain",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/2586c94909246fd7f8bfd5a4c9245d36.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p2_3",
+              "text": "Then they walk many more kilometres through the forest to their school in Banten village.",
+              "cn": "然后他们还要穿过森林走很多公里才能到达万丹村的学校。",
+              "emoji": "🌳",
+              "notes": "A two-part difficult journey.",
+              "statement": "The school is in Banten village.",
+              "answer": true,
+              "explanation": "文中明确提到 'their school in Banten village'。",
+              "keywords": "forest, Banten village",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/fd4e7caf478b705e98955fe3104422ce.mp3",
+              "state": "hidden"
+            }
+          ],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/95c267374e8a1f80d4d625a720866123.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "china_group",
+          "text": "CHINA: The Mountain Path",
+          "emoji": "🇨🇳",
+          "children": [
+            {
+              "id": "p3_1",
+              "text": "A pupil at Gulu Village Primary School, China, rides a donkey as his grandfather walks beside him.",
+              "cn": "中国古鲁村小学的学生骑着驴，爷爷走在旁边。",
+              "emoji": "👴",
+              "notes": "Focus on China.",
+              "statement": "The student rides a donkey.",
+              "answer": true,
+              "explanation": "文中说是 'rides a donkey'。",
+              "keywords": "China, pupil, donkey",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/db9dcb080aa4f7949b1c0e92d737e1dc.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p3_2",
+              "text": "Gulu is a mountain village in a national park.",
+              "cn": "古鲁是一个位于国家公园内的山村。",
+              "emoji": "🏞️",
+              "notes": "Location description.",
+              "statement": "Gulu is a mountain village.",
+              "answer": true,
+              "explanation": "文中说是 'mountain village'。",
+              "keywords": "mountain, national park",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/2700b182efb04182c436141f261f72aa.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p3_3",
+              "text": "The school is far away from the village.",
+              "cn": "学校离村子很远。",
+              "emoji": "📏",
+              "notes": "Distance issue.",
+              "statement": "The school is near the village.",
+              "answer": false,
+              "explanation": "文中说 'far away from the village'。",
+              "keywords": "far away",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/74b79d536d5f22583563588b67c1f031.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p3_4",
+              "text": "It is halfway up a mountain, so it takes five hours to climb from the bottom of the mountain to the school.",
+              "cn": "它在半山腰，所以从山脚爬到学校需要五个小时。",
+              "emoji": "🧗",
+              "notes": "Elevation and time.",
+              "statement": "It takes 5 hours to climb up.",
+              "answer": true,
+              "explanation": "文中提到 'it takes five hours to climb'。",
+              "keywords": "halfway up, five hours",
+              "highlight": "so",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/279b6fa285e3e08c8ff6cccd7d41d1d7.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p3_5",
+              "text": "The children have a dangerous journey: the path is only 45 centimetres wide in some places.",
+              "cn": "孩子们有一段危险的旅程：有些地方的小路只有45厘米宽。",
+              "emoji": "⚠️",
+              "notes": "The specific danger: narrowness.",
+              "statement": "The path is 45 centimetres wide.",
+              "answer": true,
+              "explanation": "文中说是 '45 centimetres'。",
+              "keywords": "dangerous, 45 centimetres, wide",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/b02afc9cd856cc98274abaf8cca2ac34.mp3",
+              "state": "hidden"
+            }
+          ],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/27d6957df29e7cebf1e8c36aad0761da.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "srilanka_group",
+          "text": "SRI LANKA: The Castle Wall",
+          "emoji": "🇱🇰",
+          "children": [
+            {
+              "id": "p4_1",
+              "text": "In Sri Lanka, some children have to cross a piece of wood between two walls of an old castle every morning.",
+              "cn": "在斯里兰卡，一些孩子每天早上必须穿过旧城堡两堵墙之间的一块木头。",
+              "emoji": "🏰",
+              "notes": "Focus on Sri Lanka.",
+              "statement": "They cross a piece of wood.",
+              "answer": true,
+              "explanation": "文中说 'cross a piece of wood'。",
+              "keywords": "Sri Lanka, wood, castle",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/0246ce490d4b6369d69aa2924bc80bdf.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p4_2",
+              "text": "Their teacher watches them carefully.",
+              "cn": "他们的老师仔细地看着他们。",
+              "emoji": "👀",
+              "notes": "Adult supervision.",
+              "statement": "The teacher watches them.",
+              "answer": true,
+              "explanation": "文中说 'Their teacher watches them'。",
+              "keywords": "teacher, carefully",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/abbd8074f308e4f4a5c61aa70cf38842.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p4_3",
+              "text": "But in Sri Lanka, many girls don't go to school - they have to go to work or get married young.",
+              "cn": "但在斯里兰卡，许多女孩不去上学——她们必须去工作或很早就结婚。",
+              "emoji": "👰",
+              "notes": "Social context.",
+              "statement": "All girls go to school in Sri Lanka.",
+              "answer": false,
+              "explanation": "文中说 'many girls don't go to school'。",
+              "keywords": "girls, married young",
+              "highlight": "But",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/6cff23bc38b71043f4261c946fe694ec.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p4_4",
+              "text": "So girls are happy to take a risk in order to get to school.",
+              "cn": "所以女孩们乐于冒险去上学。",
+              "emoji": "👩‍🎓",
+              "notes": "Value of education.",
+              "statement": "Girls are happy to take a risk.",
+              "answer": true,
+              "explanation": "文中说她们 'are happy to take a risk'。",
+              "keywords": "happy, take a risk",
+              "highlight": "So, in order to",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/15f17047e76e16a3e3ae691d6a77819e.mp3",
+              "state": "hidden"
+            }
+          ],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/9708d3705ec28ffed3e9f32218c3847c.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "brazil_group",
+          "text": "BRAZIL: The Desert Ride",
+          "emoji": "🇧🇷",
+          "children": [
+            {
+              "id": "p5_1",
+              "text": "Six-year old Fabricio Oliveira gets on his donkey every morning to ride with his friends for over an hour through a desert region in the very dry Sertão area of north-east Brazil.",
+              "cn": "六岁的法布里西奥·奥利维拉每天早上骑上驴，和朋友们一起在巴西东北部非常干燥的塞尔唐地区的沙漠地带骑行一个多小时。",
+              "emoji": "🏜️",
+              "notes": "Focus on Brazil.",
+              "statement": "Fabricio is 6 years old.",
+              "answer": true,
+              "explanation": "文中说他是 'Six-year old'。",
+              "keywords": "Fabricio, Brazil, desert",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/10d91c1476594566e8bf15e0c772de92.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p5_2",
+              "text": "Their school is in Extrema.",
+              "cn": "他们的学校在埃克斯特雷马。",
+              "emoji": "🏫",
+              "notes": "School name/location.",
+              "statement": "The school is in Extrema.",
+              "answer": true,
+              "explanation": "文中说 'Their school is in Extrema'。",
+              "keywords": "Extrema",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/3f16f23c8d7a19ae9edba279fae1519e.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p5_3",
+              "text": "It's a tiny village - only very few people live there.",
+              "cn": "那是一个极小的村庄——只有极少数人住在那里。",
+              "emoji": "🏘️",
+              "notes": "'Tiny' means extremely small.",
+              "statement": "Extrema is a tiny village.",
+              "answer": true,
+              "explanation": "文中描述为 'tiny village'。",
+              "keywords": "tiny village",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/ac1cfeb33d457257f97ea2e4722a1c7d.mp3",
+              "state": "hidden"
+            }
+          ],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/0825f25dee15a4c805e471ed5842e826.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "india_group",
+          "text": "INDIA: The Railway Tracks",
+          "emoji": "🇮🇳",
+          "children": [
+            {
+              "id": "p6_1",
+              "text": "These children live in poor houses on Chetla Road in Delhi, India.",
+              "cn": "这些孩子住在印度德里切特拉路的简陋房屋里。",
+              "emoji": "🏠",
+              "notes": "Focus on India.",
+              "statement": "They live in Delhi.",
+              "answer": true,
+              "explanation": "文中说 'in Delhi, India'。",
+              "keywords": "Delhi, India",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/bd29da495bde3aae7b0dd3f3834fc26e.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p6_2",
+              "text": "Their homes are near the busy and dangerous railway lines that go to Alipur station.",
+              "cn": "他们的家就在通往阿里普尔车站的繁忙且危险的铁路线附近。",
+              "emoji": "🚂",
+              "notes": "The urban danger.",
+              "statement": "They live near a station.",
+              "answer": true,
+              "explanation": "文中提到 'Alipur station'。",
+              "keywords": "dangerous, railway, station",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/c26dd366602bb9f8f63976d469b3af0c.mp3",
+              "state": "hidden"
+            },
+            {
+              "id": "p6_3",
+              "text": "Every morning they walk along the tracks to get to their school, forty minutes away.",
+              "cn": "每天早上，他们沿着轨道走40分钟去上学。",
+              "emoji": "🕘",
+              "notes": "Route and duration.",
+              "statement": "They walk along the tracks.",
+              "answer": true,
+              "explanation": "文中说 'walk along the tracks'。",
+              "keywords": "tracks, forty minutes",
+              "children": [],
+              "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/48136cb01897ab5d7f997492625de5a8.mp3",
+              "state": "hidden"
+            }
+          ],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/648390ffcff6f008ab0caafc36833df4.mp3",
+          "state": "hidden"
+        }
+      ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/321046f38284cc47dba8c2e316ef4b39.mp3",
+      "state": "hidden"
+    },
+    {
+      "id": "conclusion_group",
+      "text": "CONCLUSION: A Better Future",
+      "emoji": "🌈",
+      "children": [
+        {
+          "id": "p7_1",
+          "text": "So one question we can ask is: why do the children do this?",
+          "cn": "所以我们可以问一个问题：孩子们为什么要这样做？",
+          "emoji": "🤔",
+          "notes": "Rhetorical transition.",
+          "statement": "The author asks 'why'.",
+          "answer": true,
+          "explanation": "文中直接提出了这个问题。",
+          "keywords": "why",
+          "highlight": "So",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/af2ce7a5bc56376b5838867ad8dadad8.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p7_2",
+          "text": "Because their parents make them do it?",
+          "cn": "是因为他们的父母强迫他们这样做吗？",
+          "emoji": "🙎‍♂️",
+          "notes": "Considering a common assumption.",
+          "statement": "The parents make them do it.",
+          "answer": false,
+          "explanation": "文中说 'The answer... is no'。",
+          "keywords": "parents",
+          "highlight": "Because",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/5140d1c02683103b082870128ab8e2cd.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p7_3",
+          "text": "The answer, in many cases, is no - it's because for them going to school means a better future.",
+          "cn": "在许多情况下，答案是否定的——这是因为对他们来说，上学意味着更美好的未来。",
+          "emoji": "💎",
+          "notes": "The true motivation.",
+          "statement": "School means a better future.",
+          "answer": true,
+          "explanation": "文中明确说 'going to school means a better future'。",
+          "keywords": "better future",
+          "highlight": "it's because",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/c64602b5b8791fcbe554c6cab973be74.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p7_4",
+          "text": "They hope to get a job and money, so they can help their families and their neighbours.",
+          "cn": "他们希望得到工作和金钱，这样他们就能帮助自己的家庭和邻居。",
+          "emoji": "🏠",
+          "notes": "Goals of education.",
+          "statement": "They want to help their neighbours.",
+          "answer": true,
+          "explanation": "文中说 'help their families and their neighbours'。",
+          "keywords": "job, money, neighbours",
+          "highlight": "so",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/cf837062af3e51b93988cb8749c921a7.mp3",
+          "state": "hidden"
+        },
+        {
+          "id": "p7_5",
+          "text": "And this is why rivers, deserts or danger won't stop them on their way to school.",
+          "cn": "这就是为什么河流、沙漠或危险都无法阻止他们去上学的脚步。",
+          "emoji": "🏃",
+          "notes": "Concluding thought on resilience.",
+          "statement": "Nothing stops them.",
+          "answer": true,
+          "explanation": "文中说 'won't stop them'。",
+          "keywords": "won't stop, way to school",
+          "highlight": "And this is why",
+          "children": [],
+          "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/48e68d75a5fba87a425a8be6595dff66.mp3",
+          "state": "hidden"
+        }
+      ],
+      "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/4ac4f0f54643e9f12e5ea1cbea6bef90.mp3",
+      "state": "hidden"
+    }
+  ],
+  "audio": "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u12-p114-p119/cabc5c46a3df6edbe4f7b93f89fb5aaf.mp3",
+  "state": "emoji"
+};
+        const writingPrompt = "";
+
+        let treeData = null;
+        let actionSteps = [];
+        let currentStepIndex = 0;
+        let activeNodeId = null;
+        let clickedNodeId = null;
+        let collapsedNodes = new Set();
+        let savedCollapsedNodes = null; // To restore after showAll mode
+        let showAllMode = 0; // 0: progressive (Manual), 1: emoji, 2: keywords, 3: full
+        let maxDepthVisible = 5; // Default
+        let maxTreeDepth = 0;
+
+        let isPlayingAll = false;
+        let playAllQueue = [];
+        let currentPlayIndex = -1;
+
+        let activeBoxEl = null;
+        let activeWrappers = []; // Now an array to hold all ancestor wrappers
+        let actionsTimeout = null;
+
+        function closeActions() {
+            if (!activeBoxEl) return;
+            if (actionsTimeout) clearTimeout(actionsTimeout);
+            
+            const actions = activeBoxEl.querySelector('.node-actions');
+            if (actions) actions.remove();
+            activeBoxEl.classList.remove('node-box-active');
+            activeWrappers.forEach(w => w.classList.remove('active-wrapper'));
+            
+            activeBoxEl = null;
+            activeWrappers = [];
+            actionsTimeout = null;
+        }
+
+        function refreshActionsTimeout() {
+            if (!activeBoxEl) return;
+            if (actionsTimeout) clearTimeout(actionsTimeout);
+            
+            actionsTimeout = setTimeout(() => {
+                closeActions();
+            }, 3000);
+        }
+
+        function findNodeById(node, id) {
+            if (node.id === id) return node;
+            if (node.children) {
+                for (const child of node.children) {
+                    const found = findNodeById(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        // 2. Step Generation Logic (Empty -> Emoji -> Keywords -> Full -> Children)
+        function getMaxDepth(node, currentDepth = 0) {
+            if (!node.children || node.children.length === 0) return currentDepth;
+            return Math.max(...node.children.map(child => getMaxDepth(child, currentDepth + 1)));
+        }
+
+        function initDepthSlider() {
+            maxTreeDepth = getMaxDepth(initialData);
+            const slider = document.getElementById('depthSlider');
+            const labels = document.getElementById('depthLabels');
+            slider.max = maxTreeDepth;
+            slider.value = maxTreeDepth;
+            maxDepthVisible = maxTreeDepth;
+
+            labels.innerHTML = '';
+            for (let i = 0; i <= maxTreeDepth; i++) {
+                const span = document.createElement('span');
+                span.innerText = `L${i}`;
+                span.onclick = () => updateDepth(i);
+                labels.appendChild(span);
+            }
+            updateDepthLabels(maxTreeDepth);
+
+            const depthContainer = document.querySelector('.depth-slider-container');
+            if (depthContainer) {
+                depthContainer.style.display = showAllMode === 0 ? 'none' : 'flex';
+            }
+            updatePlayAllVisibility();
+        }
+
+        function updateDepth(val) {
+            maxDepthVisible = parseInt(val);
+            document.getElementById('depthSlider').value = maxDepthVisible;
+            updateDepthLabels(maxDepthVisible);
+            renderDOM(true);
+            updatePlayAllVisibility();
+        }
+
+        function updateDepthLabels(val) {
+            const labels = document.querySelectorAll('#depthLabels span');
+            labels.forEach((label, i) => {
+                label.classList.toggle('active', i === val);
+            });
+        }
+        function generateSteps(node) {
+            if (!node.children || node.children.length === 0) return;
+
+            // STEP A: Show empty box outline for the structure
+            actionSteps.push(() => {
+                node.children.forEach(child => child.state = 'empty');
+                activeNodeId = node.children[0].id;
+            });
+
+            // STEP B: For each child, reveal through states progressively
+            node.children.forEach(child => {
+
+                // 1. Reveal Emoji Hint
+                actionSteps.push(() => {
+                    child.state = 'emoji';
+                    activeNodeId = child.id;
+                });
+
+                // 2. Reveal Simple Words / Keywords (if they exist)
+                if (child.keywords) {
+                    actionSteps.push(() => {
+                        child.state = 'keywords';
+                        activeNodeId = child.id;
+                    });
+                }
+
+                // 3. Reveal Full Sentence
+                actionSteps.push(() => {
+                    child.state = 'full';
+                    activeNodeId = child.id;
+                });
+
+                // 4. Recurse to generate steps for this child's sub-nodes
+                generateSteps(child);
+            });
+        }
+
+        function cloneData(data) {
+            return JSON.parse(JSON.stringify(data));
+        }
+
+        // 3. Render Engine
+        function renderNode(node, depth = 0) {
+            const isManualMode = showAllMode === 0;
+            if (node.state === 'hidden' || (!isManualMode && depth > maxDepthVisible)) return null;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mindmap-node-wrapper';
+
+            const box = document.createElement('div');
+            box.className = `node-box ${node.state} level-${depth}`;
+
+            if (node.id === activeNodeId) {
+                if (isPlayingAll) {
+                    box.classList.add('playing');
+                    box.id = 'playing-node';
+                } else {
+                    box.id = 'active-node';
+                }
+            }
+            if (node.id === clickedNodeId) box.classList.add('clicked-flicker');
+
+            // Play from here if playing all
+            if (isPlayingAll && node.state !== 'empty') {
+                box.style.cursor = 'pointer';
+                box.onclick = (e) => {
+                    e.stopPropagation();
+                    const index = playAllQueue.findIndex(n => n.id === node.id);
+                    if (index !== -1) {
+                        currentPlayIndex = index;
+                        if (lastAudio) {
+                            lastAudio.pause();
+                            lastAudio = null;
+                        }
+                        window.speechSynthesis.cancel();
+                        playNextInQueue();
+                    }
+                };
+            }
+
+            // Collapse Logic
+            const hasChildren = node.children && node.children.length > 0;
+            const allChildrenFull = hasChildren && node.children.every(c => c.state === 'full');
+            const isCollapsed = collapsedNodes.has(node.id);
+            const isDepthLimited = !isManualMode && depth >= maxDepthVisible;
+            const hideChildren = (isCollapsed && allChildrenFull) || (isDepthLimited && hasChildren);
+
+            if (allChildrenFull && showAllMode !== 3 && !isDepthLimited) {
+                box.classList.add('collapsible');
+                box.title = isCollapsed ? "Click to expand" : "Click to collapse";
+                box.onclick = (e) => {
+                    e.stopPropagation();
+                    clickedNodeId = node.id;
+                    if (collapsedNodes.has(node.id)) {
+                        collapsedNodes.delete(node.id);
+                        activeNodeId = node.children[0].id;
+                    } else {
+                        collapsedNodes.add(node.id);
+                        activeNodeId = node.id;
+                    }
+                    renderDOM(true);
+                };
+            }
+
+            // Render Content based on current Learning State
+            if (node.state === 'emoji') {
+                box.innerHTML = `<span class="node-content-emoji">${node.emoji}</span>`;
+            } else if (node.state === 'keywords') {
+                box.innerHTML = `
+                    <span class="node-content-emoji">${node.emoji}</span>
+                    <span class="node-content-keywords">${node.keywords}</span>
+                `;
+            } else if (node.state === 'full') {
+                let displayedText = node.text;
+                if (node.highlight) {
+                    const highlights = node.highlight.split(',').map(s => s.trim()).filter(s => s);
+                    highlights.forEach(h => {
+                        // Use regex to replace matches with highlighted span
+                        // Use word boundaries \b for better matching, but be careful with "not only...but also"
+                        // For complex patterns like "not only...but also", we might need a different approach
+                        if (h.includes('...')) {
+                            const parts = h.split('...').map(p => p.trim());
+                            const pattern = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*?');
+                            const regex = new RegExp(`(${pattern})`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            const escaped = h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const regex = new RegExp(`(\\b${escaped}\\b)`, 'gi');
+                            displayedText = displayedText.replace(regex, '<span class="highlight">$1</span>');
+                        }
+                    });
+                }
+                box.innerHTML = `
+                    <span class="node-content-emoji">${node.emoji}</span>
+                    <span class="node-content-text" style="flex:1;">${displayedText}</span>
+                `;
+
+                // Add click listener to show actions on the fly (overlay)
+                const existingOnClick = box.onclick;
+                box.onclick = (e) => {
+                    e.stopPropagation(); // Prevent global closeActions from firing
+                    if (existingOnClick) existingOnClick(e);
+                    
+                    // Toggle current node: if it's already active, close it
+                    if (activeBoxEl === box) {
+                        closeActions();
+                        return;
+                    }
+
+                    // Cleanup previous actions if they exist
+                    if (activeBoxEl) {
+                        closeActions();
+                    }
+
+                    const actions = document.createElement('div');
+                    actions.className = 'node-actions';
+                    actions.onclick = (e) => {
+                        e.stopPropagation();
+                    };
+                    actions.innerHTML = `
+                        <button class="action-btn" onclick="playAudio('${node.id}', event); refreshActionsTimeout();" title="Play Audio">🔊</button>
+                        ${node.cn ? `<button class="action-btn" onclick="toggleTooltip(this, event); refreshActionsTimeout();" title="Translation">CN<span class="tooltip">${node.cn}</span></button>` : ''}
+                        ${node.notes ? `<button class="action-btn" onclick="toggleTooltip(this, event); refreshActionsTimeout();" title="Notes">💡<span class="tooltip">${node.notes}</span></button>` : ''}
+                        ${node.statement ? `<button class="action-btn" onclick="showQuestion('${node.id}', event); refreshActionsTimeout();" title="Question">❓</button>` : ''}
+                    `;
+                    box.appendChild(actions);
+                    box.classList.add('node-box-active');
+                    
+                    // Apply active-wrapper to all ancestor mindmap-node-wrappers for stacking safety
+                    activeWrappers = [];
+                    let parent = box.parentElement;
+                    while (parent && parent !== document.body) {
+                        if (parent.classList.contains('mindmap-node-wrapper')) {
+                            parent.classList.add('active-wrapper');
+                            activeWrappers.push(parent);
+                        }
+                        parent = parent.parentElement;
+                    }
+                    
+                    activeBoxEl = box;
+                    refreshActionsTimeout();
+                };
+            }
+
+            if (hideChildren && node.state !== 'empty' && node.state !== 'hidden') {
+                box.innerHTML += `<span class="collapsed-indicator" title="Hidden nodes">+${node.children.length}</span>`;
+            }
+
+            wrapper.appendChild(box);
+
+            // Render children
+            if (node.children && node.children.some(c => c.state !== 'hidden') && !hideChildren) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children-container';
+
+                node.children.forEach(child => {
+                    const childElement = renderNode(child, depth + 1);
+                    if (childElement) {
+                        const childRow = document.createElement('div');
+                        childRow.className = 'child-row';
+                        childRow.appendChild(childElement);
+                        childrenContainer.appendChild(childRow);
+                    }
+                });
+                wrapper.appendChild(childrenContainer);
+            }
+
+            return wrapper;
+        }
+
+        function renderDOM(manualToggle = false) {
+            closeActions(); // Close any active overlays before re-rendering
+            const container = document.getElementById('mindmap-container');
+
+            // Save scroll positions if we want to preserve them
+            const savedScrollTop = container.scrollTop;
+            const savedScrollLeft = container.scrollLeft;
+
+            container.innerHTML = '';
+            const domTree = renderNode(treeData, 0);
+            if (domTree) {
+                container.appendChild(domTree);
+            }
+
+            if (manualToggle) {
+                // Restore scroll positions when switching modes or toggling collapse
+                container.scrollTop = savedScrollTop;
+                container.scrollLeft = savedScrollLeft;
+                return;
+            }
+
+            // Auto-scroll logic (only for progressive steps)
+            const activeEl = document.getElementById('active-node');
+            if (activeEl) {
+                const containerRect = container.getBoundingClientRect();
+                const activeRect = activeEl.getBoundingClientRect();
+
+                let shouldScrollToTop = true;
+                // (manualToggle check removed here as we return early above)
+
+                let targetScrollTop = container.scrollTop;
+
+                if (shouldScrollToTop) {
+                    targetScrollTop = activeRect.top - containerRect.top + container.scrollTop - 60;
+                } else {
+                    const childrenContainer = activeEl.closest('.children-container');
+                    if (childrenContainer) {
+                        const lastChildRow = childrenContainer.lastElementChild;
+                        const lastChildBox = lastChildRow ? lastChildRow.querySelector('.node-box') : null;
+
+                        if (lastChildBox) {
+                            const lastRect = lastChildBox.getBoundingClientRect();
+                            const bottomThreshold = containerRect.bottom - 60;
+
+                            if (lastRect.bottom > bottomThreshold) {
+                                const neededScroll = lastRect.bottom - bottomThreshold;
+                                targetScrollTop = container.scrollTop + neededScroll;
+                                const maxScroll = activeRect.top - containerRect.top + container.scrollTop - 60;
+                                targetScrollTop = Math.min(targetScrollTop, maxScroll);
+                            }
+                        }
+                    }
+                }
+
+                container.scrollTo({
+                    left: container.scrollWidth,
+                    top: Math.max(0, targetScrollTop),
+                    behavior: 'smooth'
+                });
+            } else {
+                container.scrollTo({
+                    left: container.scrollWidth,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // 4. Action Controllers
+        let lastAudio = null;
+        async function playAudio(nodeId, event) {
+            if (event) event.stopPropagation();
+            const node = findNodeById(treeData, nodeId);
+            if (!node) return;
+
+            if (lastAudio) {
+                lastAudio.pause();
+                lastAudio = null;
+            }
+
+            if (node.audio) {
+                try {
+                    const audioUrl = await AudioCacheManager.getAudio(node.audio);
+                    const audio = new Audio(audioUrl);
+                    lastAudio = audio;
+                    audio.play().catch(err => {
+                        console.error("Audio playback failed:", err);
+                        speak(node.text);
+                    });
+                } catch (err) {
+                    speak(node.text);
+                }
+            } else {
+                speak(node.text);
+            }
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-GB'; // British English
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleTooltip(btn, event) {
+            if (event) event.stopPropagation();
+            const tooltip = btn.querySelector('.tooltip');
+            if (!tooltip) return;
+            
+            // Hide all other tooltips first
+            document.querySelectorAll('.tooltip.visible').forEach(t => {
+                if (t !== tooltip) t.classList.remove('visible');
+            });
+
+            tooltip.classList.toggle('visible');
+
+            if (tooltip.classList.contains('visible')) {
+                // Auto hide after 5 seconds
+                if (btn._tooltipTimeout) clearTimeout(btn._tooltipTimeout);
+                btn._tooltipTimeout = setTimeout(() => {
+                    tooltip.classList.remove('visible');
+                }, 5000);
+            }
+        }
+        function collectVisibleNodes(node, depth = 0, list = []) {
+            if (node.state === 'hidden' || depth > maxDepthVisible) return list;
+            list.push(node);
+            if (node.children && depth < maxDepthVisible && !collapsedNodes.has(node.id)) {
+                node.children.forEach(child => collectVisibleNodes(child, depth + 1, list));
+            }
+            return list;
+        }
+
+        async function togglePlayAll() {
+            if (isPlayingAll) {
+                stopPlayAll();
+                return;
+            }
+
+            const btn = document.getElementById('playAllBtn');
+            btn.innerText = '⏹️';
+            isPlayingAll = true;
+
+            playAllQueue = collectVisibleNodes(treeData);
+            currentPlayIndex = 0;
+
+            playNextInQueue();
+        }
+
+        function stopPlayAll() {
+            isPlayingAll = false;
+            if (lastAudio) {
+                lastAudio.pause();
+                lastAudio = null;
+            }
+            window.speechSynthesis.cancel();
+
+            const btn = document.getElementById('playAllBtn');
+            btn.innerText = '🔊';
+
+            renderDOM(true);
+        }
+
+        async function playNextInQueue() {
+            if (!isPlayingAll || currentPlayIndex >= playAllQueue.length) {
+                stopPlayAll();
+                return;
+            }
+
+            const node = playAllQueue[currentPlayIndex];
+            activeNodeId = node.id;
+            renderDOM(true); // Highlights current node with 'playing' class via renderNode logic
+
+            // Auto scroll to current node
+            const el = document.getElementById('playing-node');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            await playNodeAudioAsync(node);
+
+            if (isPlayingAll) {
+                currentPlayIndex++;
+                setTimeout(playNextInQueue, 500); // Small gap between sentences
+            }
+        }
+
+        async function playNodeAudioAsync(node) {
+            if (node.audio) {
+                try {
+                    const audioUrl = await AudioCacheManager.getAudio(node.audio);
+                    return new Promise((resolve) => {
+                        const audio = new Audio(audioUrl);
+                        lastAudio = audio;
+                        audio.onended = resolve;
+                        audio.onerror = () => {
+                            speakAsync(node.text).then(resolve);
+                        };
+                        audio.play().catch(err => {
+                            speakAsync(node.text).then(resolve);
+                        });
+                    });
+                } catch (err) {
+                    console.error("Cache fetch failed, falling back to TTS:", err);
+                    await speakAsync(node.text);
+                }
+            } else {
+                await speakAsync(node.text);
+            }
+        }
+
+        function speakAsync(text) {
+            return new Promise((resolve) => {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-GB';
+                    utterance.onend = resolve;
+                    utterance.onerror = resolve;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    resolve();
+                }
+            });
+        }
+
+        function updatePlayAllVisibility() {
+            const isVisible = showAllMode === 3 && maxDepthVisible === maxTreeDepth;
+            document.getElementById('playAllBtn').style.display = isVisible ? 'flex' : 'none';
+            document.getElementById('playAllSeparator').style.display = isVisible ? 'block' : 'none';
+            if (!isVisible && isPlayingAll) stopPlayAll();
+
+            if (showAllMode === 3) {
+                // Preload visible nodes in the background
+                const visibleNodes = collectVisibleNodes(treeData);
+                AudioCacheManager.preloadAll(visibleNodes);
+            }
+        }
+
+        let currentQuestionNode = null;
+        function showQuestion(nodeId, event) {
+            if (event) event.stopPropagation();
+            const node = findNodeById(treeData, nodeId);
+            if (!node || !node.statement) return;
+
+            currentQuestionNode = node;
+            document.getElementById('questionStatement').innerText = node.statement;
+            document.getElementById('questionFeedback').style.display = 'none';
+            document.getElementById('questionModal').style.display = 'flex';
+        }
+
+        function checkAnswer(userChoice) {
+            if (!currentQuestionNode) return;
+
+            const isCorrect = userChoice === currentQuestionNode.answer;
+            const feedback = document.getElementById('questionFeedback');
+            const feedbackText = document.getElementById('feedbackText');
+            const explanationText = document.getElementById('explanationText');
+
+            feedback.style.display = 'block';
+            feedback.style.backgroundColor = isCorrect ? '#ecfdf5' : '#fef2f2';
+            feedback.style.border = `1px solid ${isCorrect ? '#10b981' : '#ef4444'}`;
+
+            feedbackText.innerText = isCorrect ? "✅ Correct! (正确)" : "❌ Incorrect (错误)";
+            feedbackText.style.color = isCorrect ? "#065f46" : "#991b1b";
+
+            explanationText.innerText = currentQuestionNode.explanation || "";
+        }
+
+        function closeQuestionModal() {
+            document.getElementById('questionModal').style.display = 'none';
+            currentQuestionNode = null;
+        }
+
+        // Global click listener to hide tooltips when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.action-btn')) {
+                document.querySelectorAll('.tooltip.visible').forEach(t => {
+                    t.classList.remove('visible');
+                });
+            }
+        });
+
+        function updateButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            prevBtn.disabled = currentStepIndex === 0;
+            const isFinished = currentStepIndex >= actionSteps.length;
+            nextBtn.disabled = isFinished;
+
+            const progress = actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        function applyStepsUpTo(targetIndex) {
+            treeData = cloneData(initialData);
+            actionSteps = [];
+            activeNodeId = treeData.id;
+
+            // Add initial step to reveal the root node's full text
+            actionSteps.push(() => {
+                treeData.state = 'full';
+                activeNodeId = treeData.id;
+            });
+
+            generateSteps(treeData);
+
+            currentStepIndex = targetIndex;
+            for (let i = 0; i < currentStepIndex; i++) {
+                actionSteps[i]();
+            }
+
+            renderDOM();
+            updateButtons();
+        }
+
+        function nextStep() {
+            if (showAllMode > 0) {
+                // Return to progressive mode seamlessly
+                updateMode(0);
+                updatePlayAllVisibility();
+                return;
+            }
+
+            if (currentStepIndex < actionSteps.length) {
+                actionSteps[currentStepIndex]();
+                currentStepIndex++;
+                renderDOM();
+                updateButtons();
+                updatePlayAllVisibility();
+            }
+        }
+
+        function prevStep() {
+            if (showAllMode > 0) {
+                // Return to progressive mode
+                updateMode(0);
+                updatePlayAllVisibility();
+                return;
+            }
+
+            if (currentStepIndex > 0) {
+                applyStepsUpTo(currentStepIndex - 1);
+                updatePlayAllVisibility();
+            }
+        }
+
+        function updateMode(val) {
+            const newMode = parseInt(val);
+            const slider = document.getElementById('modeSlider');
+            slider.value = newMode;
+
+            // Update labels
+            const labels = document.querySelectorAll('.mode-labels:not(#depthLabels) span');
+            labels.forEach((label, i) => {
+                label.classList.toggle('active', i === newMode);
+            });
+
+            const depthContainer = document.querySelector('.depth-slider-container');
+            if (depthContainer) {
+                depthContainer.style.display = newMode === 0 ? 'none' : 'flex';
+            }
+
+            if (newMode === 0) {
+
+                // Return to manual/progressive mode
+                if (showAllMode !== 0) {
+                    showAllMode = 0;
+                    if (savedCollapsedNodes) {
+                        collapsedNodes = savedCollapsedNodes;
+                        savedCollapsedNodes = null;
+                    }
+                    applyStepsUpTo(currentStepIndex);
+                }
+                return;
+            }
+
+            if (showAllMode === 0) {
+                savedCollapsedNodes = new Set(collapsedNodes);
+            }
+            showAllMode = newMode;
+
+            let targetState = 'emoji';
+            if (showAllMode === 2) {
+                targetState = 'keywords';
+            } else if (showAllMode === 3) {
+                targetState = 'full';
+            }
+
+            function setNodeStateRecursively(node, state) {
+                // If the node doesn't have keywords (like root), default to full text
+                if (state === 'keywords' && !node.keywords) {
+                    node.state = 'full';
+                } else {
+                    node.state = state;
+                }
+
+                if (node.children) {
+                    node.children.forEach(child => setNodeStateRecursively(child, state));
+                }
+            }
+
+            // Apply target state directly to the tree
+            setNodeStateRecursively(treeData, targetState);
+            collapsedNodes.clear(); // Ensure nothing is hidden when toggling
+            renderDOM(true);
+            updatePlayAllVisibility();
+        }
+
+        function resetMap() {
+            updateMode(0);
+            collapsedNodes.clear();
+            applyStepsUpTo(0);
+            updatePlayAllVisibility();
+        }
+
+        // Modal Functions
+        function showWritingPrompt() {
+            if (!writingPrompt) return;
+            document.getElementById('promptText').innerHTML = writingPrompt;
+            document.getElementById('promptModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('promptModal').style.display = 'none';
+        }
+
+        // Listen for user input
+        window.onload = () => {
+            if (writingPrompt) {
+                document.getElementById('promptBtn').style.display = 'flex';
+            }
+            initDepthSlider();
+            resetMap();
+        };
+
+        // Global click listener to close actions
+        function handleGlobalClick(e) {
+            if (activeBoxEl && !activeBoxEl.contains(e.target)) {
+                closeActions();
+            }
+        }
+        window.addEventListener('mousedown', handleGlobalClick);
+        window.addEventListener('pointerdown', handleGlobalClick);
+        window.addEventListener('touchstart', handleGlobalClick);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowRight') {
+                e.preventDefault();
+                const btn = document.getElementById('nextBtn');
+                if (!btn.disabled) nextStep();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                const btn = document.getElementById('prevBtn');
+                if (!btn.disabled) prevStep();
+            } else if (e.code === 'KeyA') {
+                e.preventDefault();
+                if (showAllMode > 0) updateMode(showAllMode - 1);
+            } else if (e.code === 'KeyD') {
+                e.preventDefault();
+                if (showAllMode < 3) updateMode(showAllMode + 1);
+            }
+        });
+
+    </script>
+</body>
+
+</html>
