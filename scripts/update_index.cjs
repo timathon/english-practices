@@ -135,31 +135,84 @@ function generateRecursiveIndex(folderPath, title, isRoot = false) {
     }
 
     function renderNode(node, name, depth = 0) {
-        let html = '';
+        let html = "";
         const folderNames = Object.keys(node.folders).sort(naturalCompare);
         const nodeFiles = [...node.files].sort(naturalCompare);
         
+        function getDisplayName(f, folderName) {
+            let displayName = f.name.replace(/\.html$/i, "");
+            const prefix = folderName.toLowerCase() + "-";
+            if (displayName.toLowerCase().startsWith(prefix)) {
+                displayName = displayName.substring(prefix.length);
+            }
+            return displayName.replace(/-/g, " ");
+        }
+
         if (depth === 0) {
             for (const folderName of folderNames) {
                 html += renderNode(node.folders[folderName], folderName, depth + 1);
             }
             for (const f of nodeFiles) {
-                html += `            <li><a href="${f.path}">${f.name}</a></li>\n`;
+                html += `            <li><a href="${f.path}">${getDisplayName(f, name)}</a></li>\n`;
             }
         } else {
-            const folderID = name.toUpperCase().replace(/\s+/g, '-');
+            const folderID = name.toUpperCase().replace(/\s+/g, "-");
             html += `            <li><span class="folder folder-toggle" data-unit="${folderID}">${name}</span> <span class="file-count"></span>\n`;
-            html += '                <ul class="collapsed">\n';
+            html += "                <ul class=\"collapsed\">\n";
             
             for (const folderName of folderNames) {
                 html += renderNode(node.folders[folderName], folderName, depth + 1);
             }
-            for (const f of nodeFiles) {
-                html += `                    <li><a href="${f.path}" onclick="saveLastUnit('${folderID}')">${f.name}</a></li>\n`;
-            }
+
+            const groupConfig = [
+                { name: "概览", keywords: ["recall-map"] },
+                { name: "单词", keywords: ["vocab-guide", "spelling-hero", "vocab-master"], sortOrder: ["vocab-guide", "spelling-hero", "vocab-master"] },
+                { name: "课文", keywords: ["text-navigator"] },
+                { name: "句子", keywords: ["sentence-architect"] },
+                { name: "作文", keywords: ["writing-map"] },
+                { name: "其他", keywords: [] }
+            ];
+
+            const categorized = {};
+            groupConfig.forEach(g => categorized[g.name] = []);
+
+            nodeFiles.forEach(f => {
+                const fileName = f.name.toLowerCase();
+                let matched = false;
+                for (const group of groupConfig) {
+                    if (group.keywords.length === 0) continue;
+                    if (group.keywords.some(k => fileName.includes(k))) {
+                        categorized[group.name].push(f);
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) categorized["其他"].push(f);
+            });
+
+            groupConfig.forEach(group => {
+                const files = categorized[group.name];
+                if (group.sortOrder) {
+                    files.sort((a, b) => {
+                        const indexA = group.sortOrder.findIndex(k => a.name.toLowerCase().includes(k));
+                        const indexB = group.sortOrder.findIndex(k => b.name.toLowerCase().includes(k));
+                        return (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB);
+                    });
+                }
+                if (files.length > 0) {
+                    html += `                    <li class="group-container">\n`;
+                    html += `                        <div class="group-label">${group.name}</div>\n`;
+                    html += `                        <div class="group-links">\n`;
+                    for (const f of files) {
+                        html += `                            <a href="${f.path}" onclick="saveLastUnit('${folderID}')">${getDisplayName(f, name)}</a>\n`;
+                    }
+                    html += `                        </div>\n`;
+                    html += `                    </li>\n`;
+                }
+            });
             
-            html += '                </ul>\n';
-            html += '            </li>\n';
+            html += "                </ul>\n";
+            html += "            </li>\n";
         }
         return html;
     }
@@ -227,6 +280,29 @@ function generateRecursiveIndex(folderPath, title, isRoot = false) {
             font-style: italic;
             color: #888;
         }
+        .group-container {
+            display: flex;
+            align-items: flex-start;
+            margin: 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            margin-left: -20px;
+        }
+        .group-label {
+            width: 80px;
+            flex-shrink: 0;
+            font-size: 0.85em;
+            color: #999;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding-top: 2px;
+        }
+        .group-links {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
         .collapsed {
             display: none;
         }
@@ -243,20 +319,24 @@ function generateRecursiveIndex(folderPath, title, isRoot = false) {
     <script>
         function saveLastUnit(unit) {
             localStorage.setItem('last-unit-' + window.location.pathname, unit);
+            localStorage.setItem('last-unit-latest', unit);
         }
 
         document.addEventListener('DOMContentLoaded', function () {
             const folders = document.querySelectorAll('.folder-toggle');
-            const lastUnit = localStorage.getItem('last-unit-' + window.location.pathname);
+            const latestUnit = localStorage.getItem('last-unit-latest');
+            let lastUnit = localStorage.getItem('last-unit-' + window.location.pathname);
+            
+            // If the latest unit clicked anywhere belongs to this index, use it!
+            if (latestUnit && document.querySelector(\`[data-unit="\${latestUnit}"]\`)) {
+                lastUnit = latestUnit;
+            }
 
             folders.forEach(folder => {
                 const sublist = folder.nextElementSibling.nextElementSibling;
                 if (sublist && sublist.tagName === 'UL') {
-                    const fileCount = Array.from(sublist.children).reduce((acc, child) => {
-                        if (child.querySelector('a')) return acc + 1;
-                        if (child.querySelector('.folder-toggle')) return acc + 1;
-                        return acc;
-                    }, 0);
+                    const fileCount = Array.from(sublist.querySelectorAll('a')).filter(a => a.closest('ul') === sublist).length + 
+                                      Array.from(sublist.querySelectorAll('.folder-toggle')).filter(f => f.closest('ul') === sublist).length;
                     
                     const fileCountSpan = folder.nextElementSibling;
                     fileCountSpan.textContent = \`(\${fileCount} items)\`;
@@ -277,6 +357,9 @@ function generateRecursiveIndex(folderPath, title, isRoot = false) {
                             saveLastUnit(unit);
                         } else if (localStorage.getItem('last-unit-' + window.location.pathname) === unit) {
                             localStorage.removeItem('last-unit-' + window.location.pathname);
+                            if (localStorage.getItem('last-unit-latest') === unit) {
+                                localStorage.removeItem('last-unit-latest');
+                            }
                         }
                     });
                 }
