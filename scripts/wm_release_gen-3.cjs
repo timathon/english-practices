@@ -122,11 +122,9 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         const jsonData = JSON.parse(fs.readFileSync(absoluteInputPath, 'utf8'));
         const treeData = jsonData.tree || jsonData;
 
-        const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
-        const bookName = folderName.replace(/-[0-9]+$/, '').toLowerCase();
-
         // Calculate indexPath
         const bookFolder = path.basename(path.dirname(path.dirname(absoluteInputPath)));
+        const bookName = bookFolder.toLowerCase();
         const bookRoot = path.join(BASE_DIR, bookFolder);
         const indexPath = path.join(path.relative(path.dirname(absoluteOutputPath), bookRoot), 'index.html');
 

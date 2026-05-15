@@ -158,12 +158,25 @@ except Exception as e:
                     execSync(`ffmpeg -i "${combinedWav}" -af "silenceremove=start_periods=1:start_threshold=-35dB,areverse,silenceremove=start_periods=1:start_threshold=-35dB,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
                     
                     const r2Key = `ep/${book}/${hash}.mp3`;
-                    await s3Client.send(new PutObjectCommand({
-                        Bucket: BUCKET_NAME,
-                        Key: r2Key,
-                        Body: fs.readFileSync(segmentMp3),
-                        ContentType: "audio/mpeg",
-                    }));
+                    
+                    let uploadSuccess = false;
+                    for (let attempt = 1; attempt <= 3; attempt++) {
+                        try {
+                            await s3Client.send(new PutObjectCommand({
+                                Bucket: BUCKET_NAME,
+                                Key: r2Key,
+                                Body: fs.readFileSync(segmentMp3),
+                                ContentType: "audio/mpeg",
+                            }));
+                            uploadSuccess = true;
+                            break;
+                        } catch (e) {
+                            console.warn(`[Batch: ${batchId}] Upload attempt ${attempt} failed for ${r2Key}: ${e.message}`);
+                            if (attempt < 3) await new Promise(res => setTimeout(res, 2000));
+                        }
+                    }
+                    if (!uploadSuccess) throw new Error(`[Batch: ${batchId}] Failed to upload single audio to R2 after 3 attempts: ${r2Key}`);
+                    
                     task.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
                     success = true;
                 } else {
@@ -196,6 +209,8 @@ except Exception as e:
 
                     console.log(`Detected ${allSilences.length} pauses (>1.0s), using ${silences.length} longest as separators.`);
 
+                    // 1. Cut Phase: Generate all MP3s locally first
+                    const uploadTasks = [];
                     let startTime = 0;
                     for (let i = 0; i < tasks.length; i++) {
                         const task = tasks[i];
@@ -214,15 +229,32 @@ except Exception as e:
                         
                         if (fs.existsSync(segmentWav)) fs.unlinkSync(segmentWav);
 
-                        const r2Key = `ep/${book}/${hash}.mp3`;
-                        await s3Client.send(new PutObjectCommand({
-                            Bucket: BUCKET_NAME,
-                            Key: r2Key,
-                            Body: fs.readFileSync(segmentMp3),
-                            ContentType: "audio/mpeg",
-                        }));
-                        task.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
+                        uploadTasks.push({ task, segmentMp3, hash, text });
                         startTime = endTime;
+                    }
+
+                    // 2. Upload Phase: Upload all prepared MP3s to R2 with retries
+                    for (const { task, segmentMp3, hash, text } of uploadTasks) {
+                        const r2Key = `ep/${book}/${hash}.mp3`;
+                        console.log(`[Batch: ${batchId}] Uploading to R2: ${r2Key}`);
+                        let uploadSuccess = false;
+                        for (let attempt = 1; attempt <= 3; attempt++) {
+                            try {
+                                await s3Client.send(new PutObjectCommand({
+                                    Bucket: BUCKET_NAME,
+                                    Key: r2Key,
+                                    Body: fs.readFileSync(segmentMp3),
+                                    ContentType: "audio/mpeg",
+                                }));
+                                uploadSuccess = true;
+                                break;
+                            } catch (e) {
+                                console.warn(`[Batch: ${batchId}] Upload attempt ${attempt} failed for ${r2Key}: ${e.message}`);
+                                if (attempt < 3) await new Promise(res => setTimeout(res, 2000));
+                            }
+                        }
+                        if (!uploadSuccess) throw new Error(`[Batch: ${batchId}] Failed to upload ${r2Key} after 3 attempts.`);
+                        task.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
                     }
                     success = true;
                 }

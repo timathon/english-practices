@@ -90,13 +90,12 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
             return;
         }
 
-        const folderName = path.basename(path.dirname(jsonPath)).toLowerCase();
-        const bookName = folderName.replace(/-[0-9]+$/, '').toLowerCase();
         const jsonData = JSON.parse(fs.readFileSync(absoluteInputPath, 'utf8'));
         const vocab = jsonData.unit_vocabulary;
 
         // Calculate indexPath
         const bookFolder = path.basename(path.dirname(path.dirname(absoluteInputPath)));
+        const bookName = bookFolder.toLowerCase();
         const bookRoot = path.join(BASE_DIR, bookFolder);
         let indexPath = path.join(path.relative(path.dirname(absoluteOutputPath), bookRoot), 'index.html');
 
