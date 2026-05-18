@@ -1971,6 +1971,25 @@
             });
         }
 
+        // Interactive Sentence Highlighter
+        function wrapSentences(paragraph) {
+            const sentenceRegex = /[^.!?]+[.!?]+["']?|[^.!?]+$/g;
+            const sentences = paragraph.match(sentenceRegex);
+            if (!sentences) return paragraph;
+            
+            return sentences.map(s => {
+                if (!s.trim()) return s;
+                return `<span class="sentence-highlight cursor-pointer transition-colors duration-200 rounded py-0.5" onclick="highlightSentence(this)">${s}</span>`;
+            }).join('');
+        }
+
+        function highlightSentence(element) {
+            document.querySelectorAll('.sentence-highlight').forEach(el => {
+                el.classList.remove('bg-indigo-600', 'dark:bg-indigo-400', 'text-white', 'dark:text-slate-900');
+            });
+            element.classList.add('bg-indigo-600', 'dark:bg-indigo-400', 'text-white', 'dark:text-slate-900');
+        }
+
         // 6. Practice View Setup
         function startPractice(passageId) {
             currentPassage = PASSAGES_DATA.find(p => p.id === passageId);
@@ -1998,7 +2017,7 @@
             
             // Display Reading Passage
             const passageBox = document.getElementById('practice-passage');
-            passageBox.innerHTML = currentPassage.passage.split('\n\n').map(p => `<p class="mb-4">${p}</p>`).join('');
+            passageBox.innerHTML = currentPassage.passage.split('\n\n').map(p => `<p class="mb-4">${wrapSentences(p)}</p>`).join('');
 
             // Render Questions
             renderQuestions();
