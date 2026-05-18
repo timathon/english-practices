@@ -168,6 +168,36 @@ This document defines the rules for extracting and converting textbook data into
 - **Structure:** Follow the standard hierarchical tree structure defined in **Section 6 (Writing Map)**.
 - **Metadata:**
   - `section`: "Model Essay 1" or "Model Essay 2".
+
+## 8. Reading & Expression (RE)
+**Source:** Reading and Expression Markdown (e.g., `data/A7B/a7b-workbooks/a7b-re-old.md`).
+**Target:** `*-re-old-u[x].json` (Save in the same folder as source)
+
+- **Conversion Scope:** Generate separate JSON files for each unit/test found in the markdown source.
+- **Format & Structure:**
+  - `id`: A unique string ID identifying the unit (e.g., `"a7b-re-old-u1"`).
+  - `level`: The grade/semester info (e.g., `"Grade 7 Semester 2"`).
+  - `unit`: The unit name (e.g., `"Unit 1"`).
+  - `title`: The display title for the workbook test.
+  - `passage`: Verbatim text of the reading passage.
+  - `questions`: Array of exactly 4 question objects:
+    - **Questions 1, 2, and 3 (细节题 / Index 0-2):**
+      - `id`: Unique 8-character alphanumeric or logical string (e.g., `"u1-q41"`).
+      - `number`: Question number matching the text (usually 41, 42, 43).
+      - `type`: `"multiple-choice"`.
+      - `prompt`: Question prompt from the markdown text.
+      - `options`: Array of 4 options containing the correct answer and 3 synthetically generated plausible distractors.
+      - `answer`: Index of the correct option (0-3). **Crucially, the correct answer index must be randomized (shuffled).**
+    - **Question 4 (开放题 / Index 3):**
+      - `id`: Unique string ID (e.g., `"u1-q44"`).
+      - `number`: Question number matching the text (usually 44).
+      - `type`: `"sentence-ordering"`.
+      - `prompt`: Open-ended question prompt (e.g., `"What club do you want to join? Why? Write 20 words or more."`).
+      - `blocks`: Array of exactly 6 sentence block objects, where exactly 3 are correct components forming a high-scoring cohesive answer and 3 are incorrect distractors.
+        - Each block has `id`, `text`, `isCorrect` (boolean), and `role` (`"opinion"`, `"reason"`, `"summary"`, or `"distractor"`).
+        - Correct Blocks: Include an **Opinion** (观点), a **Reason** (理由), and a **Summary/Significance** (升华) in the first person ("I", "my") that combined meet the word count requirement (e.g., ≥20 words).
+        - Distractors: 3 incorrect sentence options (e.g., third-person copy-pasted sentences from the passage or unrelated grammar points).
+      - `correctOrder`: Array of the 3 correct block IDs in chronological sequence (e.g., `["b1", "b2", "b3"]`).
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Crucially, do NOT use any text found within `VISUAL` or `LAYOUT` markers (e.g., `*[*VISUAL: ...*]*` or `*[*LAYOUT: ...*]*`) as source material for practice items, sentences, or contexts.**
 ---

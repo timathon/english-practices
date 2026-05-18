@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初中英语“阅读与表达”高分通关指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load D3 and Markmap View for robust, hardware-accelerated mindmap rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.16.0"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .markmap-wrapper {
+            position: relative;
+            width: 100%;
+            height: 400px;
+        }
+
+        .markmap {
+            width: 100%;
+            height: 100%;
+        }
+
+        .markmap>svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 透明遮罩层，防止手机端上下滑动页面时误触导致导图平移 */
+        .touch-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0);
+        }
+
+        /* 桌面端自动解锁：屏幕宽度 >= 768px 时强制隐藏遮罩层，允许自由交互 */
+        @media (min-width: 768px) {
+            .touch-overlay {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800 leading-relaxed py-10">
+
+    <div class="max-w-5xl mx-auto px-4">
+        <!-- Header -->
+        <header class="bg-blue-600 text-white rounded-t-2xl p-8 text-center shadow-lg">
+            <div class="text-left mb-4">
+                <a href="../../index.html" class="text-blue-100 hover:text-white transition font-medium">← 返回 A7B Practices 首页</a>
+            </div>
+            <h1 class="text-3xl font-bold mb-3">初中英语“阅读与表达”高分通关指南</h1>
+            <p class="text-blue-100 text-lg">“阅读与表达”通常包含4个小题，总分10分。前三题为细节题，最后一题为开放题。拿下这10分，需将“精准阅读”与“规范写作”完美结合。</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="bg-white rounded-b-2xl shadow-lg p-8">
+
+            <!-- Mindmap Section (Now explicitly initialized with pre-structured JSON data) -->
+            <section class="mb-12">
+                <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-blue-200 pb-2 mb-6">核心思维导图 (Keywords
+                    Mindmap)</h2>
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-100 shadow-inner relative">
+                    <!-- Control buttons to toggle interactive pan/zoom on mobile and reset views -->
+                    <div class="absolute top-4 right-4 z-20 flex gap-2 items-center">
+                        <!-- Toggle Lock (Mobile Only) -->
+                        <button id="toggle-lock-btn"
+                            class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-md transition flex items-center justify-center gap-1.5 md:hidden">
+                            <span id="lock-icon">🔒</span>
+                            <span id="lock-text">已锁定 (便于滑屏)</span>
+                        </button>
+                        <!-- Reset Button (Universal - emoji only) -->
+                        <button id="reset-btn"
+                            class="bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold p-2 rounded-lg shadow-md transition flex items-center justify-center"
+                            title="🔄">
+                            <span>🔄</span>
+                        </button>
+                    </div>
+
+                    <div class="markmap-wrapper mt-8 sm:mt-4">
+                        <!-- 透明遮罩层拦截触控，通过控制其显示/隐藏来实现锁定与解锁 -->
+                        <div id="touch-overlay" class="touch-overlay"></div>
+                        <div id="mindmap-container" class="w-full h-full"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part 1 -->
+            <section class="mb-12">
+                <h2 class="text-2xl font-bold text-blue-700 border-b-2 border-blue-200 pb-2 mb-6">第一部分：考场应试技巧 (Exam
+                    Skills)</h2>
+
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span
+                            class="bg-blue-100 text-blue-700 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">1</span>
+                        破解 Q41-Q43：细节精准击破 (2分 × 3)
+                    </h3>
+                    <p class="mb-4 text-gray-600">这类题目答案全在文章里，关键在于“找得准”和“抄得对”。</p>
+                    <ul class="space-y-3 list-disc list-inside text-gray-700 ml-4">
+                        <li><strong class="text-blue-600">划定关键词（定位法）：</strong>看到题目后，圈出疑问词确定答案类型，再圈出核心名词或动词，回原文“扫描”定位。
+                        </li>
+                        <li><strong class="text-red-500">警惕“人称陷阱”（最易失分点）：</strong>文章如果是第一人称（I, we），题目问第三人称（he, she,
+                            they），<strong>作答时必须进行人称转换！</strong>
+                            <div class="bg-red-50 border-l-4 border-red-400 p-3 mt-2 text-sm ml-6 rounded">
+                                <span class="text-red-600 font-bold">错误示范：</span>文章写 "I work on the ISS." 题目问 Where does
+                                she work? 回答 "I work on the ISS."（直接扣分）<br>
+                                <span class="text-green-600 font-bold mt-1 inline-block">正确回答：</span>She works on the
+                                ISS. (注意动词也要变成三单形式)
+                            </div>
+                        </li>
+                        <li><strong class="text-blue-600">精简与完整并重：</strong>鼓励用完整的句子回答，但在不违反语法的前提下，精准的短语作答（如问When，直接答 At
+                            6:00 p.m.）往往也是得分的。切忌大段抄写无关内容。</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span
+                            class="bg-blue-100 text-blue-700 rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">2</span>
+                        拿下 Q44：开放表达不失分 (4分)
+                    </h3>
+                    <p class="mb-4 text-gray-600">这道题是拉开差距的核心，通常包含两问（如：What do you think...? Why?）。</p>
+                    <ul class="space-y-3 list-disc list-inside text-gray-700 ml-4">
+                        <li><strong class="text-blue-600">全面回应，切勿漏答：</strong>第一句话直接回答第一问（表明观点），第二句话及以后回答第二问（陈述理由）。</li>
+                        <li><strong class="text-blue-600">凑够字数（20词以上）：</strong>推荐公式：<strong>“观点陈述（约5词） + 核心理由（约10词） +
+                                补充说明/总结升华（约10词）”</strong>。</li>
+                        <li><strong
+                                class="text-blue-600">“安全第一”原则：</strong>不要使用没有把握的生僻词或复杂句型。使用最基础的简单句，确保<strong>拼写无误、语法正确</strong>即可拿满分。
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Part 2 -->
+            <section class="mb-12">
+                <h2 class="text-2xl font-bold text-blue-700 border-b-2 border-blue-200 pb-2 mb-6">第二部分：真题实例演练 (Example
+                    Analysis)</h2>
+                <p class="mb-4 text-gray-700">以 <strong>A7B-Final-2 (Living on the ISS)</strong> 为例进行实战演练：</p>
+
+                <blockquote class="bg-gray-50 border-l-4 border-gray-300 italic p-4 mb-6 text-gray-600 rounded">
+                    <strong>片段回顾：</strong> ...I work here with astronauts from the United States, Russia, Japan,
+                    Canada... We spend about two hours each day exercising... Like most of you, we listen to music, read
+                    books, play cards, watch movies and talk with our family members...
+                </blockquote>
+
+                <div class="space-y-6">
+                    <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm hover:shadow-md transition">
+                        <h4 class="font-bold text-gray-800">题目 41: Where are the astronauts on the ISS from?</h4>
+                        <p class="text-sm text-gray-500 mt-1"><strong class="text-blue-500">技巧：</strong> 定位词 "Where...
+                            from"。找到原文 "from the United States..."。</p>
+                        <p class="text-green-700 font-medium mt-2">✅ They are from the United States, Russia, Japan,
+                            Canada and several other European countries.</p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm hover:shadow-md transition">
+                        <h4 class="font-bold text-gray-800">题目 42: How long do the astronauts exercise every day?</h4>
+                        <p class="text-sm text-gray-500 mt-1"><strong class="text-blue-500">技巧：</strong> 定位词 "How long",
+                            "exercise"。注意：原文是We，作答要改成They。</p>
+                        <p class="text-green-700 font-medium mt-2">✅ They exercise for about two hours each day. / For about
+                            two hours.</p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm hover:shadow-md transition">
+                        <h4 class="font-bold text-gray-800">题目 43: How do Jessica and other astronauts relax and have
+                            fun on the ISS?</h4>
+                        <p class="text-sm text-gray-500 mt-1"><strong class="text-blue-500">难点：</strong> 把原文的 we 改为
+                            they，把 our family 改为 their family。</p>
+                        <p class="text-green-700 font-medium mt-2">✅ They listen to music, read books, play cards, watch
+                            movies and talk with their family members.</p>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 p-5 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-gray-800">题目 44: What do you think of the life on the ISS? Why? Write
+                            20 words or more.</h4>
+                        <p class="text-sm text-gray-600 mt-2"><strong>解题步骤：</strong><br>
+                            1. 第一问：表明看法 (I think the life on the ISS is interesting and exciting.)<br>
+                            2. 第二问：给理由 (Because they can float in space...)<br>
+                            3. 检查字数和语法，不够再加一句感叹。
+                        </p>
+                        <p class="text-green-700 font-medium mt-3 bg-white p-3 rounded border border-green-200">
+                            ✅ I think the life on the ISS is interesting but challenging. Because astronauts can do
+                            experiments in space, but they have to face the microgravity environment. I want to be an
+                            astronaut, too! <span class="text-xs text-gray-500">(共 33 个词，绝对 safe)</span>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part 3 -->
+            <section>
+                <h2 class="text-2xl font-bold text-blue-700 border-b-2 border-blue-200 pb-2 mb-6">第三部分：日常备考与训练建议 (Daily
+                    Practice)</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Box 1 -->
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                                </path>
+                            </svg>
+                            1. 建立错题本
+                        </h3>
+                        <ul class="text-sm text-gray-600 space-y-2 list-disc list-inside">
+                            <li>忘了改动词三单？(he like → likes)</li>
+                            <li>忘了改物主代词？(my → his/her)</li>
+                            <li>一般疑问句忘了 Yes/No？</li>
+                        </ul>
+                    </div>
+
+                    <!-- Box 2 -->
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                </path>
+                            </svg>
+                            2. 万能语料库
+                        </h3>
+                        <ul class="text-sm text-gray-600 space-y-2">
+                            <li><strong>健康类:</strong> It's good for our health.</li>
+                            <li><strong>校园类:</strong> It makes school colorful.</li>
+                            <li><strong>助人类:</strong> It's meaningful to help.</li>
+                            <li><strong>旅游类:</strong> It makes us relaxed.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Box 3 -->
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                            <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            3. 限时“三查”
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-2">每次练习8-10分钟，写完后：</p>
+                        <ul class="text-sm text-gray-600 space-y-2 font-medium">
+                            <li class="flex items-center"><span class="text-red-500 mr-2">✓</span> 查时态一致</li>
+                            <li class="flex items-center"><span class="text-red-500 mr-2">✓</span> 查人称一致</li>
+                            <li class="flex items-center"><span class="text-red-500 mr-2">✓</span> 查字数标点 (≥20词)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Markmap Initialization and Interaction Controller -->
+    <script>
+        let mmInstance = null;
+
+        // Clean, structured data to completely bypass compile errors from markmap-lib
+        const mindmapData = {
+            content: "阅读与表达",
+            children: [
+                {
+                    content: "技巧",
+                    children: [
+                        {
+                            content: "细节题",
+                            children: [
+                                {
+                                    content: "定位",
+                                    children: [
+                                        { content: "圈出疑问词" },
+                                        { content: "找核心名词/动词" }
+                                    ]
+                                },
+                                {
+                                    content: "人称",
+                                    children: [
+                                        { content: "第一人称转第三人称" },
+                                        { content: "动词变三单形式" }
+                                    ]
+                                },
+                                {
+                                    content: "精简",
+                                    children: [
+                                        { content: "优先使用精准短语" },
+                                        { content: "避免大段冗余抄写" }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            content: "开放题",
+                            children: [
+                                {
+                                    content: "全面",
+                                    children: [
+                                        { content: "第一句明确观点" },
+                                        { content: "第二句阐述理由" }
+                                    ]
+                                },
+                                {
+                                    content: "字数",
+                                    children: [
+                                        { content: "结构：观点+理由+升华" },
+                                        { content: "确保总词数 ≥ 20" }
+                                    ]
+                                },
+                                {
+                                    content: "安全",
+                                    children: [
+                                        { content: "使用基础核心词汇" },
+                                        { content: "采用简单句式(主谓宾)" }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    content: "演练",
+                    children: [
+                        {
+                            content: "找词",
+                            children: [
+                                { content: "结合题目回原文扫描" }
+                            ]
+                        },
+                        {
+                            content: "转换",
+                            children: [
+                                { content: "主语代词 (We 变 They)" },
+                                { content: "物主代词 (our 变 their)" }
+                            ]
+                        },
+                        {
+                            content: "公式",
+                            children: [
+                                { content: "观点陈述 (约5词)" },
+                                { content: "核心理由 (约10词)" },
+                                { content: "补充升华 (约10词)" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    content: "备考",
+                    children: [
+                        {
+                            content: "错题本",
+                            children: [
+                                { content: "收集人称未改错题" },
+                                { content: "收集时态混淆错题" }
+                            ]
+                        },
+                        {
+                            content: "万能句",
+                            children: [
+                                { content: "健康/运动类通用句" },
+                                { content: "校园/学习类通用句" },
+                                { content: "品德/旅游类通用句" }
+                            ]
+                        },
+                        {
+                            content: "限时练",
+                            children: [
+                                { content: "查时态 (前后一致)" },
+                                { content: "查人称 (主谓一致)" },
+                                { content: "查字数标点 (大小写)" }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // Initialize the mindmap with Markmap View and D3
+        function initMarkmap() {
+            const container = document.getElementById('mindmap-container');
+            if (!container) return;
+
+            container.innerHTML = ''; // Clean up any lingering fallback text elements
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('id', 'mindmap-svg');
+            svg.setAttribute('class', 'w-full h-full');
+            container.appendChild(svg);
+
+            try {
+                const { Markmap } = window.markmap;
+                mmInstance = Markmap.create(svg, {
+                    autoFit: true,
+                    duration: 500
+                }, mindmapData);
+            } catch (e) {
+                console.error('Failed to initialize Markmap:', e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Render the mindmap immediately on load
+            initMarkmap();
+
+            const lockBtn = document.getElementById('toggle-lock-btn');
+            const overlay = document.getElementById('touch-overlay');
+            const lockText = document.getElementById('lock-text');
+            const lockIcon = document.getElementById('lock-icon');
+            const resetBtn = document.getElementById('reset-btn');
+
+            // Read state from localStorage, default to locked (true) if nothing is stored
+            let isLocked = localStorage.getItem('mindmap_locked') !== 'false';
+
+            function updateUI() {
+                if (isLocked) {
+                    overlay.style.display = 'block';
+                    lockText.textContent = '已锁定 (便于滑屏)';
+                    lockIcon.textContent = '🔒';
+                    lockBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-md transition flex items-center justify-center gap-1.5 md:hidden';
+                } else {
+                    overlay.style.display = 'none';
+                    lockText.textContent = '已解锁 (手势可缩放移动)';
+                    lockIcon.textContent = '🔓';
+                    lockBtn.className = 'bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-md transition flex items-center justify-center gap-1.5 md:hidden';
+                }
+            }
+
+            // Sync original lock UI state
+            updateUI();
+
+            lockBtn.addEventListener('click', () => {
+                isLocked = !isLocked;
+                localStorage.setItem('mindmap_locked', isLocked);
+                updateUI();
+            });
+
+            // Handle the view reset back to container fit
+            resetBtn.addEventListener('click', () => {
+                if (mmInstance) {
+                    mmInstance.fit(); // Fits mindmap to viewport boundaries instantly
+                } else {
+                    console.warn('Markmap is still loading or could not be found.');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

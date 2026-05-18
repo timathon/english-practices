@@ -1,0 +1,2474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 7 Reading & Expression Old Workbooks</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#4f46e5',
+                            dark: '#6366f1',
+                            hoverLight: '#4338ca',
+                            hoverDark: '#4f46e5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .passage-text {
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+        }
+        /* Custom scrollbar for beautiful UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- Top Navigation Bar -->
+    <header id="main-header" class="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button id="back-btn" class="hidden hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 border border-slate-200 dark:border-slate-800">
+                    ←
+                </button>
+                <div>
+                    <h1 class="text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-400">
+                        七年级下册 - 阅读与表达
+                    </h1>
+                    <p id="sub-title" class="text-xs text-slate-400 dark:text-slate-500">SmartEdu Workbook</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle" class="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all duration-200">
+                    🌓
+                </button>
+                <a id="home-btn" href="../../index.html" class="hidden sm:inline-flex text-xs font-semibold px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+                    返回首页
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main id="main-content" class="flex-grow flex flex-col max-w-7xl w-full mx-auto px-3 md:px-4 py-3 md:py-6">
+        <!-- Loader -->
+        <div id="loader" class="flex-grow flex items-center justify-center">
+            <div class="flex flex-col items-center gap-4">
+                <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent dark:border-indigo-400 dark:border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">加载资源中，请稍候...</p>
+            </div>
+        </div>
+
+        <!-- Dashboard View (Initial state) -->
+        <div id="dashboard-view" class="hidden flex-grow flex flex-col gap-6">
+            <!-- Overall Stats Banner -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gradient-to-r from-indigo-600/10 to-violet-500/10 border border-indigo-100 dark:border-indigo-900/30 rounded-3xl p-6">
+                <div class="flex flex-col justify-center">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">通关进度</span>
+                    <span id="mastery-percent" class="text-3xl font-extrabold mt-1 text-slate-800 dark:text-slate-100">0%</span>
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+                        <div id="mastery-progress-bar" class="bg-gradient-to-r from-indigo-600 to-violet-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 pt-4 sm:pt-0 sm:pl-6">
+                    <div class="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-xl text-indigo-600 dark:text-indigo-400">📝</div>
+                    <div>
+                        <p class="text-2xl font-bold text-slate-800 dark:text-slate-100" id="total-attempts">0次</p>
+                        <p class="text-xs text-slate-400">累计练习次数</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 pt-4 sm:pt-0 sm:pl-6">
+                    <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-xl text-emerald-500 dark:text-emerald-400">🏆</div>
+                    <div>
+                        <p class="text-2xl font-bold text-slate-800 dark:text-slate-100" id="mastered-count">0 / 15</p>
+                        <p class="text-xs text-slate-400">满分通关篇章数</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Controls -->
+            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+
+
+                <!-- Tabs Filter -->
+                <div class="flex gap-1.5 bg-slate-200/60 dark:bg-slate-900/60 p-1.5 rounded-2xl w-full sm:w-auto">
+                    <button class="filter-tab active flex-1 sm:flex-initial text-center text-xs font-semibold px-4 py-2 rounded-xl transition" data-filter="all">全部</button>
+                    <button class="filter-tab flex-1 sm:flex-initial text-center text-xs font-semibold px-4 py-2 rounded-xl transition text-slate-500" data-filter="completed">满分通关</button>
+                    <button class="filter-tab flex-1 sm:flex-initial text-center text-xs font-semibold px-4 py-2 rounded-xl transition text-slate-500" data-filter="inprogress">进行中</button>
+                    <button class="filter-tab flex-1 sm:flex-initial text-center text-xs font-semibold px-4 py-2 rounded-xl transition text-slate-500" data-filter="unstarted">未开始</button>
+                </div>
+            </div>
+
+            <!-- Grid Passage Cards -->
+            <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+
+        <!-- Practice View (Split screen design) -->
+        <div id="practice-view" class="hidden flex-grow flex flex-col md:flex-row gap-4 md:gap-6 relative">
+            <!-- Left Pane: Passage Reading Pane -->
+            <div class="w-full md:w-1/2 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm h-[40vh] md:h-[calc(100vh-10rem)] overflow-hidden">
+                <div class="px-4 md:px-6 py-3 md:py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span id="practice-unit-badge" class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 text-xs font-bold px-2.5 py-1 rounded-lg"></span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500" id="word-count"></span>
+                    </div>
+                    <div class="text-xs text-slate-500 font-semibold flex items-center gap-1">
+                        ⏱️ <span id="timer">00:00</span>
+                    </div>
+                </div>
+                
+                <div class="flex-grow p-4 md:p-6 overflow-y-auto">
+                    <h2 id="practice-title" class="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100"></h2>
+                    <div id="practice-passage" class="passage-text text-base text-slate-700 dark:text-slate-300 space-y-4"></div>
+                </div>
+            </div>
+
+            <!-- Right Pane: Questions Pane -->
+            <div class="w-full md:w-1/2 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm flex-grow h-0 md:h-[calc(100vh-10rem)] overflow-hidden">
+                <div class="px-4 md:px-6 py-3 md:py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200">真题问答</span>
+                    <!-- Progress Bar segments -->
+                    <div id="questions-progress-bar" class="flex items-center gap-1.5"></div>
+                </div>
+
+                <div id="questions-container" class="flex-grow p-4 md:p-6 overflow-y-auto">
+                    <!-- Standard Questions Q41, Q42, Q43 -->
+                    <div id="mc-questions-section"></div>
+
+                    <!-- Sentence Ordering Question Q44 -->
+                    <div id="so-question-section" class="hidden">
+
+                        <h4 id="so-q-prompt" class="font-bold text-slate-800 dark:text-slate-200 text-base leading-relaxed mb-3"></h4>
+                        
+                        <!-- Dynamic Hint Card -->
+                        <div id="hint-card" class="hidden mb-4 p-4 bg-indigo-50/60 dark:bg-indigo-900/10 border border-indigo-100/50 dark:border-indigo-900/20 text-xs text-indigo-700 dark:text-indigo-400 rounded-2xl relative">
+                            <button id="close-hint" class="absolute top-2.5 right-2.5 hover:text-slate-800">✕</button>
+                            <strong>编写指南/提示：</strong>
+                            <p id="so-q-hint" class="mt-1 leading-relaxed"></p>
+                        </div>
+
+                        <!-- Target ordering slots -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">您的作答区 (点击方块返回下方候选区):</label>
+                            <div id="so-target-zone" class="min-h-[140px] p-4 bg-slate-50 dark:bg-slate-950 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl flex flex-col gap-2 transition-all">
+                                <p class="text-xs text-slate-400 text-center m-auto" id="target-placeholder">请从下方选择词块进行排序...</p>
+                            </div>
+                        </div>
+
+                        <!-- Candidate options block pool -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">备选词块候选区 (点击词块放入上方作答区):</label>
+                            <div id="so-pool-zone" class="flex flex-col gap-2 p-3 bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 rounded-2xl"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 md:px-6 py-3 md:py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
+                    <!-- Left: Prev/Next Buttons (emoji only) -->
+                    <div class="flex items-center gap-2">
+                        <button id="prev-question-btn" class="w-8 h-8 flex items-center justify-center border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-sm transition duration-200 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent">
+                            ◀️
+                        </button>
+                        <button id="next-question-btn" class="w-8 h-8 flex items-center justify-center border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-sm transition duration-200 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent">
+                            ▶️
+                        </button>
+                    </div>
+                    <!-- Right: Cancel/Submit Buttons -->
+                    <div class="flex items-center gap-2">
+                        <button id="cancel-practice-btn" class="px-4 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">放弃</button>
+                        <button id="submit-practice-btn" class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-6 py-2 rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 transition-all duration-200">
+                            提交作答
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Exit Confirmation Modal (Glassmorphic) -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center transform scale-95 transition-transform duration-300">
+            <div class="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/20 text-amber-500 flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                ⚠️
+            </div>
+            <h3 class="text-base font-bold text-slate-800 dark:text-slate-100 mb-2">确认退出当前练习？</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">您的本次作答进度将不会被保存，确定要放弃本次练习吗？</p>
+            <div class="flex gap-3 justify-center">
+                <button id="confirm-cancel-btn" class="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold transition">
+                    取消
+                </button>
+                <button id="confirm-exit-btn" class="bg-rose-500 hover:bg-rose-600 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-md shadow-rose-500/10 transition-all">
+                    确认退出
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Modal (Glassmorphic) -->
+    <div id="results-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="p-6 text-center border-b border-slate-100 dark:border-slate-800 flex flex-col items-center">
+                <!-- Score Indicator -->
+                <div class="w-24 h-24 rounded-full flex items-center justify-center border-4 text-3xl font-extrabold mb-4" id="modal-score-ring">
+                    <span id="modal-score">0</span><span class="text-base text-slate-400">/10</span>
+                </div>
+                
+                <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100" id="modal-title">练习报告</h3>
+                <p id="modal-verdict" class="text-sm font-semibold mt-1 text-indigo-600 dark:text-indigo-400"></p>
+            </div>
+
+            <!-- Score breakdowns -->
+            <div class="p-6 max-h-[300px] overflow-y-auto space-y-4" id="modal-details"></div>
+
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span class="text-xs text-slate-400" id="modal-time-taken">耗时: 00:00</span>
+                <div class="flex gap-2">
+                    <button id="modal-retry-btn" class="px-4 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">重新练习</button>
+                    <button id="modal-close-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-md transition">返回大厅</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embed PASSAGES_DATA -->
+    <script>
+        const PASSAGES_DATA = [
+    {
+        "id": "a7b-re-old-u1",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 1",
+        "title": "Our Dream School Clubs",
+        "passage": "Wei Fang and Liu Lin are the students of Green School. They are good friends. They want to join some clubs. There are many clubs in their school. They are the English club, the music club, the swimming club, the chess club, the art club and so on. Wei Fang wants to join the music club. She wants to be a musician when she grows up(长大). She can sing and dance. Now she can play the piano and play the guitar well, but she can't play the violin. Liu Lin can play chess and he can swim well. But he can only speak a little English. So he wants to join the English club to improve(提高)his English. On Sundays, he often plays basketball with his friends. He wants to be a basketball player.",
+        "questions": [
+            {
+                "id": "u1-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "Who wants to be a musician?",
+                "options": [
+                    "Liu Lin.",
+                    "Wei Fang.",
+                    "Wei Fang's brother.",
+                    "Liu Lin's friend."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u1-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "What club does Liu Lin want to join?",
+                "options": [
+                    "The chess club.",
+                    "The music club.",
+                    "The English club.",
+                    "The swimming club."
+                ],
+                "answer": 2
+            },
+            {
+                "id": "u1-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "When does Liu Lin play basketball with his friends?",
+                "options": [
+                    "Sundays.",
+                    "On Friday afternoons.",
+                    "Every evening.",
+                    "On Sundays."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "u1-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What club do you want to join? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I want to join the music club to learn more instruments.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because I love playing the piano and want to be a musician like Wei Fang.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "It is a wonderful way to relax and make my school life more colorful.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "He often plays basketball with his friends on Sundays.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "She can sing and dance but she can't play the violin.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "There are many clubs in their school such as swimming.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u2",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 2",
+        "title": "Daily Routines of the Hanson Family",
+        "passage": "Today, at half past five, Mrs. Hanson gets up. She goes to the bathroom, brushes her teeth and washes her face. Then she goes to the kitchen and makes breakfast. Next, Mr. Hanson gets up. He goes to the bathroom and has a shower. He wakes up(把……叫醒) his children Ann and Antony at seven o'clock. They are still tired but they get dressed. Then they have breakfast.\n\nAfter breakfast, the children go to school. Mr. Hanson goes to work. He works at a radio station. Mrs. Hanson works at home. The children stay at school from eight o'clock to one o'clock in the afternoon. Then they go home and have lunch. Mr. Hanson doesn't go home for lunch. He has it at a restaurant near the radio station. The children do their homework after lunch. Then Antony has his soccer class. Ann stays at home and reads her books.\n\nMr. Hanson comes home at six o'clock. The family have dinner together. After dinner the children do the dishes. Then they watch TV and go to bed at ten o'clock.",
+        "questions": [
+            {
+                "id": "u2-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "Who makes breakfast?",
+                "options": [
+                    "Mr. Hanson.",
+                    "Mrs. Hanson.",
+                    "Ann.",
+                    "Antony."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u2-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "Where does Mr. Hanson work?",
+                "options": [
+                    "A radio station.",
+                    "At home.",
+                    "At a restaurant.",
+                    "At a radio station."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "u2-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "What does Ann do after she does her homework?",
+                "options": [
+                    "She watches TV.",
+                    "She reads her books.",
+                    "She has her soccer class.",
+                    "She does the dishes."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u2-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What do you think of the family's life? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I think the family has a happy and busy life.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because they do their work and study well during the day.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "And they also have a warm dinner and enjoy relaxing time together in the evening.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "The children stay at school from eight o'clock to one o'clock.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "Mr. Hanson works at a radio station.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "Antony has his soccer class after lunch.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u3",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 3",
+        "title": "A School Teacher and Ways to School",
+        "passage": "Mrs. Smith is a teacher. She teaches English in a village school. It's about 10 kilometers from her home. She usually goes to work by bus. She teaches English very well and her students like her class. They think her class is interesting. Mrs. Smith also loves her students. She thinks they are all good kids. Mrs. Smith has a daughter. Her name is Jenny. She is a middle school student. Her school is not far from their house. So she usually walks to school. But sometimes she gets up late and she rides her bike. She is never late for class. Jenny is good at English. She usually helps her friends with their English. Her teacher thinks she is a good student. All students like her.",
+        "questions": [
+            {
+                "id": "u3-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "What is Mrs. Smith?",
+                "options": [
+                    "A teacher.",
+                    "A doctor.",
+                    "A student.",
+                    "A farmer."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "u3-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "How far is it from Mrs. Smith's school to her home?",
+                "options": [
+                    "About 5 kilometers.",
+                    "About 10 kilometers.",
+                    "About 20 kilometers.",
+                    "It is not far."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u3-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "How does Jenny usually go to school?",
+                "options": [
+                    "By bus.",
+                    "Bike.",
+                    "She walks.",
+                    "By train."
+                ],
+                "answer": 2
+            },
+            {
+                "id": "u3-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What do you think of Jenny? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I think Jenny is a kind and helpful girl.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because she is excellent at English and often helps her friends with their studies.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "She is a wonderful student and sets a good example for all of us.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "Mrs. Smith teaches English in a village school.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "Jenny usually walks to school but sometimes rides her bike.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "She teaches English very well and her students like her.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u4",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 4",
+        "title": "Alex's Busy School Life and Strict Rules",
+        "passage": "Dear Molly,\n\nHow's it going with you? For me it's terrible. There are too many rules in our school. It isn't fair(公平的). I have to get up at five forty every morning. I can't be late for running. I have to run at six thirty. I have to practice English and Chinese every day. In the evening I can't watch TV or hang out with friends because I have to do my homework. I have to go to bed before ten o'clock. What's more, we can't listen to music or eat in the classroom. We even can't wear hats or have long hair. We have to wear school uniforms every day. On weekends, I still have to stay at school on Saturday, because I have to learn science and math. Do you have lots of rules in your school? Are they fair? What's your dream school like?\n\nYour friend,\nAlex",
+        "questions": [
+            {
+                "id": "u4-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "What time does Alex have to get up?",
+                "options": [
+                    "5:40.",
+                    "Before 10:00.",
+                    "At 5:40.",
+                    "After 6:00."
+                ],
+                "answer": 2
+            },
+            {
+                "id": "u4-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "What does Alex have to practice every day?",
+                "options": [
+                    "Science and math.",
+                    "English and Chinese.",
+                    "Running and music.",
+                    "Basketball and piano."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u4-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "Why does Alex stay at school on Saturday?",
+                "options": [
+                    "To play basketball.",
+                    "To do homework.",
+                    "To hang out with friends.",
+                    "To learn science and math."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "u4-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What's your dream school like? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "My dream school has fewer rules and lots of fun clubs.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because I want to have more free time to explore my hobbies after class.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "It would be an exciting place where students can learn happily.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "Alex has to wear school uniforms every day.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "He has to get up at five forty every morning.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "He stays at school on Saturday to learn math.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u5",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 5",
+        "title": "The Beautiful Four Seasons in New Zealand",
+        "passage": "New Zealand is a beautiful country and people can visit it at any time of the year. The weather all the year is fine. Unlike continental(大陆的)countries, the weather here doesn't change too much.\n\nSummer lasts from December to February. It is the best time of the year to visit New Zealand. The long sunny days are wonderful for outdoor games and water sports. Autumn is from March to May. This season is enjoyable in New Zealand. The temperature is a few degrees lower than that of summer.\n\nWinter is from June to August. The mountain areas(地区) are covered with snow during winter and there is a little rainfall in some places. This is a good time for skiing. Spring in New Zealand can be hot, warm or cool. The weather is quite different, depending on the places you visit. You can visit Alexandra in Central Otago and Hastings in Hawke's Bay.",
+        "questions": [
+            {
+                "id": "u5-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "How long does summer last in New Zealand?",
+                "options": [
+                    "For three months.",
+                    "From June to August.",
+                    "Three months.",
+                    "One month."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "u5-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "What's the weather like in the mountain areas in New Zealand in winter?",
+                "options": [
+                    "It is hot and rainy.",
+                    "It is windy and sunny.",
+                    "They are covered with snow.",
+                    "It is quite hot."
+                ],
+                "answer": 2
+            },
+            {
+                "id": "u5-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "What's the main idea of this passage?",
+                "options": [
+                    "How to ski in New Zealand.",
+                    "The history of New Zealand.",
+                    "Alexandra and Hastings.",
+                    "Introduction to New Zealand's four seasons."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "u5-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "Which season do you like best in New Zealand? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I like summer in New Zealand best because the weather is warm.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because I can enjoy outdoor games and do all kinds of water sports on sunny days.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "It must be an amazing time to explore the beautiful beaches and nature.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "Winter lasts from June to August in New Zealand.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "The mountain areas are covered with snow during winter.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "Spring in New Zealand can be hot, warm or cool.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u6",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 6",
+        "title": "Fun Activities and Rest During Class Breaks",
+        "passage": "Do you have a rest between classes? And what do you usually do during the rest time? Let me tell you what we do during the rest.\n\nWe have a twenty-minute rest between classes. Look! Most of us are playing during the rest time. Some students are on the playground. They are having a basketball game. Oh! A boy is running with a ball. And another boy is trying to stop him. They are so cool. And there are some girls watching the game. Some students are in the classroom. They are talking. A few of them are reading or doing homework. Look! A girl is looking at the birds in a tree in front of the classroom. She must be thinking of something interesting because she is smiling.\n\nWhat are the teachers doing? Do you know? Some of them are working in the office, and some are talking with students. Everyone is busy with his or her things. We are all busy and happy!",
+        "questions": [
+            {
+                "id": "u6-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "How long is the rest between classes?",
+                "options": [
+                    "Twenty minutes.",
+                    "For twenty minutes.",
+                    "Thirty minutes.",
+                    "Fifteen minutes."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u6-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "Who are playing basketball?",
+                "options": [
+                    "Some teachers.",
+                    "Some girls.",
+                    "A boy and a girl.",
+                    "Some students."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "u6-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "What are the teachers doing?",
+                "options": [
+                    "Only working in the office.",
+                    "Working in the office or talking with students.",
+                    "Playing basketball with students.",
+                    "Watching birds in front of the classroom."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u6-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What do you usually do during the rest time? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I usually chat with my best friends or walk around the school playground during the rest time.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because this helps me relax my brain and eyes after a long study session.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "It keeps me energetic and ready for the next challenging class.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "We have a twenty-minute rest between classes.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "A girl is looking at the birds in a tree.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "The teachers are working in their offices.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-midterm",
+        "level": "Grade 7 Semester 2",
+        "unit": "MidTerm",
+        "title": "Li Dong's Great Work as a Zoo Keeper",
+        "passage": "Hello! My name is Li Dong. I'm 27 years old. I love animals a lot and work in a zoo. Every day I take the train to the zoo. It takes me about 45 minutes to get to the zoo from my home. I have a cat at home. His name is Mimi. He is five years old. He is black and white. He lives with me for three years. He often sleeps on my sofa. Mimi likes to eat fish best. And he likes to watch fish. I use a computer screen saver with fish swimming everywhere. When Mimi sees it, he is happy. He thinks there are a lot of fish in my computer. So he walks around my computer and keeps watching the screen. Don't you think he is funny and cute?",
+        "questions": [
+            {
+                "id": "mid-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "Where does Li Dong work?",
+                "options": [
+                    "Zoo.",
+                    "In a zoo.",
+                    "In a hospital.",
+                    "In a library."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "mid-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "How far is it from Li Dong's home to the zoo?",
+                "options": [
+                    "About 45 minutes' ride by train.",
+                    "About 10 kilometers.",
+                    "It is not very far.",
+                    "About three years' walk."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "mid-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "How old is Mimi?",
+                "options": [
+                    "Three years old.",
+                    "27 years old.",
+                    "One year old.",
+                    "Five years old."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "mid-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What do you think of Mimi? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I think Mimi is an extremely cute and clever cat.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because he loves watching the virtual fish on the computer screen and thinks they are real.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "His funny behavior brings great joy to his owner's life.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "Li Dong takes the train to the zoo every day.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "Mimi is a black and white cat.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "He lives with Li Dong for three years.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u7",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 7",
+        "title": "Christmas in the Summer Sun of Australia",
+        "passage": "You see people in movies have a white Christmas in England or the United States, but Christmas in Australia is very different.\n\nChristmas (December 25th) comes at the hottest time of the year in Australia. The temperature can be over 40°C in some cities! Because it is so hot, people usually have lunch outside and swim in the pool during Christmas. They also meet all of their family for Christmas lunch. Christmas lunch is usually a big meal with ham, turkey, salad and seafood. Family members all cook something different to bring to the feast(大餐). One year my aunt even made a gingerbread house(姜饼屋) that we ate for dessert!\n\nThe sport of cricket(板球) is very popular in Australia. So during Christmas, family members also play a game of cricket in the backyard(后院). Australia might not have a white Christmas, but it is still a very exciting and fun time of the year.",
+        "questions": [
+            {
+                "id": "u7-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "What color is Christmas in movies in England or the United States?",
+                "options": [
+                    "Green.",
+                    "Red.",
+                    "White.",
+                    "Golden."
+                ],
+                "answer": 2
+            },
+            {
+                "id": "u7-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "Why is Christmas in Australia different?",
+                "options": [
+                    "It comes at the hottest time of the year.",
+                    "Because it comes at the hottest time of the year.",
+                    "Because they only play cricket.",
+                    "Because they eat gingerbread houses."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u7-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "What do people in Australia often do during Christmas?",
+                "options": [
+                    "Ski on mountains.",
+                    "Sleep all day.",
+                    "Travel to the UK.",
+                    "Play cricket in backyards and swim in pools."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "u7-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "Do you like Christmas in Australia? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "Yes, I would love to experience Christmas in Australia because it is unique.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because having an outdoor feast and swimming in a pool on Christmas day sounds like great fun.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "It would be an unforgettable holiday experience compared to a traditional cold Christmas.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "Christmas comes at the hottest time in Australia.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "The temperature can be over 40°C in some cities.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "His aunt made a gingerbread house for dessert.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u8",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 8",
+        "title": "Sally's Cozy and Lively Neighborhood",
+        "passage": "I'm Sally. My grandparents live in a nice neighborhood. It's an interesting place to visit. I like to spend time there on weekends. I often walk along Main Street to get there.\n\nThere is an old building in the center of the neighborhood. It's a library. It's about 150 years old and lots of people like to read books there. There is a red building across from the library. It's an old post office. It's about 100 years old. Next to it, there is a supermarket.\n\nMy favorite place in the neighborhood is Walking Street. There are many small restaurants on this street. I like to eat all kinds of delicious snacks. There is a park behind Walking Street. My grandparents always walk around in the park every afternoon. It's nice and quiet, and they can enjoy the clean air and sunshine.",
+        "questions": [
+            {
+                "id": "u8-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "When does Sally spend time in her grandparents' home?",
+                "options": [
+                    "On weekends.",
+                    "Weekends.",
+                    "Every afternoon.",
+                    "On Mondays."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "u8-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "Where is the library?",
+                "options": [
+                    "Across from the post office.",
+                    "Behind Walking Street.",
+                    "Next to the supermarket.",
+                    "In the center of the neighborhood."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "u8-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "What's Sally's favorite place in the neighborhood?",
+                "options": [
+                    "The old library.",
+                    "Walking Street.",
+                    "The quiet park.",
+                    "The red post office."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u8-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What do you think of Sally's grandparents' daily lives? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I think her grandparents have a very healthy and peaceful life.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because they can enjoy fresh air and warm sunshine while walking in the park every afternoon.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "It is a perfect way for them to keep fit and relax in their old age.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "Sally often walks along Main Street on weekends.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "The library is about 150 years old.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "There are many small restaurants on Walking Street.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u9",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 9",
+        "title": "How a TV Show Saved a Mother's Life",
+        "passage": "Julie is a cute girl, with big eyes and straight blonde hair. She lives in New York with her mother.\n\nIt is a Sunday. Julie is playing with her friend, Becky, in the living room. Julie's mother wants to get some fruit for them. She falls down(突然倒下) on the way to the kitchen. Julie finds her mother can't move or speak. She soon calls 911. When Julie is waiting for help, she does CPR(心肺复苏) on her mother with Becky. Soon the doctors come and take Julie's mother to hospital. Her mother gets her life back.\n\nJulie is only eight years old. How does she know CPR? Julie says, \"My mother and I often watch a TV show every Saturday and I learn it from the show. The show tells many stories about doctors. I really like that show. I want to be a doctor when I grow up.\"\n\nJulie's mother thanks her daughter for calling 911 and doing CPR on her. She may also need to thank the TV show.",
+        "questions": [
+            {
+                "id": "u9-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "What is Julie doing when her mother falls down?",
+                "options": [
+                    "Watching a TV show.",
+                    "Eating some fruit.",
+                    "Playing with her friend Becky.",
+                    "Calling 911."
+                ],
+                "answer": 2
+            },
+            {
+                "id": "u9-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "What does Julie first do after she finds her mother can't move?",
+                "options": [
+                    "She does CPR.",
+                    "She calls 911.",
+                    "She goes to the kitchen.",
+                    "She cries."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u9-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "Where does Julie learn CPR?",
+                "options": [
+                    "From a TV show.",
+                    "At school.",
+                    "A TV show.",
+                    "From Becky."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "u9-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What do you think of Julie? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I think Julie is an exceptionally brave and smart girl.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because she remained calm, called 911, and performed CPR to save her mother at just eight years old.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "She is a true hero and an inspiration for all young children.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "Julie lives in New York with her mother.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "She falls down on the way to the kitchen.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "Julie wants to be a doctor when she grows up.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u10",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 10",
+        "title": "Three Gold Keys to a Healthy Life",
+        "passage": "Healthy eating is important for us. What and how should we eat to be healthy? First, we need to have enough food, never too much or too little. Second, it's very important for us to have a balanced diet(饮食平衡). Different kinds of foods are necessary(必要的), such as bread, meat, fish, eggs, milk, fruit and vegetables. Bread gives us energy(能量). Meat, fish, eggs and milk help our bones grow(骨骼生长). Fruit and vegetables make us more healthy. Third, we should eat regularly(有规律地). Some students don't have a regular breakfast or don't eat anything in the morning. It is bad for their health. In fact, a good breakfast keeps us strong. In short, we should not only eat enough, good and healthy food but also eat regularly.",
+        "questions": [
+            {
+                "id": "u10-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "To be healthy, how many ways are mentioned in the passage?",
+                "options": [
+                    "One way.",
+                    "Two ways.",
+                    "Four ways.",
+                    "Three ways."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "u10-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "What does the underlined word \"It\" refer to?",
+                "options": [
+                    "Eating regularly.",
+                    "Having enough food.",
+                    "Not having a regular breakfast or not eating anything in the morning.",
+                    "Eating eggs and milk."
+                ],
+                "answer": 2
+            },
+            {
+                "id": "u10-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "What helps our bones grow according to the passage?",
+                "options": [
+                    "Meat, fish, eggs and milk.",
+                    "By bread.",
+                    "Fruit and vegetables.",
+                    "Having a regular breakfast."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "u10-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What is your healthy eating habit? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I always make sure to eat a balanced breakfast and plenty of fresh vegetables every day.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because this provides me with enough energy and vitamins to focus on my schoolwork.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "Maintaining these good habits is key to building a strong and healthy body.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "Bread gives us energy to run.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "Some students don't have a regular breakfast.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "Meat, fish and milk help our bones grow.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u11",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 11",
+        "title": "A Warm Cotton Coat on Christmas Eve",
+        "passage": "One night, Mary saw a girl sitting by the road near her house. The girl's coat was very old and thin. It couldn't keep warm at all. Mary thought a cotton coat may be helpful to the girl. So she opened the window and shouted to the girl, \"Come to the front door of my house, please!\" The girl was surprised, but she did as Mary said. She knocked at the door of Mary's house. Mary opened the door and smiled warmly to the poor girl. She handed a cotton(棉) coat to the girl. Just then she saw a smile on the girl's face. That night, Mary was very happy for what she had done.\n\nThe poor girl had never appeared(出现) again since that night. Years later, Mary almost forgot the poor girl. One day, Mary got a call from a lawyer(律师) called Jack. Jack invited her to his office. After they met, Jack gave Mary a letter. It said, \"Forty years ago, a beautiful girl helped me. In that winter, she gave me warmth and hope. Later I got through the hardest time in my life and then started a happy life.\"\n\nAfter Mary read the letter, she remembered that homeless girl. \"Where is she now?\" asked Mary.\n\"Mrs. Hope died two months ago,\" answered Jack. \"She left one of her houses to you. Besides, there is one more thing she left to you—a cotton coat.\"",
+        "questions": [
+            {
+                "id": "u11-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "Why couldn't the girl's coat keep warm at all?",
+                "options": [
+                    "Because it was too short.",
+                    "Because it was made of cotton.",
+                    "Because it was very old and thin.",
+                    "Because she lost it."
+                ],
+                "answer": 2
+            },
+            {
+                "id": "u11-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "What did Mary give to the girl that night?",
+                "options": [
+                    "A cotton coat.",
+                    "Cotton coat.",
+                    "A house.",
+                    "A warm smile only."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "u11-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "How did the girl feel when Mary asked her to the front door?",
+                "options": [
+                    "She was angry.",
+                    "She was surprised.",
+                    "She was happy.",
+                    "She was tired."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u11-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What do you think of the girl? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I think the girl was an extremely grateful and kind-hearted person.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because she remembered Mary's warm help for forty years and returned a house and the coat.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "Her story teaches us that kindness will always be remembered and rewarded.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "Mary gave a cotton coat to the poor girl.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "Mrs. Hope died two months ago.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "The girl sat by the road near Mary's house.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-u12",
+        "level": "Grade 7 Semester 2",
+        "unit": "Unit 12",
+        "title": "A Wonderful Summer Mountain Vacation",
+        "passage": "Last summer I went on vacation with my parents. We drove to a holiday resort(度假村). After getting there, we climbed the mountains first. It was a little cold in the mountains. But we were lucky because we took our coats with us. It didn't take us long to get to the top of the mountain. And on the way to the mountain, we also saw many beautiful flowers. We walked around the mountain and saw some animals in the forest.\n\nAfter getting back to the resort, we relaxed in the hot spring water(温泉). It made me feel happy. Dishes in the resort were quite delicious. We enjoyed a big dinner. At about 8:00 p.m., we had a party around a campfire(篝火). We danced and sang with other visitors. We also played games together. It was great fun.",
+        "questions": [
+            {
+                "id": "u12-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "When did the writer go on vacation?",
+                "options": [
+                    "In last summer.",
+                    "Last summer.",
+                    "Last spring.",
+                    "Last autumn."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u12-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "How did they go to the holiday resort?",
+                "options": [
+                    "They drove.",
+                    "By train.",
+                    "They walked.",
+                    "By plane."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "u12-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "What did they see on the way to the mountain?",
+                "options": [
+                    "Some animals in the forest.",
+                    "Many beautiful flowers.",
+                    "A campfire party.",
+                    "Hot spring water."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "u12-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What do you think of the vacation? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I think the writer had a highly enjoyable and memorable summer vacation.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because they could climb mountains, see wild animals, relax in hot springs, and enjoy a campfire party.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "It was a wonderful blend of active outdoor adventures and relaxing family time.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "They climbed the mountains and it was cold.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "Dishes in the resort were quite delicious.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "They had a party around a campfire at 8:00 p.m.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-final-1",
+        "level": "Grade 7 Semester 2",
+        "unit": "Final 1",
+        "title": "A Memorable Sightseeing Trip to London",
+        "passage": "The capital of the U.K. is one of my favorite cities in the world. I started my London journey with a visit to the Tower of London. It is the site of many key historical events. I arrived as soon as the Tower of London opened, which was around 9 a.m. There was a lot to see and I spent the whole morning there.\n\nComing out of the Tower of London, I found myself right next to the iconic(标志性的) Tower Bridge. I had already learnt about its history, including how it was built. I had also learnt how the lifting mechanism worked to allow ships through. I experienced the Glass Floor, a high-level walkway of the bridge. It was so exciting!\n\nThen I went on to the Houses of Parliament by London underground. Before going inside for a visit, I took a lot of photos from the outside of this beautiful building. Tomorrow I am going to get a map of London and have fun simply walking around the city.",
+        "questions": [
+            {
+                "id": "f1-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "When did the writer get to the Tower of London?",
+                "options": [
+                    "Around 9 a.m.",
+                    "At noon.",
+                    "In the afternoon.",
+                    "Around 5 p.m."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "f1-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "How did the writer get to the Houses of Parliament?",
+                "options": [
+                    "About two hours.",
+                    "By walking.",
+                    "By boat.",
+                    "By London underground."
+                ],
+                "answer": 3
+            },
+            {
+                "id": "f1-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "What did the writer do before he entered the Houses of Parliament?",
+                "options": [
+                    "He walked around.",
+                    "He took photos from the outside.",
+                    "He bought a map.",
+                    "He experienced the Glass Floor."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "f1-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What's your favorite city in the world? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "My favorite city in the world is London because of its rich history.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because I want to visit the iconic Tower Bridge and experience the exciting Glass Floor.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "It would be an amazing adventure to walk around the city with a map.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "The writer arrived at the Tower of London around 9 a.m.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "He took a lot of photos from the outside.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "He spent the whole morning at the Tower of London.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    },
+    {
+        "id": "a7b-re-old-final-2",
+        "level": "Grade 7 Semester 2",
+        "unit": "Final 2",
+        "title": "Living and Exercising in Space on the ISS",
+        "passage": "Living on the ISS\n\nHello, everyone. My name is Jessica Meir. I am an astronaut. I work on the International Space Station (国际空间站,缩写为ISS) as a flight engineer. Today, I will tell you something about what life is like on the ISS.\n\nThe ISS has over 425 cubic meters(立方米) of living space. I work here with astronauts from the United States, Russia, Japan, Canada and several other European countries. When we are on the ISS, we have to follow a detailed daily schedule. It tells us when to get up, eat, exercise, work, relax and go to sleep. We spend about two hours each day exercising. Without regular exercise, we would lose a certain amount of muscle and bone due to the microgravity(微重力) environment in space.\n\nWhen we are not busy doing experiments on the ISS, we can relax and have fun through a variety of ways. Like most of you, we listen to music, read books, play cards, watch movies and talk with our family members. As you can see, the microgravity environment in space brings many challenges that don't exist on the Earth. Would you like to live for some time on the ISS?\n\nYours sincerely,\nJessica Meir",
+        "questions": [
+            {
+                "id": "f2-q41",
+                "number": 41,
+                "type": "multiple-choice",
+                "prompt": "Where are the astronauts on the ISS from?",
+                "options": [
+                    "The United States, Russia, Japan, Canada and several other European countries.",
+                    "Only the United States and Russia.",
+                    "Only European countries.",
+                    "The United Kingdom and Australia."
+                ],
+                "answer": 0
+            },
+            {
+                "id": "f2-q42",
+                "number": 42,
+                "type": "multiple-choice",
+                "prompt": "How long do the astronauts exercise every day?",
+                "options": [
+                    "About two hours.",
+                    "Only on weekends.",
+                    "For about two hours.",
+                    "For ten hours."
+                ],
+                "answer": 2
+            },
+            {
+                "id": "f2-q43",
+                "number": 43,
+                "type": "multiple-choice",
+                "prompt": "How do Jessica and other astronauts relax and have fun on the ISS?",
+                "options": [
+                    "By playing tennis.",
+                    "By listening to music, reading books, playing cards and watching movies.",
+                    "By sleeping all day.",
+                    "By traveling back to Earth."
+                ],
+                "answer": 1
+            },
+            {
+                "id": "f2-q44",
+                "number": 44,
+                "type": "sentence-ordering",
+                "prompt": "What do you think of the life on the ISS? Why? Write 20 words or more.",
+                "blocks": [
+                    {
+                        "id": "b1",
+                        "text": "I think life on the ISS is extremely challenging but exciting.",
+                        "isCorrect": true,
+                        "role": "opinion"
+                    },
+                    {
+                        "id": "b2",
+                        "text": "Because astronauts have to live in a microgravity environment and exercise two hours daily to stay strong.",
+                        "isCorrect": true,
+                        "role": "reason"
+                    },
+                    {
+                        "id": "b3",
+                        "text": "It would be an amazing experience to do experiments and see the Earth from space.",
+                        "isCorrect": true,
+                        "role": "summary"
+                    },
+                    {
+                        "id": "b4",
+                        "text": "The ISS has over 425 cubic meters of space.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b5",
+                        "text": "Without exercise they would lose muscle and bone.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    },
+                    {
+                        "id": "b6",
+                        "text": "They have to follow a detailed daily schedule.",
+                        "isCorrect": false,
+                        "role": "distractor"
+                    }
+                ],
+                "correctOrder": [
+                    "b1",
+                    "b2",
+                    "b3"
+                ]
+            }
+        ]
+    }
+];
+    </script>
+
+    <!-- IndexedDB and SPA Controller logic -->
+    <script>
+        const DB_NAME = 'SmartEduREWorkbook';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'practice_records';
+        
+        let db = null;
+        let userStats = {}; // Cache of statistics per passage
+        let currentPassage = null;
+        let practiceTimer = null;
+        let secondsElapsed = 0;
+        let currentAnswers = {}; // Map of question ID to selected answer (index or array of IDs)
+        let selectedBlocks = []; // For sentence ordering (b1, b2, etc.)
+        let activeQuestionIdx = 0; // Active question tab index (0 to 3)
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        // 1. Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // 2. IndexedDB Setup
+        function openDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = (e) => reject('Database failed to open: ' + e.target.error);
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains(STORE_NAME)) {
+                        database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+
+        function loadStats() {
+            return new Promise((resolve) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.getAll();
+
+                request.onsuccess = () => {
+                    userStats = {};
+                    request.result.forEach(record => {
+                        userStats[record.id] = record;
+                    });
+                    resolve();
+                };
+                request.onerror = () => {
+                    console.error('Failed to load practice stats.');
+                    resolve();
+                };
+            });
+        }
+
+        function saveRecord(passageId, score, timeTaken) {
+            return new Promise((resolve) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                const existing = userStats[passageId] || {
+                    id: passageId,
+                    attempts: 0,
+                    best_score: 0,
+                    last_score: 0,
+                    history: []
+                };
+
+                existing.attempts += 1;
+                existing.last_score = score;
+                if (score > existing.best_score) {
+                    existing.best_score = score;
+                }
+                existing.last_practiced = new Date().toISOString();
+                existing.history.push({
+                    score: score,
+                    time_taken: timeTaken,
+                    date: existing.last_practiced
+                });
+
+                const request = store.put(existing);
+                request.onsuccess = () => {
+                    userStats[passageId] = existing;
+                    resolve();
+                };
+            });
+        }
+
+        // 3. UI Helpers
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function calculateWordCount(text) {
+            return text.trim().split(/\s+/).length;
+        }
+
+        // 4. Timer Functions
+        function startTimer() {
+            secondsElapsed = 0;
+            document.getElementById('timer').textContent = '00:00';
+            clearInterval(practiceTimer);
+            practiceTimer = setInterval(() => {
+                secondsElapsed++;
+                document.getElementById('timer').textContent = formatTime(secondsElapsed);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(practiceTimer);
+        }
+
+        // 5. Dashboard View Render
+        function renderDashboard() {
+            // Stats Calculations
+            let totalAttempts = 0;
+            let masteredCount = 0;
+            
+            PASSAGES_DATA.forEach(p => {
+                const stat = userStats[p.id];
+                if (stat) {
+                    totalAttempts += stat.attempts;
+                    if (stat.best_score === 10) masteredCount++;
+                }
+            });
+
+            document.getElementById('total-attempts').textContent = `${totalAttempts}次`;
+            document.getElementById('mastered-count').textContent = `${masteredCount} / 15`;
+            
+            const masteryPercent = Math.round((masteredCount / 15) * 100);
+            document.getElementById('mastery-percent').textContent = `${masteryPercent}%`;
+            document.getElementById('mastery-progress-bar').style.width = `${masteryPercent}%`;
+
+            // Filter & Render Cards
+            const grid = document.getElementById('cards-grid');
+            grid.innerHTML = '';
+
+            const filteredData = PASSAGES_DATA.filter(p => {
+                const stat = userStats[p.id];
+                const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      p.unit.toLowerCase().includes(searchQuery.toLowerCase());
+                
+                if (!matchesSearch) return false;
+
+                if (currentFilter === 'completed') {
+                    return stat && stat.best_score === 10;
+                } else if (currentFilter === 'inprogress') {
+                    return stat && stat.attempts > 0 && stat.best_score < 10;
+                } else if (currentFilter === 'unstarted') {
+                    return !stat || stat.attempts === 0;
+                }
+                return true;
+            });
+
+            if (filteredData.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-16 flex flex-col items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl">
+                        <span class="text-3xl mb-2">📁</span>
+                        <p class="text-sm font-semibold text-slate-400">没有找到匹配的练习题...</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredData.forEach(p => {
+                const stat = userStats[p.id];
+                const attempts = stat ? stat.attempts : 0;
+                const bestScore = stat ? stat.best_score : 0;
+                const progressWidth = Math.round((bestScore / 10) * 100);
+
+                let badgeHtml = '';
+                if (attempts === 0) {
+                    badgeHtml = '<span class="bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-md">未开始</span>';
+                } else if (bestScore === 10) {
+                    badgeHtml = '<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-md">已通关</span>';
+                } else {
+                    badgeHtml = '<span class="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-md">进行中</span>';
+                }
+
+                const lastPracticedStr = stat && stat.last_practiced 
+                    ? new Date(stat.last_practiced).toLocaleDateString('zh-CN', {month: 'numeric', day: 'numeric', hour: 'numeric', minute:'2-digit'})
+                    : '从无记录';
+
+                const card = document.createElement('div');
+                card.className = 'group flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 dark:hover:border-indigo-400/50 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer hover:-translate-y-0.5';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-3 shrink-0">
+                        <span class="bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400 text-xs font-extrabold px-2.5 py-1 rounded-lg">${p.unit}</span>
+                        ${badgeHtml}
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-all duration-200 mb-2 truncate">${p.title}</h3>
+                    
+                    <p class="text-xs text-slate-400 dark:text-slate-500 line-clamp-2 mb-4 leading-relaxed flex-grow">
+                        ${p.passage.substring(0, 85).replace(/\n/g, ' ')}...
+                    </p>
+
+                    <div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-850">
+                        <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
+                            <span>最高分: ${bestScore}/10</span>
+                            <span>尝试次数: ${attempts}</span>
+                        </div>
+                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mb-3">
+                            <div class="bg-indigo-600 dark:bg-indigo-400 h-full rounded-full transition-all duration-300" style="width: ${progressWidth}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] text-slate-400/80">
+                            <span>🕒 上次练习: ${lastPracticedStr}</span>
+                            <span class="font-bold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-0.5 transition-transform duration-200">开始训练 →</span>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => startPractice(p.id));
+                grid.appendChild(card);
+            });
+        }
+
+        // 6. Practice View Setup
+        function startPractice(passageId) {
+            currentPassage = PASSAGES_DATA.find(p => p.id === passageId);
+            if (!currentPassage) return;
+
+            currentAnswers = {};
+            selectedBlocks = [];
+            activeQuestionIdx = 0;
+
+            // Update Views
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('practice-view').classList.remove('hidden');
+            document.getElementById('back-btn').classList.remove('hidden');
+            document.getElementById('main-header').classList.add('hidden', 'md:block');
+            const homeBtn = document.getElementById('home-btn');
+            if (homeBtn) {
+                homeBtn.classList.add('hidden');
+                homeBtn.classList.remove('sm:inline-flex');
+            }
+            
+            // Header stats
+            document.getElementById('practice-unit-badge').textContent = currentPassage.unit;
+            document.getElementById('word-count').textContent = `📊 单词数: ${calculateWordCount(currentPassage.passage)} 词`;
+            document.getElementById('practice-title').textContent = currentPassage.title;
+            
+            // Display Reading Passage
+            const passageBox = document.getElementById('practice-passage');
+            passageBox.innerHTML = currentPassage.passage.split('\n\n').map(p => `<p class="mb-4">${p}</p>`).join('');
+
+            // Render Questions
+            renderQuestions();
+
+            // Set up Q44 Sentence Ordering pool
+            const q44 = currentPassage.questions.find(q => q.type === 'sentence-ordering');
+            if (q44) {
+                document.getElementById('so-q-prompt').textContent = `44. ${q44.prompt}`;
+                document.getElementById('so-q-hint').textContent = q44.hint;
+                
+                // Close/Hide hint card initially
+                document.getElementById('hint-card').classList.add('hidden');
+
+                // Pool Setup with Shuffled blocks
+                const poolZone = document.getElementById('so-pool-zone');
+                poolZone.innerHTML = '';
+
+                // Shuffle the blocks array copy to randomize layout representation
+                const shuffledBlocks = [...q44.blocks].sort(() => Math.random() - 0.5);
+                
+                shuffledBlocks.forEach(block => {
+                    const blockBtn = document.createElement('button');
+                    blockBtn.id = `block-${block.id}`;
+                    blockBtn.className = 'w-full text-left text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl px-4 py-3 shadow-sm transition hover:shadow duration-200 focus:outline-none flex items-center justify-between';
+                    blockBtn.innerHTML = `
+                        <span class="text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">${block.text}</span>
+                        <span class="text-sm text-indigo-500 font-bold ml-2 shrink-0">＋</span>
+                    `;
+                    blockBtn.addEventListener('click', () => moveBlockToTarget(block.id));
+                    poolZone.appendChild(blockBtn);
+                });
+
+                updateTargetZone();
+            }
+
+            // Initialize active question and progress bar
+            setActiveQuestion(0);
+
+            // Start Session Timer
+            startTimer();
+        }
+
+        function renderQuestions() {
+            const mcContainer = document.getElementById('mc-questions-section');
+            mcContainer.innerHTML = '';
+
+            const mcQuestions = currentPassage.questions.filter(q => q.type === 'multiple-choice');
+            
+            mcQuestions.forEach((q, idx) => {
+                const qBox = document.createElement('div');
+                qBox.id = `mc-question-box-${q.id}`;
+                qBox.className = 'space-y-2 md:space-y-3 hidden';
+                qBox.innerHTML = `
+                    <h4 class="font-bold text-slate-800 dark:text-slate-200 text-base leading-relaxed">${q.number}. ${q.prompt}</h4>
+                    <div class="grid grid-cols-1 gap-2 md:gap-2.5 mt-1.5 md:mt-2" id="options-for-${q.id}"></div>
+                `;
+
+                const optBox = qBox.querySelector(`#options-for-${q.id}`);
+                q.options.forEach((opt, optIdx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'text-left text-sm w-full bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 px-4 py-2.5 md:py-3.5 rounded-xl transition-all duration-200 flex items-center gap-3 focus:outline-none';
+                    btn.innerHTML = `
+                        <span class="w-7 h-7 shrink-0 rounded-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold text-xs text-slate-400 group-hover:border-indigo-400">${String.fromCharCode(65 + optIdx)}</span>
+                        <span class="text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">${opt}</span>
+                    `;
+                    btn.addEventListener('click', () => selectMCOption(q.id, optIdx, btn));
+                    optBox.appendChild(btn);
+                });
+
+                mcContainer.appendChild(qBox);
+            });
+        }
+
+        function selectMCOption(qId, index, clickedBtn) {
+            currentAnswers[qId] = index;
+            
+            const optionsBox = document.getElementById(`options-for-${qId}`);
+            Array.from(optionsBox.children).forEach(btn => {
+                btn.className = 'text-left text-sm w-full bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 px-4 py-2.5 md:py-3.5 rounded-xl transition-all duration-200 flex items-center gap-3 focus:outline-none';
+                btn.querySelector('span:first-child').className = 'w-7 h-7 shrink-0 rounded-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold text-xs text-slate-400';
+            });
+
+            clickedBtn.className = 'text-left text-sm w-full bg-indigo-50/50 dark:bg-indigo-950/20 border-2 border-indigo-500 px-4 py-2.5 md:py-3.5 rounded-xl transition-all duration-200 flex items-center gap-3 focus:outline-none';
+            clickedBtn.querySelector('span:first-child').className = 'w-7 h-7 shrink-0 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs';
+            updateProgressBar();
+        }
+
+        function setActiveQuestion(idx) {
+            if (idx < 0 || idx > 3) return;
+            activeQuestionIdx = idx;
+            
+            const mcContainer = document.getElementById('mc-questions-section');
+            const soContainer = document.getElementById('so-question-section');
+            
+            const mcQuestions = currentPassage.questions.filter(q => q.type === 'multiple-choice');
+            mcQuestions.forEach((q, qIdx) => {
+                const qBox = document.getElementById(`mc-question-box-${q.id}`);
+                if (qBox) {
+                    if (qIdx === idx) {
+                        qBox.classList.remove('hidden');
+                    } else {
+                        qBox.classList.add('hidden');
+                    }
+                }
+            });
+            
+            if (idx < 3) {
+                mcContainer.classList.remove('hidden');
+                soContainer.classList.add('hidden');
+            } else {
+                mcContainer.classList.add('hidden');
+                soContainer.classList.remove('hidden');
+            }
+            
+            const prevBtn = document.getElementById('prev-question-btn');
+            const nextBtn = document.getElementById('next-question-btn');
+            if (prevBtn) prevBtn.disabled = (idx === 0);
+            if (nextBtn) nextBtn.disabled = (idx === 3);
+            
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            const progressBar = document.getElementById('questions-progress-bar');
+            if (!progressBar || !currentPassage) return;
+            progressBar.innerHTML = '';
+            
+            const questions = currentPassage.questions;
+            questions.forEach((q, idx) => {
+                const segment = document.createElement('div');
+                
+                let isAnswered = false;
+                if (q.type === 'multiple-choice') {
+                    isAnswered = (currentAnswers[q.id] !== undefined);
+                } else if (q.type === 'sentence-ordering') {
+                    isAnswered = (selectedBlocks && selectedBlocks.length === 3);
+                }
+                
+                let baseClass = 'w-7 h-2.5 rounded-full cursor-pointer transition-all duration-300 border shadow-sm ';
+                if (isAnswered) {
+                    baseClass += 'bg-indigo-600 dark:bg-indigo-500 border-indigo-600 dark:border-indigo-500';
+                } else {
+                    baseClass += 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700';
+                }
+                
+                if (idx === activeQuestionIdx) {
+                    baseClass += ' ring-2 ring-offset-2 ring-indigo-500 dark:ring-offset-slate-900';
+                }
+                
+                segment.className = baseClass;
+                segment.title = `Question ${q.number}`;
+                segment.addEventListener('click', () => {
+                    setActiveQuestion(idx);
+                });
+                
+                progressBar.appendChild(segment);
+            });
+        }
+
+        // 7. Q44 Block Movement Functions
+        function moveBlockToTarget(blockId) {
+            const q44 = currentPassage.questions.find(q => q.type === 'sentence-ordering');
+            const block = q44.blocks.find(b => b.id === blockId);
+            
+            if (!selectedBlocks.includes(blockId)) {
+                selectedBlocks.push(blockId);
+                // Hide pool item visually or disable it
+                const poolItem = document.getElementById(`block-${blockId}`);
+                poolItem.classList.add('opacity-40', 'pointer-events-none');
+                poolItem.querySelector('span:last-child').textContent = '✓';
+            }
+            updateTargetZone();
+        }
+
+        function removeBlockFromTarget(blockId) {
+            selectedBlocks = selectedBlocks.filter(id => id !== blockId);
+            
+            const poolItem = document.getElementById(`block-${blockId}`);
+            if (poolItem) {
+                poolItem.classList.remove('opacity-40', 'pointer-events-none');
+                poolItem.querySelector('span:last-child').textContent = '＋';
+            }
+            updateTargetZone();
+        }
+
+        function updateTargetZone() {
+            const targetZone = document.getElementById('so-target-zone');
+            const placeholder = document.getElementById('target-placeholder');
+            
+            // Clean dynamic blocks, leave placeholder
+            Array.from(targetZone.querySelectorAll('.dynamic-block')).forEach(el => el.remove());
+
+            if (selectedBlocks.length === 0) {
+                placeholder.classList.remove('hidden');
+                updateProgressBar();
+                return;
+            }
+
+            placeholder.classList.add('hidden');
+            
+            const q44 = currentPassage.questions.find(q => q.type === 'sentence-ordering');
+            
+            selectedBlocks.forEach((blockId, index) => {
+                const block = q44.blocks.find(b => b.id === blockId);
+                const blockEl = document.createElement('div');
+                blockEl.className = 'dynamic-block w-full text-left text-sm bg-indigo-50/50 dark:bg-indigo-950/20 border-2 border-indigo-200 dark:border-indigo-800/40 rounded-xl px-4 py-3 shadow-sm transition hover:bg-rose-50/20 hover:border-rose-400 dark:hover:border-rose-900 duration-200 flex items-center justify-between cursor-pointer';
+                blockEl.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-6 h-6 shrink-0 rounded-full bg-indigo-200 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] flex items-center justify-center">${index + 1}</span>
+                        <span class="text-slate-700 dark:text-slate-200 font-semibold leading-relaxed">${block.text}</span>
+                    </div>
+                    <span class="text-xs text-rose-500 font-bold ml-2 shrink-0">✕</span>
+                `;
+                blockEl.addEventListener('click', () => removeBlockFromTarget(blockId));
+                targetZone.appendChild(blockEl);
+            });
+            updateProgressBar();
+        }
+
+        // 8. Practice Submit & Scoring Logic
+        document.getElementById('submit-practice-btn').addEventListener('click', () => {
+            // Validate all questions answered
+            const mcQuestions = currentPassage.questions.filter(q => q.type === 'multiple-choice');
+            let unanswered = [];
+            
+            mcQuestions.forEach(q => {
+                if (currentAnswers[q.id] === undefined) unanswered.push(q.number);
+            });
+
+            if (unanswered.length > 0) {
+                alert(`请回答细节选择题：第 ${unanswered.join(', ')} 题未选择作答。`);
+                return;
+            }
+
+            if (selectedBlocks.length === 0) {
+                if (!confirm('第44题开放表达未放置任何句子词块，确定直接提交吗？')) return;
+            }
+
+            stopTimer();
+            scorePractice();
+        });
+
+        function scorePractice() {
+            let totalScore = 0;
+            const mcQuestions = currentPassage.questions.filter(q => q.type === 'multiple-choice');
+            const detailsList = [];
+
+            // 1. Scoring Multiple Choices (2 points each)
+            mcQuestions.forEach(q => {
+                const userAnsIndex = currentAnswers[q.id];
+                const isCorrect = userAnsIndex === q.answer;
+                if (isCorrect) totalScore += 2;
+
+                detailsList.push({
+                    number: q.number,
+                    type: 'multiple-choice',
+                    prompt: q.prompt,
+                    isCorrect: isCorrect,
+                    pointsGained: isCorrect ? 2 : 0,
+                    maxPoints: 2,
+                    userAnswerText: q.options[userAnsIndex] || '未作答',
+                    correctAnswerText: q.options[q.answer]
+                });
+            });
+
+            // 2. Scoring Sentence Ordering Q44 (4 points)
+            const q44 = currentPassage.questions.find(q => q.type === 'sentence-ordering');
+            let isQ44Correct = false;
+            
+            if (q44) {
+                // Check if user selected exactly the 3 correct blocks in the correct chronological order
+                const correctOrder = q44.correctOrder;
+                const isMatched = selectedBlocks.length === correctOrder.length && 
+                                  selectedBlocks.every((val, index) => val === correctOrder[index]);
+                
+                if (isMatched) {
+                    totalScore += 4;
+                    isQ44Correct = true;
+                }
+
+                // Compile readable order string
+                const userOrderTexts = selectedBlocks.map((id, index) => {
+                    const blockObj = q44.blocks.find(b => b.id === id);
+                    return `(${index + 1}) ${blockObj.text}`;
+                }).join('<br>');
+
+                const correctOrderTexts = correctOrder.map((id, index) => {
+                    const blockObj = q44.blocks.find(b => b.id === id);
+                    return `(${index + 1}) ${blockObj.text}`;
+                }).join('<br>');
+
+                detailsList.push({
+                    number: 44,
+                    type: 'sentence-ordering',
+                    prompt: q44.prompt,
+                    isCorrect: isMatched,
+                    pointsGained: isMatched ? 4 : 0,
+                    maxPoints: 4,
+                    userAnswerText: userOrderTexts || '未排序作答',
+                    correctAnswerText: correctOrderTexts
+                });
+            }
+
+            // Save to database
+            saveRecord(currentPassage.id, totalScore, secondsElapsed).then(() => {
+                showResultsModal(totalScore, secondsElapsed, detailsList);
+            });
+        }
+
+        // 9. Results Modal Display
+        function showResultsModal(score, seconds, details) {
+            const modal = document.getElementById('results-modal');
+            const scoreVal = document.getElementById('modal-score');
+            const scoreRing = document.getElementById('modal-score-ring');
+            const verdict = document.getElementById('modal-verdict');
+            const detailsBox = document.getElementById('modal-details');
+            const timeSpan = document.getElementById('modal-time-taken');
+
+            scoreVal.textContent = score;
+            timeSpan.textContent = `⏱️ 作答耗时: ${formatTime(seconds)}`;
+
+            // Verdict and Ring styling
+            if (score === 10) {
+                scoreRing.className = 'w-24 h-24 rounded-full flex items-center justify-center border-4 border-emerald-500 text-emerald-500 text-3xl font-extrabold mb-4';
+                verdict.textContent = '🏆 卓越！您拿到了10分满分！';
+            } else if (score >= 6) {
+                scoreRing.className = 'w-24 h-24 rounded-full flex items-center justify-center border-4 border-indigo-500 text-indigo-500 text-3xl font-extrabold mb-4';
+                verdict.textContent = '👍 优秀！恭喜你顺利通关！';
+            } else {
+                scoreRing.className = 'w-24 h-24 rounded-full flex items-center justify-center border-4 border-rose-500 text-rose-500 text-3xl font-extrabold mb-4';
+                verdict.textContent = '💪 加油！多加练习一定能拿满分！';
+            }
+
+            // Render breakdowns
+            detailsBox.innerHTML = '';
+            details.forEach(item => {
+                const detailEl = document.createElement('div');
+                detailEl.className = `p-4 border rounded-2xl text-xs space-y-2 ${item.isCorrect ? 'bg-emerald-50/30 border-emerald-200 dark:bg-emerald-950/10 dark:border-emerald-900/30' : 'bg-rose-50/20 border-rose-200 dark:bg-rose-950/10 dark:border-rose-900/30'}`;
+                
+                let answerBlockHtml = '';
+                if (item.type === 'multiple-choice') {
+                    answerBlockHtml = `
+                        <p class="text-[11px] text-slate-500 mt-1">你的作答: <span class="${item.isCorrect ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-rose-600 dark:text-rose-400 font-bold'}">${item.userAnswerText}</span></p>
+                        ${!item.isCorrect ? `<p class="text-[11px] text-slate-400 mt-0.5">标准答案: <span class="text-slate-600 dark:text-slate-300 font-semibold">${item.correctAnswerText}</span></p>` : ''}
+                    `;
+                } else {
+                    answerBlockHtml = `
+                        <div class="mt-2 text-[11px] text-slate-500">
+                            <strong>您的排序：</strong>
+                            <div class="bg-white dark:bg-slate-900 p-2 border border-slate-100 dark:border-slate-800 rounded-xl mt-1 leading-relaxed">${item.userAnswerText}</div>
+                        </div>
+                        ${!item.isCorrect ? `
+                        <div class="mt-2 text-[11px] text-slate-400">
+                            <strong>参考优秀高分回答（观点＋理由＋总结）：</strong>
+                            <div class="bg-white dark:bg-slate-900 p-2 border border-slate-100 dark:border-slate-850 rounded-xl mt-1 leading-relaxed text-slate-600 dark:text-slate-300 font-medium">${item.correctAnswerText}</div>
+                        </div>
+                        ` : ''}
+                    `;
+                }
+
+                detailEl.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-800 dark:text-slate-200">Question ${item.number} (${item.type === 'multiple-choice' ? '细节题' : '开放题'})</span>
+                        <span class="font-bold ${item.isCorrect ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}" >${item.pointsGained}/${item.maxPoints} 分</span>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-400 leading-relaxed font-medium mt-1">${item.prompt}</p>
+                    ${answerBlockHtml}
+                `;
+                detailsBox.appendChild(detailEl);
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        // 10. SPA Navigation Handlers
+        document.getElementById('back-btn').addEventListener('click', exitPractice);
+        document.getElementById('cancel-practice-btn').addEventListener('click', exitPractice);
+        document.getElementById('prev-question-btn').addEventListener('click', () => {
+            setActiveQuestion(activeQuestionIdx - 1);
+        });
+        document.getElementById('next-question-btn').addEventListener('click', () => {
+            setActiveQuestion(activeQuestionIdx + 1);
+        });
+        
+        function exitPractice() {
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        document.getElementById('confirm-cancel-btn').addEventListener('click', () => {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        });
+
+        document.getElementById('confirm-exit-btn').addEventListener('click', () => {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            stopTimer();
+            currentPassage = null;
+            document.getElementById('practice-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            document.getElementById('back-btn').classList.add('hidden');
+            document.getElementById('main-header').classList.remove('hidden', 'md:block');
+            const homeBtn = document.getElementById('home-btn');
+            if (homeBtn) {
+                homeBtn.classList.remove('hidden');
+                homeBtn.classList.add('sm:inline-flex');
+            }
+            renderDashboard();
+        });
+
+        // Modal Controls
+        document.getElementById('modal-close-btn').addEventListener('click', () => {
+            document.getElementById('results-modal').classList.add('hidden');
+            document.getElementById('practice-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            document.getElementById('back-btn').classList.add('hidden');
+            document.getElementById('main-header').classList.remove('hidden', 'md:block');
+            const homeBtn = document.getElementById('home-btn');
+            if (homeBtn) {
+                homeBtn.classList.remove('hidden');
+                homeBtn.classList.add('sm:inline-flex');
+            }
+            renderDashboard();
+        });
+
+        document.getElementById('modal-retry-btn').addEventListener('click', () => {
+            document.getElementById('results-modal').classList.add('hidden');
+            startPractice(currentPassage.id);
+        });
+
+        // 11. Interactive Hints Trigger
+        document.getElementById('close-hint').addEventListener('click', () => {
+            document.getElementById('hint-card').classList.add('hidden');
+        });
+
+        // 12. Filters & Searches Setup
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-tab').forEach(t => {
+                    t.classList.remove('active', 'bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-800', 'dark:text-slate-100');
+                    t.classList.add('text-slate-500');
+                });
+                
+                e.target.classList.add('active', 'bg-white', 'dark:bg-slate-800', 'shadow-sm', 'text-slate-800', 'dark:text-slate-100');
+                e.target.classList.remove('text-slate-500');
+
+                currentFilter = e.target.getAttribute('data-filter');
+                renderDashboard();
+            });
+        });
+
+
+
+        // 13. Initialization Bootstrapper
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            
+            openDatabase()
+                .then(() => loadStats())
+                .then(() => {
+                    // Hide loader and show view
+                    document.getElementById('loader').classList.add('hidden');
+                    document.getElementById('dashboard-view').classList.remove('hidden');
+                    renderDashboard();
+                })
+                .catch(err => {
+                    alert('IndexedDB Initialization failed! Records will not save offline: ' + err);
+                    document.getElementById('loader').classList.add('hidden');
+                    document.getElementById('dashboard-view').classList.remove('hidden');
+                    renderDashboard();
+                });
+        });
+    </script>
+</body>
+</html>
