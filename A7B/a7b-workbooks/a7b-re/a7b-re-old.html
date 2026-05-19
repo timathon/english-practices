@@ -164,7 +164,17 @@
             <!-- Right Pane: Questions Pane -->
             <div class="w-full md:w-1/2 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm flex-grow h-0 md:h-[calc(100vh-10rem)] overflow-hidden">
                 <div class="px-4 md:px-6 py-3 md:py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200">真题问答</span>
+                    <div class="flex items-center gap-4">
+                        <span class="text-sm font-bold text-slate-800 dark:text-slate-200">真题问答</span>
+                        <div class="flex items-center gap-1.5">
+                            <button id="prev-question-btn" class="w-7 h-7 flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-xs transition duration-200 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent">
+                                ◀️
+                            </button>
+                            <button id="next-question-btn" class="w-7 h-7 flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-xs transition duration-200 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent">
+                                ▶️
+                            </button>
+                        </div>
+                    </div>
                     <!-- Progress Bar segments -->
                     <div id="questions-progress-bar" class="flex items-center gap-1.5"></div>
                 </div>
@@ -201,16 +211,7 @@
                     </div>
                 </div>
 
-                <div class="px-4 md:px-6 py-3 md:py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
-                    <!-- Left: Prev/Next Buttons (emoji only) -->
-                    <div class="flex items-center gap-2">
-                        <button id="prev-question-btn" class="w-8 h-8 flex items-center justify-center border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-sm transition duration-200 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent">
-                            ◀️
-                        </button>
-                        <button id="next-question-btn" class="w-8 h-8 flex items-center justify-center border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-sm transition duration-200 focus:outline-none disabled:opacity-40 disabled:hover:bg-transparent">
-                            ▶️
-                        </button>
-                    </div>
+                <div class="px-4 md:px-6 py-3 md:py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end shrink-0">
                     <!-- Right: Cancel/Submit Buttons -->
                     <div class="flex items-center gap-2">
                         <button id="cancel-practice-btn" class="px-4 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">放弃</button>
@@ -244,8 +245,8 @@
 
     <!-- Results Modal (Glassmorphic) -->
     <div id="results-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="p-6 text-center border-b border-slate-100 dark:border-slate-800 flex flex-col items-center">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col h-[80vh] md:h-auto md:max-h-[90vh]">
+            <div class="p-6 text-center border-b border-slate-100 dark:border-slate-800 flex flex-col items-center shrink-0">
                 <!-- Score Indicator -->
                 <div class="w-24 h-24 rounded-full flex items-center justify-center border-4 text-3xl font-extrabold mb-4" id="modal-score-ring">
                     <span id="modal-score">0</span><span class="text-base text-slate-400">/10</span>
@@ -256,9 +257,9 @@
             </div>
 
             <!-- Score breakdowns -->
-            <div class="p-6 max-h-[300px] overflow-y-auto space-y-4" id="modal-details"></div>
+            <div class="p-6 flex-grow overflow-y-auto space-y-4 md:max-h-[400px]" id="modal-details"></div>
 
-            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
                 <span class="text-xs text-slate-400" id="modal-time-taken">耗时: 00:00</span>
                 <div class="flex gap-2">
                     <button id="modal-retry-btn" class="px-4 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">重新练习</button>
@@ -1973,7 +1974,7 @@
 
         // Interactive Sentence Highlighter
         function wrapSentences(paragraph) {
-            const sentenceRegex = /(?:Mr\.|Mrs\.|Ms\.|Dr\.|[^.!?])+[.!?]+["']?|(?:Mr\.|Mrs\.|Ms\.|Dr\.|[^.!?])+$/ig;
+            const sentenceRegex = /(?:Mr\.|Mrs\.|Ms\.|Dr\.|U\.K\.|U\.S\.|a\.m\.|p\.m\.|[^.!?])+[.!?]+["']?|(?:Mr\.|Mrs\.|Ms\.|Dr\.|U\.K\.|U\.S\.|a\.m\.|p\.m\.|[^.!?])+$/ig;
             const sentences = paragraph.match(sentenceRegex);
             if (!sentences) return paragraph;
             
@@ -2145,6 +2146,7 @@
             if (!progressBar || !currentPassage) return;
             progressBar.innerHTML = '';
             
+            let allAnswered = true;
             const questions = currentPassage.questions;
             questions.forEach((q, idx) => {
                 const segment = document.createElement('div');
@@ -2155,6 +2157,8 @@
                 } else if (q.type === 'sentence-ordering') {
                     isAnswered = (selectedBlocks && selectedBlocks.length === 3);
                 }
+                
+                if (!isAnswered) allAnswered = false;
                 
                 let baseClass = 'w-7 h-2.5 rounded-full cursor-pointer transition-all duration-300 border shadow-sm ';
                 if (isAnswered) {
@@ -2175,6 +2179,18 @@
                 
                 progressBar.appendChild(segment);
             });
+
+            // Toggle submit button state
+            const submitBtn = document.getElementById('submit-practice-btn');
+            if (submitBtn) {
+                if (allAnswered) {
+                    submitBtn.disabled = false;
+                    submitBtn.className = 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white px-6 py-2 rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 transition-all duration-200 cursor-pointer';
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.className = 'bg-slate-200 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 px-6 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-not-allowed';
+                }
+            }
         }
 
         // 7. Q44 Block Movement Functions
@@ -2355,22 +2371,22 @@
             detailsBox.innerHTML = '';
             details.forEach(item => {
                 const detailEl = document.createElement('div');
-                detailEl.className = `p-4 border rounded-2xl text-xs space-y-2 ${item.isCorrect ? 'bg-emerald-50/30 border-emerald-200 dark:bg-emerald-950/10 dark:border-emerald-900/30' : 'bg-rose-50/20 border-rose-200 dark:bg-rose-950/10 dark:border-rose-900/30'}`;
+                detailEl.className = `p-4 border rounded-2xl text-sm space-y-2 ${item.isCorrect ? 'bg-emerald-50/30 border-emerald-200 dark:bg-emerald-950/10 dark:border-emerald-900/30' : 'bg-rose-50/20 border-rose-200 dark:bg-rose-950/10 dark:border-rose-900/30'}`;
                 
                 let answerBlockHtml = '';
                 if (item.type === 'multiple-choice') {
                     answerBlockHtml = `
-                        <p class="text-[11px] text-slate-500 mt-1">你的作答: <span class="${item.isCorrect ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-rose-600 dark:text-rose-400 font-bold'}">${item.userAnswerText}</span></p>
-                        ${!item.isCorrect ? `<p class="text-[11px] text-slate-400 mt-0.5">标准答案: <span class="text-slate-600 dark:text-slate-300 font-semibold">${item.correctAnswerText}</span></p>` : ''}
+                        <p class="text-sm text-slate-500 mt-1">你的作答: <span class="${item.isCorrect ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-rose-600 dark:text-rose-400 font-bold'}">${item.userAnswerText}</span></p>
+                        ${!item.isCorrect ? `<p class="text-sm text-slate-400 mt-0.5">标准答案: <span class="text-slate-600 dark:text-slate-300 font-semibold">${item.correctAnswerText}</span></p>` : ''}
                     `;
                 } else {
                     answerBlockHtml = `
-                        <div class="mt-2 text-[11px] text-slate-500">
+                        <div class="mt-2 text-sm text-slate-500">
                             <strong>您的排序：</strong>
                             <div class="bg-white dark:bg-slate-900 p-2 border border-slate-100 dark:border-slate-800 rounded-xl mt-1 leading-relaxed">${item.userAnswerText}</div>
                         </div>
                         ${!item.isCorrect ? `
-                        <div class="mt-2 text-[11px] text-slate-400">
+                        <div class="mt-2 text-sm text-slate-400">
                             <strong>参考优秀高分回答（观点＋理由＋总结）：</strong>
                             <div class="bg-white dark:bg-slate-900 p-2 border border-slate-100 dark:border-slate-850 rounded-xl mt-1 leading-relaxed text-slate-600 dark:text-slate-300 font-medium">${item.correctAnswerText}</div>
                         </div>
