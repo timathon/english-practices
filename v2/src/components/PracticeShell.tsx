@@ -6,7 +6,7 @@ import { RecallMapShell } from './RecallMapShell'
 import { VocabGuideShell } from './VocabGuideShell'
 import { SpellingHeroShell } from './SpellingHeroShell'
 import { MindMapShell } from './MindMapShell'
-
+// Render practice components based on type
 export function PracticeShell() {
     const { id } = useParams()
     const [practice, setPractice] = useState<any>(null)
