@@ -4,6 +4,7 @@ import './VocabMasterShell.css'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
+import { API_URL } from '../lib/auth'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
@@ -43,7 +44,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
 
    const loadRecords = async () => {
        try {
-           const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + '/api/records', { credentials: 'include' })
+           const res = await fetch(API_URL + '/api/records', { credentials: 'include' })
            const json = await res.json()
            if (Array.isArray(json)) setPracticeRecords(json)
        } catch (e) {
@@ -159,7 +160,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
 
    const syncRecord = async (scorePercent: number, isFinished: boolean) => {
        try {
-           const url = `${import.meta.env.VITE_API_URL || 'http://localhost:8787'}/api/records${activeRecordId ? '/' + activeRecordId : ''}`;
+           const url = `${API_URL}/api/records${activeRecordId ? '/' + activeRecordId : ''}`;
            const method = activeRecordId ? 'PUT' : 'POST';
            
            const res = await fetch(url, {

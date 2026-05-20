@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSession } from './lib/auth'
+import { useSession, API_URL } from './lib/auth'
 import { Link, useLocation } from 'react-router-dom'
 import './Dashboard.css'
 
@@ -248,7 +248,7 @@ export function Dashboard() {
   useEffect(() => {
     if (session) {
       setLoading(true)
-      fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + '/api/practices', { credentials: 'include' })
+      fetch(API_URL + '/api/practices', { credentials: 'include' })
         .then(res => res.json())
         .then(data => { 
           if (Array.isArray(data)) setPractices(data)
@@ -259,7 +259,7 @@ export function Dashboard() {
           setLoading(false)
         })
         
-      fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + '/api/records', { credentials: 'include' })
+      fetch(API_URL + '/api/records', { credentials: 'include' })
         .then(res => res.json())
         .then(data => { if (Array.isArray(data)) setRecords(data) })
         .catch(console.error)

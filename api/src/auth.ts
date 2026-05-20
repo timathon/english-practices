@@ -6,8 +6,8 @@ import * as schema from "./db/schema";
 
 export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string) => {
     return betterAuth({
-        secret,
-        baseURL: baseURL || "https://epapi.vibequizzing.com",
+        secret: secret || "dev_secret_1234567890",
+        baseURL: baseURL || "http://localhost:8787",
         trustedOrigins: ["http://localhost:5173", "http://127.0.0.1:5173", "https://timathon.github.io", "https://epv2.vibequizzing.com", "http://epv2.vibequizzing.com"],
         database: drizzleAdapter(drizzle(dbBinding), {
             provider: "sqlite",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useSession } from './lib/auth'
+import { useSession, API_URL } from './lib/auth'
 
 export function ManageUsers() {
   const { data: session } = useSession()
@@ -15,7 +15,7 @@ export function ManageUsers() {
   const [editingExpiry, setEditingExpiry] = useState<string>('')
 
   const fetchUsers = async () => {
-    const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + '/api/admin/users', { credentials: 'include' })
+    const res = await fetch(API_URL + '/api/admin/users', { credentials: 'include' })
     if (res.ok) {
         setUsers(await res.json())
     }
@@ -41,7 +41,7 @@ export function ManageUsers() {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault()
     setMsg('')
-    const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + '/api/admin/users', {
+    const res = await fetch(API_URL + '/api/admin/users', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -62,7 +62,7 @@ export function ManageUsers() {
 
   const handleRemoveUser = async (id: string) => {
     if (!window.confirm("Are you sure you want to remove this user?")) return;
-    const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + `/api/admin/users/${id}`, {
+    const res = await fetch(API_URL + `/api/admin/users/${id}`, {
       method: 'DELETE',
       credentials: 'include'
     });
@@ -95,7 +95,7 @@ export function ManageUsers() {
 
   const saveUserAccess = async (id: string) => {
       const tbArray = Array.from(editingTextbooks)
-      const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + `/api/admin/users/${id}/textbooks`, {
+      const res = await fetch(API_URL + `/api/admin/users/${id}/textbooks`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -117,7 +117,7 @@ export function ManageUsers() {
           alert('Password must be at least 6 characters');
           return;
       }
-      const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + `/api/admin/users/${id}/password`, {
+      const res = await fetch(API_URL + `/api/admin/users/${id}/password`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',

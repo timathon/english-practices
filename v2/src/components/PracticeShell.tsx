@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { API_URL } from '../lib/auth'
 import { VocabMasterShell } from './VocabMasterShell'
 import { RecallMapShell } from './RecallMapShell'
 import { VocabGuideShell } from './VocabGuideShell'
@@ -11,7 +12,7 @@ export function PracticeShell() {
     const [error, setError] = useState('')
     
     useEffect(() => {
-        fetch((import.meta.env.VITE_API_URL || 'http://localhost:8787') + `/api/practices/${id}`, { credentials: 'include' })
+        fetch(API_URL + `/api/practices/${id}`, { credentials: 'include' })
            .then(res => res.json())
            .then(data => {
                if (data.error) setError(data.error)
