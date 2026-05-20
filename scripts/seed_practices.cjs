@@ -32,12 +32,30 @@ async function seed() {
     
     const practices = [];
     
+    function findJsonFiles(dir) {
+        let results = [];
+        if (!fs.existsSync(dir)) return results;
+        const list = fs.readdirSync(dir);
+        list.forEach(file => {
+            const fullPath = path.join(dir, file);
+            const stat = fs.statSync(fullPath);
+            if (stat && stat.isDirectory()) {
+                results = results.concat(findJsonFiles(fullPath));
+            } else if (file.endsWith('.json')) {
+                results.push(fullPath);
+            }
+        });
+        return results;
+    }
+
     for (const tb of textbooks) {
         const tbDir = path.join(dataDir, tb);
-        const files = fs.readdirSync(tbDir).filter(f => f.endsWith('.json'));
+        const jsonFiles = findJsonFiles(tbDir);
         
-        for (const file of files) {
-            const match = file.match(/^([a-z0-9]+)-([uUmM]\d+)-(.*)\.json$/i);
+        for (const filePath of jsonFiles) {
+            const relPath = path.relative(tbDir, filePath);
+            const filename = path.basename(filePath);
+            const match = filename.match(/^([a-z0-9]+)-([uUmM]\d+)-(.*)\.json$/i);
             let unit = 'General';
             let type = 'unknown';
             
@@ -45,22 +63,49 @@ async function seed() {
                 unit = match[2].toUpperCase();
                 type = match[3];
             } else {
-                type = file.replace('.json', '');
+                type = filename.replace('.json', '');
             }
             
-            const raw = fs.readFileSync(path.join(tbDir, file), 'utf-8');
+            const raw = fs.readFileSync(filePath, 'utf-8');
             try {
                 const content = JSON.parse(raw);
+                
+                // Extract writing task prompt for writing maps
+                if (filename.includes('-writing-map-')) {
+                    const dir = path.dirname(filePath);
+                    let mdPath = "";
+                    if (filename.includes('-model-x')) {
+                        mdPath = path.join(dir, filename.replace(/-writing-map-model-x-?\d*\.json$/, '-writing-task-x.md'));
+                    }
+                    if (!mdPath || !fs.existsSync(mdPath)) {
+                        if (filename.includes('-model-')) {
+                            mdPath = path.join(dir, filename.replace(/-writing-map-model-?\d*\.json$/, '-writing-task.md'));
+                        }
+                    }
+                    if (!mdPath || !fs.existsSync(mdPath)) {
+                        mdPath = path.join(dir, filename.replace(/-writing-map-.+\.json$/, '-writing-task.md'));
+                    }
+                    if (!mdPath || !fs.existsSync(mdPath)) {
+                        mdPath = path.join(dir, filename.replace(/\.json$/, '.md'));
+                    }
+                    if (mdPath && fs.existsSync(mdPath)) {
+                        let contentMd = fs.readFileSync(mdPath, 'utf8');
+                        contentMd = contentMd.split(/### Model Essay/i)[0].trim();
+                        content.writingPrompt = contentMd;
+                        console.log(`[Prompt Embedded] for ${filename} from ${path.basename(mdPath)}`);
+                    }
+                }
+
                 practices.push({
-                    id: `${tb}_${file.replace('.json', '')}`,
+                    id: `${tb}_${relPath.replace(/\.json$/, '').replace(/[\/\\]/g, '_')}`,
                     textbook: tb,
                     unit: unit,
                     type: type,
-                    title: content.title || file,
+                    title: content.title || filename,
                     content: content
                 });
             } catch (e) {
-                console.error(`Failed to parse ${file}: ${e.message}`);
+                console.error(`Failed to parse ${relPath}: ${e.message}`);
             }
         }
     }

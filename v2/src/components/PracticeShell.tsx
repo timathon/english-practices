@@ -5,6 +5,7 @@ import { VocabMasterShell } from './VocabMasterShell'
 import { RecallMapShell } from './RecallMapShell'
 import { VocabGuideShell } from './VocabGuideShell'
 import { SpellingHeroShell } from './SpellingHeroShell'
+import { MindMapShell } from './MindMapShell'
 
 export function PracticeShell() {
     const { id } = useParams()
@@ -38,6 +39,11 @@ export function PracticeShell() {
 
     if (practice.type === 'spelling-hero') {
         return <SpellingHeroShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} />
+    }
+
+    if (practice.type.startsWith('text-navigator') || practice.type.startsWith('writing-map')) {
+        const isWritingMap = practice.type.startsWith('writing-map')
+        return <MindMapShell data={practice.content} textbook={practice.textbook} isWritingMap={isWritingMap} />
     }
     
     return (
