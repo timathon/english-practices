@@ -6,6 +6,8 @@ import { RecallMapShell } from './RecallMapShell'
 import { VocabGuideShell } from './VocabGuideShell'
 import { SpellingHeroShell } from './SpellingHeroShell'
 import { MindMapShell } from './MindMapShell'
+import { SentenceArchitectShell } from './SentenceArchitectShell'
+
 // Render practice components based on type
 export function PracticeShell() {
     const { id } = useParams()
@@ -39,6 +41,10 @@ export function PracticeShell() {
 
     if (practice.type === 'spelling-hero') {
         return <SpellingHeroShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} />
+    }
+
+    if (practice.type === 'sentence-architect') {
+        return <SentenceArchitectShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
     if (practice.type.startsWith('text-navigator') || practice.type.startsWith('writing-map')) {

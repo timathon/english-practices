@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession, API_URL } from './lib/auth'
 import { Link, useLocation } from 'react-router-dom'
 import './Dashboard.css'
@@ -146,8 +146,9 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                       let avg = 0;
                       const isVM = p.type.toLowerCase().includes('vocab-master');
                       const isSH = p.type.toLowerCase().includes('spelling-hero');
+                      const isSA = p.type.toLowerCase().includes('sentence-architect');
 
-                      if (isVM && p.content?.challenges) {
+                      if ((isVM || isSA) && p.content?.challenges) {
                         total = p.content.challenges.length;
                         let sumMax = 0;
                         for (const chal of p.content.challenges) {
@@ -202,7 +203,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                           <Link to={`/practice/${p.id}`} className="db-practice-link">
                             <span className="db-practice-icon">{getIcon(p.type)}</span>
                             <span className="db-practice-name">{formatType(p.type)}</span>
-                            {(isVM || isSH) && total > 0 && (
+                            {(isVM || isSH || isSA) && total > 0 && (
                               <div 
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
                                 title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}
@@ -235,7 +236,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
   )
 }
 
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 
 export function Dashboard() {
   const { data: session } = useSession()
@@ -244,9 +245,25 @@ export function Dashboard() {
   const [practices, setPractices] = useState<any[]>([])
   const [records, setRecords] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [chartDimensions, setChartDimensions] = useState<{ width: number; height: number } | null>(null)
+  const chartContainerRef = useRef<HTMLDivElement>(null)
+  const userId = session?.user?.id
 
   useEffect(() => {
-    if (session) {
+    if (loading || !chartContainerRef.current) return
+
+    const observer = new ResizeObserver((entries) => {
+      if (!entries || entries.length === 0) return
+      const { width, height } = entries[0].contentRect
+      setChartDimensions({ width, height })
+    })
+
+    observer.observe(chartContainerRef.current)
+    return () => observer.disconnect()
+  }, [loading])
+
+  useEffect(() => {
+    if (userId) {
       setLoading(true)
       fetch(API_URL + '/api/practices', { credentials: 'include' })
         .then(res => res.json())
@@ -264,7 +281,7 @@ export function Dashboard() {
         .then(data => { if (Array.isArray(data)) setRecords(data) })
         .catch(console.error)
     }
-  }, [session])
+  }, [userId])
 
   // group: textbook -> unit -> practices[]
   const grouped: Record<string, Record<string, any[]>> = practices.reduce((acc, p) => {
@@ -409,9 +426,12 @@ export function Dashboard() {
 
       <div className="db-stats">
         <h3 className="db-stats-title">Recent 7 Days Activity</h3>
-        <div style={{ width: '100%', height: 300, background: 'var(--card-bg)', borderRadius: '10px', padding: '20px 20px 10px 0', border: '1px solid var(--border)' }}>
-          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-            <ComposedChart data={last7DaysStats}>
+        <div 
+          ref={chartContainerRef}
+          style={{ width: '100%', height: 300, background: 'var(--card-bg)', borderRadius: '10px', padding: '20px 20px 10px 0', border: '1px solid var(--border)', boxSizing: 'border-box' }}
+        >
+          {chartDimensions && chartDimensions.width > 0 && chartDimensions.height > 0 ? (
+            <ComposedChart width={chartDimensions.width} height={chartDimensions.height} data={last7DaysStats}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
               <XAxis dataKey="date" stroke="var(--text)" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis yAxisId="left" stroke="var(--text)" fontSize={12} tickLine={false} axisLine={false} tickCount={5} allowDecimals={false} />
@@ -424,7 +444,7 @@ export function Dashboard() {
               <Bar yAxisId="left" dataKey="count" name="Practices Done" fill="var(--tab-active-text)" radius={[4, 4, 0, 0]} />
               <Line yAxisId="right" type="monotone" dataKey="avgScore" name="Avg Score" stroke="var(--accent)" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
             </ComposedChart>
-          </ResponsiveContainer>
+          ) : null}
         </div>
       </div>
       </div>

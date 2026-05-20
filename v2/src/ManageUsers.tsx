@@ -28,12 +28,14 @@ export function ManageUsers() {
     }
   }
 
+  const userId = session?.user?.id
+
   useEffect(() => {
-    if ((session?.user as any)?.role === 'admin') {
+    if (userId && (session?.user as any)?.role === 'admin') {
       fetchUsers()
       fetchTextbooks()
     }
-  }, [session])
+  }, [userId])
 
   if (!session) return <div>Please login.</div>
   if ((session.user as any).role !== 'admin') return <div>Unauthorized. Admin access required.</div>
