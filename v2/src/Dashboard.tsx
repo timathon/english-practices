@@ -247,6 +247,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [chartDimensions, setChartDimensions] = useState<{ width: number; height: number } | null>(null)
   const chartContainerRef = useRef<HTMLDivElement>(null)
+  const fetchedUserIdRef = useRef<string | null>(null)
   const userId = session?.user?.id
 
   useEffect(() => {
@@ -263,7 +264,8 @@ export function Dashboard() {
   }, [loading])
 
   useEffect(() => {
-    if (userId) {
+    if (userId && fetchedUserIdRef.current !== userId) {
+      fetchedUserIdRef.current = userId
       setLoading(true)
       fetch(API_URL + '/api/practices', { credentials: 'include' })
         .then(res => res.json())
@@ -369,7 +371,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.21-23:46</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.21-23:56</span></p>
         </div>
       </div>
 
