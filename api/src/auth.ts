@@ -8,7 +8,14 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
     return betterAuth({
         secret: secret || "dev_secret_1234567890",
         baseURL: baseURL || "http://localhost:8787",
-        trustedOrigins: ["http://localhost:5173", "http://127.0.0.1:5173", "https://timathon.github.io", "https://epv2.vibequizzing.com", "http://epv2.vibequizzing.com"],
+        trustedOrigins: [
+            "http://localhost:5173", "http://127.0.0.1:5173",
+            "http://localhost:5174", "http://127.0.0.1:5174",
+            "http://localhost:5175", "http://127.0.0.1:5175",
+            "http://localhost:5176", "http://127.0.0.1:5176",
+            "http://localhost:3000", "http://127.0.0.1:3000",
+            "https://timathon.github.io", "https://epv2.vibequizzing.com", "http://epv2.vibequizzing.com"
+        ],
         database: drizzleAdapter(drizzle(dbBinding), {
             provider: "sqlite",
             schema: {

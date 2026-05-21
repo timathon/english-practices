@@ -13,6 +13,14 @@ const app = new Hono<{ Bindings: Bindings }>()
 const allowedOrigins = [
   'http://localhost:5173', 
   'http://127.0.0.1:5173', 
+  'http://localhost:5174', 
+  'http://127.0.0.1:5174', 
+  'http://localhost:5175', 
+  'http://127.0.0.1:5175', 
+  'http://localhost:5176', 
+  'http://127.0.0.1:5176', 
+  'http://localhost:3000', 
+  'http://127.0.0.1:3000', 
   'https://timathon.github.io', 
   'https://epv2.vibequizzing.com',
   'http://epv2.vibequizzing.com'
@@ -28,8 +36,11 @@ const getCachedAuth = (env: Bindings) => {
 
 app.use('/api/*', cors({
   origin: (origin) => {
-    if (allowedOrigins.includes(origin || '')) return origin;
-    return allowedOrigins[3]; // Default to epv2.vibequizzing.com
+    if (!origin) return 'https://epv2.vibequizzing.com';
+    if (allowedOrigins.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return origin;
+    }
+    return 'https://epv2.vibequizzing.com';
   },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Origin', 'Content-Type', 'Accept', 'Authorization', 'x-requested-with'],
@@ -43,7 +54,7 @@ app.onError((err, c) => {
   
   // Set CORS headers for error responses
   const origin = c.req.header('Origin')
-  if (origin && allowedOrigins.includes(origin)) {
+  if (origin && (allowedOrigins.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))) {
     c.header('Access-Control-Allow-Origin', origin)
     c.header('Access-Control-Allow-Credentials', 'true')
   }
