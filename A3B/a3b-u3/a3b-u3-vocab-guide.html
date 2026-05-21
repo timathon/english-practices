@@ -249,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -277,6 +300,7 @@
             vertical-align: middle;
             transition: all 0.1s;
             padding: 0;
+            flex-shrink: 0;
         }
         .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
@@ -449,7 +473,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Mmm! Yummy, yummy food!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Mmm! Yummy, yummy food!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想/图像记忆法 (oo像两块圆圆的大饼，饼就是food食物)</div>
         </div>
@@ -469,7 +496,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like strawberries, too."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like strawberries, too."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法 (straw稻草 + berry莓果 = 长在稻草上的莓果)</div>
         </div>
@@ -489,7 +519,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like tomatoes."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like tomatoes."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (特麻头 - 番茄长得像特大红肿的麻头)</div>
         </div>
@@ -509,7 +542,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "A nice afternoon tea for Grandpa and me!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"A nice afternoon tea for Grandpa and me!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (提 - 提神要喝tea茶)</div>
         </div>
@@ -529,7 +565,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Every week, under the tree."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Every week, under the tree."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想/图像记忆法 (e想鹅，v想剪刀，ery想容易：每只鹅剪毛都很容易)</div>
         </div>
@@ -549,7 +588,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "We like it very much!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"We like it very much!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词组记忆法 (very很 + much多 = 很多，即非常)</div>
         </div>
@@ -569,7 +611,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "A nice afternoon tea for Grandpa and me!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"A nice afternoon tea for Grandpa and me!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法 (after在...之后 + noon中午 = 下午)</div>
         </div>
@@ -589,7 +634,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "A nice afternoon tea for Grandpa and me!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"A nice afternoon tea for Grandpa and me!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词组记忆法 (下午喝的茶就是afternoon tea)</div>
         </div>
@@ -609,7 +657,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like noodles, too."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like noodles, too."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (怒斗 - 愤怒的小鸟在斗面条)</div>
         </div>
@@ -629,7 +680,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like carrots."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like carrots."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法 (car小汽车 + rot腐烂 = 小汽车里有一堆烂胡萝卜)</div>
         </div>
@@ -649,7 +703,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like chicken and fish."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like chicken and fish."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法 (chick小鸡 + en后缀 = 鸡肉)</div>
         </div>
@@ -669,7 +726,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like chicken and fish."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like chicken and fish."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (费事 - 抓鱼很费事)</div>
         </div>
@@ -689,7 +749,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like rice, too."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like rice, too."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (白饭 - 吃rice要配白饭)</div>
         </div>
@@ -709,7 +772,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Meat Fruit"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Meat Fruit"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (面特 - 吃面的时候特别喜欢加meat肉)</div>
         </div>
@@ -729,7 +795,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Meat Fruit"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Meat Fruit"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (腐乳特 - 特制的腐乳里有水果味道)</div>
         </div>
@@ -749,7 +818,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Vegetables"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Vegetables"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法 (veget生机 + able能...的 = 有生机的东西，即蔬菜)</div>
         </div>
@@ -769,7 +841,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Let's make a salad together!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Let's make a salad together!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (色拉 - 沙拉就是色拉)</div>
         </div>
@@ -789,7 +864,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like bananas."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like bananas."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想/图像记忆法 (三个a像三根香蕉挂在b和n这两根树枝上)</div>
         </div>
@@ -809,7 +887,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like beans."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like beans."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (必备 - 营养午餐豆子是必备)</div>
         </div>
@@ -829,7 +910,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like cucumbers."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like cucumbers."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (Q看爸 - Q版黄瓜看着爸爸)</div>
         </div>
@@ -849,7 +933,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Then let's have cucumbers!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Then let's have cucumbers!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (等 - 接下来我们要等)</div>
         </div>
@@ -869,7 +956,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "What about Tom?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"What about Tom?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (阿爸它 - 关于阿爸它的故事)</div>
         </div>
@@ -889,7 +979,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Every week, under the tree."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Every week, under the tree."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (喂卡 - 这一星期的电话卡要喂满)</div>
         </div>
@@ -909,7 +1002,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Every week, under the tree."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Every week, under the tree."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想/图像记忆法 (t像树干，r像树枝，ee像树叶)</div>
         </div>
@@ -929,7 +1025,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Milk tea is good."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Milk tea is good."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (眯了口 - 眯了一口牛奶，真香)</div>
         </div>
@@ -949,7 +1048,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Cupcakes are great."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Cupcakes are great."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法 (cup杯子 + cake蛋糕 = 杯形蛋糕)</div>
         </div>
@@ -969,7 +1071,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Yummy sandwiches, with beef and eggs!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Yummy sandwiches, with beef and eggs!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (三文治 - 粤语三文治即三明治)</div>
         </div>
@@ -989,7 +1094,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Yummy sandwiches, with beef and eggs!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Yummy sandwiches, with beef and eggs!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (必备 - 吃火锅牛肉是必备)</div>
         </div>
@@ -1009,7 +1117,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like dumplings."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like dumplings."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (当铺铃 - 饺子馆里的铃声像当铺铃)</div>
         </div>
@@ -1029,7 +1140,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "My family and I like hot dogs."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"My family and I like hot dogs."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (哈特 - 热得哈特哈特地喘气)</div>
         </div>
@@ -1049,7 +1163,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "My family and I like hot dogs."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"My family and I like hot dogs."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词组记忆法 (hot热的 + dog狗 = 热狗)</div>
         </div>
@@ -1069,7 +1186,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "My family and I like sushi."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"My family and I like sushi."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (寿司 - 寿司就是sushi)</div>
         </div>
@@ -1089,7 +1209,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Cupcakes are great."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Cupcakes are great."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (开口 - 看到蛋糕就想开口吃)</div>
         </div>
@@ -1109,7 +1232,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "What about Tom?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"What about Tom?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词组记忆法 (what什么 + about关于 = 关于这个怎么样)</div>
         </div>
@@ -1129,7 +1255,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He likes grapes."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He likes grapes."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (果然铺 - 果然铺满了紫色的葡萄)</div>
         </div>
@@ -1149,7 +1278,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "What juice do they make?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"What juice do they make?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (就死 - 这杯果汁甜得我就死在这了)</div>
         </div>
@@ -1169,7 +1301,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Why do Taotao and Jiajia get up early?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Why do Taotao and Jiajia get up early?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (外 - 为什么要跑去外面)</div>
         </div>
@@ -1189,7 +1324,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "But it's still early."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"But it's still early."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 联想/图像记忆法 (ear耳朵 + ly利：早起对耳朵有利，能听到鸟叫)</div>
         </div>
@@ -1209,7 +1347,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Let's get ready for breakfast."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Let's get ready for breakfast."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 词根词缀法 (break打破 + fast禁食 = 打破禁食，即早餐)</div>
         </div>
@@ -1229,7 +1370,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Time to get up, children."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Time to get up, children."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (太慢 - 时间过得太慢了)</div>
         </div>
@@ -1249,7 +1393,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "But it's still early."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"But it's still early."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (死盯 - 他还是死死盯着我)</div>
         </div>
@@ -1269,7 +1416,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Let's get ready for breakfast."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Let's get ready for breakfast."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (瑞迪 - 瑞迪已经准备好了)</div>
         </div>
@@ -1289,7 +1439,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Do you like corn?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Do you like corn?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (颗呢 - 玉米有很多颗呢)</div>
         </div>
@@ -1309,7 +1462,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Let's get ready for lunch together, too!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Let's get ready for lunch together, too!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 谐音记忆法 (蓝吃 - 中午我们要拦住大家一起吃lunch)</div>
         </div>
@@ -1556,14 +1712,24 @@
                         item.classList.add('hide-cn');
                         item.classList.remove('force-show-cn');
                     });
+                    document.body.classList.remove('show-sentences-cn');
                 } else {
                     textEls.forEach(el => el.innerText = "Hide CN");
                     iconEls.forEach(el => el.innerText = "㊙️");
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
+                    document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {

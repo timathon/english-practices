@@ -249,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -277,6 +300,7 @@
             vertical-align: middle;
             transition: all 0.1s;
             padding: 0;
+            flex-shrink: 0;
         }
         .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
@@ -449,7 +473,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "What's your hobby?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"What's your hobby?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ho（猴子）+ bby（宝宝）都有自己的“业余爱好”。</div>
         </div>
@@ -469,7 +496,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "What do you like doing in your free time after school?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"What do you like doing in your free time after school?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> fr（夫人）+ ee（眼睛）空闲的时候盯着看。</div>
         </div>
@@ -489,7 +519,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "What do you like doing in your free time after school?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"What do you like doing in your free time after school?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> af（阿飞）+ ter（特儿）在后面追。</div>
         </div>
@@ -509,7 +542,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Painting, reading and singing! Dancing, running and swimming!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Painting, reading and singing! Dancing, running and swimming!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s（蛇）+ wim（我们）在水里游泳。</div>
         </div>
@@ -529,7 +565,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "We have a lot of fun!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"We have a lot of fun!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> lo（10）+ t（吨），那是“许多”货物。</div>
         </div>
@@ -549,7 +588,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "We have a lot of fun!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"We have a lot of fun!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> a（一个）+ lot（许多），合起来就是大量。</div>
         </div>
@@ -569,7 +611,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "What are these?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"What are these?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> th（它们）+ ese（鹅鹅鹅）都在“这些”篮子里。</div>
         </div>
@@ -589,7 +634,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Yes, they like doing tai chi."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Yes, they like doing tai chi."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 音译：太（tai）极（chi）。</div>
         </div>
@@ -609,7 +657,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Daming likes taking photos of his friends."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Daming likes taking photos of his friends."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> hi（嗨）+ s（蛇）是“他的”宠物。</div>
         </div>
@@ -629,7 +680,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Fabre - "the insect man""
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Fabre - "the insect man""</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> in（在里面）+ sect（部分），昆虫身体有很多部分。</div>
         </div>
@@ -649,7 +703,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Fabre - "the insect man""
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Fabre - "the insect man""</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> m（妈）+ an（一个）男人。</div>
         </div>
@@ -669,7 +726,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He likes learning about animals and plants."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He likes learning about animals and plants."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> l（乐）+ earn（挣钱），学习才能快乐挣钱。</div>
         </div>
@@ -689,7 +749,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He likes learning about animals and plants."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He likes learning about animals and plants."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> p（胖）+ lant（蓝兔）在吃“植物”。</div>
         </div>
@@ -709,7 +772,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "When?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"When?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> w（我）+ hen（母鸡）“什么时候”下蛋？</div>
         </div>
@@ -729,7 +795,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He likes asking questions."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He likes asking questions."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> que（缺）+ stion（死神），这是个致命的“问题”。</div>
         </div>
@@ -749,7 +818,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He likes watching insects."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He likes watching insects."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> wa（哇）+ tch（太差），观察得太仔细了。</div>
         </div>
@@ -769,7 +841,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "One day he goes up a tree to study a mantis."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"One day he goes up a tree to study a mantis."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> stu（学生）+ dy（大爷）都在研究。</div>
         </div>
@@ -789,7 +864,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "One day he goes up a tree to study a mantis."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"One day he goes up a tree to study a mantis."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> man（男人）+ tis（踢死）了一只“螳螂”。</div>
         </div>
@@ -809,7 +887,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He stays there and watches for a long time."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He stays there and watches for a long time."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s（蛇）+ tay（抬头）在原地“停留”。</div>
         </div>
@@ -829,7 +910,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It's so interesting!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It's so interesting!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> in（在...里）+ ter（特）+ est（最）+ ing，里面特别有趣。</div>
         </div>
@@ -849,7 +933,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Fabre grows up."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Fabre grows up."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> gr（工人）+ ow（哦）在慢慢成长。</div>
         </div>
@@ -869,7 +956,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Fabre grows up."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Fabre grows up."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> grow（成长）+ up（向上），向上成长就是“长大”。</div>
         </div>
@@ -889,7 +979,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "From country to country, we have different hobbies."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"From country to country, we have different hobbies."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> coun（看）+ try（尝试）走遍每个“国家”。</div>
         </div>
@@ -909,7 +1002,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Stan likes making robots."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Stan likes making robots."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ro（肉）+ bot（波特），波特吃肉机器人。</div>
         </div>
@@ -929,7 +1025,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Weiwei likes making kites."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Weiwei likes making kites."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> k（快）+ ite（爱它）的风筝。</div>
         </div>
@@ -949,7 +1048,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Sally likes skating on ice."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Sally likes skating on ice."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s（蛇）+ kate（凯特）去“滑冰”。</div>
         </div>
@@ -969,7 +1071,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Sally likes skating on ice."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Sally likes skating on ice."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> i（爱）+ ce（吃）冰棍。</div>
         </div>
@@ -989,7 +1094,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Kelly likes skiing."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Kelly likes skiing."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> s（蛇）+ ki（气）去滑雪。</div>
         </div>
@@ -1009,7 +1117,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Charlie likes gardening."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Charlie likes gardening."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> gar（加）+ den（灯），给“花园”加盏灯。</div>
         </div>
@@ -1029,7 +1140,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "What do you like doing in your free time after school?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"What do you like doing in your free time after school?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> free（自由的）+ time（时间）就是空闲时间。</div>
         </div>
@@ -1049,7 +1163,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Painting, reading and singing!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Painting, reading and singing!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sing（唱）+ ing，正在唱歌。</div>
         </div>
@@ -1069,7 +1186,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Painting, reading and singing!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Painting, reading and singing!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> paint（画画）+ ing，正在画画。</div>
         </div>
@@ -1089,7 +1209,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Dancing, running and swimming!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Dancing, running and swimming!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> dan（单）+ cing（姓），单姓的人在“跳舞”。</div>
         </div>
@@ -1109,7 +1232,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Dancing, running and swimming!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Dancing, running and swimming!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> run（跑）+ ning，跑个不停。</div>
         </div>
@@ -1129,7 +1255,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Painting, reading and singing!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Painting, reading and singing!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> read（读）+ ing，正在阅读。</div>
         </div>
@@ -1149,7 +1278,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I like taking photos!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I like taking photos!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> take（拿）+ photos（照片），拿着相机拍照片。</div>
         </div>
@@ -1169,7 +1301,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He likes learning about animals and plants."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He likes learning about animals and plants."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> learn（学习）+ about（关于），学习关于某事就是了解它。</div>
         </div>
@@ -1189,7 +1324,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Hobbies around the world"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Hobbies around the world"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> around（围绕）+ world（世界），围绕着世界就是全世界。</div>
         </div>
@@ -1209,7 +1347,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "_____ children like bird-watching."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"_____ children like bird-watching."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> bird（鸟）+ watching（看），看鸟就是“观鸟”。</div>
         </div>
@@ -1456,14 +1597,24 @@
                         item.classList.add('hide-cn');
                         item.classList.remove('force-show-cn');
                     });
+                    document.body.classList.remove('show-sentences-cn');
                 } else {
                     textEls.forEach(el => el.innerText = "Hide CN");
                     iconEls.forEach(el => el.innerText = "㊙️");
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
+                    document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {
