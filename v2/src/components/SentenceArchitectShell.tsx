@@ -48,7 +48,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     
     const [showFeedback, setShowFeedback] = useState(false)
     const [isCorrectFeedback, setIsCorrectFeedback] = useState(false)
-    const [userSentenceStr, setUserSentenceStr] = useState("")
+    const [, setUserSentenceStr] = useState("")
 
     // Settings
     const [autoplay, setAutoplay] = useState(() => {
@@ -166,7 +166,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
             let shouldKeepCapital = isAcronym || isI;
 
             if (!shouldKeepCapital && isOriginalCapitalized) {
-                const foundInMiddle = originalWords.some((w, i) => i > 0 && w === word);
+                const foundInMiddle = originalWords.some((w: string, i: number) => i > 0 && w === word);
                 if (foundInMiddle) {
                     shouldKeepCapital = true;
                 }
