@@ -201,3 +201,15 @@ This document defines the rules for extracting and converting textbook data into
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Crucially, do NOT use any text found within `VISUAL` or `LAYOUT` markers (e.g., `*[*VISUAL: ...*]*` or `*[*LAYOUT: ...*]*`) as source material for practice items, sentences, or contexts.**
 ---
+
+## V2 Version Badge
+
+**File:** `v2/src/Dashboard.tsx`
+
+Whenever making a git commit that includes changes to any file under the `v2/` directory, **update the version badge** in the Dashboard hero subtitle before committing. The badge is a `<span>` inside the `db-subtitle` paragraph with the format:
+
+```
+vYYYY.MM.DD-HH:MM
+```
+
+Update it to the **current local date and time** at the moment of the commit (e.g., `v2025.05.21-23:10`). This allows verifying whether the Cloudflare deployment is serving the latest build.
