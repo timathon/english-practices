@@ -213,3 +213,21 @@ vYYYY.MM.DD-HH:MM
 ```
 
 Update it to the **current local date and time** at the moment of the commit (e.g., `v2025.05.21-23:10`). This allows verifying whether the Cloudflare deployment is serving the latest build.
+
+## V2 Deployment
+
+**Platform:** Cloudflare Pages
+**Project Name:** `english-practices-v2`
+**Production URL:** https://epv2.vibequizzing.com
+
+### Deploy Steps
+
+1. Update the version badge (see above).
+2. Build the app:
+   ```bash
+   cd v2 && npm run build
+   ```
+3. Deploy to Cloudflare Pages:
+   ```bash
+   npx wrangler pages deploy dist --project-name=english-practices-v2
+   ```
