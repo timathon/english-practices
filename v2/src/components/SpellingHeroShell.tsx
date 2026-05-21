@@ -5,6 +5,7 @@ import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
+import { cache } from '../lib/cache'
 
 const PUBLIC_URL_BASE = 'https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev'
 
@@ -394,6 +395,21 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
             const j = await res.json()
             if (method === 'POST' && j.success && j.id) {
                 setActiveRecordId(j.id)
+                cache.updateRecord({
+                    id: j.id,
+                    unit: `${practiceId} (${activeChallengeRef.current?.title || ''})`,
+                    score: scorePercent,
+                    unfinished: !isFinished,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                } as any)
+            } else if (method === 'PUT' && j.success && activeRecordId) {
+                cache.updateRecord({
+                    id: activeRecordId,
+                    score: scorePercent,
+                    unfinished: !isFinished,
+                    updatedAt: new Date().toISOString()
+                })
             }
         } catch (e) {
             console.error("Failed to sync record", e)

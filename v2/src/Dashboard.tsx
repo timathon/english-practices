@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSession, API_URL } from './lib/auth'
 import { Link, useLocation } from 'react-router-dom'
+import { cache } from './lib/cache'
 import './Dashboard.css'
 
 const PRACTICE_TYPE_ICONS: Record<string, string> = {
@@ -266,22 +267,42 @@ export function Dashboard() {
   useEffect(() => {
     if (userId && fetchedUserIdRef.current !== userId) {
       fetchedUserIdRef.current = userId
-      setLoading(true)
-      fetch(API_URL + '/api/practices', { credentials: 'include' })
-        .then(res => res.json())
-        .then(data => { 
-          if (Array.isArray(data)) setPractices(data)
-          setLoading(false)
-        })
-        .catch(e => {
-          console.error(e)
-          setLoading(false)
-        })
-        
-      fetch(API_URL + '/api/records', { credentials: 'include' })
-        .then(res => res.json())
-        .then(data => { if (Array.isArray(data)) setRecords(data) })
-        .catch(console.error)
+
+      const cachedPractices = cache.getPractices()
+      if (cachedPractices) {
+        setPractices(cachedPractices)
+        setLoading(false)
+      } else {
+        setLoading(true)
+        fetch(API_URL + '/api/practices', { credentials: 'include' })
+          .then(res => res.json())
+          .then(data => { 
+            if (Array.isArray(data)) {
+              cache.setPractices(data)
+              setPractices(data)
+            }
+            setLoading(false)
+          })
+          .catch(e => {
+            console.error(e)
+            setLoading(false)
+          })
+      }
+
+      const cachedRecords = cache.getRecords()
+      if (cachedRecords) {
+        setRecords(cachedRecords)
+      } else {
+        fetch(API_URL + '/api/records', { credentials: 'include' })
+          .then(res => res.json())
+          .then(data => { 
+            if (Array.isArray(data)) {
+              cache.setRecords(data)
+              setRecords(data)
+            }
+          })
+          .catch(console.error)
+      }
     }
   }, [userId])
 
@@ -371,7 +392,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.21-23:56</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.22-00:02</span></p>
         </div>
       </div>
 
