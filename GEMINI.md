@@ -206,7 +206,7 @@ This document defines the rules for extracting and converting textbook data into
 
 **File:** `v2/src/Dashboard.tsx`
 
-Whenever making a git commit that includes changes to any file under the `v2/` directory, **update the version badge** in the Dashboard hero subtitle before committing. The badge is a `<span>` inside the `db-subtitle` paragraph with the format:
+Whenever making a git commit that includes changes to files under the `v2/` or `api/` directories (excluding auto-generated files like `v2/public/textbooks.json`), **update the version badge** in the Dashboard hero subtitle before committing. The badge is a `<span>` inside the `db-subtitle` paragraph with the format:
 
 ```
 vYYYY.MM.DD-HH:MM

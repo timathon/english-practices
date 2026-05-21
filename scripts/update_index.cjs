@@ -115,7 +115,7 @@ function getHtmlFilesInDirectory(directory, excludeDirs = []) {
 }
 
 function generateRecursiveIndex(folderPath, title, isRoot = false) {
-    const exclude = ['.git', 'scripts', 'data', 'templates', 'release', 'temp', 'node_modules', 'v2', 'api'];
+    const exclude = ['.git', 'scripts', 'data', 'templates', 'release', 'temp', 'node_modules', 'v2', 'api', 'dev_notes'];
     const files = getHtmlFilesInDirectory(folderPath, isRoot ? exclude : []);
     const sortedFiles = [...files].sort(naturalCompare);
     
@@ -379,7 +379,7 @@ function main() {
     generateRecursiveIndex('.', 'English Practices', true);
 
     // Generate index.html for each textbook folder
-    const excludeFolders = ['.git', 'scripts', 'release', 'data', 'templates', 'temp', 'node_modules', 'v2', 'api'];
+    const excludeFolders = ['.git', 'scripts', 'release', 'data', 'templates', 'temp', 'node_modules', 'v2', 'api', 'dev_notes'];
     const items = fs.readdirSync('.').filter(d => {
         const stat = fs.statSync(d);
         return stat.isDirectory() && !d.startsWith('.') && !excludeFolders.includes(d);
