@@ -5,10 +5,12 @@ export function SignIn() {
   const [usernameOrEmail, setUsernameOrEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
     
     const isEmail = usernameOrEmail.includes('@')
 
@@ -17,10 +19,12 @@ export function SignIn() {
       fetchOptions: {
         onError(ctx: any) {
           setError(ctx.error.message)
+          setLoading(false)
         },
         onSuccess() {
           window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/dashboard`
-        }      }
+        }
+      }
     }
 
     if (isEmail) {
@@ -51,8 +55,19 @@ export function SignIn() {
           required 
           style={{ padding: 10 }}
         />
-        <button type="submit" style={{ padding: 10, background: '#0366d6', color: 'white', border: 'none', borderRadius: 4 }}>
-          Sign In
+        <button 
+          type="submit" 
+          disabled={loading} 
+          style={{ 
+            padding: 10, 
+            background: loading ? '#ccc' : '#0366d6', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: 4,
+            cursor: loading ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
     </div>

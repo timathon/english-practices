@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { username } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
+import crypto from "node:crypto";
 import * as schema from "./db/schema";
 
 export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string) => {
@@ -48,13 +49,39 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
             enabled: true,
             minPasswordLength: 6,
             password: {
-                // @ts-ignore
-                hashOptions: {
-                    memoryCost: 64, // Extremely low to stay under 50ms CPU limit
-                    iterations: 1,
-                    parallelism: 1
+                hash: async (password: string) => {
+                    return new Promise<string>((resolve, reject) => {
+                        const salt = crypto.randomBytes(16).toString("hex");
+                        // N=1024, r=8, p=1 is extremely fast (takes ~2ms in C++)
+                        crypto.scrypt(password, salt, 64, { N: 1024, r: 8, p: 1 }, (err: Error | null, derivedKey: Buffer) => {
+                            if (err) reject(err);
+                            else resolve(`${salt}:${derivedKey.toString("hex")}`);
+                        });
+                    });
+                },
+                verify: async ({ hash, password }) => {
+                    const [salt, key] = hash.split(":");
+                    if (!salt || !key) return false;
+                    return new Promise<boolean>((resolve) => {
+                        // First try lightweight scrypt parameters N=1024 (new hashes)
+                        crypto.scrypt(password, salt, 64, { N: 1024, r: 8, p: 1 }, (err: Error | null, derivedKey: Buffer) => {
+                            if (!err && derivedKey.toString("hex") === key) {
+                                resolve(true);
+                                return;
+                            }
+                            // Fallback to legacy default parameters N=16384 (using fast native scrypt with maxmem)
+                            crypto.scrypt(password, salt, 64, { N: 16384, r: 16, p: 1, maxmem: 67108864 }, (err2: Error | null, derivedKey2: Buffer) => {
+                                if (!err2 && derivedKey2.toString("hex") === key) {
+                                    resolve(true);
+                                } else {
+                                    resolve(false);
+                                }
+                            });
+                        });
+                    });
                 }
             }
         }
     });
 };
+
