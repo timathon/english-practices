@@ -381,7 +381,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-00:47</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-00:59</span></p>
         </div>
       </div>
 
@@ -421,6 +421,10 @@ export function Dashboard() {
         <div className="db-stats">
           <h3 className="db-stats-title">Recent 7 Days Activity</h3>
           <div className="db-chart-card">
+            <div className="db-chart-legend-left">
+              <span className="db-chart-legend-bar" />
+              <span>Practices Done</span>
+            </div>
             <div className="db-chart-area">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
@@ -441,6 +445,7 @@ export function Dashboard() {
                   <XAxis
                     dataKey="date" stroke="var(--text)" fontSize={11}
                     tickLine={false} axisLine={false} dy={6}
+                    tickFormatter={(value, index) => [1, 3, 5].includes(index) ? '' : value}
                   />
                   <YAxis
                     yAxisId="left" stroke="var(--text)" fontSize={11}
@@ -466,10 +471,11 @@ export function Dashboard() {
                     }}
                     labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
                     itemStyle={{ color: 'var(--text-h)', padding: '2px 0' }}
+                    itemSorter={(item) => item.name === 'Practices Done' ? 1 : 2}
                   />
                   <Area
                     yAxisId="right" type="monotone" dataKey="avgScore"
-                    fill="url(#lineGlow)" stroke="none"
+                    fill="url(#lineGlow)" stroke="none" tooltipType="none"
                   />
                   <Bar
                     yAxisId="left" dataKey="count" name="Practices Done"
@@ -484,15 +490,9 @@ export function Dashboard() {
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
-            <div className="db-chart-legends">
-              <div className="db-chart-legend-item">
-                <span className="db-chart-legend-bar" />
-                <span>Practices Done</span>
-              </div>
-              <div className="db-chart-legend-item">
-                <span className="db-chart-legend-dot" />
-                <span>Avg Score</span>
-              </div>
+            <div className="db-chart-legend-right">
+              <span className="db-chart-legend-dot" />
+              <span>Avg Score</span>
             </div>
           </div>
         </div>
