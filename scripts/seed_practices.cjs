@@ -55,13 +55,17 @@ async function seed() {
         for (const filePath of jsonFiles) {
             const relPath = path.relative(tbDir, filePath);
             const filename = path.basename(filePath);
-            const match = filename.match(/^([a-z0-9]+)-([uUmM]\d+)-(.*)\.json$/i);
+            const match = filename.match(/^([a-z0-9-]+)-([uUmM]\d+)-(.*)\.json$/i);
+            const matchCgiu = filename.match(/^c-giu-(\d+)-(.*)\.json$/i);
             let unit = 'General';
             let type = 'unknown';
             
             if (match) {
                 unit = match[2].toUpperCase();
                 type = match[3];
+            } else if (matchCgiu) {
+                unit = 'U' + matchCgiu[1];
+                type = matchCgiu[2];
             } else {
                 type = filename.replace('.json', '');
             }
@@ -111,6 +115,20 @@ async function seed() {
     }
     
     console.log(`Found ${practices.length} valid JSON practices. Beginning upload...`);
+
+    console.log("Clearing existing practices in DB...");
+    const clearRes = await fetch(`${API_URL}/api/admin/practices`, {
+        method: 'DELETE',
+        headers: { 
+            'Cookie': cookies 
+        }
+    });
+    if (!clearRes.ok) {
+        console.error('Failed to clear practices in DB. Status:', clearRes.status);
+        console.error(await clearRes.text());
+        return;
+    }
+    console.log("Successfully cleared existing practices.");
     
     let successCount = 0;
     for (let i = 0; i < practices.length; i += 20) {
