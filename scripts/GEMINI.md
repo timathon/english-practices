@@ -1,133 +1,96 @@
 # Scripts Operational Guide
 
-This document records specific operational patterns and commands for the scripts in this folder.
+This document records specific operational patterns and commands for the scripts in this folder, ensuring future agents can run them without needing to read the source code.
 
-## Recall Map Generation (`rm_release_gen.cjs`)
+---
 
-Unlike some interactive scripts in this directory, `rm_release_gen.cjs` requires explicit input and output arguments.
+## 📋 General Rules & Arguments
+For V3 release generators (`vm_release_gen-3.cjs`, `sh_release_gen-3.cjs`, `sa_release_gen-3.cjs`):
+- **Validation Type (`type`)**: `post` (default, URL parameter verification) or `builtin` (local activation key validation).
+- **Users**: `--user=X` (defaults to 3, use 10 for interactive packages as per sequence.md).
+- **Validity**: `--validity=Y` (months, defaults to 3).
+- **Audio Modes**:
+  - `--skip-audio` (force audioMode = '1', skips TTS tasks completely, ideal for local tests or non-audio runs).
+  - `--regenerate` (force audioMode = '3', regenerates all TTS assets).
+  - *(Default)* (audioMode = '2', checks Cloudflare R2 and only requests missing audio via Gemini API).
 
-### Usage Pattern
+---
+
+## 🗺 Recall Map Generation (`rm_release_gen.cjs`)
+Converts recall map JSON data into a formatted interactive HTML mindmap.
 ```bash
 node scripts/rm_release_gen.cjs [input_json_path] [output_html_path]
 ```
-
-### Example Execution
-To generate a Recall Map HTML from a JSON file:
+**Example:**
 ```bash
-node scripts/rm_release_gen.cjs data/B-Think1/b-think1-u11/b-think1-u11-p106-p109-recall-map.json B-Think1/b-think1-u11/b-think1-u11-p106-p109-recall-map.html
+node scripts/rm_release_gen.cjs data/RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-recall-map.json RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-recall-map.html
 ```
 
-## Vocabulary Guide Generation (`vg_release_gen-3.cjs`)
+---
 
-This script handles HTML generation and automated TTS processing.
-
-### Usage Pattern
+## 📖 Vocabulary Guide Generation (`vg_release_gen-3.cjs`)
+Generates printable/web vocab guides with integrated speech/phonics support.
 ```bash
 node scripts/vg_release_gen-3.cjs [input_json_path] [output_html_path] [flags]
 ```
-
-### Audio Flags
-- `--regenerate`: Force regenerate all audio items (overwrites existing R2 files).
-- `--skip-audio`: Generate HTML only, skipping all audio processing.
-- (Default): Check R2 and only generate missing audio items.
-
-### Example Execution
+**Example (No Audio):**
 ```bash
-node scripts/vg_release_gen-3.cjs data/B-Think1/b-think1-u11/b-think1-u11-p106-p109-vocab-guide.json B-Think1/b-think1-u11/b-think1-u11-p106-p109-vocab-guide.html --regenerate
+node scripts/vg_release_gen-3.cjs data/RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-vocab-guide.json RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-vocab-guide.html --skip-audio
 ```
 
-## Vocab Master Generation (`vm_release_gen-3.cjs`)
+---
 
-This script generates vocabulary challenges with progress tracking.
-
-### Usage Pattern
+## 🧠 Vocab Master Generation (`vm_release_gen-3.cjs`)
+Generates multi-choice and cloze vocabulary practice challenges.
 ```bash
 node scripts/vm_release_gen-3.cjs [input_json_path] [type] [output_html_path] [flags]
 ```
-
-### Arguments
-- `type`: Either `post` (default) or `builtin`.
-
-### Audio Flags
-- `--regenerate`: Force regenerate all audio items.
-- `--skip-audio`: Generate HTML only.
-- (Default): Check R2 and generate only missing audio items.
-
-### Example Execution
+**Example (Builtin Key, 10 Users, 3 Months, Skip Audio):**
 ```bash
-node scripts/vm_release_gen-3.cjs data/B-Think1/b-think1-u11/b-think1-u11-p106-p109-vocab-master.json post B-Think1/b-think1-u11/b-think1-u11-p106-p109-vocab-master.html
+node scripts/vm_release_gen-3.cjs data/RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-vocab-master.json builtin RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-vocab-master.html --user=10 --validity=3 --skip-audio
 ```
 
-## Spelling Hero Generation (`sh_release_gen-3.cjs`)
+---
 
-This script creates interactive spelling challenges.
-
-### Usage Pattern
+## 🔠 Spelling Hero Generation (`sh_release_gen-3.cjs`)
+Creates interactive spelling/chunking challenges.
 ```bash
 node scripts/sh_release_gen-3.cjs [input_json_path] [type] [output_html_path] [flags]
 ```
-
-### Arguments
-- `type`: Either `post` (default) or `builtin`.
-
-### Audio Flags
-- `--regenerate`: Force regenerate all audio items.
-- `--skip-audio`: Generate HTML only.
-- (Default): Check R2 and generate only missing audio items.
-
-### Example Execution
+**Example (Builtin Key, 10 Users, 3 Months, Skip Audio):**
 ```bash
-node scripts/sh_release_gen-3.cjs data/B-Think1/b-think1-u11/b-think1-u11-p106-p109-spelling-hero.json post B-Think1/b-think1-u11/b-think1-u11-p106-p109-spelling-hero.html --regenerate
-# Or with builtin type:
-node scripts/sh_release_gen-3.cjs data/B-Think1/b-think1-u11/b-think1-u11-p106-p109-spelling-hero.json builtin B-Think1/b-think1-u11/b-think1-u11-p106-p109-spelling-hero.html
+node scripts/sh_release_gen-3.cjs data/RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-spelling-hero.json builtin RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-spelling-hero.html --user=10 --validity=3 --skip-audio
 ```
 
-## Sentence Architect Generation (`sa_release_gen-3.cjs`)
+---
 
-This script generates sentence-building exercises with XOR encryption.
-
-### Usage Pattern
+## 🧱 Sentence Architect Generation (`sa_release_gen-3.cjs`)
+Generates sentence block builder interfaces with encryption.
 ```bash
 node scripts/sa_release_gen-3.cjs [input_json_path] [type] [output_html_path] [flags]
 ```
-
-### Arguments
-- `type`: Either `post` (default) or `builtin`.
-
-### Audio Flags
-- `--regenerate`: Force regenerate all audio items.
-- `--skip-audio`: Generate HTML only.
-- (Default): Check R2 and generate only missing audio items.
-
-### Example Execution
+**Example (Builtin Key, 10 Users, 3 Months, Skip Audio):**
 ```bash
-node scripts/sa_release_gen-3.cjs data/B-Think1/b-think1-u11/b-think1-u11-p106-p109-sentence-architect.json post B-Think1/b-think1-u11/b-think1-u11-p106-p109-sentence-architect.html
+node scripts/sa_release_gen-3.cjs data/RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-sentence-architect.json builtin RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-sentence-architect.html --user=10 --validity=3 --skip-audio
 ```
 
-## Writing Map / Text Navigator Generation (`wm_release_gen-3.cjs`)
+---
 
-This script handles hierarchical mindmap trees, including Writing Maps, Recall Maps (alternative), and Text Navigators.
-
-### Usage Pattern
+## 🧭 Writing Map & Text Navigator Generation (`wm_release_gen-3.cjs`)
+Generates structured writing mapping templates or interactive paragraph/dialogue navigation flows.
 ```bash
 node scripts/wm_release_gen-3.cjs [input_json_path] [output_html_path] [flags]
 ```
-
-### Audio Flags
-- `--regenerate`: Force regenerate all audio items.
-- `--skip-audio`: Generate HTML only.
-- (Default): Check R2 and generate only missing audio items.
-
-### Example Execution
+**Example (No Audio):**
 ```bash
-node scripts/wm_release_gen-3.cjs data/B-Think1/b-think1-u11/b-think1-u11-p106-p109-text-navigator-reading.json B-Think1/b-think1-u11/b-think1-u11-p106-p109-text-navigator-reading.html --regenerate
+node scripts/wm_release_gen-3.cjs data/RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-text-navigator.json RAZ-B/raz-b-all-by-myself/raz-b-all-by-myself-text-navigator.html --skip-audio
 ```
 
-## Maintenance & Finalization
+---
 
-### Update Indexes
-After running any release generators, you **must** update the textbook and exercise indexes to ensure the new content is visible in the browser.
-
+## 🛠 Maintenance & Indexing
+Always rebuild the index and data catalog after generating new releases:
 ```bash
 node scripts/update_index.cjs
 ```
+
