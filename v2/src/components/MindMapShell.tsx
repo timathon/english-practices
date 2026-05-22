@@ -40,6 +40,15 @@ export function MindMapShell({ data, textbook, isWritingMap }: MindMapShellProps
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
   const [showAllMode, setShowAllMode] = useState(0) // 0: manual, 1: emoji, 2: keywords, 3: full
   const [savedCollapsedNodes, setSavedCollapsedNodes] = useState<Set<string> | null>(null)
+  const [layoutOrientation, setLayoutOrientation] = useState<'horizontal' | 'vertical'>(() => {
+    return (localStorage.getItem('mm-layout-orientation') as 'horizontal' | 'vertical') || 'horizontal'
+  })
+
+  const toggleLayoutOrientation = () => {
+    const next = layoutOrientation === 'horizontal' ? 'vertical' : 'horizontal'
+    setLayoutOrientation(next)
+    localStorage.setItem('mm-layout-orientation', next)
+  }
   
   // Depth logic
   const [maxDepthVisible, setMaxDepthVisible] = useState(5)
@@ -797,6 +806,13 @@ export function MindMapShell({ data, textbook, isWritingMap }: MindMapShellProps
             </button>
           )}
           {showAllMode === 3 && maxDepthVisible === maxTreeDepth && <div className="mm-btn-separator" />}
+          <button 
+            className="mm-ctrl-btn layout-toggle" 
+            onClick={toggleLayoutOrientation} 
+            title={layoutOrientation === 'horizontal' ? "Switch to Vertical Layout (切换至垂直布局)" : "Switch to Horizontal Layout (切换至水平布局)"}
+          >
+            {layoutOrientation === 'horizontal' ? "📋" : "🌳"}
+          </button>
           <button className="mm-ctrl-btn" onClick={resetMap} title="Reset (重置)">🔄</button>
           <button className="mm-ctrl-btn" onClick={prevStep} disabled={currentStepIndex <= 1 || showAllMode > 0} title="Previous Step (上一步)">◀️</button>
           <button className="mm-ctrl-btn next" onClick={nextStep} disabled={(currentStepIndex >= actionSteps.length && showAllMode === 0) || showAllMode > 0} title="Next Step (下一步)">▶️</button>
@@ -854,7 +870,7 @@ export function MindMapShell({ data, textbook, isWritingMap }: MindMapShellProps
       </div>
 
       {/* Main Mindmap Area */}
-      <main className="mm-container" ref={containerRef}>
+      <main className={`mm-container ${layoutOrientation === 'vertical' ? 'vertical-layout' : ''}`} ref={containerRef}>
         {renderNode(treeData)}
       </main>
 

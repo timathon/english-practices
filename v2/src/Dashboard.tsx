@@ -37,7 +37,7 @@ function saveLastUnit(tb: string, unit: string) {
   try {
     const map = JSON.parse(localStorage.getItem(LS_KEY) || '{}')
     localStorage.setItem(LS_KEY, JSON.stringify({ ...map, [tb]: unit }))
-  } catch {}
+  } catch { }
 }
 
 function BookSection({ tb, units, records, initialUnit }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string }) {
@@ -75,13 +75,13 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
       <div>
         <div className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
           {unitKeys.map(unit => (
-            <button 
-              key={unit} 
+            <button
+              key={unit}
               onClick={() => handleUnitChange(unit)}
               className={`db-tab-btn ${activeUnit === unit ? 'active' : ''}`}
-              style={{ 
-                padding: '6px 14px', 
-                border: 'none', 
+              style={{
+                padding: '6px 14px',
+                border: 'none',
                 borderBottom: activeUnit === unit ? '3px solid var(--tab-active-text)' : '3px solid transparent',
                 background: activeUnit === unit ? 'var(--card-bg)' : 'transparent',
                 cursor: 'pointer',
@@ -105,23 +105,23 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
               const textNavigatorItems = items.filter((p: any) => p.type.toLowerCase().includes('text-navigator'));
               const writingMapItems = items.filter((p: any) => p.type.toLowerCase().includes('writing-map'));
               const sentenceArchitectItems = items.filter((p: any) => p.type.toLowerCase().includes('sentence-architect'));
-              
+
               const matchedIds = new Set([
-                  ...recallMapItems.map((p: any) => p.id),
-                  ...vocabItems.map((p: any) => p.id),
-                  ...textNavigatorItems.map((p: any) => p.id),
-                  ...writingMapItems.map((p: any) => p.id),
-                  ...sentenceArchitectItems.map((p: any) => p.id)
+                ...recallMapItems.map((p: any) => p.id),
+                ...vocabItems.map((p: any) => p.id),
+                ...textNavigatorItems.map((p: any) => p.id),
+                ...writingMapItems.map((p: any) => p.id),
+                ...sentenceArchitectItems.map((p: any) => p.id)
               ]);
               const otherItems = items.filter((p: any) => !matchedIds.has(p.id));
 
               const groups = [
-                  { title: '1. Recall Map', items: recallMapItems },
-                  { title: '2. Vocabulary & Spelling', items: vocabItems },
-                  { title: '3. Text Navigators', items: textNavigatorItems },
-                  { title: '4. Sentence Architect', items: sentenceArchitectItems },
-                  { title: '5. Writing Maps', items: writingMapItems },
-                  { title: 'Other Practices', items: otherItems }
+                { title: '1. Recall Map', items: recallMapItems },
+                { title: '2. Vocabulary & Spelling', items: vocabItems },
+                { title: '3. Text Navigators', items: textNavigatorItems },
+                { title: '4. Sentence Architect', items: sentenceArchitectItems },
+                { title: '5. Writing Maps', items: writingMapItems },
+                { title: 'Other Practices', items: otherItems }
               ].filter(g => g.items.length > 0);
 
               const getIcon = (typeStr: string) => {
@@ -179,7 +179,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                             }
                             if (doneCount > 0) avg = Math.round(sumBest / doneCount);
                           }
-                        } catch {}
+                        } catch { }
                       }
 
                       const getGrade = (a: number) => {
@@ -205,7 +205,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                             <span className="db-practice-icon">{getIcon(p.type)}</span>
                             <span className="db-practice-name">{formatType(p.type)}</span>
                             {(isVM || isSH || isSA) && total > 0 && (
-                              <div 
+                              <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
                                 title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}
                               >
@@ -261,7 +261,7 @@ export function Dashboard() {
         setLoading(true)
         fetch(API_URL + '/api/practices', { credentials: 'include' })
           .then(res => res.json())
-          .then(data => { 
+          .then(data => {
             if (Array.isArray(data)) {
               cache.setPractices(data)
               setPractices(data)
@@ -280,7 +280,7 @@ export function Dashboard() {
       } else {
         fetch(API_URL + '/api/records', { credentials: 'include' })
           .then(res => res.json())
-          .then(data => { 
+          .then(data => {
             if (Array.isArray(data)) {
               cache.setRecords(data)
               setRecords(data)
@@ -311,26 +311,26 @@ export function Dashboard() {
     const stats = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-  
+
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      
+
       const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
+
       const nextDay = new Date(d);
       nextDay.setDate(nextDay.getDate() + 1);
-  
+
       const dayRecords = records.filter(r => {
         const rDate = new Date(r.createdAt);
         return rDate >= d && rDate < nextDay;
       });
-  
+
       const count = dayRecords.length;
-      const avgScore = count > 0 
+      const avgScore = count > 0
         ? Math.round(dayRecords.reduce((acc, r) => acc + r.score, 0) / count)
         : 0;
-  
+
       stats.push({
         date: dateStr,
         count,
@@ -381,7 +381,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-01:16</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-01:43</span></p>
         </div>
       </div>
 
@@ -511,10 +511,10 @@ export function Dashboard() {
           </div>
           <div className="db-books">
             {Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).map(tb => (
-              <BookSection 
-                key={tb} 
-                tb={tb} 
-                units={grouped[tb]} 
+              <BookSection
+                key={tb}
+                tb={tb}
+                units={grouped[tb]}
                 records={records}
                 initialUnit={returnState?.textbook === tb ? returnState.unit : undefined}
               />
