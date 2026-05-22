@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const API_URL = 'http://localhost:8787';
+const API_URL = process.env.API_URL || 'http://localhost:8787';
 
 async function seed() {
     console.log("Authenticating as Admin...");
