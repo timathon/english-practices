@@ -429,6 +429,8 @@ app.post('/api/admin/practices', async (c) => {
       }).onConflictDoUpdate({
           target: practice.id,
           set: {
+              unit: item.unit,
+              type: item.type,
               content: item.content,
               title: item.title,
               updatedAt: new Date()
@@ -437,6 +439,16 @@ app.post('/api/admin/practices', async (c) => {
   }
   
   return c.json({ success: true, count: items.length })
+})
+
+app.delete('/api/admin/practices', async (c) => {
+  const auth = getCachedAuth(c.env)
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+
+  const db = drizzle(c.env.DB)
+  await db.delete(practice)
+  return c.json({ success: true })
 })
 
 export default app
