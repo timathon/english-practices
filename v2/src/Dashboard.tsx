@@ -237,7 +237,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
   )
 }
 
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
+import { ComposedChart, Bar, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export function Dashboard() {
   const { data: session } = useSession()
@@ -246,23 +246,8 @@ export function Dashboard() {
   const [practices, setPractices] = useState<any[]>([])
   const [records, setRecords] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [chartDimensions, setChartDimensions] = useState<{ width: number; height: number } | null>(null)
-  const chartContainerRef = useRef<HTMLDivElement>(null)
   const fetchedUserIdRef = useRef<string | null>(null)
   const userId = session?.user?.id
-
-  useEffect(() => {
-    if (loading || !chartContainerRef.current) return
-
-    const observer = new ResizeObserver((entries) => {
-      if (!entries || entries.length === 0) return
-      const { width, height } = entries[0].contentRect
-      setChartDimensions({ width, height })
-    })
-
-    observer.observe(chartContainerRef.current)
-    return () => observer.disconnect()
-  }, [loading])
 
   useEffect(() => {
     if (userId && fetchedUserIdRef.current !== userId) {
@@ -308,6 +293,10 @@ export function Dashboard() {
 
   // group: textbook -> unit -> practices[]
   const grouped: Record<string, Record<string, any[]>> = practices.reduce((acc, p) => {
+    // Skip C-GIU General unit
+    if (p.textbook === 'C-GIU' && p.unit === 'General') {
+      return acc
+    }
     if (!acc[p.textbook]) acc[p.textbook] = {}
     if (!acc[p.textbook][p.unit]) acc[p.textbook][p.unit] = []
     acc[p.textbook][p.unit].push(p)
@@ -372,7 +361,7 @@ export function Dashboard() {
       let practiceName = 'Unknown';
       if (practice) {
         const acronym = practice.type.split('-').map((w: string) => w.charAt(0).toUpperCase()).join('');
-        const shortChallenge = challengeTitle.replace('Challenge ', '');
+        const shortChallenge = challengeTitle.replace('Challenge ', '').split(':')[0].trim();
         practiceName = challengeTitle ? `${acronym}-${shortChallenge}` : acronym;
       }
 
@@ -392,7 +381,120 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.22-00:24</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-00:47</span></p>
+        </div>
+      </div>
+
+      <div className="db-books">
+        <div className="db-stats">
+          <h3 className="db-stats-title">Today's Practices</h3>
+          {parsedTodayRecords.length > 0 ? (
+            <div className="db-stats-table-container">
+              <table className="db-stats-table">
+                <thead>
+                  <tr>
+                    <th>Started</th>
+                    <th>Book-Unit</th>
+                    <th>Practice</th>
+                    <th>Score</th>
+                    <th>Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedTodayRecords.map(r => (
+                    <tr key={r.id}>
+                      <td>{r.timeStarted}</td>
+                      <td>{r.bookUnit}</td>
+                      <td>{r.practiceName}</td>
+                      <td>{r.score}</td>
+                      <td>{r.timeUsed}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="db-empty" style={{ padding: '20px' }}>No practices started today yet.</div>
+          )}
+        </div>
+
+        <div className="db-stats">
+          <h3 className="db-stats-title">Recent 7 Days Activity</h3>
+          <div className="db-chart-card">
+            <div className="db-chart-area">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={last7DaysStats}
+                  margin={{ top: 16, right: 12, bottom: 0, left: -8 }}
+                >
+                  <defs>
+                    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--tab-active-text)" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="var(--tab-active-text)" stopOpacity={0.4} />
+                    </linearGradient>
+                    <linearGradient id="lineGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.5} />
+                  <XAxis
+                    dataKey="date" stroke="var(--text)" fontSize={11}
+                    tickLine={false} axisLine={false} dy={6}
+                  />
+                  <YAxis
+                    yAxisId="left" stroke="var(--text)" fontSize={11}
+                    tickLine={false} axisLine={false} tickCount={5}
+                    allowDecimals={false} width={28}
+                  />
+                  <YAxis
+                    yAxisId="right" orientation="right" stroke="var(--text)"
+                    fontSize={11} tickLine={false} axisLine={false}
+                    tickFormatter={(v) => `${v}%`} domain={[0, 100]} width={36}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'var(--accent-bg)', radius: 4 }}
+                    contentStyle={{
+                      backgroundColor: 'var(--card-bg)',
+                      borderColor: 'var(--border)',
+                      borderRadius: '10px',
+                      color: 'var(--text-h)',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+                      backdropFilter: 'blur(12px)',
+                      padding: '10px 14px',
+                      fontSize: '0.8rem',
+                    }}
+                    labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
+                    itemStyle={{ color: 'var(--text-h)', padding: '2px 0' }}
+                  />
+                  <Area
+                    yAxisId="right" type="monotone" dataKey="avgScore"
+                    fill="url(#lineGlow)" stroke="none"
+                  />
+                  <Bar
+                    yAxisId="left" dataKey="count" name="Practices Done"
+                    fill="url(#barGrad)" radius={[6, 6, 0, 0]} barSize={20}
+                  />
+                  <Line
+                    yAxisId="right" type="monotone" dataKey="avgScore"
+                    name="Avg Score" stroke="var(--accent)" strokeWidth={2.5}
+                    dot={{ r: 3.5, fill: 'var(--card-bg)', strokeWidth: 2.5 }}
+                    activeDot={{ r: 5.5, fill: 'var(--accent)', strokeWidth: 0 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="db-chart-legends">
+              <div className="db-chart-legend-item">
+                <span className="db-chart-legend-bar" />
+                <span>Practices Done</span>
+              </div>
+              <div className="db-chart-legend-item">
+                <span className="db-chart-legend-dot" />
+                <span>Avg Score</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -413,64 +515,6 @@ export function Dashboard() {
           ))}
         </div>
       )}
-
-      <div className="db-books" style={{ marginTop: '16px' }}>
-        <div className="db-stats">
-          <h3 className="db-stats-title">Today's Practices</h3>
-        {parsedTodayRecords.length > 0 ? (
-          <div className="db-stats-table-container">
-            <table className="db-stats-table">
-              <thead>
-                <tr>
-                  <th>Started</th>
-                  <th>Book-Unit</th>
-                  <th>Practice</th>
-                  <th>Score</th>
-                  <th>Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {parsedTodayRecords.map(r => (
-                  <tr key={r.id}>
-                    <td>{r.timeStarted}</td>
-                    <td>{r.bookUnit}</td>
-                    <td>{r.practiceName}</td>
-                    <td>{r.score}</td>
-                    <td>{r.timeUsed}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="db-empty" style={{ padding: '20px' }}>No practices started today yet.</div>
-        )}
-      </div>
-
-      <div className="db-stats">
-        <h3 className="db-stats-title">Recent 7 Days Activity</h3>
-        <div 
-          ref={chartContainerRef}
-          style={{ width: '100%', height: 300, background: 'var(--card-bg)', borderRadius: '10px', padding: '20px 20px 10px 0', border: '1px solid var(--border)', boxSizing: 'border-box' }}
-        >
-          {chartDimensions && chartDimensions.width > 0 && chartDimensions.height > 0 ? (
-            <ComposedChart width={chartDimensions.width} height={chartDimensions.height} data={last7DaysStats}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="date" stroke="var(--text)" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis yAxisId="left" stroke="var(--text)" fontSize={12} tickLine={false} axisLine={false} tickCount={5} allowDecimals={false} />
-              <YAxis yAxisId="right" orientation="right" stroke="var(--text)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text-h)' }}
-                itemStyle={{ color: 'var(--text-h)' }}
-              />
-              <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '0.85rem' }} />
-              <Bar yAxisId="left" dataKey="count" name="Practices Done" fill="var(--tab-active-text)" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="right" type="monotone" dataKey="avgScore" name="Avg Score" stroke="var(--accent)" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
-            </ComposedChart>
-          ) : null}
-        </div>
-      </div>
-      </div>
 
       {(session.user as any).role === 'admin' && (
         <div className="db-admin-panel">
