@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 import { SignIn } from './SignIn'
 import { Dashboard } from './Dashboard'
@@ -86,10 +86,7 @@ function App() {
       <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
         <Routes>
           <Route path="/" element={
-            <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-              <h1>Welcome to English Practices V2.1</h1>
-              <p>This is the new interactive platform. Ask your teacher for an account!</p>
-            </div>
+            session ? <Navigate to="/dashboard" replace /> : <Navigate to="/signin" replace />
           } />
           <Route path="/signin" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>} />
           <Route path="/admin-login" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>} />
