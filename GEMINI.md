@@ -231,3 +231,17 @@ Update it to the **current local date and time** at the moment of the commit (e.
    ```bash
    npx wrangler pages deploy dist --project-name=english-practices-v2
    ```
+
+## Data Synchronization
+
+Whenever any JSON files in the `data/` directory are added, modified, or deleted, they must be synchronized to both the local database and the remote database. This synchronization must be performed **BEFORE** making any git commits containing the data changes.
+
+### Sync Steps
+1. **Sync to local database**:
+   ```bash
+   node scripts/seed_practices.cjs
+   ```
+2. **Sync to remote database**:
+   ```bash
+   API_URL=https://epapi.vibequizzing.com node scripts/seed_practices.cjs
+   ```
