@@ -381,7 +381,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-01:00</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-01:16</span></p>
         </div>
       </div>
 
@@ -503,17 +503,24 @@ export function Dashboard() {
       ) : Object.keys(grouped).length === 0 ? (
         <div className="db-empty">No textbooks assigned. Please contact your administrator.</div>
       ) : (
-        <div className="db-books">
-          {Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).map(tb => (
-            <BookSection 
-              key={tb} 
-              tb={tb} 
-              units={grouped[tb]} 
-              records={records}
-              initialUnit={returnState?.textbook === tb ? returnState.unit : undefined}
-            />
-          ))}
-        </div>
+        <>
+          <div className="db-divider">
+            <span className="db-divider-line" />
+            <h3 className="db-divider-title">Textbooks ({Object.keys(grouped).length})</h3>
+            <span className="db-divider-line" />
+          </div>
+          <div className="db-books">
+            {Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).map(tb => (
+              <BookSection 
+                key={tb} 
+                tb={tb} 
+                units={grouped[tb]} 
+                records={records}
+                initialUnit={returnState?.textbook === tb ? returnState.unit : undefined}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       {(session.user as any).role === 'admin' && (
