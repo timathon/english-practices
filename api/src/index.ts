@@ -27,6 +27,7 @@ const allowedOrigins = [
 ]
 
 let authInstance: any = null;
+let cachedMappedPractices: any[] | null = null;
 const getCachedAuth = (env: Bindings) => {
   if (!authInstance) {
     authInstance = getAuth(env.DB, env.BETTER_AUTH_SECRET, env.BETTER_AUTH_URL);
@@ -364,18 +365,49 @@ app.get('/api/practices', async (c) => {
   if (!session) return c.json({ error: 'Unauthorized' }, 401)
   
   const db = drizzle(c.env.DB)
-  const practices = await db.select({
-      id: practice.id,
-      textbook: practice.textbook,
-      unit: practice.unit,
-      type: practice.type,
-      title: practice.title,
-      content: practice.content
-  }).from(practice)
+  if (!cachedMappedPractices) {
+      const practices = await db.select({
+          id: practice.id,
+          textbook: practice.textbook,
+          unit: practice.unit,
+          type: practice.type,
+          title: practice.title,
+          content: practice.content
+      }).from(practice)
+      
+      cachedMappedPractices = practices.map(p => {
+          let lightContent: any = {};
+          const type = (p.type || '').toLowerCase();
+          const content = p.content as any;
+          
+          if (content) {
+              if (type.includes('vocab-master') || type.includes('sentence-architect')) {
+                  const challenges = content.challenges || [];
+                  lightContent = {
+                      challenges: challenges.map((c: any) => ({ title: c.title || '' }))
+                  };
+              } else if (type.includes('spelling-hero')) {
+                  const wordCount = content.spelling_words?.length || 0;
+                  lightContent = {
+                      spelling_words: new Array(wordCount).fill({})
+                  };
+              }
+          }
+          
+          return {
+              id: p.id,
+              textbook: p.textbook,
+              unit: p.unit,
+              type: p.type,
+              title: p.title,
+              content: lightContent
+          };
+      });
+  }
   
   const userRole = (session.user as any).role?.toLowerCase();
   if (userRole === 'admin') {
-      return c.json(practices)
+      return c.json(cachedMappedPractices)
   }
   
   const expiry = (session.user as any).subscriptionExpiry;
@@ -392,7 +424,7 @@ app.get('/api/practices', async (c) => {
       }
   }
   
-  return c.json(practices.filter(p => Array.isArray(allowed) && allowed.includes(p.textbook)))
+  return c.json(cachedMappedPractices.filter(p => Array.isArray(allowed) && allowed.includes(p.textbook)))
 })
 
 app.get('/api/practices/:id', async (c) => {
@@ -451,6 +483,7 @@ app.post('/api/admin/practices', async (c) => {
       })
   }
   
+  cachedMappedPractices = null;
   return c.json({ success: true, count: items.length })
 })
 
@@ -461,6 +494,7 @@ app.delete('/api/admin/practices', async (c) => {
 
   const db = drizzle(c.env.DB)
   await db.delete(practice)
+  cachedMappedPractices = null;
   return c.json({ success: true })
 })
 
