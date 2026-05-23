@@ -75,6 +75,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const [continueDisabled, setContinueDisabled] = useState(false)
 
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
+    const recordIdPromiseRef = useRef<Promise<string> | null>(null)
     const [practiceRecords, setPracticeRecords] = useState<any[]>([])
     const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
 
@@ -108,6 +109,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
         setActiveChallenge(c)
         setActiveRecordId(null)
+        recordIdPromiseRef.current = null
 
         // Clone and shuffle questions
         const shuffled = [...c.data].sort(() => Math.random() - 0.5).map((q: any, i: number) => ({ ...q, originalIndex: i }))
@@ -249,37 +251,77 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
     const syncRecord = async (scorePercent: number, isFinished: boolean) => {
         try {
-            const url = `${API_URL}/api/records${activeRecordId ? '/' + activeRecordId : ''}`;
-            const method = activeRecordId ? 'PUT' : 'POST';
+            if (activeRecordId) {
+                const res = await fetch(`${API_URL}/api/records/${activeRecordId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        unit: `${practiceId} (${activeChallenge.title})`,
+                        score: scorePercent,
+                        unfinished: !isFinished
+                    })
+                })
+                const j = await res.json()
+                if (j.success) {
+                    cache.updateRecord({
+                        id: activeRecordId,
+                        score: scorePercent,
+                        unfinished: !isFinished,
+                        updatedAt: new Date().toISOString()
+                    })
+                }
+            } else if (recordIdPromiseRef.current) {
+                const recordId = await recordIdPromiseRef.current
+                const res = await fetch(`${API_URL}/api/records/${recordId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        unit: `${practiceId} (${activeChallenge.title})`,
+                        score: scorePercent,
+                        unfinished: !isFinished
+                    })
+                })
+                const j = await res.json()
+                if (j.success) {
+                    cache.updateRecord({
+                        id: recordId,
+                        score: scorePercent,
+                        unfinished: !isFinished,
+                        updatedAt: new Date().toISOString()
+                    })
+                }
+            } else {
+                const postPromise = (async () => {
+                    const res = await fetch(`${API_URL}/api/records`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            unit: `${practiceId} (${activeChallenge.title})`,
+                            score: scorePercent,
+                            unfinished: !isFinished
+                        })
+                    })
+                    const j = await res.json()
+                    if (j.success && j.id) {
+                        setActiveRecordId(j.id)
+                        cache.updateRecord({
+                            id: j.id,
+                            unit: `${practiceId} (${activeChallenge.title})`,
+                            score: scorePercent,
+                            unfinished: !isFinished,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        } as any)
+                        return j.id as string
+                    }
+                    throw new Error("Failed to create record")
+                })()
 
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    unit: `${practiceId} (${activeChallenge.title})`,
-                    score: scorePercent,
-                    unfinished: !isFinished
-                })
-            })
-            const j = await res.json()
-            if (method === 'POST' && j.success && j.id) {
-                setActiveRecordId(j.id)
-                cache.updateRecord({
-                    id: j.id,
-                    unit: `${practiceId} (${activeChallenge.title})`,
-                    score: scorePercent,
-                    unfinished: !isFinished,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                } as any)
-            } else if (method === 'PUT' && j.success && activeRecordId) {
-                cache.updateRecord({
-                    id: activeRecordId,
-                    score: scorePercent,
-                    unfinished: !isFinished,
-                    updatedAt: new Date().toISOString()
-                })
+                recordIdPromiseRef.current = postPromise
+                await postPromise
             }
         } catch (e) {
             console.error("Failed to sync record", e)
