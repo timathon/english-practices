@@ -249,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -277,6 +300,7 @@
             vertical-align: middle;
             transition: all 0.1s;
             padding: 0;
+            flex-shrink: 0;
         }
         .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
@@ -449,7 +473,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Label the picture with the words in the list: arm, leg, mouth..."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Label the picture with the words in the list: arm, leg, mouth..."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 长长的手臂(arm)可以抱住农场(farm)的小羊。</div>
         </div>
@@ -469,7 +496,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "When you eat a meal, you use your mouth."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"When you eat a meal, you use your mouth."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 嘴巴(mouth)张得大，像一只小老鼠(mouse)。</div>
         </div>
@@ -489,7 +519,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Our muscles will not be as strong as now."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Our muscles will not be as strong as now."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 强壮的肌肉(muscle)需要经常锻炼。</div>
         </div>
@@ -509,7 +542,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Our fingers will get longer."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Our fingers will get longer."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 歌唱家(singer)用灵活的手指(finger)弹琴。</div>
         </div>
@@ -529,7 +565,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "A points to the hair, G to the thumb."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"A points to the hair, G to the thumb."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 竖起大拇指(thumb)，因为你跳(jump)得高。</div>
         </div>
@@ -549,7 +588,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I think I've got a problem with my ankle."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I think I've got a problem with my ankle."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 叔叔(uncle)走路时不小心扭伤了脚踝(ankle)。</div>
         </div>
@@ -569,7 +611,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Match the words with the photos: ankle, back, elbow..."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Match the words with the photos: ankle, back, elbow..."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 手肘(elbow)在肩膀的下面(below)。</div>
         </div>
@@ -589,7 +634,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "My shoulder hurts."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"My shoulder hurts."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 士兵(soldier)的肩膀(shoulder)很宽阔。</div>
         </div>
@@ -609,7 +657,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "My stomach really isn't too good this morning."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"My stomach really isn't too good this morning."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 看比赛(match)时太紧张，肚子(stomach)痛。</div>
         </div>
@@ -629,7 +680,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "B: A chin/throat."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"B: A chin/throat."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 在船(boat)上大声喊，喊哑了喉咙(throat)。</div>
         </div>
@@ -649,7 +703,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Don't eat so quickly you'll bite your tongue."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Don't eat so quickly you'll bite your tongue."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 年轻(young)人喜欢吐舌头(tongue)做鬼脸。</div>
         </div>
@@ -669,7 +726,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Now I've got backache."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Now I've got backache."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 长时间坐着会背痛(backache)，还会头痛(headache)。</div>
         </div>
@@ -689,7 +749,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "The main reason is that we have more and more technology."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"The main reason is that we have more and more technology."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 科技(technology)改变了我们的生活。</div>
         </div>
@@ -709,7 +772,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Well, no one can be 100 per cent sure, but here are some possibilities."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Well, no one can be 100 per cent sure, but here are some possibilities."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 一切皆有可能(possibility)。</div>
         </div>
@@ -729,7 +795,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Our muscles will not be as strong because we won't do a lot of physical work."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Our muscles will not be as strong because we won't do a lot of physical work."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 做体力活(physical work)能强身健体。</div>
         </div>
@@ -749,7 +818,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "So it will probably disappear some time in the future."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"So it will probably disappear some time in the future."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 魔术师让兔子消失(disappear)了。</div>
         </div>
@@ -769,7 +841,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "You don't have to do sport to be healthy and keep fit."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"You don't have to do sport to be healthy and keep fit."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 不要总坐着(sit)，要运动来保持健康(keep fit)。</div>
         </div>
@@ -789,7 +864,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Who can you talk to about a headache?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Who can you talk to about a headache?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 头(head)痛(ache)真难受。</div>
         </div>
@@ -809,7 +887,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "LOOK! stomach ache, ear ache..."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"LOOK! stomach ache, ear ache..."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 肚子(stomach)痛(ache)得打滚。</div>
         </div>
@@ -829,7 +910,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "LOOK! stomach ache, ear ache..."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"LOOK! stomach ache, ear ache..."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 耳朵(ear)痛(ache)影响听力。</div>
         </div>
@@ -849,7 +933,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "LOOK! stomach ache, ear ache, headache, toothache."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"LOOK! stomach ache, ear ache, headache, toothache."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> 牙(tooth)痛(ache)不是病，痛起来真要命。</div>
         </div>
@@ -904,7 +991,7 @@
             }
         };
 
-        const vocabData = [{"word":"arm","meaning":"手臂","page_number":102,"context_sentence":"Label the picture with the words in the list: arm, leg, mouth...","ipa":"/ɑːm/","comparison":"arm vs farm","syllable_type":"闭音节","memorization_hook":"长长的手臂(arm)可以抱住农场(farm)的小羊。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/a7c66191e63618bc7a3e3dcff1fbebaa.mp3"},{"word":"mouth","meaning":"嘴巴","page_number":102,"context_sentence":"When you eat a meal, you use your mouth.","ipa":"/maʊθ/","comparison":"mouth vs mouse","syllable_type":"元音字母组合音节","memorization_hook":"嘴巴(mouth)张得大，像一只小老鼠(mouse)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/493458482bfe829c935ad4acaca96275.mp3"},{"word":"muscle","meaning":"肌肉","page_number":102,"context_sentence":"Our muscles will not be as strong as now.","ipa":"/ˈmʌsl/","comparison":"muscle vs musical","syllable_type":"mus-cle","memorization_hook":"强壮的肌肉(muscle)需要经常锻炼。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/1a86e1af90e6da847031e384bf082c14.mp3"},{"word":"finger","meaning":"手指","page_number":102,"context_sentence":"Our fingers will get longer.","ipa":"/ˈfɪŋɡə/","comparison":"finger vs singer","syllable_type":"fin-ger","memorization_hook":"歌唱家(singer)用灵活的手指(finger)弹琴。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/51cc0d69731c75e6e19b0e2320d7a361.mp3"},{"word":"thumb","meaning":"拇指","page_number":102,"context_sentence":"A points to the hair, G to the thumb.","ipa":"/θʌm/","comparison":"thumb vs jump","syllable_type":"闭音节","memorization_hook":"竖起大拇指(thumb)，因为你跳(jump)得高。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/d29bb2ac2347b1312dd3f30975d0dcf0.mp3"},{"word":"ankle","meaning":"脚踝","page_number":104,"context_sentence":"I think I've got a problem with my ankle.","ipa":"/ˈæŋkl/","comparison":"ankle vs uncle","syllable_type":"an-kle","memorization_hook":"叔叔(uncle)走路时不小心扭伤了脚踝(ankle)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/eecb13498b75ff485cd5796acdd76a2e.mp3"},{"word":"elbow","meaning":"手肘","page_number":104,"context_sentence":"Match the words with the photos: ankle, back, elbow...","ipa":"/ˈelbəʊ/","comparison":"elbow vs below","syllable_type":"el-bow","memorization_hook":"手肘(elbow)在肩膀的下面(below)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/fdacb01205d4fa85518f0b01d69001f5.mp3"},{"word":"shoulder","meaning":"肩膀","page_number":104,"context_sentence":"My shoulder hurts.","ipa":"/ˈʃəʊldə/","comparison":"shoulder vs soldier","syllable_type":"shoul-der","memorization_hook":"士兵(soldier)的肩膀(shoulder)很宽阔。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/14da4a67110c071b42de162306b3fc9f.mp3"},{"word":"stomach","meaning":"胃；肚子","page_number":104,"context_sentence":"My stomach really isn't too good this morning.","ipa":"/ˈstʌmək/","comparison":"stomach vs match","syllable_type":"stom-ach","memorization_hook":"看比赛(match)时太紧张，肚子(stomach)痛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/72fa6952838d9c0349ae3b140eb804fc.mp3"},{"word":"throat","meaning":"喉咙","page_number":104,"context_sentence":"B: A chin/throat.","ipa":"/θrəʊt/","comparison":"throat vs boat","syllable_type":"元音字母组合音节","memorization_hook":"在船(boat)上大声喊，喊哑了喉咙(throat)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/f0f4a4d9e47c5ca6f296fae083a62654.mp3"},{"word":"tongue","meaning":"舌头","page_number":104,"context_sentence":"Don't eat so quickly you'll bite your tongue.","ipa":"/tʌŋ/","comparison":"tongue vs young","syllable_type":"闭音节","memorization_hook":"年轻(young)人喜欢吐舌头(tongue)做鬼脸。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/ba9e2578129feb5b96aabb93a9b25d98.mp3"},{"word":"backache","meaning":"背痛","page_number":105,"context_sentence":"Now I've got backache.","ipa":"/ˈbækeɪk/","comparison":"backache vs headache","syllable_type":"back-ache","memorization_hook":"长时间坐着会背痛(backache)，还会头痛(headache)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/bcdc2ac0e4837b1a5516846fa04066a0.mp3"},{"word":"technology","meaning":"科技","page_number":103,"context_sentence":"The main reason is that we have more and more technology.","ipa":"/tekˈnɒlədʒi/","comparison":"technology vs technician","syllable_type":"tech-nol-o-gy","memorization_hook":"科技(technology)改变了我们的生活。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/3268249b1ddd77ed89b285c7e64bf4e6.mp3"},{"word":"possibility","meaning":"可能性","page_number":103,"context_sentence":"Well, no one can be 100 per cent sure, but here are some possibilities.","ipa":"/ˌpɒsəˈbɪləti/","comparison":"possibility vs possible","syllable_type":"pos-si-bil-i-ty","memorization_hook":"一切皆有可能(possibility)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/ae4912985dcfbd98308fa435e1bad6b2.mp3"},{"word":"physical work","meaning":"体力活","page_number":103,"context_sentence":"Our muscles will not be as strong because we won't do a lot of physical work.","ipa":"/ˈfɪzɪkl wɜːk/","comparison":"physical vs physics","syllable_type":"phys-i-cal work","memorization_hook":"做体力活(physical work)能强身健体。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/bd87d900f60e047e849b003d649ca286.mp3"},{"word":"disappear","meaning":"消失","page_number":103,"context_sentence":"So it will probably disappear some time in the future.","ipa":"/ˌdɪsəˈpɪə/","comparison":"disappear vs appear","syllable_type":"dis-ap-pear","memorization_hook":"魔术师让兔子消失(disappear)了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/c88c610951bcf833b9d350664851e5cc.mp3"},{"word":"keep fit","meaning":"保持健康","page_number":103,"context_sentence":"You don't have to do sport to be healthy and keep fit.","ipa":"/kiːp fɪt/","comparison":"fit vs sit","syllable_type":"keep fit","memorization_hook":"不要总坐着(sit)，要运动来保持健康(keep fit)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/599790742addb2bbb703e895b76c4359.mp3"},{"word":"headache","meaning":"头痛","page_number":105,"context_sentence":"Who can you talk to about a headache?","ipa":"/ˈhedeɪk/","comparison":"headache vs head","syllable_type":"head-ache","memorization_hook":"头(head)痛(ache)真难受。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/043f4af6d73d3d37c079854cd3385d34.mp3"},{"word":"stomach ache","meaning":"胃痛","page_number":105,"context_sentence":"LOOK! stomach ache, ear ache...","ipa":"/ˈstʌmək eɪk/","comparison":"stomach ache vs toothache","syllable_type":"stom-ach ache","memorization_hook":"肚子(stomach)痛(ache)得打滚。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/d3f2934fa8eeca309fcbc1c1b651a4d4.mp3"},{"word":"ear ache","meaning":"耳痛","page_number":105,"context_sentence":"LOOK! stomach ache, ear ache...","ipa":"/ˈɪəreɪk/","comparison":"ear ache vs ear","syllable_type":"ear ache","memorization_hook":"耳朵(ear)痛(ache)影响听力。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/d3f2934fa8eeca309fcbc1c1b651a4d4.mp3"},{"word":"toothache","meaning":"牙痛","page_number":105,"context_sentence":"LOOK! stomach ache, ear ache, headache, toothache.","ipa":"/ˈtuːθeɪk/","comparison":"toothache vs tooth","syllable_type":"tooth-ache","memorization_hook":"牙(tooth)痛(ache)不是病，痛起来真要命。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/e0568fab304b013f0b048c582237b17c.mp3"}];
+        const vocabData = [{"word":"arm","meaning":"手臂","page_number":102,"context_sentence":"Label the picture with the words in the list: arm, leg, mouth...","ipa":"/ɑːm/","comparison":"arm vs farm","syllable_type":"闭音节","memorization_hook":"长长的手臂(arm)可以抱住农场(farm)的小羊。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/a7c66191e63618bc7a3e3dcff1fbebaa.mp3"},{"word":"mouth","meaning":"嘴巴","page_number":102,"context_sentence":"When you eat a meal, you use your mouth.","ipa":"/maʊθ/","comparison":"mouth vs mouse","syllable_type":"元音字母组合音节","memorization_hook":"嘴巴(mouth)张得大，像一只小老鼠(mouse)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/493458482bfe829c935ad4acaca96275.mp3"},{"word":"muscle","meaning":"肌肉","page_number":102,"context_sentence":"Our muscles will not be as strong as now.","ipa":"/ˈmʌsl/","comparison":"muscle vs musical","syllable_type":"mus-cle","memorization_hook":"强壮的肌肉(muscle)需要经常锻炼。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/1a86e1af90e6da847031e384bf082c14.mp3"},{"word":"finger","meaning":"手指","page_number":102,"context_sentence":"Our fingers will get longer.","ipa":"/ˈfɪŋɡə/","comparison":"finger vs singer","syllable_type":"fin-ger","memorization_hook":"歌唱家(singer)用灵活的手指(finger)弹琴。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/51cc0d69731c75e6e19b0e2320d7a361.mp3"},{"word":"thumb","meaning":"拇指","page_number":102,"context_sentence":"A points to the hair, G to the thumb.","ipa":"/θʌm/","comparison":"thumb vs jump","syllable_type":"闭音节","memorization_hook":"竖起大拇指(thumb)，因为你跳(jump)得高。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/d29bb2ac2347b1312dd3f30975d0dcf0.mp3"},{"word":"ankle","meaning":"脚踝","page_number":104,"context_sentence":"I think I've got a problem with my ankle.","ipa":"/ˈæŋkl/","comparison":"ankle vs uncle","syllable_type":"an-kle","memorization_hook":"叔叔(uncle)走路时不小心扭伤了脚踝(ankle)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/eecb13498b75ff485cd5796acdd76a2e.mp3"},{"word":"elbow","meaning":"手肘","page_number":104,"context_sentence":"Match the words with the photos: ankle, back, elbow...","ipa":"/ˈelbəʊ/","comparison":"elbow vs below","syllable_type":"el-bow","memorization_hook":"手肘(elbow)在肩膀的下面(below)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/fdacb01205d4fa85518f0b01d69001f5.mp3"},{"word":"shoulder","meaning":"肩膀","page_number":104,"context_sentence":"My shoulder hurts.","ipa":"/ˈʃəʊldə/","comparison":"shoulder vs soldier","syllable_type":"shoul-der","memorization_hook":"士兵(soldier)的肩膀(shoulder)很宽阔。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/14da4a67110c071b42de162306b3fc9f.mp3"},{"word":"stomach","meaning":"胃；肚子","page_number":104,"context_sentence":"My stomach really isn't too good this morning.","ipa":"/ˈstʌmək/","comparison":"stomach vs match","syllable_type":"stom-ach","memorization_hook":"看比赛(match)时太紧张，肚子(stomach)痛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/72fa6952838d9c0349ae3b140eb804fc.mp3"},{"word":"throat","meaning":"喉咙","page_number":104,"context_sentence":"B: A chin/throat.","ipa":"/θrəʊt/","comparison":"throat vs boat","syllable_type":"元音字母组合音节","memorization_hook":"在船(boat)上大声喊，喊哑了喉咙(throat)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/f0f4a4d9e47c5ca6f296fae083a62654.mp3"},{"word":"tongue","meaning":"舌头","page_number":104,"context_sentence":"Don't eat so quickly you'll bite your tongue.","ipa":"/tʌŋ/","comparison":"tongue vs young","syllable_type":"闭音节","memorization_hook":"年轻(young)人喜欢吐舌头(tongue)做鬼脸。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/ba9e2578129feb5b96aabb93a9b25d98.mp3"},{"word":"backache","meaning":"背痛","page_number":105,"context_sentence":"Now I've got backache.","ipa":"/ˈbækeɪk/","comparison":"backache vs headache","syllable_type":"back-ache","memorization_hook":"长时间坐着会背痛(backache)，还会头痛(headache)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/bcdc2ac0e4837b1a5516846fa04066a0.mp3"},{"word":"technology","meaning":"科技","page_number":103,"context_sentence":"The main reason is that we have more and more technology.","ipa":"/tekˈnɒlədʒi/","comparison":"technology vs technician","syllable_type":"tech-nol-o-gy","memorization_hook":"科技(technology)改变了我们的生活。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/3268249b1ddd77ed89b285c7e64bf4e6.mp3"},{"word":"possibility","meaning":"可能性","page_number":103,"context_sentence":"Well, no one can be 100 per cent sure, but here are some possibilities.","ipa":"/ˌpɒsəˈbɪləti/","comparison":"possibility vs possible","syllable_type":"pos-si-bil-i-ty","memorization_hook":"一切皆有可能(possibility)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/ae4912985dcfbd98308fa435e1bad6b2.mp3"},{"word":"physical work","meaning":"体力活","page_number":103,"context_sentence":"Our muscles will not be as strong because we won't do a lot of physical work.","ipa":"/ˈfɪzɪkl wɜːk/","comparison":"physical vs physics","syllable_type":"phys-i-cal work","memorization_hook":"做体力活(physical work)能强身健体。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/bd87d900f60e047e849b003d649ca286.mp3"},{"word":"disappear","meaning":"消失","page_number":103,"context_sentence":"So it will probably disappear some time in the future.","ipa":"/ˌdɪsəˈpɪə/","comparison":"disappear vs appear","syllable_type":"dis-ap-pear","memorization_hook":"魔术师让兔子消失(disappear)了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/c88c610951bcf833b9d350664851e5cc.mp3"},{"word":"keep fit","meaning":"保持健康","page_number":103,"context_sentence":"You don't have to do sport to be healthy and keep fit.","ipa":"/kiːp fɪt/","comparison":"fit vs sit","syllable_type":"keep fit","memorization_hook":"不要总坐着(sit)，要运动来保持健康(keep fit)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/599790742addb2bbb703e895b76c4359.mp3"},{"word":"headache","meaning":"头痛","page_number":105,"context_sentence":"Who can you talk to about a headache?","ipa":"/ˈhedeɪk/","comparison":"headache vs head","syllable_type":"head-ache","memorization_hook":"头(head)痛(ache)真难受。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/043f4af6d73d3d37c079854cd3385d34.mp3"},{"word":"stomach ache","meaning":"胃痛","page_number":105,"context_sentence":"LOOK! stomach ache, ear ache...","ipa":"/ˈstʌmək eɪk/","comparison":"stomach ache vs toothache","syllable_type":"stom-ach ache","memorization_hook":"肚子(stomach)痛(ache)得打滚。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/d3f2934fa8eeca309fcbc1c1b651a4d4.mp3"},{"word":"ear ache","meaning":"耳痛","page_number":105,"context_sentence":"LOOK! stomach ache, ear ache...","ipa":"/ˈɪəreɪk/","comparison":"ear ache vs ear","syllable_type":"ear ache","memorization_hook":"耳朵(ear)痛(ache)影响听力。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/d3f2934fa8eeca309fcbc1c1b651a4d4.mp3"},{"word":"toothache","meaning":"牙痛","page_number":105,"context_sentence":"LOOK! stomach ache, ear ache, headache, toothache.","ipa":"/ˈtuːθeɪk/","comparison":"toothache vs tooth","syllable_type":"tooth-ache","memorization_hook":"牙(tooth)痛(ache)不是病，痛起来真要命。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/e0568fab304b013f0b048c582237b17c.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -1096,14 +1183,24 @@
                         item.classList.add('hide-cn');
                         item.classList.remove('force-show-cn');
                     });
+                    document.body.classList.remove('show-sentences-cn');
                 } else {
                     textEls.forEach(el => el.innerText = "Hide CN");
                     iconEls.forEach(el => el.innerText = "㊙️");
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
+                    document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {

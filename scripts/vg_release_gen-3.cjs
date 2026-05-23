@@ -94,8 +94,9 @@ async function generate(jsonPath, outputPath, audioMode = '1') {
         const vocab = jsonData.unit_vocabulary;
 
         // Calculate indexPath
-        const bookFolder = path.basename(path.dirname(path.dirname(absoluteInputPath)));
-        const bookName = bookFolder.toLowerCase();
+        const relativeDataPath = path.relative(path.join(BASE_DIR, 'data'), absoluteInputPath);
+        const bookName = relativeDataPath.split(path.sep)[0].toLowerCase();
+        const bookFolder = relativeDataPath.split(path.sep)[0];
         const bookRoot = path.join(BASE_DIR, bookFolder);
         let indexPath = path.join(path.relative(path.dirname(absoluteOutputPath), bookRoot), 'index.html');
 

@@ -162,8 +162,9 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
     const key = generateKey(ID_A);
 
     // Calculate indexPath
-    const bookFolder = path.basename(path.dirname(path.dirname(absoluteJsonPath)));
-    const bookName = bookFolder.toLowerCase();
+    const relativeDataPath = path.relative(path.join(BASE_DIR, 'data'), absoluteJsonPath);
+    const bookName = relativeDataPath.split(path.sep)[0].toLowerCase();
+    const bookFolder = relativeDataPath.split(path.sep)[0];
     const bookRoot = path.join(BASE_DIR, bookFolder);
     const indexPath = path.join(path.relative(path.dirname(resolvePath(outputPath)), bookRoot), 'index.html');
 

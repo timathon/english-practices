@@ -249,7 +249,30 @@
             font-style: italic; 
             color: #555;
             border-radius: 0 4px 4px 0;
+            display: flex;
+            align-items: flex-start;
         }
+        .sentence-wrapper { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; cursor: pointer; }
+        .en-sentence { display: block; }
+        .cn-sentence { 
+            display: none; 
+            font-size: 0.85em; 
+            color: #7f8c8d; 
+            font-style: normal; 
+            margin-top: 5px; 
+            border-top: 1px dashed #eee; 
+            padding-top: 3px; 
+        }
+
+        /* Click-to-toggle logic (when NOT in global Show CN mode) */
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .en-sentence { display: none; }
+        body:not(.show-sentences-cn) .sentence-wrapper.show-cn .cn-sentence { display: block; border-top: none; margin-top: 0; padding-top: 0; color: #e67e22; font-style: italic; }
+        
+        /* Global Show CN mode logic */
+        body.show-sentences-cn .cn-sentence { display: block; }
+        body.show-sentences-cn .en-sentence { display: block; cursor: default; }
+        body.show-sentences-cn .sentence-wrapper { cursor: default; }
+
         .hook-box { 
             background-color: #e8f8f5; 
             border-left: 4px solid #1abc9c; 
@@ -277,6 +300,7 @@
             vertical-align: middle;
             transition: all 0.1s;
             padding: 0;
+            flex-shrink: 0;
         }
         .play-btn:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 1px; }
         .play-btn:disabled { opacity: 0.5; cursor: not-allowed; border-bottom-width: 1px; transform: translateY(2px); }
@@ -449,7 +473,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Do you know any more 'crazy' things that adults say to children?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Do you know any more 'crazy' things that adults say to children?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> cr- (哭) + a + zy (自)：哭得像个疯子一样，真的很crazy。</div>
         </div>
@@ -469,7 +496,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Read the webchats."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Read the webchats."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> web (网) + chat (聊天)：在网上聊天就是webchat。</div>
         </div>
@@ -489,7 +519,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Well, we watched a lot of TV and our eyes are still normal, haha!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Well, we watched a lot of TV and our eyes are still normal, haha!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> nor (没有) + mal (坏)：没有变坏，说明是正常的normal。</div>
         </div>
@@ -509,7 +542,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "But he had another favourite too."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"But he had another favourite too."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> fav- (喜欢) + our (我们的) + ite：我们最喜欢的favourite。</div>
         </div>
@@ -529,7 +565,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I always liked doing dangerous things."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I always liked doing dangerous things."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> danger (危险) + ous (形容词后缀)：充满危险的，即dangerous。</div>
         </div>
@@ -549,7 +588,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I didn't understand the joke for years!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I didn't understand the joke for years!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> under (在下面) + stand (站)：站在真理下面，你就理解understand了。</div>
         </div>
@@ -569,7 +611,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "If I was angry or upset, I always made a face."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"If I was angry or upset, I always made a face."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> up (向上) + set (放置)：把心情向上翻了个个，肯定很不舒服upset。</div>
         </div>
@@ -589,7 +634,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "your face will stay like that forever!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"your face will stay like that forever!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> for (为了) + ever (曾经)：为了曾经的承诺，直到永远forever。</div>
         </div>
@@ -609,7 +657,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Use the first conditional to talk about possible events."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Use the first conditional to talk about possible events."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> condition (条件) + al (形容词后缀)：有条件的conditional。</div>
         </div>
@@ -629,7 +680,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "As soon as I get my exam results, I'll phone you."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"As soon as I get my exam results, I'll phone you."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> re (再次) + sults (跳)：跳出来的东西就是结果results。</div>
         </div>
@@ -649,7 +703,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "When I see Martin, I'll give him your message."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"When I see Martin, I'll give him your message."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> mes- (麦斯) + sage (贤人)：贤人传达的信息message。</div>
         </div>
@@ -669,7 +726,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He's got a big business meeting he has to attend."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He's got a big business meeting he has to attend."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> at (在) + tend (照料)：在场照料，即参加attend。</div>
         </div>
@@ -689,7 +749,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He's got a big business meeting."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He's got a big business meeting."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> busy (忙碌) + ness (名词后缀)：忙碌的事情就是生意business。</div>
         </div>
@@ -709,7 +772,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "He's got a big business meeting."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"He's got a big business meeting."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> meet (遇见) + ing：大家遇见在一起就是开会meeting。</div>
         </div>
@@ -729,7 +795,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Something important?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Something important?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> im (进入) + port (港口) + ant：进入港口的东西都很重要important。</div>
         </div>
@@ -749,7 +818,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Dad, say that again. What? The hospital?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Dad, say that again. What? The hospital?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> host (主人) + pital (别跑)：主人病了，快跑向医院hospital。</div>
         </div>
@@ -769,7 +841,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "PHRASES FOR FLUENCY"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"PHRASES FOR FLUENCY"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> flu (流) + ency (名词后缀)：像水流一样，就是流利fluency。</div>
         </div>
@@ -789,7 +864,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Find the expressions 1-6 in the story."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Find the expressions 1-6 in the story."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ex (出) + press (压) + ion：压出来的东西就是表达expression。</div>
         </div>
@@ -809,7 +887,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Match them to the definitions a-f."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Match them to the definitions a-f."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> de (下) + finit (界限) + ion：划下界限，就是定义definition。</div>
         </div>
@@ -829,7 +910,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It's a surprise!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It's a surprise!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sur (在上面) + prise (抓)：突然被从上面抓住，感到很惊喜surprise。</div>
         </div>
@@ -849,7 +933,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Do you do a lot of exercise?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Do you do a lot of exercise?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> ex (出) + er (耳) + cise (切)：出了一身汗，切开耳朵去锻炼exercise。</div>
         </div>
@@ -869,7 +956,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Who does the cleaning in your house?"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Who does the cleaning in your house?"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> clean (干净) + ing：把东西变干净的过程就是清洁cleaning。</div>
         </div>
@@ -889,7 +979,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "FUNCTIONS: Sympathising"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"FUNCTIONS: Sympathising"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sym (共同) + path (情感) + ise (动词后缀)：产生共同的情感，就是同情sympathise。</div>
         </div>
@@ -909,7 +1002,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "That's a shame."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"That's a shame."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> sh (谁) + ame (爱我)：没人爱我，真是一种遗憾shame。</div>
         </div>
@@ -929,7 +1025,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "If you watch TV all the time, you'll get square eyes."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"If you watch TV all the time, you'll get square eyes."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> square (正方形) + eyes (眼睛)：看电视看成方眼睛。</div>
         </div>
@@ -949,7 +1048,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "If you eat all your carrots, you'll see in the dark!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"If you eat all your carrots, you'll see in the dark!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> see (看) + dark (黑暗)：在黑暗中看。</div>
         </div>
@@ -969,7 +1071,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "As soon as I think of other examples, I'll tell you."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"As soon as I think of other examples, I'll tell you."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> soon (快)：很快地就...</div>
         </div>
@@ -989,7 +1094,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "he shouts at me all the time."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"he shouts at me all the time."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> shout (喊) + at (指向)：对着某人喊。</div>
         </div>
@@ -1009,7 +1117,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "he shouts at me all the time."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"he shouts at me all the time."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> all (所有) + time (时间)：所有的时间里都在发生。</div>
         </div>
@@ -1029,7 +1140,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Poor you."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Poor you."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> poor (贫穷/可怜) + you (你)。</div>
         </div>
@@ -1049,7 +1163,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "I can't wait!"
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"I can't wait!"</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> can't (不能) + wait (等待)。</div>
         </div>
@@ -1069,7 +1186,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "Wait and see."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"Wait and see."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> wait (等) + see (看)。</div>
         </div>
@@ -1089,7 +1209,10 @@
                 <button class="play-btn" onclick="app.playAudio(this)" style="display: inline-flex;">
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                 </button>
-                "It's all ups and downs."
+                <div class="sentence-wrapper" onclick="app.toggleSentence(this)">
+                    <div class="en-sentence">"It's all ups and downs."</div>
+                    
+                </div>
             </div>
             <div class="hook-box"><span class="hook-label">🧠 核心记忆法:</span> up (上) + down (下)：有上有下，就是起伏。</div>
         </div>
@@ -1144,7 +1267,7 @@
             }
         };
 
-        const vocabData = [{"word":"crazy","meaning":"adj. 疯狂的，古怪的","ipa":"/ˈkreɪzi/","page_number":106,"context_sentence":"Do you know any more 'crazy' things that adults say to children?","comparison":"crazy vs cozy","syllable_type":"cra-zy","memorization_hook":"cr- (哭) + a + zy (自)：哭得像个疯子一样，真的很crazy。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/76dbe0deecb01ee2679a9dc9c6bc0bb2.mp3"},{"word":"webchat","meaning":"n. 网络聊天","ipa":"/ˈwebtʃæt/","page_number":106,"context_sentence":"Read the webchats.","comparison":"webchat vs website","syllable_type":"web-chat","memorization_hook":"web (网) + chat (聊天)：在网上聊天就是webchat。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/446c6be1a26950bf6d5b85a7d89e92e1.mp3"},{"word":"normal","meaning":"adj. 正常的","ipa":"/ˈnɔːml/","page_number":106,"context_sentence":"Well, we watched a lot of TV and our eyes are still normal, haha!","comparison":"normal vs formal","syllable_type":"nor-mal","memorization_hook":"nor (没有) + mal (坏)：没有变坏，说明是正常的normal。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/4d4e27d31a1cb456cfcdda015b7c0968.mp3"},{"word":"favourite","meaning":"adj. 最喜爱的","ipa":"/ˈfeɪvərɪt/","page_number":106,"context_sentence":"But he had another favourite too.","comparison":"favourite vs flavor","syllable_type":"fa-vour-ite","memorization_hook":"fav- (喜欢) + our (我们的) + ite：我们最喜欢的favourite。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/9d5a617613f2b0d27a17deec7d310c8b.mp3"},{"word":"dangerous","meaning":"adj. 危险的","ipa":"/ˈdeɪndʒərəs/","page_number":106,"context_sentence":"I always liked doing dangerous things.","comparison":"dangerous vs danger","syllable_type":"dan-ger-ous","memorization_hook":"danger (危险) + ous (形容词后缀)：充满危险的，即dangerous。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/5a7fb6d814f41ad6b6975760385426ce.mp3"},{"word":"understand","meaning":"v. 理解，懂","ipa":"/ˌʌndəˈstænd/","page_number":106,"context_sentence":"I didn't understand the joke for years!","comparison":"understand vs stand","syllable_type":"un-der-stand","memorization_hook":"under (在下面) + stand (站)：站在真理下面，你就理解understand了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/67f8bcd93f91bc56d8d2f5522354dd9f.mp3"},{"word":"upset","meaning":"adj. 难过的，心烦的","ipa":"/ˌʌpˈset/","page_number":106,"context_sentence":"If I was angry or upset, I always made a face.","comparison":"upset vs setup","syllable_type":"up-set","memorization_hook":"up (向上) + set (放置)：把心情向上翻了个个，肯定很不舒服upset。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/be52789e90fb4e986dd91c9026973c14.mp3"},{"word":"forever","meaning":"adv. 永远","ipa":"/fərˈevə(r)/","page_number":106,"context_sentence":"your face will stay like that forever!","comparison":"forever vs fever","syllable_type":"for-ev-er","memorization_hook":"for (为了) + ever (曾经)：为了曾经的承诺，直到永远forever。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/1965dd4414147be077b06458768f5fc3.mp3"},{"word":"conditional","meaning":"adj. 有条件的","ipa":"/kənˈdɪʃənl/","page_number":106,"context_sentence":"Use the first conditional to talk about possible events.","comparison":"conditional vs condition","syllable_type":"con-di-tion-al","memorization_hook":"condition (条件) + al (形容词后缀)：有条件的conditional。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/b1911baf168e64cc802c78744a002f42.mp3"},{"word":"results","meaning":"n. 成绩，结果","ipa":"/rɪˈzʌlts/","page_number":107,"context_sentence":"As soon as I get my exam results, I'll phone you.","comparison":"results vs adults","syllable_type":"re-sults","memorization_hook":"re (再次) + sults (跳)：跳出来的东西就是结果results。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/4056922cd3e5d0ef8e888ee3a4541285.mp3"},{"word":"message","meaning":"n. 信息，留言","ipa":"/ˈmesɪdʒ/","page_number":107,"context_sentence":"When I see Martin, I'll give him your message.","comparison":"message vs massage","syllable_type":"mes-sage","memorization_hook":"mes- (麦斯) + sage (贤人)：贤人传达的信息message。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/625cfd49c2e864dd97c8c2a96ddc5d5f.mp3"},{"word":"attend","meaning":"v. 参加，出席","ipa":"/əˈtend/","page_number":108,"context_sentence":"He's got a big business meeting he has to attend.","comparison":"attend vs intend","syllable_type":"at-tend","memorization_hook":"at (在) + tend (照料)：在场照料，即参加attend。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/42756e48c6b1ae956b987938e2e45334.mp3"},{"word":"business","meaning":"n. 商业，生意","ipa":"/ˈbɪznəs/","page_number":108,"context_sentence":"He's got a big business meeting.","comparison":"business vs busyness","syllable_type":"busi-ness","memorization_hook":"busy (忙碌) + ness (名词后缀)：忙碌的事情就是生意business。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/1e93c228f204049da5b5da8581a58364.mp3"},{"word":"meeting","meaning":"n. 会议","ipa":"/ˈmiːtɪŋ/","page_number":108,"context_sentence":"He's got a big business meeting.","comparison":"meeting vs melting","syllable_type":"meet-ing","memorization_hook":"meet (遇见) + ing：大家遇见在一起就是开会meeting。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/1e93c228f204049da5b5da8581a58364.mp3"},{"word":"important","meaning":"adj. 重要的","ipa":"/ɪmˈpɔːtnt/","page_number":108,"context_sentence":"Something important?","comparison":"important vs impotent","syllable_type":"im-por-tant","memorization_hook":"im (进入) + port (港口) + ant：进入港口的东西都很重要important。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/f0f07bf3cd0867952ed6b7a61d3bba18.mp3"},{"word":"hospital","meaning":"n. 医院","ipa":"/ˈhɒspɪtl/","page_number":108,"context_sentence":"Dad, say that again. What? The hospital?","comparison":"hospital vs hospitable","syllable_type":"hos-pi-tal","memorization_hook":"host (主人) + pital (别跑)：主人病了，快跑向医院hospital。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/72e244947a54160cfe3aa19b10561e83.mp3"},{"word":"fluency","meaning":"n. 流利","ipa":"/ˈfluːənsi/","page_number":109,"context_sentence":"PHRASES FOR FLUENCY","comparison":"fluency vs fluency","syllable_type":"flu-en-cy","memorization_hook":"flu (流) + ency (名词后缀)：像水流一样，就是流利fluency。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/e4911a846c4dc0157451953fbf756e39.mp3"},{"word":"expression","meaning":"n. 词语，表达方式","ipa":"/ɪkˈspreʃn/","page_number":109,"context_sentence":"Find the expressions 1-6 in the story.","comparison":"expression vs expansion","syllable_type":"ex-pres-sion","memorization_hook":"ex (出) + press (压) + ion：压出来的东西就是表达expression。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/fdc9cf66f5dc85cc3fa7a9c11c0bd789.mp3"},{"word":"definition","meaning":"n. 定义","ipa":"/ˌdefɪˈnɪʃn/","page_number":109,"context_sentence":"Match them to the definitions a-f.","comparison":"definition vs definition","syllable_type":"de-fi-ni-tion","memorization_hook":"de (下) + finit (界限) + ion：划下界限，就是定义definition。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/c0921c934aef7d4d2c4b2d712075d840.mp3"},{"word":"surprise","meaning":"n. 惊喜，意外","ipa":"/səˈpraɪz/","page_number":109,"context_sentence":"It's a surprise!","comparison":"surprise vs sunrise","syllable_type":"sur-prise","memorization_hook":"sur (在上面) + prise (抓)：突然被从上面抓住，感到很惊喜surprise。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/5a8bc6d5dc1663b4ea79833cd4bd0651.mp3"},{"word":"exercise","meaning":"n./v. 锻炼","ipa":"/ˈeksəsaɪz/","page_number":109,"context_sentence":"Do you do a lot of exercise?","comparison":"exercise vs exorcise","syllable_type":"ex-er-cise","memorization_hook":"ex (出) + er (耳) + cise (切)：出了一身汗，切开耳朵去锻炼exercise。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/59ec33aeee04614a51ca648ca5a27c6a.mp3"},{"word":"cleaning","meaning":"n. 清洁","ipa":"/ˈkliːnɪŋ/","page_number":109,"context_sentence":"Who does the cleaning in your house?","comparison":"cleaning vs leaning","syllable_type":"clean-ing","memorization_hook":"clean (干净) + ing：把东西变干净的过程就是清洁cleaning。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/81407d6748037701554cc0036e9e529c.mp3"},{"word":"sympathise","meaning":"v. 同情","ipa":"/ˈsɪmpəθaɪz/","page_number":109,"context_sentence":"FUNCTIONS: Sympathising","comparison":"sympathise vs synthesize","syllable_type":"sym-pa-thise","memorization_hook":"sym (共同) + path (情感) + ise (动词后缀)：产生共同的情感，就是同情sympathise。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/8ca9368065c02432347e8e64d3f86bf4.mp3"},{"word":"shame","meaning":"n. 遗憾，羞愧","ipa":"/ʃeɪm/","page_number":109,"context_sentence":"That's a shame.","comparison":"shame vs same","syllable_type":"相对开音节","memorization_hook":"sh (谁) + ame (爱我)：没人爱我，真是一种遗憾shame。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/25428189ec242621ea57cb30896dd549.mp3"},{"word":"square eyes","meaning":"n. 看电视过久导致的视力疲劳","ipa":"/skweə(r) aɪz/","page_number":106,"context_sentence":"If you watch TV all the time, you'll get square eyes.","comparison":"square eyes vs round eyes","syllable_type":"phrase","memorization_hook":"square (正方形) + eyes (眼睛)：看电视看成方眼睛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/e03a5c8f6f96791131da67c4a5cfa996.mp3"},{"word":"see in the dark","meaning":"v. 在黑暗中看清","ipa":"/siː ɪn ðə dɑːk/","page_number":106,"context_sentence":"If you eat all your carrots, you'll see in the dark!","comparison":"see in the dark vs see in the light","syllable_type":"phrase","memorization_hook":"see (看) + dark (黑暗)：在黑暗中看。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/3acb167716848e298341c40edca3b069.mp3"},{"word":"as soon as","meaning":"conj. 一...就...","ipa":"/əz suːn əz/","page_number":107,"context_sentence":"As soon as I think of other examples, I'll tell you.","comparison":"as soon as vs as long as","syllable_type":"phrase","memorization_hook":"soon (快)：很快地就...","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/209a5719a10146d75853b3fabc42d7a1.mp3"},{"word":"shout at","meaning":"v. 对...大声喊叫","ipa":"/ʃaʊt æt/","page_number":108,"context_sentence":"he shouts at me all the time.","comparison":"shout at vs look at","syllable_type":"phrase","memorization_hook":"shout (喊) + at (指向)：对着某人喊。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/6188db838ff69dea99c2a3670a0653c0.mp3"},{"word":"all the time","meaning":"adv. 总是，一直","ipa":"/ɔːl ðə taɪm/","page_number":108,"context_sentence":"he shouts at me all the time.","comparison":"all the time vs at the time","syllable_type":"phrase","memorization_hook":"all (所有) + time (时间)：所有的时间里都在发生。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/6188db838ff69dea99c2a3670a0653c0.mp3"},{"word":"poor you","meaning":"exp. 你真可怜","ipa":"/pɔː(r) juː/","page_number":108,"context_sentence":"Poor you.","comparison":"poor you vs good you","syllable_type":"phrase","memorization_hook":"poor (贫穷/可怜) + you (你)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/09f62fddc9ef529f9d706b9fcb61e9ee.mp3"},{"word":"can't wait","meaning":"v. 迫不及待","ipa":"/kɑːnt weɪt/","page_number":108,"context_sentence":"I can't wait!","comparison":"can't wait vs don't wait","syllable_type":"phrase","memorization_hook":"can't (不能) + wait (等待)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/bdf590b7d49657ba87964f7e8725f6ca.mp3"},{"word":"wait and see","meaning":"v. 等着瞧","ipa":"/weɪt ənd siː/","page_number":108,"context_sentence":"Wait and see.","comparison":"wait and see vs look and see","syllable_type":"phrase","memorization_hook":"wait (等) + see (看)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/8c85d0b59493e95c6bb84a62339dc672.mp3"},{"word":"ups and downs","meaning":"n. 起伏，盛衰","ipa":"/ʌps ənd daʊnz/","page_number":109,"context_sentence":"It's all ups and downs.","comparison":"ups and downs vs ups and outs","syllable_type":"phrase","memorization_hook":"up (上) + down (下)：有上有下，就是起伏。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1-u11/9d709a8267c7423340bb93fbc34bc773.mp3"}];
+        const vocabData = [{"word":"crazy","meaning":"adj. 疯狂的，古怪的","ipa":"/ˈkreɪzi/","page_number":106,"context_sentence":"Do you know any more 'crazy' things that adults say to children?","comparison":"crazy vs cozy","syllable_type":"cra-zy","memorization_hook":"cr- (哭) + a + zy (自)：哭得像个疯子一样，真的很crazy。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/76dbe0deecb01ee2679a9dc9c6bc0bb2.mp3"},{"word":"webchat","meaning":"n. 网络聊天","ipa":"/ˈwebtʃæt/","page_number":106,"context_sentence":"Read the webchats.","comparison":"webchat vs website","syllable_type":"web-chat","memorization_hook":"web (网) + chat (聊天)：在网上聊天就是webchat。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/446c6be1a26950bf6d5b85a7d89e92e1.mp3"},{"word":"normal","meaning":"adj. 正常的","ipa":"/ˈnɔːml/","page_number":106,"context_sentence":"Well, we watched a lot of TV and our eyes are still normal, haha!","comparison":"normal vs formal","syllable_type":"nor-mal","memorization_hook":"nor (没有) + mal (坏)：没有变坏，说明是正常的normal。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/4d4e27d31a1cb456cfcdda015b7c0968.mp3"},{"word":"favourite","meaning":"adj. 最喜爱的","ipa":"/ˈfeɪvərɪt/","page_number":106,"context_sentence":"But he had another favourite too.","comparison":"favourite vs flavor","syllable_type":"fa-vour-ite","memorization_hook":"fav- (喜欢) + our (我们的) + ite：我们最喜欢的favourite。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/9d5a617613f2b0d27a17deec7d310c8b.mp3"},{"word":"dangerous","meaning":"adj. 危险的","ipa":"/ˈdeɪndʒərəs/","page_number":106,"context_sentence":"I always liked doing dangerous things.","comparison":"dangerous vs danger","syllable_type":"dan-ger-ous","memorization_hook":"danger (危险) + ous (形容词后缀)：充满危险的，即dangerous。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/5a7fb6d814f41ad6b6975760385426ce.mp3"},{"word":"understand","meaning":"v. 理解，懂","ipa":"/ˌʌndəˈstænd/","page_number":106,"context_sentence":"I didn't understand the joke for years!","comparison":"understand vs stand","syllable_type":"un-der-stand","memorization_hook":"under (在下面) + stand (站)：站在真理下面，你就理解understand了。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/67f8bcd93f91bc56d8d2f5522354dd9f.mp3"},{"word":"upset","meaning":"adj. 难过的，心烦的","ipa":"/ˌʌpˈset/","page_number":106,"context_sentence":"If I was angry or upset, I always made a face.","comparison":"upset vs setup","syllable_type":"up-set","memorization_hook":"up (向上) + set (放置)：把心情向上翻了个个，肯定很不舒服upset。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/be52789e90fb4e986dd91c9026973c14.mp3"},{"word":"forever","meaning":"adv. 永远","ipa":"/fərˈevə(r)/","page_number":106,"context_sentence":"your face will stay like that forever!","comparison":"forever vs fever","syllable_type":"for-ev-er","memorization_hook":"for (为了) + ever (曾经)：为了曾经的承诺，直到永远forever。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/1965dd4414147be077b06458768f5fc3.mp3"},{"word":"conditional","meaning":"adj. 有条件的","ipa":"/kənˈdɪʃənl/","page_number":106,"context_sentence":"Use the first conditional to talk about possible events.","comparison":"conditional vs condition","syllable_type":"con-di-tion-al","memorization_hook":"condition (条件) + al (形容词后缀)：有条件的conditional。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/b1911baf168e64cc802c78744a002f42.mp3"},{"word":"results","meaning":"n. 成绩，结果","ipa":"/rɪˈzʌlts/","page_number":107,"context_sentence":"As soon as I get my exam results, I'll phone you.","comparison":"results vs adults","syllable_type":"re-sults","memorization_hook":"re (再次) + sults (跳)：跳出来的东西就是结果results。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/4056922cd3e5d0ef8e888ee3a4541285.mp3"},{"word":"message","meaning":"n. 信息，留言","ipa":"/ˈmesɪdʒ/","page_number":107,"context_sentence":"When I see Martin, I'll give him your message.","comparison":"message vs massage","syllable_type":"mes-sage","memorization_hook":"mes- (麦斯) + sage (贤人)：贤人传达的信息message。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/625cfd49c2e864dd97c8c2a96ddc5d5f.mp3"},{"word":"attend","meaning":"v. 参加，出席","ipa":"/əˈtend/","page_number":108,"context_sentence":"He's got a big business meeting he has to attend.","comparison":"attend vs intend","syllable_type":"at-tend","memorization_hook":"at (在) + tend (照料)：在场照料，即参加attend。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/42756e48c6b1ae956b987938e2e45334.mp3"},{"word":"business","meaning":"n. 商业，生意","ipa":"/ˈbɪznəs/","page_number":108,"context_sentence":"He's got a big business meeting.","comparison":"business vs busyness","syllable_type":"busi-ness","memorization_hook":"busy (忙碌) + ness (名词后缀)：忙碌的事情就是生意business。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/1e93c228f204049da5b5da8581a58364.mp3"},{"word":"meeting","meaning":"n. 会议","ipa":"/ˈmiːtɪŋ/","page_number":108,"context_sentence":"He's got a big business meeting.","comparison":"meeting vs melting","syllable_type":"meet-ing","memorization_hook":"meet (遇见) + ing：大家遇见在一起就是开会meeting。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/1e93c228f204049da5b5da8581a58364.mp3"},{"word":"important","meaning":"adj. 重要的","ipa":"/ɪmˈpɔːtnt/","page_number":108,"context_sentence":"Something important?","comparison":"important vs impotent","syllable_type":"im-por-tant","memorization_hook":"im (进入) + port (港口) + ant：进入港口的东西都很重要important。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/f0f07bf3cd0867952ed6b7a61d3bba18.mp3"},{"word":"hospital","meaning":"n. 医院","ipa":"/ˈhɒspɪtl/","page_number":108,"context_sentence":"Dad, say that again. What? The hospital?","comparison":"hospital vs hospitable","syllable_type":"hos-pi-tal","memorization_hook":"host (主人) + pital (别跑)：主人病了，快跑向医院hospital。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/72e244947a54160cfe3aa19b10561e83.mp3"},{"word":"fluency","meaning":"n. 流利","ipa":"/ˈfluːənsi/","page_number":109,"context_sentence":"PHRASES FOR FLUENCY","comparison":"fluency vs fluency","syllable_type":"flu-en-cy","memorization_hook":"flu (流) + ency (名词后缀)：像水流一样，就是流利fluency。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/e4911a846c4dc0157451953fbf756e39.mp3"},{"word":"expression","meaning":"n. 词语，表达方式","ipa":"/ɪkˈspreʃn/","page_number":109,"context_sentence":"Find the expressions 1-6 in the story.","comparison":"expression vs expansion","syllable_type":"ex-pres-sion","memorization_hook":"ex (出) + press (压) + ion：压出来的东西就是表达expression。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/fdc9cf66f5dc85cc3fa7a9c11c0bd789.mp3"},{"word":"definition","meaning":"n. 定义","ipa":"/ˌdefɪˈnɪʃn/","page_number":109,"context_sentence":"Match them to the definitions a-f.","comparison":"definition vs definition","syllable_type":"de-fi-ni-tion","memorization_hook":"de (下) + finit (界限) + ion：划下界限，就是定义definition。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/c0921c934aef7d4d2c4b2d712075d840.mp3"},{"word":"surprise","meaning":"n. 惊喜，意外","ipa":"/səˈpraɪz/","page_number":109,"context_sentence":"It's a surprise!","comparison":"surprise vs sunrise","syllable_type":"sur-prise","memorization_hook":"sur (在上面) + prise (抓)：突然被从上面抓住，感到很惊喜surprise。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/5a8bc6d5dc1663b4ea79833cd4bd0651.mp3"},{"word":"exercise","meaning":"n./v. 锻炼","ipa":"/ˈeksəsaɪz/","page_number":109,"context_sentence":"Do you do a lot of exercise?","comparison":"exercise vs exorcise","syllable_type":"ex-er-cise","memorization_hook":"ex (出) + er (耳) + cise (切)：出了一身汗，切开耳朵去锻炼exercise。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/59ec33aeee04614a51ca648ca5a27c6a.mp3"},{"word":"cleaning","meaning":"n. 清洁","ipa":"/ˈkliːnɪŋ/","page_number":109,"context_sentence":"Who does the cleaning in your house?","comparison":"cleaning vs leaning","syllable_type":"clean-ing","memorization_hook":"clean (干净) + ing：把东西变干净的过程就是清洁cleaning。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/81407d6748037701554cc0036e9e529c.mp3"},{"word":"sympathise","meaning":"v. 同情","ipa":"/ˈsɪmpəθaɪz/","page_number":109,"context_sentence":"FUNCTIONS: Sympathising","comparison":"sympathise vs synthesize","syllable_type":"sym-pa-thise","memorization_hook":"sym (共同) + path (情感) + ise (动词后缀)：产生共同的情感，就是同情sympathise。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/8ca9368065c02432347e8e64d3f86bf4.mp3"},{"word":"shame","meaning":"n. 遗憾，羞愧","ipa":"/ʃeɪm/","page_number":109,"context_sentence":"That's a shame.","comparison":"shame vs same","syllable_type":"相对开音节","memorization_hook":"sh (谁) + ame (爱我)：没人爱我，真是一种遗憾shame。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/25428189ec242621ea57cb30896dd549.mp3"},{"word":"square eyes","meaning":"n. 看电视过久导致的视力疲劳","ipa":"/skweə(r) aɪz/","page_number":106,"context_sentence":"If you watch TV all the time, you'll get square eyes.","comparison":"square eyes vs round eyes","syllable_type":"phrase","memorization_hook":"square (正方形) + eyes (眼睛)：看电视看成方眼睛。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/e03a5c8f6f96791131da67c4a5cfa996.mp3"},{"word":"see in the dark","meaning":"v. 在黑暗中看清","ipa":"/siː ɪn ðə dɑːk/","page_number":106,"context_sentence":"If you eat all your carrots, you'll see in the dark!","comparison":"see in the dark vs see in the light","syllable_type":"phrase","memorization_hook":"see (看) + dark (黑暗)：在黑暗中看。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/3acb167716848e298341c40edca3b069.mp3"},{"word":"as soon as","meaning":"conj. 一...就...","ipa":"/əz suːn əz/","page_number":107,"context_sentence":"As soon as I think of other examples, I'll tell you.","comparison":"as soon as vs as long as","syllable_type":"phrase","memorization_hook":"soon (快)：很快地就...","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/209a5719a10146d75853b3fabc42d7a1.mp3"},{"word":"shout at","meaning":"v. 对...大声喊叫","ipa":"/ʃaʊt æt/","page_number":108,"context_sentence":"he shouts at me all the time.","comparison":"shout at vs look at","syllable_type":"phrase","memorization_hook":"shout (喊) + at (指向)：对着某人喊。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/6188db838ff69dea99c2a3670a0653c0.mp3"},{"word":"all the time","meaning":"adv. 总是，一直","ipa":"/ɔːl ðə taɪm/","page_number":108,"context_sentence":"he shouts at me all the time.","comparison":"all the time vs at the time","syllable_type":"phrase","memorization_hook":"all (所有) + time (时间)：所有的时间里都在发生。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/6188db838ff69dea99c2a3670a0653c0.mp3"},{"word":"poor you","meaning":"exp. 你真可怜","ipa":"/pɔː(r) juː/","page_number":108,"context_sentence":"Poor you.","comparison":"poor you vs good you","syllable_type":"phrase","memorization_hook":"poor (贫穷/可怜) + you (你)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/09f62fddc9ef529f9d706b9fcb61e9ee.mp3"},{"word":"can't wait","meaning":"v. 迫不及待","ipa":"/kɑːnt weɪt/","page_number":108,"context_sentence":"I can't wait!","comparison":"can't wait vs don't wait","syllable_type":"phrase","memorization_hook":"can't (不能) + wait (等待)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/bdf590b7d49657ba87964f7e8725f6ca.mp3"},{"word":"wait and see","meaning":"v. 等着瞧","ipa":"/weɪt ənd siː/","page_number":108,"context_sentence":"Wait and see.","comparison":"wait and see vs look and see","syllable_type":"phrase","memorization_hook":"wait (等) + see (看)。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/8c85d0b59493e95c6bb84a62339dc672.mp3"},{"word":"ups and downs","meaning":"n. 起伏，盛衰","ipa":"/ʌps ənd daʊnz/","page_number":109,"context_sentence":"It's all ups and downs.","comparison":"ups and downs vs ups and outs","syllable_type":"phrase","memorization_hook":"up (上) + down (下)：有上有下，就是起伏。","audio":"https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/b-think1/9d709a8267c7423340bb93fbc34bc773.mp3"}];
 
         let isAlphabetical = false;
         const container = document.getElementById('vocab-container');
@@ -1336,14 +1459,24 @@
                         item.classList.add('hide-cn');
                         item.classList.remove('force-show-cn');
                     });
+                    document.body.classList.remove('show-sentences-cn');
                 } else {
                     textEls.forEach(el => el.innerText = "Hide CN");
                     iconEls.forEach(el => el.innerText = "㊙️");
                     items.forEach(item => {
                         item.classList.remove('hide-cn');
                         item.classList.remove('force-show-cn');
+                        // Reset individual sentence toggles when global mode is on
+                        const wrapper = item.querySelector('.sentence-wrapper');
+                        if (wrapper) wrapper.classList.remove('show-cn');
                     });
+                    document.body.classList.add('show-sentences-cn');
                 }
+            },
+
+            toggleSentence: function(el) {
+                if (document.body.classList.contains('show-sentences-cn')) return;
+                el.classList.toggle('show-cn');
             },
 
             showItemCN: function(el) {

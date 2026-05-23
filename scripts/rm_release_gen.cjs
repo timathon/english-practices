@@ -83,7 +83,8 @@ async function generate(jsonPath, outputPath) {
         const jsonData = JSON.parse(fs.readFileSync(absoluteInputPath, 'utf8'));
 
         // Calculate indexPath
-        const bookFolder = path.basename(path.dirname(path.dirname(absoluteInputPath)));
+        const relativeDataPath = path.relative(path.join(BASE_DIR, 'data'), absoluteInputPath);
+        const bookFolder = relativeDataPath.split(path.sep)[0];
         const bookRoot = path.join(BASE_DIR, bookFolder);
         const indexPath = path.join(path.relative(path.dirname(absoluteOutputPath), bookRoot), 'index.html');
 
