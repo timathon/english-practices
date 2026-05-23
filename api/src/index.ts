@@ -288,6 +288,19 @@ app.put('/api/admin/users/:id/password', async (c) => {
   }
 })
 
+app.get('/api/admin/users/:id/records', async (c) => {
+  const auth = getCachedAuth(c.env)
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+  
+  const userId = c.req.param('id')
+  const db = drizzle(c.env.DB)
+  const records = await db.select().from(practiceRecords)
+    .where(eq(practiceRecords.userId, userId))
+    .orderBy(desc(practiceRecords.createdAt))
+  return c.json(records)
+})
+
 app.get('/api/records', async (c) => {
   const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers });

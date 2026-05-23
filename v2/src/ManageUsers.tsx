@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useSession, API_URL } from './lib/auth'
+import { cache } from './lib/cache'
+import { ComposedChart, Bar, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import './Dashboard.css'
 
 export function ManageUsers() {
   const { data: session } = useSession()
@@ -13,6 +16,11 @@ export function ManageUsers() {
   const [newPassword, setNewPassword] = useState('')
   const [editingTextbooks, setEditingTextbooks] = useState<Set<string>>(new Set())
   const [editingExpiry, setEditingExpiry] = useState<string>('')
+
+  const [selectedUser, setSelectedUser] = useState<any | null>(null)
+  const [selectedUserRecords, setSelectedUserRecords] = useState<any[]>([])
+  const [practices, setPractices] = useState<any[]>([])
+  const [loadingStats, setLoadingStats] = useState(false)
 
   const fetchUsers = async () => {
     const res = await fetch(API_URL + '/api/admin/users', { credentials: 'include' })
@@ -28,12 +36,47 @@ export function ManageUsers() {
     }
   }
 
+  const fetchAllPractices = async () => {
+    const cached = cache.getPractices()
+    if (cached) {
+      setPractices(cached)
+      return
+    }
+    const res = await fetch(API_URL + '/api/practices', { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        cache.setPractices(data)
+        setPractices(data)
+      }
+    }
+  }
+
+  const handleSelectUserForStats = async (user: any) => {
+    setSelectedUser(user)
+    setLoadingStats(true)
+    try {
+      const res = await fetch(API_URL + `/api/admin/users/${user.id}/records`, { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setSelectedUserRecords(data)
+      } else {
+        alert("Failed to fetch user stats")
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingStats(false)
+    }
+  }
+
   const userId = session?.user?.id
 
   useEffect(() => {
     if (userId && (session?.user as any)?.role === 'admin') {
       fetchUsers()
       fetchTextbooks()
+      fetchAllPractices()
     }
   }, [userId])
 
@@ -178,7 +221,27 @@ export function ManageUsers() {
             {users.map(u => (
                 <React.Fragment key={u.id}>
                 <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: 10 }}>{u.username}</td>
+                    <td style={{ padding: 10 }}>
+                        <button 
+                            onClick={() => handleSelectUserForStats(u)}
+                            title="Click to view practice stats"
+                            style={{ 
+                                background: 'none', 
+                                border: 'none', 
+                                color: 'var(--accent, #aa3bff)', 
+                                cursor: 'pointer', 
+                                padding: 0, 
+                                font: 'inherit', 
+                                textDecoration: 'underline',
+                                fontWeight: 'bold',
+                                transition: 'color 0.2s ease'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.color = 'var(--tab-active-text)'}
+                            onMouseOut={(e) => e.currentTarget.style.color = 'var(--accent, #aa3bff)'}
+                        >
+                            {u.username}
+                        </button>
+                    </td>
                     <td style={{ padding: 10 }}>{u.role}</td>
                     <td style={{ padding: 10 }}>
                         {u.role === 'admin' ? (
@@ -340,6 +403,272 @@ export function ManageUsers() {
             ))}
         </tbody>
       </table>
+      {selectedUser && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          padding: '20px',
+          boxSizing: 'border-box'
+        }}
+        onClick={() => setSelectedUser(null)}
+        >
+          <div style={{
+            background: 'var(--bg)',
+            borderRadius: '16px',
+            border: '1px solid var(--border)',
+            width: '100%',
+            maxWidth: '1080px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '30px',
+            boxSizing: 'border-box',
+            position: 'relative',
+            boxShadow: 'var(--shadow)'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-h)', fontWeight: 'bold' }}>
+                  Practice Stats: {selectedUser.username}
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text)' }}>
+                  Registered on {new Date(selectedUser.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedUser(null)}
+                style={{
+                  background: 'var(--code-bg)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  color: 'var(--text-h)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(0.9)'}
+                onMouseOut={(e) => e.currentTarget.style.filter = 'none'}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            {loadingStats ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text)' }}>Loading stats...</div>
+            ) : (
+              <div>
+                <div className="db-books" style={{ gap: '30px', width: '100%', flexWrap: 'wrap' }}>
+                  
+                  {/* Today's Practices */}
+                  <div className="db-stats" style={{ flex: '1 1 450px', maxWidth: '100%' }}>
+                    <h3 className="db-stats-title">Today's Practices</h3>
+                    {(() => {
+                      const todayStr = new Date().toLocaleDateString();
+                      const parsedTodayRecords = selectedUserRecords
+                        .filter(r => new Date(r.createdAt).toLocaleDateString() === todayStr)
+                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                        .map(r => {
+                          const match = r.unit.match(/^(.+?)\s\((.+)\)$/);
+                          let practiceId = r.unit;
+                          let challengeTitle = '';
+                          if (match) {
+                            practiceId = match[1];
+                            challengeTitle = match[2];
+                          }
+                          const practice = practices.find(p => p.id === practiceId);
+                          const timeStarted = new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                          const timeUsedMs = r.updatedAt ? new Date(r.updatedAt).getTime() - new Date(r.createdAt).getTime() : 0;
+                          const timeUsed = timeUsedMs > 0 ? (timeUsedMs < 60000 ? '<1 min' : Math.round(timeUsedMs / 60000) + ' mins') : '-';
+
+                          let practiceName = 'Unknown';
+                          if (practice) {
+                            const acronym = practice.type.split('-').map((w: string) => w.charAt(0).toUpperCase()).join('');
+                            const shortChallenge = challengeTitle.replace('Challenge ', '').split(':')[0].trim();
+                            practiceName = challengeTitle ? `${acronym}-${shortChallenge}` : acronym;
+                          }
+
+                          return {
+                            id: r.id,
+                            timeStarted,
+                            bookUnit: practice ? `${practice.textbook}-${practice.unit}` : 'Unknown',
+                            practiceName,
+                            score: r.score + '%',
+                            timeUsed
+                          };
+                        });
+
+                      return parsedTodayRecords.length > 0 ? (
+                        <div className="db-stats-table-container">
+                          <table className="db-stats-table">
+                            <thead>
+                              <tr>
+                                <th>Started</th>
+                                <th>Book-Unit</th>
+                                <th>Practice</th>
+                                <th>Score</th>
+                                <th>Duration</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {parsedTodayRecords.map(r => (
+                                <tr key={r.id}>
+                                  <td>{r.timeStarted}</td>
+                                  <td>{r.bookUnit}</td>
+                                  <td>{r.practiceName}</td>
+                                  <td>{r.score}</td>
+                                  <td>{r.timeUsed}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="db-empty" style={{ padding: '20px' }}>No practices started today yet.</div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Recent 7 Days Activity */}
+                  <div className="db-stats" style={{ flex: '1 1 450px', maxWidth: '100%' }}>
+                    <h3 className="db-stats-title">Recent 7 Days Activity</h3>
+                    {(() => {
+                      const getLast7DaysStats = (recs: any[]) => {
+                        const stats = [];
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        for (let i = 6; i >= 0; i--) {
+                          const d = new Date(today);
+                          d.setDate(d.getDate() - i);
+
+                          const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                          const nextDay = new Date(d);
+                          nextDay.setDate(nextDay.getDate() + 1);
+
+                          const dayRecords = recs.filter(r => {
+                            const rDate = new Date(r.createdAt);
+                            return rDate >= d && rDate < nextDay;
+                          });
+
+                          const count = dayRecords.length;
+                          const avgScore = count > 0
+                            ? Math.round(dayRecords.reduce((acc, r) => acc + r.score, 0) / count)
+                            : 0;
+
+                          stats.push({
+                            date: dateStr,
+                            count,
+                            avgScore
+                          });
+                        }
+                        return stats;
+                      };
+                      const last7DaysStats = getLast7DaysStats(selectedUserRecords);
+
+                      return (
+                        <div className="db-chart-card">
+                          <div className="db-chart-legend-left">
+                            <span className="db-chart-legend-bar" />
+                            <span>Practices Done</span>
+                          </div>
+                          <div className="db-chart-area">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ComposedChart
+                                data={last7DaysStats}
+                                margin={{ top: 16, right: 12, bottom: 0, left: -8 }}
+                              >
+                                <defs>
+                                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="var(--tab-active-text)" stopOpacity={0.9} />
+                                    <stop offset="100%" stopColor="var(--tab-active-text)" stopOpacity={0.4} />
+                                  </linearGradient>
+                                  <linearGradient id="lineGlow" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.25} />
+                                    <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.5} />
+                                <XAxis
+                                  dataKey="date" stroke="var(--text)" fontSize={11}
+                                  tickLine={false} axisLine={false} dy={6}
+                                  tickFormatter={(value, index) => [1, 3, 5].includes(index) ? '' : value}
+                                />
+                                <YAxis
+                                  yAxisId="left" stroke="var(--text)" fontSize={11}
+                                  tickLine={false} axisLine={false} tickCount={5}
+                                  allowDecimals={false} width={28}
+                                />
+                                <YAxis
+                                  yAxisId="right" orientation="right" stroke="var(--text)"
+                                  fontSize={11} tickLine={false} axisLine={false}
+                                  tickFormatter={(v) => `${v}%`} domain={[0, 100]} width={36}
+                                />
+                                <Tooltip
+                                  cursor={{ fill: 'var(--accent-bg)', radius: 4 }}
+                                  contentStyle={{
+                                    backgroundColor: 'var(--card-bg)',
+                                    borderColor: 'var(--border)',
+                                    borderRadius: '10px',
+                                    color: 'var(--text-h)',
+                                    boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+                                    backdropFilter: 'blur(12px)',
+                                    padding: '10px 14px',
+                                    fontSize: '0.8rem',
+                                  }}
+                                  labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
+                                  itemStyle={{ color: 'var(--text-h)', padding: '2px 0' }}
+                                  itemSorter={(item) => item.name === 'Practices Done' ? 1 : 2}
+                                />
+                                <Area
+                                  yAxisId="right" type="monotone" dataKey="avgScore"
+                                  fill="url(#lineGlow)" stroke="none" tooltipType="none"
+                                />
+                                <Bar
+                                  yAxisId="left" dataKey="count" name="Practices Done"
+                                  fill="url(#barGrad)" radius={[6, 6, 0, 0]} barSize={20}
+                                />
+                                <Line
+                                  yAxisId="right" type="monotone" dataKey="avgScore"
+                                  name="Avg Score" stroke="var(--accent)" strokeWidth={2.5}
+                                  dot={{ r: 3.5, fill: 'var(--card-bg)', strokeWidth: 2.5 }}
+                                  activeDot={{ r: 5.5, fill: 'var(--accent)', strokeWidth: 0 }}
+                                />
+                              </ComposedChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="db-chart-legend-right">
+                            <span className="db-chart-legend-dot" />
+                            <span>Avg Score</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
