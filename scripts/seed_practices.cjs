@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const API_URL = process.env.API_URL || 'http://localhost:8787';
+const FORCE = process.argv.includes('--force');
+const { execSync } = require('child_process');
 
 const http = require('http');
 const https = require('https');
@@ -51,7 +53,21 @@ function myFetch(url, options = {}) {
     });
 }
 
+function checkChanges() {
+    if (FORCE) return true;
+    try {
+        const diff = execSync('git diff HEAD --name-only data/**/*.json', { encoding: 'utf8' }).trim();
+        return diff.length > 0;
+    } catch (e) {
+        return true;
+    }
+}
+
 async function seed() {
+    if (!checkChanges()) {
+        console.log("No changes detected in data/**/*.json. Skipping sync. Use --force to override.");
+        return;
+    }
     console.log("Authenticating as Admin...");
     const authRes = await myFetch(`${API_URL}/api/auth/sign-in/email`, {
         method: 'POST',

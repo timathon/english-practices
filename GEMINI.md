@@ -235,7 +235,7 @@ Update it to the **current local date and time** at the moment of the commit (e.
 
 ## Data Synchronization
 
-Whenever any JSON files in the `data/` directory are added, modified, or deleted, they must be synchronized to both the local database and the remote database. This synchronization must be performed **BEFORE** making any git commits containing the data changes.
+Whenever any JSON files in the `data/` directory are added, modified, or deleted, they must be synchronized to both the local database and the remote database. This synchronization must be performed **BEFORE** making any git commits containing the data changes. **If no JSON files under `data/` have changed since the last sync, skip these steps to avoid redundant database operations.**
 
 ### Sync Steps
 1. **Sync to local database**:
