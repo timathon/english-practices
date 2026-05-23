@@ -27,28 +27,30 @@ export function PracticeShell() {
     if (error) return <div className="practice-error">Error: {error}</div>
     if (!practice) return <div className="practice-loading">Loading...</div>
     
-    if (practice.type === 'vocab-master') {
+    const cleanType = practice.type.replace(/^p\d+-p\d+-/i, '').replace(/^p\d+-/i, '');
+    
+    if (cleanType === 'vocab-master') {
         return <VocabMasterShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
-    if (practice.type === 'recall-map') {
+    if (cleanType === 'recall-map') {
         return <RecallMapShell data={practice.content} />
     }
 
-    if (practice.type === 'vocab-guide') {
+    if (cleanType === 'vocab-guide') {
         return <VocabGuideShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} />
     }
 
-    if (practice.type === 'spelling-hero') {
+    if (cleanType === 'spelling-hero') {
         return <SpellingHeroShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} />
     }
 
-    if (practice.type === 'sentence-architect') {
+    if (cleanType === 'sentence-architect') {
         return <SentenceArchitectShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
-    if (practice.type.startsWith('text-navigator') || practice.type.startsWith('writing-map')) {
-        const isWritingMap = practice.type.startsWith('writing-map')
+    if (cleanType.startsWith('text-navigator') || cleanType.startsWith('writing-map')) {
+        const isWritingMap = cleanType.startsWith('writing-map')
         return <MindMapShell data={practice.content} textbook={practice.textbook} isWritingMap={isWritingMap} />
     }
     
@@ -57,7 +59,7 @@ export function PracticeShell() {
             <h2>{practice.title}</h2>
             <div style={{ background: '#ffebee', padding: 20, borderRadius: 8, color: '#c62828', marginBottom: 20 }}>
                 <strong>Component Not Ready</strong><br />
-                The interactive shell wrapper for type <code>{practice.type}</code> has not been built yet.
+                The interactive shell wrapper for type <code>{practice.type}</code> (cleaned: <code>{cleanType}</code>) has not been built yet.
             </div>
             <pre style={{ background: '#f5f5f5', padding: 15, borderRadius: 8, overflow: 'auto' }}>
                 {JSON.stringify(practice.content, null, 2)}
