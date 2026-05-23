@@ -31,11 +31,11 @@ This document defines the rules for extracting and converting textbook data into
   - If result is < 50, round down to the nearest multiple of 10 (e.g., 14 words * 3 = 42 -> target: 40).
 - **Prioritize Verbs:** Identify verbs from Chinese `meaning`. Verbs should ideally receive all 3 question types (especially `Cloze`).
 - **Question Types:**
-  - `Cloze`: Target word replaced by "____". 3 distractors (different forms or visually similar).
+  - `Cloze`: Target word replaced by "____". 5 distractors (different forms or visually similar).
     - **Ambiguity & Hints:** The sentence context must provide sufficient information to uniquely identify the correct word. If the context is ambiguous (e.g., "I ____ all by myself." where any verb could fit), you **must** append a Chinese hint of the target word at the end of the prompt in the format: `(提示: [Chinese meaning])` (e.g., `I ____ all by myself. (提示: 唱歌; 唱)`).
-  - `Cn2En`: Prompt is Chinese `meaning`. Options: Correct English + 3 distractors.
-  - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 3 distractors.
-- **Answer Randomization:** Correct answer index must be randomized (0-3).
+  - `Cn2En`: Prompt is Chinese `meaning`. Options: Correct English + 5 distractors.
+  - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 5 distractors.
+- **Answer Randomization:** Correct answer index must be randomized (0-5).
 - **Structure:** 
   - A top-level object with `level`, `title` (always `"Vocab Master"`), and `challenges` (an array).
   - Group questions into Challenges of exactly **10 questions** each.
@@ -50,8 +50,8 @@ This document defines the rules for extracting and converting textbook data into
   - `title`: "Vocab Master".
   - `type`: `Cloze`, `Cn2En`, or `En2Cn`.
   - `prompt`: The question prompt.
-  - `options`: 4 shuffled options.
-  - `answer`: Index of the correct option (0-3).
+  - `options`: 6 shuffled options.
+  - `answer`: Index of the correct option (0-5).
 
 ## 3. Spelling Hero (SH)
 **Source:** `*-vocab-guide.json`
@@ -96,7 +96,7 @@ This document defines the rules for extracting and converting textbook data into
   - `en`: Primary English sentence.
   - `cn`: Chinese translation.
   - `hint`: Concise bilingual grammar clue.
-  - `noise`: 2-3 relevant distractor words not in the sentence. **MUST NOT** include any words already present in the primary English sentence (`en`). Distractors should be related in theme or part-of-speech but distinct from the target words to avoid confusion or multiple correct answers with the provided blocks.
+  - `noise`: 2-5 relevant distractor words not in the sentence. The number of noise words should scale with the sentence length (e.g., 2 for short, 5 for long). **MUST NOT** include any words already present in the primary English sentence (`en`). Distractors should be valid distractors where students may make mistakes (e.g., related in theme or part-of-speech) but must be distinct from the target words to avoid confusion or multiple correct answers with the provided blocks.
   - `accept`: Array of valid grammatical variations.
     - **Natural Variations:** Include common word-order variations that use the *exact same words* (e.g., "Together the two of us played" -> "The two of us played together").
     - **No Expanded Contractions:** Do NOT include expanded forms of contractions in `accept` (e.g., if `en` is "it's...", do not add "it is..." to `accept`) because the user constructs sentences from discrete word blocks and won't have the individual words to form the expansion.

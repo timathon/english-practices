@@ -191,11 +191,15 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
         }
     }
 
-    // 2. Apply Audio URLs
+    // 2. Apply Audio URLs and Validate Data
     for (const challenge of data.challenges) {
         for (const q of challenge.questions) {
             if (q.context_sentence) {
                 q.audio = getAudioUrl(q.context_sentence, bookName);
+            }
+            // Validate options count (should be 6 as per GEMINI.md)
+            if (!q.options || !Array.isArray(q.options) || q.options.length !== 6) {
+                console.warn(`  [Warning] Question "${q.prompt?.substring(0, 30)}..." has ${q.options?.length || 0} options. Exactly 6 are required.`);
             }
         }
     }

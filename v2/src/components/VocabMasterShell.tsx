@@ -14,6 +14,17 @@ const getAudioUrl = (sentence: string, book: string) => {
     return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
 }
 
+function shuffle<T>(array: T[]): T[] {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+    return arr;
+}
+
 export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const audioRef = useRef<HTMLAudioElement | null>(null)
    const sfxRef = useRef<HTMLAudioElement | null>(null)
@@ -67,7 +78,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        recordIdPromiseRef.current = null
        
        // Clone and shuffle questions
-       const shuffled = [...c.questions].sort(() => Math.random() - 0.5).map((q: any, i: number) => ({ ...q, originalIndex: i }))
+       const shuffled = shuffle([...c.questions]).map((q: any, i: number) => ({ ...q, originalIndex: i }))
        setQueue(shuffled)
        setMistakeQueue([])
        setCurrentIndex(0)
@@ -109,12 +120,29 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        setHintUsed(false)
        setLocked(false)
        setShowFeedback(false)
-       
-       // Generate shuffled options that retain original index
-       const indexedOptions = nextQ.options.map((text: string, idx: number) => ({ text, originalIdx: idx }))
-       indexedOptions.sort(() => Math.random() - 0.5)
-       setOptions(indexedOptions)
-   }
+              // Generate shuffled options that retain original index
+        let selectedOptions: Array<{ text: string; originalIdx: number }> = [];
+        if (nextQ.options.length > 4) {
+            const correctIdx = nextQ.answer;
+            const wrongIndices: number[] = [];
+            for (let i = 0; i < nextQ.options.length; i++) {
+                if (i !== correctIdx) {
+                    wrongIndices.push(i);
+                }
+            }
+            
+            // Randomly select 3 wrong options from the pool
+            const shuffledWrong = shuffle(wrongIndices);
+            const selectedWrongIndices = shuffledWrong.slice(0, 3);
+            
+            const finalIndices = [correctIdx, ...selectedWrongIndices];
+            selectedOptions = finalIndices.map(idx => ({ text: nextQ.options[idx], originalIdx: idx }));
+        } else {
+            selectedOptions = nextQ.options.map((text: string, idx: number) => ({ text, originalIdx: idx }));
+        }
+        
+        setOptions(shuffle(selectedOptions));
+    }
 
    const playAudio = async (url: string) => {
        if (!url) return;

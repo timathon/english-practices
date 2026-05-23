@@ -398,6 +398,15 @@
         getHash: function(str) {
             return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString();
         },
+        shuffle: function(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+            }
+            return array;
+        },
         playSFX: async function(type) {
             if (!this.state.settings.sfx) return;
             const url = this.sfx[type];
@@ -601,7 +610,7 @@
             const c = challenges.find(x => x.id === id);
             this.state.currentChallenge = c; 
             // Question Randomization
-            this.state.queue = [...c.questions].sort(() => Math.random() - 0.5); 
+            this.state.queue = this.shuffle([...c.questions]); 
             this.state.mistakeQueue = [];
             this.state.currentIndex = 0; 
             this.state.scoreLog = new Array(c.questions.length).fill(null);
@@ -640,12 +649,30 @@
             const optionsArea = document.getElementById("options-area");
             optionsArea.innerHTML = "";
             
-            // Create map of original index to text
-            const indexedOptions = q.options.map((text, idx) => ({ text, originalIdx: idx }));
-            // Shuffle
-            indexedOptions.sort(() => Math.random() - 0.5);
+            let selectedOptions = [];
+            if (q.options.length > 4) {
+                const correctIdx = q.answer;
+                const wrongIndices = [];
+                for (let i = 0; i < q.options.length; i++) {
+                    if (i !== correctIdx) {
+                        wrongIndices.push(i);
+                    }
+                }
+                
+                // Randomly select 3 wrong options from the pool
+                const shuffledWrong = this.shuffle([...wrongIndices]);
+                const selectedWrongIndices = shuffledWrong.slice(0, 3);
+                
+                const finalIndices = [correctIdx, ...selectedWrongIndices];
+                selectedOptions = finalIndices.map(idx => ({ text: q.options[idx], originalIdx: idx }));
+            } else {
+                selectedOptions = q.options.map((text, idx) => ({ text, originalIdx: idx }));
+            }
+            
+            // Shuffle the final list of selected options so the correct answer is randomized
+            this.shuffle(selectedOptions);
 
-            indexedOptions.forEach((opt) => {
+            selectedOptions.forEach((opt) => {
                 const btn = document.createElement("button");
                 btn.className = "option-btn";
                 btn.innerText = opt.text;

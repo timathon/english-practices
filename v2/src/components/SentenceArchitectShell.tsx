@@ -14,6 +14,17 @@ const getAudioUrl = (sentence: string, book: string) => {
     return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
 }
 
+function shuffle<T>(array: T[]): T[] {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+    return arr;
+}
+
 interface PoolWord {
     id: number;
     text: string;
@@ -112,7 +123,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         recordIdPromiseRef.current = null
 
         // Clone and shuffle questions
-        const shuffled = [...c.data].sort(() => Math.random() - 0.5).map((q: any, i: number) => ({ ...q, originalIndex: i }))
+        const shuffled = shuffle([...c.data]).map((q: any, i: number) => ({ ...q, originalIndex: i }))
         setQueue(shuffled)
         setMistakeQueue([])
         setCurrentIndex(0)
@@ -157,8 +168,17 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         // Generate Shuffled Word Pool
         const cleanEn = nextQ.en.replace(/[.!?]$/, "");
         const originalWords = cleanEn.split(" ");
-        const allWords = [...originalWords, ...nextQ.noise];
-        allWords.sort(() => Math.random() - 0.5);
+        
+        // Randomly select 2 or 3 noise words from the pool
+        const noisePool = [...(nextQ.noise || [])];
+        const noiseCount = Math.floor(Math.random() * 2) + 2; // Randomly choose 2 or 3
+        const selectedNoise: string[] = [];
+        while (selectedNoise.length < noiseCount && noisePool.length > 0) {
+            const randomIndex = Math.floor(Math.random() * noisePool.length);
+            selectedNoise.push(noisePool.splice(randomIndex, 1)[0]);
+        }
+        
+        const allWords = shuffle([...originalWords, ...selectedNoise]);
 
         const poolItems = allWords.map((word, idx) => {
             let displayWord = word;

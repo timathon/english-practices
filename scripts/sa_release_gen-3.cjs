@@ -227,12 +227,16 @@ async function generate(jsonPath, type, outputPath, userCount = 3, validityMonth
         }
     }
 
-    // 2. Apply Audio URLs
+    // 2. Apply Audio URLs and Validate Data
     for (const challenge of data.challenges) {
         const items = challenge.sentences || challenge.data || [];
         for (const item of items) {
             if (item.en) {
                 item.audio = getAudioUrl(item.en, bookName);
+            }
+            // Validate noise pool (should be 2-5 as per GEMINI.md)
+            if (!item.noise || !Array.isArray(item.noise) || item.noise.length < 2) {
+                console.warn(`  [Warning] Sentence "${item.en?.substring(0, 30)}..." has insufficient noise words (${item.noise?.length || 0}).`);
             }
         }
     }

@@ -640,7 +640,17 @@
         generatePool: function(q) {
             const cleanEn = q.en.replace(/[.!?]$/, "");
             const originalWords = cleanEn.split(" ");
-            let allWords = [...originalWords, ...q.noise];
+            
+            // Randomly select 2 or 3 noise words from the pool
+            const noisePool = [...(q.noise || [])];
+            const noiseCount = Math.floor(Math.random() * 2) + 2; // Randomly choose 2 or 3
+            const selectedNoise = [];
+            while (selectedNoise.length < noiseCount && noisePool.length > 0) {
+                const randomIndex = Math.floor(Math.random() * noisePool.length);
+                selectedNoise.push(noisePool.splice(randomIndex, 1)[0]);
+            }
+            
+            let allWords = [...originalWords, ...selectedNoise];
             allWords.sort(() => Math.random() - 0.5);
             
             const pool = document.getElementById("word-pool");
