@@ -32,6 +32,7 @@ This document defines the rules for extracting and converting textbook data into
 - **Prioritize Verbs:** Identify verbs from Chinese `meaning`. Verbs should ideally receive all 3 question types (especially `Cloze`).
 - **Question Types:**
   - `Cloze`: Target word replaced by "____". 3 distractors (different forms or visually similar).
+    - **Ambiguity & Hints:** The sentence context must provide sufficient information to uniquely identify the correct word. If the context is ambiguous (e.g., "I ____ all by myself." where any verb could fit), you **must** append a Chinese hint of the target word at the end of the prompt in the format: `(提示: [Chinese meaning])` (e.g., `I ____ all by myself. (提示: 唱歌; 唱)`).
   - `Cn2En`: Prompt is Chinese `meaning`. Options: Correct English + 3 distractors.
   - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 3 distractors.
 - **Answer Randomization:** Correct answer index must be randomized (0-3).
