@@ -10,7 +10,7 @@ const s3Client = new S3Client({
 });
 
 const BUCKET = "embroid-001";
-const SOURCE_PREFIX = "ep/b-think1-u11/";
+const SOURCE_PREFIX = "ep/b-think1-u10/";
 const DEST_PREFIX = "ep/b-think1/";
 
 async function listAll(prefix) {
@@ -29,7 +29,7 @@ async function listAll(prefix) {
 }
 
 async function main() {
-    console.log(`Starting to move files from "${SOURCE_PREFIX}" to "${DEST_PREFIX}" in batches of 40...`);
+    console.log(`Starting to move files from "${SOURCE_PREFIX}" to "${DEST_PREFIX}" in batches of 50...`);
     
     if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
         console.error("ERROR: Missing AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY in environment variables.");
@@ -40,7 +40,7 @@ async function main() {
     const filesToMove = keys.filter(key => key !== SOURCE_PREFIX); // Skip prefix marker if present
     console.log(`Found ${filesToMove.length} files to move.`);
 
-    const batchSize = 40;
+    const batchSize = 50;
     for (let i = 0; i < filesToMove.length; i += batchSize) {
         const batch = filesToMove.slice(i, i + batchSize);
         console.log(`\n📦 Processing batch ${Math.floor(i / batchSize) + 1} / ${Math.ceil(filesToMove.length / batchSize)} (indices ${i} to ${i + batch.length - 1})...`);
@@ -75,7 +75,7 @@ async function main() {
         console.log(`   All deletes in batch succeeded.`);
     }
 
-    console.log(`\n🎉 Done! All files moved successfully in batches of 40.`);
+    console.log(`\n🎉 Done! All files moved successfully in batches of 50.`);
 }
 
 main().catch(err => {
