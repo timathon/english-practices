@@ -165,21 +165,33 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                       if (isSH && p.content?.spelling_words) {
                         const wordCount = p.content.spelling_words.length;
                         total = Math.ceil((wordCount * 2) / 10);
-                        try {
-                          const raw = localStorage.getItem(`sh-stats-${p.id}`);
-                          if (raw) {
-                            const allStats = JSON.parse(raw);
-                            let sumBest = 0;
-                            for (let i = 1; i <= total; i++) {
-                              const s = allStats[`ch-${i}`];
-                              if (s && s.lifetime.attempts > 0) {
-                                doneCount++;
-                                sumBest += s.lifetime.best;
-                              }
-                            }
-                            if (doneCount > 0) avg = Math.round(sumBest / doneCount);
+                        let sumMax = 0;
+                        for (let i = 1; i <= total; i++) {
+                          const chalRecords = records.filter((r: any) => r.unit === `${p.id} (Challenge ${i})` && !r.unfinished);
+                          if (chalRecords.length > 0) {
+                            doneCount++;
+                            sumMax += Math.max(...chalRecords.map((r: any) => r.score));
                           }
-                        } catch { }
+                        }
+                        if (doneCount > 0) {
+                          avg = Math.round(sumMax / doneCount);
+                        } else {
+                          try {
+                            const raw = localStorage.getItem(`sh-stats-${p.id}`);
+                            if (raw) {
+                              const allStats = JSON.parse(raw);
+                              let sumBest = 0;
+                              for (let i = 1; i <= total; i++) {
+                                const s = allStats[`ch-${i}`];
+                                if (s && s.lifetime.attempts > 0) {
+                                  doneCount++;
+                                  sumBest += s.lifetime.best;
+                                }
+                              }
+                              if (doneCount > 0) avg = Math.round(sumBest / doneCount);
+                            }
+                          } catch { }
+                        }
                       }
 
                       const getGrade = (a: number) => {
@@ -393,7 +405,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-20:15</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-20:23</span></p>
         </div>
       </div>
 
