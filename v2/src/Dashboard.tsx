@@ -251,6 +251,41 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
 
 import { ComposedChart, Bar, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const practicesDoneText = data.breakdown 
+      ? `Practices Done: ${data.count} (${data.breakdown})`
+      : `Practices Done: ${data.count}`;
+    
+    return (
+      <div style={{
+        backgroundColor: 'var(--card-bg)',
+        borderColor: 'var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: '10px',
+        color: 'var(--text-h)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+        backdropFilter: 'blur(12px)',
+        padding: '10px 14px',
+        fontSize: '0.8rem',
+        textAlign: 'left'
+      }}>
+        <p style={{ color: 'var(--text)', fontWeight: 600, margin: '0 0 4px 0' }}>{label}</p>
+        <p style={{ color: 'var(--text-h)', margin: '2px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '2px', backgroundColor: 'var(--tab-active-text)' }} />
+          {practicesDoneText}
+        </p>
+        <p style={{ color: 'var(--text-h)', margin: '2px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', border: '2px solid var(--accent)', boxSizing: 'border-box' }} />
+          Avg Score: {data.avgScore}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function Dashboard() {
   const { data: session } = useSession()
   const location = useLocation()
@@ -344,10 +379,28 @@ export function Dashboard() {
         ? Math.round(dayRecords.reduce((acc, r) => acc + r.score, 0) / count)
         : 0;
 
+      const bookCounts: Record<string, number> = {};
+      dayRecords.forEach(r => {
+        const match = r.unit.match(/^(.+?)\s\((.+)\)$/);
+        let practiceId = r.unit;
+        if (match) {
+          practiceId = match[1];
+        }
+        const practice = practices.find(p => p.id === practiceId);
+        const book = practice ? practice.textbook : 'Unknown';
+        bookCounts[book] = (bookCounts[book] || 0) + 1;
+      });
+
+      const breakdown = Object.entries(bookCounts)
+        .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true, sensitivity: 'base' }))
+        .map(([book, cnt]) => `${book}-${cnt}`)
+        .join(', ');
+
       stats.push({
         date: dateStr,
         count,
-        avgScore
+        avgScore,
+        breakdown
       });
     }
     return stats;
@@ -405,7 +458,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-20:34</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-20:44</span></p>
         </div>
       </div>
 
@@ -512,19 +565,7 @@ export function Dashboard() {
                   />
                   <Tooltip
                     cursor={{ fill: 'var(--accent-bg)', radius: 4 }}
-                    contentStyle={{
-                      backgroundColor: 'var(--card-bg)',
-                      borderColor: 'var(--border)',
-                      borderRadius: '10px',
-                      color: 'var(--text-h)',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-                      backdropFilter: 'blur(12px)',
-                      padding: '10px 14px',
-                      fontSize: '0.8rem',
-                    }}
-                    labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
-                    itemStyle={{ color: 'var(--text-h)', padding: '2px 0' }}
-                    itemSorter={(item) => item.name === 'Practices Done' ? 1 : 2}
+                    content={<CustomTooltip />}
                   />
                   <Area
                     yAxisId="right" type="monotone" dataKey="avgScore"
