@@ -12,7 +12,7 @@ const PRACTICE_TYPE_ICONS: Record<string, string> = {
   'Writing Map': '📝',
 }
 
-const TEXTBOOK_EMOJIS: Record<string, string> = {
+export const TEXTBOOK_EMOJIS: Record<string, string> = {
   A3A: '🌱', A3B: '🌿',
   A5A: '🌸', A5B: '🌺',
   A6B: '🌟',
@@ -20,7 +20,7 @@ const TEXTBOOK_EMOJIS: Record<string, string> = {
   A8B: '🎓',
 }
 
-function getTextbookEmoji(tb: string) {
+export function getTextbookEmoji(tb: string) {
   for (const key of Object.keys(TEXTBOOK_EMOJIS)) {
     if (tb.toUpperCase().includes(key)) return TEXTBOOK_EMOJIS[key]
   }
@@ -245,6 +245,7 @@ export function Dashboard() {
   const returnState = location.state as { textbook?: string; unit?: string } | null
   const [practices, setPractices] = useState<any[]>([])
   const [records, setRecords] = useState<any[]>([])
+  const [activeTodayBook, setActiveTodayBook] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const fetchedUserIdRef = useRef<string | null>(null)
   const userId = session?.user?.id
@@ -369,11 +370,22 @@ export function Dashboard() {
         id: r.id,
         timeStarted,
         bookUnit: practice ? `${practice.textbook}-${practice.unit}` : 'Unknown',
+        book: practice ? practice.textbook : 'Unknown',
         practiceName,
         score: r.score + '%',
         timeUsed
       };
     });
+
+  const todayRecordsByBook = parsedTodayRecords.reduce<Record<string, typeof parsedTodayRecords>>((acc, r) => {
+    const book = r.book || 'Unknown';
+    if (!acc[book]) acc[book] = [];
+    acc[book].push(r);
+    return acc;
+  }, {});
+
+  const todayBookKeys = Object.keys(todayRecordsByBook).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+  const activeBook = todayBookKeys.includes(activeTodayBook) ? activeTodayBook : (todayBookKeys[0] || '');
 
   return (
     <div className="db-root">
@@ -381,7 +393,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-18:39</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.23-20:15</span></p>
         </div>
       </div>
 
@@ -389,29 +401,58 @@ export function Dashboard() {
         <div className="db-stats">
           <h3 className="db-stats-title">Today's Practices</h3>
           {parsedTodayRecords.length > 0 ? (
-            <div className="db-stats-table-container">
-              <table className="db-stats-table">
-                <thead>
-                  <tr>
-                    <th>Started</th>
-                    <th>Book-Unit</th>
-                    <th>Practice</th>
-                    <th>Score</th>
-                    <th>Duration</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parsedTodayRecords.map(r => (
-                    <tr key={r.id}>
-                      <td>{r.timeStarted}</td>
-                      <td>{r.bookUnit}</td>
-                      <td>{r.practiceName}</td>
-                      <td>{r.score}</td>
-                      <td>{r.timeUsed}</td>
+            <div>
+              <div className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
+                {todayBookKeys.map(book => (
+                  <button
+                    key={book}
+                    onClick={() => setActiveTodayBook(book)}
+                    className={`db-tab-btn ${activeBook === book ? 'active' : ''}`}
+                    style={{
+                      padding: '6px 14px',
+                      border: 'none',
+                      borderBottom: activeBook === book ? '3px solid var(--tab-active-text)' : '3px solid transparent',
+                      background: activeBook === book ? 'var(--card-bg)' : 'transparent',
+                      cursor: 'pointer',
+                      fontWeight: activeBook === book ? 'bold' : 'normal',
+                      color: activeBook === book ? 'var(--tab-active-text)' : 'var(--tab-text)',
+                      borderRadius: '5px 5px 0 0',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span>{getTextbookEmoji(book)}</span>
+                    <span>{book} ({todayRecordsByBook[book].length})</span>
+                  </button>
+                ))}
+              </div>
+              <div className="db-stats-table-container" style={{ borderRadius: '0 10px 10px 10px' }}>
+                <table className="db-stats-table">
+                  <thead>
+                    <tr>
+                      <th>Started</th>
+                      <th>Book-Unit</th>
+                      <th>Practice</th>
+                      <th>Score</th>
+                      <th>Duration</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(todayRecordsByBook[activeBook] || []).map(r => (
+                      <tr key={r.id}>
+                        <td>{r.timeStarted}</td>
+                        <td>{r.bookUnit}</td>
+                        <td>{r.practiceName}</td>
+                        <td>{r.score}</td>
+                        <td>{r.timeUsed}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             <div className="db-empty" style={{ padding: '20px' }}>No practices started today yet.</div>

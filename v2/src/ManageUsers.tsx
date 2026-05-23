@@ -3,6 +3,7 @@ import { useSession, API_URL } from './lib/auth'
 import { cache } from './lib/cache'
 import { ComposedChart, Bar, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import './Dashboard.css'
+import { getTextbookEmoji } from './Dashboard'
 
 export function ManageUsers() {
   const { data: session } = useSession()
@@ -21,6 +22,7 @@ export function ManageUsers() {
   const [selectedUserRecords, setSelectedUserRecords] = useState<any[]>([])
   const [practices, setPractices] = useState<any[]>([])
   const [loadingStats, setLoadingStats] = useState(false)
+  const [activeTodayBook, setActiveTodayBook] = useState<string>('')
 
   const fetchUsers = async () => {
     const res = await fetch(API_URL + '/api/admin/users', { credentials: 'include' })
@@ -508,36 +510,76 @@ export function ManageUsers() {
                             id: r.id,
                             timeStarted,
                             bookUnit: practice ? `${practice.textbook}-${practice.unit}` : 'Unknown',
+                            book: practice ? practice.textbook : 'Unknown',
                             practiceName,
                             score: r.score + '%',
                             timeUsed
                           };
                         });
 
+                      const todayRecordsByBook = parsedTodayRecords.reduce<Record<string, typeof parsedTodayRecords>>((acc, r) => {
+                        const book = r.book || 'Unknown';
+                        if (!acc[book]) acc[book] = [];
+                        acc[book].push(r);
+                        return acc;
+                      }, {});
+
+                      const todayBookKeys = Object.keys(todayRecordsByBook).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+                      const activeBook = todayBookKeys.includes(activeTodayBook) ? activeTodayBook : (todayBookKeys[0] || '');
+
                       return parsedTodayRecords.length > 0 ? (
-                        <div className="db-stats-table-container">
-                          <table className="db-stats-table">
-                            <thead>
-                              <tr>
-                                <th>Started</th>
-                                <th>Book-Unit</th>
-                                <th>Practice</th>
-                                <th>Score</th>
-                                <th>Duration</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {parsedTodayRecords.map(r => (
-                                <tr key={r.id}>
-                                  <td>{r.timeStarted}</td>
-                                  <td>{r.bookUnit}</td>
-                                  <td>{r.practiceName}</td>
-                                  <td>{r.score}</td>
-                                  <td>{r.timeUsed}</td>
+                        <div>
+                          <div className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
+                            {todayBookKeys.map(book => (
+                              <button
+                                key={book}
+                                onClick={() => setActiveTodayBook(book)}
+                                className={`db-tab-btn ${activeBook === book ? 'active' : ''}`}
+                                style={{
+                                  padding: '6px 14px',
+                                  border: 'none',
+                                  borderBottom: activeBook === book ? '3px solid var(--tab-active-text)' : '3px solid transparent',
+                                  background: activeBook === book ? 'var(--card-bg)' : 'transparent',
+                                  cursor: 'pointer',
+                                  fontWeight: activeBook === book ? 'bold' : 'normal',
+                                  color: activeBook === book ? 'var(--tab-active-text)' : 'var(--tab-text)',
+                                  borderRadius: '5px 5px 0 0',
+                                  whiteSpace: 'nowrap',
+                                  transition: 'all 0.2s',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <span>{getTextbookEmoji(book)}</span>
+                                <span>{book} ({todayRecordsByBook[book].length})</span>
+                              </button>
+                            ))}
+                          </div>
+                          <div className="db-stats-table-container" style={{ borderRadius: '0 10px 10px 10px' }}>
+                            <table className="db-stats-table">
+                              <thead>
+                                <tr>
+                                  <th>Started</th>
+                                  <th>Book-Unit</th>
+                                  <th>Practice</th>
+                                  <th>Score</th>
+                                  <th>Duration</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {(todayRecordsByBook[activeBook] || []).map(r => (
+                                  <tr key={r.id}>
+                                    <td>{r.timeStarted}</td>
+                                    <td>{r.bookUnit}</td>
+                                    <td>{r.practiceName}</td>
+                                    <td>{r.score}</td>
+                                    <td>{r.timeUsed}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       ) : (
                         <div className="db-empty" style={{ padding: '20px' }}>No practices started today yet.</div>
