@@ -53,14 +53,41 @@ function myFetch(url, options = {}) {
     });
 }
 
+function getChangedOrAddedJsonFiles() {
+    try {
+        const statusOutput = execSync('git status --porcelain "data/**/*.json"', { encoding: 'utf8' }).trim();
+        if (!statusOutput) return [];
+        
+        const files = [];
+        const lines = statusOutput.split('\n');
+        for (const line of lines) {
+            if (line.length < 4) continue;
+            const status = line.substring(0, 2);
+            // Skip deleted files (either staged delete or unstaged delete)
+            if (status.includes('D')) continue;
+            
+            let filePath = line.substring(3).trim();
+            // Handle renamed files: R  old -> new
+            if (status.startsWith('R') && filePath.includes(' -> ')) {
+                filePath = filePath.split(' -> ')[1].trim();
+            }
+            // Remove wrapping double quotes if present
+            if (filePath.startsWith('"') && filePath.endsWith('"')) {
+                filePath = filePath.substring(1, filePath.length - 1);
+            }
+            files.push(filePath);
+        }
+        return files;
+    } catch (e) {
+        console.error("Failed to run git status:", e.message);
+        return [];
+    }
+}
+
 function checkChanges() {
     if (FORCE) return true;
-    try {
-        const diff = execSync('git diff HEAD --name-only data/**/*.json', { encoding: 'utf8' }).trim();
-        return diff.length > 0;
-    } catch (e) {
-        return true;
-    }
+    const changed = getChangedOrAddedJsonFiles();
+    return changed.length > 0;
 }
 
 async function seed() {
@@ -92,107 +119,139 @@ async function seed() {
     }
     
     const dataDir = path.join(__dirname, '..', 'data');
-    const textbooks = fs.readdirSync(dataDir).filter(f => !f.startsWith('.') && fs.statSync(path.join(dataDir, f)).isDirectory());
+    const changedFiles = FORCE ? null : getChangedOrAddedJsonFiles();
     
     const practices = [];
+    const filesToProcess = [];
     
-    function findJsonFiles(dir) {
-        let results = [];
-        if (!fs.existsSync(dir)) return results;
-        const list = fs.readdirSync(dir);
-        list.forEach(file => {
-            const fullPath = path.join(dir, file);
-            const stat = fs.statSync(fullPath);
-            if (stat && stat.isDirectory()) {
-                results = results.concat(findJsonFiles(fullPath));
-            } else if (file.endsWith('.json')) {
-                results.push(fullPath);
+    if (FORCE) {
+        const textbooks = fs.readdirSync(dataDir).filter(f => !f.startsWith('.') && fs.statSync(path.join(dataDir, f)).isDirectory());
+        
+        function findJsonFiles(dir) {
+            let results = [];
+            if (!fs.existsSync(dir)) return results;
+            const list = fs.readdirSync(dir);
+            list.forEach(file => {
+                const fullPath = path.join(dir, file);
+                const stat = fs.statSync(fullPath);
+                if (stat && stat.isDirectory()) {
+                    results = results.concat(findJsonFiles(fullPath));
+                } else if (file.endsWith('.json')) {
+                    results.push(fullPath);
+                }
+            });
+            return results;
+        }
+
+        for (const tb of textbooks) {
+            const tbDir = path.join(dataDir, tb);
+            const jsonFiles = findJsonFiles(tbDir);
+            for (const f of jsonFiles) {
+                filesToProcess.push({
+                    textbook: tb,
+                    filePath: f,
+                    tbDir: tbDir
+                });
             }
-        });
-        return results;
+        }
+    } else {
+        for (const relPath of changedFiles) {
+            const fullPath = path.resolve(relPath);
+            const relativeToData = path.relative(dataDir, fullPath);
+            const parts = relativeToData.split(path.sep);
+            if (parts.length < 2) continue; // Not inside a textbook subfolder
+            const tb = parts[0];
+            const tbDir = path.join(dataDir, tb);
+            filesToProcess.push({
+                textbook: tb,
+                filePath: fullPath,
+                tbDir: tbDir
+            });
+        }
     }
 
-    for (const tb of textbooks) {
-        const tbDir = path.join(dataDir, tb);
-        const jsonFiles = findJsonFiles(tbDir);
+    for (const itemToProc of filesToProcess) {
+        const { textbook: tb, filePath, tbDir } = itemToProc;
+        const relPath = path.relative(tbDir, filePath);
+        const filename = path.basename(filePath);
+        const match = filename.match(/^([a-z0-9-]+)-([uUmM]\d+)-(.*)\.json$/i);
+        const matchCgiu = filename.match(/^c-giu-(\d+)-(.*)\.json$/i);
+        let unit = 'General';
+        let type = 'unknown';
         
-        for (const filePath of jsonFiles) {
-            const relPath = path.relative(tbDir, filePath);
-            const filename = path.basename(filePath);
-            const match = filename.match(/^([a-z0-9-]+)-([uUmM]\d+)-(.*)\.json$/i);
-            const matchCgiu = filename.match(/^c-giu-(\d+)-(.*)\.json$/i);
-            let unit = 'General';
-            let type = 'unknown';
+        if (match) {
+            unit = match[2].toUpperCase();
+            type = match[3];
+        } else if (matchCgiu) {
+            unit = 'U' + matchCgiu[1];
+            type = matchCgiu[2];
+        } else {
+            type = filename.replace('.json', '');
+        }
+        
+        if (!fs.existsSync(filePath)) continue;
+        const raw = fs.readFileSync(filePath, 'utf-8');
+        try {
+            const content = JSON.parse(raw);
             
-            if (match) {
-                unit = match[2].toUpperCase();
-                type = match[3];
-            } else if (matchCgiu) {
-                unit = 'U' + matchCgiu[1];
-                type = matchCgiu[2];
-            } else {
-                type = filename.replace('.json', '');
-            }
-            
-            const raw = fs.readFileSync(filePath, 'utf-8');
-            try {
-                const content = JSON.parse(raw);
-                
-                // Extract writing task prompt for writing maps
-                if (filename.includes('-writing-map-')) {
-                    const dir = path.dirname(filePath);
-                    let mdPath = "";
-                    if (filename.includes('-model-x')) {
-                        mdPath = path.join(dir, filename.replace(/-writing-map-model-x-?\d*\.json$/, '-writing-task-x.md'));
-                    }
-                    if (!mdPath || !fs.existsSync(mdPath)) {
-                        if (filename.includes('-model-')) {
-                            mdPath = path.join(dir, filename.replace(/-writing-map-model-?\d*\.json$/, '-writing-task.md'));
-                        }
-                    }
-                    if (!mdPath || !fs.existsSync(mdPath)) {
-                        mdPath = path.join(dir, filename.replace(/-writing-map-.+\.json$/, '-writing-task.md'));
-                    }
-                    if (!mdPath || !fs.existsSync(mdPath)) {
-                        mdPath = path.join(dir, filename.replace(/\.json$/, '.md'));
-                    }
-                    if (mdPath && fs.existsSync(mdPath)) {
-                        let contentMd = fs.readFileSync(mdPath, 'utf8');
-                        contentMd = contentMd.split(/### Model Essay/i)[0].trim();
-                        content.writingPrompt = contentMd;
-                        console.log(`[Prompt Embedded] for ${filename} from ${path.basename(mdPath)}`);
+            // Extract writing task prompt for writing maps
+            if (filename.includes('-writing-map-')) {
+                const dir = path.dirname(filePath);
+                let mdPath = "";
+                if (filename.includes('-model-x')) {
+                    mdPath = path.join(dir, filename.replace(/-writing-map-model-x-?\d*\.json$/, '-writing-task-x.md'));
+                }
+                if (!mdPath || !fs.existsSync(mdPath)) {
+                    if (filename.includes('-model-')) {
+                        mdPath = path.join(dir, filename.replace(/-writing-map-model-?\d*\.json$/, '-writing-task.md'));
                     }
                 }
-
-                practices.push({
-                    id: `${tb}_${relPath.replace(/\.json$/, '').replace(/[\/\\]/g, '_')}`,
-                    textbook: tb,
-                    unit: unit,
-                    type: type,
-                    title: content.title || filename,
-                    content: content
-                });
-            } catch (e) {
-                console.error(`Failed to parse ${relPath}: ${e.message}`);
+                if (!mdPath || !fs.existsSync(mdPath)) {
+                    mdPath = path.join(dir, filename.replace(/-writing-map-.+\.json$/, '-writing-task.md'));
+                }
+                if (!mdPath || !fs.existsSync(mdPath)) {
+                    mdPath = path.join(dir, filename.replace(/\.json$/, '.md'));
+                }
+                if (mdPath && fs.existsSync(mdPath)) {
+                    let contentMd = fs.readFileSync(mdPath, 'utf8');
+                    contentMd = contentMd.split(/### Model Essay/i)[0].trim();
+                    content.writingPrompt = contentMd;
+                    console.log(`[Prompt Embedded] for ${filename} from ${path.basename(mdPath)}`);
+                }
             }
+
+            practices.push({
+                id: `${tb}_${relPath.replace(/\.json$/, '').replace(/[\/\\]/g, '_')}`,
+                textbook: tb,
+                unit: unit,
+                type: type,
+                title: content.title || filename,
+                content: content
+            });
+        } catch (e) {
+            console.error(`Failed to parse ${relPath}: ${e.message}`);
         }
     }
     
-    console.log(`Found ${practices.length} valid JSON practices. Beginning upload...`);
+    console.log(`Found ${practices.length} valid JSON practices to seed. Beginning upload...`);
 
-    console.log("Clearing existing practices in DB...");
-    const clearRes = await myFetch(`${API_URL}/api/admin/practices`, {
-        method: 'DELETE',
-        headers: { 
-            'Cookie': cookies 
+    if (FORCE) {
+        console.log("Clearing existing practices in DB (due to --force)...");
+        const clearRes = await myFetch(`${API_URL}/api/admin/practices`, {
+            method: 'DELETE',
+            headers: { 
+                'Cookie': cookies 
+            }
+        });
+        if (!clearRes.ok) {
+            console.error('Failed to clear practices in DB. Status:', clearRes.status);
+            console.error(await clearRes.text());
+            return;
         }
-    });
-    if (!clearRes.ok) {
-        console.error('Failed to clear practices in DB. Status:', clearRes.status);
-        console.error(await clearRes.text());
-        return;
+        console.log("Successfully cleared existing practices.");
+    } else {
+        console.log("Partial sync: Skipping database clear (upserting changed/added files only).");
     }
-    console.log("Successfully cleared existing practices.");
     
     let successCount = 0;
     for (let i = 0; i < practices.length; i += 20) {

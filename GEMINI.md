@@ -199,6 +199,32 @@ This document defines the rules for extracting and converting textbook data into
         - Correct Blocks: Include an **Opinion** (观点), a **Reason** (理由), and a **Summary/Significance** (升华) in the first person ("I", "my") that combined meet the word count requirement (e.g., ≥20 words).
         - Distractors: 3 incorrect sentence options (e.g., third-person copy-pasted sentences from the passage or unrelated grammar points).
       - `correctOrder`: Array of the 3 correct block IDs in chronological sequence (e.g., `["b1", "b2", "b3"]`).
+
+## 9. Grammar Wizard (GW)
+**Source:** Textbook contents JSON (e.g., `data/A7B/a7b-contents.json`) and the unit's Markdown file (e.g., `data/A7B/a7b-u1/a7b-u1.md`).
+**Target:** `*-grammar-wizard.json` (Save in the same folder as source)
+
+- **Target Question Count:** Exactly **2 Challenges** of **10 questions** each (20 questions total).
+- **Content Focus:** Focus on the grammar points specified for the unit in the contents JSON and the usage patterns in the unit's Markdown. Questions should test:
+  - **Purpose:** The communicative function or goal of the grammar rule (e.g., why do we use "Why" vs "What").
+  - **Definition/Concepts:** Terminology and rules (e.g., defining countable vs. uncountable, irregular plurals).
+  - **Formation:** How to construct the forms (e.g., adding -es, spelling rules for plural nouns, word order of questions).
+  - **Usage:** Cloze/sentence-level questions checking application of rules in a sentence context.
+  - **Differentiation:** Differentiating the unit's grammar from similar or easily confused rules (e.g., "Why" vs. "What", singular vs. plural forms, adjective vs. adverb).
+- **Structure:**
+  - A top-level object with `level` (e.g., `"Grade 7 Semester 2 - Unit 1"`), `title` (always `"Grammar Wizard"`), and `challenges` (an array).
+  - Group questions into Challenges of exactly **10 questions** each.
+  - Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`), a `title` (e.g., `"Wh-Questions & Noun Plurals"`, `"Adjectives & General Usage"`), a relevant emoji `icon` (e.g., `"🧙‍♂️"`, `"⚡"`), and an array of 10 question objects under the key `questions`.
+- **Question Schema:**
+  - `id`: A unique 8-character alphanumeric string generated for this specific question.
+  - `type`: Always `"multiple-choice"`.
+  - `category`: One of `"purpose"`, `"definition"`, `"formation"`, `"usage"`, or `"differentiation"`.
+  - `prompt`: The question prompt (either in English, Chinese, or bilingual).
+  - `options`: Array of exactly 4 options.
+  - `answer`: Index of the correct option (0-3, randomized).
+  - `explanation`: Detailed explanation in Chinese explaining the grammar rule and options.
+  - `hint`: A brief, helpful cue or reminder in Chinese.
+
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Crucially, do NOT use any text found within `VISUAL` or `LAYOUT` markers (e.g., `*[*VISUAL: ...*]*` or `*[*LAYOUT: ...*]*`) as source material for practice items, sentences, or contexts.**
 ---

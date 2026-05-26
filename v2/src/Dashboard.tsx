@@ -132,12 +132,17 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                 .filter((p: any) => p.type.toLowerCase().includes('sentence-architect'))
                 .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
 
+              const grammarWizardItems = items
+                .filter((p: any) => p.type.toLowerCase().includes('grammar-wizard'))
+                .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
+
               const matchedIds = new Set([
                 ...recallMapItems.map((p: any) => p.id),
                 ...vocabItems.map((p: any) => p.id),
                 ...textNavigatorItems.map((p: any) => p.id),
                 ...writingMapItems.map((p: any) => p.id),
-                ...sentenceArchitectItems.map((p: any) => p.id)
+                ...sentenceArchitectItems.map((p: any) => p.id),
+                ...grammarWizardItems.map((p: any) => p.id)
               ]);
               const otherItems = items.filter((p: any) => !matchedIds.has(p.id));
 
@@ -145,7 +150,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                 { title: '1. Recall Map', items: recallMapItems },
                 { title: '2. Vocabulary & Spelling', items: vocabItems },
                 { title: '3. Text Navigators', items: textNavigatorItems },
-                { title: '4. Sentence Architect', items: sentenceArchitectItems },
+                { title: '4. Sentence & Grammar', items: [...grammarWizardItems, ...sentenceArchitectItems] },
                 { title: '5. Writing Maps', items: writingMapItems },
                 { title: 'Other Practices', items: otherItems }
               ].filter(g => g.items.length > 0);
@@ -158,6 +163,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                 if (t.includes('recall')) return '🗺️';
                 if (t.includes('writing')) return '📝';
                 if (t.includes('text-navigator')) return '🧭';
+                if (t.includes('grammar-wizard')) return '🧙‍♂️';
                 return PRACTICE_TYPE_ICONS[typeStr] ?? '▶️';
               };
 
@@ -174,8 +180,9 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                       const isVM = p.type.toLowerCase().includes('vocab-master');
                       const isSH = p.type.toLowerCase().includes('spelling-hero');
                       const isSA = p.type.toLowerCase().includes('sentence-architect');
+                      const isGW = p.type.toLowerCase().includes('grammar-wizard');
 
-                      if ((isVM || isSA) && p.content?.challenges) {
+                      if ((isVM || isSA || isGW) && p.content?.challenges) {
                         total = p.content.challenges.length;
                         let sumMax = 0;
                         for (const chal of p.content.challenges) {
@@ -242,7 +249,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                           <Link to={`/practice/${p.id}`} className="db-practice-link">
                             <span className="db-practice-icon">{getIcon(p.type)}</span>
                             <span className="db-practice-name">{formatType(p.type)}</span>
-                            {(isVM || isSH || isSA) && total > 0 && (
+                            {(isVM || isSH || isSA || isGW) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
                                 title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}
@@ -484,7 +491,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.26-23:55</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.27-01:01</span></p>
         </div>
       </div>
 

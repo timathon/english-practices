@@ -381,7 +381,7 @@ app.get('/api/practices', async (c) => {
           const content = p.content as any;
           
           if (content) {
-              if (type.includes('vocab-master') || type.includes('sentence-architect')) {
+              if (type.includes('vocab-master') || type.includes('sentence-architect') || type.includes('grammar-wizard')) {
                   const challenges = content.challenges || [];
                   lightContent = {
                       challenges: challenges.map((c: any) => ({ title: c.title || '' }))

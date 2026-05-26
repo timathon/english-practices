@@ -7,6 +7,7 @@ import { VocabGuideShell } from './VocabGuideShell'
 import { SpellingHeroShell } from './SpellingHeroShell'
 import { MindMapShell } from './MindMapShell'
 import { SentenceArchitectShell } from './SentenceArchitectShell'
+import { GrammarWizardShell } from './GrammarWizardShell'
 
 // Render practice components based on type
 export function PracticeShell() {
@@ -47,6 +48,10 @@ export function PracticeShell() {
 
     if (cleanType === 'sentence-architect') {
         return <SentenceArchitectShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
+    if (cleanType === 'grammar-wizard') {
+        return <GrammarWizardShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
     if (cleanType.startsWith('text-navigator') || cleanType.startsWith('writing-map')) {
