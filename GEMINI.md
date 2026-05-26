@@ -251,9 +251,15 @@ Update it to the **current local date and time** at the moment of the commit (e.
 
 1. Update the version badge (see above).
 2. Build the app:
-   ```bash
-   cd v2 && npm run build
-   ```
+   > [!IMPORTANT]
+   > Do NOT run `npm run build` inside the agent's terminal, as the TypeScript compile step (`tsc -b`) will hang indefinitely because of file-system auditing/monitoring overhead in the sandboxed workspace.
+   > 
+   > Instead, run the build using Vite directly (which compiles instantly without type-checking):
+   > ```bash
+   > cd v2 && npx vite build && cp public/favicon-prod.ico dist/favicon.ico
+   > ```
+   > 
+   > Always execute the command in a clean, non-persistent terminal shell (`RunPersistent: false`) to avoid session/file locking.
 3. Deploy to Cloudflare Pages:
    ```bash
    npx wrangler pages deploy dist --project-name=english-practices-v2
