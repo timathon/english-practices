@@ -100,11 +100,37 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
         <div className="db-unit-card">
           <div key={activeUnit} className="db-unit-body">
             {(() => {
-              const recallMapItems = items.filter((p: any) => p.type.toLowerCase().includes('recall-map'));
-              const vocabItems = items.filter((p: any) => p.type.toLowerCase().includes('vocab') || p.type.toLowerCase().includes('spelling'));
-              const textNavigatorItems = items.filter((p: any) => p.type.toLowerCase().includes('text-navigator'));
-              const writingMapItems = items.filter((p: any) => p.type.toLowerCase().includes('writing-map'));
-              const sentenceArchitectItems = items.filter((p: any) => p.type.toLowerCase().includes('sentence-architect'));
+              const recallMapItems = items
+                .filter((p: any) => p.type.toLowerCase().includes('recall-map'))
+                .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
+
+              const getVocabPriority = (type: string) => {
+                const t = type.toLowerCase();
+                if (t.includes('vocab-guide')) return 1;
+                if (t.includes('spelling-hero')) return 2;
+                if (t.includes('vocab-master')) return 3;
+                return 4;
+              };
+              const vocabItems = items
+                .filter((p: any) => p.type.toLowerCase().includes('vocab') || p.type.toLowerCase().includes('spelling'))
+                .sort((a: any, b: any) => {
+                  const pA = getVocabPriority(a.type);
+                  const pB = getVocabPriority(b.type);
+                  if (pA !== pB) return pA - pB;
+                  return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' });
+                });
+
+              const textNavigatorItems = items
+                .filter((p: any) => p.type.toLowerCase().includes('text-navigator'))
+                .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
+
+              const writingMapItems = items
+                .filter((p: any) => p.type.toLowerCase().includes('writing-map'))
+                .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
+
+              const sentenceArchitectItems = items
+                .filter((p: any) => p.type.toLowerCase().includes('sentence-architect'))
+                .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
 
               const matchedIds = new Set([
                 ...recallMapItems.map((p: any) => p.id),
@@ -458,7 +484,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.24-00:34</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.26-23:55</span></p>
         </div>
       </div>
 
