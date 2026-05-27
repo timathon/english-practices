@@ -219,7 +219,7 @@ This document defines the rules for extracting and converting textbook data into
   - `id`: A unique 8-character alphanumeric string generated for this specific question.
   - `type`: Always `"multiple-choice"`.
   - `category`: One of `"purpose"`, `"definition"`, `"formation"`, `"usage"`, or `"differentiation"`.
-  - `prompt`: The question prompt (either in English, Chinese, or bilingual).
+  - `prompt`: The question prompt (must be asked in Chinese, but may contain English for grammar terms).
   - `options`: Array of exactly 4 options.
   - `answer`: Index of the correct option (0-3, randomized).
   - `explanation`: Detailed explanation in Chinese explaining the grammar rule and options.
