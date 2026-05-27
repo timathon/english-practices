@@ -6,6 +6,7 @@ import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
 import { cache } from '../lib/cache'
+import { petService } from '../lib/petService'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
@@ -379,6 +380,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
         if (isCorrect) {
             playSfx('correct')
+            petService.awardCorrectAnswer()
             let scoreType = "green"
             if (isRedemption) {
                 scoreType = "redemption"

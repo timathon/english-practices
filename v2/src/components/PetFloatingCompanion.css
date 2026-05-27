@@ -1,0 +1,229 @@
+.pet-float-wrapper {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+/* Close/minimize button */
+.pet-float-close {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: var(--shadow);
+  z-index: 1002;
+}
+
+.pet-float-wrapper:hover .pet-float-close {
+  opacity: 1;
+}
+
+.pet-float-close:hover {
+  transform: scale(1.1);
+  background: #ff4b4b;
+  color: #fff;
+  border-color: #ff4b4b;
+}
+
+/* Minimized view button */
+.pet-float-minimized {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, background-color 0.2s;
+  animation: floatMini 3s ease-in-out infinite;
+}
+
+.pet-float-minimized:hover {
+  transform: scale(1.1);
+  background: var(--accent-bg);
+}
+
+@keyframes floatMini {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Avatar Circle */
+.pet-float-avatar-container {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  border: 2px solid var(--accent);
+  box-shadow: 0 8px 24px rgba(170, 59, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  overflow: visible;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pet-float-avatar-container {
+    background: rgba(30, 41, 59, 0.75);
+  }
+}
+
+.pet-float-avatar-container:hover {
+  transform: scale(1.08);
+  box-shadow: 0 12px 32px rgba(170, 59, 255, 0.35);
+}
+
+.pet-float-emoji {
+  font-size: 34px;
+  line-height: 1;
+  display: inline-block;
+  transition: transform 0.1s;
+}
+
+.pet-float-avatar-container:active .pet-float-emoji {
+  transform: scale(0.9);
+}
+
+/* Speech bubble */
+.pet-float-speech {
+  position: absolute;
+  bottom: 84px;
+  right: 0;
+  background: var(--card-bg);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 160px;
+  width: max-content;
+  box-shadow: var(--shadow);
+  animation: scaleIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-align: center;
+  z-index: 1001;
+}
+
+.pet-float-speech-arrow {
+  position: absolute;
+  bottom: -6px;
+  right: 28px;
+  width: 10px;
+  height: 10px;
+  background: var(--card-bg);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+
+/* Particles rising up */
+.pet-float-particle {
+  position: absolute;
+  font-size: 16px;
+  font-weight: bold;
+  pointer-events: none;
+  animation: floatUpAndFade 1.2s ease-out forwards;
+  z-index: 1003;
+}
+
+/* Micro Stats Indicator bars below avatar */
+.pet-float-stats-summary {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  box-sizing: content-box;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pet-float-stats-summary {
+    background: rgba(15, 23, 42, 0.9);
+  }
+}
+
+.pet-float-stat-bar-micro {
+  height: 3px;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.pet-float-stat-bar-micro.food {
+  background: linear-gradient(90deg, #f97316, #ea580c);
+}
+
+.pet-float-stat-bar-micro.love {
+  background: linear-gradient(90deg, #ec4899, #db2777);
+}
+
+/* Animations */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes floatUpAndFade {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.8);
+  }
+}
+
+.pet-float-avatar-container.bounce {
+  animation: petBounce 0.6s ease;
+}
+
+@keyframes petBounce {
+  0%, 100% { transform: scale(1) translateY(0); }
+  30% { transform: scale(1.2, 0.8) translateY(0); }
+  45% { transform: scale(0.9, 1.2) translateY(-14px); }
+  60% { transform: scale(1.1, 0.9) translateY(0); }
+  75% { transform: scale(0.95, 1.05) translateY(-4px); }
+}
+

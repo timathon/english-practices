@@ -5,6 +5,7 @@ import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
 import { cache } from '../lib/cache'
+import { petService } from '../lib/petService'
 
 function shuffle<T>(array: T[]): T[] {
     const arr = [...array];
@@ -231,6 +232,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
 
        if (isCorrect) {
            playSfx('correct')
+           petService.awardCorrectAnswer()
            let scoreType = "green"
            if (isRedemption) {
                scoreType = "redemption"

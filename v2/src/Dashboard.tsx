@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSession, API_URL } from './lib/auth'
 import { Link, useLocation } from 'react-router-dom'
 import { cache } from './lib/cache'
+import { PetDashboardWidget } from './components/PetDashboardWidget'
 import './Dashboard.css'
 
 const PRACTICE_TYPE_ICONS: Record<string, string> = {
@@ -505,11 +506,12 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.27-16:39</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.27-20:25</span></p>
         </div>
       </div>
 
       <div className="db-books">
+        <PetDashboardWidget />
         <div className="db-stats">
           <div className="db-history-header">
             <h3 className="db-stats-title">Practice History</h3>

@@ -4,6 +4,7 @@ import { SignIn } from './SignIn'
 import { Dashboard } from './Dashboard'
 import { ManageUsers } from './ManageUsers'
 import { PracticeShell } from './components/PracticeShell'
+import { PetFloatingCompanion } from './components/PetFloatingCompanion'
 import { useSession, signOut } from './lib/auth'
 import './App.css'
 
@@ -83,6 +84,7 @@ function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL.slice(0, -1) || ''}>
       <Navigation session={session} />
+      {session && <PetFloatingCompanion />}
       <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
         <Routes>
           <Route path="/" element={

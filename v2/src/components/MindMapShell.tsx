@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
+import { petService } from '../lib/petService'
 import './MindMapShell.css'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev"
@@ -570,6 +571,9 @@ export function MindMapShell({ data, textbook, isWritingMap }: MindMapShellProps
     if (!questionNode) return
     setUserAnswer(choice)
     setShowFeedback(true)
+    if (choice === questionNode.answer) {
+      petService.awardCorrectAnswer()
+    }
   }
 
   // Keyboard Navigation Listeners

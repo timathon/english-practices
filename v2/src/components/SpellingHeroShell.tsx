@@ -6,6 +6,7 @@ import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
 import { cache } from '../lib/cache'
+import { petService } from '../lib/petService'
 
 const PUBLIC_URL_BASE = 'https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev'
 
@@ -356,6 +357,9 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
         setIsCorrect(correct)
         setShowFeedback(true)
         playSfx(correct ? 'correct' : 'wrong')
+        if (correct) {
+            petService.awardCorrectAnswer()
+        }
         setTimeout(() => playAudio(q.audio), 200)
 
         // Update refs immediately so nextQuestion reads fresh values
