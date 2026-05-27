@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { petService } from '../lib/petService';
-import type { PetState } from '../lib/petService';
+import type { PetState, AchievementDef } from '../lib/petService';
 import './PetFloatingCompanion.css';
 
 interface Particle {
@@ -11,72 +12,110 @@ interface Particle {
 }
 
 export function PetFloatingCompanion() {
+  const location = useLocation();
+  if (location.pathname === '/dashboard') {
+    return null;
+  }
   const [petState, setPetState] = useState<PetState>(() => petService.getPetState());
   const [isBouncing, setIsBouncing] = useState(false);
+  const [isLevelingUp, setIsLevelingUp] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [speech, setSpeech] = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
-  
+
   const particleIdRef = useRef(0);
   const speechTimeoutRef = useRef<number | null>(null);
+  const prevLevelRef = useRef(petState.level);
 
   // Sync pet state updates
   useEffect(() => {
     const handleUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<PetState>;
-      setPetState(customEvent.detail);
+      const newState = customEvent.detail;
+
+      // Detect level up
+      if (newState.level > prevLevelRef.current) {
+        setIsLevelingUp(true);
+        showSpeech(`Level Up! Lv.${newState.level} ⭐`);
+        setTimeout(() => setIsLevelingUp(false), 1500);
+      }
+      prevLevelRef.current = newState.level;
+
+      setPetState(newState);
     };
-    
+
+    const handleAchievement = (e: Event) => {
+      const ach = (e as CustomEvent<AchievementDef>).detail;
+      showSpeech(`${ach.emoji} ${ach.title}!`, 4000);
+    };
+
     window.addEventListener('ep-pet-update', handleUpdate);
+    window.addEventListener('ep-achievement-unlock', handleAchievement);
     return () => {
       window.removeEventListener('ep-pet-update', handleUpdate);
+      window.removeEventListener('ep-achievement-unlock', handleAchievement);
     };
   }, []);
 
   // Show a speech bubble helper
   const showSpeech = (text: string, duration = 3000) => {
-    if (speechTimeoutRef.current) {
-      window.clearTimeout(speechTimeoutRef.current);
-    }
+    if (speechTimeoutRef.current) window.clearTimeout(speechTimeoutRef.current);
     setSpeech(text);
-    speechTimeoutRef.current = window.setTimeout(() => {
-      setSpeech(null);
-    }, duration);
+    speechTimeoutRef.current = window.setTimeout(() => setSpeech(null), duration);
   };
 
   // Listen to correct answers to trigger reaction
   useEffect(() => {
-    const handleCorrect = () => {
+    const handleCorrect = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+
       setIsBouncing(true);
       setTimeout(() => setIsBouncing(false), 800);
 
-      // Spawn a food particle and love particle
+      // Spawn particles
       const id1 = particleIdRef.current++;
       const id2 = particleIdRef.current++;
-      
-      const newParticles = [
-        { id: id1, text: '+1 🍖', x: -10 + Math.random() * 20, y: -20 },
-        { id: id2, text: '+1 ❤️', x: -10 + Math.random() * 20, y: -45 }
+      const newParticles: Particle[] = [
+        { id: id1, text: `+${detail.xpGain || 10} XP`, x: -10 + Math.random() * 20, y: -20 },
+        { id: id2, text: '+1 ❤️', x: -10 + Math.random() * 20, y: -45 },
       ];
 
       setParticles(prev => [...prev, ...newParticles]);
-
-      // Cleanup particles after animation
       setTimeout(() => {
         setParticles(prev => prev.filter(p => p.id !== id1 && p.id !== id2));
       }, 1500);
 
-      // Cute phrase list
-      const praises = [
-        'Awesome! 🎉',
-        'Yummy! 🍖',
-        'Smart! 🧠',
-        'Keep it up! ✨',
-        'Thank you! 💖',
-        'Doing great! ⭐'
-      ];
-      const randomPraise = praises[Math.floor(Math.random() * praises.length)];
-      showSpeech(randomPraise);
+      // Check for special events
+      if (detail.dailyGoalJustCompleted) {
+        showSpeech('🎉 Daily Goal Complete! Amazing!', 4000);
+        // Spawn celebration particles
+        for (let i = 0; i < 5; i++) {
+          const cid = particleIdRef.current++;
+          const celebEmojis = ['🎉', '🎊', '⭐', '✨', '🌟'];
+          setTimeout(() => {
+            setParticles(prev => [...prev, {
+              id: cid,
+              text: celebEmojis[i % celebEmojis.length],
+              x: -30 + Math.random() * 60,
+              y: -30 - Math.random() * 20,
+            }]);
+            setTimeout(() => {
+              setParticles(prev => prev.filter(p => p.id !== cid));
+            }, 1500);
+          }, i * 100);
+        }
+      } else {
+        // Regular praise
+        const praises = [
+          'Awesome! 🎉',
+          'Yummy! 🍖',
+          'Smart! 🧠',
+          'Keep it up! ✨',
+          'Thank you! 💖',
+          'Doing great! ⭐',
+        ];
+        showSpeech(praises[Math.floor(Math.random() * praises.length)]);
+      }
     };
 
     window.addEventListener('ep-correct-answer', handleCorrect);
@@ -90,17 +129,14 @@ export function PetFloatingCompanion() {
   const handlePet = (e: React.MouseEvent) => {
     e.stopPropagation();
     petService.petPet();
-    
-    // Spawn heart particles
+
     const id = particleIdRef.current++;
-    const heartParticle = {
+    setParticles(prev => [...prev, {
       id,
       text: '❤️',
       x: -15 + Math.random() * 30,
-      y: -30
-    };
-    
-    setParticles(prev => [...prev, heartParticle]);
+      y: -30,
+    }]);
     setTimeout(() => {
       setParticles(prev => prev.filter(p => p.id !== id));
     }, 1500);
@@ -109,12 +145,20 @@ export function PetFloatingCompanion() {
     showSpeech(msg);
   };
 
-  const currentEmoji = petService.getPetEmoji(petState.type, petState.food, petState.love);
+  const currentEmoji = petService.getPetEmoji(petState.type, petState.food, petState.love, petState.level);
+  const stage = petService.getEvolutionStage(petState.level);
+  const dailyProgress = petService.getDailyProgress(petState);
+  const streakInfo = petService.getStreakInfo(petState);
+
+  // Daily ring SVG params
+  const ringRadius = 34;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCircumference * (1 - dailyProgress.percent / 100);
 
   if (isMinimized) {
     return (
-      <button 
-        className="pet-float-minimized" 
+      <button
+        className="pet-float-minimized"
         onClick={() => {
           setIsMinimized(false);
           showSpeech('I am back! 😊');
@@ -136,14 +180,14 @@ export function PetFloatingCompanion() {
         </div>
       )}
 
-      {/* Floating particles (e.g. +1 🍖, ❤️) */}
+      {/* Floating particles */}
       {particles.map(p => (
-        <span 
-          key={p.id} 
+        <span
+          key={p.id}
           className="pet-float-particle"
-          style={{ 
-            left: `calc(50% + ${p.x}px)`, 
-            transform: `translateY(${p.y}px)` 
+          style={{
+            left: `calc(50% + ${p.x}px)`,
+            transform: `translateY(${p.y}px)`,
           }}
         >
           {p.text}
@@ -151,8 +195,8 @@ export function PetFloatingCompanion() {
       ))}
 
       {/* Close button */}
-      <button 
-        className="pet-float-close" 
+      <button
+        className="pet-float-close"
         onClick={(e) => {
           e.stopPropagation();
           setIsMinimized(true);
@@ -162,21 +206,51 @@ export function PetFloatingCompanion() {
         ✕
       </button>
 
-      {/* Main companion bubble */}
-      <div 
-        className={`pet-float-avatar-container ${isBouncing ? 'bounce' : ''}`}
+      {/* Streak badge */}
+      {streakInfo.streak > 0 && (
+        <div className="pet-float-streak-badge" title={`${streakInfo.streak} day streak!`}>
+          🔥{streakInfo.streak}
+        </div>
+      )}
+
+      {/* Main companion with daily progress ring */}
+      <div
+        className={`pet-float-avatar-container ${isBouncing ? 'bounce' : ''} ${isLevelingUp ? 'level-up' : ''} pet-float-stage-${stage}`}
         onClick={handlePet}
         title={`Pet ${petState.name}! Click to give love.`}
       >
+        {/* Daily progress ring (SVG) */}
+        <svg className="pet-float-daily-ring-svg" viewBox="0 0 80 80">
+          {/* Background ring */}
+          <circle
+            cx="40" cy="40" r={ringRadius}
+            fill="none"
+            stroke="var(--border)"
+            strokeWidth="3"
+            opacity="0.3"
+          />
+          {/* Progress ring */}
+          <circle
+            cx="40" cy="40" r={ringRadius}
+            fill="none"
+            stroke={dailyProgress.completed ? '#22c55e' : 'var(--accent)'}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={ringCircumference}
+            strokeDashoffset={ringOffset}
+            style={{ transition: 'stroke-dashoffset 0.5s ease, stroke 0.3s' }}
+            transform="rotate(-90 40 40)"
+          />
+        </svg>
+
         <span className="pet-float-emoji">{currentEmoji}</span>
-        
-        {/* Status ring */}
+
+        {/* Micro stat bars */}
         <div className="pet-float-stats-summary">
           <div className="pet-float-stat-bar-micro food" style={{ width: `${petState.food}%` }} />
           <div className="pet-float-stat-bar-micro love" style={{ width: `${petState.love}%` }} />
         </div>
       </div>
-
     </div>
   );
 }

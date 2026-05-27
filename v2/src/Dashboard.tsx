@@ -506,13 +506,14 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.27-20:25</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.27-22:01</span></p>
         </div>
       </div>
 
-      <div className="db-books">
+      <div className="db-books db-top-section">
         <PetDashboardWidget />
-        <div className="db-stats">
+        <div className="db-top-right">
+        <div className="db-stats db-stats-history">
           <div className="db-history-header">
             <h3 className="db-stats-title">Practice History</h3>
             <div className="db-history-nav">
@@ -538,35 +539,20 @@ export function Dashboard() {
             </div>
           </div>
           {parsedTodayRecords.length > 0 ? (
-            <div>
-              <div className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
+            <div className="db-history-content">
+              <div className="db-units-tabs">
                 {todayBookKeys.map(book => (
                   <button
                     key={book}
                     onClick={() => setActiveTodayBook(book)}
                     className={`db-tab-btn ${activeBook === book ? 'active' : ''}`}
-                    style={{
-                      padding: '6px 14px',
-                      border: 'none',
-                      borderBottom: activeBook === book ? '3px solid var(--tab-active-text)' : '3px solid transparent',
-                      background: activeBook === book ? 'var(--card-bg)' : 'transparent',
-                      cursor: 'pointer',
-                      fontWeight: activeBook === book ? 'bold' : 'normal',
-                      color: activeBook === book ? 'var(--tab-active-text)' : 'var(--tab-text)',
-                      borderRadius: '5px 5px 0 0',
-                      whiteSpace: 'nowrap',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
                   >
                     <span>{getTextbookEmoji(book)}</span>
                     <span>{book} ({todayRecordsByBook[book].length})</span>
                   </button>
                 ))}
               </div>
-              <div className="db-stats-table-container" style={{ borderRadius: '0 10px 10px 10px' }}>
+              <div className="db-stats-table-container">
                 <table className="db-stats-table">
                   <thead>
                     <tr>
@@ -663,6 +649,7 @@ export function Dashboard() {
               <span>Avg Score</span>
             </div>
           </div>
+        </div>
         </div>
       </div>
 

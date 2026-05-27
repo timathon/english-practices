@@ -1,23 +1,76 @@
+/* ═══════════════════════════════════════════════════════════════
+   Pet Dashboard Widget — Enhanced Styles
+   ═══════════════════════════════════════════════════════════════ */
+
 .pet-widget-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: var(--shadow);
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   box-sizing: border-box;
+  position: relative;
+  overflow: visible;
 }
 
+/* ── Header ─────────────────────────────────────────────────── */
 .pet-widget-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 10px;
-  flex-wrap: wrap;
+  padding-bottom: 12px;
   gap: 8px;
+}
+
+.pet-widget-header-sub {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.pet-widget-level-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.pet-widget-level-baby {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border: 1px solid #fbbf24;
+}
+
+.pet-widget-level-teen {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #065f46;
+  border: 1px solid #34d399;
+}
+
+.pet-widget-level-adult {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #1e40af;
+  border: 1px solid #60a5fa;
+}
+
+.pet-widget-level-legendary {
+  background: linear-gradient(135deg, #fae8ff, #e9d5ff);
+  color: #7e22ce;
+  border: 1px solid #c084fc;
+  animation: legendaryShimmer 3s ease-in-out infinite;
+}
+
+@keyframes legendaryShimmer {
+  0%, 100% { box-shadow: 0 0 4px rgba(192, 132, 252, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(192, 132, 252, 0.6); }
 }
 
 .pet-widget-points-badge {
@@ -27,40 +80,71 @@
   border: 1px solid var(--accent-border);
   padding: 3px 10px;
   border-radius: 999px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
+/* ── Content ────────────────────────────────────────────────── */
 .pet-widget-content {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-/* Avatar details layout */
+/* ── Avatar Section ─────────────────────────────────────────── */
 .pet-widget-avatar-section {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 14px;
 }
 
 .pet-widget-emoji-circle {
-  width: 72px;
-  height: 72px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
   background: var(--code-bg);
-  border: 2px solid var(--border);
+  border: 3px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, border-color 0.2s;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.3s;
   flex-shrink: 0;
+  position: relative;
 }
 
 .pet-widget-emoji-circle:hover {
   transform: scale(1.05);
-  border-color: var(--accent);
+}
+
+/* Evolution glow rings */
+.pet-widget-glow-baby {
+  border-color: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.25);
+}
+.pet-widget-glow-baby:hover { box-shadow: 0 0 16px rgba(251, 191, 36, 0.4); }
+
+.pet-widget-glow-teen {
+  border-color: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.25);
+}
+.pet-widget-glow-teen:hover { box-shadow: 0 0 16px rgba(52, 211, 153, 0.4); }
+
+.pet-widget-glow-adult {
+  border-color: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.25);
+}
+.pet-widget-glow-adult:hover { box-shadow: 0 0 16px rgba(96, 165, 250, 0.4); }
+
+.pet-widget-glow-legendary {
+  border-color: #c084fc;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.4);
+  animation: legendaryPulse 2s ease-in-out infinite;
+}
+.pet-widget-glow-legendary:hover { box-shadow: 0 0 24px rgba(192, 132, 252, 0.6); }
+
+@keyframes legendaryPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(192, 132, 252, 0.3); border-color: #c084fc; }
+  50% { box-shadow: 0 0 20px rgba(192, 132, 252, 0.6); border-color: #a855f7; }
 }
 
 .pet-widget-emoji {
@@ -71,8 +155,9 @@
 .pet-widget-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   flex-grow: 1;
+  min-width: 0;
 }
 
 .pet-widget-name-container {
@@ -103,7 +188,7 @@
 }
 
 .pet-widget-status {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text);
   font-weight: 500;
 }
@@ -154,54 +239,182 @@
   border-color: #ef4444;
 }
 
-/* Face speech bubble */
-.pet-widget-face-speech {
-  position: absolute;
-  bottom: 84px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--code-bg);
-  color: var(--text-h);
-  border: 1px solid var(--border);
-  padding: 8px 12px;
+/* ── XP Progress Bar ────────────────────────────────────────── */
+.pet-widget-xp-section {
+  margin-top: 4px;
+}
+
+.pet-widget-xp-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+
+.pet-widget-xp-bar-bg {
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pet-widget-xp-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pet-widget-xp-baby { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+.pet-widget-xp-teen { background: linear-gradient(90deg, #34d399, #10b981); }
+.pet-widget-xp-adult { background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+.pet-widget-xp-legendary { background: linear-gradient(90deg, #c084fc, #a855f7); }
+
+/* ── Metrics Row (Streak + Daily Goal) ──────────────────────── */
+.pet-widget-metrics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pet-widget-metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px 10px;
   border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  width: max-content;
-  max-width: 180px;
-  text-align: center;
-  box-shadow: var(--shadow);
-  z-index: 100;
-  animation: tooltipFadeIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.15);
-  line-height: 1.4;
-  white-space: normal;
-}
-
-.pet-widget-face-speech-arrow {
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%) rotate(45deg);
-  width: 8px;
-  height: 8px;
+  border: 1px solid var(--border);
   background: var(--code-bg);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-@keyframes tooltipFadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.9); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+.pet-widget-metric-card.streak-active {
+  border-color: #f97316;
+  box-shadow: inset 0 0 12px rgba(249, 115, 22, 0.06);
 }
 
-/* Stats section */
+.pet-widget-metric-card.streak-inactive {
+  border-color: var(--border);
+  opacity: 0.75;
+}
+
+.pet-widget-metric-card.goal-complete {
+  border-color: #22c55e;
+  box-shadow: inset 0 0 12px rgba(34, 197, 94, 0.06);
+}
+
+.pet-widget-metric-card.goal-celebrating {
+  animation: goalCelebrate 0.6s ease;
+}
+
+@keyframes goalCelebrate {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.04); }
+  50% { transform: scale(0.98); }
+  75% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.pet-widget-metric-icon-wrap {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pet-widget-metric-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.pet-widget-metric-icon.flame-anim {
+  animation: flameFlicker 1.5s ease-in-out infinite;
+}
+
+@keyframes flameFlicker {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.05) rotate(-3deg); }
+  50% { transform: scale(1.1) rotate(2deg); }
+  75% { transform: scale(1.03) rotate(-1deg); }
+}
+
+.pet-widget-metric-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.pet-widget-metric-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-h);
+  line-height: 1.2;
+}
+
+.pet-widget-metric-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pet-widget-metric-sub {
+  font-size: 0.65rem;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+/* ── Daily Goal Ring ────────────────────────────────────────── */
+.pet-widget-daily-ring-wrap {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.pet-widget-daily-ring {
+  width: 48px;
+  height: 48px;
+}
+
+.pet-widget-daily-ring-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-h);
+}
+
+/* Goal preset select */
+.pet-widget-goal-select {
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.pet-widget-goal-select:hover {
+  border-color: var(--accent);
+}
+
+/* ── Stats Section (Food & Love) ────────────────────────────── */
 .pet-widget-stats-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   background: rgba(0, 0, 0, 0.02);
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -213,13 +426,13 @@
 .pet-widget-stat-row {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .pet-widget-stat-label-container {
   display: flex;
   justify-content: space-between;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
 }
 
@@ -232,7 +445,7 @@
 }
 
 .pet-widget-progress-bg {
-  height: 8px;
+  height: 7px;
   background: var(--border);
   border-radius: 999px;
   overflow: hidden;
@@ -253,13 +466,13 @@
 }
 
 .pet-widget-lifetime-correct {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--text);
-  margin-top: 4px;
+  margin-top: 2px;
   text-align: right;
 }
 
-/* Actions buttons */
+/* ── Action Buttons ─────────────────────────────────────────── */
 .pet-widget-actions {
   display: flex;
   gap: 10px;
@@ -303,37 +516,143 @@
   color: #fff;
 }
 
-/* Adopt Selector style */
-.pet-widget-selector {
+/* ── Achievements Shelf ─────────────────────────────────────── */
+.pet-widget-achievements-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pet-widget-achievements-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+}
+
+.pet-widget-achievements-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.pet-widget-achievements-shelf {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+}
+
+.pet-widget-achievements-shelf::-webkit-scrollbar {
+  height: 4px;
+}
+
+.pet-widget-achievements-shelf::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.pet-widget-achievement-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 52px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  transition: transform 0.15s, border-color 0.2s;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.pet-widget-achievement-badge.unlocked {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.pet-widget-achievement-badge.unlocked:hover {
+  transform: scale(1.08);
+  border-color: var(--accent);
+}
+
+.pet-widget-achievement-badge.locked {
+  opacity: 0.45;
+}
+
+.pet-widget-achievement-emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.pet-widget-achievement-name {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  max-width: 48px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Adopt Selector (Collapsible) ───────────────────────────── */
+.pet-widget-selector {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   border-top: 1px dashed var(--border);
   padding-top: 10px;
-  margin-top: 2px;
 }
 
-.pet-widget-selector-label {
+.pet-widget-adopt-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
   font-size: 0.75rem;
   font-weight: bold;
   color: var(--text);
-  white-space: nowrap;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.pet-widget-adopt-toggle:hover {
+  color: var(--text-h);
+}
+
+.pet-widget-adopt-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.pet-widget-adopt-arrow.open {
+  transform: rotate(90deg);
 }
 
 .pet-widget-selector-buttons {
   display: flex;
   gap: 6px;
-  flex-grow: 1;
+  animation: fadeSlideDown 0.2s ease-out;
+}
+
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .pet-selector-btn {
   flex: 1;
-  padding: 4px 6px;
+  padding: 5px 8px;
   background: var(--code-bg);
   border: 1px solid var(--border);
   color: var(--text-h);
-  border-radius: 6px;
-  font-size: 0.72rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -350,7 +669,90 @@
   border-color: var(--accent);
 }
 
-/* Animations helpers */
+/* ── Achievement Toast ──────────────────────────────────────── */
+.pet-widget-toast {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 200;
+  animation: toastSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  white-space: nowrap;
+}
+
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.9); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.pet-widget-toast-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.pet-widget-toast-title {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pet-widget-toast-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+/* ── Face Speech Bubble ─────────────────────────────────────── */
+.pet-widget-face-speech {
+  position: absolute;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--code-bg);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  width: max-content;
+  max-width: 180px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  z-index: 100;
+  animation: tooltipFadeIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.pet-widget-face-speech-arrow {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: var(--code-bg);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.9); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ── Bounce animation ───────────────────────────────────────── */
 .anim-bounce {
   animation: petBounceWidget 0.6s ease;
 }
@@ -361,5 +763,3 @@
   50% { transform: scale(0.9, 1.1) translateY(-6px); }
   70% { transform: scale(1.05, 0.95); }
 }
-
-

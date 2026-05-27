@@ -13,9 +13,14 @@ The modern interactive platform for English learning, built with React, TypeScri
     - ✅ **Grammar Wizard**: Concepts and construction quizzes covering key language points.
     - ✅ **Text Navigator**: Reading mindmap structures with inline True/False statement validation.
 - **Pet Companion System**:
-    - **Local Companions**: Adopt a cute buddy (🐱 Cat, 🐶 Dog, or 🦖 Dino) and rename it.
-    - **Bilingual Face Tooltips**: Interacting (feeding/petting) triggers speech bubbles pointing directly to the pet's face.
-    - **Practice Rewards**: Earn fractions of food points and love points through correct answers.
+    - **Local Companions**: Adopt a buddy (🐱 Cat, 🐶 Dog, or 🦖 Dino) and rename it.
+    - **🔥 Streak Tracking**: Consecutive practice days are tracked with flame animations. Missing a day resets the streak.
+    - **⭐ XP & 20-Level Progression**: +10 base XP per correct answer + streak bonus (up to +40). Levels span from 1 to 20.
+    - **🎯 Daily Goals**: Three presets (Easy: 15, Normal: 30, Hard: 50) with SVG ring progress indicator and +50 XP bonus on completion.
+    - **🐣 Pet Evolution**: Four visual stages — Baby (L1–4), Teen (L5–10), Adult (L11–17), Legendary (L18–20) — with stage-specific emoji and glow colors.
+    - **🏆 15 Achievements**: Unlockable badges for streak milestones (3/7/14/30 days), level milestones (5/10/15/20), correct answer milestones (100/500/1000), daily goal milestones (3/10/30), and first feed. Toast notifications on unlock.
+    - **Floating Companion**: Shows streak badge, daily progress ring, XP particles on correct answers, level-up glow animation, and confetti burst on daily goal completion.
+    - **Practice Rewards**: Earn food points and love through correct answers. Feed and pet your companion on the dashboard.
 - **User Dashboard**:
     - Natural numeric sorting for modules (M1, M2... M10).
     - Progress tracking with letter grades (S, A, B, C, F).
@@ -28,16 +33,24 @@ The modern interactive platform for English learning, built with React, TypeScri
 
 ## Pet Companion System Design
 
-To keep the client-side resource footprint minimal and execution completely server-independent, the system uses the following design principles:
+All pet state is client-side (no server dependency). The system uses the following design principles:
 
-1. **State Persistence**: All state variables (Hunger, Love, Inventory, Lifetime Correct) are stored in client `localStorage` under `ep-pet-state`.
-2. **Lazy-Calculated Decay**: Instead of background worker threads or active interval loops, natural hunger and love decay (at `0.5` points per hour) are calculated lazily on state-load. This means the pet decays even when the app is closed, but consumes zero background power.
-3. **Decoupled Event-Driven Synchronization**: Component widgets (`PetDashboardWidget` and `PetFloatingCompanion`) are completely decoupled. They synchronize state in real time by dispatching and listening to a custom window event (`ep-pet-update`).
+1. **State Persistence**: All state (hunger, love, inventory, streaks, XP, level, achievements, daily progress) is stored in `localStorage` under `ep-pet-state`. Old schemas are auto-migrated with sensible defaults.
+2. **Lazy-Calculated Decay**: Natural hunger and love decay (at `0.5` points per hour) is calculated lazily on state-load. The pet decays even when the app is closed, but consumes zero background power.
+3. **Event-Driven Synchronization**: Widgets (`PetDashboardWidget` and `PetFloatingCompanion`) sync via custom window events:
+   - `ep-pet-update` — state changed (any field)
+   - `ep-correct-answer` — correct answer with detail payload (xpGain, dailyProgress, streak, level, etc.)
+   - `ep-achievement-unlock` — new achievement unlocked with definition payload
 4. **Pacing Rules**:
-   - **Correct Answer**: Awards `+0.1` Food Point ( drumstick fraction) and `+0.1` Love. Answering 10 questions correct yields exactly `1.0` Food Item.
-   - **Feeding**: Consumes `1.0` Food Item and restores `+10` Hunger.
+   - **Correct Answer**: Awards `+0.1` Food Point and `+0.1` Love. Awards `+10` base XP `+ streak×2` bonus XP (capped at +40). 10 correct answers = 1 Food Item.
+   - **Feeding**: Consumes `1.0` Food Item and restores `+10` Hunger. First feed unlocks the `first-feed` achievement.
    - **Petting**: Increases Love by `+2` points.
-   - **Speech Feedback**: Renders speech balloons pointing to the pet face on petting/feeding, which automatically clear after 4 seconds.
+   - **Daily Goal**: When `dailyProgress` hits the preset target, awards a one-time `+50` XP bonus and increments `dailyGoalsCompleted`.
+   - **Streaks**: First correct answer of the day updates `lastPracticeDate`. Consecutive days increment `streak`; gaps reset to 1.
+5. **Level & Evolution**:
+   - 20 levels with XP thresholds: `[0, 80, 200, 380, 620, 920, 1300, 1750, 2300, 2950, 3700, 4550, 5500, 6000, 6600, 7300, 8000, 8500, 9000, 9500]`.
+   - Evolution stages: Baby (L1–4), Teen (L5–10), Adult (L11–17), Legendary (L18–20). Each stage changes pet emoji expressions and UI glow colors.
+6. **Achievements**: 15 badges checked after each `awardCorrectAnswer()` call. Newly unlocked IDs are dispatched as events for toast notifications.
 
 ## Tech Stack
 

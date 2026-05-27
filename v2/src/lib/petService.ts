@@ -1,18 +1,108 @@
+export type DailyGoalPreset = 'easy' | 'normal' | 'hard';
+
+export const DAILY_GOAL_VALUES: Record<DailyGoalPreset, number> = {
+  easy: 15,
+  normal: 30,
+  hard: 50,
+};
+
 export interface PetState {
   type: 'cat' | 'dog' | 'dino';
   name: string;
-  food: number; // 0 to 100
-  love: number; // 0 to 100
-  foodPoints: number; // items earned from correct answers
+  food: number;        // 0 to 100
+  love: number;        // 0 to 100
+  foodPoints: number;  // items earned from correct answers
   totalCorrect: number;
   lastUpdated: number; // timestamp in ms
+
+  // Streak & Daily
+  streak: number;
+  longestStreak: number;
+  lastPracticeDate: string;   // "YYYY-MM-DD"
+  dailyGoalPreset: DailyGoalPreset;
+  dailyProgress: number;
+  dailyProgressDate: string;  // "YYYY-MM-DD"
+  dailyGoalsCompleted: number; // lifetime count of goals completed
+
+  // XP & Level
+  xp: number;
+  level: number;
+
+  // Achievements
+  achievements: string[];
 }
 
+// ── Achievement Definitions ──────────────────────────────────────
+export interface AchievementDef {
+  id: string;
+  title: string;
+  titleCn: string;
+  description: string;
+  emoji: string;
+}
+
+export const ACHIEVEMENT_DEFS: AchievementDef[] = [
+  { id: 'first-feed',    title: 'First Meal',       titleCn: '第一餐',     description: 'Fed your pet for the first time',   emoji: '🍖' },
+  { id: 'streak-3',      title: '3-Day Streak',     titleCn: '三日连击',   description: 'Practiced 3 days in a row',          emoji: '🔥' },
+  { id: 'streak-7',      title: 'Weekly Warrior',    titleCn: '周练达人',   description: 'Practiced 7 days in a row',          emoji: '⚔️' },
+  { id: 'streak-14',     title: 'Fortnight Force',   titleCn: '两周之力',   description: 'Practiced 14 days in a row',         emoji: '🛡️' },
+  { id: 'streak-30',     title: 'Monthly Master',    titleCn: '月练宗师',   description: 'Practiced 30 days in a row',         emoji: '👑' },
+  { id: 'level-5',       title: 'Rising Star',       titleCn: '新星崛起',   description: 'Reached Level 5',                    emoji: '🌟' },
+  { id: 'level-10',      title: 'Seasoned Scholar',  titleCn: '学海精英',   description: 'Reached Level 10',                   emoji: '🏅' },
+  { id: 'level-15',      title: 'Grand Master',      titleCn: '大师级别',   description: 'Reached Level 15',                   emoji: '💎' },
+  { id: 'level-20',      title: 'Legendary',         titleCn: '传说降临',   description: 'Reached Level 20 — Max!',            emoji: '🏆' },
+  { id: 'correct-100',   title: 'Century',           titleCn: '百题斩',     description: '100 correct answers',                emoji: '💯' },
+  { id: 'correct-500',   title: 'Half Millennium',   titleCn: '五百连斩',   description: '500 correct answers',                emoji: '⚡' },
+  { id: 'correct-1000',  title: 'Thousand Club',     titleCn: '千题俱乐部', description: '1000 correct answers',               emoji: '🎯' },
+  { id: 'daily-goal-3',  title: 'Goal Getter',       titleCn: '目标达人',   description: 'Completed daily goal 3 times',       emoji: '🎯' },
+  { id: 'daily-goal-10', title: 'Consistent',        titleCn: '持之以恒',   description: 'Completed daily goal 10 times',      emoji: '🏋️' },
+  { id: 'daily-goal-30', title: 'Discipline King',   titleCn: '自律之王',   description: 'Completed daily goal 30 times',      emoji: '🦁' },
+];
+
+// ── Level Thresholds (20 levels) ─────────────────────────────────
+// Level 1 = 0 XP, Level 2 = 80 XP, ... Level 20 = 9500 XP
+const LEVEL_THRESHOLDS = [
+  0,     // L1
+  80,    // L2
+  200,   // L3
+  380,   // L4
+  620,   // L5
+  920,   // L6
+  1300,  // L7
+  1750,  // L8
+  2300,  // L9
+  2950,  // L10
+  3700,  // L11
+  4550,  // L12
+  5500,  // L13
+  6000,  // L14
+  6600,  // L15
+  7300,  // L16
+  8000,  // L17
+  8500,  // L18
+  9000,  // L19
+  9500,  // L20
+];
+
+const MAX_LEVEL = LEVEL_THRESHOLDS.length; // 20
+
+// ── Defaults ─────────────────────────────────────────────────────
 const DEFAULT_PETS: Record<string, string> = {
   cat: 'Lucky',
   dog: 'Buddy',
-  dino: 'Rex'
+  dino: 'Rex',
 };
+
+function getTodayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getYesterdayStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 const INITIAL_STATE = (type: 'cat' | 'dog' | 'dino' = 'cat'): PetState => ({
   type,
@@ -21,7 +111,20 @@ const INITIAL_STATE = (type: 'cat' | 'dog' | 'dino' = 'cat'): PetState => ({
   love: 50,
   foodPoints: 0,
   totalCorrect: 0,
-  lastUpdated: Date.now()
+  lastUpdated: Date.now(),
+  // Streak
+  streak: 0,
+  longestStreak: 0,
+  lastPracticeDate: '',
+  dailyGoalPreset: 'normal',
+  dailyProgress: 0,
+  dailyProgressDate: getTodayStr(),
+  dailyGoalsCompleted: 0,
+  // XP
+  xp: 0,
+  level: 1,
+  // Achievements
+  achievements: [],
 });
 
 const LS_KEY = 'ep-pet-state';
@@ -38,16 +141,29 @@ export const petService = {
         localStorage.setItem(LS_KEY, JSON.stringify(state));
         return state;
       }
-      const parsed = JSON.parse(stored) as PetState;
-      // Ensure all fields exist
-      const state = {
+      const parsed = JSON.parse(stored);
+      // Migrate from old schema — ensure all new fields exist
+      const state: PetState = {
         type: parsed.type || 'cat',
         name: parsed.name || DEFAULT_PETS[parsed.type || 'cat'],
         food: typeof parsed.food === 'number' ? parsed.food : 50,
         love: typeof parsed.love === 'number' ? parsed.love : 50,
         foodPoints: typeof parsed.foodPoints === 'number' ? parsed.foodPoints : 0,
         totalCorrect: typeof parsed.totalCorrect === 'number' ? parsed.totalCorrect : 0,
-        lastUpdated: parsed.lastUpdated || Date.now()
+        lastUpdated: parsed.lastUpdated || Date.now(),
+        // Streak (with migration defaults)
+        streak: typeof parsed.streak === 'number' ? parsed.streak : 0,
+        longestStreak: typeof parsed.longestStreak === 'number' ? parsed.longestStreak : 0,
+        lastPracticeDate: parsed.lastPracticeDate || '',
+        dailyGoalPreset: parsed.dailyGoalPreset || 'normal',
+        dailyProgress: typeof parsed.dailyProgress === 'number' ? parsed.dailyProgress : 0,
+        dailyProgressDate: parsed.dailyProgressDate || getTodayStr(),
+        dailyGoalsCompleted: typeof parsed.dailyGoalsCompleted === 'number' ? parsed.dailyGoalsCompleted : 0,
+        // XP
+        xp: typeof parsed.xp === 'number' ? parsed.xp : 0,
+        level: typeof parsed.level === 'number' ? parsed.level : 1,
+        // Achievements
+        achievements: Array.isArray(parsed.achievements) ? parsed.achievements : [],
       };
       return this.applyDecay(state);
     } catch {
@@ -68,7 +184,7 @@ export const petService = {
   applyDecay(state: PetState): PetState {
     const now = Date.now();
     const hoursElapsed = (now - state.lastUpdated) / (1000 * 60 * 60);
-    
+
     if (hoursElapsed >= 1) {
       const decay = hoursElapsed * DECAY_RATE_PER_HOUR;
       state.food = Math.max(0, Math.round((state.food - decay) * 10) / 10);
@@ -79,29 +195,94 @@ export const petService = {
     return state;
   },
 
-  awardCorrectAnswer() {
+  // ── Core: Award a correct answer ─────────────────────────────
+  awardCorrectAnswer(): string[] {
     const state = this.getPetState();
+    const today = getTodayStr();
+    const yesterday = getYesterdayStr();
+
+    // -- Daily progress reset --
+    if (state.dailyProgressDate !== today) {
+      state.dailyProgress = 0;
+      state.dailyProgressDate = today;
+    }
+
+    // -- Streak logic --
+    if (state.lastPracticeDate !== today) {
+      // First practice of the day
+      if (state.lastPracticeDate === yesterday) {
+        state.streak += 1;
+      } else if (state.lastPracticeDate !== today) {
+        state.streak = 1; // streak broken or first ever
+      }
+      state.longestStreak = Math.max(state.streak, state.longestStreak);
+      state.lastPracticeDate = today;
+    }
+
+    // -- Increment counters --
     state.totalCorrect += 1;
-    
-    // Earn 0.1 food item point and directly gain 0.1 love point
+    state.dailyProgress += 1;
+
+    // -- Food & love --
     state.foodPoints = Math.round((state.foodPoints + 0.1) * 10) / 10;
     state.love = Math.min(100, Math.round((state.love + 0.1) * 10) / 10);
+
+    // -- XP calculation --
+    const baseXP = 10;
+    const streakBonus = Math.min(state.streak * 2, 40); // cap at 40 bonus
+    let xpGain = baseXP + streakBonus;
+
+    // Daily goal completion bonus (one-time per day)
+    const dailyGoal = DAILY_GOAL_VALUES[state.dailyGoalPreset];
+    if (state.dailyProgress === dailyGoal) {
+      xpGain += 50;
+      state.dailyGoalsCompleted += 1;
+    }
+
+    state.xp += xpGain;
+    state.level = this.getLevel(state.xp);
     state.lastUpdated = Date.now();
-    
+
+    // -- Check achievements --
+    const newAchievements = this.checkAndUnlockAchievements(state);
+
     this.savePetState(state);
-    
+
     // Dispatch animation event
-    window.dispatchEvent(new CustomEvent('ep-correct-answer'));
+    window.dispatchEvent(new CustomEvent('ep-correct-answer', {
+      detail: {
+        xpGain,
+        dailyProgress: state.dailyProgress,
+        dailyGoal,
+        dailyGoalJustCompleted: state.dailyProgress === dailyGoal,
+        streak: state.streak,
+        level: state.level,
+        newAchievements,
+      }
+    }));
+
+    return newAchievements;
   },
 
+  // ── Feed ──────────────────────────────────────────────────────
   feedPet(): boolean {
     const state = this.getPetState();
     if (state.foodPoints < 1.0) return false;
-    
+
     state.foodPoints = Math.round((state.foodPoints - 1.0) * 10) / 10;
     state.food = Math.min(100, state.food + 10);
     state.lastUpdated = Date.now();
-    
+
+    // Check first-feed achievement
+    if (!state.achievements.includes('first-feed')) {
+      state.achievements.push('first-feed');
+      this.savePetState(state);
+      window.dispatchEvent(new CustomEvent('ep-achievement-unlock', {
+        detail: this.getAchievementDetails('first-feed'),
+      }));
+      return true;
+    }
+
     this.savePetState(state);
     return true;
   },
@@ -110,7 +291,6 @@ export const petService = {
     const state = this.getPetState();
     state.love = Math.min(100, state.love + 2);
     state.lastUpdated = Date.now();
-    
     this.savePetState(state);
   },
 
@@ -129,27 +309,90 @@ export const petService = {
     this.savePetState(state);
   },
 
-  getPetEmoji(type: 'cat' | 'dog' | 'dino', food: number, love: number): string {
+  setDailyGoalPreset(preset: DailyGoalPreset) {
+    const state = this.getPetState();
+    state.dailyGoalPreset = preset;
+    this.savePetState(state);
+  },
+
+  // ── Level Helpers ─────────────────────────────────────────────
+  getLevel(xp: number): number {
+    let level = 1;
+    for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+      if (xp >= LEVEL_THRESHOLDS[i]) {
+        level = i + 1;
+        break;
+      }
+    }
+    return Math.min(level, MAX_LEVEL);
+  },
+
+  getXpForCurrentLevel(level: number): number {
+    return LEVEL_THRESHOLDS[Math.min(level - 1, LEVEL_THRESHOLDS.length - 1)];
+  },
+
+  getXpForNextLevel(level: number): number {
+    if (level >= MAX_LEVEL) return LEVEL_THRESHOLDS[MAX_LEVEL - 1];
+    return LEVEL_THRESHOLDS[level]; // level is 1-indexed, threshold array is 0-indexed
+  },
+
+  getXpProgress(xp: number, level: number): { current: number; needed: number; percent: number } {
+    if (level >= MAX_LEVEL) return { current: 0, needed: 0, percent: 100 };
+    const currentThreshold = LEVEL_THRESHOLDS[level - 1];
+    const nextThreshold = LEVEL_THRESHOLDS[level];
+    const current = xp - currentThreshold;
+    const needed = nextThreshold - currentThreshold;
+    const percent = Math.min(100, Math.round((current / needed) * 100));
+    return { current, needed, percent };
+  },
+
+  // ── Evolution Stages ──────────────────────────────────────────
+  getEvolutionStage(level: number): 'baby' | 'teen' | 'adult' | 'legendary' {
+    if (level >= 18) return 'legendary';
+    if (level >= 11) return 'adult';
+    if (level >= 5) return 'teen';
+    return 'baby';
+  },
+
+  getEvolutionLabel(stage: 'baby' | 'teen' | 'adult' | 'legendary'): string {
+    switch (stage) {
+      case 'baby': return '🐣 Baby';
+      case 'teen': return '🌱 Teen';
+      case 'adult': return '⭐ Adult';
+      case 'legendary': return '👑 Legendary';
+    }
+  },
+
+  // ── Pet Emoji (evolution-aware) ───────────────────────────────
+  getPetEmoji(type: 'cat' | 'dog' | 'dino', food: number, love: number, level: number = 1): string {
+    const stage = this.getEvolutionStage(level);
     const avg = (food + love) / 2;
+
     if (type === 'cat') {
-      if (avg >= 80) return '😻'; // Loved/Happy
-      if (food <= 30) return '😿'; // Hungry
-      if (love <= 30) return '😾'; // Lonely
-      if (avg <= 15) return '😿'; // Very neglected
-      return '🐱'; // Neutral
+      if (avg <= 15) return '😿';
+      if (food <= 30) return '😿';
+      if (love <= 30) return '😾';
+      if (stage === 'legendary') return '😻';
+      if (stage === 'adult') return avg >= 60 ? '😸' : '🐱';
+      if (stage === 'teen') return avg >= 60 ? '😺' : '🐱';
+      return avg >= 60 ? '😺' : '🐱'; // baby
     } else if (type === 'dog') {
-      if (avg >= 80) return '🐶'; // Loved/Happy
-      if (food <= 30) return '🥺'; // Hungry
-      if (love <= 30) return '🐩'; // Lonely
-      if (avg <= 15) return '😭'; // Very neglected
-      return '🐕'; // Neutral
+      if (avg <= 15) return '😭';
+      if (food <= 30) return '🥺';
+      if (love <= 30) return '🐩';
+      if (stage === 'legendary') return '🐶';
+      if (stage === 'adult') return avg >= 60 ? '🐶' : '🐕';
+      if (stage === 'teen') return avg >= 60 ? '🐕‍🦺' : '🐕';
+      return avg >= 60 ? '🐕‍🦺' : '🐕'; // baby
     } else {
       // dino
-      if (avg >= 80) return '🦖'; // Loved/Happy
-      if (food <= 30) return '🦕'; // Hungry
-      if (love <= 30) return '🦕'; // Lonely
-      if (avg <= 15) return '🦕'; // Very neglected
-      return '🦖'; // Neutral
+      if (avg <= 15) return '🦕';
+      if (food <= 30) return '🦕';
+      if (love <= 30) return '🦕';
+      if (stage === 'legendary') return '🐉';
+      if (stage === 'adult') return avg >= 60 ? '🦖' : '🦕';
+      if (stage === 'teen') return avg >= 60 ? '🦖' : '🦕';
+      return '🦕'; // baby
     }
   },
 
@@ -163,6 +406,79 @@ export const petService = {
     return 'Neutral (平常心)';
   },
 
+  // ── Daily Goal Helpers ────────────────────────────────────────
+  getDailyProgress(state: PetState): { current: number; goal: number; percent: number; completed: boolean } {
+    const today = getTodayStr();
+    const current = state.dailyProgressDate === today ? state.dailyProgress : 0;
+    const goal = DAILY_GOAL_VALUES[state.dailyGoalPreset];
+    return {
+      current,
+      goal,
+      percent: Math.min(100, Math.round((current / goal) * 100)),
+      completed: current >= goal,
+    };
+  },
+
+  // ── Streak Helpers ────────────────────────────────────────────
+  getStreakInfo(state: PetState): { streak: number; longestStreak: number; activatedToday: boolean } {
+    const today = getTodayStr();
+    return {
+      streak: state.streak,
+      longestStreak: state.longestStreak,
+      activatedToday: state.lastPracticeDate === today,
+    };
+  },
+
+  // ── Achievement Logic ─────────────────────────────────────────
+  checkAndUnlockAchievements(state: PetState): string[] {
+    const newlyUnlocked: string[] = [];
+
+    const check = (id: string, condition: boolean) => {
+      if (condition && !state.achievements.includes(id)) {
+        state.achievements.push(id);
+        newlyUnlocked.push(id);
+      }
+    };
+
+    // Streak
+    check('streak-3', state.streak >= 3);
+    check('streak-7', state.streak >= 7);
+    check('streak-14', state.streak >= 14);
+    check('streak-30', state.streak >= 30);
+
+    // Level
+    check('level-5', state.level >= 5);
+    check('level-10', state.level >= 10);
+    check('level-15', state.level >= 15);
+    check('level-20', state.level >= 20);
+
+    // Correct answers
+    check('correct-100', state.totalCorrect >= 100);
+    check('correct-500', state.totalCorrect >= 500);
+    check('correct-1000', state.totalCorrect >= 1000);
+
+    // Daily goals completed
+    check('daily-goal-3', state.dailyGoalsCompleted >= 3);
+    check('daily-goal-10', state.dailyGoalsCompleted >= 10);
+    check('daily-goal-30', state.dailyGoalsCompleted >= 30);
+
+    // Dispatch unlock events for each
+    for (const id of newlyUnlocked) {
+      window.dispatchEvent(new CustomEvent('ep-achievement-unlock', {
+        detail: this.getAchievementDetails(id),
+      }));
+    }
+
+    return newlyUnlocked;
+  },
+
+  getAchievementDetails(id: string): AchievementDef {
+    return ACHIEVEMENT_DEFS.find(a => a.id === id) || {
+      id, title: id, titleCn: id, description: '', emoji: '🏅'
+    };
+  },
+
+  // ── Chat Messages ─────────────────────────────────────────────
   getRandomFeedMessage(name: string, type: 'cat' | 'dog' | 'dino'): string {
     const actionStr = type === 'cat' ? 'purrs' : type === 'dog' ? 'wags tail' : 'roars';
     const cnActionStr = type === 'cat' ? '呼噜呼噜' : type === 'dog' ? '摇尾巴' : '开心咆哮';
@@ -191,9 +507,9 @@ export const petService = {
       `*${name} does a little dance* You are doing a fantastic job today! 🦕✨ ( *${name}跳了个舞* 你今天做得生龙活虎！)`,
       `Dino power! 🦖 Let's smash some English exercises! (恐龙力量！让我们消灭那些英语练习！)`
     ];
-    
+
     if (type === 'cat') return catMessages[Math.floor(Math.random() * catMessages.length)];
     if (type === 'dog') return dogMessages[Math.floor(Math.random() * dogMessages.length)];
     return dinoMessages[Math.floor(Math.random() * dinoMessages.length)];
-  }
+  },
 };
