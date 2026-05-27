@@ -38,7 +38,7 @@ export function PetDashboardWidget() {
   };
 
   const handleFeed = () => {
-    if (petState.foodPoints <= 0) {
+    if (petState.foodPoints < 1.0) {
       showSpeech('Practice and give correct answers to get food! 🍗');
       return;
     }
@@ -73,8 +73,8 @@ export function PetDashboardWidget() {
     <div className="db-stats pet-widget-card">
       <div className="pet-widget-header">
         <h3 className="db-stats-title">Pet Companion (宠物伙伴)</h3>
-        <span className="pet-widget-points-badge" title="Food items in stock. Earn more by answering correctly!">
-          🍗 Inventory: <strong>{petState.foodPoints}</strong>
+        <span className="pet-widget-points-badge" title="Food items in stock. Earn more by answering correctly! (每答对10题获得1个食物)">
+          🍗 Inventory: <strong>{Math.floor(petState.foodPoints)}</strong>
         </span>
       </div>
 
@@ -168,7 +168,7 @@ export function PetDashboardWidget() {
           <button 
             className="pet-widget-btn feed-btn"
             onClick={handleFeed}
-            disabled={petState.foodPoints <= 0}
+            disabled={petState.foodPoints < 1.0}
           >
             🍗 Feed (喂食)
           </button>

@@ -83,9 +83,9 @@ export const petService = {
     const state = this.getPetState();
     state.totalCorrect += 1;
     
-    // Earn 1 food item point and directly gain 1 love point
-    state.foodPoints += 1;
-    state.love = Math.min(100, Math.round((state.love + 1) * 10) / 10);
+    // Earn 0.1 food item point and directly gain 0.1 love point
+    state.foodPoints = Math.round((state.foodPoints + 0.1) * 10) / 10;
+    state.love = Math.min(100, Math.round((state.love + 0.1) * 10) / 10);
     state.lastUpdated = Date.now();
     
     this.savePetState(state);
@@ -96,10 +96,10 @@ export const petService = {
 
   feedPet(): boolean {
     const state = this.getPetState();
-    if (state.foodPoints <= 0) return false;
+    if (state.foodPoints < 1.0) return false;
     
-    state.foodPoints -= 1;
-    state.food = Math.min(100, state.food + 15);
+    state.foodPoints = Math.round((state.foodPoints - 1.0) * 10) / 10;
+    state.food = Math.min(100, state.food + 10);
     state.lastUpdated = Date.now();
     
     this.savePetState(state);
@@ -108,7 +108,7 @@ export const petService = {
 
   petPet() {
     const state = this.getPetState();
-    state.love = Math.min(100, state.love + 10);
+    state.love = Math.min(100, state.love + 2);
     state.lastUpdated = Date.now();
     
     this.savePetState(state);
