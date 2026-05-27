@@ -58,6 +58,15 @@ export function ManageUsers() {
   const [practices, setPractices] = useState<any[]>([])
   const [loadingStats, setLoadingStats] = useState(false)
   const [activeTodayBook, setActiveTodayBook] = useState<string>('')
+  const [historyOffset, setHistoryOffset] = useState(0)
+
+  const getDayLabel = (offset: number) => {
+    if (offset === 0) return 'Today'
+    if (offset === 1) return 'Yesterday'
+    const d = new Date()
+    d.setDate(d.getDate() - offset)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
 
   const fetchUsers = async () => {
     const res = await fetch(API_URL + '/api/admin/users', { credentials: 'include' })
@@ -91,6 +100,7 @@ export function ManageUsers() {
 
   const handleSelectUserForStats = async (user: any) => {
     setSelectedUser(user)
+    setHistoryOffset(0)
     setLoadingStats(true)
     try {
       const res = await fetch(API_URL + `/api/admin/users/${user.id}/records`, { credentials: 'include' })
@@ -515,11 +525,39 @@ export function ManageUsers() {
                   
                   {/* Today's Practices */}
                   <div className="db-stats" style={{ flex: '1 1 450px', maxWidth: '100%' }}>
-                    <h3 className="db-stats-title">Today's Practices</h3>
+                    <div className="db-history-header">
+                      <h3 className="db-stats-title">Practice History</h3>
+                      <div className="db-history-nav">
+                        <button
+                          onClick={() => setHistoryOffset(prev => Math.min(6, prev + 1))}
+                          disabled={historyOffset === 6}
+                          className="db-history-nav-btn"
+                          title="Previous Day"
+                        >
+                          ←
+                        </button>
+                        <span className="db-history-nav-label">
+                          {getDayLabel(historyOffset)}
+                        </span>
+                        <button
+                          onClick={() => setHistoryOffset(prev => Math.max(0, prev - 1))}
+                          disabled={historyOffset === 0}
+                          className="db-history-nav-btn"
+                          title="Next Day"
+                        >
+                          →
+                        </button>
+                      </div>
+                    </div>
                     {(() => {
-                      const todayStr = new Date().toLocaleDateString();
+                      const getTargetDateStr = (offset: number) => {
+                        const d = new Date()
+                        d.setDate(d.getDate() - offset)
+                        return d.toLocaleDateString()
+                      }
+                      const targetDateStr = getTargetDateStr(historyOffset);
                       const parsedTodayRecords = selectedUserRecords
-                        .filter(r => new Date(r.createdAt).toLocaleDateString() === todayStr)
+                        .filter(r => new Date(r.createdAt).toLocaleDateString() === targetDateStr)
                         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                         .map(r => {
                           const match = r.unit.match(/^(.+?)\s\((.+)\)$/);
@@ -617,7 +655,9 @@ export function ManageUsers() {
                           </div>
                         </div>
                       ) : (
-                        <div className="db-empty" style={{ padding: '20px' }}>No practices started today yet.</div>
+                        <div className="db-empty" style={{ padding: '20px' }}>
+                          No practices started {historyOffset === 0 ? 'today' : historyOffset === 1 ? 'yesterday' : `on ${getDayLabel(historyOffset)}`} yet.
+                        </div>
                       );
                     })()}
                   </div>

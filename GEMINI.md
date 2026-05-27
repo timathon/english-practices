@@ -252,14 +252,16 @@ Update it to the **current local date and time** at the moment of the commit (e.
 1. Update the version badge (see above).
 2. Build the app:
    > [!IMPORTANT]
-   > Do NOT run `npm run build` inside the agent's terminal, as the TypeScript compile step (`tsc -b`) will hang indefinitely because of file-system auditing/monitoring overhead in the sandboxed workspace.
+   > Do NOT run `npm run build` or `npx vite build` directly in the agent's terminal:
+   > - The TypeScript compile step (`tsc -b`) hangs indefinitely due to virtualized file-system auditing overhead when scanning tens of thousands of type definitions.
+   > - Plain `npx <command>` hangs because dependencies are hoisted to the root of this monorepo (so `v2/` doesn't have local bin files). `npx` fails to find `vite` locally, so it attempts to query the remote registry and prompts for interactive permission, causing non-interactive terminals to lock up.
    > 
-   > Instead, run the build using Vite directly (which compiles instantly without type-checking):
+   > Instead, run the build using the **hoisted local Vite binary** directly:
    > ```bash
-   > cd v2 && npx vite build && cp public/favicon-prod.ico dist/favicon.ico
+   > cd v2 && ../node_modules/.bin/vite build && cp public/favicon-prod.ico dist/favicon.ico
    > ```
    > 
-   > Always execute the command in a clean, non-persistent terminal shell (`RunPersistent: false`) to avoid session/file locking.
+   > Always execute the command in a clean, isolated non-persistent terminal shell (`RunPersistent: false`) to avoid session/file locking.
 3. Deploy to Cloudflare Pages:
    ```bash
    npx wrangler pages deploy dist --project-name=english-practices-v2
