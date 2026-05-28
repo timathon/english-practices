@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { SignIn } from './SignIn'
 import { Dashboard } from './Dashboard'
 import { ManageUsers } from './ManageUsers'
+import { UsageGuide } from './UsageGuide'
 import { PracticeShell } from './components/PracticeShell'
 import { PetFloatingCompanion } from './components/PetFloatingCompanion'
 import { useSession, signOut } from './lib/auth'
@@ -50,6 +51,7 @@ function Navigation({ session }: { session: any }) {
           ) : (
             <>
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/dashboard">Dashboard</Link>
+              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/manual">Game Manual</Link>
               {(session.user as any).role === 'admin' && (
                   <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
               )}
@@ -96,6 +98,13 @@ function App() {
             <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
                 <Dashboard />
+              </div>
+            </div>
+          } />
+          <Route path="/manual" element={
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <UsageGuide />
               </div>
             </div>
           } />
