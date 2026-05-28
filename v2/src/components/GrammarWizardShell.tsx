@@ -441,9 +441,11 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
 
                <div className="gw-question-area">
                    <div className="gw-prompt-container">
-                       <div className="gw-prompt-category">{q.category.toUpperCase()}</div>
+                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '10px' }}>
+                           <div className="gw-prompt-category" style={{ margin: 0 }}>{q.category.toUpperCase()}</div>
+                           <button className="gw-prompt-hint-btn" onClick={() => setHintUsed(true)}>💡</button>
+                       </div>
                        <div className="gw-prompt-val">{q.prompt}</div>
-                       <button className="gw-prompt-hint-btn" onClick={() => setHintUsed(true)}>💡</button>
                        <div className={`gw-hint-text ${hintUsed ? 'visible' : ''}`}>{q.hint}</div>
                    </div>
 
