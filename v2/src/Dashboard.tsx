@@ -29,6 +29,8 @@ function saveLastUnit(tb: string, unit: string) {
 
 function BookSection({ tb, units, records, initialUnit }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string }) {
   const unitKeys = Object.keys(units).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+  const isRazB = tb === 'RAZ-B'
+
   const [activeUnit, setActiveUnit] = useState<string>(() => {
     // Priority: router-state (just navigated back) > localStorage > first unit
     if (initialUnit && unitKeys.includes(initialUnit)) { saveLastUnit(tb, initialUnit); return initialUnit }
@@ -37,9 +39,26 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
     return unitKeys[0] || ''
   })
 
+  const letters = isRazB
+    ? Array.from(new Set(unitKeys.map(key => key.trim().charAt(0).toUpperCase()))).sort()
+    : []
+
+  const [activeLetter, setActiveLetter] = useState<string>(() => {
+    if (!isRazB) return ''
+    return activeUnit ? activeUnit.trim().charAt(0).toUpperCase() : (letters[0] || '')
+  })
+
   const handleUnitChange = (unit: string) => {
     setActiveUnit(unit)
     saveLastUnit(tb, unit)
+  }
+
+  const handleLetterChange = (letter: string) => {
+    setActiveLetter(letter)
+    const firstUnitForLetter = unitKeys.find(key => key.trim().charAt(0).toUpperCase() === letter)
+    if (firstUnitForLetter) {
+      handleUnitChange(firstUnitForLetter)
+    }
   }
 
   useEffect(() => {
@@ -48,8 +67,21 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
     }
   }, [units, activeUnit, unitKeys])
 
+  useEffect(() => {
+    if (isRazB && activeUnit) {
+      const letter = activeUnit.trim().charAt(0).toUpperCase()
+      if (letter && letter !== activeLetter) {
+        setActiveLetter(letter)
+      }
+    }
+  }, [activeUnit, isRazB, activeLetter])
+
   if (unitKeys.length === 0) return null
   const items = units[activeUnit]?.sort((a: any, b: any) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })) || []
+
+  const displayedUnits = isRazB
+    ? unitKeys.filter(unit => unit.trim().charAt(0).toUpperCase() === activeLetter)
+    : unitKeys
 
   return (
     <section className="db-book" id={`book-${tb}`}>
@@ -60,8 +92,39 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
       </div>
 
       <div>
+        {isRazB && (
+          <div className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
+            {letters.map(letter => (
+              <button
+                key={letter}
+                onClick={() => handleLetterChange(letter)}
+                className={`db-tab-btn ${activeLetter === letter ? 'active' : ''}`}
+                style={{
+                  padding: '4px 10px',
+                  border: 'none',
+                  borderBottom: activeLetter === letter ? '2px solid var(--tab-active-text)' : '2px solid transparent',
+                  background: activeLetter === letter ? 'var(--accent-bg)' : 'transparent',
+                  cursor: 'pointer',
+                  fontWeight: activeLetter === letter ? 'bold' : 'normal',
+                  color: activeLetter === letter ? 'var(--tab-active-text)' : 'var(--tab-text)',
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '28px'
+                }}
+              >
+                {letter}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
-          {unitKeys.map(unit => (
+          {displayedUnits.map(unit => (
             <button
               key={unit}
               onClick={() => handleUnitChange(unit)}
@@ -516,7 +579,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.28-16:45</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.28-23:48</span></p>
         </div>
       </div>
 

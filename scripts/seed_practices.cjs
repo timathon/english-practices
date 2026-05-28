@@ -186,7 +186,41 @@ async function seed() {
             unit = 'U' + matchCgiu[1];
             type = matchCgiu[2];
         } else {
-            type = filename.replace('.json', '');
+            const parts = relPath.split(path.sep);
+            if (parts.length > 1) {
+                const folderName = parts[0];
+                if (folderName.startsWith('raz-b-')) {
+                    unit = folderName.replace(/^raz-b-/i, '')
+                        .split('-')
+                        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                        .join(' ');
+                } else {
+                    unit = folderName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                }
+            }
+            
+            const knownTypes = [
+                'vocab-guide',
+                'vocab-master',
+                'spelling-hero',
+                'sentence-architect',
+                'recall-map',
+                'grammar-wizard',
+                'text-navigator',
+                'writing-map'
+            ];
+            
+            for (const kt of knownTypes) {
+                if (filename.includes(kt)) {
+                    const idx = filename.indexOf(kt);
+                    type = filename.substring(idx).replace('.json', '');
+                    break;
+                }
+            }
+            
+            if (type === 'unknown') {
+                type = filename.replace('.json', '');
+            }
         }
         
         if (!fs.existsSync(filePath)) continue;
