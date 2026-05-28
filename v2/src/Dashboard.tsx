@@ -30,6 +30,12 @@ function saveLastUnit(tb: string, unit: string) {
 function BookSection({ tb, units, records, initialUnit }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string }) {
   const unitKeys = Object.keys(units).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
   const isRazB = tb === 'RAZ-B'
+  const isBThink1 = tb === 'B-THINK1' || tb === 'B-Think1'
+
+  const getPageStart = (p: any) => {
+    const match = p.type.match(/^p\d+/i)
+    return match ? match[0].toUpperCase() : ''
+  }
 
   const [activeUnit, setActiveUnit] = useState<string>(() => {
     // Priority: router-state (just navigated back) > localStorage > first unit
@@ -46,6 +52,17 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
   const [activeLetter, setActiveLetter] = useState<string>(() => {
     if (!isRazB) return ''
     return activeUnit ? activeUnit.trim().charAt(0).toUpperCase() : (letters[0] || '')
+  })
+
+  const pageStarts = isBThink1
+    ? Array.from(new Set((units[activeUnit] || []).map(p => getPageStart(p)).filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+    : []
+
+  const [activePageStart, setActivePageStart] = useState<string>(() => {
+    if (!isBThink1) return ''
+    const activeUnitItems = units[activeUnit] || []
+    const starts = Array.from(new Set(activeUnitItems.map(p => getPageStart(p)).filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+    return starts[0] || ''
   })
 
   const handleUnitChange = (unit: string) => {
@@ -76,12 +93,37 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
     }
   }, [activeUnit, isRazB, activeLetter])
 
-  if (unitKeys.length === 0) return null
-  const items = units[activeUnit]?.sort((a: any, b: any) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })) || []
+  useEffect(() => {
+    if (isBThink1 && activeUnit) {
+      const activeUnitItems = units[activeUnit] || []
+      const starts = Array.from(new Set(activeUnitItems.map(p => getPageStart(p)).filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+      if (starts.length > 0 && !starts.includes(activePageStart)) {
+        setActivePageStart(starts[0])
+      }
+    }
+  }, [activeUnit, isBThink1, units, activePageStart])
 
-  const displayedUnits = isRazB
-    ? unitKeys.filter(unit => unit.trim().charAt(0).toUpperCase() === activeLetter)
-    : unitKeys
+  if (unitKeys.length === 0) return null
+
+  const items = (units[activeUnit] || [])
+    .filter((p: any) => !isBThink1 || getPageStart(p) === activePageStart)
+    .sort((a: any, b: any) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }))
+
+  const level2Tabs = isBThink1
+    ? pageStarts
+    : isRazB
+      ? unitKeys.filter(unit => unit.trim().charAt(0).toUpperCase() === activeLetter)
+      : unitKeys
+
+  const activeLevel2Tab = isBThink1 ? activePageStart : activeUnit
+
+  const handleLevel2TabChange = (val: string) => {
+    if (isBThink1) {
+      setActivePageStart(val)
+    } else {
+      handleUnitChange(val)
+    }
+  }
 
   return (
     <section className="db-book" id={`book-${tb}`}>
@@ -123,32 +165,63 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
           </div>
         )}
 
+        {isBThink1 && (
+          <div className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
+            {unitKeys.map(unit => (
+              <button
+                key={unit}
+                onClick={() => handleUnitChange(unit)}
+                className={`db-tab-btn ${activeUnit === unit ? 'active' : ''}`}
+                style={{
+                  padding: '4px 10px',
+                  border: 'none',
+                  borderBottom: activeUnit === unit ? '2px solid var(--tab-active-text)' : '2px solid transparent',
+                  background: activeUnit === unit ? 'var(--accent-bg)' : 'transparent',
+                  cursor: 'pointer',
+                  fontWeight: activeUnit === unit ? 'bold' : 'normal',
+                  color: activeUnit === unit ? 'var(--tab-active-text)' : 'var(--tab-text)',
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '28px'
+                }}
+              >
+                {unit}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
-          {displayedUnits.map(unit => (
+          {level2Tabs.map(tabVal => (
             <button
-              key={unit}
-              onClick={() => handleUnitChange(unit)}
-              className={`db-tab-btn ${activeUnit === unit ? 'active' : ''}`}
+              key={tabVal}
+              onClick={() => handleLevel2TabChange(tabVal)}
+              className={`db-tab-btn ${activeLevel2Tab === tabVal ? 'active' : ''}`}
               style={{
                 padding: '6px 14px',
                 border: 'none',
-                borderBottom: activeUnit === unit ? '3px solid var(--tab-active-text)' : '3px solid transparent',
-                background: activeUnit === unit ? 'var(--card-bg)' : 'transparent',
+                borderBottom: activeLevel2Tab === tabVal ? '3px solid var(--tab-active-text)' : '3px solid transparent',
+                background: activeLevel2Tab === tabVal ? 'var(--card-bg)' : 'transparent',
                 cursor: 'pointer',
-                fontWeight: activeUnit === unit ? 'bold' : 'normal',
-                color: activeUnit === unit ? 'var(--tab-active-text)' : 'var(--tab-text)',
+                fontWeight: activeLevel2Tab === tabVal ? 'bold' : 'normal',
+                color: activeLevel2Tab === tabVal ? 'var(--tab-active-text)' : 'var(--tab-text)',
                 borderRadius: '5px 5px 0 0',
                 whiteSpace: 'nowrap',
                 transition: 'all 0.2s'
               }}
             >
-              {unit}
+              {tabVal}
             </button>
           ))}
         </div>
 
         <div className="db-unit-card">
-          <div key={activeUnit} className="db-unit-body">
+          <div key={isBThink1 ? `${activeUnit}-${activePageStart}` : activeUnit} className="db-unit-body">
             {(() => {
               const recallMapItems = items
                 .filter((p: any) => p.type.toLowerCase().includes('recall-map'))
@@ -579,7 +652,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.28-23:59</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.29-00:03</span></p>
         </div>
       </div>
 
