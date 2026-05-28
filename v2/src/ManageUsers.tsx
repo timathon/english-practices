@@ -52,6 +52,7 @@ export function ManageUsers() {
   const [newPassword, setNewPassword] = useState('')
   const [editingTextbooks, setEditingTextbooks] = useState<Set<string>>(new Set())
   const [editingExpiry, setEditingExpiry] = useState<string>('')
+  const [showAddUserModal, setShowAddUserModal] = useState(false)
 
   const [selectedUser, setSelectedUser] = useState<any | null>(null)
   const [selectedUserRecords, setSelectedUserRecords] = useState<any[]>([])
@@ -146,9 +147,10 @@ export function ManageUsers() {
         setMsg(`Success: Created user ${data.user.username}`)
         setUsername('')
         setPassword('')
+        setShowAddUserModal(false)
         fetchUsers()
     } else {
-        setMsg(`Error: ${JSON.stringify(data)}`)
+        setMsg(`Error: ${data.error || JSON.stringify(data)}`)
     }
   }
 
@@ -227,31 +229,120 @@ export function ManageUsers() {
 
   return (
     <div style={{ maxWidth: 800, margin: '20px auto' }}>
-      <h2>Manage Users</h2>
-
-      <div style={{ background: '#f9f9f9', padding: 20, marginBottom: 20, border: '1px solid #ccc', borderRadius: 8 }}>
-        <h3>Add User</h3>
-        {msg && <div style={{ color: msg.startsWith('Error') ? 'red' : 'green', marginBottom: 10 }}>{msg}</div>}
-        <form onSubmit={handleAddUser} style={{ display: 'flex', gap: 10 }}>
-            <input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                required
-                style={{ padding: 8 }}
-            />
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                style={{ padding: 8 }}
-            />
-            <button type="submit" style={{ padding: '8px 16px', background: '#0366d6', color: 'white', border: 'none', borderRadius: 4 }}>Add Student</button>
-        </form>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h2 style={{ margin: 0 }}>Manage Users</h2>
+        <button
+          onClick={() => {
+            setMsg('')
+            setUsername('')
+            setPassword('')
+            setShowAddUserModal(true)
+          }}
+          style={{
+            padding: '8px 16px',
+            background: '#0366d6',
+            color: 'white',
+            border: 'none',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '0.9rem'
+          }}
+        >
+          Add User
+        </button>
       </div>
+
+      {showAddUserModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          padding: '20px',
+          boxSizing: 'border-box'
+        }}
+        onClick={() => {
+          setShowAddUserModal(false)
+          setMsg('')
+        }}
+        >
+          <div style={{
+            background: 'var(--card-bg, #fff)',
+            borderRadius: '16px',
+            border: '1px solid var(--border, #ccc)',
+            width: '100%',
+            maxWidth: '400px',
+            padding: '30px',
+            boxSizing: 'border-box',
+            position: 'relative',
+            boxShadow: 'var(--shadow)',
+            color: 'var(--text-h, #333)'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.25rem', color: 'var(--text-h)', fontWeight: 'bold' }}>Add New Student</h3>
+            {msg && <div style={{ color: msg.startsWith('Error') ? 'red' : 'green', marginBottom: 15, fontSize: '0.9rem' }}>{msg}</div>}
+            <form onSubmit={handleAddUser}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 15, marginBottom: 20 }}>
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  required
+                  style={{
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border, #ccc)',
+                    background: 'var(--code-bg, #f5f8fa)',
+                    color: 'var(--text-h, #333)'
+                  }}
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  style={{
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border, #ccc)',
+                    background: 'var(--code-bg, #f5f8fa)',
+                    color: 'var(--text-h, #333)'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddUserModal(false)
+                    setMsg('')
+                  }}
+                  style={{ padding: '8px 16px', background: '#e1e4e8', color: '#333', border: '1px solid #ccc', borderRadius: 6, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: '8px 16px', background: '#0366d6', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  Confirm
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
         <thead>
