@@ -3,6 +3,7 @@ import { useSession, API_URL } from './lib/auth'
 import { Link, useLocation } from 'react-router-dom'
 import { cache } from './lib/cache'
 import { PetDashboardWidget } from './components/PetDashboardWidget'
+import { getTextbookEmoji } from './lib/textbooks'
 import './Dashboard.css'
 
 const PRACTICE_TYPE_ICONS: Record<string, string> = {
@@ -11,21 +12,6 @@ const PRACTICE_TYPE_ICONS: Record<string, string> = {
   'Sentence Architect': '🏗️',
   'Recall Map': '🗺️',
   'Writing Map': '📝',
-}
-
-export const TEXTBOOK_EMOJIS: Record<string, string> = {
-  A3A: '🌱', A3B: '🌿',
-  A5A: '🌸', A5B: '🌺',
-  A6B: '🌟',
-  A7A: '🚀', A7B: '🛸',
-  A8B: '🎓',
-}
-
-export function getTextbookEmoji(tb: string) {
-  for (const key of Object.keys(TEXTBOOK_EMOJIS)) {
-    if (tb.toUpperCase().includes(key)) return TEXTBOOK_EMOJIS[key]
-  }
-  return '📖'
 }
 
 const LS_KEY = 'ep-last-units'
@@ -66,7 +52,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
   const items = units[activeUnit]?.sort((a: any, b: any) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })) || []
 
   return (
-    <section className="db-book">
+    <section className="db-book" id={`book-${tb}`}>
       <div className="db-book-header">
         <span className="db-book-emoji">{getTextbookEmoji(tb)}</span>
         <h3 className="db-book-title">{tb}</h3>
@@ -247,7 +233,14 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
 
                       return (
                         <li key={p.id}>
-                          <Link to={`/practice/${p.id}`} className="db-practice-link">
+                          <Link 
+                            to={`/practice/${p.id}`} 
+                            className="db-practice-link"
+                            onClick={() => {
+                              sessionStorage.setItem('last-active-textbook', p.textbook);
+                              sessionStorage.setItem('last-active-unit', p.unit);
+                            }}
+                          >
                             <span className="db-practice-icon">{getIcon(p.type)}</span>
                             <span className="db-practice-name">{formatType(p.type)}</span>
                             {(isVM || isSH || isSA || isGW) && total > 0 && (
@@ -324,6 +317,9 @@ export function Dashboard() {
   const { data: session } = useSession()
   const location = useLocation()
   const returnState = location.state as { textbook?: string; unit?: string } | null
+  const targetTextbook = returnState?.textbook || sessionStorage.getItem('last-active-textbook') || ''
+  const targetUnit = returnState?.unit || sessionStorage.getItem('last-active-unit') || ''
+
   const [practices, setPractices] = useState<any[]>([])
   const [records, setRecords] = useState<any[]>([])
   const [activeTodayBook, setActiveTodayBook] = useState<string>('')
@@ -381,6 +377,20 @@ export function Dashboard() {
       }
     }
   }, [userId])
+
+  useEffect(() => {
+    if (!loading && targetTextbook) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`book-${targetTextbook}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          sessionStorage.removeItem('last-active-textbook');
+          sessionStorage.removeItem('last-active-unit');
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, targetTextbook]);
 
   // group: textbook -> unit -> practices[]
   const grouped: Record<string, Record<string, any[]>> = practices.reduce((acc, p) => {
@@ -506,7 +516,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.28-14:51</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.28-15:49</span></p>
         </div>
       </div>
 
@@ -671,7 +681,7 @@ export function Dashboard() {
                 tb={tb}
                 units={grouped[tb]}
                 records={records}
-                initialUnit={returnState?.textbook === tb ? returnState.unit : undefined}
+                initialUnit={targetTextbook === tb ? targetUnit : undefined}
               />
             ))}
           </div>

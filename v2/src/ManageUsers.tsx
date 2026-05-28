@@ -3,7 +3,7 @@ import { useSession, API_URL } from './lib/auth'
 import { cache } from './lib/cache'
 import { ComposedChart, Bar, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import './Dashboard.css'
-import { getTextbookEmoji } from './Dashboard'
+import { getTextbookEmoji } from './lib/textbooks'
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
