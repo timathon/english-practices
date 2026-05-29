@@ -226,7 +226,7 @@ This document defines the rules for extracting and converting textbook data into
   - `hint`: A brief, helpful cue or reminder in Chinese.
 
 ---
-**Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Crucially, do NOT use any text found within `VISUAL` or `LAYOUT` markers (e.g., `*[*VISUAL: ...*]*` or `*[*LAYOUT: ...*]*`) as source material for practice items, sentences, or contexts.**
+**Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. After generating practice JSONs, there is no need to run `scripts/*-release-gen-3.cjs`; you only need to run `scripts/tts-in-one.cjs`. **Crucially, do NOT use any text found within `VISUAL` or `LAYOUT` markers (e.g., `*[*VISUAL: ...*]*` or `*[*LAYOUT: ...*]*`) as source material for practice items, sentences, or contexts.**
 ---
 
 ## V2 Version Badge
