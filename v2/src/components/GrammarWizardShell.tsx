@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import './GrammarWizardShell.css'
 import { audioCache } from '../lib/audioCache'
@@ -6,6 +6,8 @@ import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
+import { useCountdown } from '../lib/useCountdown'
+import { CountdownRing } from './CountdownRing'
 
 function shuffle<T>(array: T[]): T[] {
     const arr = [...array];
@@ -47,6 +49,17 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    const recordIdPromiseRef = useRef<Promise<string> | null>(null)
    const [practiceRecords, setPracticeRecords] = useState<any[]>([])
    const [historyModal, setHistoryModal] = useState<{title: string, logs: any[]} | null>(null)
+   const timerExpiredRef = useRef(false)
+   const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+
+   // Countdown timer (30s per question)
+   const countdownTimer = useCountdown(30, {
+       onExpire: () => {
+           if (timerExpiredRef.current) return
+           timerExpiredRef.current = true
+           checkAnswerRef.current(true)
+       }
+   })
 
    const primaryColor = data.primaryColor || '#8b5cf6' // Elegant purple for grammar wizards
    const primaryDarkColor = data.primaryColorDark || '#6d28d9'
@@ -118,10 +131,13 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        }
        setLocked(false)
        setShowFeedback(false)
+       timerExpiredRef.current = false
        
        // We keep option original indices but randomize their display order
        const mappedOptions = nextQ.options.map((text: string, idx: number) => ({ text, originalIdx: idx }));
        setOptions(shuffle(mappedOptions));
+       // Reset countdown timer
+       countdownTimer.reset()
    }
 
    const playSfx = async (type: 'correct'|'wrong') => {
@@ -229,14 +245,16 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
         }
     }
 
-   const checkAnswer = () => {
-       if (locked || selectedOption === null) return
-       setLocked(true)
-       
-       setContinueDisabled(true)
-       setTimeout(() => setContinueDisabled(false), 1000)
+    const checkAnswer = useCallback((forceWrong?: boolean) => {
+        if (locked) return
+        if (!forceWrong && selectedOption === null) return
+        setLocked(true)
+        countdownTimer.pause()
+        
+        setContinueDisabled(true)
+        setTimeout(() => setContinueDisabled(false), 1000)
 
-       const isCorrect = selectedOption === q.answer
+        const isCorrect = !forceWrong && selectedOption === q.answer
        setIsCorrectFeedback(isCorrect)
        setShowFeedback(true)
 
@@ -277,7 +295,10 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        
        const scorePercent = Math.round((totalScore / queue.length) * 100)
        syncRecord(scorePercent, false)
-   }
+    }, [locked, selectedOption, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer])
+
+    // Keep ref in sync so onExpire uses the latest checkAnswer
+    useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
 
    const nextQuestion = () => {
        let nextIndex = currentIndex
@@ -486,13 +507,19 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        <div className="gw-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
            <div className="gw-screen">
                 <div className="gw-top-bar">
-                    <button className="gw-close-btn" onClick={() => {
-                        const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
-                        if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
-                            setActiveChallenge(null);
-                            loadRecords();
-                        }
-                    }}>✕</button>
+                    <div style={{ position: 'relative', flexShrink: 0, width: 30 }}>
+                        <button className="gw-close-btn" onClick={() => {
+                            countdownTimer.pause()
+                            const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
+                            if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
+                                setActiveChallenge(null);
+                                loadRecords();
+                            } else {
+                                if (!locked) countdownTimer.resume()
+                            }
+                        }}>✕</button>
+                        <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={30} isRunning={countdownTimer.isRunning} />
+                    </div>
                    <div className="gw-progress-container">
                         {queue.map((_, i) => {
                             const isActive = (!isRedemption && i === currentIndex && !showFeedback) || (isRedemption && q && q.originalIndex === i && !showFeedback);
@@ -562,7 +589,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                        <button 
                            className="gw-check-btn" 
                            disabled={selectedOption === null}
-                           onClick={checkAnswer}
+                           onClick={() => checkAnswer()}
                        >
                            Check
                        </button>

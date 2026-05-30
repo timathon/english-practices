@@ -7,6 +7,8 @@ import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
+import { useCountdown } from '../lib/useCountdown'
+import { CountdownRing } from './CountdownRing'
 
 const PUBLIC_URL_BASE = 'https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev'
 
@@ -167,6 +169,18 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
     const [isCorrect, setIsCorrect]       = useState(false)
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
+    const timerExpiredRef = useRef(false)
+    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+
+    // Countdown timer (10s per question)
+    const countdownTimer = useCountdown(10, {
+        onExpire: () => {
+            if (timerExpiredRef.current) return
+            timerExpiredRef.current = true
+            // Auto-submit if ready, else force wrong
+            checkAnswerRef.current(true)
+        }
+    })
 
     // Linear state
     const [activeSlot, setActiveSlot]       = useState(0)
@@ -252,6 +266,7 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
         setIsRedemption(nextRedemption)
         setLocked(false)
         setShowFeedback(false)
+        timerExpiredRef.current = false
 
         if (nextQ.qtype === 'linear') {
             const lin = nextQ as LinearQuestion
@@ -268,6 +283,8 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
             setBrickPool([...soup.correctChunks, ...distractorSample].sort(() => Math.random() - 0.5))
             setSoupSelection([])
         }
+        // Reset countdown timer
+        countdownTimer.reset()
         return nextQ
     }, [])
 
@@ -343,15 +360,19 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
 
     // ── Check answer ──────────────────────────────────────────────────────────
 
-    const checkAnswer = () => {
-        if (!q || locked || !isReady()) return
+    const checkAnswer = useCallback((forceWrong?: boolean) => {
+        if (!q || locked) return
+        if (!forceWrong && !isReady()) return
         setLocked(true)
+        countdownTimer.pause()
 
         let correct = false
-        if (q.qtype === 'linear') {
-            correct = userChunks.join('') === q.word
-        } else {
-            correct = soupSelection.map(s => s.text).join('') === q.word
+        if (!forceWrong) {
+            if (q.qtype === 'linear') {
+                correct = userChunks.join('') === q.word
+            } else {
+                correct = soupSelection.map(s => s.text).join('') === q.word
+            }
         }
 
         setIsCorrect(correct)
@@ -381,7 +402,10 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
         const totalCorrect = newLog.filter(s => s === 'green').length
         const scorePercent = Math.round((totalCorrect / queueRef.current.length) * 100)
         syncRecord(scorePercent, false)
-    }
+    }, [q, locked, userChunks, soupSelection, playSfx, playAudio, isReady])
+
+    // Keep ref in sync so onExpire uses the latest checkAnswer
+    useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
 
     const syncRecord = async (scorePercent: number, isFinished: boolean) => {
         try {
@@ -541,12 +565,18 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
                 <div className="sh-screen">
                     {/* Top bar */}
                     <div className="sh-top-bar">
-                        <button className="sh-close-btn" onClick={() => {
-                            const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)
-                            if (window.confirm(`Quit? You have ${rem} attempt(s) left today.`)) {
-                                setActiveChallenge(null)
-                            }
-                        }}>✕</button>
+                        <div style={{ position: 'relative', flexShrink: 0, width: 30 }}>
+                            <button className="sh-close-btn" onClick={() => {
+                                countdownTimer.pause()
+                                const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)
+                                if (window.confirm(`Quit? You have ${rem} attempt(s) left today.`)) {
+                                    setActiveChallenge(null)
+                                } else {
+                                    if (!locked) countdownTimer.resume()
+                                }
+                            }}>✕</button>
+                            <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={10} isRunning={countdownTimer.isRunning} />
+                        </div>
                         <div className="sh-progress-container">
                             {queue.map((_, i) => {
                                 const isActive = !isRedemption && i === currentIndex && !showFeedback
@@ -659,7 +689,7 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
                             <button
                                 className="sh-check-btn"
                                 disabled={!isReady()}
-                                onClick={checkAnswer}
+                            onClick={() => checkAnswer()}
                             >
                                 Check
                             </button>

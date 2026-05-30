@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import './VocabMasterShell.css'
 import md5 from 'md5'
@@ -7,6 +7,8 @@ import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
+import { useCountdown } from '../lib/useCountdown'
+import { CountdownRing } from './CountdownRing'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
@@ -52,6 +54,17 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const recordIdPromiseRef = useRef<Promise<string> | null>(null)
    const [practiceRecords, setPracticeRecords] = useState<any[]>([])
    const [historyModal, setHistoryModal] = useState<{title: string, logs: any[]} | null>(null)
+   const timerExpiredRef = useRef(false)
+   const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+
+   // Countdown timer (10s per question)
+   const countdownTimer = useCountdown(10, {
+       onExpire: () => {
+           if (timerExpiredRef.current) return
+           timerExpiredRef.current = true
+           checkAnswerRef.current(true)
+       }
+   })
 
    const primaryColor = data.primaryColor || '#3b82f6'
    const primaryDarkColor = data.primaryColorDark || '#2563eb'
@@ -121,6 +134,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        setHintUsed(false)
        setLocked(false)
        setShowFeedback(false)
+       timerExpiredRef.current = false
               // Generate shuffled options that retain original index
         let selectedOptions: Array<{ text: string; originalIdx: number }> = [];
         if (nextQ.options.length > 4) {
@@ -143,6 +157,8 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
         }
         
         setOptions(shuffle(selectedOptions));
+        // Reset countdown timer
+        countdownTimer.reset()
     }
 
    const playAudio = async (url: string) => {
@@ -269,14 +285,16 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
         }
     }
 
-   const checkAnswer = () => {
-       if (locked || selectedOption === null) return
+   const checkAnswer = useCallback((forceWrong?: boolean) => {
+       if (locked) return
+       if (!forceWrong && selectedOption === null) return
        setLocked(true)
+       countdownTimer.pause()
        
        setContinueDisabled(true)
        setTimeout(() => setContinueDisabled(false), 1000)
 
-       const isCorrect = selectedOption === q.answer
+       const isCorrect = !forceWrong && selectedOption === q.answer
        setIsCorrectFeedback(isCorrect)
        setShowFeedback(true)
 
@@ -321,7 +339,10 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        
        const scorePercent = Math.round((totalScore / queue.length) * 100)
        syncRecord(scorePercent, false)
-   }
+   }, [locked, selectedOption, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer])
+
+   // Keep ref in sync so onExpire uses the latest checkAnswer
+   useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
 
    const nextQuestion = () => {
        let nextIndex = currentIndex
@@ -505,13 +526,19 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        <div className="vm-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
            <div className="vm-screen">
                 <div className="vm-top-bar">
-                    <button className="vm-close-btn" onClick={() => {
-                        const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
-                        if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
-                            setActiveChallenge(null);
-                            loadRecords();
-                        }
-                    }}>✕</button>
+                    <div style={{ position: 'relative', flexShrink: 0, width: 30 }}>
+                        <button className="vm-close-btn" onClick={() => {
+                            countdownTimer.pause()
+                            const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
+                            if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
+                                setActiveChallenge(null);
+                                loadRecords();
+                            } else {
+                                if (!locked) countdownTimer.resume()
+                            }
+                        }}>✕</button>
+                        <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={10} isRunning={countdownTimer.isRunning} />
+                    </div>
                    <div className="vm-progress-container">
                         {queue.map((_, i) => {
                             const isActive = (!isRedemption && i === currentIndex && !showFeedback) || (isRedemption && q && q.originalIndex === i && !showFeedback);
@@ -605,7 +632,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                        <button 
                            className="vm-check-btn" 
                            disabled={selectedOption === null}
-                           onClick={checkAnswer}
+                           onClick={() => checkAnswer()}
                        >
                            Check
                        </button>

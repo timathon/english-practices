@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import './SentenceArchitectShell.css'
 import md5 from 'md5'
@@ -7,6 +7,8 @@ import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
+import { useCountdown } from '../lib/useCountdown'
+import { CountdownRing } from './CountdownRing'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
@@ -90,6 +92,17 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
     const [practiceRecords, setPracticeRecords] = useState<any[]>([])
     const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
+    const timerExpiredRef = useRef(false)
+    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+
+    // Countdown timer (30s per question)
+    const countdownTimer = useCountdown(30, {
+        onExpire: () => {
+            if (timerExpiredRef.current) return
+            timerExpiredRef.current = true
+            checkAnswerRef.current(true)
+        }
+    })
 
     const primaryColor = data.primaryColor || '#3b82f6'
     const primaryDarkColor = data.primaryColorDark || '#2563eb'
@@ -165,6 +178,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         setUserSelection([])
         setContinueCountdown(0)
         setContinueDisabled(false)
+        timerExpiredRef.current = false
 
         // Generate Shuffled Word Pool
         const cleanEn = nextQ.en.replace(/[.!?]$/, "");
@@ -213,6 +227,8 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         });
 
         setWordPool(poolItems)
+        // Reset countdown timer
+        countdownTimer.reset()
     }
 
     const playAudio = async (url: string) => {
@@ -349,9 +365,11 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         }
     }
 
-    const checkAnswer = () => {
-        if (locked || userSelection.length === 0) return
+    const checkAnswer = useCallback((forceWrong?: boolean) => {
+        if (locked) return
+        if (!forceWrong && userSelection.length === 0) return
         setLocked(true)
+        countdownTimer.pause()
 
         // Construct user sentence string (capitalizing first word if needed)
         const constructed = userSelection.map((item, idx) => {
@@ -367,9 +385,12 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         setUserSentenceStr(constructed);
 
         const target = q.en.replace(/[.!?]$/, "");
-        let isCorrect = constructed === target;
-        if (!isCorrect && q.accept) {
-            isCorrect = q.accept.some((alt: string) => alt.replace(/[.!?]$/, "") === constructed);
+        let isCorrect = false
+        if (!forceWrong) {
+            isCorrect = constructed === target;
+            if (!isCorrect && q.accept) {
+                isCorrect = q.accept.some((alt: string) => alt.replace(/[.!?]$/, "") === constructed);
+            }
         }
 
         setIsCorrectFeedback(isCorrect)
@@ -434,7 +455,10 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                 })
             }, 1000)
         }
-    }
+    }, [locked, userSelection, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, autoplay, queue.length, countdownTimer])
+
+    // Keep ref in sync so onExpire uses the latest checkAnswer
+    useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
 
     const nextQuestion = () => {
         let nextIndex = currentIndex
@@ -686,13 +710,19 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         <div className="sa-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
             <div className="sa-screen">
                 <div className="sa-top-bar">
-                    <button className="sa-close-btn" onClick={() => {
-                        const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
-                        if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
-                            setActiveChallenge(null);
-                            loadRecords();
-                        }
-                    }}>✕</button>
+                    <div style={{ position: 'relative', flexShrink: 0, width: 30 }}>
+                        <button className="sa-close-btn" onClick={() => {
+                            countdownTimer.pause()
+                            const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
+                            if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
+                                setActiveChallenge(null);
+                                loadRecords();
+                            } else {
+                                if (!locked) countdownTimer.resume()
+                            }
+                        }}>✕</button>
+                        <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={30} isRunning={countdownTimer.isRunning} />
+                    </div>
                     <div className="sa-progress-container">
                         {queue.map((_, i) => {
                             const isActive = (!isRedemption && i === currentIndex && !showFeedback) || (isRedemption && q && q.originalIndex === i && !showFeedback);
@@ -793,7 +823,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                         <button
                             className="sa-check-btn"
                             disabled={userSelection.length === 0}
-                            onClick={checkAnswer}
+                            onClick={() => checkAnswer()}
                         >
                             Check
                         </button>
