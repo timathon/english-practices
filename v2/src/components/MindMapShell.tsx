@@ -39,7 +39,7 @@ export function MindMapShell({ data, textbook, isWritingMap }: MindMapShellProps
   const [actionSteps, setActionSteps] = useState<(() => void)[]>([])
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null)
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
-  const [showAllMode, setShowAllMode] = useState(0) // 0: manual, 1: emoji, 2: keywords, 3: full
+  const [showAllMode, setShowAllMode] = useState(3) // 0: manual, 1: emoji, 2: keywords, 3: full
   const [savedCollapsedNodes, setSavedCollapsedNodes] = useState<Set<string> | null>(null)
   const [layoutOrientation, setLayoutOrientation] = useState<'horizontal' | 'vertical'>(() => {
     return (localStorage.getItem('mm-layout-orientation') as 'horizontal' | 'vertical') || 'horizontal'
@@ -205,8 +205,15 @@ export function MindMapShell({ data, textbook, isWritingMap }: MindMapShellProps
     setMaxTreeDepth(depth)
     setMaxDepthVisible(depth)
 
-    // Replay initial step
-    applyStepsUpTo(1, tempTree)
+    // Show all in full mode on load
+    setShowAllMode(3)
+    const fullTree = JSON.parse(JSON.stringify(tempTree))
+    const setAllFull = (node: Node) => {
+      node.state = 'full'
+      if (node.children) node.children.forEach(setAllFull)
+    }
+    setAllFull(fullTree)
+    setTreeData(fullTree)
   }, [data.tree, getMaxDepth, findNode])
 
   // Replay steps up to targetIndex on a cloned tree

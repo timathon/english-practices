@@ -22,9 +22,11 @@ export function PetFloatingCompanion() {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [speech, setSpeech] = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [recentlyClicked, setRecentlyClicked] = useState(false);
 
   const particleIdRef = useRef(0);
   const speechTimeoutRef = useRef<number | null>(null);
+  const clickTimeoutRef = useRef<number | null>(null);
   const prevLevelRef = useRef(petState.level);
 
   // Sync pet state updates
@@ -122,6 +124,7 @@ export function PetFloatingCompanion() {
     return () => {
       window.removeEventListener('ep-correct-answer', handleCorrect);
       if (speechTimeoutRef.current) window.clearTimeout(speechTimeoutRef.current);
+      if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
     };
   }, []);
 
@@ -129,6 +132,12 @@ export function PetFloatingCompanion() {
   const handlePet = (e: React.MouseEvent) => {
     e.stopPropagation();
     petService.petPet();
+
+    setRecentlyClicked(true);
+    if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
+    clickTimeoutRef.current = window.setTimeout(() => {
+      setRecentlyClicked(false);
+    }, 2000);
 
     const id = particleIdRef.current++;
     setParticles(prev => [...prev, {
@@ -171,7 +180,7 @@ export function PetFloatingCompanion() {
   }
 
   return (
-    <div className="pet-float-wrapper">
+    <div className={`pet-float-wrapper${recentlyClicked ? ' active' : ''}`}>
       {/* Speech bubble */}
       {speech && (
         <div className="pet-float-speech">

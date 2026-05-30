@@ -11,7 +11,25 @@ import './App.css'
 
 function Navigation({ session }: { session: any }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [delayedClosed, setDelayedClosed] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (isMenuOpen) {
+      setDelayedClosed(false);
+    } else {
+      setDelayedClosed(true);
+      const timer = setTimeout(() => {
+        setDelayedClosed(false);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isMenuOpen]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -34,7 +52,7 @@ function Navigation({ session }: { session: any }) {
   return (
     <div ref={menuRef} className="nav-container">
       <button 
-        className="nav-btn"
+        className={`nav-btn${isMenuOpen || delayedClosed ? ' active' : ''}`}
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         aria-label="Toggle navigation menu"
       >

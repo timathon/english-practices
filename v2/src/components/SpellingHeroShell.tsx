@@ -360,7 +360,7 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
         if (correct) {
             petService.awardCorrectAnswer()
         }
-        setTimeout(() => playAudio(q.audio), 200)
+        setTimeout(() => playAudio(q.audio), 600)
 
         // Update refs immediately so nextQuestion reads fresh values
         const newLog = [...scoreLogRef.current]

@@ -25,7 +25,7 @@ export function RecallMapShell({ data }: Omit<RecallMapShellProps, 'practiceId'>
   const [actionSteps, setActionSteps] = useState<(() => void)[]>([])
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null)
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
-  const [showAllMode, setShowAllMode] = useState(0) // 0: manual, 1: emoji, 2: keywords/full
+  const [showAllMode, setShowAllMode] = useState(2) // 0: manual, 1: emoji, 2: keywords/full
   const [savedCollapsedNodes, setSavedCollapsedNodes] = useState<Set<string> | null>(null)
   
   const containerRef = useRef<HTMLDivElement>(null)
@@ -94,8 +94,15 @@ export function RecallMapShell({ data }: Omit<RecallMapShellProps, 'practiceId'>
     generateSteps(tempTree)
     setActionSteps(() => steps)
     
-    // Start with root visible if it was full in data or just run first step
-    applyStepsUpTo(1)
+    // Start with all visible in full mode on load
+    setShowAllMode(2)
+    const fullTree = JSON.parse(JSON.stringify(tempTree))
+    const setAllFull = (node: Node) => {
+      node.state = 'full'
+      if (node.children) node.children.forEach(setAllFull)
+    }
+    setAllFull(fullTree)
+    setTreeData(fullTree)
   }, [data.tree])
 
   const findNode = (root: Node, id: string): Node | null => {

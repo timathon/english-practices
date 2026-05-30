@@ -28,9 +28,24 @@ function saveLastUnit(tb: string, unit: string) {
 }
 
 function BookSection({ tb, units, records, initialUnit }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string }) {
-  const unitKeys = Object.keys(units).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+  const unitKeys = Object.keys(units).sort((a, b) => {
+    const isStdA = /^[UM]\d+/i.test(a.trim())
+    const isStdB = /^[UM]\d+/i.test(b.trim())
+    if (isStdA && !isStdB) return -1
+    if (!isStdA && isStdB) return 1
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+  })
   const isRazB = tb === 'RAZ-B'
   const isBThink1 = tb === 'B-THINK1' || tb === 'B-Think1'
+
+  const formatUnitDisplay = (unitName: string) => {
+    const escapedTb = tb.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const prefixReg = new RegExp(`^${escapedTb}\\b`, 'i')
+    if (prefixReg.test(unitName)) {
+      return unitName.replace(prefixReg, '').trim()
+    }
+    return unitName
+  }
 
   const getPageStart = (p: any) => {
     const match = p.type.match(/^p\d+/i)
@@ -215,7 +230,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                 transition: 'all 0.2s'
               }}
             >
-              {tabVal}
+              {formatUnitDisplay(tabVal)}
             </button>
           ))}
         </div>
@@ -652,7 +667,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.29-00:03</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.30-09:56</span></p>
         </div>
       </div>
 

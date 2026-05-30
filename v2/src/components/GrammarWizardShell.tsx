@@ -34,6 +34,10 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    const [selectedOption, setSelectedOption] = useState<number | null>(null)
    const [locked, setLocked] = useState(false)
    const [hintUsed, setHintUsed] = useState(false)
+   const [showHintModal, setShowHintModal] = useState(false)
+   const [isClosing, setIsClosing] = useState(false)
+   const [hintTimeLeft, setHintTimeLeft] = useState(5)
+   const hintIntervalRef = useRef<number | null>(null)
    const [completed, setCompleted] = useState(false)
    const [finalScore, setFinalScore] = useState(0)
    const [showFeedback, setShowFeedback] = useState(false)
@@ -59,6 +63,9 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    
    useEffect(() => {
        loadRecords()
+       return () => {
+           if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
+       }
    }, [])
 
    const handleChallengeSelect = (c: any) => {
@@ -103,6 +110,12 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        setIsRedemption(isRedemp)
        setSelectedOption(null)
        setHintUsed(false)
+       setShowHintModal(false)
+       setIsClosing(false)
+       if (hintIntervalRef.current) {
+           clearInterval(hintIntervalRef.current)
+           hintIntervalRef.current = null
+       }
        setLocked(false)
        setShowFeedback(false)
        
@@ -310,6 +323,35 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        }
    }
 
+    const closeHintModal = () => {
+        setIsClosing(true)
+        setTimeout(() => {
+            setShowHintModal(false)
+            setIsClosing(false)
+            if (hintIntervalRef.current) {
+                clearInterval(hintIntervalRef.current)
+                hintIntervalRef.current = null
+            }
+        }, 200)
+    }
+
+    const handleShowHint = () => {
+        setHintUsed(true)
+        setShowHintModal(true)
+        setHintTimeLeft(5)
+        
+        if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
+        
+        let secondsLeft = 5
+        hintIntervalRef.current = window.setInterval(() => {
+            secondsLeft -= 1
+            setHintTimeLeft(secondsLeft)
+            if (secondsLeft <= 0) {
+                closeHintModal()
+            }
+        }, 1000)
+    }
+
    if (!activeChallenge) {
        return (
            <div className="gw-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
@@ -443,10 +485,9 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                    <div className="gw-prompt-container">
                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '10px' }}>
                            <div className="gw-prompt-category" style={{ margin: 0 }}>{q.category.toUpperCase()}</div>
-                           <button className="gw-prompt-hint-btn" onClick={() => setHintUsed(true)}>💡</button>
+                           <button className="gw-prompt-hint-btn" onClick={handleShowHint}>💡</button>
                        </div>
                        <div className="gw-prompt-val">{q.prompt}</div>
-                       <div className={`gw-hint-text ${hintUsed ? 'visible' : ''}`}>{q.hint}</div>
                    </div>
 
                    <div className="gw-options-list">
@@ -515,7 +556,23 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                        </button>
                    )}
                </div>
-           </div>
+
+               {(showHintModal || isClosing) && (
+                    <div className={`gw-modal-overlay${isClosing ? ' closing' : ''}`} onClick={closeHintModal}>
+                        <div className={`gw-modal-content${isClosing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                                    💡 Hint (提示) <span style={{ fontSize: '0.9rem', color: '#999', marginLeft: '6px' }}>({hintTimeLeft}s)</span>
+                                </span>
+                                <button className="gw-close-btn" style={{ margin: 0, width: 'auto', fontSize: '1.2rem' }} onClick={closeHintModal}>✕</button>
+                            </div>
+                            <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                                {q.hint}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
        </div>
    )
 }
