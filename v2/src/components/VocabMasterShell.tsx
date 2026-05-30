@@ -546,7 +546,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
 
                            return (
                                <button 
-                                   key={opt.text} 
+                                   key={`${opt.text}-${opt.originalIdx}`} 
                                    className={classes}
                                    onClick={() => handleOptionClick(opt.originalIdx)}
                                    disabled={locked}
