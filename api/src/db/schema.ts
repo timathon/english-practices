@@ -11,6 +11,7 @@ export const user = sqliteTable("user", {
   subscriptionExpiry: integer("subscriptionExpiry", { mode: "timestamp" }),
   emailVerified: integer("emailVerified", { mode: "boolean" }).notNull(),
   image: text("image"),
+  petState: text("petState", { mode: "json" }).$type<any>(),
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull()
 });

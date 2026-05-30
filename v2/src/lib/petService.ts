@@ -1,3 +1,5 @@
+import { API_URL, authClient } from './auth';
+
 export type DailyGoalPreset = 'easy' | 'normal' | 'hard';
 
 export const DAILY_GOAL_VALUES: Record<DailyGoalPreset, number> = {
@@ -30,6 +32,7 @@ export interface PetState {
 
   // Achievements
   achievements: string[];
+  userId?: string;
 }
 
 // ── Achievement Definitions ──────────────────────────────────────
@@ -164,6 +167,7 @@ export const petService = {
         level: typeof parsed.level === 'number' ? parsed.level : 1,
         // Achievements
         achievements: Array.isArray(parsed.achievements) ? parsed.achievements : [],
+        userId: parsed.userId || undefined,
       };
       return this.applyDecay(state);
     } catch {
@@ -176,8 +180,92 @@ export const petService = {
       localStorage.setItem(LS_KEY, JSON.stringify(state));
       // Notify components about state change
       window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: state }));
+      // Sync to remote database
+      this.syncSave(state);
     } catch (e) {
       console.error('Failed to save pet state', e);
+    }
+  },
+
+  async syncSave(state: PetState) {
+    try {
+      // Ensure we have a userId on the state. If not, fetch it from session.
+      if (!state.userId) {
+        const sessionRes = await authClient.getSession();
+        const user = sessionRes?.data?.user;
+        if (user) {
+          state.userId = user.id;
+          localStorage.setItem(LS_KEY, JSON.stringify(state));
+        } else {
+          return; // Skip sync if not logged in
+        }
+      }
+
+      await fetch(`${API_URL}/api/pet`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(state)
+      });
+    } catch (e) {
+      console.error('Failed to sync pet state to server', e);
+    }
+  },
+
+  async syncWithServer() {
+    try {
+      const sessionRes = await authClient.getSession();
+      const user = sessionRes?.data?.user;
+      if (!user) return; // Skip if no active session
+
+      const res = await fetch(`${API_URL}/api/pet`, { credentials: 'include' });
+      if (res.status === 401) return;
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
+
+      const serverState = await res.json();
+      const localState = this.getPetState();
+
+      // Check if local state belongs to another user
+      if (localState.userId && localState.userId !== user.id) {
+        if (serverState) {
+          localStorage.setItem(LS_KEY, JSON.stringify(serverState));
+          window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: serverState }));
+        } else {
+          const freshState = INITIAL_STATE();
+          freshState.userId = user.id;
+          localStorage.setItem(LS_KEY, JSON.stringify(freshState));
+          window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: freshState }));
+        }
+        return;
+      }
+
+      // Associate local state with user if not done yet
+      if (!localState.userId) {
+        localState.userId = user.id;
+        localStorage.setItem(LS_KEY, JSON.stringify(localState));
+      }
+
+      if (!serverState) {
+        // Upload local state if server has none
+        await this.syncSave(localState);
+        return;
+      }
+
+      // Reconciliation based on lastUpdated timestamp
+      const serverTime = serverState.lastUpdated || 0;
+      const localTime = localState.lastUpdated || 0;
+
+      if (serverTime > localTime) {
+        serverState.userId = user.id;
+        localStorage.setItem(LS_KEY, JSON.stringify(serverState));
+        window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: serverState }));
+      } else if (localTime > serverTime) {
+        await this.syncSave(localState);
+      }
+    } catch (e) {
+      console.error('Failed to sync pet companion state with server', e);
     }
   },
 

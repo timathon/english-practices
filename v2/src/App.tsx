@@ -7,6 +7,7 @@ import { UsageGuide } from './UsageGuide'
 import { PracticeShell } from './components/PracticeShell'
 import { PetFloatingCompanion } from './components/PetFloatingCompanion'
 import { useSession, signOut } from './lib/auth'
+import { petService } from './lib/petService'
 import './App.css'
 
 function Navigation({ session }: { session: any }) {
@@ -98,6 +99,12 @@ function Navigation({ session }: { session: any }) {
 
 function App() {
   const { data: session, isPending } = useSession()
+
+  useEffect(() => {
+    if (session) {
+      petService.syncWithServer();
+    }
+  }, [session]);
 
   if (isPending) return <div style={{ padding: 20 }}>Loading...</div>
 
