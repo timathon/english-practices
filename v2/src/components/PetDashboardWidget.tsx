@@ -53,7 +53,7 @@ export function PetDashboardWidget() {
 
   const handleFeed = () => {
     if (petState.foodPoints < 1.0) {
-      showSpeech('Practice and give correct answers to get food! 🍗');
+      showSpeech(`Practice and give correct answers to get food! ${petService.getPetFoodEmoji(petState.type)}`);
       return;
     }
     const success = petService.feedPet();
@@ -133,7 +133,7 @@ export function PetDashboardWidget() {
             Lv.{petState.level} · {stageLabel}
           </span>
           <span className="pet-widget-points-badge" title="Food items in stock. Earn more by answering correctly! (每答对10题获得1个食物)">
-            🍗 ×{Math.floor(petState.foodPoints)}
+            {petService.getPetFoodEmoji(petState.type)} ×{Math.floor(petState.foodPoints)}
           </span>
         </div>
       </div>
@@ -301,7 +301,7 @@ export function PetDashboardWidget() {
             onClick={handleFeed}
             disabled={petState.foodPoints < 1.0}
           >
-            🍗 Feed (喂食)
+            {petService.getPetFoodEmoji(petState.type)} Feed (喂食)
           </button>
           <button
             className="pet-widget-btn pet-btn"
@@ -428,8 +428,8 @@ export function PetDashboardWidget() {
                         <h5>Hunger & Food (饱食度与食物)</h5>
                       </div>
                       <div className="pet-help-card-body">
-                        <p className="help-en">Correct answers grant <strong>0.1 food points</strong> (1 food item per 10 correct answers). Feed your pet (🍗) to restore Hunger by <strong>+10</strong> (consumes 1 food).</p>
-                        <p className="help-cn">每答对一题获得 <strong>0.1 个食物</strong>（每答对10题可获得1个完整食物）。喂食 (🍗) 消耗1个食物，恢复 <strong>+10 饱食度</strong>。</p>
+                        <p className="help-en">Correct answers grant <strong>0.1 food points</strong> (1 food item per 10 correct answers). Feed your pet ({petService.getPetFoodEmoji(petState.type)}) to restore Hunger by <strong>+10</strong> (consumes 1 food).</p>
+                        <p className="help-cn">每答对一题获得 <strong>0.1 个食物</strong>（每答对10题可获得1个完整食物）。喂食 ({petService.getPetFoodEmoji(petState.type)}) 消耗1个食物，恢复 <strong>+10 饱食度</strong>。</p>
                       </div>
                     </div>
 

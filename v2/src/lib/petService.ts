@@ -451,6 +451,12 @@ export const petService = {
     }
   },
 
+  getPetFoodEmoji(type: 'cat' | 'dog' | 'dino'): string {
+    if (type === 'cat') return '🐟';
+    if (type === 'dog') return '🍖';
+    return '🥩'; // dino
+  },
+
   // ── Pet Emoji (evolution-aware) ───────────────────────────────
   getPetEmoji(type: 'cat' | 'dog' | 'dino', food: number, love: number, level: number = 1): string {
     const stage = this.getEvolutionStage(level);
@@ -570,9 +576,10 @@ export const petService = {
   getRandomFeedMessage(name: string, type: 'cat' | 'dog' | 'dino'): string {
     const actionStr = type === 'cat' ? 'purrs' : type === 'dog' ? 'wags tail' : 'roars';
     const cnActionStr = type === 'cat' ? '呼噜呼噜' : type === 'dog' ? '摇尾巴' : '开心咆哮';
+    const foodEmoji = this.getPetFoodEmoji(type);
     const messages = [
       `*${name} eats happily* Nom nom! That was delicious! 😋 Keep up the good work! (美味！*${name}吃得很开心* 继续加油！)`,
-      `*${name} ${actionStr}* Thank you for the tasty food! 🍗 Let's learn more together! (多谢美味！*${name}${cnActionStr}* 咱们一起学更多吧！)`,
+      `*${name} ${actionStr}* Thank you for the tasty food! ${foodEmoji} Let's learn more together! (多谢美味！*${name}${cnActionStr}* 咱们一起学更多吧！)`,
       `Yum! This gives ${name} energy to watch you study! ⚡ Keep it up! (好吃！看你学习，让${name}更有劲了！)`,
       `*${name} licks lips* Delicious! You are getting smarter, and I am getting fuller! 🧠✨ (真好吃！*${name}舔了舔嘴* 你变聪明了，我也变饱了！)`
     ];
