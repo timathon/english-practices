@@ -492,6 +492,24 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
         }
     }
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!activeChallenge || completed || historyChallenge) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!locked) {
+                    if (isReady()) {
+                        checkAnswer();
+                    }
+                } else {
+                    nextQuestion();
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeChallenge, completed, historyChallenge, locked, isReady, checkAnswer, nextQuestion]);
+
     // ─── Render: Complete screen ──────────────────────────────────────────────
 
     if (completed && activeChallenge) {
@@ -647,7 +665,13 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
                             </button>
                         ) : (
                             <button className="sh-check-btn continue" onClick={nextQuestion}>
-                                Continue
+                                {(() => {
+                                    const mistakesCount = mistakeRef.current.length;
+                                    const isLast = redemptionRef.current 
+                                        ? (mistakesCount === 0)
+                                        : (indexRef.current + 1 >= queue.length && mistakesCount === 0);
+                                    return isLast ? 'Finish' : 'Continue';
+                                })()}
                             </button>
                         )}
                     </div>

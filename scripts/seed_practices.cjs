@@ -55,8 +55,8 @@ function myFetch(url, options = {}) {
 
 function getChangedOrAddedJsonFiles() {
     try {
-        const statusOutput = execSync('git status --porcelain "data/**/*.json"', { encoding: 'utf8' }).trim();
-        if (!statusOutput) return [];
+        const statusOutput = execSync('git status --porcelain "data/**/*.json"', { encoding: 'utf8' });
+        if (!statusOutput.trim()) return [];
         
         const files = [];
         const lines = statusOutput.split('\n');

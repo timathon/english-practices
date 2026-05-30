@@ -492,6 +492,26 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         try { localStorage.setItem('sa-settings-sfx', String(next)) } catch {}
     }
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!activeChallenge || completed || historyModal || showSettings) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!locked) {
+                    if (userSelection.length > 0) {
+                        checkAnswer();
+                    }
+                } else {
+                    if (!continueDisabled) {
+                        nextQuestion();
+                    }
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeChallenge, completed, historyModal, showSettings, locked, userSelection.length, continueDisabled, nextQuestion, checkAnswer]);
+
     if (!activeChallenge) {
         return (
             <div className="sa-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>

@@ -352,6 +352,26 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
         }, 1000)
     }
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!activeChallenge || completed || historyModal || showHintModal) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!locked) {
+                    if (selectedOption !== null) {
+                        checkAnswer();
+                    }
+                } else {
+                    if (!continueDisabled) {
+                        nextQuestion();
+                    }
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeChallenge, completed, historyModal, showHintModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer]);
+
    if (!activeChallenge) {
        return (
            <div className="gw-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
@@ -547,13 +567,25 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                            Check
                        </button>
                    ) : (
-                       <button 
-                           className="gw-check-btn continue" 
-                           onClick={nextQuestion}
-                           disabled={continueDisabled}
-                       >
-                           Continue
-                       </button>
+                        <button 
+                            className="gw-check-btn continue" 
+                            onClick={nextQuestion}
+                            disabled={continueDisabled}
+                        >
+                            {(() => {
+                                const isCorrect = selectedOption === q.answer;
+                                let mistakesCount = mistakeQueue.length;
+                                if (isRedemption) {
+                                    if (isCorrect) mistakesCount = Math.max(0, mistakesCount - 1);
+                                } else {
+                                    if (!isCorrect) mistakesCount += 1;
+                                }
+                                const isLast = isRedemption 
+                                    ? (mistakesCount === 0)
+                                    : (currentIndex + 1 >= queue.length && mistakesCount === 0);
+                                return isLast ? 'Finish' : 'Continue';
+                            })()}
+                        </button>
                    )}
                </div>
 

@@ -367,6 +367,26 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        }
    }
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!activeChallenge || completed || historyModal) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!locked) {
+                    if (selectedOption !== null) {
+                        checkAnswer();
+                    }
+                } else {
+                    if (!continueDisabled) {
+                        nextQuestion();
+                    }
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeChallenge, completed, historyModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer]);
+
    if (!activeChallenge) {
        return (
            <div className="vm-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
@@ -595,7 +615,19 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                            onClick={nextQuestion}
                            disabled={continueDisabled}
                        >
-                           Continue
+                            {(() => {
+                                const isCorrect = selectedOption === q.answer;
+                                let mistakesCount = mistakeQueue.length;
+                                if (isRedemption) {
+                                    if (isCorrect) mistakesCount = Math.max(0, mistakesCount - 1);
+                                } else {
+                                    if (!isCorrect) mistakesCount += 1;
+                                }
+                                const isLast = isRedemption 
+                                    ? (mistakesCount === 0)
+                                    : (currentIndex + 1 >= queue.length && mistakesCount === 0);
+                                return isLast ? 'Finish' : 'Continue';
+                            })()}
                        </button>
                    )}
                </div>

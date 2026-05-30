@@ -643,7 +643,7 @@ export function MindMapShell({ data, textbook, isWritingMap }: MindMapShellProps
     // Parse Highlight words
     let displayedText: React.ReactNode = node.text
     if (state === 'full' && node.highlight) {
-      const highlights = node.highlight.split(',').map(s => s.trim()).filter(Boolean)
+      const highlights = Array.from(new Set(node.highlight.split(',').map(s => s.trim()).filter(Boolean)))
       let textWithHighlights = node.text
 
       // Escape regex helper
