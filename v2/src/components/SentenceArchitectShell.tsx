@@ -58,6 +58,10 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
     const [locked, setLocked] = useState(false)
     const [hintUsed, setHintUsed] = useState(false)
+    const [showHintModal, setShowHintModal] = useState(false)
+    const [isClosing, setIsClosing] = useState(false)
+    const [hintTimeLeft, setHintTimeLeft] = useState(5)
+    const hintIntervalRef = useRef<number | null>(null)
     const [completed, setCompleted] = useState(false)
     const [finalScore, setFinalScore] = useState(0)
     
@@ -120,6 +124,9 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
     useEffect(() => {
         loadRecords()
+        return () => {
+            if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
+        }
     }, [])
 
     // Preload standard audio SFX
@@ -173,6 +180,12 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         setQ(nextQ)
         setIsRedemption(isRedemp)
         setHintUsed(false)
+        setShowHintModal(false)
+        setIsClosing(false)
+        if (hintIntervalRef.current) {
+            clearInterval(hintIntervalRef.current)
+            hintIntervalRef.current = null
+        }
         setLocked(false)
         setShowFeedback(false)
         setUserSelection([])
@@ -516,9 +529,38 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         try { localStorage.setItem('sa-settings-sfx', String(next)) } catch {}
     }
 
+    const closeHintModal = () => {
+        setIsClosing(true)
+        setTimeout(() => {
+            setShowHintModal(false)
+            setIsClosing(false)
+            if (hintIntervalRef.current) {
+                clearInterval(hintIntervalRef.current)
+                hintIntervalRef.current = null
+            }
+        }, 200)
+    }
+
+    const handleShowHint = () => {
+        setHintUsed(true)
+        setShowHintModal(true)
+        setHintTimeLeft(5)
+        
+        if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
+        
+        let secondsLeft = 5
+        hintIntervalRef.current = window.setInterval(() => {
+            secondsLeft -= 1
+            setHintTimeLeft(secondsLeft)
+            if (secondsLeft <= 0) {
+                closeHintModal()
+            }
+        }, 1000)
+    }
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (!activeChallenge || completed || historyModal || showSettings) return;
+            if (!activeChallenge || completed || historyModal || showSettings || showHintModal) return;
             if (e.key === 'Enter') {
                 e.preventDefault();
                 if (!locked) {
@@ -534,7 +576,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeChallenge, completed, historyModal, showSettings, locked, userSelection.length, continueDisabled, nextQuestion, checkAnswer]);
+    }, [activeChallenge, completed, historyModal, showSettings, showHintModal, locked, userSelection.length, continueDisabled, nextQuestion, checkAnswer]);
 
     if (!activeChallenge) {
         return (
@@ -733,10 +775,11 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
                 <div className="sa-question-area">
                     <div className="sa-prompt-container">
-                        <div className="sa-prompt-type">Build the Sentence</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '5px' }}>
+                            <div className="sa-prompt-type" style={{ margin: 0 }}>Build the Sentence</div>
+                            <button className="sa-prompt-hint-btn" onClick={handleShowHint}>💡</button>
+                        </div>
                         <div className="sa-prompt-val">{q.cn}</div>
-                        <button className="sa-prompt-hint-btn" onClick={() => setHintUsed(true)}>💡</button>
-                        <div className={`sa-hint-text ${hintUsed ? 'visible' : ''}`}>{q.hint}</div>
                     </div>
 
                     {/* Answer Selection Area */}
@@ -841,6 +884,22 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                         </button>
                     )}
                 </div>
+
+                {(showHintModal || isClosing) && (
+                    <div className={`sa-modal-overlay${isClosing ? ' closing' : ''}`} onClick={closeHintModal}>
+                        <div className={`sa-modal-content${isClosing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                                    💡 Hint (提示) <span style={{ fontSize: '0.9rem', color: '#999', marginLeft: '6px' }}>({hintTimeLeft}s)</span>
+                                </span>
+                                <button className="sa-close-btn" style={{ margin: 0, width: 'auto', fontSize: '1.2rem' }} onClick={closeHintModal}>✕</button>
+                            </div>
+                            <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                                {q.hint}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

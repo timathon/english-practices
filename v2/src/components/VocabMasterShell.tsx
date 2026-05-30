@@ -43,9 +43,13 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const [options, setOptions] = useState<any[]>([])
 
    const [selectedOption, setSelectedOption] = useState<number | null>(null)
-   const [locked, setLocked] = useState(false)
-   const [hintUsed, setHintUsed] = useState(false)
-   const [completed, setCompleted] = useState(false)
+    const [locked, setLocked] = useState(false)
+    const [hintUsed, setHintUsed] = useState(false)
+    const [showHintModal, setShowHintModal] = useState(false)
+    const [isClosing, setIsClosing] = useState(false)
+    const [hintTimeLeft, setHintTimeLeft] = useState(5)
+    const hintIntervalRef = useRef<number | null>(null)
+    const [completed, setCompleted] = useState(false)
    const [finalScore, setFinalScore] = useState(0)
    const [showFeedback, setShowFeedback] = useState(false)
    const [isCorrectFeedback, setIsCorrectFeedback] = useState(false)
@@ -79,9 +83,12 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        }
    }
    
-   useEffect(() => {
-       loadRecords()
-   }, [])
+    useEffect(() => {
+        loadRecords()
+        return () => {
+            if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
+        }
+    }, [])
 
    const handleChallengeSelect = (c: any) => {
        const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
@@ -128,13 +135,19 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
            return 
        }
 
-       setQ(nextQ)
-       setIsRedemption(isRedemp)
-       setSelectedOption(null)
-       setHintUsed(false)
-       setLocked(false)
-       setShowFeedback(false)
-       timerExpiredRef.current = false
+        setQ(nextQ)
+        setIsRedemption(isRedemp)
+        setSelectedOption(null)
+        setHintUsed(false)
+        setShowHintModal(false)
+        setIsClosing(false)
+        if (hintIntervalRef.current) {
+            clearInterval(hintIntervalRef.current)
+            hintIntervalRef.current = null
+        }
+        setLocked(false)
+        setShowFeedback(false)
+        timerExpiredRef.current = false
               // Generate shuffled options that retain original index
         let selectedOptions: Array<{ text: string; originalIdx: number }> = [];
         if (nextQ.options.length > 4) {
@@ -388,25 +401,54 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        }
    }
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (!activeChallenge || completed || historyModal) return;
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                if (!locked) {
-                    if (selectedOption !== null) {
-                        checkAnswer();
-                    }
-                } else {
-                    if (!continueDisabled) {
-                        nextQuestion();
-                    }
-                }
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeChallenge, completed, historyModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer]);
+     const closeHintModal = () => {
+         setIsClosing(true)
+         setTimeout(() => {
+             setShowHintModal(false)
+             setIsClosing(false)
+             if (hintIntervalRef.current) {
+                 clearInterval(hintIntervalRef.current)
+                 hintIntervalRef.current = null
+             }
+         }, 200)
+     }
+
+     const handleShowHint = () => {
+         setHintUsed(true)
+         setShowHintModal(true)
+         setHintTimeLeft(5)
+         
+         if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
+         
+         let secondsLeft = 5
+         hintIntervalRef.current = window.setInterval(() => {
+             secondsLeft -= 1
+             setHintTimeLeft(secondsLeft)
+             if (secondsLeft <= 0) {
+                 closeHintModal()
+             }
+         }, 1000)
+     }
+
+     useEffect(() => {
+         const handleKeyDown = (e: KeyboardEvent) => {
+             if (!activeChallenge || completed || historyModal || showHintModal) return;
+             if (e.key === 'Enter') {
+                 e.preventDefault();
+                 if (!locked) {
+                     if (selectedOption !== null) {
+                         checkAnswer();
+                     }
+                 } else {
+                     if (!continueDisabled) {
+                         nextQuestion();
+                     }
+                 }
+             }
+         };
+         window.addEventListener('keydown', handleKeyDown);
+         return () => window.removeEventListener('keydown', handleKeyDown);
+     }, [activeChallenge, completed, historyModal, showHintModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer]);
 
    if (!activeChallenge) {
        return (
@@ -547,13 +589,14 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                    </div>
                </div>
 
-               <div className="vm-question-area">
-                   <div className="vm-prompt-container">
-                       <div className="vm-prompt-type">{typeText}</div>
-                       <div className="vm-prompt-val">{q.prompt}</div>
-                       <button className="vm-prompt-hint-btn" onClick={() => setHintUsed(true)}>💡</button>
-                       <div className={`vm-hint-text ${hintUsed ? 'visible' : ''}`}>{q.hint}</div>
-                   </div>
+                <div className="vm-question-area">
+                    <div className="vm-prompt-container">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '5px' }}>
+                             <div className="vm-prompt-type" style={{ margin: 0 }}>{typeText}</div>
+                             <button className="vm-prompt-hint-btn" onClick={handleShowHint}>💡</button>
+                         </div>
+                        <div className="vm-prompt-val">{q.prompt}</div>
+                    </div>
 
                    <div className="vm-options-grid">
                        {options.map((opt: any) => {
@@ -658,7 +701,23 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                        </button>
                    )}
                </div>
-           </div>
-       </div>
-   )
+
+                {(showHintModal || isClosing) && (
+                     <div className={`vm-modal-overlay${isClosing ? ' closing' : ''}`} onClick={closeHintModal}>
+                         <div className={`vm-modal-content${isClosing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                 <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                                     💡 Hint (提示) <span style={{ fontSize: '0.9rem', color: '#999', marginLeft: '6px' }}>({hintTimeLeft}s)</span>
+                                 </span>
+                                 <button className="vm-close-btn" style={{ margin: 0, width: 'auto', fontSize: '1.2rem' }} onClick={closeHintModal}>✕</button>
+                             </div>
+                             <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                                 {q.hint}
+                             </div>
+                         </div>
+                     </div>
+                 )}
+            </div>
+        </div>
+    )
 }
