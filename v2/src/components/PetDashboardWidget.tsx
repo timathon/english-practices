@@ -12,6 +12,8 @@ export function PetDashboardWidget() {
   const [showAdopt, setShowAdopt] = useState(false);
   const [achievementToast, setAchievementToast] = useState<AchievementDef | null>(null);
   const [goalCelebrating, setGoalCelebrating] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'stats' | 'evolution' | 'activities'>('stats');
 
   const speechTimeoutRef = useRef<number | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
@@ -115,7 +117,17 @@ export function PetDashboardWidget() {
 
       {/* Header */}
       <div className="pet-widget-header">
-        <h3 className="db-stats-title">Pet Companion (宠物伙伴)</h3>
+        <div className="pet-widget-header-row">
+          <h3 className="db-stats-title">Pet Companion (宠物伙伴)</h3>
+          <button
+            type="button"
+            className="pet-help-btn"
+            onClick={() => setShowHelpModal(true)}
+            title="How the Pet System works (宠物系统指南)"
+          >
+            ❓
+          </button>
+        </div>
         <div className="pet-widget-header-sub">
           <span className={`pet-widget-level-badge pet-widget-level-${stage}`}>
             Lv.{petState.level} · {stageLabel}
@@ -358,6 +370,163 @@ export function PetDashboardWidget() {
           )}
         </div>
       </div>
+
+      {/* ── Help Modal ── */}
+      {showHelpModal && (
+        <div className="pet-help-modal-overlay" onClick={() => setShowHelpModal(false)}>
+          <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="pet-help-modal-header">
+              <h4 className="pet-help-modal-title">🐾 Companion Guide (宠物系统指南)</h4>
+              <button className="pet-help-modal-close" onClick={() => setShowHelpModal(false)}>×</button>
+            </div>
+
+            {/* Tab navigation */}
+            <div className="pet-help-tabs">
+              <button
+                type="button"
+                className={`pet-help-tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+                onClick={() => setActiveTab('stats')}
+              >
+                📊 Stats (属性)
+              </button>
+              <button
+                type="button"
+                className={`pet-help-tab-btn ${activeTab === 'evolution' ? 'active' : ''}`}
+                onClick={() => setActiveTab('evolution')}
+              >
+                🌱 Evolution (进化)
+              </button>
+              <button
+                type="button"
+                className={`pet-help-tab-btn ${activeTab === 'activities' ? 'active' : ''}`}
+                onClick={() => setActiveTab('activities')}
+              >
+                🏆 Milestones (挑战)
+              </button>
+            </div>
+
+            <div className="pet-help-modal-body">
+              <div className="pet-help-tab-content">
+                {activeTab === 'stats' && (
+                  <div className="pet-help-cards-container">
+                    {/* XP Card */}
+                    <div className="pet-help-card">
+                      <div className="pet-help-card-header">
+                        <span>⭐</span>
+                        <h5>XP & Levels (经验与等级)</h5>
+                      </div>
+                      <div className="pet-help-card-body">
+                        <p className="help-en">Earn base <strong>10 XP</strong> per correct answer. Daily streak adds up to <strong>+40 XP</strong> per answer. Completing the daily goal awards a <strong>+50 XP</strong> bonus.</p>
+                        <p className="help-cn">每答对一题获得 <strong>10</strong> 基础经验值，每日连续练习奖励最高可达单题 <strong>+40 经验</strong>。完成每日目标额外赠送 <strong>+50 经验</strong>。</p>
+                      </div>
+                    </div>
+
+                    {/* Hunger/Food Card */}
+                    <div className="pet-help-card">
+                      <div className="pet-help-card-header">
+                        <span>🍔</span>
+                        <h5>Hunger & Food (饱食度与食物)</h5>
+                      </div>
+                      <div className="pet-help-card-body">
+                        <p className="help-en">Correct answers grant <strong>0.1 food points</strong> (1 food item per 10 correct answers). Feed your pet (🍗) to restore Hunger by <strong>+10</strong> (consumes 1 food).</p>
+                        <p className="help-cn">每答对一题获得 <strong>0.1 个食物</strong>（每答对10题可获得1个完整食物）。喂食 (🍗) 消耗1个食物，恢复 <strong>+10 饱食度</strong>。</p>
+                      </div>
+                    </div>
+
+                    {/* Love Card */}
+                    <div className="pet-help-card">
+                      <div className="pet-help-card-header">
+                        <span>❤️</span>
+                        <h5>Love & Interaction (亲密度与互动)</h5>
+                      </div>
+                      <div className="pet-help-card-body">
+                        <p className="help-en">Correct answers increase Love by <strong>0.1</strong>. You can also click the <strong>Pet (抚摸)</strong> button to interact and increase Love by <strong>+2</strong>.</p>
+                        <p className="help-cn">每答对一题增加 <strong>0.1 亲密度</strong>。点击 <strong>Pet (抚摸)</strong> 按钮与伙伴互动，直接增加 <strong>+2 亲密度</strong>。</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'evolution' && (
+                  <div className="pet-help-cards-container">
+                    {/* Stages Card */}
+                    <div className="pet-help-card">
+                      <div className="pet-help-card-header">
+                        <span>🌱</span>
+                        <h5>Evolution Stages (成长进化阶段)</h5>
+                      </div>
+                      <div className="pet-help-card-body">
+                        <p className="help-en">Your companion has 4 growth stages based on their level:</p>
+                        <p className="help-cn">你的伙伴根据等级分为四个成长阶段：</p>
+                        <p className="help-en">🐣 <strong>Baby:</strong> Lv. 1 – 4</p>
+                        <p className="help-cn">🐣 <strong>幼年期:</strong> 等级 1 – 4</p>
+                        <p className="help-en">🌱 <strong>Teen:</strong> Lv. 5 – 10</p>
+                        <p className="help-cn">🌱 <strong>成长期:</strong> 等级 5 – 10</p>
+                        <p className="help-en">⭐ <strong>Adult:</strong> Lv. 11 – 17</p>
+                        <p className="help-cn">⭐ <strong>成熟期:</strong> 等级 11 – 17</p>
+                        <p className="help-en">👑 <strong>Legendary:</strong> Lv. 18 – 20 (Max Level)</p>
+                        <p className="help-cn">👑 <strong>传说级:</strong> 等级 18 – 20（满级）</p>
+                      </div>
+                    </div>
+
+                    {/* Perks Card */}
+                    <div className="pet-help-card">
+                      <div className="pet-help-card-header">
+                        <span>✨</span>
+                        <h5>Evolution Visuals (视觉与外观)</h5>
+                      </div>
+                      <div className="pet-help-card-body">
+                        <p className="help-en">Evolving your pet changes their avatar emoji and unlocks gorgeous glowing level ring styles on the dashboard.</p>
+                        <p className="help-cn">当宠物进化时，会改变其外观 Emoji 形象，并在主页卡片上解锁精美的流光等级边框。</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'activities' && (
+                  <div className="pet-help-cards-container">
+                    {/* Goals & Streaks */}
+                    <div className="pet-help-card">
+                      <div className="pet-help-card-header">
+                        <span>🔥</span>
+                        <h5>Daily Goal & Streaks (每日目标与连击)</h5>
+                      </div>
+                      <div className="pet-help-card-body">
+                        <p className="help-en">Practicing daily maintains your streak, boosting XP gains. Set custom Daily Goal presets (Easy, Normal, Hard) to fit your study plan.</p>
+                        <p className="help-cn">每日练习可以保持连击天数，大幅提升单题经验获取。可以根据学习计划自由选择每日目标预设（简单、普通、困难）。</p>
+                      </div>
+                    </div>
+
+                    {/* Achievements */}
+                    <div className="pet-help-card">
+                      <div className="pet-help-card-header">
+                        <span>🏆</span>
+                        <h5>Achievements (成就挑战)</h5>
+                      </div>
+                      <div className="pet-help-card-body">
+                        <p className="help-en">Unlock permanent trophies by hitting key milestones (levels, streak goals, correct answers). Unlocked trophies display on the display shelf.</p>
+                        <p className="help-cn">达成特定里程碑（如特定等级、连续天数、累计答对题数）可解锁永久成就奖杯，并在底部的陈列架上展示。</p>
+                      </div>
+                    </div>
+
+                    {/* Decay */}
+                    <div className="pet-help-card">
+                      <div className="pet-help-card-header">
+                        <span>🍂</span>
+                        <h5>Natural Decay (日常消耗)</h5>
+                      </div>
+                      <div className="pet-help-card-body">
+                        <p className="help-en">Hunger (🍔) and Love (❤️) decay at <strong>0.5 points per hour</strong> (12 points/day). Practice regularly to prevent them from becoming hungry or lonely!</p>
+                        <p className="help-cn">饱食度（🍔）与亲密度（❤️）每小时会自然减少 <strong>0.5 点</strong>（每天共消耗 12 点）。记得经常打卡练习，不要冷落它哦！</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

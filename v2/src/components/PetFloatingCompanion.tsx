@@ -85,7 +85,7 @@ export function PetFloatingCompanion() {
       setParticles(prev => [...prev, ...newParticles]);
       setTimeout(() => {
         setParticles(prev => prev.filter(p => p.id !== id1 && p.id !== id2));
-      }, 1500);
+      }, 3500);
 
       // Check for special events
       if (detail.dailyGoalJustCompleted) {
@@ -103,7 +103,7 @@ export function PetFloatingCompanion() {
             }]);
             setTimeout(() => {
               setParticles(prev => prev.filter(p => p.id !== cid));
-            }, 1500);
+            }, 3500);
           }, i * 100);
         }
       } else {
@@ -148,7 +148,7 @@ export function PetFloatingCompanion() {
     }]);
     setTimeout(() => {
       setParticles(prev => prev.filter(p => p.id !== id));
-    }, 1500);
+    }, 3500);
 
     const msg = petService.getRandomPetMessage(petState.name, petState.type);
     showSpeech(msg);
@@ -180,86 +180,88 @@ export function PetFloatingCompanion() {
   }
 
   return (
-    <div className={`pet-float-wrapper${recentlyClicked ? ' active' : ''}`}>
-      {/* Speech bubble */}
-      {speech && (
-        <div className="pet-float-speech">
-          {speech}
-          <div className="pet-float-speech-arrow" />
-        </div>
-      )}
-
-      {/* Floating particles */}
+    <>
+      {/* Floating particles (rendered fixed to viewport to avoid layer clipping) */}
       {particles.map(p => (
         <span
           key={p.id}
           className="pet-float-particle"
           style={{
-            left: `calc(50% + ${p.x}px)`,
-            transform: `translateY(${p.y}px)`,
+            right: `${58 - p.x}px`,
+            bottom: `${58 - p.y}px`,
           }}
         >
           {p.text}
         </span>
       ))}
 
-      {/* Close button */}
-      <button
-        className="pet-float-close"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsMinimized(true);
-        }}
-        title="Hide Pet"
-      >
-        ✕
-      </button>
+      <div className={`pet-float-wrapper${recentlyClicked ? ' active' : ''}`}>
+        {/* Speech bubble */}
+        {speech && (
+          <div className="pet-float-speech">
+            {speech}
+            <div className="pet-float-speech-arrow" />
+          </div>
+        )}
 
-      {/* Streak badge */}
-      {streakInfo.streak > 0 && (
-        <div className="pet-float-streak-badge" title={`${streakInfo.streak} day streak!`}>
-          🔥{streakInfo.streak}
-        </div>
-      )}
+        {/* Close button */}
+        <button
+          className="pet-float-close"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMinimized(true);
+          }}
+          title="Hide Pet"
+        >
+          ✕
+        </button>
 
-      {/* Main companion with daily progress ring */}
-      <div
-        className={`pet-float-avatar-container ${isBouncing ? 'bounce' : ''} ${isLevelingUp ? 'level-up' : ''} pet-float-stage-${stage}`}
-        onClick={handlePet}
-        title={`Pet ${petState.name}! Click to give love.`}
-      >
-        {/* Daily progress ring (SVG) */}
-        <svg className="pet-float-daily-ring-svg" viewBox="0 0 80 80">
-          {/* Background ring */}
-          <circle
-            cx="40" cy="40" r={ringRadius}
-            fill="none"
-            stroke="var(--border)"
-            strokeWidth="3"
-            opacity="0.3"
-          />
-          {/* Progress ring */}
-          <circle
-            cx="40" cy="40" r={ringRadius}
-            fill="none"
-            stroke={dailyProgress.completed ? '#22c55e' : 'var(--accent)'}
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={ringCircumference}
-            strokeDashoffset={ringOffset}
-            style={{ transition: 'stroke-dashoffset 0.5s ease, stroke 0.3s' }}
-            transform="rotate(-90 40 40)"
-          />
-        </svg>
+        {/* Streak badge */}
+        {streakInfo.streak > 0 && (
+          <div className="pet-float-streak-badge" title={`${streakInfo.streak} day streak!`}>
+            🔥{streakInfo.streak}
+          </div>
+        )}
 
-        <span className="pet-float-emoji">{currentEmoji}</span>
+        {/* Main companion with daily progress ring */}
+        <div
+          className={`pet-float-avatar-container ${isBouncing ? 'bounce' : ''} ${isLevelingUp ? 'level-up' : ''} pet-float-stage-${stage}`}
+          onClick={handlePet}
+          title={`Pet ${petState.name}! Click to give love.`}
+        >
+          {/* Daily progress ring (SVG) */}
+          <svg className="pet-float-daily-ring-svg" viewBox="0 0 80 80">
+            {/* Background ring */}
+            <circle
+              cx="40" cy="40" r={ringRadius}
+              fill="none"
+              stroke="var(--border)"
+              strokeWidth="3"
+              opacity="0.3"
+            />
+            {/* Progress ring */}
+            <circle
+              cx="40" cy="40" r={ringRadius}
+              fill="none"
+              stroke={dailyProgress.completed ? '#22c55e' : 'var(--accent)'}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={ringCircumference}
+              strokeDashoffset={ringOffset}
+              style={{ transition: 'stroke-dashoffset 0.5s ease, stroke 0.3s' }}
+              transform="rotate(-90 40 40)"
+            />
+          </svg>
 
-        {/* Micro stat bars */}
-        <div className="pet-float-stats-summary">
-          <div className="pet-float-stat-bar-micro food" style={{ width: `${petState.food}%` }} />
-          <div className="pet-float-stat-bar-micro love" style={{ width: `${petState.love}%` }} />
+          <span className="pet-float-emoji">{currentEmoji}</span>
+
+          {/* Micro stat bars */}
+          <div className="pet-float-stats-summary">
+            <div className="pet-float-stat-bar-micro food" style={{ width: `${petState.food}%` }} />
+            <div className="pet-float-stat-bar-micro love" style={{ width: `${petState.love}%` }} />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
