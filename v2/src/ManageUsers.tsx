@@ -4,6 +4,7 @@ import { cache } from './lib/cache'
 import { ComposedChart, Bar, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import './Dashboard.css'
 import { getTextbookEmoji } from './lib/textbooks'
+import { useHorizontalScrollRef } from './Dashboard'
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -41,6 +42,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function ManageUsers() {
+  const historyScrollRef = useHorizontalScrollRef()
   const { data: session } = useSession()
   const [users, setUsers] = useState<any[]>([])
   const [textbooks, setTextbooks] = useState<string[]>([])
@@ -693,7 +695,7 @@ export function ManageUsers() {
 
                       return parsedTodayRecords.length > 0 ? (
                         <div>
-                          <div className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
+                          <div ref={historyScrollRef} className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
                             {todayBookKeys.map(book => (
                               <button
                                 key={book}

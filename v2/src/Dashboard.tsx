@@ -1,10 +1,100 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSession, API_URL } from './lib/auth'
 import { Link, useLocation } from 'react-router-dom'
 import { cache } from './lib/cache'
 import { PetDashboardWidget } from './components/PetDashboardWidget'
 import { getTextbookEmoji } from './lib/textbooks'
 import './Dashboard.css'
+
+export function useHorizontalScrollRef() {
+  const elRef = useRef<HTMLDivElement | null>(null)
+
+  return useCallback((el: HTMLDivElement | null) => {
+    if (el) {
+      elRef.current = el
+      if ((el as any).__horizontalScrollCleanup) return
+
+      const onWheel = (e: WheelEvent) => {
+        if (e.deltaY === 0) return
+        const prevScrollLeft = el.scrollLeft
+        el.scrollLeft += e.deltaY
+        if (el.scrollLeft !== prevScrollLeft) {
+          e.preventDefault()
+        }
+      }
+
+      let isDown = false
+      let startX: number
+      let scrollLeft: number
+      let hasDragged = false
+
+      const onPointerDown = (e: PointerEvent) => {
+        if (e.pointerType !== 'mouse' || e.button !== 0) return
+        isDown = true
+        el.style.cursor = 'grabbing'
+        el.style.userSelect = 'none'
+        startX = e.pageX - el.offsetLeft
+        scrollLeft = el.scrollLeft
+        hasDragged = false
+        el.setPointerCapture(e.pointerId)
+      }
+
+      const onPointerUp = (e: PointerEvent) => {
+        if (e.pointerType !== 'mouse') return
+        if (!isDown) return
+        isDown = false
+        el.style.cursor = 'grab'
+        el.style.userSelect = ''
+        el.releasePointerCapture(e.pointerId)
+        
+        if (hasDragged) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }
+
+      const onPointerMove = (e: PointerEvent) => {
+        if (!isDown || e.pointerType !== 'mouse') return
+        e.preventDefault()
+        const x = e.pageX - el.offsetLeft
+        const walk = (x - startX) * 1.5
+        if (Math.abs(walk) > 5) {
+          hasDragged = true
+        }
+        el.scrollLeft = scrollLeft - walk
+      }
+
+      const onClick = (e: MouseEvent) => {
+        if (hasDragged) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }
+
+      el.addEventListener('wheel', onWheel, { passive: false })
+      el.addEventListener('pointerdown', onPointerDown)
+      el.addEventListener('pointerup', onPointerUp, true)
+      el.addEventListener('pointermove', onPointerMove)
+      el.addEventListener('click', onClick, true)
+
+      el.style.cursor = 'grab'
+
+      ;(el as any).__horizontalScrollCleanup = () => {
+        el.removeEventListener('wheel', onWheel)
+        el.removeEventListener('pointerdown', onPointerDown)
+        el.removeEventListener('pointerup', onPointerUp, true)
+        el.removeEventListener('pointermove', onPointerMove)
+        el.removeEventListener('click', onClick, true)
+      }
+    } else {
+      if (elRef.current && (elRef.current as any).__horizontalScrollCleanup) {
+        ;(elRef.current as any).__horizontalScrollCleanup()
+        delete (elRef.current as any).__horizontalScrollCleanup
+      }
+      elRef.current = null
+    }
+  }, [])
+}
 
 const PRACTICE_TYPE_ICONS: Record<string, string> = {
   'Vocab Master': '📚',
@@ -28,6 +118,8 @@ function saveLastUnit(tb: string, unit: string) {
 }
 
 function BookSection({ tb, units, records, initialUnit }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string }) {
+  const lettersScrollRef = useHorizontalScrollRef()
+  const unitsScrollRef = useHorizontalScrollRef()
   const unitKeys = Object.keys(units).sort((a, b) => {
     const isStdA = /^[UM]\d+/i.test(a.trim())
     const isStdB = /^[UM]\d+/i.test(b.trim())
@@ -150,7 +242,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
 
       <div>
         {isRazB && (
-          <div className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
+          <div ref={lettersScrollRef} className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
             {letters.map(letter => (
               <button
                 key={letter}
@@ -181,7 +273,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
         )}
 
         {isBThink1 && (
-          <div className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
+          <div ref={lettersScrollRef} className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
             {unitKeys.map(unit => (
               <button
                 key={unit}
@@ -211,7 +303,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
           </div>
         )}
 
-        <div className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
+        <div ref={unitsScrollRef} className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
           {level2Tabs.map(tabVal => (
             <button
               key={tabVal}
@@ -465,6 +557,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function Dashboard() {
+  const historyScrollRef = useHorizontalScrollRef()
   const { data: session } = useSession()
   const location = useLocation()
   const returnState = location.state as { textbook?: string; unit?: string } | null
@@ -667,7 +760,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.30-22:50</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.31-07:48</span></p>
         </div>
       </div>
 
@@ -701,7 +794,7 @@ export function Dashboard() {
           </div>
           {parsedTodayRecords.length > 0 ? (
             <div className="db-history-content">
-              <div className="db-units-tabs">
+              <div className="db-units-tabs" ref={historyScrollRef}>
                 {todayBookKeys.map(book => (
                   <button
                     key={book}
