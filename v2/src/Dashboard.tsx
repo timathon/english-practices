@@ -24,8 +24,8 @@ export function useHorizontalScrollRef() {
       }
 
       let isDown = false
-      let startX: number
-      let scrollLeft: number
+      let startX = 0
+      let scrollLeft = 0
       let hasDragged = false
 
       const onPointerDown = (e: PointerEvent) => {
@@ -33,10 +33,9 @@ export function useHorizontalScrollRef() {
         isDown = true
         el.style.cursor = 'grabbing'
         el.style.userSelect = 'none'
-        startX = e.pageX - el.offsetLeft
+        startX = e.clientX
         scrollLeft = el.scrollLeft
         hasDragged = false
-        el.setPointerCapture(e.pointerId)
       }
 
       const onPointerUp = (e: PointerEvent) => {
@@ -45,29 +44,46 @@ export function useHorizontalScrollRef() {
         isDown = false
         el.style.cursor = 'grab'
         el.style.userSelect = ''
-        el.releasePointerCapture(e.pointerId)
+        
+        try {
+          if (el.hasPointerCapture(e.pointerId)) {
+            el.releasePointerCapture(e.pointerId)
+          }
+        } catch {}
         
         if (hasDragged) {
           e.preventDefault()
           e.stopPropagation()
+          // Ensure hasDragged is reset after event propagation completes
+          setTimeout(() => {
+            hasDragged = false
+          }, 50)
         }
       }
 
       const onPointerMove = (e: PointerEvent) => {
         if (!isDown || e.pointerType !== 'mouse') return
-        e.preventDefault()
-        const x = e.pageX - el.offsetLeft
-        const walk = (x - startX) * 1.5
-        if (Math.abs(walk) > 5) {
+        const dx = e.clientX - startX
+        const walk = dx * 1.5
+        
+        if (Math.abs(dx) > 10 && !hasDragged) {
           hasDragged = true
+          try {
+            el.setPointerCapture(e.pointerId)
+          } catch {}
         }
-        el.scrollLeft = scrollLeft - walk
+
+        if (hasDragged) {
+          e.preventDefault()
+          el.scrollLeft = scrollLeft - walk
+        }
       }
 
       const onClick = (e: MouseEvent) => {
         if (hasDragged) {
           e.preventDefault()
           e.stopPropagation()
+          hasDragged = false
         }
       }
 
@@ -760,7 +776,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.31-07:48</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.05.31-10:09</span></p>
         </div>
       </div>
 
