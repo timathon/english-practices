@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { signIn } from './lib/auth'
 
 export function SignIn() {
@@ -6,6 +7,19 @@ export function SignIn() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [hasLoggedInUsers, setHasLoggedInUsers] = useState(false)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('logged_in_users')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setHasLoggedInUsers(true)
+        }
+      }
+    } catch (e) {}
+  }, [])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,6 +83,21 @@ export function SignIn() {
         >
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
+        {hasLoggedInUsers && (
+          <Link 
+            to="/switch-user" 
+            style={{ 
+              textAlign: 'center', 
+              marginTop: 10, 
+              display: 'block', 
+              color: 'var(--tab-active-text, #0366d6)',
+              fontSize: '0.9rem',
+              textDecoration: 'underline'
+            }}
+          >
+            Switch to an existing account
+          </Link>
+        )}
       </form>
     </div>
   )

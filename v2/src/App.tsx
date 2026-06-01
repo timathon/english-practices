@@ -6,15 +6,35 @@ import { ManageUsers } from './ManageUsers'
 import { UsageGuide } from './UsageGuide'
 import { PracticeShell } from './components/PracticeShell'
 import { PetFloatingCompanion } from './components/PetFloatingCompanion'
-import { useSession, signOut } from './lib/auth'
+import { useSession, signOut, authClient } from './lib/auth'
 import { petService } from './lib/petService'
+import { SwitchUser } from './SwitchUser'
 import './App.css'
 
 function Navigation({ session }: { session: any }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [delayedClosed, setDelayedClosed] = useState(false);
+  const [hasLoggedInUsers, setHasLoggedInUsers] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('logged_in_users');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setHasLoggedInUsers(true);
+        } else {
+          setHasLoggedInUsers(false);
+        }
+      } else {
+        setHasLoggedInUsers(false);
+      }
+    } catch (e) {
+      setHasLoggedInUsers(false);
+    }
+  }, [isMenuOpen]);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -66,11 +86,17 @@ function Navigation({ session }: { session: any }) {
         <div className="nav-menu">
           <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/">Home</Link>
           {!session ? (
-            <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/signin">Sign In</Link>
+            <>
+              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/signin">Sign In</Link>
+              {hasLoggedInUsers && (
+                <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/switch-user">Switch User</Link>
+              )}
+            </>
           ) : (
             <>
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/dashboard">Dashboard</Link>
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/manual">Game Manual</Link>
+              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/switch-user">Switch User</Link>
               {(session.user as any).role === 'admin' && (
                   <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
               )}
@@ -82,8 +108,38 @@ function Navigation({ session }: { session: any }) {
                 className="nav-item danger"
                 onClick={async () => {
                   setIsMenuOpen(false);
-                  await signOut()
-                  window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`
+                  
+                  const currentToken = localStorage.getItem('active_session_token');
+                  let loggedInUsers = [];
+                  try {
+                    loggedInUsers = JSON.parse(localStorage.getItem('logged_in_users') || '[]');
+                  } catch (e) {}
+                  
+                  if (Array.isArray(loggedInUsers)) {
+                    loggedInUsers = loggedInUsers.filter((u: any) => u.token !== currentToken);
+                    localStorage.setItem('logged_in_users', JSON.stringify(loggedInUsers));
+                  }
+                  localStorage.removeItem('active_session_token');
+                  
+                  try {
+                    await signOut();
+                  } catch (e) {
+                    console.error(e);
+                  }
+
+                  if (loggedInUsers.length > 0) {
+                    try {
+                      await authClient.multiSession.setActive({
+                        sessionToken: loggedInUsers[0].token
+                      })
+                    } catch (err) {
+                      console.error('Failed to set next active session on sign out:', err)
+                    }
+                    localStorage.setItem('active_session_token', loggedInUsers[0].token);
+                    window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/dashboard`;
+                  } else {
+                    window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`;
+                  }
                 }}
                 style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
               >
@@ -134,6 +190,13 @@ function App() {
             </div>
           } />
           <Route path="/practice/:id" element={<PracticeShell />} />
+          <Route path="/switch-user" element={
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <SwitchUser />
+              </div>
+            </div>
+          } />
           <Route path="/admin/manage-users" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>} />
         </Routes>
       </main>

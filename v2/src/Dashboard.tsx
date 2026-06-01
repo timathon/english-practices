@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSession, API_URL } from './lib/auth'
 import { Link, useLocation } from 'react-router-dom'
 import { cache } from './lib/cache'
@@ -718,7 +718,21 @@ export function Dashboard() {
     }
     return stats;
   };
-  const last7DaysStats = getLast7DaysStats(records);
+  const last7DaysStats = useMemo(() => getLast7DaysStats(records), [records, practices]);
+
+  const handleChartInteraction = (state: any) => {
+    if (!state) return;
+    let index = state.activeTooltipIndex;
+    if (typeof index !== 'number' && state.activeLabel) {
+      index = last7DaysStats.findIndex(s => s.date === state.activeLabel);
+    }
+    if (typeof index === 'number' && index >= 0 && index <= 6) {
+      const offset = 6 - index;
+      if (historyOffset !== offset) {
+        setHistoryOffset(offset);
+      }
+    }
+  };
 
   const getTargetDateStr = (offset: number) => {
     const d = new Date()
@@ -776,13 +790,82 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.02-00:03</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.02-01:37</span></p>
         </div>
       </div>
 
       <div className="db-books db-top-section">
         <PetDashboardWidget />
         <div className="db-top-right">
+        <div className="db-stats">
+          <h3 className="db-stats-title">Activity: Last 7 Days</h3>
+          <div className="db-chart-card">
+            <div className="db-chart-legend-left">
+              <span className="db-chart-legend-bar" />
+              <span>Practices Done</span>
+            </div>
+            <div className="db-chart-area">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={last7DaysStats}
+                  margin={{ top: 16, right: 12, bottom: 0, left: -8 }}
+                  onMouseMove={handleChartInteraction}
+                  onClick={handleChartInteraction}
+                >
+                  <defs>
+                    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--tab-active-text)" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="var(--tab-active-text)" stopOpacity={0.4} />
+                    </linearGradient>
+                    <linearGradient id="lineGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.5} />
+                  <XAxis
+                    dataKey="date" stroke="var(--text)" fontSize={11}
+                    tickLine={false} axisLine={false} dy={6}
+                    tickFormatter={(value, index) => [1, 3, 5].includes(index) ? '' : value}
+                  />
+                  <YAxis
+                    yAxisId="left" stroke="var(--text)" fontSize={11}
+                    tickLine={false} axisLine={false} tickCount={5}
+                    allowDecimals={false} width={28}
+                  />
+                  <YAxis
+                    yAxisId="right" orientation="right" stroke="var(--text)"
+                    fontSize={11} tickLine={false} axisLine={false}
+                    tickFormatter={(v) => `${v}%`} domain={[0, 100]} width={36}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'var(--accent-bg)', radius: 4 }}
+                    content={<CustomTooltip />}
+                  />
+                  <Area
+                    yAxisId="right" type="monotone" dataKey="avgScore"
+                    fill="url(#lineGlow)" stroke="none" tooltipType="none"
+                  />
+                  <Bar
+                    yAxisId="left" dataKey="count" name="Practices Done"
+                    fill="url(#barGrad)" radius={[6, 6, 0, 0]} barSize={20}
+                  />
+                  <Line
+                    yAxisId="right" type="monotone" dataKey="avgScore"
+                    name="Avg Score" stroke="var(--accent)" strokeWidth={2.5}
+                    dot={{ r: 3.5, fill: 'var(--card-bg)', strokeWidth: 2.5 }}
+                    activeDot={{ r: 5.5, fill: 'var(--accent)', strokeWidth: 0 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="db-chart-legend-right">
+              <span className="db-chart-legend-dot" />
+              <span>Avg Score</span>
+            </div>
+          </div>
+        </div>
+
         <div className="db-stats db-stats-history">
           <div className="db-history-header">
             <h3 className="db-stats-title">Practice History</h3>
@@ -853,75 +936,8 @@ export function Dashboard() {
             </div>
           )}
         </div>
-
-        <div className="db-stats">
-          <h3 className="db-stats-title">Recent 7 Days Activity</h3>
-          <div className="db-chart-card">
-            <div className="db-chart-legend-left">
-              <span className="db-chart-legend-bar" />
-              <span>Practices Done</span>
-            </div>
-            <div className="db-chart-area">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={last7DaysStats}
-                  margin={{ top: 16, right: 12, bottom: 0, left: -8 }}
-                >
-                  <defs>
-                    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--tab-active-text)" stopOpacity={0.9} />
-                      <stop offset="100%" stopColor="var(--tab-active-text)" stopOpacity={0.4} />
-                    </linearGradient>
-                    <linearGradient id="lineGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.25} />
-                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.5} />
-                  <XAxis
-                    dataKey="date" stroke="var(--text)" fontSize={11}
-                    tickLine={false} axisLine={false} dy={6}
-                    tickFormatter={(value, index) => [1, 3, 5].includes(index) ? '' : value}
-                  />
-                  <YAxis
-                    yAxisId="left" stroke="var(--text)" fontSize={11}
-                    tickLine={false} axisLine={false} tickCount={5}
-                    allowDecimals={false} width={28}
-                  />
-                  <YAxis
-                    yAxisId="right" orientation="right" stroke="var(--text)"
-                    fontSize={11} tickLine={false} axisLine={false}
-                    tickFormatter={(v) => `${v}%`} domain={[0, 100]} width={36}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'var(--accent-bg)', radius: 4 }}
-                    content={<CustomTooltip />}
-                  />
-                  <Area
-                    yAxisId="right" type="monotone" dataKey="avgScore"
-                    fill="url(#lineGlow)" stroke="none" tooltipType="none"
-                  />
-                  <Bar
-                    yAxisId="left" dataKey="count" name="Practices Done"
-                    fill="url(#barGrad)" radius={[6, 6, 0, 0]} barSize={20}
-                  />
-                  <Line
-                    yAxisId="right" type="monotone" dataKey="avgScore"
-                    name="Avg Score" stroke="var(--accent)" strokeWidth={2.5}
-                    dot={{ r: 3.5, fill: 'var(--card-bg)', strokeWidth: 2.5 }}
-                    activeDot={{ r: 5.5, fill: 'var(--accent)', strokeWidth: 0 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="db-chart-legend-right">
-              <span className="db-chart-legend-dot" />
-              <span>Avg Score</span>
-            </div>
-          </div>
-        </div>
-        </div>
       </div>
+    </div>
 
       {loading ? (
         <div className="db-empty">Loading textbooks...</div>

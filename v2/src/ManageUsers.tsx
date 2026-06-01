@@ -755,9 +755,9 @@ export function ManageUsers() {
                     })()}
                   </div>
 
-                  {/* Recent 7 Days Activity */}
+                  {/* Activity: Last 7 Days */}
                   <div className="db-stats" style={{ flex: '1 1 450px', maxWidth: '100%' }}>
-                    <h3 className="db-stats-title">Recent 7 Days Activity</h3>
+                    <h3 className="db-stats-title">Activity: Last 7 Days</h3>
                     {(() => {
                       const getLast7DaysStats = (recs: any[]) => {
                         const stats = [];

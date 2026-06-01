@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { username } from "better-auth/plugins";
+import { username, bearer, multiSession } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import crypto from "node:crypto";
 import * as schema from "./db/schema";
@@ -43,7 +43,9 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
             }
         },
         plugins: [
-            username()
+            username(),
+            bearer(),
+            multiSession()
         ],
         emailAndPassword: {
             enabled: true,

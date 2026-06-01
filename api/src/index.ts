@@ -155,6 +155,24 @@ app.post('/api/admin/users', async (c) => {
             username: body.username
         } as any
     })
+
+    if (res?.user?.id) {
+      const db = drizzle(c.env.DB)
+      const expiry = new Date()
+      expiry.setDate(expiry.getDate() + 30)
+      await db.update(user).set({
+        subscriptionExpiry: expiry
+      }).where(eq(user.id, res.user.id))
+
+      return c.json({
+        ...res,
+        user: {
+          ...res.user,
+          subscriptionExpiry: expiry
+        }
+      })
+    }
+
     return c.json(res)
   } catch (err: any) {
     console.error("Create User Error:", err.message)

@@ -13,9 +13,6 @@ interface Particle {
 
 export function PetFloatingCompanion() {
   const location = useLocation();
-  if (location.pathname === '/dashboard') {
-    return null;
-  }
   const [petState, setPetState] = useState<PetState>(() => petService.getPetState());
   const [isBouncing, setIsBouncing] = useState(false);
   const [isLevelingUp, setIsLevelingUp] = useState(false);
@@ -163,6 +160,10 @@ export function PetFloatingCompanion() {
   const ringRadius = 34;
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference * (1 - dailyProgress.percent / 100);
+
+  if (location.pathname === '/dashboard') {
+    return null;
+  }
 
   if (isMinimized) {
     return (
