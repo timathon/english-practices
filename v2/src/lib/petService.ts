@@ -114,7 +114,7 @@ const INITIAL_STATE = (type: 'cat' | 'dog' | 'dino' = 'cat'): PetState => ({
   love: 50,
   foodPoints: 0,
   totalCorrect: 0,
-  lastUpdated: Date.now(),
+  lastUpdated: 0, // 0 = uninitialized; never wins timestamp comparison vs real server data
   // Streak
   streak: 0,
   longestStreak: 0,
@@ -140,9 +140,10 @@ export const petService = {
     try {
       const stored = localStorage.getItem(LS_KEY);
       if (!stored) {
-        const state = INITIAL_STATE();
-        localStorage.setItem(LS_KEY, JSON.stringify(state));
-        return state;
+        // Return a default in-memory state but do NOT save it to localStorage.
+        // This prevents an uninitialized default from being treated as real data
+        // during sync (which would overwrite genuine server state).
+        return INITIAL_STATE();
       }
       const parsed = JSON.parse(stored);
       // Migrate from old schema — ensure all new fields exist
@@ -153,7 +154,7 @@ export const petService = {
         love: typeof parsed.love === 'number' ? parsed.love : 50,
         foodPoints: typeof parsed.foodPoints === 'number' ? parsed.foodPoints : 0,
         totalCorrect: typeof parsed.totalCorrect === 'number' ? parsed.totalCorrect : 0,
-        lastUpdated: parsed.lastUpdated || Date.now(),
+        lastUpdated: parsed.lastUpdated || 0,
         // Streak (with migration defaults)
         streak: typeof parsed.streak === 'number' ? parsed.streak : 0,
         longestStreak: typeof parsed.longestStreak === 'number' ? parsed.longestStreak : 0,
@@ -226,17 +227,39 @@ export const petService = {
 
       const serverState = await res.json();
       const localState = this.getPetState();
+      const localIsUninitialized = !localState.userId || localState.lastUpdated === 0;
 
       // Check if local state belongs to another user
       if (localState.userId && localState.userId !== user.id) {
         if (serverState) {
+          serverState.userId = user.id;
           localStorage.setItem(LS_KEY, JSON.stringify(serverState));
           window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: serverState }));
         } else {
           const freshState = INITIAL_STATE();
           freshState.userId = user.id;
+          freshState.lastUpdated = Date.now();
           localStorage.setItem(LS_KEY, JSON.stringify(freshState));
           window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: freshState }));
+        }
+        return;
+      }
+
+      // If local state is uninitialized (no userId or lastUpdated=0),
+      // always prefer server data to avoid overwriting real progress.
+      if (localIsUninitialized) {
+        if (serverState) {
+          serverState.userId = user.id;
+          localStorage.setItem(LS_KEY, JSON.stringify(serverState));
+          window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: serverState }));
+        } else {
+          // No server data either — initialize a fresh state for this user
+          const freshState = INITIAL_STATE();
+          freshState.userId = user.id;
+          freshState.lastUpdated = Date.now();
+          localStorage.setItem(LS_KEY, JSON.stringify(freshState));
+          window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: freshState }));
+          await this.syncSave(freshState);
         }
         return;
       }
@@ -270,6 +293,9 @@ export const petService = {
   },
 
   applyDecay(state: PetState): PetState {
+    // Skip decay for uninitialized states (lastUpdated === 0 means fresh default)
+    if (!state.lastUpdated) return state;
+
     const now = Date.now();
     const hoursElapsed = (now - state.lastUpdated) / (1000 * 60 * 60);
 
