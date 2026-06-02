@@ -225,6 +225,24 @@ This document defines the rules for extracting and converting textbook data into
   - `explanation`: Detailed explanation in Chinese explaining the grammar rule and options.
   - `hint`: A brief, helpful cue or reminder in Chinese.
 
+## 10. Test Passages (TP)
+**Source:** Textbook test passages Markdown (e.g., `data/A5B/a5b-u1/a5b-u1-test-passages.md`).
+**Target:** `*-test-passages.json` (Save in the same folder as source)
+
+- **Extraction Scope**: Extract every sentence/dialogue line from the passage or listening dialogue section.
+- **Dialogue Formatting**: 
+  - If a line is spoken by a character (e.g., `Jack: Hi, Lucy!`), extract the name as `speaker` and set `newline: true` on the first sentence of the turn.
+  - Subsequent sentences spoken in the same turn share the `speaker` property but do not have `newline: true`.
+  - For normal passages, set `newline: true` only on the first sentence starting a new paragraph.
+- **Options and Answer**:
+  - Each sentence must have exactly 3 translation options (`options` array): 1 correct and 2 wrong distractors containing subtle traps (e.g., vocabulary swaps, tense errors, negation flips).
+  - Parenthetical explanations (e.g., `（时态错误 - ...）`) must **NOT** be included in either the `options` strings or a separate explanations field (clean translation strings only).
+  - Shuffled index of the correct translation must be specified in the `answer` field (0, 1, or 2).
+- **Structure**:
+  - `level`: e.g., "Grade 5 Semester 2 - Unit 1".
+  - `title`: e.g., "Test Passages - Translation Hero".
+  - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline }`).
+
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file.
 
