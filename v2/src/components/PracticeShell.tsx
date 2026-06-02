@@ -8,6 +8,8 @@ import { SpellingHeroShell } from './SpellingHeroShell'
 import { MindMapShell } from './MindMapShell'
 import { SentenceArchitectShell } from './SentenceArchitectShell'
 import { GrammarWizardShell } from './GrammarWizardShell'
+import { TestPassagesShell } from './TestPassagesShell'
+
 
 // Render practice components based on type
 export function PracticeShell() {
@@ -53,6 +55,11 @@ export function PracticeShell() {
     if (cleanType === 'grammar-wizard') {
         return <GrammarWizardShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
+
+    if (cleanType === 'test-passages') {
+        return <TestPassagesShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
 
     if (cleanType.startsWith('text-navigator') || cleanType.startsWith('writing-map')) {
         const isWritingMap = cleanType.startsWith('writing-map')
