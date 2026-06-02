@@ -1,4 +1,6 @@
-### Unit 1 Get ready & Start up: Listening Dialogues
+### Unit 1 Get ready & Start up: 1. Listening Dialogues
+
+
 
 Jack: Hi, Lucy! How are you?
 Lucy: I'm great, Jack! I was just thinking how much we've changed.
@@ -22,9 +24,7 @@ Question 3: When did they first meet? Answer: In Grade 1.
 Question 4: Which one is NOT true? Answer: It was hard for them to be friends.
 Question 5: What is the dialogue mainly about? Answer: It's great to grow up with friends.
 
----
-
-### Unit 1 Get ready & Start up: Dialogue Completion
+### Unit 1 Get ready & Start up: 2. Dialogue Completion
 
 
 
@@ -36,7 +36,7 @@ Lucy: Growing up with them is never boring. They make you angry, but they're alw
 Mike: Yeah! That's what makes siblings so great!
 Lucy: I agree.
 
-### Unit 1 Speed up: Listening Passage 1
+### Unit 1 Speed up: 1. Listening Passage
 
 
 
@@ -48,13 +48,13 @@ Question 3: I need to challenge my friends and face difficulties. Answer: False.
 Question 4: Growing up is always really hard. Answer: False.
 Question 5: I love growing up because of new surprises. Answer: True.
 
-### Unit 1 Speed up: Reading Passage 2
+### Unit 1 Speed up: 2. Reading Passage
 
 
 
 Last winter, I joined a winter camp. At first I was scared to leave home, but soon I made new friends. We learned to make snowmen together. One day, we had a hiking trip. The hill was steep, and I wanted to give up. But Lily, my campmate held my hand and said, "We can do it!" Finally, we reached the top. I felt so proud! Before the camp ended, we had a party. I sang an English song. And I never dared to do it before. That winter camp taught me growth happens when we try new things.
 
-### Unit 1 Fuel up: Listening Passage 1 (My Great Summer)
+### Unit 1 Fuel up: 1. Listening Passage (My Great Summer)
 
 
 
@@ -66,7 +66,7 @@ Event: joined an interesting camp
 Activities: learned how to ride a horse with some hard training
 Feelings: happy and proud
 
-### Unit 1 Fuel up: Reading Passage 2 (Plant Growth)
+### Unit 1 Fuel up: 2. Reading Passage (Plant Growth)
 
 
 
@@ -78,7 +78,7 @@ Question 3: When did the writer first water the flower seeds? Answer: The writer
 Question 4: What did the plant look like on April 1st? Answer: On April 1st the plant had a small and green sprout.
 Question 5: Why might the writer say "Oh, come on!" on May 1st? Answer: Because the writer can't / can hardly wait to see the flowers.
 
-### Unit 1 Hit it big, Wrap up & Let's explore: Reading Passage 1 (Growth Album)
+### Unit 1 Hit it big, Wrap up & Let's explore: 1. Reading Passage (Growth Album)
 
 
 
@@ -90,7 +90,7 @@ Question 3: Who went to the zoo with the writer last summer holiday? Answer: The
 Question 4: What did the writer learn about pandas? Answer: Pandas eat bamboo all day.
 Question 5: Why did the writer feel proud of the drawing? Answer: Because it was the writer's first prize in an art contest.
 
-### Unit 1 Hit it big, Wrap up & Let's explore: Reading Passage 2 (Needs and Wants in Growing up)
+### Unit 1 Hit it big, Wrap up & Let's explore: 2. Reading Passage (Needs and Wants in Growing up)
 
 
 
@@ -102,7 +102,7 @@ Question 3: According to Liam's mum, what is a "need"? Answer: Something we must
 Question 4: What happened after Liam bought new shoes? Answer: He saved money and later got the game.
 Question 5: What does the story mainly talk about? Answer: It's important to tell needs from wants in growing up.
 
-### Unit 1 Formative Practice: Listening Sentences
+### Unit 1 Formative Practice: 1. Listening Sentences
 
 
 
@@ -117,7 +117,7 @@ Sentence 8: I learned to play the violin two years ago. It was hard for me. Answ
 Sentence 9: I went to the summer camp last Monday and came back home last Friday. Answer: False.
 Sentence 10: Growing up movies are the most popular ones in this class. Answer: False.
 
-### Unit 1 Formative Practice: Listening Dialogues 1
+### Unit 1 Formative Practice: 2. Listening Dialogues 1
 
 
 
@@ -151,17 +151,17 @@ Andy: Ok! Ms Wang. Good morning, everyone! Today I'll share my "growing up" albu
 Teacher: That's a great memory. This album helps us see your growth.
 Question 5: According to the dialogue, where are they? Answer: In a classroom.
 
-### Unit 1 Formative Practice: Listening Dialogues 2
+### Unit 1 Formative Practice: 3. Listening Dialogues 2
 
 
 
 Mum: Time for breakfast, Alex. Hurry. Don't be late for school.
-Alex: Coming, Mum. We'll have a math test today. I am not good at math.
-Mum: When I was a child, I was not good at math, either. But I asked my teacher for help and practiced every day.
+Alex: Coming, Mum. We'll have a maths test today. I am not good at maths.
+Mum: When I was a child, I was not good at maths, either. But I asked my teacher for help and practised every day.
 Alex: Really? Did it work?
 Mum: Yeah. Learning new things helps us grow and makes us braver and smarter. So Alex, don't give up.
 Alex: Thank you, Mum. I'll try my best.
-Question 1: What will Alex do today? Answer: He will have a math test.
+Question 1: What will Alex do today? Answer: He will have a maths test.
 Question 2: Where are they? Answer: At home.
 
 Amy: Hi Mia! You look so happy. What happened?
@@ -174,7 +174,7 @@ Question 3: What's wrong with Mia's grandma? Answer: She can't walk well.
 Question 4: Why did Mia feel happy? Answer: She helped her grandma.
 Question 5: What can we learn from the dialogue? Answer: Caring for others is one of the ways of growing up.
 
-### Unit 1 Formative Practice: Listening Passage 1
+### Unit 1 Formative Practice: 4. Listening Passage 1
 
 
 
@@ -186,7 +186,7 @@ Question 3: My parents were at home when she cried. Answer: False.
 Question 4: My little sister stopped crying after I sang a song. Answer: True.
 Question 5: Through the experience, I learned to be responsible and loving. Answer: True.
 
-### Unit 1 Formative Practice: Listening Passage 2 (Stephen's Info Card)
+### Unit 1 Formative Practice: 5. Listening Passage 2 (Stephen's Info Card)
 
 
 
@@ -198,7 +198,17 @@ Time: two years ago
 Activity: Watched a great film
 What I learned: Facing difficulties makes us brave. Every small win means growth.
 
-### Unit 1 Formative Practice: Word Definitions
+### Unit 1 Formative Practice: 6. Sentence Matching
+
+
+
+Sentence 1: We can learn to ski together this winter.
+Sentence 2: We clapped and jumped at my birthday party.
+Sentence 3: It was hot and the training was hard.
+Sentence 4: This is my "growing up" album.
+Sentence 5: My friends and I had a picnic yesterday.
+
+### Unit 1 Formative Practice: 7. Word Definitions
 
 
 
@@ -208,7 +218,7 @@ Question 3: To give someone money for something you buy or for a service. Answer
 Question 4: The process of learning the skills that you need to do a job or an activity. Answer: training.
 Question 5: A place where people stay in tents, usually in mountains or a forest. Answer: camp.
 
-### Unit 1 Formative Practice: Dialogue Completion
+### Unit 1 Formative Practice: 8. Dialogue Completion
 
 
 
@@ -221,19 +231,19 @@ David: Let's remember this- If we fight again, we'll talk nicely, OK?
 Nancy: Deal! Being friends isn't always easy, but it helps us grow.
 David: Yeah! That's the best part!
 
-### Unit 1 Formative Practice: Reading Passage (Jim's Rabbit)
+### Unit 1 Formative Practice: 9. Reading Passage (Jim's Rabbit)
 
 
 
 My name is Jim. Last year, I got a tiny rabbit named Snow. It was white, as small as my hand, and only ate carrots. It liked hiding behind something. Weeks later, Snow grew bigger and its fur became thicker. It could run. Now, it eats lettuce, too. I'm happy to see it getting strong day by day.
 
-### Unit 1 Formative Practice: Reading Passage (Healthy Eating)
+### Unit 1 Formative Practice: 10. Reading Passage (Healthy Eating)
 
 
 
 Good eating habits help kids grow strong and healthy. Every day, we need different food. First, eat lots of fruit and vegetables. They give us vitamins to fight sickness. Second, have whole grains like oats or brown rice. They give us energy for school and play. Third, drink milk or eat eggs. They make our bones and muscles strong. Avoid too much candies or chips. They are not good for our teeth. Let's choose healthy food and grow up happily.
 
-### Unit 1 Formative Practice: Reading Passage (Age Rules)
+### Unit 1 Formative Practice: 11. Reading Passage (Age Rules)
 
 
 
@@ -245,11 +255,11 @@ Question 3: It's easy to get credit cards before 18 in the UK. Answer: False.
 Question 4: A 7-year-old boy can take a train for free in China. Answer: False.
 Question 5: Safety is not the goal of age rules. Answer: False.
 
-### Unit 1 Formative Practice: Reading Passage (Mistakes Help Us Grow)
+### Unit 1 Formative Practice: 12. Reading Passage (Mistakes Help Us Grow)
 
 
 
-Lily loved painting but hated mistakes. One day, she tried to draw a cat, but its tail looked wrong. She wanted to crumple the paper. Her art teacher saw this and said, "Mistakes help us grow." The teacher showed Lily her old paintings-they were messy too! Lily kept practicing. She fixed the cat's tail and even added a small bird next to it. At the school art show, her picture got a "Most Improved" award. Lily learned that growth isn't about being perfect. It's about trying again, even when things are hard. Every small step makes you better.
+Lily loved painting but hated mistakes. One day, she tried to draw a cat, but its tail looked wrong. She wanted to crumple the paper. Her art teacher saw this and said, "Mistakes help us grow." The teacher showed Lily her old paintings-they were messy too! Lily kept practising. She fixed the cat's tail and even added a small bird next to it. At the school art show, her picture got a "Most Improved" award. Lily learned that growth isn't about being perfect. It's about trying again, even when things are hard. Every small step makes you better.
 
 Question 1: What did Lily love doing? Answer: Painting.
 Question 2: Why did Lily want to crumple her paper one day? Answer: The tail of the cat she drew looked wrong.
@@ -257,11 +267,11 @@ Question 3: What did the art teacher do to help Lily? Answer: Showed her old mes
 Question 4: What award did Lily get at the school art show? Answer: Most Improved.
 Question 5: What did Lily learn about growth? Answer: Growth means keeping on trying.
 
-### Unit 1 Formative Practice: Reading Passage (Confucius and the Young Carpenter)
+### Unit 1 Formative Practice: 13. Reading Passage (Confucius and the Young Carpenter)
 
 
 
-Long ago, a 10-year-old boy named Kong Hui loved making wooden toys. One day, he met Confucius, a wise man. Kong Hui showed Confucius a small wooden cart he made, but it couldn't roll straight. He felt sad and wanted to give up. Confucius smiled and said, "Crafts, like virtues, need patience. Look at bamboo-it grows slowly but stands tall." The boy listened. He checked the cart's wheels again, fixed the uneven parts, and tried again. After many tries, the cart rolled smoothly! Confucius patted his head, "You didn't just fix a cart-you learned to persist, never give up." From that day, Kong Hui kept practicing. Years later, he became a great carpenter. He always remembered Confucius' words: True growth comes from trying hard, just like our ancestors taught us.
+Long ago, a 10-year-old boy named Kong Hui loved making wooden toys. One day, he met Confucius, a wise man. Kong Hui showed Confucius a small wooden cart he made, but it couldn't roll straight. He felt sad and wanted to give up. Confucius smiled and said, "Crafts, like virtues, need patience. Look at bamboo-it grows slowly but stands tall." The boy listened. He checked the cart's wheels again, fixed the uneven parts, and tried again. After many tries, the cart rolled smoothly! Confucius patted his head, "You didn't just fix a cart-you learned to persist, never give up." From that day, Kong Hui kept practising. Years later, he became a great carpenter. He always remembered Confucius' words: True growth comes from trying hard, just like our ancestors taught us.
 
 Question 1: What did Kong Hui love to do when he was 10? Answer: He loved making wooden toys.
 Question 2: Why did Kong Hui feel sad when showing his wooden cart to Confucius? Answer: His wooden cart couldn't roll straight.
@@ -269,6 +279,8 @@ Question 3: What did Kong Hui do after listening to Confucius's words? Answer: H
 Question 4: What did Kong Hui learn by fixing the cart? Answer: The virtue of persistence and never giving up.
 Question 5: Which one is true about the passage? Answer: True growth comes from trying hard.
 
-### Unit 1 Formative Practice: Writing Sample (My Story of Growth)
+### Unit 1 Formative Practice: 14. Writing Sample (My Story of Growth)
+
+
 
 Last summer, I joined a summer camp. At first, I was nervous because I didn't know anyone there. But I decided to be brave and make new friends. I talked to other kids and played games with them. By the end of the camp, I had many new friends and felt much more confident. I learned that being brave and friendly can help me overcome my fears. It made me feel happy and proud of myself.

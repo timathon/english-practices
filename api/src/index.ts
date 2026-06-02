@@ -404,6 +404,11 @@ app.get('/api/practices', async (c) => {
                   lightContent = {
                       challenges: challenges.map((c: any) => ({ title: c.title || '' }))
                   };
+              } else if (type.includes('test-passages')) {
+                  const sections = content.sections || [];
+                  lightContent = {
+                      sections: sections.map((s: any) => ({ title: s.title || '' }))
+                  };
               } else if (type.includes('spelling-hero')) {
                   const wordCount = content.spelling_words?.length || 0;
                   lightContent = {
