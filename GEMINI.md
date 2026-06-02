@@ -225,9 +225,9 @@ This document defines the rules for extracting and converting textbook data into
   - `explanation`: Detailed explanation in Chinese explaining the grammar rule and options.
   - `hint`: A brief, helpful cue or reminder in Chinese.
 
-## 10. Test Passages (TP)
-**Source:** Textbook test passages Markdown (e.g., `data/A5B/a5b-u1/a5b-u1-test-passages.md`).
-**Target:** `*-test-passages.json` (Save in the same folder as source)
+## 10. Passage Decoder (PD)
+**Source:** Textbook workbook passages Markdown (e.g., `data/A5B/a5b-u1/a5b-u1-passage-decoder.md`).
+**Target:** `*-passage-decoder.json` (Save in the same folder as source)
 
 - **Extraction Scope**: Extract every sentence/dialogue line from the passage or listening dialogue section.
 - **Dialogue Formatting**: 
@@ -240,7 +240,7 @@ This document defines the rules for extracting and converting textbook data into
   - Shuffled index of the correct translation must be specified in the `answer` field (0, 1, or 2).
 - **Structure**:
   - `level`: e.g., "Grade 5 Semester 2 - Unit 1".
-  - `title`: e.g., "Test Passages - Translation Hero".
+  - `title`: e.g., "Passage Decoder".
   - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline }`).
 
 ---

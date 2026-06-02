@@ -370,8 +370,8 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                 .filter((p: any) => p.type.toLowerCase().includes('text-navigator'))
                 .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
 
-              const testPassageItems = items
-                .filter((p: any) => p.type.toLowerCase().includes('test-passages'))
+              const passageDecoderItems = items
+                .filter((p: any) => p.type.toLowerCase().includes('passage-decoder'))
                 .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
 
               const writingMapItems = items
@@ -390,7 +390,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                 ...recallMapItems.map((p: any) => p.id),
                 ...vocabItems.map((p: any) => p.id),
                 ...textNavigatorItems.map((p: any) => p.id),
-                ...testPassageItems.map((p: any) => p.id),
+                ...passageDecoderItems.map((p: any) => p.id),
                 ...writingMapItems.map((p: any) => p.id),
                 ...sentenceArchitectItems.map((p: any) => p.id),
                 ...grammarWizardItems.map((p: any) => p.id)
@@ -400,7 +400,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
               const groups = [
                 { title: '1. Recall Map', items: recallMapItems },
                 { title: '2. Vocabulary & Spelling', items: vocabItems },
-                { title: '3. Text Navigators & Passages', items: [...textNavigatorItems, ...testPassageItems] },
+                { title: '3. Text Navigators & Passage Decoders', items: [...textNavigatorItems, ...passageDecoderItems] },
                 { title: '4. Sentence & Grammar', items: [...grammarWizardItems, ...sentenceArchitectItems] },
                 { title: '5. Writing Maps', items: writingMapItems },
                 { title: 'Other Practices', items: otherItems }
@@ -415,7 +415,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                 if (t.includes('writing')) return '📝';
                 if (t.includes('text-navigator')) return '🧭';
                 if (t.includes('grammar-wizard')) return '🧙‍♂️';
-                if (t.includes('test-passages')) return '📖';
+                if (t.includes('passage-decoder')) return '📖';
                 return PRACTICE_TYPE_ICONS[typeStr] ?? '▶️';
               };
 
@@ -433,7 +433,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                       const isSH = p.type.toLowerCase().includes('spelling-hero');
                       const isSA = p.type.toLowerCase().includes('sentence-architect');
                       const isGW = p.type.toLowerCase().includes('grammar-wizard');
-                      const isTP = p.type.toLowerCase().includes('test-passages');
+                      const isPD = p.type.toLowerCase().includes('passage-decoder');
 
                       if ((isVM || isSA || isGW) && p.content?.challenges) {
                         total = p.content.challenges.length;
@@ -446,7 +446,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                           }
                         }
                         if (doneCount > 0) avg = Math.round(sumMax / doneCount);
-                      } else if (isTP && p.content?.sections) {
+                      } else if (isPD && p.content?.sections) {
                         total = p.content.sections.length;
                         let sumMax = 0;
                         for (const sec of p.content.sections) {
@@ -521,7 +521,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                           >
                             <span className="db-practice-icon">{getIcon(p.type)}</span>
                             <span className="db-practice-name">{formatType(p.type)}</span>
-                            {(isVM || isSH || isSA || isGW || isTP) && total > 0 && (
+                            {(isVM || isSH || isSA || isGW || isPD) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
                                 title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}
@@ -809,7 +809,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.02-21:36</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.02-22:32</span></p>
         </div>
       </div>
 

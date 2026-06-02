@@ -404,7 +404,7 @@ app.get('/api/practices', async (c) => {
                   lightContent = {
                       challenges: challenges.map((c: any) => ({ title: c.title || '' }))
                   };
-              } else if (type.includes('test-passages')) {
+              } else if (type.includes('passage-decoder')) {
                   const sections = content.sections || [];
                   lightContent = {
                       sections: sections.map((s: any) => ({ title: s.title || '' }))

@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import './TestPassagesShell.css'
+import './PassageDecoderShell.css'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
+import { useCountdown } from '../lib/useCountdown'
+import { CountdownRing } from './CountdownRing'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
@@ -15,7 +17,7 @@ const getAudioUrl = (sentence: string, book: string) => {
     return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
 }
 
-export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
+export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const audioRef = useRef<HTMLAudioElement | null>(null)
     const sfxRef = useRef<HTMLAudioElement | null>(null)
     const activeSentenceRef = useRef<HTMLSpanElement | null>(null)
@@ -39,13 +41,19 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
     const [locked, setLocked] = useState(false)
     const [completed, setCompleted] = useState(false)
     const [finalScore, setFinalScore] = useState(0)
-    const [showFeedback, setShowFeedback] = useState(false)
     const [isCorrectFeedback, setIsCorrectFeedback] = useState(false)
 
-    // Continue button countdown
-    const [continueDisabled, setContinueDisabled] = useState(false)
-    const [continueCountdown, setContinueCountdown] = useState(0)
-    const countdownTimerRef = useRef<number | null>(null)
+    const timerExpiredRef = useRef(false)
+    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+
+    // Countdown timer (15s per question)
+    const countdownTimer = useCountdown(15, {
+        onExpire: () => {
+            if (timerExpiredRef.current) return
+            timerExpiredRef.current = true
+            checkAnswerRef.current(true)
+        }
+    })
 
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
@@ -67,9 +75,6 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
 
     useEffect(() => {
         loadRecords()
-        return () => {
-            if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
-        }
     }, [])
 
     const handleSectionSelect = (sec: any) => {
@@ -119,18 +124,31 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
             return
         }
 
+        if (nextQ) {
+            // Create a copy of the question and shuffle its options
+            const shuffledQ = { ...nextQ };
+            const zipped = shuffledQ.options.map((opt: string, idx: number) => ({
+                opt,
+                isCorrect: idx === nextQ.answer
+            }));
+            
+            for (let i = zipped.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [zipped[i], zipped[j]] = [zipped[j], zipped[i]];
+            }
+            
+            shuffledQ.options = zipped.map((z: any) => z.opt);
+            shuffledQ.answer = zipped.findIndex((z: any) => z.isCorrect);
+            nextQ = shuffledQ;
+        }
+
         setQ(nextQ)
         setIsRedemption(isRedemp)
         setSelectedOption(null)
         setShowOptions(false)
         setLocked(false)
-        setShowFeedback(false)
-        setContinueCountdown(0)
-        setContinueDisabled(false)
-        if (countdownTimerRef.current) {
-            clearInterval(countdownTimerRef.current)
-            countdownTimerRef.current = null
-        }
+        timerExpiredRef.current = false
+        countdownTimer.pause()
     }
 
     const playAudio = async (url: string) => {
@@ -253,32 +271,15 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
         }
     }
 
-    const checkAnswer = useCallback((optionIdx: number) => {
+    const checkAnswer = useCallback((optionIdx: number | null, forceWrong?: boolean) => {
         if (locked) return
+        if (!forceWrong && optionIdx === null) return
         setLocked(true)
+        countdownTimer.pause()
 
-        // Lock Continue button for 2 seconds
-        setContinueDisabled(true)
-        setContinueCountdown(2)
-
-        if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
-        let secondsLeft = 2
-        countdownTimerRef.current = window.setInterval(() => {
-            secondsLeft -= 1
-            setContinueCountdown(secondsLeft)
-            if (secondsLeft <= 0) {
-                setContinueDisabled(false)
-                if (countdownTimerRef.current) {
-                    clearInterval(countdownTimerRef.current)
-                    countdownTimerRef.current = null
-                }
-            }
-        }, 1000)
-
-        const isCorrect = optionIdx === q.answer
+        const isCorrect = !forceWrong && optionIdx === q.answer
         setIsCorrectFeedback(isCorrect)
         setSelectedOption(optionIdx)
-        setShowFeedback(true)
 
         let updatedMistakes = [...mistakeQueue]
         let updatedScoreLog = [...scoreLog]
@@ -317,7 +318,14 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
 
         const scorePercent = Math.round((totalScore / queue.length) * 100)
         syncRecord(scorePercent, false)
-    }, [locked, q, mistakeQueue, scoreLog, currentIndex, isRedemption, queue.length, textbook])
+    }, [locked, q, mistakeQueue, scoreLog, currentIndex, isRedemption, queue.length, textbook, countdownTimer])
+
+    // Keep ref in sync so onExpire uses the latest checkAnswer
+    useEffect(() => {
+        checkAnswerRef.current = (forceWrong?: boolean) => {
+            checkAnswer(null, forceWrong)
+        }
+    }, [checkAnswer])
 
     const nextQuestion = useCallback(() => {
         let nextIndex = currentIndex
@@ -330,6 +338,7 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
 
     const finishGame = async (finalQueue: any[]) => {
         setCompleted(true)
+        countdownTimer.pause()
 
         const totalScore = scoreLog.reduce((acc, curr) => {
             if (curr === "green") return acc + 1
@@ -364,6 +373,8 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
 
     const revealOptions = () => {
         setShowOptions(true)
+        timerExpiredRef.current = false
+        countdownTimer.reset(15)
         if (textbook && q) {
             playAudio(getAudioUrl(q.en, textbook))
         }
@@ -381,7 +392,7 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
                 }
             } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (showOptions && locked && !continueDisabled) {
+                if (showOptions && locked) {
                     nextQuestion();
                 }
             } else if (showOptions && !locked) {
@@ -399,7 +410,7 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeSection, completed, historyModal, showOptions, locked, continueDisabled, nextQuestion, checkAnswer, q]);
+    }, [activeSection, completed, historyModal, showOptions, locked, nextQuestion, checkAnswer, q]);
 
     // Scroll active sentence into view
     useEffect(() => {
@@ -414,44 +425,44 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
     // Menu/Dashboard View
     if (!activeSection) {
         return (
-            <div className="tp-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-                <div className="tp-screen">
-                    <div className="tp-header">
+            <div className="pd-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
+                <div className="pd-screen">
+                    <div className="pd-header">
                         <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, fontSize: '1.5rem', textDecoration: 'none' }}>🏠</Link>
                         <h1>{data.title}</h1>
                         <h2>{data.level}</h2>
                     </div>
 
-                    <div className="tp-section-grid">
+                    <div className="pd-section-grid">
                         {sections.map((sec: any) => (
-                            <div key={sec.id} className="tp-section-card">
-                                <div className="tp-card-header">
+                            <div key={sec.id} className="pd-section-card">
+                                <div className="pd-card-header">
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <h3 className="tp-card-title">{sec.title}</h3>
+                                        <h3 className="pd-card-title">{sec.title}</h3>
                                         <div style={{ fontSize: '0.7rem', color: '#999', marginTop: '4px' }}>
                                             {trialsTracker.getRemainingTrials(practiceId, sec.id)} / 5 attempts left
                                         </div>
                                     </div>
                                     <button
-                                        className="tp-start-btn"
+                                        className="pd-start-btn"
                                         onClick={() => handleSectionSelect(sec)}
                                         style={trialsTracker.getRemainingTrials(practiceId, sec.id) === 0 ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
                                     >
                                         {trialsTracker.getRemainingTrials(practiceId, sec.id) === 0 ? 'LOCKED' : 'START'}
                                     </button>
                                 </div>
-                                <div className="tp-card-stats">
+                                <div className="pd-card-stats">
                                     {(() => {
                                         const s = getStats(sec.title);
                                         return (
                                             <>
-                                                <div className="tp-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `TODAY - ${sec.title}`, logs: s.todayLogs })}>
-                                                    <span className="tp-stat-label">TODAY</span>
-                                                    <span className="tp-stat-val">{s.todayRuns} Runs | Best: {s.todayBest}%</span>
+                                                <div className="pd-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `TODAY - ${sec.title}`, logs: s.todayLogs })}>
+                                                    <span className="pd-stat-label">TODAY</span>
+                                                    <span className="pd-stat-val">{s.todayRuns} Runs | Best: {s.todayBest}%</span>
                                                 </div>
-                                                <div className="tp-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${sec.title}`, logs: s.lifeLogs })}>
-                                                    <span className="tp-stat-label">LIFETIME</span>
-                                                    <span className="tp-stat-val">{s.lifeRuns} Runs | Best: {s.lifeBest}%</span>
+                                                <div className="pd-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${sec.title}`, logs: s.lifeLogs })}>
+                                                    <span className="pd-stat-label">LIFETIME</span>
+                                                    <span className="pd-stat-val">{s.lifeRuns} Runs | Best: {s.lifeBest}%</span>
                                                 </div>
                                             </>
                                         )
@@ -463,13 +474,13 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
                 </div>
 
                 {historyModal && (
-                    <div className="tp-modal-overlay" onClick={() => setHistoryModal(null)}>
-                        <div className="tp-modal-content" onClick={e => e.stopPropagation()}>
-                            <h3 className="tp-modal-title">{historyModal.title}</h3>
+                    <div className="pd-modal-overlay" onClick={() => setHistoryModal(null)}>
+                        <div className="pd-modal-content" onClick={e => e.stopPropagation()}>
+                            <h3 className="pd-modal-title">{historyModal.title}</h3>
                             {historyModal.logs.length === 0 ? (
                                 <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No records yet.</p>
                             ) : (
-                                <ul className="tp-history-list">
+                                <ul className="pd-history-list">
                                     {historyModal.logs.map((log: any, i: number) => {
                                         const d = new Date(log.createdAt);
                                         const isUnfinished = log.unfinished ? ' (Unfinished)' : '';
@@ -484,9 +495,9 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
                                         else if (diffDays <= 6) dateLabel = diffDays + ' days ago ' + timeStr;
                                         else dateLabel = d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
                                         return (
-                                            <li key={log.id || i} className="tp-history-item">
-                                                <span className="tp-history-date">{dateLabel}</span>
-                                                <span className="tp-history-score" style={{ color: log.score >= 80 ? 'var(--primary)' : 'inherit' }}>
+                                            <li key={log.id || i} className="pd-history-item">
+                                                <span className="pd-history-date">{dateLabel}</span>
+                                                <span className="pd-history-score" style={{ color: log.score >= 80 ? 'var(--primary)' : 'inherit' }}>
                                                     {log.score}%{isUnfinished}
                                                 </span>
                                             </li>
@@ -494,7 +505,7 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
                                     })}
                                 </ul>
                             )}
-                            <button className="tp-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
+                            <button className="pd-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
                         </div>
                     </div>
                 )}
@@ -505,11 +516,11 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
     // Completion View
     if (completed) {
         return (
-            <div className="tp-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-                <div className="tp-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+            <div className="pd-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
+                <div className="pd-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
                     <h1 style={{ color: 'var(--primary)', fontSize: '3.5rem', margin: '0' }}>{finalScore}%</h1>
                     <h2 style={{ margin: '10px 0 30px 0', color: '#555' }}>Section Complete!</h2>
-                    <button className="tp-check-btn" onClick={() => {
+                    <button className="pd-check-btn" onClick={() => {
                         setActiveSection(null)
                         loadRecords()
                     }} style={{ maxWidth: '300px' }}>
@@ -523,27 +534,30 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
     if (!q) return null
 
     return (
-        <div className="tp-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-            <div className="tp-screen gameplay">
-                <div className="tp-top-bar">
-                    <button className="tp-close-btn" onClick={() => {
+        <div className="pd-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
+            <div className="pd-screen gameplay">
+                <div className="pd-top-bar">
+                    <button className="pd-close-btn" onClick={() => {
+                        countdownTimer.pause()
                         const rem = trialsTracker.getRemainingTrials(practiceId, activeSection.id);
                         if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this section today!`)) {
                             setActiveSection(null);
                             loadRecords();
+                        } else {
+                            if (!locked && showOptions) countdownTimer.resume()
                         }
                     }}>✕</button>
-                    <div className="tp-progress-container">
+                    <div className="pd-progress-container">
                         {queue.map((_, i) => {
                             const isActive = (!isRedemption && i === currentIndex) || (isRedemption && q.originalIndex === i);
-                            return <div key={i} className={`tp-progress-segment ${scoreLog[i] || ''}${isActive ? ' active' : ''}`} />
+                            return <div key={i} className={`pd-progress-segment ${scoreLog[i] || ''}${isActive ? ' active' : ''}`} />
                         })}
                     </div>
                 </div>
 
-                <div className="tp-split-viewport">
+                <div className="pd-split-viewport">
                     {/* Upper Viewport: Shows full text context formatted as paragraphs/dialogue */}
-                    <div className="tp-upper-viewport">
+                    <div className="pd-upper-viewport">
                         {(() => {
                             // Group sentences into paragraphs/lines
                             const paragraphs: any[][] = [];
@@ -563,9 +577,9 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
                             return paragraphs.map((para, paraIdx) => {
                                 const firstSentence = para[0];
                                 return (
-                                    <p key={paraIdx} className="tp-paragraph">
+                                    <p key={paraIdx} className="pd-paragraph">
                                         {firstSentence.speaker && (
-                                            <strong className="tp-speaker-prefix">{firstSentence.speaker}: </strong>
+                                            <strong className="pd-speaker-prefix">{firstSentence.speaker}: </strong>
                                         )}
                                         {para.map((sentence) => {
                                             const isCurrent = isRedemption
@@ -578,7 +592,7 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
                                                 <span
                                                     key={sentence.id}
                                                     ref={isCurrent ? activeSentenceRef : null}
-                                                    className={`tp-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
+                                                    className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
                                                 >
                                                     {sentence.en}{' '}
                                                 </span>
@@ -591,20 +605,23 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
                     </div>
 
                     {/* Lower Viewport: Handles interaction options and feedback */}
-                    <div className="tp-lower-viewport">
+                    <div className="pd-lower-viewport">
                         {!showOptions ? (
-                            <div className="tp-think-area">
-                                <p className="tp-think-prompt">想一想这句话的中文翻译...</p>
-                                <p className="tp-think-sub">Think about the translation in your head</p>
-                                <button className="tp-reveal-btn" onClick={revealOptions}>
-                                    Show Options <span className="tp-shortcut-tag">Space</span>
+                            <div className="pd-think-area">
+                                <p className="pd-think-prompt">想一想这句话的中文翻译...</p>
+                                <p className="pd-think-sub">Think about the translation in your head</p>
+                                <button className="pd-reveal-btn" onClick={revealOptions}>
+                                    Show Options <span className="pd-shortcut-tag">Space</span>
                                 </button>
                             </div>
                         ) : (
-                            <div className="tp-options-area">
-                                <div className="tp-options-grid">
+                            <div className="pd-options-area">
+                                <div className="pd-timer-container">
+                                    <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={15} isRunning={countdownTimer.isRunning} />
+                                </div>
+                                <div className="pd-options-grid">
                                     {q.options.map((opt: string, optIdx: number) => {
-                                        let btnClass = "tp-option-btn"
+                                        let btnClass = "pd-option-btn"
                                         if (locked) {
                                             if (optIdx === q.answer) {
                                                 btnClass += " correct"
@@ -622,61 +639,33 @@ export function TestPassagesShell({ data, practiceId, unit, textbook }: any) {
                                                 onClick={() => checkAnswer(optIdx)}
                                                 disabled={locked}
                                             >
-                                                <span className="tp-option-num">{optIdx + 1}</span>
-                                                <span className="tp-option-text">{opt}</span>
+                                                <span className="pd-option-num">{optIdx + 1}</span>
+                                                <span className="pd-option-text">{opt}</span>
                                             </button>
                                         )
                                     })}
                                 </div>
 
-                                <div className={`tp-feedback-area ${showFeedback ? 'visible ' + (isCorrectFeedback ? 'correct' : 'wrong') : ''}`}>
-                                    {showFeedback ? (
-                                        isCorrectFeedback ? (
-                                            <div className="tp-feedback-content">
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <button className="tp-play-btn" onClick={() => playAudio(getAudioUrl(q.en, textbook))}>
-                                                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                                                    </button>
-                                                    <h4 className="tp-feedback-title correct">Excellent!</h4>
-                                                </div>
-                                                <p className="tp-feedback-sentence">📖 {q.en}</p>
-                                            </div>
-                                        ) : (
-                                            <div className="tp-feedback-content">
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <button className="tp-play-btn" onClick={() => playAudio(getAudioUrl(q.en, textbook))}>
-                                                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                                                    </button>
-                                                    <h4 className="tp-feedback-title wrong">Correct Answer:</h4>
-                                                </div>
-                                                <p className="tp-feedback-msg">{q.options[q.answer]}</p>
-                                                <p className="tp-feedback-sentence">📖 {q.en}</p>
-                                            </div>
-                                        )
-                                    ) : null}
-                                </div>
 
-                                <div className="tp-footer-action">
+
+                                <div className="pd-footer-action">
                                     <button
-                                        className="tp-continue-btn"
+                                        className="pd-continue-btn"
                                         onClick={nextQuestion}
-                                        disabled={!locked || continueDisabled}
+                                        disabled={!locked}
                                     >
-                                        {continueCountdown > 0
-                                            ? `Continue (${continueCountdown}s)`
-                                            : (() => {
-                                                let mistakesCount = mistakeQueue.length;
-                                                if (isRedemption && isCorrectFeedback) {
-                                                    mistakesCount = Math.max(0, mistakesCount - 1);
-                                                } else if (!isRedemption && !isCorrectFeedback) {
-                                                    mistakesCount += 1;
-                                                }
-                                                const isLast = isRedemption
-                                                    ? (mistakesCount === 0)
-                                                    : (currentIndex + 1 >= queue.length && mistakesCount === 0);
-                                                return isLast ? 'Finish' : 'Continue';
-                                            })()
-                                        }
+                                        {(() => {
+                                            let mistakesCount = mistakeQueue.length;
+                                            if (isRedemption && isCorrectFeedback) {
+                                                mistakesCount = Math.max(0, mistakesCount - 1);
+                                            } else if (!isRedemption && !isCorrectFeedback) {
+                                                mistakesCount += 1;
+                                            }
+                                            const isLast = isRedemption
+                                                ? (mistakesCount === 0)
+                                                : (currentIndex + 1 >= queue.length && mistakesCount === 0);
+                                            return isLast ? 'Finish' : 'Continue';
+                                        })()}
                                     </button>
                                 </div>
                             </div>

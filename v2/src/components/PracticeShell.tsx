@@ -8,7 +8,7 @@ import { SpellingHeroShell } from './SpellingHeroShell'
 import { MindMapShell } from './MindMapShell'
 import { SentenceArchitectShell } from './SentenceArchitectShell'
 import { GrammarWizardShell } from './GrammarWizardShell'
-import { TestPassagesShell } from './TestPassagesShell'
+import { PassageDecoderShell } from './PassageDecoderShell'
 
 
 // Render practice components based on type
@@ -56,8 +56,8 @@ export function PracticeShell() {
         return <GrammarWizardShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
-    if (cleanType === 'test-passages') {
-        return <TestPassagesShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    if (cleanType === 'passage-decoder') {
+        return <PassageDecoderShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
 
