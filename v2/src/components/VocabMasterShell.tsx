@@ -214,10 +214,10 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        } catch (e) { console.error(e) }
    }
 
-   const handleOptionClick = (idx: number) => {
-       if (locked) return
-       setSelectedOption(idx)
-   }
+    const handleOptionClick = useCallback((idx: number) => {
+        if (locked) return
+        setSelectedOption(idx)
+    }, [locked])
 
     const syncRecord = async (scorePercent: number, isFinished: boolean) => {
         try {
@@ -444,11 +444,17 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                          nextQuestion();
                      }
                  }
+             } else if (!locked && ['1', '2', '3', '4'].includes(e.key)) {
+                 e.preventDefault();
+                 const idx = parseInt(e.key, 10) - 1;
+                 if (options[idx]) {
+                     handleOptionClick(options[idx].originalIdx);
+                 }
              }
          };
          window.addEventListener('keydown', handleKeyDown);
          return () => window.removeEventListener('keydown', handleKeyDown);
-     }, [activeChallenge, completed, historyModal, showHintModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer]);
+     }, [activeChallenge, completed, historyModal, showHintModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer, options, handleOptionClick]);
 
    if (!activeChallenge) {
        return (
@@ -599,33 +605,34 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                     </div>
 
                    <div className="vm-options-grid">
-                       {options.map((opt: any) => {
-                           // Determine classes based on selection/locked state
-                           let classes = "vm-option-btn "
-                           if (locked) {
-                               if (opt.originalIdx === q.answer) {
-                                   classes += "correct " // Always reveal correct answer
-                               } else if (selectedOption === opt.originalIdx) {
-                                   classes += "wrong " // Mark wrong if selected
-                               }
-                           } else {
-                               if (selectedOption === opt.originalIdx) {
-                                   classes += "selected "
-                               }
-                           }
+                        {options.map((opt: any, idx: number) => {
+                            // Determine classes based on selection/locked state
+                            let classes = "vm-option-btn "
+                            if (locked) {
+                                if (opt.originalIdx === q.answer) {
+                                    classes += "correct " // Always reveal correct answer
+                                } else if (selectedOption === opt.originalIdx) {
+                                    classes += "wrong " // Mark wrong if selected
+                                }
+                            } else {
+                                if (selectedOption === opt.originalIdx) {
+                                    classes += "selected "
+                                }
+                            }
 
-                           return (
-                               <button 
-                                   key={`${opt.text}-${opt.originalIdx}`} 
-                                   className={classes}
-                                   onClick={() => handleOptionClick(opt.originalIdx)}
-                                   disabled={locked}
-                               >
-                                   {opt.text}
-                               </button>
-                           )
-                       })}
-                   </div>
+                            return (
+                                <button 
+                                    key={`${opt.text}-${opt.originalIdx}`} 
+                                    className={classes}
+                                    onClick={() => handleOptionClick(opt.originalIdx)}
+                                    disabled={locked}
+                                >
+                                    <span className="vm-option-marker">{idx + 1}</span>
+                                    <span>{opt.text}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
                </div>
 
                <div className={`vm-feedback-area ${showFeedback ? 'visible ' + (isCorrectFeedback ? 'correct' : 'wrong') : ''}`}>

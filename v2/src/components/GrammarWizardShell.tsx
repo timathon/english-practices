@@ -161,10 +161,10 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        } catch (e) { console.error(e) }
    }
 
-   const handleOptionClick = (idx: number) => {
-       if (locked) return
-       setSelectedOption(idx)
-   }
+    const handleOptionClick = useCallback((idx: number) => {
+        if (locked) return
+        setSelectedOption(idx)
+    }, [locked])
 
     const syncRecord = async (scorePercent: number, isFinished: boolean) => {
         try {
@@ -387,11 +387,17 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                         nextQuestion();
                     }
                 }
+            } else if (!locked && ['1', '2', '3', '4'].includes(e.key)) {
+                e.preventDefault();
+                const idx = parseInt(e.key, 10) - 1;
+                if (options[idx]) {
+                    handleOptionClick(options[idx].originalIdx);
+                }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeChallenge, completed, historyModal, showHintModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer]);
+    }, [activeChallenge, completed, historyModal, showHintModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer, options, handleOptionClick]);
 
    if (!activeChallenge) {
        return (
@@ -538,7 +544,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                    </div>
 
                    <div className="gw-options-list">
-                       {options.map((opt: any) => {
+                       {options.map((opt: any, idx: number) => {
                            let classes = "gw-option-btn "
                            if (locked) {
                                if (opt.originalIdx === q.answer) {
@@ -559,6 +565,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                                    onClick={() => handleOptionClick(opt.originalIdx)}
                                    disabled={locked}
                                >
+                                   <span className="gw-option-marker">{idx + 1}</span>
                                    <span className="gw-option-text">{opt.text}</span>
                                </button>
                            )
