@@ -149,7 +149,7 @@ function recordFinish(practiceId: string, challengeId: string, score: number) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellData; practiceId: string; textbook: string }) {
+export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: ShellData; practiceId: string; unit: string; textbook: string }) {
     const { data: session } = useSession()
     const userId = session?.user?.id
     const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -401,7 +401,7 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
                 mistakeService.addMistake(userId, {
                     practiceId,
                     textbook,
-                    unit: data.level,
+                    unit,
                     practiceType: 'spelling-hero',
                     question: data.spelling_words.find(sw => sw.word === q.word) || {
                         word: q.word,

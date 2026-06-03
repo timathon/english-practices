@@ -58,7 +58,7 @@ export function PracticeShell() {
     }
 
     if (cleanType === 'spelling-hero') {
-        return <SpellingHeroShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} />
+        return <SpellingHeroShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
     if (cleanType === 'sentence-architect') {
