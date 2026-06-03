@@ -138,6 +138,12 @@ function saveLastUnit(tb: string, unit: string) {
 function BookSection({ tb, units, records, initialUnit }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string }) {
   const lettersScrollRef = useHorizontalScrollRef()
   const unitsScrollRef = useHorizontalScrollRef()
+  const unitsContainerRef = useRef<HTMLDivElement | null>(null)
+
+  const setUnitsScrollRef = useCallback((el: HTMLDivElement | null) => {
+    unitsScrollRef(el)
+    unitsContainerRef.current = el
+  }, [unitsScrollRef])
   const unitKeys = Object.keys(units).sort((a, b) => {
     const isStdA = /^[UM]\d+/i.test(a.trim())
     const isStdB = /^[UM]\d+/i.test(b.trim())
@@ -242,6 +248,20 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
 
   const activeLevel2Tab = isBThink1 ? activePageStart : activeUnit
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (unitsContainerRef.current) {
+        const activeBtn = unitsContainerRef.current.querySelector('.db-tab-btn.active') as HTMLElement
+        if (activeBtn) {
+          const container = unitsContainerRef.current
+          const left = activeBtn.offsetLeft - (container.clientWidth / 2) + (activeBtn.clientWidth / 2)
+          container.scrollTo({ left, behavior: 'smooth' })
+        }
+      }
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [activeLevel2Tab])
+
   const handleLevel2TabChange = (val: string) => {
     if (isBThink1) {
       setActivePageStart(val)
@@ -321,7 +341,7 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
           </div>
         )}
 
-        <div ref={unitsScrollRef} className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
+        <div ref={setUnitsScrollRef} className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
           {level2Tabs.map(tabVal => (
             <button
               key={tabVal}
@@ -857,7 +877,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.03-22:29</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.04-07:18</span></p>
         </div>
       </div>
 
