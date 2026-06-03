@@ -610,7 +610,14 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                     })}
                                 </div>
 
-
+                                {locked && q.remark && (
+                                    <div className="pd-remark-banner">
+                                        <span className="pd-remark-icon">💡</span>
+                                        <div className="pd-remark-text">
+                                            <strong>备注：</strong>{q.remark}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="pd-footer-action">
                                     <button
