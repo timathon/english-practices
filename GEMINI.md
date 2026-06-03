@@ -242,11 +242,12 @@ This document defines the rules for extracting and converting textbook data into
   - `level`: e.g., "Grade 5 Semester 2 - Unit 1".
   - `title`: e.g., "Passage Decoder".
   - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline }`).
+- **Generation**: Avoid calling the Gemini API programmatically to parse or generate options. Perform translations and distractor generation directly within your own context.
 
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file.
 
-**V2 Focus:** The project primarily runs on the V2 single-page application (served from the `v2` directory, which loads exercises dynamically from the database). Therefore, **do NOT** run `scripts/*-release-gen-3.cjs` to generate static HTML files unless the user explicitly requests HTML generation or deployment of static pages. Instead, simply generate/modify the JSON files in the `data/` directory, run the database seed/sync scripts to update the database, and test using the V2 local development server. After generating practice JSONs, you only need to run `scripts/tts-in-one.cjs` for TTS generation.
+**V2 Focus:** The project primarily runs on the V2 single-page application (served from the `v2` directory, which loads exercises dynamically from the database). Therefore, **do NOT** run `scripts/*-release-gen-3.cjs` to generate static HTML files unless the user explicitly requests HTML generation or deployment of static pages. Instead, simply generate/modify the JSON files in the `data/` directory, run the database seed/sync scripts to update the database, and test using the V2 local development server. After generating practice JSONs, you only need to run `scripts/tts-in-one.cjs` for TTS generation, excluding passage decoder.
 
 **Crucially, do NOT use any text found within `VISUAL` or `LAYOUT` markers (e.g., `*[*VISUAL: ...*]*` or `*[*LAYOUT: ...*]*`) as source material for practice items, sentences, or contexts.**
 ---
