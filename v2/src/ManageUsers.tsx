@@ -650,10 +650,10 @@ export function ManageUsers() {
               <div>
                 <div className="db-books" style={{ gap: '30px', width: '100%', flexWrap: 'wrap' }}>
                                {/* Activity: Last 7 Days */}
-                  <div className="db-stats" style={{ flex: '1 1 450px', maxWidth: '100%' }}>
+                  <div className="db-stats db-stats-column-modal">
                     <h3 className="db-stats-title">Activity: Last 7 Days</h3>
                     {(() => {
-                      const getLast7DaysStats = (recs: any[]) => {
+                      const getLast7DaysStats = (recs: any[]): any[] => {
                         const stats = [];
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
@@ -703,7 +703,21 @@ export function ManageUsers() {
                         }
                         return stats;
                       };
-                      const last7DaysStats = getLast7DaysStats(selectedUserRecords);
+                      const last7DaysStats: any[] = getLast7DaysStats(selectedUserRecords);
+
+                      const handleChartInteraction = (state: any) => {
+                        if (!state) return;
+                        let index = state.activeTooltipIndex;
+                        if (typeof index !== 'number' && state.activeLabel) {
+                          index = last7DaysStats.findIndex(s => s.date === state.activeLabel);
+                        }
+                        if (typeof index === 'number' && index >= 0 && index <= 6) {
+                          const offset = 6 - index;
+                          if (historyOffset !== offset) {
+                            setHistoryOffset(offset);
+                          }
+                        }
+                      };
 
                       return (
                         <div className="db-chart-card">
@@ -716,6 +730,7 @@ export function ManageUsers() {
                               <ComposedChart
                                 data={last7DaysStats}
                                 margin={{ top: 16, right: 12, bottom: 0, left: -8 }}
+                                onClick={handleChartInteraction}
                               >
                                 <defs>
                                   <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
@@ -774,7 +789,7 @@ export function ManageUsers() {
                   </div>
 
                   {/* Today's Practices */}
-                  <div className="db-stats" style={{ flex: '1 1 450px', maxWidth: '100%' }}>
+                  <div className="db-stats db-stats-history-modal db-stats-column-modal">
                     <div className="db-history-header">
                       <h3 className="db-stats-title">Practice History</h3>
                       <div className="db-history-nav">
@@ -851,28 +866,13 @@ export function ManageUsers() {
                       const activeBook = todayBookKeys.includes(activeTodayBook) ? activeTodayBook : (todayBookKeys[0] || '');
 
                       return parsedTodayRecords.length > 0 ? (
-                        <div>
-                          <div ref={historyScrollRef} className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto' }}>
+                        <div className="db-history-content">
+                          <div ref={historyScrollRef} className="db-units-tabs">
                             {todayBookKeys.map(book => (
                               <button
                                 key={book}
                                 onClick={() => setActiveTodayBook(book)}
                                 className={`db-tab-btn ${activeBook === book ? 'active' : ''}`}
-                                style={{
-                                  padding: '6px 14px',
-                                  border: 'none',
-                                  borderBottom: activeBook === book ? '3px solid var(--tab-active-text)' : '3px solid transparent',
-                                  background: activeBook === book ? 'var(--card-bg)' : 'transparent',
-                                  cursor: 'pointer',
-                                  fontWeight: activeBook === book ? 'bold' : 'normal',
-                                  color: activeBook === book ? 'var(--tab-active-text)' : 'var(--tab-text)',
-                                  borderRadius: '5px 5px 0 0',
-                                  whiteSpace: 'nowrap',
-                                  transition: 'all 0.2s',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
                               >
                                 <span>{getTextbookEmoji(book)}</span>
                                 <span>{book} ({todayRecordsByBook[book].length})</span>

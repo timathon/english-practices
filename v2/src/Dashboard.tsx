@@ -857,7 +857,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.03-22:06</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.03-22:29</span></p>
         </div>
       </div>
 
@@ -876,7 +876,6 @@ export function Dashboard() {
                 <ComposedChart
                   data={last7DaysStats}
                   margin={{ top: 16, right: 12, bottom: 0, left: -8 }}
-                  onMouseMove={handleChartInteraction}
                   onClick={handleChartInteraction}
                 >
                   <defs>
