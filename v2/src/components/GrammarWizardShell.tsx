@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import './GrammarWizardShell.css'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
-import { API_URL } from '../lib/auth'
+import { useSession, API_URL } from '../lib/auth'
+import { mistakeService } from '../lib/mistakeService'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
@@ -21,6 +22,8 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
+   const { data: session } = useSession()
+   const userId = session?.user?.id
    const sfxRef = useRef<HTMLAudioElement | null>(null)
    
    const [activeChallenge, setActiveChallenge] = useState<any>(null)
@@ -278,6 +281,16 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
            if (!isRedemption) {
                updatedScoreLog[currentIndex] = "red"
                updatedMistakes.push(q)
+               if (userId) {
+                   mistakeService.addMistake(userId, {
+                       practiceId,
+                       textbook,
+                       unit,
+                       practiceType: 'grammar-wizard',
+                       question: q,
+                       wrongAnswer: selectedOption !== null ? q.options[selectedOption] : undefined
+                   });
+               }
            } else {
                const missed = updatedMistakes.shift()
                updatedMistakes.push(missed) // Move to back of the queue
@@ -295,7 +308,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        
        const scorePercent = Math.round((totalScore / queue.length) * 100)
        syncRecord(scorePercent, false)
-    }, [locked, selectedOption, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer])
+    }, [locked, selectedOption, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer, userId, practiceId, textbook, unit])
 
     // Keep ref in sync so onExpire uses the latest checkAnswer
     useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
@@ -322,6 +335,9 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        setFinalScore(scorePercent)
 
        syncRecord(scorePercent, true)
+       if (userId) {
+           mistakeService.syncToServer(userId);
+       }
    }
    
    const getStats = (challengeTitle: string) => {
@@ -518,6 +534,9 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                             countdownTimer.pause()
                             const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
                             if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
+                                if (userId) {
+                                    mistakeService.syncToServer(userId);
+                                }
                                 setActiveChallenge(null);
                                 loadRecords();
                             } else {

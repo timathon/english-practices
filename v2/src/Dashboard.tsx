@@ -4,6 +4,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { cache } from './lib/cache'
 import { PetDashboardWidget } from './components/PetDashboardWidget'
 import { getTextbookEmoji } from './lib/textbooks'
+import { mistakeService, type Mistake } from './lib/mistakeService'
+import { MistakeReviewer } from './components/MistakeReviewer'
 import './Dashboard.css'
 
 export function useHorizontalScrollRef() {
@@ -604,6 +606,15 @@ export function Dashboard() {
   const [activeTodayBook, setActiveTodayBook] = useState<string>('')
   const [historyOffset, setHistoryOffset] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [activeView, setActiveView] = useState<'textbooks' | 'mistakes'>('textbooks')
+  const [mistakes, setMistakes] = useState<Mistake[]>([])
+  const [activeMistakeReview, setActiveMistakeReview] = useState<Mistake[] | null>(null)
+  const [activeMistakeBook, setActiveMistakeBook] = useState<string>('')
+  const [activeMistakeUnit, setActiveMistakeUnit] = useState<string>('')
+  const [showResolved, setShowResolved] = useState(false)
+
+  const unresolvedMistakes = useMemo(() => mistakes.filter(m => !m.resolved), [mistakes])
+  const unresolvedCount = unresolvedMistakes.length
 
   const getDayLabel = (offset: number) => {
     if (offset === 0) return 'Today'
@@ -654,6 +665,11 @@ export function Dashboard() {
           })
           .catch(console.error)
       }
+
+      // Load mistakes
+      mistakeService.syncFromServer(userId).then(synced => {
+        setMistakes(synced)
+      })
     }
   }, [userId])
 
@@ -670,6 +686,38 @@ export function Dashboard() {
       return () => clearTimeout(timer);
     }
   }, [loading, targetTextbook]);
+
+  const handleCloseReviewer = () => {
+    setActiveMistakeReview(null);
+    if (userId) {
+      setMistakes(mistakeService.getMistakes(userId));
+    }
+  };
+
+  const handleDeleteMistake = (id: string) => {
+    if (userId && window.confirm("Are you sure you want to delete this mistake?")) {
+      mistakeService.removeMistake(userId, id);
+      mistakeService.syncToServer(userId);
+      setMistakes(mistakeService.getMistakes(userId));
+    }
+  };
+
+  const groupedMistakes = useMemo(() => {
+    const visibleMistakes = showResolved ? mistakes : mistakes.filter(m => !m.resolved);
+    return visibleMistakes.reduce<Record<string, Record<string, Mistake[]>>>((acc, m) => {
+      const tb = m.textbook || 'Other';
+      const un = m.unit || 'General';
+      if (!acc[tb]) acc[tb] = {};
+      if (!acc[tb][un]) acc[tb][un] = [];
+      acc[tb][un].push(m);
+      return acc;
+    }, {});
+  }, [mistakes, showResolved]);
+
+  const mistakeBooks = Object.keys(groupedMistakes).sort();
+  const effectiveMistakeBook = mistakeBooks.includes(activeMistakeBook) ? activeMistakeBook : (mistakeBooks[0] || '');
+  const mistakeUnits = effectiveMistakeBook ? Object.keys(groupedMistakes[effectiveMistakeBook]).sort() : [];
+  const effectiveMistakeUnit = mistakeUnits.includes(activeMistakeUnit) ? activeMistakeUnit : (mistakeUnits[0] || '');
 
   // group: textbook -> unit -> practices[]
   const grouped: Record<string, Record<string, any[]>> = practices.reduce((acc, p) => {
@@ -809,7 +857,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.03-10:36</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.03-11:56</span></p>
         </div>
       </div>
 
@@ -964,23 +1012,188 @@ export function Dashboard() {
         <div className="db-empty">No textbooks assigned. Please contact your administrator.</div>
       ) : (
         <>
-          <div className="db-divider">
-            <span className="db-divider-line" />
-            <h3 className="db-divider-title">Textbooks ({Object.keys(grouped).length})</h3>
-            <span className="db-divider-line" />
+          <div className="db-view-tabs">
+            <button
+              className={`db-view-tab ${activeView === 'textbooks' ? 'active' : ''}`}
+              onClick={() => setActiveView('textbooks')}
+            >
+              🎯 Practice Library
+            </button>
+            <button
+              className={`db-view-tab ${activeView === 'mistakes' ? 'active' : ''}`}
+              onClick={() => setActiveView('mistakes')}
+            >
+              📓 Mistake Book {unresolvedCount > 0 && <span className="db-view-tab-badge">{unresolvedCount}</span>}
+            </button>
           </div>
-          <div className="db-books">
-            {Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).map(tb => (
-              <BookSection
-                key={tb}
-                tb={tb}
-                units={grouped[tb]}
-                records={records}
-                initialUnit={targetTextbook === tb ? targetUnit : undefined}
-              />
-            ))}
-          </div>
+
+          {activeView === 'textbooks' ? (
+            <div className="db-books">
+              {Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })).map(tb => (
+                <BookSection
+                  key={tb}
+                  tb={tb}
+                  units={grouped[tb]}
+                  records={records}
+                  initialUnit={targetTextbook === tb ? targetUnit : undefined}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="db-mistakes-section">
+              {mistakes.length === 0 ? (
+                <div className="db-empty" style={{ background: 'var(--card-bg)', padding: '60px 20px', borderRadius: '16px' }}>
+                  <span style={{ fontSize: '3rem', display: 'block', marginBottom: '15px' }}>🎉</span>
+                  <h3 style={{ color: 'var(--text-h)', margin: '0 0 8px 0', fontSize: '1.25rem' }}>No Mistakes to Review!</h3>
+                  <p style={{ color: 'var(--text)', margin: 0, fontSize: '0.9rem' }}>Great job! Your mistake collection is clean.</p>
+                </div>
+              ) : (
+                <div className="db-mistakes-container">
+                  {/* Sidebar: Books & Units */}
+                  <div className="db-mistakes-sidebar">
+                    <div className="db-mistakes-header-card">
+                      <h3 className="db-mistakes-title">📓 Mistake Book</h3>
+                      <p className="db-mistakes-sub">You have {unresolvedCount} unresolved questions.</p>
+                      <div className="db-mistakes-filter-control">
+                        <label className="db-filter-switch">
+                          <input
+                            type="checkbox"
+                            checked={showResolved}
+                            onChange={(e) => setShowResolved(e.target.checked)}
+                          />
+                          <span className="db-filter-slider"></span>
+                        </label>
+                        <span className="db-filter-label">Show resolved</span>
+                      </div>
+                      <button
+                        className="db-quick-review-btn"
+                        disabled={unresolvedCount === 0}
+                        onClick={() => setActiveMistakeReview(unresolvedMistakes)}
+                      >
+                        ⚡ Quick Review All
+                      </button>
+                    </div>
+
+                    <div className="db-mistakes-nav">
+                      <div className="db-mistakes-book-tabs">
+                        {mistakeBooks.map(tb => (
+                          <button
+                            key={tb}
+                            className={`db-mistakes-book-tab ${effectiveMistakeBook === tb ? 'active' : ''}`}
+                            onClick={() => {
+                              setActiveMistakeBook(tb);
+                              setActiveMistakeUnit('');
+                            }}
+                          >
+                            <span className="db-mistakes-book-name">{getTextbookEmoji(tb)} {tb}</span>
+                            <span className="db-mistakes-count">{Object.values(groupedMistakes[tb]).flat().length}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {effectiveMistakeBook && (
+                        <div className="db-mistakes-unit-tabs">
+                          {mistakeUnits.map(un => (
+                            <button
+                              key={un}
+                              className={`db-mistakes-unit-tab ${effectiveMistakeUnit === un ? 'active' : ''}`}
+                              onClick={() => setActiveMistakeUnit(un)}
+                            >
+                              <span className="db-mistakes-unit-name">{un}</span>
+                              <span className="db-mistakes-count">{groupedMistakes[effectiveMistakeBook][un].length}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content: List of Mistakes for selected Textbook-Unit */}
+                  <div className="db-mistakes-content">
+                    {effectiveMistakeBook && effectiveMistakeUnit ? (
+                      <div className="db-mistakes-list-card">
+                        <div className="db-mistakes-list-header">
+                          <h4 style={{ margin: 0, color: 'var(--text-h)' }}>
+                            {effectiveMistakeBook} - {effectiveMistakeUnit} ({groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].length})
+                          </h4>
+                          <button
+                            className="db-unit-review-btn"
+                            disabled={groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].filter(m => !m.resolved).length === 0}
+                            onClick={() => setActiveMistakeReview(groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].filter(m => !m.resolved))}
+                          >
+                            ✏️ Review Unit
+                          </button>
+                        </div>
+                        <div className="db-mistakes-list">
+                          {groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].map((m) => (
+                            <div key={m.id} className={`db-mistake-item-card ${m.resolved ? 'resolved' : ''}`}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div className="db-mistake-meta">
+                                  <span className="db-mistake-type-badge">{m.practiceType.replace('-', ' ')}</span>
+                                  <span className="db-mistake-attempts">Attempts: {m.attemptsCount}</span>
+                                  {m.resolved && <span className="db-mistake-resolved-badge">Solved</span>}
+                                </div>
+                                <div className="db-mistake-prompt">
+                                  {m.practiceType === 'vocab-master' && <strong>{m.question.prompt}</strong>}
+                                  {m.practiceType === 'grammar-wizard' && <span>{m.question.prompt}</span>}
+                                  {m.practiceType === 'passage-decoder' && (
+                                    <>
+                                      <div style={{ fontStyle: 'italic', color: 'var(--accent)', marginBottom: 4 }}>{m.question.en}</div>
+                                      <div style={{ fontSize: '0.82rem', color: 'var(--text)' }}>Select correct translation</div>
+                                    </>
+                                  )}
+                                  {m.practiceType === 'sentence-architect' && (
+                                    <>
+                                      <div>{m.question.cn}</div>
+                                      <div style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text)', marginTop: 4 }}>💡 {m.question.hint}</div>
+                                    </>
+                                  )}
+                                  {m.practiceType === 'spelling-hero' && (
+                                    <>
+                                      <div>Spell the word for: <strong>{m.question.meaning}</strong></div>
+                                      <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: 'var(--accent)', marginTop: 4 }}>
+                                        {m.question.chunks.map(() => '_').join(' ')}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="db-mistake-actions">
+                                <button
+                                  className="db-mistake-action-btn delete"
+                                  title="Remove from Mistake Book"
+                                  onClick={() => handleDeleteMistake(m.id)}
+                                >
+                                  🗑️
+                                </button>
+                                <button
+                                  className="db-mistake-action-btn review"
+                                  onClick={() => setActiveMistakeReview([m])}
+                                >
+                                  {m.resolved ? 'Review Again' : 'Review'}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="db-empty" style={{ background: 'var(--card-bg)', padding: '40px', borderRadius: '16px' }}>Select a textbook and unit to view mistakes.</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </>
+      )}
+
+      {activeMistakeReview && (
+        <MistakeReviewer
+          userId={userId}
+          initialMistakes={activeMistakeReview}
+          onClose={handleCloseReviewer}
+        />
       )}
 
       {(session.user as any).role === 'admin' && (

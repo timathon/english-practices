@@ -4,7 +4,8 @@ import './SpellingHeroShell.css'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
-import { API_URL } from '../lib/auth'
+import { useSession, API_URL } from '../lib/auth'
+import { mistakeService } from '../lib/mistakeService'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
@@ -149,6 +150,8 @@ function recordFinish(practiceId: string, challengeId: string, score: number) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellData; practiceId: string; textbook: string }) {
+    const { data: session } = useSession()
+    const userId = session?.user?.id
     const audioRef = useRef<HTMLAudioElement | null>(null)
     const sfxRef  = useRef<HTMLAudioElement | null>(null)
 
@@ -394,6 +397,20 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
             newMistakes.shift()
         } else if (!correct && !redemptionRef.current) {
             newMistakes.push(q)
+            if (userId) {
+                mistakeService.addMistake(userId, {
+                    practiceId,
+                    textbook,
+                    unit: data.level,
+                    practiceType: 'spelling-hero',
+                    question: data.spelling_words.find(sw => sw.word === q.word) || {
+                        word: q.word,
+                        meaning: q.cn,
+                        chunks: q.qtype === 'linear' ? (q as LinearQuestion).chunks : []
+                    },
+                    wrongAnswer: q.qtype === 'linear' ? userChunks.join('') : soupSelection.map(s => s.text).join('')
+                });
+            }
         } else if (!correct && redemptionRef.current) {
             newMistakes.push(newMistakes.shift()!)
         }
@@ -509,6 +526,9 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
             setCompleted(true)
             if (activeChallengeRef.current) recordFinish(practiceId, activeChallengeRef.current.id, score)
             syncRecord(score, true)
+            if (userId) {
+                mistakeService.syncToServer(userId);
+            }
         } else {
             const nextRedemption = nextIndex >= currentQueue.length && currentMistakes.length > 0
             redemptionRef.current = nextRedemption
@@ -570,6 +590,9 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
                                 countdownTimer.pause()
                                 const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)
                                 if (window.confirm(`Quit? You have ${rem} attempt(s) left today.`)) {
+                                    if (userId) {
+                                        mistakeService.syncToServer(userId);
+                                    }
                                     setActiveChallenge(null)
                                 } else {
                                     if (!locked) countdownTimer.resume()

@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import './PassageDecoderShell.css'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
-import { API_URL } from '../lib/auth'
+import { useSession, API_URL } from '../lib/auth'
+import { mistakeService } from '../lib/mistakeService'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
@@ -12,6 +13,8 @@ import { CountdownRing } from './CountdownRing'
 
 
 export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
+    const { data: session } = useSession()
+    const userId = session?.user?.id
     const sfxRef = useRef<HTMLAudioElement | null>(null)
     const activeSentenceRef = useRef<HTMLSpanElement | null>(null)
 
@@ -269,6 +272,16 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
             if (!isRedemption) {
                 updatedScoreLog[currentIndex] = "red"
                 updatedMistakes.push(q)
+                if (userId) {
+                    mistakeService.addMistake(userId, {
+                        practiceId,
+                        textbook,
+                        unit,
+                        practiceType: 'passage-decoder',
+                        question: q,
+                        wrongAnswer: optionIdx !== null ? q.options[optionIdx] : undefined
+                    });
+                }
             } else {
                 const missed = updatedMistakes.shift()
                 updatedMistakes.push(missed) // Move to back
@@ -316,6 +329,9 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         setFinalScore(scorePercent)
 
         syncRecord(scorePercent, true)
+        if (userId) {
+            mistakeService.syncToServer(userId);
+        }
     }
 
     const getStats = (sectionTitle: string) => {
@@ -505,6 +521,9 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                         countdownTimer.pause()
                         const rem = trialsTracker.getRemainingTrials(practiceId, activeSection.id);
                         if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this section today!`)) {
+                            if (userId) {
+                                mistakeService.syncToServer(userId);
+                            }
                             setActiveSection(null);
                             loadRecords();
                         } else {

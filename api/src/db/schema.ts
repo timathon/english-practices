@@ -12,6 +12,7 @@ export const user = sqliteTable("user", {
   emailVerified: integer("emailVerified", { mode: "boolean" }).notNull(),
   image: text("image"),
   petState: text("petState", { mode: "json" }).$type<any>(),
+  mistakeState: text("mistakeState", { mode: "json" }).$type<any>(),
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull()
 });

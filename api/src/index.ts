@@ -578,4 +578,32 @@ app.put('/api/pet', async (c) => {
   return c.json({ success: true });
 })
 
+app.get('/api/mistakes', async (c) => {
+  const auth = getCachedAuth(c.env)
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const db = drizzle(c.env.DB);
+  const rows = await db.select({ mistakeState: user.mistakeState }).from(user).where(eq(user.id, session.user.id));
+  if (rows.length === 0) return c.json({ error: "User not found" }, 404);
+
+  return c.json(rows[0].mistakeState || null);
+})
+
+app.put('/api/mistakes', async (c) => {
+  const auth = getCachedAuth(c.env)
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const body = await c.req.json();
+  const db = drizzle(c.env.DB);
+
+  await db.update(user).set({
+    mistakeState: body,
+    updatedAt: new Date()
+  }).where(eq(user.id, session.user.id));
+
+  return c.json({ success: true });
+})
+
 export default app

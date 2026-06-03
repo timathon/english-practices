@@ -4,7 +4,8 @@ import './SentenceArchitectShell.css'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
-import { API_URL } from '../lib/auth'
+import { useSession, API_URL } from '../lib/auth'
+import { mistakeService } from '../lib/mistakeService'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
@@ -42,6 +43,8 @@ interface SelectedWord {
 }
 
 export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any) {
+    const { data: session } = useSession()
+    const userId = session?.user?.id
     const audioRef = useRef<HTMLAudioElement | null>(null)
     const sfxRef = useRef<HTMLAudioElement | null>(null)
 
@@ -429,6 +432,16 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
             if (!isRedemption) {
                 updatedScoreLog[currentIndex] = "red"
                 updatedMistakes.push(q)
+                if (userId) {
+                    mistakeService.addMistake(userId, {
+                        practiceId,
+                        textbook,
+                        unit,
+                        practiceType: 'sentence-architect',
+                        question: q,
+                        wrongAnswer: constructed
+                    });
+                }
             } else {
                 const missed = updatedMistakes.shift()
                 updatedMistakes.push(missed) // Move to back of the queue
@@ -495,6 +508,9 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         setFinalScore(scorePercent)
 
         syncRecord(scorePercent, true)
+        if (userId) {
+            mistakeService.syncToServer(userId);
+        }
     }
 
     const getStats = (challengeTitle: string) => {
@@ -757,6 +773,9 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                             countdownTimer.pause()
                             const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
                             if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
+                                if (userId) {
+                                    mistakeService.syncToServer(userId);
+                                }
                                 setActiveChallenge(null);
                                 loadRecords();
                             } else {
