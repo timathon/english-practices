@@ -617,9 +617,9 @@ export function SpellingHeroShell({ data, practiceId, textbook }: { data: ShellD
                                     })}
                                 </div>
                                 <div className="sh-options-grid">
-                                    {(shuffledOpts[activeSlot] || []).map(opt => (
+                                    {(shuffledOpts[activeSlot] || []).map((opt, idx) => (
                                         <button
-                                            key={opt}
+                                            key={`${opt}-${idx}`}
                                             className={`sh-option-btn ${userChunks[activeSlot] === opt ? 'selected' : ''}`}
                                             onClick={() => handleOptionSelect(opt)}
                                             disabled={locked}
