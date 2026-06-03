@@ -17,6 +17,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const userId = session?.user?.id
     const sfxRef = useRef<HTMLAudioElement | null>(null)
     const activeSentenceRef = useRef<HTMLSpanElement | null>(null)
+    const lastActiveSectionIdRef = useRef<string | null>(null)
 
     // Sections list with safe IDs
     const sections = (data.sections || []).map((sec: any, idx: number) => ({
@@ -25,6 +26,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     }));
 
     const [activeSection, setActiveSection] = useState<any>(null)
+    const [flickeringSectionId, setFlickeringSectionId] = useState<string | null>(null)
     const [queue, setQueue] = useState<any[]>([])
     const [mistakeQueue, setMistakeQueue] = useState<any[]>([])
     const [currentIndex, setCurrentIndex] = useState(0)
@@ -77,6 +79,8 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         const hasConsumed = trialsTracker.consumeTrial(practiceId, sec.id)
         if (!hasConsumed) return;
 
+        lastActiveSectionIdRef.current = sec.id
+        setFlickeringSectionId(null)
         setActiveSection(sec)
         setActiveRecordId(null)
         recordIdPromiseRef.current = null
@@ -402,6 +406,35 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         }
     }, [currentIndex, q, showOptions]);
 
+    // Scroll back to the last active section card when returning to menu
+    useEffect(() => {
+        if (!activeSection && lastActiveSectionIdRef.current) {
+            const lastId = lastActiveSectionIdRef.current;
+            const cardId = `sec-card-${lastId}`;
+            lastActiveSectionIdRef.current = null; // Clear it so it only scrolls once
+            setFlickeringSectionId(lastId);
+
+            const timeoutId = setTimeout(() => {
+                const element = document.getElementById(cardId);
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            }, 100);
+
+            const flickerTimeoutId = setTimeout(() => {
+                setFlickeringSectionId(null);
+            }, 2500);
+
+            return () => {
+                clearTimeout(timeoutId);
+                clearTimeout(flickerTimeoutId);
+            };
+        }
+    }, [activeSection]);
+
     // Menu/Dashboard View
     if (!activeSection) {
         return (
@@ -414,42 +447,45 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                     </div>
 
                     <div className="pd-section-grid">
-                        {sections.map((sec: any) => (
-                            <div key={sec.id} className="pd-section-card">
-                                <div className="pd-card-header">
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <h3 className="pd-card-title">{sec.title}</h3>
-                                        <div style={{ fontSize: '0.7rem', color: '#999', marginTop: '4px' }}>
-                                            {trialsTracker.getRemainingTrials(practiceId, sec.id)} / 5 attempts left
+                        {sections.map((sec: any) => {
+                            const isFlickering = flickeringSectionId === sec.id;
+                            return (
+                                <div key={sec.id} id={`sec-card-${sec.id}`} className={`pd-section-card ${isFlickering ? 'flicker-active' : ''}`}>
+                                    <div className="pd-card-header">
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <h3 className="pd-card-title">{sec.title}</h3>
+                                            <div style={{ fontSize: '0.7rem', color: '#999', marginTop: '4px' }}>
+                                                {trialsTracker.getRemainingTrials(practiceId, sec.id)} / 5 attempts left
+                                            </div>
                                         </div>
+                                        <button
+                                            className="pd-start-btn"
+                                            onClick={() => handleSectionSelect(sec)}
+                                            style={trialsTracker.getRemainingTrials(practiceId, sec.id) === 0 ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
+                                        >
+                                            {trialsTracker.getRemainingTrials(practiceId, sec.id) === 0 ? 'LOCKED' : 'START'}
+                                        </button>
                                     </div>
-                                    <button
-                                        className="pd-start-btn"
-                                        onClick={() => handleSectionSelect(sec)}
-                                        style={trialsTracker.getRemainingTrials(practiceId, sec.id) === 0 ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                    >
-                                        {trialsTracker.getRemainingTrials(practiceId, sec.id) === 0 ? 'LOCKED' : 'START'}
-                                    </button>
+                                    <div className="pd-card-stats">
+                                        {(() => {
+                                            const s = getStats(sec.title);
+                                            return (
+                                                <>
+                                                    <div className="pd-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `TODAY - ${sec.title}`, logs: s.todayLogs })}>
+                                                        <span className="pd-stat-label">TODAY</span>
+                                                        <span className="pd-stat-val">{s.todayRuns} Runs | Best: {s.todayBest}%</span>
+                                                    </div>
+                                                    <div className="pd-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${sec.title}`, logs: s.lifeLogs })}>
+                                                        <span className="pd-stat-label">LIFETIME</span>
+                                                        <span className="pd-stat-val">{s.lifeRuns} Runs | Best: {s.lifeBest}%</span>
+                                                    </div>
+                                                </>
+                                            )
+                                        })()}
+                                    </div>
                                 </div>
-                                <div className="pd-card-stats">
-                                    {(() => {
-                                        const s = getStats(sec.title);
-                                        return (
-                                            <>
-                                                <div className="pd-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `TODAY - ${sec.title}`, logs: s.todayLogs })}>
-                                                    <span className="pd-stat-label">TODAY</span>
-                                                    <span className="pd-stat-val">{s.todayRuns} Runs | Best: {s.todayBest}%</span>
-                                                </div>
-                                                <div className="pd-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${sec.title}`, logs: s.lifeLogs })}>
-                                                    <span className="pd-stat-label">LIFETIME</span>
-                                                    <span className="pd-stat-val">{s.lifeRuns} Runs | Best: {s.lifeBest}%</span>
-                                                </div>
-                                            </>
-                                        )
-                                    })()}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
