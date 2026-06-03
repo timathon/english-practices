@@ -120,6 +120,21 @@ export function ManageUsers() {
     }
   }
 
+  const handleSwitchUser = (direction: 'left' | 'right') => {
+    if (!selectedUser || users.length <= 1) return
+    const currentIndex = users.findIndex(u => u.id === selectedUser.id)
+    if (currentIndex === -1) return
+
+    let nextIndex
+    if (direction === 'left') {
+      nextIndex = (currentIndex - 1 + users.length) % users.length
+    } else {
+      nextIndex = (currentIndex + 1) % users.length
+    }
+    const nextUser = users[nextIndex]
+    handleSelectUserForStats(nextUser)
+  }
+
   const userId = session?.user?.id
 
   useEffect(() => {
@@ -579,8 +594,27 @@ export function ManageUsers() {
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-h)', fontWeight: 'bold' }}>
-                  Practice Stats: {selectedUser.username}
+                <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-h)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>Practice Stats:</span>
+                  <button
+                    onClick={() => handleSwitchUser('left')}
+                    disabled={users.length <= 1}
+                    className="db-history-nav-btn"
+                    style={{ width: '28px', height: '28px', fontSize: '0.85rem', flexShrink: 0 }}
+                    title="Previous Student"
+                  >
+                    ←
+                  </button>
+                  <span>{selectedUser.username}</span>
+                  <button
+                    onClick={() => handleSwitchUser('right')}
+                    disabled={users.length <= 1}
+                    className="db-history-nav-btn"
+                    style={{ width: '28px', height: '28px', fontSize: '0.85rem', flexShrink: 0 }}
+                    title="Next Student"
+                  >
+                    →
+                  </button>
                 </h3>
                 <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text)' }}>
                   Registered on {new Date(selectedUser.createdAt).toLocaleDateString()}
@@ -615,7 +649,130 @@ export function ManageUsers() {
             ) : (
               <div>
                 <div className="db-books" style={{ gap: '30px', width: '100%', flexWrap: 'wrap' }}>
-                  
+                               {/* Activity: Last 7 Days */}
+                  <div className="db-stats" style={{ flex: '1 1 450px', maxWidth: '100%' }}>
+                    <h3 className="db-stats-title">Activity: Last 7 Days</h3>
+                    {(() => {
+                      const getLast7DaysStats = (recs: any[]) => {
+                        const stats = [];
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        for (let i = 6; i >= 0; i--) {
+                          const d = new Date(today);
+                          d.setDate(d.getDate() - i);
+
+                          const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                          const nextDay = new Date(d);
+                          nextDay.setDate(nextDay.getDate() + 1);
+
+                          const dayRecords = recs.filter(r => {
+                            const rDate = new Date(r.createdAt);
+                            return rDate >= d && rDate < nextDay;
+                          });
+
+                          const count = dayRecords.length;
+                          const avgScore = count > 0
+                            ? Math.round(dayRecords.reduce((acc, r) => acc + r.score, 0) / count)
+                            : 0;
+
+                          const bookCounts: Record<string, number> = {};
+                          dayRecords.forEach(r => {
+                            const match = r.unit.match(/^(.+?)\s\((.+)\)$/);
+                            let practiceId = r.unit;
+                            if (match) {
+                              practiceId = match[1];
+                            }
+                            const practice = practices.find(p => p.id === practiceId);
+                            const book = practice ? practice.textbook : 'Unknown';
+                            bookCounts[book] = (bookCounts[book] || 0) + 1;
+                          });
+
+                          const breakdown = Object.entries(bookCounts)
+                            .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true, sensitivity: 'base' }))
+                            .map(([book, cnt]) => `${book}-${cnt}`)
+                            .join(', ');
+
+                          stats.push({
+                            date: dateStr,
+                            count,
+                            avgScore,
+                            breakdown
+                          });
+                        }
+                        return stats;
+                      };
+                      const last7DaysStats = getLast7DaysStats(selectedUserRecords);
+
+                      return (
+                        <div className="db-chart-card">
+                          <div className="db-chart-legend-left">
+                            <span className="db-chart-legend-bar" />
+                            <span>Practices Done</span>
+                          </div>
+                          <div className="db-chart-area">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ComposedChart
+                                data={last7DaysStats}
+                                margin={{ top: 16, right: 12, bottom: 0, left: -8 }}
+                              >
+                                <defs>
+                                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="var(--tab-active-text)" stopOpacity={0.9} />
+                                    <stop offset="100%" stopColor="var(--tab-active-text)" stopOpacity={0.4} />
+                                  </linearGradient>
+                                  <linearGradient id="lineGlow" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.25} />
+                                    <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.5} />
+                                <XAxis
+                                  dataKey="date" stroke="var(--text)" fontSize={11}
+                                  tickLine={false} axisLine={false} dy={6}
+                                  tickFormatter={(value, index) => [1, 3, 5].includes(index) ? '' : value}
+                                />
+                                <YAxis
+                                  yAxisId="left" stroke="var(--text)" fontSize={11}
+                                  tickLine={false} axisLine={false} tickCount={5}
+                                  allowDecimals={false} width={28}
+                                />
+                                <YAxis
+                                  yAxisId="right" orientation="right" stroke="var(--text)"
+                                  fontSize={11} tickLine={false} axisLine={false}
+                                  tickFormatter={(v) => `${v}%`} domain={[0, 100]} width={36}
+                                />
+                                <Tooltip
+                                  cursor={{ fill: 'var(--accent-bg)', radius: 4 }}
+                                  content={<CustomTooltip />}
+                                />
+                                <Area
+                                  yAxisId="right" type="monotone" dataKey="avgScore"
+                                  fill="url(#lineGlow)" stroke="none" tooltipType="none"
+                                />
+                                <Bar
+                                  yAxisId="left" dataKey="count" name="Practices Done"
+                                  fill="url(#barGrad)" radius={[6, 6, 0, 0]} barSize={20}
+                                />
+                                <Line
+                                  yAxisId="right" type="monotone" dataKey="avgScore"
+                                  name="Avg Score" stroke="var(--accent)" strokeWidth={2.5}
+                                  dot={{ r: 3.5, fill: 'var(--card-bg)', strokeWidth: 2.5 }}
+                                  activeDot={{ r: 5.5, fill: 'var(--accent)', strokeWidth: 0 }}
+                                />
+                              </ComposedChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="db-chart-legend-right">
+                            <span className="db-chart-legend-dot" />
+                            <span>Avg Score</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
                   {/* Today's Practices */}
                   <div className="db-stats" style={{ flex: '1 1 450px', maxWidth: '100%' }}>
                     <div className="db-history-header">
@@ -754,131 +911,6 @@ export function ManageUsers() {
                       );
                     })()}
                   </div>
-
-                  {/* Activity: Last 7 Days */}
-                  <div className="db-stats" style={{ flex: '1 1 450px', maxWidth: '100%' }}>
-                    <h3 className="db-stats-title">Activity: Last 7 Days</h3>
-                    {(() => {
-                      const getLast7DaysStats = (recs: any[]) => {
-                        const stats = [];
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-
-                        for (let i = 6; i >= 0; i--) {
-                          const d = new Date(today);
-                          d.setDate(d.getDate() - i);
-
-                          const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-                          const nextDay = new Date(d);
-                          nextDay.setDate(nextDay.getDate() + 1);
-
-                          const dayRecords = recs.filter(r => {
-                            const rDate = new Date(r.createdAt);
-                            return rDate >= d && rDate < nextDay;
-                          });
-
-                          const count = dayRecords.length;
-                          const avgScore = count > 0
-                            ? Math.round(dayRecords.reduce((acc, r) => acc + r.score, 0) / count)
-                            : 0;
-
-                          const bookCounts: Record<string, number> = {};
-                          dayRecords.forEach(r => {
-                            const match = r.unit.match(/^(.+?)\s\((.+)\)$/);
-                            let practiceId = r.unit;
-                            if (match) {
-                              practiceId = match[1];
-                            }
-                            const practice = practices.find(p => p.id === practiceId);
-                            const book = practice ? practice.textbook : 'Unknown';
-                            bookCounts[book] = (bookCounts[book] || 0) + 1;
-                          });
-
-                          const breakdown = Object.entries(bookCounts)
-                            .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true, sensitivity: 'base' }))
-                            .map(([book, cnt]) => `${book}-${cnt}`)
-                            .join(', ');
-
-                          stats.push({
-                            date: dateStr,
-                            count,
-                            avgScore,
-                            breakdown
-                          });
-                        }
-                        return stats;
-                      };
-                      const last7DaysStats = getLast7DaysStats(selectedUserRecords);
-
-                      return (
-                        <div className="db-chart-card">
-                          <div className="db-chart-legend-left">
-                            <span className="db-chart-legend-bar" />
-                            <span>Practices Done</span>
-                          </div>
-                          <div className="db-chart-area">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <ComposedChart
-                                data={last7DaysStats}
-                                margin={{ top: 16, right: 12, bottom: 0, left: -8 }}
-                              >
-                                <defs>
-                                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="var(--tab-active-text)" stopOpacity={0.9} />
-                                    <stop offset="100%" stopColor="var(--tab-active-text)" stopOpacity={0.4} />
-                                  </linearGradient>
-                                  <linearGradient id="lineGlow" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.25} />
-                                    <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.5} />
-                                <XAxis
-                                  dataKey="date" stroke="var(--text)" fontSize={11}
-                                  tickLine={false} axisLine={false} dy={6}
-                                  tickFormatter={(value, index) => [1, 3, 5].includes(index) ? '' : value}
-                                />
-                                <YAxis
-                                  yAxisId="left" stroke="var(--text)" fontSize={11}
-                                  tickLine={false} axisLine={false} tickCount={5}
-                                  allowDecimals={false} width={28}
-                                />
-                                <YAxis
-                                  yAxisId="right" orientation="right" stroke="var(--text)"
-                                  fontSize={11} tickLine={false} axisLine={false}
-                                  tickFormatter={(v) => `${v}%`} domain={[0, 100]} width={36}
-                                />
-                                <Tooltip
-                                  cursor={{ fill: 'var(--accent-bg)', radius: 4 }}
-                                  content={<CustomTooltip />}
-                                />
-                                <Area
-                                  yAxisId="right" type="monotone" dataKey="avgScore"
-                                  fill="url(#lineGlow)" stroke="none" tooltipType="none"
-                                />
-                                <Bar
-                                  yAxisId="left" dataKey="count" name="Practices Done"
-                                  fill="url(#barGrad)" radius={[6, 6, 0, 0]} barSize={20}
-                                />
-                                <Line
-                                  yAxisId="right" type="monotone" dataKey="avgScore"
-                                  name="Avg Score" stroke="var(--accent)" strokeWidth={2.5}
-                                  dot={{ r: 3.5, fill: 'var(--card-bg)', strokeWidth: 2.5 }}
-                                  activeDot={{ r: 5.5, fill: 'var(--accent)', strokeWidth: 0 }}
-                                />
-                              </ComposedChart>
-                            </ResponsiveContainer>
-                          </div>
-                          <div className="db-chart-legend-right">
-                            <span className="db-chart-legend-dot" />
-                            <span>Avg Score</span>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-
                 </div>
               </div>
             )}
