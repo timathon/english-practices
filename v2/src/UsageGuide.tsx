@@ -2,7 +2,7 @@ import { useState } from 'react'
 import './UsageGuide.css'
 
 export function UsageGuide() {
-  const [activeTab, setActiveTab] = useState<'welcome' | 'vocab' | 'grammar' | 'pet'>('welcome')
+  const [activeTab, setActiveTab] = useState<'welcome' | 'vocab' | 'grammar' | 'mistakes' | 'pet'>('welcome')
   
   // State for Spelling Hero interactive demo
   const [spellingProgress, setSpellingProgress] = useState<string[]>([])
@@ -117,6 +117,14 @@ export function UsageGuide() {
           </button>
 
           <button 
+            className={`ug-sidebar-btn ${activeTab === 'mistakes' ? 'active' : ''}`}
+            onClick={() => setActiveTab('mistakes')}
+          >
+            <span className="icon">📓</span>
+            <span>Mistake Book</span>
+          </button>
+
+          <button 
             className={`ug-sidebar-btn ${activeTab === 'pet' ? 'active' : ''}`}
             onClick={() => setActiveTab('pet')}
           >
@@ -157,6 +165,17 @@ export function UsageGuide() {
                     Deconstruct sentences block-by-block, identify grammar purposes and rules, verify comprehension questions, and build model essays.
                   </p>
                   <span className="ug-card-badge">4 Practice Types</span>
+                </div>
+
+                <div className="ug-card" onClick={() => setActiveTab('mistakes')}>
+                  <div className="ug-card-header">
+                    <span className="ug-card-icon">📓</span>
+                    <h4 className="ug-card-title">Mistake Book</h4>
+                  </div>
+                  <p className="ug-card-desc">
+                    Review logged mistakes across all shell practices in real-time. Toggle solved filters, review single items, or review a whole unit dynamically.
+                  </p>
+                  <span className="ug-card-badge">Local-first sync</span>
                 </div>
 
                 <div className="ug-card" onClick={() => setActiveTab('pet')}>
@@ -315,7 +334,17 @@ export function UsageGuide() {
                     <h4 className="ug-card-title">Text Navigator</h4>
                   </div>
                   <p className="ug-card-desc">
-                    An interactive path builder that breaks down textbook reading passages sentence-by-sentence. Integrates true/false grammar checks, vocabulary notes, and keyword prompts.
+                    An interactive path builder that breaks down reading passages sentence-by-sentence. Integrates true/false grammar checks, vocabulary notes, and keyword prompts.
+                  </p>
+                </div>
+
+                <div className="ug-card">
+                  <div className="ug-card-header">
+                    <span className="ug-card-icon">📖</span>
+                    <h4 className="ug-card-title">Passage Decoder</h4>
+                  </div>
+                  <p className="ug-card-desc">
+                    Deconstruct reading passages or dialogues sentence-by-sentence. Read the English lines and pick the correct translation from three options with subtle traps.
                   </p>
                 </div>
               </div>
@@ -380,6 +409,71 @@ export function UsageGuide() {
                     )}
                   </div>
                 </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'mistakes' && (
+            <>
+              <div>
+                <h3 className="ug-section-title">📓 Mistake Book (错题本)</h3>
+                <p className="ug-section-intro">
+                  A premium local-first review equipment that automatically logs questions you answered incorrectly across any practice shell.
+                </p>
+              </div>
+
+              <div className="ug-grid">
+                <div className="ug-card">
+                  <div className="ug-card-header">
+                    <span className="ug-card-icon">⚡</span>
+                    <h4 className="ug-card-title">Real-time Logging</h4>
+                  </div>
+                  <p className="ug-card-desc">
+                    Any incorrect attempt is immediately saved in the browser's local cache so there is zero gameplay lag, and synced to the secure Cloudflare D1 database.
+                  </p>
+                </div>
+
+                <div className="ug-card">
+                  <div className="ug-card-header">
+                    <span className="ug-card-icon">✅</span>
+                    <h4 className="ug-card-title">Solved Question Marker</h4>
+                  </div>
+                  <p className="ug-card-desc">
+                    When you review a mistake and answer it correctly, it is marked as solved and can be filtered out. It is not permanently deleted, letting you re-practice later.
+                  </p>
+                </div>
+
+                <div className="ug-card">
+                  <div className="ug-card-header">
+                    <span className="ug-card-icon">🔄</span>
+                    <h4 className="ug-card-title">Show/Hide Filter</h4>
+                  </div>
+                  <p className="ug-card-desc">
+                    Toggle the "Show resolved" switch in the sidebar to review all past mistakes or hide solved ones to keep your practice book clean.
+                  </p>
+                </div>
+
+                <div className="ug-card">
+                  <div className="ug-card-header">
+                    <span className="ug-card-icon">✏️</span>
+                    <h4 className="ug-card-title">Quick Review</h4>
+                  </div>
+                  <p className="ug-card-desc">
+                    Launch "Quick Review All" or "Review Unit" to go through your active mistakes. Correct answers resolve the item, while wrong answers recycle it to the back.
+                  </p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 style={{ margin: '0 0 12px', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-h)' }}>💡 Pro-Tip for Reviewing</h4>
+                <ul className="ug-list">
+                  <li className="ug-list-item">
+                    <strong>Individual Review:</strong> Use the "Review" button next to any specific card to inspect or practice it. Solved cards will display a "Review Again" option.
+                  </li>
+                  <li className="ug-list-item">
+                    <strong>Audio Feedbacks:</strong> Correct answers in review session automatically trigger native TTS audio read-alouds to reinforce phonetic memory.
+                  </li>
+                </ul>
               </div>
             </>
           )}
