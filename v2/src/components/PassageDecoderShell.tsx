@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import './PassageDecoderShell.css'
-import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { API_URL } from '../lib/auth'
@@ -10,15 +9,9 @@ import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
 import { CountdownRing } from './CountdownRing'
 
-const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
-const getAudioUrl = (sentence: string, book: string) => {
-    const hash = md5(sentence);
-    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
-}
 
 export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
-    const audioRef = useRef<HTMLAudioElement | null>(null)
     const sfxRef = useRef<HTMLAudioElement | null>(null)
     const activeSentenceRef = useRef<HTMLSpanElement | null>(null)
 
@@ -98,11 +91,6 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         setCompleted(false)
 
         // Preload audios
-        linearQueue.forEach((s: any) => {
-            if (textbook) {
-                audioCache.preloadAndSync(getAudioUrl(s.en, textbook));
-            }
-        });
         audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3");
         audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3");
 
@@ -151,24 +139,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         countdownTimer.pause()
     }
 
-    const playAudio = async (url: string) => {
-        if (!url) return;
-        try {
-            const blob = await audioCache.cacheAudio(url);
-            if (!blob) return;
-            const blobUrl = URL.createObjectURL(blob);
-            if (audioRef.current) {
-                audioRef.current.src = blobUrl;
-                audioRef.current.onended = () => URL.revokeObjectURL(blobUrl)
-                audioRef.current.play().catch(console.error)
-            } else {
-                const a = new Audio(blobUrl)
-                a.onended = () => URL.revokeObjectURL(blobUrl)
-                a.play().catch(console.error)
-                audioRef.current = a
-            }
-        } catch (e) { console.error(e) }
-    }
+
 
     const playSfx = async (type: 'correct' | 'wrong') => {
         const url = type === 'correct'
@@ -304,10 +275,6 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
             }
         }
 
-        if (textbook) {
-            setTimeout(() => playAudio(getAudioUrl(q.en, textbook)), 200)
-        }
-
         setMistakeQueue(updatedMistakes)
         setScoreLog(updatedScoreLog)
 
@@ -318,7 +285,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
         const scorePercent = Math.round((totalScore / queue.length) * 100)
         syncRecord(scorePercent, false)
-    }, [locked, q, mistakeQueue, scoreLog, currentIndex, isRedemption, queue.length, textbook, countdownTimer])
+    }, [locked, q, mistakeQueue, scoreLog, currentIndex, isRedemption, queue.length, countdownTimer])
 
     // Keep ref in sync so onExpire uses the latest checkAnswer
     useEffect(() => {
@@ -375,9 +342,6 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         setShowOptions(true)
         timerExpiredRef.current = false
         countdownTimer.reset(15)
-        if (textbook && q) {
-            playAudio(getAudioUrl(q.en, textbook))
-        }
     }
 
     // Keyboard Shortcuts
