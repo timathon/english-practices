@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { API_URL } from '../lib/auth'
+import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
 import { VocabMasterShell } from './VocabMasterShell'
 import { RecallMapShell } from './RecallMapShell'
 import { VocabGuideShell } from './VocabGuideShell'
@@ -21,8 +22,20 @@ export function PracticeShell() {
         fetch(API_URL + `/api/practices/${id}`, { credentials: 'include' })
            .then(res => res.json())
            .then(data => {
-               if (data.error) setError(data.error)
-               else setPractice(data)
+               if (data.error) {
+                   setError(data.error)
+               } else {
+                   if (data.isEncrypted && typeof data.content === 'string') {
+                       try {
+                           data.content = decryptContent(data.content, OBSCURE_KEY)
+                       } catch (decErr: any) {
+                           console.error("Decryption failed:", decErr)
+                           setError("Failed to decrypt practice content.")
+                           return
+                       }
+                   }
+                   setPractice(data)
+               }
            })
            .catch(e => setError(e.message))
     }, [id])

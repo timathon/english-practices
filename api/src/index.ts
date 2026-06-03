@@ -35,6 +35,30 @@ const getCachedAuth = (env: Bindings) => {
   return authInstance;
 };
 
+// ─── Anti-scraping Encryption Helpers ───────────────────────────────────────
+const OBSCURE_KEY = 'english-practices-secret-key-2026';
+
+function bytesToBase64(bytes: Uint8Array): string {
+    let binString = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binString += String.fromCharCode.apply(null, chunk as any);
+    }
+    return btoa(binString);
+}
+
+function encryptContent(contentObj: any, key: string): string {
+    const jsonStr = JSON.stringify(contentObj);
+    const bytes = new TextEncoder().encode(jsonStr);
+    const keyBytes = new TextEncoder().encode(key);
+    for (let i = 0; i < bytes.length; i++) {
+        bytes[i] ^= keyBytes[i % keyBytes.length];
+    }
+    return bytesToBase64(bytes);
+}
+
+
 app.use('/api/*', cors({
   origin: (origin) => {
     if (!origin) return 'https://epv2.vibequizzing.com';
@@ -472,7 +496,12 @@ app.get('/api/practices/:id', async (c) => {
       }
   }
   
-  return c.json(item)
+  const encryptedContent = encryptContent(item.content, OBSCURE_KEY);
+  return c.json({
+      ...item,
+      content: encryptedContent,
+      isEncrypted: true
+  })
 })
 
 app.post('/api/admin/practices', async (c) => {
