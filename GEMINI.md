@@ -226,14 +226,20 @@ This document defines the rules for extracting and converting textbook data into
   - `hint`: A brief, helpful cue or reminder in Chinese.
 
 ## 10. Passage Decoder (PD)
-**Source:** Textbook workbook passages Markdown (e.g., `data/A5B/a5b-u1/a5b-u1-passage-decoder.md`).
-**Target:** `*-passage-decoder.json` (Save in the same folder as source)
+**Sources:**
+- **Student's Book:** Extracted from the textbook or Student's Book passages (which are identical to those in the corresponding Text Navigator JSON). The target JSON filename must end with the `-s.json` suffix (where `-s` stands for Student's Book).
+- **Passage Decoder Markdown:** Extracted from a passage decoder markdown file (e.g., `data/A5B/a5b-u1/a5b-u1-passage-decoder-w.md`), if one exists. The target JSON filename should preserve the suffix from the source markdown file (e.g., target `*-w.json` for source `*-w.md`).
+
+**Target:** `*-passage-decoder-[suffix].json` (Save in the same folder as source)
 
 - **Extraction Scope**: Extract every sentence/dialogue line from the passage or listening dialogue section.
 - **Dialogue Formatting**: 
   - If a line is spoken by a character (e.g., `Jack: Hi, Lucy!`), extract the name as `speaker` and set `newline: true` on the first sentence of the turn.
   - Subsequent sentences spoken in the same turn share the `speaker` property but do not have `newline: true`.
   - For normal passages, set `newline: true` only on the first sentence starting a new paragraph.
+- **Vocabulary Highlighting**: 
+  - All passage decoders must include a `highlight` property on each sentence object (if matching vocabulary is present).
+  - The `highlight` property should contain a comma-separated list of the exact matching words/phrases as they appear in the sentence, corresponding to the vocabulary listed in the unit/module/lesson's `vocab-guide.json`.
 - **Options and Answer**:
   - Each sentence must have exactly 3 translation options (`options` array): 1 correct and 2 wrong distractors containing subtle traps (e.g., vocabulary swaps, tense errors, negation flips).
   - Parenthetical explanations (e.g., `（时态错误 - ...）`) must **NOT** be included in either the `options` strings or a separate explanations field (clean translation strings only).
@@ -241,7 +247,7 @@ This document defines the rules for extracting and converting textbook data into
 - **Structure**:
   - `level`: e.g., "Grade 5 Semester 2 - Unit 1".
   - `title`: e.g., "Passage Decoder".
-  - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline }`).
+  - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline, highlight }`).
 - **Generation**: Avoid calling the Gemini API programmatically to parse or generate options. Perform translations and distractor generation directly within your own context.
 
 ---

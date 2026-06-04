@@ -10,6 +10,38 @@ import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
 import { CountdownRing } from './CountdownRing'
 
+function renderSentenceText(sentence: any) {
+    if (!sentence.highlight) return sentence.en;
+
+    const highlights = Array.from(new Set(sentence.highlight.split(',').map((s: string) => s.trim()).filter(Boolean)));
+    let textWithHighlights = sentence.en;
+
+    const escapeRegExp = (string: string) => {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+
+    highlights.forEach((h: any) => {
+        if (h.includes('...')) {
+            const parts = h.split('...').map((p: any) => p.trim());
+            const pattern = parts.map(escapeRegExp).join('.*?');
+            const regex = new RegExp(`(${pattern})`, 'gi');
+            textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
+        } else {
+            const regex = new RegExp(`(\\b${escapeRegExp(h)}\\b)`, 'gi');
+            textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
+        }
+    });
+
+    const textParts = textWithHighlights.split(/(\|\|HIGHLIGHT\|\|.*?\|\|ENDHIGHLIGHT\|\|)/g);
+    return textParts.map((part: string, idx: number) => {
+        if (part.startsWith('||HIGHLIGHT||') && part.endsWith('||ENDHIGHLIGHT||')) {
+            const actualText = part.slice(13, -16);
+            return <span key={idx} className="pd-highlight">{actualText}</span>;
+        }
+        return part;
+    });
+}
+
 
 
 export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
@@ -613,7 +645,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                     ref={isCurrent ? activeSentenceRef : null}
                                                     className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
                                                 >
-                                                    {sentence.en}{' '}
+                                                    {renderSentenceText(sentence)}{' '}
                                                 </span>
                                             );
                                         })}
