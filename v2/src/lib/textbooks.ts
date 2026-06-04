@@ -4,6 +4,7 @@ export const TEXTBOOK_EMOJIS: Record<string, string> = {
   A6B: '🌟',
   A7A: '🚀', A7B: '🛸',
   A8B: '🎓',
+  'B-NCE2': '📘',
 }
 
 export function getTextbookEmoji(tb: string) {
