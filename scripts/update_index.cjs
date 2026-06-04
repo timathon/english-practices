@@ -115,7 +115,7 @@ function getHtmlFilesInDirectory(directory, excludeDirs = []) {
 }
 
 function generateRecursiveIndex(folderPath, title, isRoot = false) {
-    const exclude = ['.git', 'scripts', 'data', 'templates', 'release', 'temp', 'node_modules', 'v2', 'api', 'dev_notes'];
+    const exclude = ['.git', 'scripts', 'data', 'templates', 'release', 'temp', 'node_modules', 'v2', 'api', '.dev_notes'];
     const files = getHtmlFilesInDirectory(folderPath, isRoot ? exclude : []);
     const sortedFiles = [...files].sort(naturalCompare);
     
@@ -379,7 +379,7 @@ function main() {
     generateRecursiveIndex('.', 'English Practices', true);
 
     // Generate index.html for each textbook folder
-    const excludeFolders = ['.git', 'scripts', 'release', 'data', 'templates', 'temp', 'node_modules', 'v2', 'api', 'dev_notes'];
+    const excludeFolders = ['.git', 'scripts', 'release', 'data', 'templates', 'temp', 'node_modules', 'v2', 'api', '.dev_notes'];
     const items = fs.readdirSync('.').filter(d => {
         const stat = fs.statSync(d);
         return stat.isDirectory() && !d.startsWith('.') && !excludeFolders.includes(d);
@@ -395,7 +395,39 @@ function main() {
     // Export textbook list for V2 app
     const textbooksPath = path.join('v2', 'public', 'textbooks.json');
     if (fs.existsSync('v2/public')) {
-        fs.writeFileSync(textbooksPath, JSON.stringify(items, null, 2));
+        const v2Items = [...items];
+        const dataDir = 'data';
+        if (fs.existsSync(dataDir)) {
+            const hasJson = (dir) => {
+                try {
+                    const list = fs.readdirSync(dir);
+                    for (const file of list) {
+                        const full = path.join(dir, file);
+                        if (fs.statSync(full).isDirectory()) {
+                            if (hasJson(full)) return true;
+                        } else if (file.endsWith('.json')) {
+                            return true;
+                        }
+                    }
+                } catch (e) {}
+                return false;
+            };
+
+            const dataTextbooks = fs.readdirSync(dataDir).filter(f => {
+                if (f.startsWith('.')) return false;
+                const tbPath = path.join(dataDir, f);
+                if (!fs.statSync(tbPath).isDirectory()) return false;
+                return hasJson(tbPath);
+            });
+            
+            for (const dtb of dataTextbooks) {
+                if (!v2Items.includes(dtb)) {
+                    v2Items.push(dtb);
+                }
+            }
+        }
+        v2Items.sort(naturalCompare);
+        fs.writeFileSync(textbooksPath, JSON.stringify(v2Items, null, 2));
         console.log(`Generated dynamic dataset list: ${textbooksPath}`);
     }
 }
