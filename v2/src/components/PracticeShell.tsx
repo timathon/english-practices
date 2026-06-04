@@ -69,7 +69,7 @@ export function PracticeShell() {
         return <GrammarWizardShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
-    if (cleanType === 'passage-decoder') {
+    if (cleanType.startsWith('passage-decoder')) {
         return <PassageDecoderShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
