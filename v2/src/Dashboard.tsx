@@ -135,7 +135,7 @@ function saveLastUnit(tb: string, unit: string) {
   } catch { }
 }
 
-function BookSection({ tb, units, records, initialUnit }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string }) {
+function BookSection({ tb, units, records, initialUnit, initialPage }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string; initialPage?: string }) {
   const lettersScrollRef = useHorizontalScrollRef()
   const unitsScrollRef = useHorizontalScrollRef()
   const unitsContainerRef = useRef<HTMLDivElement | null>(null)
@@ -215,6 +215,9 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
     if (!isBThink1) return ''
     const activeUnitItems = units[activeUnit] || []
     const starts = Array.from(new Set(activeUnitItems.map(p => getPageStart(p)).filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+    if (initialPage && starts.includes(initialPage)) {
+      return initialPage
+    }
     return starts[0] || ''
   })
 
@@ -611,6 +614,10 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                             onClick={() => {
                               sessionStorage.setItem('last-active-textbook', p.textbook);
                               sessionStorage.setItem('last-active-unit', p.unit);
+                              const pageStart = getPageStart(p);
+                              if (pageStart) {
+                                sessionStorage.setItem('last-active-page', pageStart);
+                              }
                             }}
                           >
                             <span className="db-practice-icon">{getIcon(p.type)}</span>
@@ -689,9 +696,10 @@ export function Dashboard() {
   const historyScrollRef = useHorizontalScrollRef()
   const { data: session } = useSession()
   const location = useLocation()
-  const returnState = location.state as { textbook?: string; unit?: string } | null
+  const returnState = location.state as { textbook?: string; unit?: string; page?: string } | null
   const targetTextbook = returnState?.textbook || sessionStorage.getItem('last-active-textbook') || ''
   const targetUnit = returnState?.unit || sessionStorage.getItem('last-active-unit') || ''
+  const targetPage = returnState?.page || sessionStorage.getItem('last-active-page') || ''
 
   const [practices, setPractices] = useState<any[]>([])
   const [records, setRecords] = useState<any[]>([])
@@ -773,6 +781,7 @@ export function Dashboard() {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           sessionStorage.removeItem('last-active-textbook');
           sessionStorage.removeItem('last-active-unit');
+          sessionStorage.removeItem('last-active-page');
         }
       }, 100);
       return () => clearTimeout(timer);
@@ -949,7 +958,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.04-13:13</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.04-15:00</span></p>
         </div>
       </div>
 
@@ -1127,6 +1136,7 @@ export function Dashboard() {
                   units={grouped[tb]}
                   records={records}
                   initialUnit={targetTextbook === tb ? targetUnit : undefined}
+                  initialPage={targetTextbook === tb ? targetPage : undefined}
                 />
               ))}
             </div>
