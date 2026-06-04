@@ -9,10 +9,12 @@ import { PetFloatingCompanion } from './components/PetFloatingCompanion'
 import { useSession, signOut, authClient } from './lib/auth'
 import { petService } from './lib/petService'
 import { SwitchUser } from './SwitchUser'
+import { IrregularVerbsModal } from './components/IrregularVerbsModal'
 import './App.css'
 
 function Navigation({ session }: { session: any }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isIrregularVerbsOpen, setIsIrregularVerbsOpen] = useState(false);
   const [delayedClosed, setDelayedClosed] = useState(false);
   const [hasLoggedInUsers, setHasLoggedInUsers] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,18 @@ function Navigation({ session }: { session: any }) {
                   <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
               )}
               <div className="nav-divider"></div>
+              <div className="nav-section-title" style={{ padding: '4px 14px', fontSize: '0.75rem', fontWeight: 'bold', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reference (参考)</div>
+              <button 
+                className="nav-item" 
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setIsIrregularVerbsOpen(true);
+                }}
+                style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+              >
+                📘 Irregular Verbs
+              </button>
+              <div className="nav-divider"></div>
               <div className="nav-user-info">
                 Logged in as <strong>{session.user.username || session.user.email}</strong>
               </div>
@@ -148,6 +162,9 @@ function Navigation({ session }: { session: any }) {
             </>
           )}
         </div>
+      )}
+      {isIrregularVerbsOpen && (
+        <IrregularVerbsModal onClose={() => setIsIrregularVerbsOpen(false)} />
       )}
     </div>
   );

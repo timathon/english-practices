@@ -491,7 +491,7 @@ app.get('/api/practices/:id', async (c) => {
       if (expiry && new Date(expiry) < new Date()) {
           return c.json({ error: 'Subscription expired' }, 403)
       }
-      if (!((session.user as any).textbooks || []).includes(item.textbook)) {
+      if (item.textbook !== 'GENERAL' && !((session.user as any).textbooks || []).includes(item.textbook)) {
           return c.json({ error: 'Forbidden' }, 403)
       }
   }
