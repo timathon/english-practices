@@ -153,6 +153,19 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
   })
   const isRazB = tb === 'RAZ-B'
   const isBThink1 = tb === 'B-THINK1' || tb === 'B-Think1'
+  const isBNce2 = tb === 'B-NCE2' || tb === 'B-Nce2'
+
+  const getNce2Unit = (lessonName: string): string => {
+    const match = lessonName.match(/^L(\d+)/i)
+    if (match) {
+      const num = parseInt(match[1], 10)
+      if (num >= 1 && num <= 24) return "U1"
+      if (num >= 25 && num <= 48) return "U2"
+      if (num >= 49 && num <= 72) return "U3"
+      if (num >= 73 && num <= 96) return "U4"
+    }
+    return "U1"
+  }
 
   const formatUnitDisplay = (unitName: string) => {
     const escapedTb = tb.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -185,6 +198,15 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
     return activeUnit ? activeUnit.trim().charAt(0).toUpperCase() : (letters[0] || '')
   })
 
+  const nce2Units = isBNce2
+    ? Array.from(new Set(unitKeys.map(key => getNce2Unit(key)))).sort()
+    : []
+
+  const [activeNce2Unit, setActiveNce2Unit] = useState<string>(() => {
+    if (!isBNce2) return ''
+    return activeUnit ? getNce2Unit(activeUnit) : 'U1'
+  })
+
   const pageStarts = isBThink1
     ? Array.from(new Set((units[activeUnit] || []).map(p => getPageStart(p)).filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
     : []
@@ -209,6 +231,14 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
     }
   }
 
+  const handleNce2UnitChange = (u: string) => {
+    setActiveNce2Unit(u)
+    const firstLesson = unitKeys.find(key => getNce2Unit(key) === u)
+    if (firstLesson) {
+      handleUnitChange(firstLesson)
+    }
+  }
+
   useEffect(() => {
     if (!units[activeUnit] && unitKeys.length > 0) {
       handleUnitChange(unitKeys[0])
@@ -223,6 +253,15 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
       }
     }
   }, [activeUnit, isRazB, activeLetter])
+
+  useEffect(() => {
+    if (isBNce2 && activeUnit) {
+      const u = getNce2Unit(activeUnit)
+      if (u && u !== activeNce2Unit) {
+        setActiveNce2Unit(u)
+      }
+    }
+  }, [activeUnit, isBNce2, activeNce2Unit])
 
   useEffect(() => {
     if (isBThink1 && activeUnit) {
@@ -244,7 +283,9 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
     ? pageStarts
     : isRazB
       ? unitKeys.filter(unit => unit.trim().charAt(0).toUpperCase() === activeLetter)
-      : unitKeys
+      : isBNce2
+        ? unitKeys.filter(unit => getNce2Unit(unit) === activeNce2Unit)
+        : unitKeys
 
   const activeLevel2Tab = isBThink1 ? activePageStart : activeUnit
 
@@ -336,6 +377,37 @@ function BookSection({ tb, units, records, initialUnit }: { tb: string; units: R
                 }}
               >
                 {unit}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isBNce2 && (
+          <div ref={lettersScrollRef} className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
+            {nce2Units.map(u => (
+              <button
+                key={u}
+                onClick={() => handleNce2UnitChange(u)}
+                className={`db-tab-btn ${activeNce2Unit === u ? 'active' : ''}`}
+                style={{
+                  padding: '4px 10px',
+                  border: 'none',
+                  borderBottom: activeNce2Unit === u ? '2px solid var(--tab-active-text)' : '2px solid transparent',
+                  background: activeNce2Unit === u ? 'var(--accent-bg)' : 'transparent',
+                  cursor: 'pointer',
+                  fontWeight: activeNce2Unit === u ? 'bold' : 'normal',
+                  color: activeNce2Unit === u ? 'var(--tab-active-text)' : 'var(--tab-text)',
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '28px'
+                }}
+              >
+                {u}
               </button>
             ))}
           </div>
@@ -877,7 +949,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.04-07:18</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.04-12:20</span></p>
         </div>
       </div>
 

@@ -174,7 +174,7 @@ async function seed() {
         const { textbook: tb, filePath, tbDir } = itemToProc;
         const relPath = path.relative(tbDir, filePath);
         const filename = path.basename(filePath);
-        const match = filename.match(/^([a-z0-9-]+)-([uUmM]\d+)-(.*)\.json$/i);
+        const match = filename.match(/^([a-z0-9-]+)-([uUmMlL]\d+)-(.*)\.json$/i);
         const matchCgiu = filename.match(/^c-giu-(\d+)-(.*)\.json$/i);
         let unit = 'General';
         let type = 'unknown';
