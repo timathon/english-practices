@@ -74,16 +74,19 @@ export function PetFloatingCompanion() {
       // Spawn particles
       const id1 = particleIdRef.current++;
       const id2 = particleIdRef.current++;
-      const id3 = particleIdRef.current++;
       const newParticles: Particle[] = [
         { id: id1, text: `+${detail.xpGain || 10} XP`, x: -15 + Math.random() * 10, y: -20 },
         { id: id2, text: '+1 ❤️', x: 0 + Math.random() * 10, y: -45 },
-        { id: id3, text: `+${detail.goldCoinGain || 1} 🪙`, x: 15 + Math.random() * 10, y: -30 },
       ];
+
+      if (detail.goldCoinGain && detail.goldCoinGain > 0) {
+        const id3 = particleIdRef.current++;
+        newParticles.push({ id: id3, text: `+${detail.goldCoinGain} 🪙`, x: 15 + Math.random() * 10, y: -30 });
+      }
 
       setParticles(prev => [...prev, ...newParticles]);
       setTimeout(() => {
-        setParticles(prev => prev.filter(p => p.id !== id1 && p.id !== id2 && p.id !== id3));
+        setParticles(prev => prev.filter(p => p.id !== id1 && p.id !== id2));
       }, 3500);
 
       // Check for special events
@@ -119,9 +122,29 @@ export function PetFloatingCompanion() {
       }
     };
 
+    const handleQuizComplete = () => {
+      setIsBouncing(true);
+      setTimeout(() => setIsBouncing(false), 800);
+
+      const id = particleIdRef.current++;
+      setParticles(prev => [...prev, {
+        id,
+        text: '+1 🪙',
+        x: 0,
+        y: -30
+      }]);
+      setTimeout(() => {
+        setParticles(prev => prev.filter(p => p.id !== id));
+      }, 3500);
+
+      showSpeech('Quiz Completed! +1 🪙 🎉', 4000);
+    };
+
     window.addEventListener('ep-correct-answer', handleCorrect);
+    window.addEventListener('ep-quiz-completion', handleQuizComplete);
     return () => {
       window.removeEventListener('ep-correct-answer', handleCorrect);
+      window.removeEventListener('ep-quiz-completion', handleQuizComplete);
       if (speechTimeoutRef.current) window.clearTimeout(speechTimeoutRef.current);
       if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
     };

@@ -88,6 +88,10 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
     const [practiceRecords, setPracticeRecords] = useState<any[]>([])
+    const [gainedXp, setGainedXp] = useState(0)
+    const [gainedLove, setGainedLove] = useState(0)
+    const [historicalBest, setHistoricalBest] = useState(0)
+    const [isNewHigh, setIsNewHigh] = useState(false)
     const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
 
     const primaryColor = data.primaryColor || '#4f46e5'
@@ -115,6 +119,8 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         setFlickeringSectionId(null)
         setActiveSection(sec)
         setActiveRecordId(null)
+        setGainedXp(0)
+        setGainedLove(0)
         recordIdPromiseRef.current = null
 
         // Passages are played in linear narrative order (NOT shuffled)
@@ -296,7 +302,9 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
         if (isCorrect) {
             playSfx('correct')
-            petService.awardCorrectAnswer()
+            const { xpGain } = petService.awardCorrectAnswer()
+            setGainedXp(prev => prev + xpGain)
+            setGainedLove(prev => prev + 1)
             if (isRedemption) {
                 updatedScoreLog[q.originalIndex] = "redemption"
                 updatedMistakes.shift() // Remove from mistake queue
@@ -364,6 +372,13 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         const scorePercent = Math.round((totalScore / finalQueue.length) * 100)
         setFinalScore(scorePercent)
 
+        const u = `${practiceId} (${activeSection.title})`
+        const logs = practiceRecords.filter(r => r.unit === u)
+        const histBest = logs.length > 0 ? Math.max(...logs.map(t => t.score)) : 0
+        setHistoricalBest(histBest)
+        setIsNewHigh(histBest === 0 ? scorePercent > 0 : scorePercent > histBest)
+
+        petService.awardQuizCompletion()
         syncRecord(scorePercent, true)
         if (userId) {
             mistakeService.syncToServer(userId);
@@ -565,9 +580,55 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     if (completed) {
         return (
             <div className="pd-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-                <div className="pd-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+                <div className="pd-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '30px 20px' }}>
                     <h1 style={{ color: 'var(--primary)', fontSize: '3.5rem', margin: '0' }}>{finalScore}%</h1>
-                    <h2 style={{ margin: '10px 0 30px 0', color: '#555' }}>Section Complete!</h2>
+                    <h2 style={{ margin: '5px 0 10px 0', color: '#333', fontSize: '1.5rem', fontWeight: 'bold' }}>Section Complete!</h2>
+                    
+                    {/* High Score / Record Status */}
+                    <div style={{ margin: '10px 0 20px 0', fontSize: '1rem', color: '#555' }}>
+                        {isNewHigh ? (
+                            <div style={{ color: '#10b981', fontWeight: 'bold' }}>
+                                🎉 New High Score! You've set a new record!
+                            </div>
+                        ) : (
+                            <div>
+                                Keep trying! Your highest score is <strong style={{ color: 'var(--primary)' }}>{historicalBest}%</strong>. You can do even better!
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Rewards Summary Card */}
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '400px',
+                        background: '#f8fafc',
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: '20px',
+                        padding: '16px 20px',
+                        marginBottom: '30px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                    }}>
+                        <h3 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Rewards Earned</h3>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-around',
+                            alignItems: 'center'
+                        }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>⚡</span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#0284c7' }}>+{gainedXp} XP</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>❤️</span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e11d48' }}>+{gainedLove} ❤️</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>🪙</span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ca8a04' }}>+1 Coin</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <button className="pd-check-btn" onClick={() => {
                         setActiveSection(null)
                         loadRecords()

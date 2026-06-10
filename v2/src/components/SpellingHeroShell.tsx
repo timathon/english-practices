@@ -168,6 +168,10 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     const [locked, setLocked]             = useState(false)
     const [completed, setCompleted]       = useState(false)
     const [finalScore, setFinalScore]     = useState(0)
+    const [gainedXp, setGainedXp]         = useState(0)
+    const [gainedLove, setGainedLove]     = useState(0)
+    const [historicalBest, setHistoricalBest] = useState(0)
+    const [isNewHigh, setIsNewHigh]       = useState(false)
     const [showFeedback, setShowFeedback] = useState(false)
     const [isCorrect, setIsCorrect]       = useState(false)
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
@@ -308,6 +312,8 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
         setActiveRecordId(null)
         recordIdPromiseRef.current = null
+        setGainedXp(0)
+        setGainedLove(0)
         setActiveChallenge(c)
         setQueue(shuffled)
         setCurrentIndex(0)
@@ -382,7 +388,9 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
         setShowFeedback(true)
         playSfx(correct ? 'correct' : 'wrong')
         if (correct) {
-            petService.awardCorrectAnswer()
+            const { xpGain } = petService.awardCorrectAnswer()
+            setGainedXp(prev => prev + xpGain)
+            setGainedLove(prev => prev + 1)
         }
         setTimeout(() => playAudio(q.audio), 600)
 
@@ -523,8 +531,15 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
             const totalCorrect = currentLog.filter(s => s === 'green').length
             const score        = Math.round((totalCorrect / currentQueue.length) * 100)
             setFinalScore(score)
+            
+            const prevStats = activeChallengeRef.current ? getChallengeStats(practiceId, activeChallengeRef.current.id) : null;
+            const histBest = prevStats ? prevStats.lifetime.best : 0;
+            setHistoricalBest(histBest)
+            setIsNewHigh(histBest === 0 ? score > 0 : score > histBest)
+
             setCompleted(true)
             if (activeChallengeRef.current) recordFinish(practiceId, activeChallengeRef.current.id, score)
+            petService.awardQuizCompletion()
             syncRecord(score, true)
             if (userId) {
                 mistakeService.syncToServer(userId);
@@ -559,9 +574,55 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     if (completed && activeChallenge) {
         return (
             <div className="sh-container" style={{ '--primary': '#58cc02', '--primary-dark': '#46a302' } as any}>
-                <div className="sh-complete-screen">
-                    <p className="sh-score-display">{finalScore}%</p>
-                    <p className="sh-complete-subtitle">Challenge Complete!</p>
+                <div className="sh-complete-screen" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '30px 20px', textAlign: 'center' }}>
+                    <p className="sh-score-display" style={{ fontSize: '3.5rem', margin: '0', fontWeight: 'bold', color: 'var(--primary)' }}>{finalScore}%</p>
+                    <p className="sh-complete-subtitle" style={{ margin: '5px 0 10px 0', color: '#333', fontSize: '1.5rem', fontWeight: 'bold' }}>Challenge Complete!</p>
+                    
+                    {/* High Score / Record Status */}
+                    <div style={{ margin: '10px 0 20px 0', fontSize: '1rem', color: '#555' }}>
+                        {isNewHigh ? (
+                            <div style={{ color: '#10b981', fontWeight: 'bold' }}>
+                                🎉 New High Score! You've set a new record!
+                            </div>
+                        ) : (
+                            <div>
+                                Keep trying! Your highest score is <strong style={{ color: 'var(--primary)' }}>{historicalBest}%</strong>. You can do even better!
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Rewards Summary Card */}
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '400px',
+                        background: '#f8fafc',
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: '20px',
+                        padding: '16px 20px',
+                        marginBottom: '30px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                    }}>
+                        <h3 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Rewards Earned</h3>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-around',
+                            alignItems: 'center'
+                        }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>⚡</span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#0284c7' }}>+{gainedXp} XP</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>❤️</span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e11d48' }}>+{gainedLove} ❤️</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>🪙</span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ca8a04' }}>+1 Coin</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <button
                         className="sh-check-btn"
                         style={{ maxWidth: 300 }}

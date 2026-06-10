@@ -331,7 +331,7 @@ export const petService = {
   },
 
   // ── Core: Award a correct answer ─────────────────────────────
-  awardCorrectAnswer(): string[] {
+  awardCorrectAnswer(): { xpGain: number; newAchievements: string[] } {
     const state = this.getPetState();
     const today = getTodayStr();
     const yesterday = getYesterdayStr();
@@ -359,7 +359,6 @@ export const petService = {
     state.dailyProgress += 1;
 
     // -- Food & love --
-    state.goldCoins = (state.goldCoins || 0) + 1;
     state.love = Math.min(100, Math.round((state.love + 1.0) * 10) / 10);
 
     // -- XP calculation --
@@ -387,7 +386,7 @@ export const petService = {
     window.dispatchEvent(new CustomEvent('ep-correct-answer', {
       detail: {
         xpGain,
-        goldCoinGain: 1,
+        goldCoinGain: 0,
         dailyProgress: state.dailyProgress,
         dailyGoal,
         dailyGoalJustCompleted: state.dailyProgress === dailyGoal,
@@ -397,7 +396,20 @@ export const petService = {
       }
     }));
 
-    return newAchievements;
+    return { xpGain, newAchievements };
+  },
+
+  awardQuizCompletion(): void {
+    const state = this.getPetState();
+    state.goldCoins = (state.goldCoins || 0) + 1;
+    state.lastUpdated = Date.now();
+    this.savePetState(state);
+
+    window.dispatchEvent(new CustomEvent('ep-quiz-completion', {
+      detail: {
+        goldCoins: state.goldCoins
+      }
+    }));
   },
 
   // ── Feed ──────────────────────────────────────────────────────
