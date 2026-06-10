@@ -200,7 +200,7 @@ export function PetFloatingCompanion() {
           setIsMinimized(false);
           showSpeech('I am back! 😊');
         }}
-        title="Show Pet Companion"
+        title="Show Study Companion"
       >
         🐾
       </button>
@@ -239,7 +239,7 @@ export function PetFloatingCompanion() {
             e.stopPropagation();
             setIsMinimized(true);
           }}
-          title="Hide Pet"
+          title="Hide Companion"
         >
           ✕
         </button>
@@ -255,7 +255,7 @@ export function PetFloatingCompanion() {
         <div
           className={`pet-float-avatar-container ${isBouncing ? 'bounce' : ''} ${isLevelingUp ? 'level-up' : ''} pet-float-stage-${stage}`}
           onClick={handlePet}
-          title={`Pet ${petState.name}! Click to give love.`}
+          title={`Interact with ${petState.name}! Click to show love.`}
         >
           {/* Daily progress ring (SVG) */}
           <svg className="pet-float-daily-ring-svg" viewBox="0 0 80 80">

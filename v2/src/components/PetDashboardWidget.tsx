@@ -171,12 +171,12 @@ export function PetDashboardWidget() {
       {/* Header */}
       <div className="pet-widget-header">
         <div className="pet-widget-header-row">
-          <h3 className="db-stats-title">Pet Companion (宠物伙伴)</h3>
+          <h3 className="db-stats-title">Companion & Rewards (伙伴与奖励)</h3>
           <button
             type="button"
             className="pet-help-btn"
             onClick={() => setShowHelpModal(true)}
-            title="How the Pet System works (宠物系统指南)"
+            title="How the Companion & Reward System works (伙伴与奖励系统指南)"
           >
             ❓
           </button>
@@ -199,7 +199,7 @@ export function PetDashboardWidget() {
             onMouseEnter={() => setHoverEmoji(true)}
             onMouseLeave={() => setHoverEmoji(false)}
             onClick={handlePet}
-            title="Click to pet!"
+            title="Click to interact!"
             style={{ position: 'relative' }}
           >
             {speechBubble && (
@@ -231,7 +231,7 @@ export function PetDashboardWidget() {
                 <button
                   onClick={() => setIsRenaming(true)}
                   className="pet-widget-edit-btn"
-                  title="Rename Pet"
+                  title="Rename Companion"
                 >
                   ✏️
                 </button>
@@ -352,9 +352,9 @@ export function PetDashboardWidget() {
           <button
             className="pet-widget-btn feed-btn"
             onClick={handleFeed}
-            title="Feed your pet"
+            title="Feed your companion"
           >
-            {petService.getPetFoodEmoji(petState.type)} Feed (喂食)
+            {petService.getPetFoodEmoji(petState.type)} Feed (喂食伙伴)
           </button>
           <button
             className="pet-widget-btn feed-btn"
@@ -398,7 +398,7 @@ export function PetDashboardWidget() {
             className="pet-widget-adopt-toggle"
             onClick={() => setShowAdopt(!showAdopt)}
           >
-            🐾 {showAdopt ? 'Hide' : 'Adopt (领养)'}
+            🐾 {showAdopt ? 'Hide' : 'Select Companion (选择伙伴)'}
             <span className={`pet-widget-adopt-arrow ${showAdopt ? 'open' : ''}`}>▸</span>
           </button>
           {showAdopt && (
@@ -431,7 +431,7 @@ export function PetDashboardWidget() {
         <div className="pet-help-modal-overlay" onClick={() => setShowHelpModal(false)}>
           <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="pet-help-modal-header">
-              <h4 className="pet-help-modal-title">🐾 Companion Guide (宠物系统指南)</h4>
+              <h4 className="pet-help-modal-title">🏆 Companion & Rewards Guide (伙伴与奖励系统指南)</h4>
               <button className="pet-help-modal-close" onClick={() => setShowHelpModal(false)}>×</button>
             </div>
 
@@ -480,11 +480,11 @@ export function PetDashboardWidget() {
                     <div className="pet-help-card">
                       <div className="pet-help-card-header">
                         <span>🍔</span>
-                        <h5>Hunger & Food (饱食度与食物)</h5>
+                        <h5>Hunger & Feed (饱食度与饲料)</h5>
                       </div>
                       <div className="pet-help-card-body">
-                        <p className="help-en">Correct answers grant <strong>1 Gold Coin</strong>. Spend <strong>1 Gold Coin</strong> to feed a food item ({petService.getPetFoodEmoji(petState.type)}) to your pet, restoring Hunger by <strong>+10</strong>.</p>
-                        <p className="help-cn">每答对一题获得 <strong>1 金币</strong>。花费 <strong>1 金币</strong> 可以购买食物进行喂食，恢复 <strong>+10 饱食度</strong>。</p>
+                        <p className="help-en">Correct answers grant <strong>1 Gold Coin</strong>. Spend <strong>1 Gold Coin</strong> to feed a food item ({petService.getPetFoodEmoji(petState.type)}) to your companion, restoring Hunger by <strong>+10</strong>.</p>
+                        <p className="help-cn">每答对一题获得 <strong>1 金币</strong>。花费 <strong>1 金币</strong> 可以购买饲料进行喂食，恢复 <strong>+10 饱食度</strong>。</p>
                       </div>
                     </div>
 
@@ -495,8 +495,8 @@ export function PetDashboardWidget() {
                         <h5>Love & Interaction (亲密度与互动)</h5>
                       </div>
                       <div className="pet-help-card-body">
-                        <p className="help-en">Correct answers increase Love by <strong>1</strong>. You can also click the <strong>Pet (抚摸)</strong> button up to <strong>5 times every 2 hours</strong> to increase Love by <strong>+2</strong> per pet.</p>
-                        <p className="help-cn">每答对一题增加 <strong>1 亲密度</strong>。点击 <strong>Pet (抚摸)</strong> 按钮与伙伴互动（<strong>每2小时限5次</strong>），直接增加 <strong>+2 亲密度</strong>。</p>
+                        <p className="help-en">Correct answers increase Love by <strong>1</strong>. You can also click the companion to **Interact (互动)** up to <strong>5 times every 2 hours</strong> to increase Love by <strong>+2</strong> per interaction.</p>
+                        <p className="help-cn">每答对一题增加 <strong>1 亲密度</strong>。点击伙伴进行 **Interact (互动)**（<strong>每2小时限5次</strong>），直接增加 <strong>+2 亲密度</strong>。</p>
                       </div>
                     </div>
                   </div>
@@ -531,8 +531,8 @@ export function PetDashboardWidget() {
                         <h5>Evolution Visuals (视觉与外观)</h5>
                       </div>
                       <div className="pet-help-card-body">
-                        <p className="help-en">Evolving your pet changes their avatar emoji and unlocks gorgeous glowing level ring styles on the dashboard.</p>
-                        <p className="help-cn">当宠物进化时，会改变其外观 Emoji 形象，并在主页卡片上解锁精美的流光等级边框。</p>
+                        <p className="help-en">Evolving your companion changes their avatar emoji and unlocks gorgeous glowing level ring styles on the dashboard.</p>
+                        <p className="help-cn">当伙伴进化时，会改变其外观 Emoji 形象，并在主页卡片上解锁精美的流光等级边框。</p>
                       </div>
                     </div>
                   </div>
@@ -571,8 +571,8 @@ export function PetDashboardWidget() {
                         <h5>Natural Decay (日常消耗)</h5>
                       </div>
                       <div className="pet-help-card-body">
-                        <p className="help-en">Hunger (🍔) and Love (❤️) decay at <strong>0.5 points per hour</strong> (12 points/day). Practice regularly to prevent them from becoming hungry or lonely!</p>
-                        <p className="help-cn">饱食度（🍔）与亲密度（❤️）每小时会自然减少 <strong>0.5 点</strong>（每天共消耗 12 点）。记得经常打卡练习，不要冷落它哦！</p>
+                        <p className="help-en">Hunger (🍔) and Love (❤️) decay at <strong>0.5 points per hour</strong> (12 points/day). Practice regularly to prevent your companion from becoming hungry or lonely!</p>
+                        <p className="help-cn">饱食度（🍔）与亲密度（❤️）每小时会自然减少 <strong>0.5 点</strong>（每天共消耗 12 点）。记得经常打卡练习，不要冷落伙伴哦！</p>
                       </div>
                     </div>
 
@@ -598,7 +598,7 @@ export function PetDashboardWidget() {
         <div className="pet-help-modal-overlay" onClick={() => setShowBuyFoodModal(false)}>
           <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
             <div className="pet-help-modal-header">
-              <h4 className="pet-help-modal-title">🛒 Buy Food (购买饲料)</h4>
+              <h4 className="pet-help-modal-title">🛒 Buy Feed (购买饲料)</h4>
               <button className="pet-help-modal-close" onClick={() => setShowBuyFoodModal(false)}>×</button>
             </div>
             <div className="pet-help-modal-body" style={{ textAlign: 'center', padding: '20px' }}>
@@ -662,7 +662,7 @@ export function PetDashboardWidget() {
               <p style={{ margin: '0 0 16px 0', color: 'var(--text)', fontSize: '0.9rem' }}>
                 Spend <strong>{buyAmount} Gold Coin{buyAmount > 1 ? 's' : ''}</strong> to buy {buyAmount} food item{buyAmount > 1 ? 's' : ''} and feed {petState.name}?
                 <br />
-                (花费 <strong>{buyAmount} 金币</strong> 购买 {buyAmount} 个食物并喂食 {petState.name}？)
+                (花费 <strong>{buyAmount} 金币</strong> 购买 {buyAmount} 个饲料并喂食 {petState.name}？)
               </p>
               <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
                 <span>🪙 Coins: <strong>{petState.goldCoins || 0}</strong></span>
@@ -679,7 +679,7 @@ export function PetDashboardWidget() {
                   disabled={isBuyDisabled || buyAmount < 1}
                   style={{ padding: '8px 20px', minWidth: '100px' }}
                 >
-                  Buy & Feed (购买并喂)
+                  Buy & Feed (购买并喂食)
                 </button>
                 <button
                   type="button"

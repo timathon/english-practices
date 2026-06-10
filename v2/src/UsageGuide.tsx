@@ -129,7 +129,7 @@ export function UsageGuide() {
             onClick={() => setActiveTab('pet')}
           >
             <span className="icon">👾</span>
-            <span>Virtual Pet Companion</span>
+            <span>Companion & Rewards</span>
           </button>
         </div>
 
@@ -180,13 +180,13 @@ export function UsageGuide() {
 
                 <div className="ug-card" onClick={() => setActiveTab('pet')}>
                   <div className="ug-card-header">
-                    <span className="ug-card-icon">👾</span>
-                    <h4 className="ug-card-title">Gamified motivation</h4>
+                    <span className="ug-card-icon">🏆</span>
+                    <h4 className="ug-card-title">Companion & Rewards</h4>
                   </div>
                   <p className="ug-card-desc">
-                    Grow a virtual study pet! Earn experience and rewards by finishing assignments, and watch your companion react to your performance.
+                    Adopt a study companion! Earn gold coins, complete daily goals, maintain practice streaks, and unlock achievements.
                   </p>
-                  <span className="ug-card-badge">Interactive Widget</span>
+                  <span className="ug-card-badge">Interactive System</span>
                 </div>
               </div>
 
@@ -481,9 +481,9 @@ export function UsageGuide() {
           {activeTab === 'pet' && (
             <>
               <div>
-                <h3 className="ug-section-title">👾 Virtual Study Pet Companion</h3>
+                <h3 className="ug-section-title">🏆 Study Companion & Reward System</h3>
                 <p className="ug-section-intro">
-                  A custom interactive companion that floats in the corner of your practice viewport and lives on your dashboard.
+                  A custom interactive companion that floats in the corner of your practice viewport, lives on your dashboard, and rewards your consistency.
                 </p>
               </div>
 
@@ -491,37 +491,37 @@ export function UsageGuide() {
                 <div className="ug-card">
                   <div className="ug-card-header">
                     <span className="ug-card-icon">🍩</span>
-                    <h4 className="ug-card-title">Hunger levels</h4>
+                    <h4 className="ug-card-title">Companion Hunger</h4>
                   </div>
                   <p className="ug-card-desc">
-                    Your pet consumes energy as time passes. Feed them Phonics Cookies and Vocabulary Cupcakes to restore hunger and keep them cheerful.
+                    Your companion's hunger bar slowly decays. Spend Gold Coins earned from correct answers to buy food and feed them to keep them cheerful.
                   </p>
                 </div>
 
                 <div className="ug-card">
                   <div className="ug-card-header">
                     <span className="ug-card-icon">⚡</span>
-                    <h4 className="ug-card-title">Study energy</h4>
+                    <h4 className="ug-card-title">Study Energy</h4>
                   </div>
                   <p className="ug-card-desc">
-                    Completing challenges boosts your pet's energy and awards Experience Points (EXP). High scores grant bonus multipliers!
+                    Completing challenges boosts your companion's energy and awards Experience Points (EXP) and Gold Coins to spend.
                   </p>
                 </div>
 
                 <div className="ug-card">
                   <div className="ug-card-header">
                     <span className="ug-card-icon">🧬</span>
-                    <h4 className="ug-card-title">Pet evolution</h4>
+                    <h4 className="ug-card-title">Companion Evolution</h4>
                   </div>
                   <p className="ug-card-desc">
-                    Once the EXP bar hits 100%, your pet levels up. Higher levels change their look and unlock funny moods or positive feedback triggers.
+                    Once the EXP bar hits 100%, your companion levels up. Higher levels change their look and unlock gorgeous glowing dashboard styles.
                   </p>
                 </div>
               </div>
 
               {/* Interactive Pet Demo */}
               <div className="ug-demo-block">
-                <h4 className="ug-demo-title">🎮 Pet Companion Demo: Feed or play to earn EXP</h4>
+                <h4 className="ug-demo-title">🎮 Study Companion Demo: Feed or play to earn EXP</h4>
                 <div className="ug-demo-window">
                   <div className="ug-pet-preview-container">
                     <div className="ug-pet-avatar-wrapper">
@@ -530,7 +530,7 @@ export function UsageGuide() {
 
                     <div className="ug-pet-stats">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '1rem', color: 'var(--text-h)' }}>Level {petLevel} Study Kitty</span>
+                        <span style={{ fontWeight: 'bold', fontSize: '1rem', color: 'var(--text-h)' }}>Level {petLevel} Study Companion</span>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text)' }}>EXP: {petExp}%</span>
                       </div>
                       
@@ -569,7 +569,7 @@ export function UsageGuide() {
                         onClick={handleFeedPet} 
                         style={{ padding: '8px 16px', borderRadius: 8, fontSize: '0.85rem' }}
                       >
-                        🍪 Feed Phonics Cookie (+5 EXP)
+                        🍪 Feed Companion Cookie (+5 EXP)
                       </button>
                       <button 
                         className="ug-sidebar-btn" 
