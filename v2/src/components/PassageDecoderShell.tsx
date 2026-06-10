@@ -660,25 +660,33 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                         marginBottom: '30px',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                     }}>
-                        <h3 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Rewards Earned</h3>
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-around',
-                            alignItems: 'center'
-                        }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>⚡</span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#0284c7' }}>+{gainedXp} XP</span>
+                        {invisibleMode ? (
+                            <div style={{ color: '#64748b', fontSize: '0.95rem', fontStyle: 'italic' }}>
+                                Practice Mode active. No rewards are awarded.
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>❤️</span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e11d48' }}>+{gainedLove} ❤️</span>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>🪙</span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ca8a04' }}>+1 Coin</span>
-                            </div>
-                        </div>
+                        ) : (
+                            <>
+                                <h3 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Rewards Earned</h3>
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-around',
+                                    alignItems: 'center'
+                                }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>⚡</span>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#0284c7' }}>+{gainedXp} XP</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>❤️</span>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e11d48' }}>+{gainedLove} ❤️</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>🪙</span>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ca8a04' }}>+1 Coin</span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     <button className="pd-check-btn" onClick={() => {
