@@ -401,16 +401,16 @@ export const petService = {
   },
 
   // ── Feed ──────────────────────────────────────────────────────
-  feedPet(): boolean {
+  feedPet(amount: number = 1): boolean {
     const state = this.getPetState();
-    if ((state.foodItems || 0) < 1) return false;
+    if ((state.foodItems || 0) < amount) return false;
 
-    state.foodItems = (state.foodItems || 0) - 1;
-    state.food = Math.min(100, state.food + 10);
+    state.foodItems = (state.foodItems || 0) - amount;
+    state.food = Math.min(100, state.food + amount * 10);
     state.lastUpdated = Date.now();
 
     // Check first-feed achievement
-    if (!state.achievements.includes('first-feed')) {
+    if (!state.achievements.includes('first-feed') && amount > 0) {
       state.achievements.push('first-feed');
       this.savePetState(state);
       window.dispatchEvent(new CustomEvent('ep-achievement-unlock', {
@@ -423,12 +423,12 @@ export const petService = {
     return true;
   },
 
-  buyFood(): boolean {
+  buyFood(amount: number = 1): boolean {
     const state = this.getPetState();
-    if ((state.goldCoins || 0) < 1) return false;
+    if ((state.goldCoins || 0) < amount) return false;
 
-    state.goldCoins = (state.goldCoins || 0) - 1;
-    state.foodItems = (state.foodItems || 0) + 1;
+    state.goldCoins = (state.goldCoins || 0) - amount;
+    state.foodItems = (state.foodItems || 0) + amount;
     state.lastUpdated = Date.now();
     this.savePetState(state);
     return true;

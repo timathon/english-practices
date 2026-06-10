@@ -18,6 +18,7 @@ export function PetDashboardWidget() {
   const navigate = useNavigate();
   const [showBuyFoodModal, setShowBuyFoodModal] = useState(false);
   const [showBuyGameModal, setShowBuyGameModal] = useState(false);
+  const [buyAmount, setBuyAmount] = useState(1);
 
   const speechTimeoutRef = useRef<number | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
@@ -57,6 +58,7 @@ export function PetDashboardWidget() {
 
   const handleFeed = () => {
     if ((petState.foodItems || 0) <= 0) {
+      setBuyAmount(1);
       setShowBuyFoodModal(true);
       return;
     }
@@ -66,17 +68,17 @@ export function PetDashboardWidget() {
     }
   };
 
-  const handleBuyFood = () => {
-    if ((petState.goldCoins || 0) < 1) {
-      showSpeech(`You need at least 1 🪙 to buy food!`);
+  const handleBuyFood = (amount: number) => {
+    if ((petState.goldCoins || 0) < amount) {
+      showSpeech(`You need at least ${amount} 🪙 to buy food!`);
       return;
     }
-    const success = petService.buyFood();
+    const success = petService.buyFood(amount);
     if (success) {
-      showSpeech(`Bought 1 food item! ${petService.getPetFoodEmoji(petState.type)}`);
+      showSpeech(`Bought ${amount} food item${amount > 1 ? 's' : ''}! ${petService.getPetFoodEmoji(petState.type)}`);
       // Trigger feed directly after buying
       setTimeout(() => {
-        const fed = petService.feedPet();
+        const fed = petService.feedPet(amount);
         if (fed) {
           showSpeech(petService.getRandomFeedMessage(petState.name, petState.type));
         }
@@ -135,6 +137,12 @@ export function PetDashboardWidget() {
   const xpProgress = petService.getXpProgress(petState.xp, petState.level);
   const dailyProgress = petService.getDailyProgress(petState);
   const streakInfo = petService.getStreakInfo(petState);
+
+  // Quantity selector variables
+  const canDecrement = buyAmount > 1;
+  const maxBuyAmount = Math.max(1, petState.goldCoins || 0);
+  const canIncrement = buyAmount < maxBuyAmount;
+  const isBuyDisabled = (petState.goldCoins || 0) < buyAmount;
 
   // Goal celebration effect
   useEffect(() => {
@@ -595,11 +603,66 @@ export function PetDashboardWidget() {
             </div>
             <div className="pet-help-modal-body" style={{ textAlign: 'center', padding: '20px' }}>
               <div style={{ fontSize: '3rem', marginBottom: '12px' }}>{petService.getPetFoodEmoji(petState.type)}</div>
-              <p style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>Your food stock is empty!</p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>Choose quantity to buy & feed: (选择购买并喂食的数量)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBuyAmount(prev => Math.max(1, prev - 1))}
+                    disabled={!canDecrement}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      border: '1px solid var(--border)',
+                      background: 'var(--code-bg)',
+                      color: 'var(--text-h)',
+                      fontSize: '1.2rem',
+                      fontWeight: 'bold',
+                      cursor: canDecrement ? 'pointer' : 'not-allowed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: canDecrement ? 1 : 0.5,
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    -
+                  </button>
+                  <span style={{ fontSize: '1.5rem', fontWeight: 'bold', minWidth: '40px', textAlign: 'center', color: 'var(--text-h)' }}>
+                    {buyAmount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setBuyAmount(prev => Math.min(maxBuyAmount, prev + 1))}
+                    disabled={!canIncrement}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      border: '1px solid var(--border)',
+                      background: 'var(--code-bg)',
+                      color: 'var(--text-h)',
+                      fontSize: '1.2rem',
+                      fontWeight: 'bold',
+                      cursor: canIncrement ? 'pointer' : 'not-allowed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: canIncrement ? 1 : 0.5,
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
               <p style={{ margin: '0 0 16px 0', color: 'var(--text)', fontSize: '0.9rem' }}>
-                Spend <strong>1 Gold Coin</strong> to buy 1 food item and feed {petState.name}?
+                Spend <strong>{buyAmount} Gold Coin{buyAmount > 1 ? 's' : ''}</strong> to buy {buyAmount} food item{buyAmount > 1 ? 's' : ''} and feed {petState.name}?
                 <br />
-                (花费 <strong>1 金币</strong> 购买 1 个食物并喂食 {petState.name}？)
+                (花费 <strong>{buyAmount} 金币</strong> 购买 {buyAmount} 个食物并喂食 {petState.name}？)
               </p>
               <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
                 <span>🪙 Coins: <strong>{petState.goldCoins || 0}</strong></span>
@@ -609,11 +672,11 @@ export function PetDashboardWidget() {
                   type="button"
                   className="pet-widget-btn feed-btn"
                   onClick={() => {
-                    if ((petState.goldCoins || 0) < 1) return;
-                    handleBuyFood();
+                    if (isBuyDisabled) return;
+                    handleBuyFood(buyAmount);
                     setShowBuyFoodModal(false);
                   }}
-                  disabled={(petState.goldCoins || 0) < 1}
+                  disabled={isBuyDisabled || buyAmount < 1}
                   style={{ padding: '8px 20px', minWidth: '100px' }}
                 >
                   Buy & Feed (购买并喂)
