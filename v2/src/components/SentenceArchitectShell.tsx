@@ -843,21 +843,17 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                     </div>
                     
                     {/* Review Mistakes Section */}
-                    {mistakeQueue.length > 0 ? (
-                        <div className="sa-mistakes-review-box">
-                            <h3 className="sa-mistakes-review-title">Review Mistakes:</h3>
-                            <div className="sa-mistakes-review-list">
-                                {[...new Set(mistakeQueue)].map((qItem: any, idx: number) => (
-                                    <div key={qItem.id || idx} className="sa-mistake-review-item">
-                                        <div className="sa-mistake-review-cn">{qItem.cn}</div>
-                                        <div className="sa-mistake-review-en">{qItem.en}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="sa-perfect-run-badge">🎉 Perfect Run! No mistakes.</div>
-                    )}
+                    {(() => {
+                        if (finalScore === 100) {
+                            return <div className="sa-perfect-run-badge">🎉 Perfect Run! No mistakes.</div>;
+                        } else if (finalScore >= 80) {
+                            return <div className="sa-perfect-run-badge" style={{ color: '#0284c7' }}>✨ Great job! Challenge completed with mistakes corrected.</div>;
+                        } else if (finalScore >= 60) {
+                            return <div className="sa-perfect-run-badge" style={{ color: '#0f766e' }}>👍 Good effort! All mistakes corrected. Keep it up!</div>;
+                        } else {
+                            return <div className="sa-perfect-run-badge" style={{ color: '#64748b' }}>💪 Nice practice! You corrected all mistakes. Keep improving!</div>;
+                        }
+                    })()}
 
                     <button className="sa-check-btn" onClick={() => {
                         setActiveChallenge(null)
