@@ -128,7 +128,7 @@ export function PetFloatingCompanion() {
   // Handle manual petting (click)
   const handlePet = (e: React.MouseEvent) => {
     e.stopPropagation();
-    petService.petPet();
+    const result = petService.petPet();
 
     setRecentlyClicked(true);
     if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
@@ -139,7 +139,7 @@ export function PetFloatingCompanion() {
     const id = particleIdRef.current++;
     setParticles(prev => [...prev, {
       id,
-      text: '❤️',
+      text: result.success ? '+2 ❤️' : '+0 ❤️',
       x: -15 + Math.random() * 30,
       y: -30,
     }]);
@@ -147,7 +147,9 @@ export function PetFloatingCompanion() {
       setParticles(prev => prev.filter(p => p.id !== id));
     }, 3500);
 
-    const msg = petService.getRandomPetMessage(petState.name, petState.type);
+    const msg = result.success
+      ? petService.getRandomPetMessage(petState.name, petState.type)
+      : petService.getRandomRefusalMessage(petState.name, petState.type, result.nextAvailableInMs);
     showSpeech(msg);
   };
 

@@ -63,8 +63,11 @@ export function PetDashboardWidget() {
   };
 
   const handlePet = () => {
-    petService.petPet();
-    showSpeech(petService.getRandomPetMessage(petState.name, petState.type));
+    const result = petService.petPet();
+    const msg = result.success
+      ? petService.getRandomPetMessage(petState.name, petState.type)
+      : petService.getRandomRefusalMessage(petState.name, petState.type, result.nextAvailableInMs);
+    showSpeech(msg);
   };
 
   const handleSaveName = (e: React.FormEvent) => {
@@ -307,7 +310,7 @@ export function PetDashboardWidget() {
             className="pet-widget-btn pet-btn"
             onClick={handlePet}
           >
-            👋 Pet (抚摸)
+            👋 Pet (抚摸 {petService.getDailyPettingStatus(petState).left}/5)
           </button>
         </div>
 
@@ -440,8 +443,8 @@ export function PetDashboardWidget() {
                         <h5>Love & Interaction (亲密度与互动)</h5>
                       </div>
                       <div className="pet-help-card-body">
-                        <p className="help-en">Correct answers increase Love by <strong>0.1</strong>. You can also click the <strong>Pet (抚摸)</strong> button to interact and increase Love by <strong>+2</strong>.</p>
-                        <p className="help-cn">每答对一题增加 <strong>0.1 亲密度</strong>。点击 <strong>Pet (抚摸)</strong> 按钮与伙伴互动，直接增加 <strong>+2 亲密度</strong>。</p>
+                        <p className="help-en">Correct answers increase Love by <strong>1</strong>. You can also click the <strong>Pet (抚摸)</strong> button up to <strong>5 times every 2 hours</strong> to increase Love by <strong>+2</strong> per pet.</p>
+                        <p className="help-cn">每答对一题增加 <strong>1 亲密度</strong>。点击 <strong>Pet (抚摸)</strong> 按钮与伙伴互动（<strong>每2小时限5次</strong>），直接增加 <strong>+2 亲密度</strong>。</p>
                       </div>
                     </div>
                   </div>

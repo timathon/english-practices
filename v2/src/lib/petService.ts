@@ -33,6 +33,9 @@ export interface PetState {
   // Achievements
   achievements: string[];
   userId?: string;
+
+  // Petting limits
+  petTimestamps: number[];
 }
 
 // ── Achievement Definitions ──────────────────────────────────────
@@ -128,6 +131,8 @@ const INITIAL_STATE = (type: 'cat' | 'dog' | 'dino' = 'cat'): PetState => ({
   level: 1,
   // Achievements
   achievements: [],
+  // Petting limits
+  petTimestamps: [],
 });
 
 const LS_KEY = 'ep-pet-state';
@@ -169,6 +174,8 @@ export const petService = {
         // Achievements
         achievements: Array.isArray(parsed.achievements) ? parsed.achievements : [],
         userId: parsed.userId || undefined,
+        // Petting limits
+        petTimestamps: Array.isArray(parsed.petTimestamps) ? parsed.petTimestamps : [],
       };
       return this.applyDecay(state);
     } catch {
@@ -339,7 +346,7 @@ export const petService = {
 
     // -- Food & love --
     state.foodPoints = Math.round((state.foodPoints + 0.1) * 10) / 10;
-    state.love = Math.min(100, Math.round((state.love + 0.1) * 10) / 10);
+    state.love = Math.min(100, Math.round((state.love + 1.0) * 10) / 10);
 
     // -- XP calculation --
     const baseXP = 10;
@@ -401,11 +408,58 @@ export const petService = {
     return true;
   },
 
-  petPet() {
+  petPet(): { success: boolean; loveGained: number; left: number; nextAvailableInMs: number } {
     const state = this.getPetState();
-    state.love = Math.min(100, state.love + 2);
-    state.lastUpdated = Date.now();
+    const now = Date.now();
+    const twoHoursAgo = now - 2 * 60 * 60 * 1000;
+
+    // Filter to keep only last 2 hours
+    state.petTimestamps = (state.petTimestamps || []).filter(t => t > twoHoursAgo);
+
+    let loveGained = 0;
+    let success = false;
+
+    if (state.petTimestamps.length < 5) {
+      state.love = Math.min(100, state.love + 2);
+      state.petTimestamps.push(now);
+      loveGained = 2;
+      success = true;
+    }
+
+    state.lastUpdated = now;
     this.savePetState(state);
+
+    const status = this.getDailyPettingStatus(state);
+
+    return {
+      success,
+      loveGained,
+      left: status.left,
+      nextAvailableInMs: status.nextAvailableInMs,
+    };
+  },
+
+  getDailyPettingStatus(state: PetState): { current: number; max: number; left: number; nextAvailableInMs: number } {
+    const now = Date.now();
+    const twoHoursAgo = now - 2 * 60 * 60 * 1000;
+
+    // Filter timestamps within the last 2 hours
+    const activeTimestamps = (state.petTimestamps || []).filter(t => t > twoHoursAgo);
+
+    const left = Math.max(0, 5 - activeTimestamps.length);
+    let nextAvailableInMs = 0;
+
+    if (left === 0 && activeTimestamps.length > 0) {
+      const oldest = Math.min(...activeTimestamps);
+      nextAvailableInMs = Math.max(0, (oldest + 2 * 60 * 60 * 1000) - now);
+    }
+
+    return {
+      current: activeTimestamps.length,
+      max: 5,
+      left,
+      nextAvailableInMs,
+    };
   },
 
   renamePet(newName: string) {
@@ -632,5 +686,32 @@ export const petService = {
     if (type === 'cat') return catMessages[Math.floor(Math.random() * catMessages.length)];
     if (type === 'dog') return dogMessages[Math.floor(Math.random() * dogMessages.length)];
     return dinoMessages[Math.floor(Math.random() * dinoMessages.length)];
+  },
+
+  getRandomRefusalMessage(name: string, type: 'cat' | 'dog' | 'dino', nextAvailableInMs: number): string {
+    const actionStr = type === 'cat' ? 'purrs' : type === 'dog' ? 'wags tail' : 'yawns';
+    const cnActionStr = type === 'cat' ? '满足地呼噜' : type === 'dog' ? '开心摇尾巴' : '打了个哈欠';
+    
+    const totalMinutes = Math.ceil(nextAvailableInMs / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    let timeStr = '';
+    let cnTimeStr = '';
+    
+    if (hours > 0) {
+      timeStr = `${hours}h ${minutes}m`;
+      cnTimeStr = `${hours}小时${minutes}分钟`;
+    } else {
+      timeStr = `${minutes}m`;
+      cnTimeStr = `${minutes}分钟`;
+    }
+
+    const messages = [
+      `*${name} is super happy and full of love!* Let's do some practice now! (Next pet in ${timeStr}) ( *${name}已经感受到满满的爱意啦！* 咱们去做题练习吧！(${cnTimeStr}后可再次抚摸))`,
+      `*${name} ${actionStr}* I'm resting right now! Next pet in ${timeStr}. 💤 ( *${name}${cnActionStr}* 我正在休息！还有 ${cnTimeStr} 可以再次抚摸哦。)`,
+      `*${name} points at the exercises* Learning time! We can pet more in ${timeStr}! 📚 ( *${name}指了指练习题* 学习时间到！${cnTimeStr}后见！)`
+    ];
+    return messages[Math.floor(Math.random() * messages.length)];
   },
 };
