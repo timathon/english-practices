@@ -10,6 +10,7 @@ import { useSession, signOut, authClient } from './lib/auth'
 import { petService } from './lib/petService'
 import { SwitchUser } from './SwitchUser'
 import { IrregularVerbsModal } from './components/IrregularVerbsModal'
+import { SchulteGame } from './components/SchulteGame'
 import './App.css'
 
 function Navigation({ session }: { session: any }) {
@@ -207,6 +208,13 @@ function App() {
             </div>
           } />
           <Route path="/practice/:id" element={<PracticeShell />} />
+          <Route path="/games/schulte" element={
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <SchulteGame />
+              </div>
+            </div>
+          } />
           <Route path="/switch-user" element={
             <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>

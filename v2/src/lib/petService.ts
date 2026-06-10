@@ -13,7 +13,9 @@ export interface PetState {
   name: string;
   food: number;        // 0 to 100
   love: number;        // 0 to 100
-  foodPoints: number;  // items earned from correct answers
+  goldCoins: number;
+  foodItems: number;
+  schulteRoundsLeft: number;
   totalCorrect: number;
   lastUpdated: number; // timestamp in ms
 
@@ -115,7 +117,9 @@ const INITIAL_STATE = (type: 'cat' | 'dog' | 'dino' = 'cat'): PetState => ({
   name: DEFAULT_PETS[type],
   food: 50,
   love: 50,
-  foodPoints: 0,
+  goldCoins: 0,
+  foodItems: 0,
+  schulteRoundsLeft: 0,
   totalCorrect: 0,
   lastUpdated: 0, // 0 = uninitialized; never wins timestamp comparison vs real server data
   // Streak
@@ -151,13 +155,23 @@ export const petService = {
         return INITIAL_STATE();
       }
       const parsed = JSON.parse(stored);
+      let goldCoins = typeof parsed.goldCoins === 'number' ? parsed.goldCoins : 0;
+      let foodItems = typeof parsed.foodItems === 'number' ? parsed.foodItems : 0;
+      
+      // Migrate 1x from foodPoints if goldCoins hasn't been set yet
+      if (typeof parsed.foodPoints === 'number' && parsed.foodPoints > 0 && !parsed.goldCoins) {
+        goldCoins = Math.round(parsed.foodPoints);
+      }
+
       // Migrate from old schema — ensure all new fields exist
       const state: PetState = {
         type: parsed.type || 'cat',
         name: parsed.name || DEFAULT_PETS[parsed.type || 'cat'],
         food: typeof parsed.food === 'number' ? parsed.food : 50,
         love: typeof parsed.love === 'number' ? parsed.love : 50,
-        foodPoints: typeof parsed.foodPoints === 'number' ? parsed.foodPoints : 0,
+        goldCoins,
+        foodItems,
+        schulteRoundsLeft: typeof parsed.schulteRoundsLeft === 'number' ? parsed.schulteRoundsLeft : 0,
         totalCorrect: typeof parsed.totalCorrect === 'number' ? parsed.totalCorrect : 0,
         lastUpdated: parsed.lastUpdated || 0,
         // Streak (with migration defaults)
@@ -345,7 +359,7 @@ export const petService = {
     state.dailyProgress += 1;
 
     // -- Food & love --
-    state.foodPoints = Math.round((state.foodPoints + 0.1) * 10) / 10;
+    state.goldCoins = (state.goldCoins || 0) + 1;
     state.love = Math.min(100, Math.round((state.love + 1.0) * 10) / 10);
 
     // -- XP calculation --
@@ -373,6 +387,7 @@ export const petService = {
     window.dispatchEvent(new CustomEvent('ep-correct-answer', {
       detail: {
         xpGain,
+        goldCoinGain: 1,
         dailyProgress: state.dailyProgress,
         dailyGoal,
         dailyGoalJustCompleted: state.dailyProgress === dailyGoal,
@@ -388,9 +403,9 @@ export const petService = {
   // ── Feed ──────────────────────────────────────────────────────
   feedPet(): boolean {
     const state = this.getPetState();
-    if (state.foodPoints < 1.0) return false;
+    if ((state.foodItems || 0) < 1) return false;
 
-    state.foodPoints = Math.round((state.foodPoints - 1.0) * 10) / 10;
+    state.foodItems = (state.foodItems || 0) - 1;
     state.food = Math.min(100, state.food + 10);
     state.lastUpdated = Date.now();
 
@@ -406,6 +421,37 @@ export const petService = {
 
     this.savePetState(state);
     return true;
+  },
+
+  buyFood(): boolean {
+    const state = this.getPetState();
+    if ((state.goldCoins || 0) < 1) return false;
+
+    state.goldCoins = (state.goldCoins || 0) - 1;
+    state.foodItems = (state.foodItems || 0) + 1;
+    state.lastUpdated = Date.now();
+    this.savePetState(state);
+    return true;
+  },
+
+  buySchulteRounds(): boolean {
+    const state = this.getPetState();
+    if ((state.goldCoins || 0) < 1) return false;
+
+    state.goldCoins = (state.goldCoins || 0) - 1;
+    state.schulteRoundsLeft = (state.schulteRoundsLeft || 0) + 3;
+    state.lastUpdated = Date.now();
+    this.savePetState(state);
+    return true;
+  },
+
+  decrementSchulteRounds(): void {
+    const state = this.getPetState();
+    if ((state.schulteRoundsLeft || 0) > 0) {
+      state.schulteRoundsLeft -= 1;
+      state.lastUpdated = Date.now();
+      this.savePetState(state);
+    }
   },
 
   petPet(): { success: boolean; loveGained: number; left: number; nextAvailableInMs: number } {

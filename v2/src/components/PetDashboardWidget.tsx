@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { petService, ACHIEVEMENT_DEFS, DAILY_GOAL_VALUES } from '../lib/petService';
 import type { PetState, DailyGoalPreset, AchievementDef } from '../lib/petService';
 import './PetDashboardWidget.css';
@@ -14,6 +15,9 @@ export function PetDashboardWidget() {
   const [goalCelebrating, setGoalCelebrating] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'stats' | 'evolution' | 'activities'>('stats');
+  const navigate = useNavigate();
+  const [showBuyFoodModal, setShowBuyFoodModal] = useState(false);
+  const [showBuyGameModal, setShowBuyGameModal] = useState(false);
 
   const speechTimeoutRef = useRef<number | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
@@ -52,13 +56,31 @@ export function PetDashboardWidget() {
   };
 
   const handleFeed = () => {
-    if (petState.foodPoints < 1.0) {
-      showSpeech(`Practice and give correct answers to get food! ${petService.getPetFoodEmoji(petState.type)}`);
+    if ((petState.foodItems || 0) <= 0) {
+      setShowBuyFoodModal(true);
       return;
     }
     const success = petService.feedPet();
     if (success) {
       showSpeech(petService.getRandomFeedMessage(petState.name, petState.type));
+    }
+  };
+
+  const handleBuyFood = () => {
+    if ((petState.goldCoins || 0) < 1) {
+      showSpeech(`You need at least 1 🪙 to buy food!`);
+      return;
+    }
+    const success = petService.buyFood();
+    if (success) {
+      showSpeech(`Bought 1 food item! ${petService.getPetFoodEmoji(petState.type)}`);
+      // Trigger feed directly after buying
+      setTimeout(() => {
+        const fed = petService.feedPet();
+        if (fed) {
+          showSpeech(petService.getRandomFeedMessage(petState.name, petState.type));
+        }
+      }, 300);
     }
   };
 
@@ -68,6 +90,26 @@ export function PetDashboardWidget() {
       ? petService.getRandomPetMessage(petState.name, petState.type)
       : petService.getRandomRefusalMessage(petState.name, petState.type, result.nextAvailableInMs);
     showSpeech(msg);
+  };
+
+  const handleGameClick = () => {
+    if ((petState.schulteRoundsLeft || 0) <= 0) {
+      setShowBuyGameModal(true);
+    } else {
+      navigate('/games/schulte');
+    }
+  };
+
+  const handleBuyGameRounds = () => {
+    if ((petState.goldCoins || 0) < 1) {
+      showSpeech(`You need at least 1 🪙 to buy game rounds!`);
+      return;
+    }
+    const success = petService.buySchulteRounds();
+    if (success) {
+      setShowBuyGameModal(false);
+      navigate('/games/schulte');
+    }
   };
 
   const handleSaveName = (e: React.FormEvent) => {
@@ -131,12 +173,12 @@ export function PetDashboardWidget() {
             ❓
           </button>
         </div>
-        <div className="pet-widget-header-sub">
+        <div className="pet-widget-header-sub" style={{ display: 'flex', gap: '8px' }}>
           <span className={`pet-widget-level-badge pet-widget-level-${stage}`}>
             Lv.{petState.level} · {stageLabel}
           </span>
-          <span className="pet-widget-points-badge" title="Food items in stock. Earn more by answering correctly! (每答对10题获得1个食物)">
-            {petService.getPetFoodEmoji(petState.type)} ×{Math.floor(petState.foodPoints)}
+          <span className="pet-widget-points-badge" title="Gold Coins earned from correct answers (通过答题赚取的金币)">
+            🪙 {petState.goldCoins || 0}
           </span>
         </div>
       </div>
@@ -298,19 +340,21 @@ export function PetDashboardWidget() {
         </div>
 
         {/* ── Row 4: Action Buttons ── */}
-        <div className="pet-widget-actions">
+        <div className="pet-widget-actions" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           <button
             className="pet-widget-btn feed-btn"
             onClick={handleFeed}
-            disabled={petState.foodPoints < 1.0}
+            title="Feed your pet"
           >
             {petService.getPetFoodEmoji(petState.type)} Feed (喂食)
           </button>
           <button
-            className="pet-widget-btn pet-btn"
-            onClick={handlePet}
+            className="pet-widget-btn feed-btn"
+            style={{ background: 'linear-gradient(135deg, #a855f7 0%, var(--accent) 100%)', borderColor: 'var(--accent)', color: '#fff' }}
+            onClick={handleGameClick}
+            title="Play Schulte Table Game"
           >
-            👋 Pet (抚摸 {petService.getDailyPettingStatus(petState).left}/5)
+            🎮 Game (游戏 x{petState.schulteRoundsLeft || 0})
           </button>
         </div>
 
@@ -431,8 +475,8 @@ export function PetDashboardWidget() {
                         <h5>Hunger & Food (饱食度与食物)</h5>
                       </div>
                       <div className="pet-help-card-body">
-                        <p className="help-en">Correct answers grant <strong>0.1 food points</strong> (1 food item per 10 correct answers). Feed your pet ({petService.getPetFoodEmoji(petState.type)}) to restore Hunger by <strong>+10</strong> (consumes 1 food).</p>
-                        <p className="help-cn">每答对一题获得 <strong>0.1 个食物</strong>（每答对10题可获得1个完整食物）。喂食 ({petService.getPetFoodEmoji(petState.type)}) 消耗1个食物，恢复 <strong>+10 饱食度</strong>。</p>
+                        <p className="help-en">Correct answers grant <strong>1 Gold Coin</strong>. Spend <strong>1 Gold Coin</strong> to feed a food item ({petService.getPetFoodEmoji(petState.type)}) to your pet, restoring Hunger by <strong>+10</strong>.</p>
+                        <p className="help-cn">每答对一题获得 <strong>1 金币</strong>。花费 <strong>1 金币</strong> 可以购买食物进行喂食，恢复 <strong>+10 饱食度</strong>。</p>
                       </div>
                     </div>
 
@@ -523,8 +567,109 @@ export function PetDashboardWidget() {
                         <p className="help-cn">饱食度（🍔）与亲密度（❤️）每小时会自然减少 <strong>0.5 点</strong>（每天共消耗 12 点）。记得经常打卡练习，不要冷落它哦！</p>
                       </div>
                     </div>
+
+                    <div className="pet-help-card">
+                      <div className="pet-help-card-header">
+                        <span>🎮</span>
+                        <h5>Schulte Table (舒尔特方格)</h5>
+                      </div>
+                      <div className="pet-help-card-body">
+                        <p className="help-en">Spend <strong>1 Gold Coin</strong> to play <strong>3 rounds</strong> of Schulte Table (4x4 or 5x5). Top the global leaderboard with your fastest completion time!</p>
+                        <p className="help-cn">消耗 <strong>1 金币</strong> 可解锁 <strong>3 局</strong> 舒尔特方格游戏（可选 4x4 或 5x5）。以最快的时间冲击全球排行榜！</p>
+                      </div>
+                    </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── Buy Food Modal ── */}
+      {showBuyFoodModal && (
+        <div className="pet-help-modal-overlay" onClick={() => setShowBuyFoodModal(false)}>
+          <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="pet-help-modal-header">
+              <h4 className="pet-help-modal-title">🛒 Buy Food (购买饲料)</h4>
+              <button className="pet-help-modal-close" onClick={() => setShowBuyFoodModal(false)}>×</button>
+            </div>
+            <div className="pet-help-modal-body" style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>{petService.getPetFoodEmoji(petState.type)}</div>
+              <p style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>Your food stock is empty!</p>
+              <p style={{ margin: '0 0 16px 0', color: 'var(--text)', fontSize: '0.9rem' }}>
+                Spend <strong>1 Gold Coin</strong> to buy 1 food item and feed {petState.name}?
+                <br />
+                (花费 <strong>1 金币</strong> 购买 1 个食物并喂食 {petState.name}？)
+              </p>
+              <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                <span>🪙 Coins: <strong>{petState.goldCoins || 0}</strong></span>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="pet-widget-btn feed-btn"
+                  onClick={() => {
+                    if ((petState.goldCoins || 0) < 1) return;
+                    handleBuyFood();
+                    setShowBuyFoodModal(false);
+                  }}
+                  disabled={(petState.goldCoins || 0) < 1}
+                  style={{ padding: '8px 20px', minWidth: '100px' }}
+                >
+                  Buy & Feed (购买并喂)
+                </button>
+                <button
+                  type="button"
+                  className="pet-widget-btn pet-btn"
+                  onClick={() => setShowBuyFoodModal(false)}
+                  style={{ padding: '8px 20px', minWidth: '100px' }}
+                >
+                  Cancel (取消)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Buy Game Modal ── */}
+      {showBuyGameModal && (
+        <div className="pet-help-modal-overlay" onClick={() => setShowBuyGameModal(false)}>
+          <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="pet-help-modal-header">
+              <h4 className="pet-help-modal-title">🎮 Schulte Table Game</h4>
+              <button className="pet-help-modal-close" onClick={() => setShowBuyGameModal(false)}>×</button>
+            </div>
+            <div className="pet-help-modal-body" style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🧩</div>
+              <p style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>No game rounds left!</p>
+              <p style={{ margin: '0 0 16px 0', color: 'var(--text)', fontSize: '0.9rem' }}>
+                Spend <strong>1 Gold Coin</strong> to buy <strong>3 play rounds</strong> of Schulte Table?
+                <br />
+                (花费 <strong>1 金币</strong> 购买 <strong>3 局</strong> 舒尔特方格游戏场次？)
+              </p>
+              <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '20px' }}>
+                <span>🪙 Coins: <strong>{petState.goldCoins || 0}</strong></span>
+                <span>🎮 Rounds: <strong>{petState.schulteRoundsLeft || 0}</strong></span>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="pet-widget-btn feed-btn"
+                  onClick={handleBuyGameRounds}
+                  disabled={(petState.goldCoins || 0) < 1}
+                  style={{ padding: '8px 20px', minWidth: '100px' }}
+                >
+                  Buy & Play (购买并玩)
+                </button>
+                <button
+                  type="button"
+                  className="pet-widget-btn pet-btn"
+                  onClick={() => setShowBuyGameModal(false)}
+                  style={{ padding: '8px 20px', minWidth: '100px' }}
+                >
+                  Cancel (取消)
+                </button>
               </div>
             </div>
           </div>

@@ -74,14 +74,16 @@ export function PetFloatingCompanion() {
       // Spawn particles
       const id1 = particleIdRef.current++;
       const id2 = particleIdRef.current++;
+      const id3 = particleIdRef.current++;
       const newParticles: Particle[] = [
-        { id: id1, text: `+${detail.xpGain || 10} XP`, x: -10 + Math.random() * 20, y: -20 },
-        { id: id2, text: '+1 ❤️', x: -10 + Math.random() * 20, y: -45 },
+        { id: id1, text: `+${detail.xpGain || 10} XP`, x: -15 + Math.random() * 10, y: -20 },
+        { id: id2, text: '+1 ❤️', x: 0 + Math.random() * 10, y: -45 },
+        { id: id3, text: `+${detail.goldCoinGain || 1} 🪙`, x: 15 + Math.random() * 10, y: -30 },
       ];
 
       setParticles(prev => [...prev, ...newParticles]);
       setTimeout(() => {
-        setParticles(prev => prev.filter(p => p.id !== id1 && p.id !== id2));
+        setParticles(prev => prev.filter(p => p.id !== id1 && p.id !== id2 && p.id !== id3));
       }, 3500);
 
       // Check for special events

@@ -94,7 +94,7 @@ app.all('/api/auth/*', (c) => {
 })
 
 import { drizzle } from 'drizzle-orm/d1'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, asc, or } from 'drizzle-orm'
 import { practiceRecords, user, practice, account, session as sessionTable } from './db/schema'
 
 app.get('/api/me', async (c) => {
@@ -604,6 +604,37 @@ app.put('/api/mistakes', async (c) => {
   }).where(eq(user.id, session.user.id));
 
   return c.json({ success: true });
+})
+
+app.get('/api/games/schulte/leaderboard', async (c) => {
+  const auth = getCachedAuth(c.env)
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const db = drizzle(c.env.DB);
+  
+  const records = await db
+    .select({
+      id: practiceRecords.id,
+      userId: practiceRecords.userId,
+      name: user.name,
+      username: user.username,
+      unit: practiceRecords.unit,
+      score: practiceRecords.score,
+      createdAt: practiceRecords.createdAt,
+    })
+    .from(practiceRecords)
+    .innerJoin(user, eq(practiceRecords.userId, user.id))
+    .where(
+      or(
+        eq(practiceRecords.unit, 'game-schulte-4x4'),
+        eq(practiceRecords.unit, 'game-schulte-5x5')
+      )
+    )
+    .orderBy(asc(practiceRecords.score))
+    .limit(50);
+
+  return c.json(records);
 })
 
 export default app
