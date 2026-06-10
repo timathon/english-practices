@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { processFile } = require('./add_passage_decoder_highlights.cjs');
 
-const dirs = ['data/A5B', 'data/A7B'];
+const dirs = ['data/A5B', 'data/A7B', 'data/A7A'];
 
 for (const dir of dirs) {
     if (!fs.existsSync(dir)) continue;

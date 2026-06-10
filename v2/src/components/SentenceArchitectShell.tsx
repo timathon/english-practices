@@ -102,6 +102,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const [gainedLove, setGainedLove] = useState(0)
     const [historicalBest, setHistoricalBest] = useState(0)
     const [isNewHigh, setIsNewHigh] = useState(false)
+    const [invisibleMode, setInvisibleMode] = useState(false)
     const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
     const timerExpiredRef = useRef(false)
     const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
@@ -250,7 +251,11 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
         setWordPool(poolItems)
         // Reset countdown timer
-        countdownTimer.reset()
+        if (!invisibleMode) {
+            countdownTimer.reset()
+        } else {
+            countdownTimer.pause()
+        }
     }
 
     const playAudio = async (url: string) => {
@@ -423,9 +428,11 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
         if (isCorrect) {
             playSfx('correct')
-            const { xpGain } = petService.awardCorrectAnswer()
-            setGainedXp(prev => prev + xpGain)
-            setGainedLove(prev => prev + 1)
+            if (!invisibleMode) {
+                const { xpGain } = petService.awardCorrectAnswer()
+                setGainedXp(prev => prev + xpGain)
+                setGainedLove(prev => prev + 1)
+            }
             let scoreType = "green"
             if (isRedemption) {
                 scoreType = "redemption"
@@ -440,7 +447,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
             if (!isRedemption) {
                 updatedScoreLog[currentIndex] = "red"
                 updatedMistakes.push(q)
-                if (userId) {
+                if (userId && !invisibleMode) {
                     mistakeService.addMistake(userId, {
                         practiceId,
                         textbook,
@@ -472,7 +479,9 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         }, 0)
 
         const scorePercent = Math.round((totalScore / queue.length) * 100)
-        syncRecord(scorePercent, false)
+        if (!invisibleMode) {
+            syncRecord(scorePercent, false)
+        }
 
         // Autoplay countdown timer
         if (autoplay) {
@@ -489,7 +498,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                 })
             }, 1000)
         }
-    }, [locked, userSelection, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, autoplay, queue.length, countdownTimer])
+    }, [locked, userSelection, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, autoplay, queue.length, countdownTimer, invisibleMode])
 
     // Keep ref in sync so onExpire uses the latest checkAnswer
     useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
@@ -521,10 +530,12 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         setHistoricalBest(histBest)
         setIsNewHigh(histBest === 0 ? scorePercent > 0 : scorePercent > histBest)
 
-        petService.awardQuizCompletion()
-        syncRecord(scorePercent, true)
-        if (userId) {
-            mistakeService.syncToServer(userId);
+        if (!invisibleMode) {
+            petService.awardQuizCompletion()
+            syncRecord(scorePercent, true)
+            if (userId) {
+                mistakeService.syncToServer(userId);
+            }
         }
     }
 
@@ -618,6 +629,43 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                         <h1>{data.title}</h1>
                         <h2>{data.level}</h2>
                         <button className="sa-settings-toggle" onClick={() => setShowSettings(true)}>⚙️</button>
+                    </div>
+
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        gap: '10px', 
+                        marginBottom: '20px',
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        padding: '8px 16px',
+                        width: 'fit-content',
+                        margin: '0 auto 20px auto'
+                    }}>
+                        <label style={{ 
+                            fontSize: '0.95rem', 
+                            color: '#475569', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            cursor: 'pointer',
+                            fontWeight: 500
+                        }}>
+                            <input 
+                                type="checkbox" 
+                                checked={invisibleMode} 
+                                onChange={(e) => setInvisibleMode(e.target.checked)}
+                                style={{ 
+                                    width: '16px', 
+                                    height: '16px', 
+                                    accentColor: 'var(--primary)',
+                                    cursor: 'pointer'
+                                }}
+                            />
+                            <span>👻 Invisible Mode (No timer, no rewards/records)</span>
+                        </label>
                     </div>
 
                     <div className="sa-challenge-grid">
@@ -739,7 +787,11 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                     
                     {/* High Score / Record Status */}
                     <div style={{ margin: '10px 0 20px 0', fontSize: '1rem', color: '#555' }}>
-                        {isNewHigh ? (
+                        {invisibleMode ? (
+                            <div style={{ color: '#64748b', fontStyle: 'italic' }}>
+                                Practice Mode (Invisible). Score not saved.
+                            </div>
+                        ) : isNewHigh ? (
                             <div style={{ color: '#10b981', fontWeight: 'bold' }}>
                                 🎉 New High Score! You've set a new record!
                             </div>
@@ -761,25 +813,33 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                         marginBottom: '30px',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                     }}>
-                        <h3 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Rewards Earned</h3>
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-around',
-                            alignItems: 'center'
-                        }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>⚡</span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#0284c7' }}>+{gainedXp} XP</span>
+                        {invisibleMode ? (
+                            <div style={{ color: '#64748b', fontSize: '0.95rem', fontStyle: 'italic' }}>
+                                Practice Mode active. No rewards are awarded.
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>❤️</span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e11d48' }}>+{gainedLove} ❤️</span>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>🪙</span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ca8a04' }}>+1 Coin</span>
-                            </div>
-                        </div>
+                        ) : (
+                            <>
+                                <h3 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Rewards Earned</h3>
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-around',
+                                    alignItems: 'center'
+                                }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>⚡</span>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#0284c7' }}>+{gainedXp} XP</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>❤️</span>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e11d48' }}>+{gainedLove} ❤️</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>🪙</span>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ca8a04' }}>+1 Coin</span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                     
                     {/* Review Mistakes Section */}
@@ -842,7 +902,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                                 if (!locked) countdownTimer.resume()
                             }
                         }}>✕</button>
-                        <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={30} isRunning={countdownTimer.isRunning} />
+                        {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={30} isRunning={countdownTimer.isRunning} />}
                     </div>
                     <div className="sa-progress-container">
                         {queue.map((_, i) => {

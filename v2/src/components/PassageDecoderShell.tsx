@@ -92,6 +92,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const [gainedLove, setGainedLove] = useState(0)
     const [historicalBest, setHistoricalBest] = useState(0)
     const [isNewHigh, setIsNewHigh] = useState(false)
+    const [invisibleMode, setInvisibleMode] = useState(false)
     const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
 
     const primaryColor = data.primaryColor || '#4f46e5'
@@ -302,9 +303,11 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
         if (isCorrect) {
             playSfx('correct')
-            const { xpGain } = petService.awardCorrectAnswer()
-            setGainedXp(prev => prev + xpGain)
-            setGainedLove(prev => prev + 1)
+            if (!invisibleMode) {
+                const { xpGain } = petService.awardCorrectAnswer()
+                setGainedXp(prev => prev + xpGain)
+                setGainedLove(prev => prev + 1)
+            }
             if (isRedemption) {
                 updatedScoreLog[q.originalIndex] = "redemption"
                 updatedMistakes.shift() // Remove from mistake queue
@@ -316,7 +319,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
             if (!isRedemption) {
                 updatedScoreLog[currentIndex] = "red"
                 updatedMistakes.push(q)
-                if (userId) {
+                if (userId && !invisibleMode) {
                     mistakeService.addMistake(userId, {
                         practiceId,
                         textbook,
@@ -341,8 +344,10 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         }, 0)
 
         const scorePercent = Math.round((totalScore / queue.length) * 100)
-        syncRecord(scorePercent, false)
-    }, [locked, q, mistakeQueue, scoreLog, currentIndex, isRedemption, queue.length, countdownTimer])
+        if (!invisibleMode) {
+            syncRecord(scorePercent, false)
+        }
+    }, [locked, q, mistakeQueue, scoreLog, currentIndex, isRedemption, queue.length, countdownTimer, invisibleMode])
 
     // Keep ref in sync so onExpire uses the latest checkAnswer
     useEffect(() => {
@@ -378,10 +383,12 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         setHistoricalBest(histBest)
         setIsNewHigh(histBest === 0 ? scorePercent > 0 : scorePercent > histBest)
 
-        petService.awardQuizCompletion()
-        syncRecord(scorePercent, true)
-        if (userId) {
-            mistakeService.syncToServer(userId);
+        if (!invisibleMode) {
+            petService.awardQuizCompletion()
+            syncRecord(scorePercent, true)
+            if (userId) {
+                mistakeService.syncToServer(userId);
+            }
         }
     }
 
@@ -408,7 +415,11 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const revealOptions = () => {
         setShowOptions(true)
         timerExpiredRef.current = false
-        countdownTimer.reset(15)
+        if (!invisibleMode) {
+            countdownTimer.reset(15)
+        } else {
+            countdownTimer.pause()
+        }
     }
 
     // Keyboard Shortcuts
@@ -491,6 +502,43 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                         <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, fontSize: '1.5rem', textDecoration: 'none' }}>🏠</Link>
                         <h1>{data.title}</h1>
                         <h2>{data.level}</h2>
+                    </div>
+
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        gap: '10px', 
+                        marginBottom: '20px',
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        padding: '8px 16px',
+                        width: 'fit-content',
+                        margin: '0 auto 20px auto'
+                    }}>
+                        <label style={{ 
+                            fontSize: '0.95rem', 
+                            color: '#475569', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            cursor: 'pointer',
+                            fontWeight: 500
+                        }}>
+                            <input 
+                                type="checkbox" 
+                                checked={invisibleMode} 
+                                onChange={(e) => setInvisibleMode(e.target.checked)}
+                                style={{ 
+                                    width: '16px', 
+                                    height: '16px', 
+                                    accentColor: 'var(--primary)',
+                                    cursor: 'pointer'
+                                }}
+                            />
+                            <span>👻 Invisible Mode (No timer, no rewards/records)</span>
+                        </label>
                     </div>
 
                     <div className="pd-section-grid">
@@ -586,7 +634,11 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                     
                     {/* High Score / Record Status */}
                     <div style={{ margin: '10px 0 20px 0', fontSize: '1rem', color: '#555' }}>
-                        {isNewHigh ? (
+                        {invisibleMode ? (
+                            <div style={{ color: '#64748b', fontStyle: 'italic' }}>
+                                Practice Mode (Invisible). Score not saved.
+                            </div>
+                        ) : isNewHigh ? (
                             <div style={{ color: '#10b981', fontWeight: 'bold' }}>
                                 🎉 New High Score! You've set a new record!
                             </div>
@@ -656,7 +708,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                             setActiveSection(null);
                             loadRecords();
                         } else {
-                            if (!locked && showOptions) countdownTimer.resume()
+                            if (!locked && showOptions && !invisibleMode) countdownTimer.resume()
                         }
                     }}>✕</button>
                     <div className="pd-progress-container">
@@ -729,7 +781,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                         ) : (
                             <div className="pd-options-area">
                                 <div className="pd-timer-container">
-                                    <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={15} isRunning={countdownTimer.isRunning} />
+                                    {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={15} isRunning={countdownTimer.isRunning} />}
                                 </div>
                                 <div className="pd-options-grid">
                                     {q.options.map((opt: string, optIdx: number) => {
