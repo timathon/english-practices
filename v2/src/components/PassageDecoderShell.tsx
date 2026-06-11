@@ -9,38 +9,43 @@ import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
 import { CountdownRing } from './CountdownRing'
+import md5 from 'md5'
+import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
 
-function renderSentenceText(sentence: any) {
-    if (!sentence.highlight) return sentence.en;
+const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
-    const highlights = Array.from(new Set(sentence.highlight.split(',').map((s: string) => s.trim()).filter(Boolean)));
-    let textWithHighlights = sentence.en;
-
-    const escapeRegExp = (string: string) => {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    };
-
-    highlights.forEach((h: any) => {
-        if (h.includes('...')) {
-            const parts = h.split('...').map((p: any) => p.trim());
-            const pattern = parts.map(escapeRegExp).join('.*?');
-            const regex = new RegExp(`(${pattern})`, 'gi');
-            textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
-        } else {
-            const regex = new RegExp(`(\\b${escapeRegExp(h)}\\b)`, 'gi');
-            textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
-        }
-    });
-
-    const textParts = textWithHighlights.split(/(\|\|HIGHLIGHT\|\|.*?\|\|ENDHIGHLIGHT\|\|)/g);
-    return textParts.map((part: string, idx: number) => {
-        if (part.startsWith('||HIGHLIGHT||') && part.endsWith('||ENDHIGHLIGHT||')) {
-            const actualText = part.slice(13, -16);
-            return <span key={idx} className="pd-highlight">{actualText}</span>;
-        }
-        return part;
-    });
+const getAudioUrl = (sentence: string, book: string) => {
+    const hash = md5(sentence);
+    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
 }
+
+const findVocabItem = (vocabList: any[], highlightPattern: string, actualText: string) => {
+    const cleanPattern = highlightPattern.trim().toLowerCase();
+    const cleanActual = actualText.trim().toLowerCase();
+    
+    // 1. Try exact match on word
+    let found = vocabList.find(item => item.word.trim().toLowerCase() === cleanPattern);
+    if (found) return found;
+
+    // 2. Try exact match on actual text
+    found = vocabList.find(item => item.word.trim().toLowerCase() === cleanActual);
+    if (found) return found;
+
+    // 3. Try starts-with/starts-with reverse to handle plurals/tenses
+    found = vocabList.find(item => {
+        const word = item.word.trim().toLowerCase();
+        return cleanActual.startsWith(word) || word.startsWith(cleanActual);
+    });
+    if (found) return found;
+
+    // 4. Fallback search: any partial overlap
+    found = vocabList.find(item => {
+        const word = item.word.trim().toLowerCase();
+        return cleanActual.includes(word) || word.includes(cleanActual);
+    });
+    return found;
+}
+
 
 
 
@@ -50,6 +55,124 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const sfxRef = useRef<HTMLAudioElement | null>(null)
     const activeSentenceRef = useRef<HTMLSpanElement | null>(null)
     const lastActiveSectionIdRef = useRef<string | null>(null)
+
+    // Vocab Guide loading state
+    const [vocabGuide, setVocabGuide] = useState<any>(null);
+    const [activeWordDetail, setActiveWordDetail] = useState<any>(null);
+    const [playingWordAudio, setPlayingWordAudio] = useState(false);
+
+    useEffect(() => {
+        if (!practiceId) return;
+        const vocabGuideId = practiceId
+            .replace(/-passage-decoder-[sw]$/, '-vocab-guide')
+            .replace(/-passage-decoder$/, '-vocab-guide');
+        
+        fetch(API_URL + `/api/practices/${vocabGuideId}`, { credentials: 'include' })
+            .then(res => res.json())
+            .then(resData => {
+                if (resData && !resData.error) {
+                    let content = resData.content;
+                    if (resData.isEncrypted && typeof content === 'string') {
+                        try {
+                            content = decryptContent(content, OBSCURE_KEY);
+                        } catch (decErr) {
+                            console.error("Decryption of vocab-guide failed:", decErr);
+                            return;
+                        }
+                    }
+                    setVocabGuide(content);
+                } else {
+                    console.warn(`Vocab guide not found or error loading: ${vocabGuideId}`, resData?.error);
+                    setVocabGuide(null);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to load vocab guide in PassageDecoder:", err);
+                setVocabGuide(null);
+            });
+    }, [practiceId]);
+
+    const playWordSentenceAudio = async (sentence: string) => {
+        if (!textbook || !sentence) return;
+        setPlayingWordAudio(true);
+        const url = getAudioUrl(sentence, textbook);
+        try {
+            const blob = await audioCache.cacheAudio(url);
+            if (blob) {
+                const audio = new Audio(URL.createObjectURL(blob));
+                audio.onended = () => setPlayingWordAudio(false);
+                audio.onerror = () => setPlayingWordAudio(false);
+                audio.play();
+            } else {
+                setPlayingWordAudio(false);
+            }
+        } catch (e) {
+            console.error("Word audio playback error:", e);
+            setPlayingWordAudio(false);
+        }
+    };
+
+    const renderSentenceText = useCallback((sentence: any) => {
+        if (!sentence.highlight) return sentence.en;
+
+        const highlights = Array.from(new Set(sentence.highlight.split(',').map((s: string) => s.trim()).filter(Boolean)));
+        let textWithHighlights = sentence.en;
+
+        const escapeRegExp = (string: string) => {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        };
+
+        highlights.forEach((h: any) => {
+            if (h.includes('...')) {
+                const parts = h.split('...').map((p: any) => p.trim());
+                const pattern = parts.map(escapeRegExp).join('.*?');
+                const regex = new RegExp(`(${pattern})`, 'gi');
+                textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
+            } else {
+                const regex = new RegExp(`(\\b${escapeRegExp(h)}\\b)`, 'gi');
+                textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
+            }
+        });
+
+        const textParts = textWithHighlights.split(/(\|\|HIGHLIGHT\|\|.*?\|\|ENDHIGHLIGHT\|\|)/g);
+        return textParts.map((part: string, idx: number) => {
+            if (part.startsWith('||HIGHLIGHT||') && part.endsWith('||ENDHIGHLIGHT||')) {
+                const actualText = part.slice(13, -16);
+                
+                const h = (highlights.find((hl: any) => {
+                    if (hl && typeof hl === 'string') {
+                        if (hl.includes('...')) {
+                            const parts = hl.split('...').map((p: any) => p.trim());
+                            const pattern = parts.map(escapeRegExp).join('.*?');
+                            return new RegExp(pattern, 'i').test(actualText);
+                        }
+                        return new RegExp(`\\b${escapeRegExp(hl)}\\b`, 'i').test(actualText) ||
+                               actualText.toLowerCase().includes(hl.toLowerCase());
+                    }
+                    return false;
+                }) || actualText) as string;
+
+                const hasGuide = vocabGuide && Array.isArray(vocabGuide.unit_vocabulary);
+                const matchedVocab = hasGuide ? findVocabItem(vocabGuide.unit_vocabulary, h, actualText) : null;
+
+                return (
+                    <span 
+                        key={idx} 
+                        className={`pd-highlight ${matchedVocab ? 'clickable' : ''}`}
+                        onClick={(e) => {
+                            if (matchedVocab) {
+                                e.stopPropagation();
+                                setActiveWordDetail(matchedVocab);
+                            }
+                        }}
+                    >
+                        {actualText}
+                    </span>
+                );
+            }
+            return part;
+        });
+    }, [vocabGuide]);
 
     // Sections list with safe IDs
     const sections = (data.sections || []).map((sec: any, idx: number) => ({
@@ -851,6 +974,73 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                         )}
                     </div>
                 </div>
+                {activeWordDetail && (
+                    <div className="pd-modal-overlay" onClick={() => {
+                        setActiveWordDetail(null);
+                        setPlayingWordAudio(false);
+                    }}>
+                        <div className="pd-word-detail-modal" onClick={e => e.stopPropagation()}>
+                            <button className="pd-word-modal-close" onClick={() => {
+                                setActiveWordDetail(null);
+                                setPlayingWordAudio(false);
+                            }}>✕</button>
+                            
+                            <div className="pd-word-detail-header">
+                                <h3 className="pd-word-detail-title">
+                                    {activeWordDetail.word}
+                                </h3>
+                                {activeWordDetail.ipa && (
+                                    <span className="pd-word-detail-ipa">[{activeWordDetail.ipa}]</span>
+                                )}
+                            </div>
+                            
+                            <div className="pd-word-detail-body">
+                                <div className="pd-word-detail-row">
+                                    <span className="pd-word-detail-label">🇨🇳 中文释义</span>
+                                    <span className="pd-word-detail-val font-chinese">{activeWordDetail.meaning}</span>
+                                </div>
+                                
+                                {activeWordDetail.syllable_type && (
+                                    <div className="pd-word-detail-row">
+                                        <span className="pd-word-detail-label">🎵 音节类型</span>
+                                        <span className="pd-word-detail-val">{activeWordDetail.syllable_type}</span>
+                                    </div>
+                                )}
+                                
+                                {activeWordDetail.comparison && (
+                                    <div className="pd-word-detail-row">
+                                        <span className="pd-word-detail-label">🔍 易混辨析</span>
+                                        <span className="pd-word-detail-val">{activeWordDetail.comparison}</span>
+                                    </div>
+                                )}
+
+                                {activeWordDetail.context_sentence && (
+                                    <div className="pd-word-detail-context">
+                                        <span className="pd-word-detail-label">🔊 例句朗读</span>
+                                        <div className="pd-word-detail-sentence-box">
+                                            <button 
+                                                className={`pd-word-play-btn ${playingWordAudio ? 'playing' : ''}`}
+                                                onClick={() => playWordSentenceAudio(activeWordDetail.context_sentence)}
+                                            >
+                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                            </button>
+                                            <span className="pd-word-detail-sentence">"{activeWordDetail.context_sentence}"</span>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {(activeWordDetail.memorization_hook || activeWordDetail.hint) && (
+                                    <div className="pd-word-detail-row hook">
+                                        <span className="pd-word-detail-label">🧠 核心记忆法</span>
+                                        <span className="pd-word-detail-val font-chinese">
+                                            {activeWordDetail.memorization_hook || activeWordDetail.hint}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )
