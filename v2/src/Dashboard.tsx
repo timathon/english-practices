@@ -115,7 +115,7 @@ export function useHorizontalScrollRef() {
 }
 
 const PRACTICE_TYPE_ICONS: Record<string, string> = {
-  'Vocab Master': '📚',
+  'Vocab Master': '🔥',
   'Spelling Hero': '✏️',
   'Sentence Architect': '🏗️',
   'Recall Map': '🗺️',
@@ -450,8 +450,8 @@ function BookSection({ tb, units, records, initialUnit, initialPage }: { tb: str
               const getVocabPriority = (type: string) => {
                 const t = type.toLowerCase();
                 if (t.includes('vocab-guide')) return 1;
-                if (t.includes('spelling-hero')) return 2;
-                if (t.includes('vocab-master')) return 3;
+                if (t.includes('vocab-master')) return 2;
+                if (t.includes('spelling-hero')) return 3;
                 return 4;
               };
               const vocabItems = items
@@ -505,6 +505,8 @@ function BookSection({ tb, units, records, initialUnit, initialPage }: { tb: str
 
               const getIcon = (typeStr: string) => {
                 const t = typeStr.toLowerCase();
+                if (t.includes('vocab-guide')) return '📚';
+                if (t.includes('vocab-master')) return '🔥';
                 if (t.includes('vocab')) return '📚';
                 if (t.includes('spelling')) return '✏️';
                 if (t.includes('sentence')) return '🏗️';
@@ -958,7 +960,7 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.11-10:08</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.11-12:16</span></p>
         </div>
       </div>
 
