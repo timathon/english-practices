@@ -242,6 +242,7 @@ This document defines the rules for extracting and converting textbook data into
   - The `highlight` property should contain a comma-separated list of the exact matching words/phrases as they appear in the sentence, corresponding to the vocabulary listed in the unit/module/lesson's `vocab-guide.json`.
 - **Options and Answer**:
   - Each sentence must have exactly 3 translation options (`options` array): 1 correct and 2 wrong distractors containing subtle traps (e.g., vocabulary swaps, tense errors, negation flips).
+  - **Avoid Lazy/Obvious Traps**: Do NOT generate lazy, unnatural, or grammatically incorrect Chinese traps, such as simply prepending "不" to nouns, adjectives, names, pronouns, or adverbial phrases (e.g., "不印度尼西亚...", "不我们...", "不如果你..."), or using silly typos like "大时" instead of "小时". Distractors must be realistic, natural Chinese sentences.
   - Parenthetical explanations (e.g., `（时态错误 - ...）`) must **NOT** be included in either the `options` strings or a separate explanations field (clean translation strings only).
   - Shuffled index of the correct translation must be specified in the `answer` field (0, 1, or 2).
 - **Structure**:
@@ -269,6 +270,10 @@ vYYYY.MM.DD-HH:MM
 ```
 
 Update it to the **current local date and time** at the moment of the commit (e.g., `v2025.05.21-23:10`). This allows verifying whether the Cloudflare deployment is serving the latest build.
+
+> [!NOTE]
+> If only data JSON files under the `data/` directory are modified, there is no need to update the version badge, rebuild, or redeploy the client app, as the V2 application fetches all exercise content dynamically from the seeded database.
+
 
 ## V2 Deployment
 
