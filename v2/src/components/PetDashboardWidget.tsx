@@ -103,6 +103,10 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
   };
 
   const handleBuyGameRounds = () => {
+    if ((petState.food || 0) < 50 || (petState.love || 0) < 50) {
+      showSpeech(`Your pet needs at least 50% health (food) and 50% love to buy game rounds! 🍎❤️`);
+      return;
+    }
     if ((petState.goldCoins || 0) < 1) {
       showSpeech(`You need at least 1 🪙 to buy game rounds!`);
       return;
@@ -705,48 +709,58 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
       )}
 
       {/* ── Buy Game Modal ── */}
-      {showBuyGameModal && (
-        <div className="pet-help-modal-overlay" onClick={() => setShowBuyGameModal(false)}>
-          <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-            <div className="pet-help-modal-header">
-              <h4 className="pet-help-modal-title">🎮 Schulte Table Game</h4>
-              <button className="pet-help-modal-close" onClick={() => setShowBuyGameModal(false)}>×</button>
-            </div>
-            <div className="pet-help-modal-body" style={{ textAlign: 'center', padding: '20px' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🧩</div>
-              <p style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>No game rounds left!</p>
-              <p style={{ margin: '0 0 16px 0', color: 'var(--text)', fontSize: '0.9rem' }}>
-                Spend <strong>1 Gold Coin</strong> to buy <strong>3 play rounds</strong> of Schulte Table?
-                <br />
-                (花费 <strong>1 金币</strong> 购买 <strong>3 局</strong> 舒尔特方格游戏场次？)
-              </p>
-              <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '20px' }}>
-                <span>🪙 Coins: <strong>{petState.goldCoins || 0}</strong></span>
-                <span>🎮 Rounds: <strong>{petState.schulteRoundsLeft || 0}</strong></span>
+      {showBuyGameModal && (() => {
+        const cannotBuy = (petState.food || 0) < 50 || (petState.love || 0) < 50;
+        return (
+          <div className="pet-help-modal-overlay" onClick={() => setShowBuyGameModal(false)}>
+            <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+              <div className="pet-help-modal-header">
+                <h4 className="pet-help-modal-title">🎮 Schulte Table Game</h4>
+                <button className="pet-help-modal-close" onClick={() => setShowBuyGameModal(false)}>×</button>
               </div>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                <button
-                  type="button"
-                  className="pet-widget-btn feed-btn"
-                  onClick={handleBuyGameRounds}
-                  disabled={(petState.goldCoins || 0) < 1}
-                  style={{ padding: '8px 20px', minWidth: '100px' }}
-                >
-                  Buy & Play (购买并玩)
-                </button>
-                <button
-                  type="button"
-                  className="pet-widget-btn pet-btn"
-                  onClick={() => setShowBuyGameModal(false)}
-                  style={{ padding: '8px 20px', minWidth: '100px' }}
-                >
-                  Cancel (取消)
-                </button>
+              <div className="pet-help-modal-body" style={{ textAlign: 'center', padding: '20px' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🧩</div>
+                <p style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>No game rounds left!</p>
+                <p style={{ margin: '0 0 16px 0', color: 'var(--text)', fontSize: '0.9rem' }}>
+                  Spend <strong>1 Gold Coin</strong> to buy <strong>3 play rounds</strong> of Schulte Table?
+                  <br />
+                  (花费 <strong>1 金币</strong> 购买 <strong>3 局</strong> 舒尔特方格游戏场次？)
+                </p>
+                {cannotBuy && (
+                  <div style={{ color: 'var(--accent, #d73a49)', fontSize: '0.85rem', marginBottom: '16px', background: 'rgba(215, 58, 73, 0.08)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(215, 58, 73, 0.2)', textAlign: 'left' }}>
+                    ⚠️ Your pet needs at least 50% health (food) and 50% love to buy game rounds! Feed and pet them first.
+                    <br />
+                    (宠物需要至少 50% 饱食度和 50% 喜爱度才能购买游戏场次！)
+                  </div>
+                )}
+                <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '20px' }}>
+                  <span>🪙 Coins: <strong>{petState.goldCoins || 0}</strong></span>
+                  <span>🎮 Rounds: <strong>{petState.schulteRoundsLeft || 0}</strong></span>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    className="pet-widget-btn feed-btn"
+                    onClick={handleBuyGameRounds}
+                    disabled={cannotBuy || (petState.goldCoins || 0) < 1}
+                    style={{ padding: '8px 20px', minWidth: '100px', ...(cannotBuy ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
+                  >
+                    Buy & Play (购买并玩)
+                  </button>
+                  <button
+                    type="button"
+                    className="pet-widget-btn pet-btn"
+                    onClick={() => setShowBuyGameModal(false)}
+                    style={{ padding: '8px 20px', minWidth: '100px' }}
+                  >
+                    Cancel (取消)
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

@@ -448,6 +448,7 @@ export const petService = {
 
   buySchulteRounds(): boolean {
     const state = this.getPetState();
+    if ((state.food || 0) < 50 || (state.love || 0) < 50) return false;
     if ((state.goldCoins || 0) < 1) return false;
 
     state.goldCoins = (state.goldCoins || 0) - 1;

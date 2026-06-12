@@ -164,6 +164,11 @@ export function SchulteGame() {
     setErrorMsg(null);
     setUnlockedMsg(null);
     
+    if ((petState.food || 0) < 50 || (petState.love || 0) < 50) {
+      setErrorMsg('Your pet must have at least 50% health (food) and 50% love to buy game rounds! 🍎❤️');
+      return;
+    }
+
     if ((petState.goldCoins || 0) < 1) {
       setErrorMsg('Not enough Gold Coins! Answer questions in lessons to earn coins. 🪙');
       return;
@@ -231,15 +236,30 @@ export function SchulteGame() {
           {unlockedMsg && <div className="schulte-alert success">{unlockedMsg}</div>}
 
           {/* Shop unlocking card */}
-          {((petState.schulteRoundsLeft || 0) <= 0 && !isPlaying) && (
-            <div className="schulte-shop-card">
-              <h3 className="schulte-shop-title">🎮 Schulte Table Shop</h3>
-              <p className="schulte-shop-text">You have run out of rounds. Unlock more play rounds to practice and top the global leaderboards!</p>
-              <button className="schulte-buy-btn" onClick={handleUnlockRounds}>
-                Spend 1 Gold Coin (🪙) for 3 Rounds
-              </button>
-            </div>
-          )}
+          {((petState.schulteRoundsLeft || 0) <= 0 && !isPlaying) && (() => {
+            const cannotBuy = (petState.food || 0) < 50 || (petState.love || 0) < 50;
+            return (
+              <div className="schulte-shop-card">
+                <h3 className="schulte-shop-title">🎮 Schulte Table Shop</h3>
+                <p className="schulte-shop-text">You have run out of rounds. Unlock more play rounds to practice and top the global leaderboards!</p>
+                {cannotBuy && (
+                  <div style={{ color: '#d73a49', fontSize: '0.85rem', marginBottom: '16px', background: 'rgba(215, 58, 73, 0.08)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(215, 58, 73, 0.2)', textAlign: 'left' }}>
+                    ⚠️ Your pet needs at least 50% health (food) and 50% love to buy game rounds! Feed and pet them first.
+                    <br />
+                    (宠物需要至少 50% 饱食度和 50% 喜爱度才能购买游戏场次！)
+                  </div>
+                )}
+                <button 
+                  className="schulte-buy-btn" 
+                  onClick={handleUnlockRounds}
+                  disabled={cannotBuy}
+                  style={cannotBuy ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                >
+                  Spend 1 Gold Coin (🪙) for 3 Rounds
+                </button>
+              </div>
+            );
+          })()}
 
           {/* Settings & Game Board */}
           {!isPlaying && !gameFinished && (
