@@ -127,7 +127,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
     audioCache.preloadAndSync(`${PUBLIC_URL_BASE}/ep/sfx/error.mp3`);
   }, [initialMistakes]);
 
-  const loadMistake = (currentQueue: Mistake[], index: number) => {
+  const loadMistake = useCallback((currentQueue: Mistake[], index: number) => {
     if (index >= currentQueue.length) {
       setCompleted(true);
       return;
@@ -168,7 +168,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
       setShuffledChunkOpts(chunks.map((c: any) => shuffle([...c.options])));
       countdownTimer.reset(15);
     }
-  };
+  }, [countdownTimer]);
 
   const handleOptionClick = (originalIdx: number) => {
     if (locked) return;
@@ -232,7 +232,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
     }
   }, [currentMistake, locked, selectedOption, userSelection, spellingSelection, userId, countdownTimer]);
 
-  const handleContinue = () => {
+  const handleContinue = useCallback(() => {
     if (!currentMistake) return;
 
     let nextQueue = [...queue];
@@ -246,7 +246,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
     const nextIdx = activeIdx + 1;
     setActiveIdx(nextIdx);
     loadMistake(nextQueue, nextIdx);
-  };
+  }, [currentMistake, queue, isCorrect, activeIdx, loadMistake]);
 
   // Sentence Architect functions
   const handleSelectWord = (word: PoolWord) => {
@@ -289,6 +289,34 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
       mistakeService.syncToServer(userId);
     };
   }, [userId]);
+
+  // Keyboard Shortcuts for Enter key to check answer and continue
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (completed || !currentMistake) return;
+
+      const isMc = ['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s'].includes(currentMistake.practiceType);
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!locked) {
+          const isReady = !(
+            (isMc && selectedOption === null) ||
+            (currentMistake.practiceType === 'sentence-architect' && userSelection.length === 0) ||
+            (currentMistake.practiceType === 'spelling-hero' && spellingSelection.some(v => v === null))
+          );
+          if (isReady) {
+            handleCheckAnswer();
+          }
+        } else if (!continueDisabled) {
+          handleContinue();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [completed, currentMistake, locked, selectedOption, userSelection, spellingSelection, continueDisabled, handleCheckAnswer, handleContinue]);
 
   if (completed) {
     return (
