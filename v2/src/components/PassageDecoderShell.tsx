@@ -554,14 +554,11 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!activeSection || completed || historyModal) return;
 
-            if (e.key === ' ') {
+            if (e.key === 'Enter') {
                 e.preventDefault();
                 if (!showOptions) {
                     revealOptions();
-                }
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                if (showOptions && locked) {
+                } else if (showOptions && locked) {
                     nextQuestion();
                 }
             } else if (showOptions && !locked) {
@@ -910,7 +907,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                 <p className="pd-think-prompt">想一想这句话的中文翻译...</p>
                                 <p className="pd-think-sub">Think about the translation in your head</p>
                                 <button className="pd-reveal-btn" onClick={revealOptions}>
-                                    Show Options <span className="pd-shortcut-tag">Space</span>
+                                    Show Options <span className="pd-shortcut-tag">Enter</span>
                                 </button>
                             </div>
                         ) : (
