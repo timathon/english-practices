@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import './RecallMapShell.css'
 
 interface Node {
@@ -17,9 +18,11 @@ interface RecallMapShellProps {
     tree: Node
   }
   practiceId: string
+  textbook: string
+  unit: string
 }
 
-export function RecallMapShell({ data }: Omit<RecallMapShellProps, 'practiceId'>) {
+export function RecallMapShell({ data, textbook, unit }: Omit<RecallMapShellProps, 'practiceId'>) {
   const [treeData, setTreeData] = useState<Node>(() => JSON.parse(JSON.stringify(data.tree)))
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [actionSteps, setActionSteps] = useState<(() => void)[]>([])
@@ -327,7 +330,7 @@ export function RecallMapShell({ data }: Omit<RecallMapShellProps, 'practiceId'>
     <div className="rm-shell">
       <header className="rm-header">
         <div className="rm-header-left">
-          <button className="rm-back-btn" onClick={() => window.history.back()}>🏠</button>
+          <Link to="/dashboard" state={{ textbook, unit }} className="rm-back-btn">🏠</Link>
           <div className="rm-titles">
             <h1>Recall Map: {data.part}</h1>
             <p>{data.level}</p>

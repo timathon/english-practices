@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import md5 from 'md5'
+import { Link } from 'react-router-dom'
 import { audioCache } from '../lib/audioCache'
 import { petService } from '../lib/petService'
 import './MindMapShell.css'
@@ -30,10 +31,11 @@ interface MindMapShellProps {
     writingPrompt?: string
   }
   textbook: string
+  unit: string
   isWritingMap: boolean
 }
 
-export function MindMapShell({ data, textbook, isWritingMap }: MindMapShellProps) {
+export function MindMapShell({ data, textbook, unit, isWritingMap }: MindMapShellProps) {
   const [treeData, setTreeData] = useState<Node>(() => JSON.parse(JSON.stringify(data.tree)))
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [actionSteps, setActionSteps] = useState<(() => void)[]>([])
@@ -797,7 +799,7 @@ export function MindMapShell({ data, textbook, isWritingMap }: MindMapShellProps
       {/* Header */}
       <header className="mm-header">
         <div className="mm-header-left">
-          <button className="mm-home-link" onClick={() => window.history.back()} title="Back (返回)">🏠</button>
+          <Link to="/dashboard" state={{ textbook, unit }} className="mm-home-link" title="Back (返回)">🏠</Link>
           <div className="mm-header-titles">
             <h1>
               {isWritingMap ? "Writing Map" : "Text Navigator"}: {data.part} 

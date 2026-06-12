@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import './VocabGuideShell.css'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
@@ -10,7 +11,7 @@ const getAudioUrl = (sentence: string, book: string) => {
     return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
 }
 
-export function VocabGuideShell({ data, practiceId, textbook }: any) {
+export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [vocab, setVocab] = useState<any[]>([])
     const [isAlphabetical, setIsAlphabetical] = useState(false)
     const [hideCN, setHideCN] = useState(true)
@@ -158,7 +159,7 @@ export function VocabGuideShell({ data, practiceId, textbook }: any) {
         <div className="vg-shell" ref={shellRef}>
             <header className="vg-header-main">
                 <div className="vg-header-top">
-                    <button className="vg-back-btn" onClick={() => window.history.back()}>🏠</button>
+                    <Link to="/dashboard" state={{ textbook, unit }} className="vg-back-btn">🏠</Link>
                     <h1>Vocabulary Guide</h1>
                 </div>
                 <h2>{data.level}</h2>

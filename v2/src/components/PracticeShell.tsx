@@ -50,11 +50,11 @@ export function PracticeShell() {
     }
 
     if (cleanType === 'recall-map') {
-        return <RecallMapShell data={practice.content} />
+        return <RecallMapShell data={practice.content} textbook={practice.textbook} unit={practice.unit} />
     }
 
     if (cleanType === 'vocab-guide') {
-        return <VocabGuideShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} />
+        return <VocabGuideShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} unit={practice.unit} />
     }
 
     if (cleanType === 'spelling-hero') {
@@ -76,7 +76,7 @@ export function PracticeShell() {
 
     if (cleanType.startsWith('text-navigator') || cleanType.startsWith('writing-map')) {
         const isWritingMap = cleanType.startsWith('writing-map')
-        return <MindMapShell data={practice.content} textbook={practice.textbook} isWritingMap={isWritingMap} />
+        return <MindMapShell data={practice.content} textbook={practice.textbook} unit={practice.unit} isWritingMap={isWritingMap} />
     }
     
     return (
