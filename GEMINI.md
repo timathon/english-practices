@@ -266,10 +266,10 @@ This document defines the rules for extracting and converting textbook data into
 Whenever making a git commit that includes changes to files under the `v2/` or `api/` directories (excluding auto-generated files like `v2/public/textbooks.json`), **update the version badge** in the Dashboard hero subtitle before committing. The badge is a `<span>` inside the `db-subtitle` paragraph with the format:
 
 ```
-vYYYY.MM.DD-HH:MM
+vYYMMDD-HHMM
 ```
 
-Update it to the **current local date and time** at the moment of the commit (e.g., `v2025.05.21-23:10`). This allows verifying whether the Cloudflare deployment is serving the latest build.
+Update it to the **current local date and time** at the moment of the commit (e.g., `v260521-2310`). This allows verifying whether the Cloudflare deployment is serving the latest build.
 
 > [!NOTE]
 > If only data JSON files under the `data/` directory are modified, there is no need to update the version badge, rebuild, or redeploy the client app, as the V2 application fetches all exercise content dynamically from the seeded database.

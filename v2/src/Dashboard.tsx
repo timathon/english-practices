@@ -814,14 +814,14 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
       const cachedRecords = cache.getRecords()
       if (cachedRecords) {
-        setRecords(cachedRecords)
+        setRecords(cachedRecords.filter((r: any) => !r.unit.startsWith('game-')))
       } else {
         fetch(API_URL + '/api/records', { credentials: 'include' })
           .then(res => res.json())
           .then(data => {
             if (Array.isArray(data)) {
               cache.setRecords(data)
-              setRecords(data)
+              setRecords(data.filter((r: any) => !r.unit.startsWith('game-')))
             }
           })
           .catch(console.error)
@@ -1040,7 +1040,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.12-19:05</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v260612-2130</span></p>
         </div>
       </div>
 
