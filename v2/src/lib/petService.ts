@@ -68,7 +68,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
 ];
 
 // ── Level Thresholds (20 levels) ─────────────────────────────────
-// Level 1 = 0 XP, Level 2 = 80 XP, ... Level 20 = 9500 XP
+// Level 1 = 0 XP, Level 2 = 80 XP, ... Level 20 = 15000 XP
 const LEVEL_THRESHOLDS = [
   0,     // L1
   80,    // L2
@@ -83,13 +83,13 @@ const LEVEL_THRESHOLDS = [
   3700,  // L11
   4550,  // L12
   5500,  // L13
-  6000,  // L14
-  6600,  // L15
-  7300,  // L16
-  8000,  // L17
-  8500,  // L18
-  9000,  // L19
-  9500,  // L20
+  6550,  // L14
+  7700,  // L15
+  8950,  // L16
+  10300, // L17
+  11750, // L18
+  13300, // L19
+  15000, // L20
 ];
 
 const MAX_LEVEL = LEVEL_THRESHOLDS.length; // 20
@@ -362,14 +362,14 @@ export const petService = {
     state.love = Math.min(100, Math.round((state.love + 1.0) * 10) / 10);
 
     // -- XP calculation --
-    const baseXP = 10;
-    const streakBonus = Math.min(state.streak * 2, 40); // cap at 40 bonus
+    const baseXP = 3;
+    const streakBonus = Math.min(Math.floor(state.streak / 2), 5); // cap at 5 bonus
     let xpGain = baseXP + streakBonus;
 
     // Daily goal completion bonus (one-time per day)
     const dailyGoal = DAILY_GOAL_VALUES[state.dailyGoalPreset];
     if (state.dailyProgress === dailyGoal) {
-      xpGain += 50;
+      xpGain += 15;
       state.dailyGoalsCompleted += 1;
     }
 

@@ -480,8 +480,8 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                         <h5>XP & Levels (经验与等级)</h5>
                       </div>
                       <div className="pet-help-card-body">
-                        <p className="help-en">Earn base <strong>10 XP</strong> per correct answer. Daily streak adds up to <strong>+40 XP</strong> per answer. Completing the daily goal awards a <strong>+50 XP</strong> bonus.</p>
-                        <p className="help-cn">每答对一题获得 <strong>10</strong> 基础经验值，每日连续练习奖励最高可达单题 <strong>+40 经验</strong>。完成每日目标额外赠送 <strong>+50 经验</strong>。</p>
+                        <p className="help-en">Earn base <strong>3 XP</strong> per correct answer. Daily streak adds up to <strong>+5 XP</strong> per answer. Completing the daily goal awards a <strong>+15 XP</strong> bonus.</p>
+                        <p className="help-cn">每答对一题获得 <strong>3</strong> 基础经验值，每日连续练习奖励最高可达单题 <strong>+5 经验</strong>。完成每日目标额外赠送 <strong>+15 经验</strong>。</p>
                       </div>
                     </div>
 
