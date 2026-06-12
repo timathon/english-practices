@@ -646,25 +646,27 @@ export function MindMapShell({ data, textbook, unit, isWritingMap }: MindMapShel
     let displayedText: React.ReactNode = node.text
     if (state === 'full' && node.highlight) {
       const highlights = Array.from(new Set(node.highlight.split(',').map(s => s.trim()).filter(Boolean)))
-      let textWithHighlights = node.text
 
       // Escape regex helper
       const escapeRegExp = (string: string) => {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       }
 
-      // Render highlight parts
-      highlights.forEach(h => {
-        if (h.includes('...')) {
-          const parts = h.split('...').map(p => p.trim())
-          const pattern = parts.map(escapeRegExp).join('.*?')
-          const regex = new RegExp(`(${pattern})`, 'gi')
-          textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||')
+      // Sort highlights by length descending to match longer phrases first
+      const sortedHighlights = [...highlights].sort((a: any, b: any) => (b as string).length - (a as string).length)
+
+      const patterns = sortedHighlights.map((h: any) => {
+        const hStr = h as string
+        if (hStr.includes('...')) {
+          const parts = hStr.split('...').map(p => p.trim())
+          return parts.map(escapeRegExp).join('.*?')
         } else {
-          const regex = new RegExp(`(\\b${escapeRegExp(h)}\\b)`, 'gi')
-          textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||')
+          return `\\b${escapeRegExp(hStr)}\\b`
         }
       })
+
+      const combinedRegex = new RegExp(`(${patterns.join('|')})`, 'gi')
+      const textWithHighlights = node.text.replace(combinedRegex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||')
 
       // Convert back to JSX array
       const textParts = textWithHighlights.split(/(\|\|HIGHLIGHT\|\|.*?\|\|ENDHIGHLIGHT\|\|)/g)

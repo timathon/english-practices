@@ -116,23 +116,26 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         if (!sentence.highlight) return sentence.en;
 
         const highlights = Array.from(new Set(sentence.highlight.split(',').map((s: string) => s.trim()).filter(Boolean)));
-        let textWithHighlights = sentence.en;
-
+        
         const escapeRegExp = (string: string) => {
             return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         };
 
-        highlights.forEach((h: any) => {
-            if (h.includes('...')) {
-                const parts = h.split('...').map((p: any) => p.trim());
-                const pattern = parts.map(escapeRegExp).join('.*?');
-                const regex = new RegExp(`(${pattern})`, 'gi');
-                textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
+        // Sort highlights by length descending to match longer phrases first
+        const sortedHighlights = [...highlights].sort((a: any, b: any) => (b as string).length - (a as string).length);
+
+        const patterns = sortedHighlights.map((h: any) => {
+            const hStr = h as string;
+            if (hStr.includes('...')) {
+                const parts = hStr.split('...').map((p: any) => p.trim());
+                return parts.map(escapeRegExp).join('.*?');
             } else {
-                const regex = new RegExp(`(\\b${escapeRegExp(h)}\\b)`, 'gi');
-                textWithHighlights = textWithHighlights.replace(regex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
+                return `\\b${escapeRegExp(hStr)}\\b`;
             }
         });
+
+        const combinedRegex = new RegExp(`(${patterns.join('|')})`, 'gi');
+        const textWithHighlights = sentence.en.replace(combinedRegex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
 
         const textParts = textWithHighlights.split(/(\|\|HIGHLIGHT\|\|.*?\|\|ENDHIGHLIGHT\|\|)/g);
         return textParts.map((part: string, idx: number) => {
