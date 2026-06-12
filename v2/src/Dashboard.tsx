@@ -773,9 +773,25 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const [activeMistakeBook, setActiveMistakeBook] = useState<string>('')
   const [activeMistakeUnit, setActiveMistakeUnit] = useState<string>('')
   const [showResolved, setShowResolved] = useState(false)
+  const [showMistakeAlertModal, setShowMistakeAlertModal] = useState(false)
+  const modalTimeoutRef = useRef<number | null>(null)
 
   const unresolvedMistakes = useMemo(() => mistakes.filter(m => !m.resolved), [mistakes])
   const unresolvedCount = unresolvedMistakes.length
+
+  useEffect(() => {
+    if (unresolvedCount > 20) {
+      setActiveView('mistakes')
+    }
+  }, [unresolvedCount])
+
+  useEffect(() => {
+    return () => {
+      if (modalTimeoutRef.current) {
+        clearTimeout(modalTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const getDayLabel = (offset: number) => {
     if (offset === 0) return 'Today'
@@ -1040,7 +1056,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v260612-2258</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v260612-2304</span></p>
         </div>
       </div>
 
@@ -1225,8 +1241,20 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         <>
           <div className="db-view-tabs">
             <button
-              className={`db-view-tab ${activeView === 'textbooks' ? 'active' : ''}`}
-              onClick={() => setActiveView('textbooks')}
+              className={`db-view-tab ${activeView === 'textbooks' ? 'active' : ''} ${unresolvedCount > 20 ? 'disabled' : ''}`}
+              onClick={() => {
+                if (unresolvedCount > 20) {
+                  if (modalTimeoutRef.current) {
+                    clearTimeout(modalTimeoutRef.current);
+                  }
+                  setShowMistakeAlertModal(true);
+                  modalTimeoutRef.current = window.setTimeout(() => {
+                    setShowMistakeAlertModal(false);
+                  }, 5000);
+                } else {
+                  setActiveView('textbooks');
+                }
+              }}
             >
               <span className="db-title-grid">
                 <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
@@ -1441,6 +1469,54 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
             <p className="db-admin-sub">Manage student accounts and assignments.</p>
           </div>
           <Link to="/admin/manage-users" className="db-admin-btn">Manage Students</Link>
+        </div>
+      )}
+
+      {showMistakeAlertModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          padding: '20px',
+          boxSizing: 'border-box'
+        }}
+        onClick={() => setShowMistakeAlertModal(false)}
+        >
+          <div style={{
+            background: 'var(--card-bg, #1a1b26)',
+            borderRadius: '16px',
+            border: '1px solid var(--accent, #aa3bff)',
+            width: '100%',
+            maxWidth: '400px',
+            padding: '30px',
+            boxSizing: 'border-box',
+            textAlign: 'center',
+            boxShadow: '0 10px 40px rgba(170, 59, 255, 0.25)',
+            color: 'var(--text-h, #fff)'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⚠️</div>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '1.25rem', color: 'var(--accent, #aa3bff)', fontWeight: 'bold' }}>
+              {showChinese ? '错题太多啦！' : 'Too many mistakes to review!'}
+            </h3>
+            <p style={{ margin: '0 0 8px 0', color: 'var(--text)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+              {showChinese 
+                ? '你的错题本里有超过 20 道错题。请先消灭错题，使其少于 20 道，才能解锁练习库！' 
+                : 'You have more than 20 items in your Mistake Book. Please resolve them to less than 20 to unlock the Practice Library!'}
+            </p>
+            <p style={{ margin: '16px 0 0 0', color: 'var(--text-m, #888)', fontSize: '0.8rem', fontStyle: 'italic' }}>
+              {showChinese ? '(此窗口将在 5 秒后自动关闭)' : '(This window will close automatically in 5 seconds)'}
+            </p>
+          </div>
         </div>
       )}
     </div>
