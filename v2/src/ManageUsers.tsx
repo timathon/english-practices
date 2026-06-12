@@ -109,7 +109,7 @@ export function ManageUsers() {
       const res = await fetch(API_URL + `/api/admin/users/${user.id}/records`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
-        setSelectedUserRecords(data)
+        setSelectedUserRecords(data.filter((r: any) => !r.unit.startsWith('game-')))
       } else {
         alert("Failed to fetch user stats")
       }
