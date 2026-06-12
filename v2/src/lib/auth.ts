@@ -15,6 +15,9 @@ const getBaseURL = () => {
 
 export const API_URL = getBaseURL();
 
+// Maximum number of simultaneous logged-in users stored on this device
+const MAX_LOGGED_IN_USERS = 3;
+
 // Store a reference to the browser's original fetch
 const originalFetch = window.fetch;
 
@@ -78,6 +81,12 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
                         role: user.role,
                         token: token
                     });
+
+                    // Enforce max users: keep only the most recent entries
+                    if (loggedInUsers.length > MAX_LOGGED_IN_USERS) {
+                        loggedInUsers = loggedInUsers.slice(-MAX_LOGGED_IN_USERS);
+                    }
+
                     localStorage.setItem('logged_in_users', JSON.stringify(loggedInUsers));
                 }
             } catch (e) {

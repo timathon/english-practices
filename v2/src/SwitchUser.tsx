@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { useSession, signOut, authClient } from './lib/auth'
+import { useSession, signOut, authClient, API_URL } from './lib/auth'
 
 interface LoggedInUser {
   userId: string;
@@ -14,28 +14,91 @@ export function SwitchUser() {
   const { data: session } = useSession()
   const [users, setUsers] = useState<LoggedInUser[]>([])
   const [switchingTo, setSwitchingTo] = useState<string | null>(null)
+  const [invalidTokens, setInvalidTokens] = useState<Set<string>>(new Set())
+  const [validating, setValidating] = useState(true)
   const activeToken = localStorage.getItem('active_session_token')
+  // Track invalid tokens to clean up when the user navigates away
+  const invalidTokensRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
+    let parsedUsers: LoggedInUser[] = []
     try {
       const stored = localStorage.getItem('logged_in_users')
       if (stored) {
         const parsed = JSON.parse(stored)
         if (Array.isArray(parsed)) {
+          parsedUsers = parsed
           setUsers(parsed)
         }
       }
     } catch (e) {
       console.error('Failed to read logged_in_users', e)
     }
+
+    // Validate tokens of non-active users
+    const othersToValidate = parsedUsers.filter(
+      u => u.token !== activeToken && u.userId !== session?.user?.id
+    )
+
+    if (othersToValidate.length === 0) {
+      setValidating(false)
+      return
+    }
+
+    let cancelled = false
+    const validate = async () => {
+      const dead = new Set<string>()
+      await Promise.all(
+        othersToValidate.map(async (u) => {
+          try {
+            const res = await fetch(API_URL + '/api/me', {
+              credentials: 'include',
+              headers: { 'Authorization': `Bearer ${u.token}` }
+            })
+            if (!res.ok) dead.add(u.token)
+          } catch {
+            dead.add(u.token)
+          }
+        })
+      )
+      if (!cancelled) {
+        setInvalidTokens(dead)
+        invalidTokensRef.current = dead
+        setValidating(false)
+      }
+    }
+    validate()
+    return () => { cancelled = true }
   }, [session])
 
+  // Clean up invalid tokens from localStorage when unmounting (navigating away)
+  useEffect(() => {
+    return () => {
+      const dead = invalidTokensRef.current
+      if (dead.size > 0) {
+        try {
+          const stored = localStorage.getItem('logged_in_users')
+          if (stored) {
+            const parsed = JSON.parse(stored)
+            if (Array.isArray(parsed)) {
+              const cleaned = parsed.filter((u: any) => !dead.has(u.token))
+              localStorage.setItem('logged_in_users', JSON.stringify(cleaned))
+            }
+          }
+        } catch (e) {
+          console.error('Failed to clean up invalid users', e)
+        }
+      }
+    }
+  }, [])
+
   const handleSwitch = async (token: string) => {
+    // Don't allow switching to an invalid/expired session
+    if (invalidTokens.has(token)) return
+
+    const targetUser = users.find(u => u.token === token)
+    setSwitchingTo(targetUser ? targetUser.name : 'another account')
     try {
-      const targetUser = users.find(u => u.token === token)
-      setSwitchingTo(targetUser ? targetUser.name : 'another account')
-      // Use better-auth multi-session plugin to set this session token as active.
-      // This will call the server to update the HttpOnly session cookie automatically!
       await authClient.multiSession.setActive({
         sessionToken: token
       })
@@ -45,7 +108,6 @@ export function SwitchUser() {
     } catch (e) {
       setSwitchingTo(null)
       console.error('Failed to switch active session:', e)
-      alert('Failed to switch account. Please try again.')
     }
   }
 
@@ -55,6 +117,14 @@ export function SwitchUser() {
     if (!window.confirm('Are you sure you want to log out and remove this account from this device?')) {
       return
     }
+
+    // Also remove from invalid set if present
+    setInvalidTokens(prev => {
+      const next = new Set(prev)
+      next.delete(tokenToRemove)
+      invalidTokensRef.current = next
+      return next
+    })
 
     const updatedUsers = users.filter(u => u.token !== tokenToRemove)
     setUsers(updatedUsers)
@@ -130,6 +200,8 @@ export function SwitchUser() {
     return '🎓'
   }
 
+  const otherUsers = users.filter(u => u.token !== activeToken && u.userId !== session?.user?.id)
+
   return (
     <div style={{
       maxWidth: '650px',
@@ -183,33 +255,38 @@ export function SwitchUser() {
         gap: '16px',
         marginBottom: '32px'
       }}>
-        {users.filter(u => u.token !== activeToken && u.userId !== session?.user?.id).map(u => {
-          const isActive = false; // The active user is filtered out, so other items are never active in this list
+        {otherUsers.map(u => {
+          const isExpired = invalidTokens.has(u.token)
+          const isCheckingTokens = validating
           return (
             <div
               key={u.userId}
-              onClick={() => handleSwitch(u.token)}
+              onClick={() => !isExpired && !isCheckingTokens && handleSwitch(u.token)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '16px 20px',
                 borderRadius: '16px',
-                background: isActive ? 'var(--accent-bg, rgba(170, 59, 255, 0.08))' : 'var(--card-bg, #ebf3fb)',
-                border: isActive ? '2px solid var(--accent, #aa3bff)' : '2px solid transparent',
-                cursor: 'pointer',
+                background: isExpired ? 'var(--code-bg, #f0f0f0)' : 'var(--card-bg, #ebf3fb)',
+                border: '2px solid transparent',
+                cursor: isExpired || isCheckingTokens ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
-                boxShadow: isActive ? '0 8px 24px rgba(170, 59, 255, 0.15)' : 'var(--shadow)',
+                boxShadow: 'var(--shadow)',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                opacity: isExpired ? 0.5 : 1,
+                filter: isExpired ? 'grayscale(0.8)' : 'none'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                if (!isActive) e.currentTarget.style.borderColor = 'var(--border)'
+                if (!isExpired && !isCheckingTokens) {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.borderColor = 'var(--border)'
+                }
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)'
-                if (!isActive) e.currentTarget.style.borderColor = 'transparent'
+                e.currentTarget.style.borderColor = 'transparent'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -218,8 +295,8 @@ export function SwitchUser() {
                   width: '48px',
                   height: '48px',
                   borderRadius: '50%',
-                  background: isActive ? 'var(--accent, #aa3bff)' : 'var(--border, #ccc)',
-                  color: isActive ? '#fff' : 'var(--text-h)',
+                  background: 'var(--border, #ccc)',
+                  color: 'var(--text-h)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -234,7 +311,7 @@ export function SwitchUser() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{
                       fontWeight: 600,
-                      color: 'var(--text-h)',
+                      color: isExpired ? 'var(--text)' : 'var(--text-h)',
                       fontSize: '1.05rem'
                     }}>
                       {u.name}
@@ -250,6 +327,18 @@ export function SwitchUser() {
                     }}>
                       {u.role}
                     </span>
+                    {isExpired && (
+                      <span style={{
+                        fontSize: '0.7rem',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        color: '#dc2626',
+                        fontWeight: 'bold'
+                      }}>
+                        SESSION EXPIRED
+                      </span>
+                    )}
                   </div>
                   <span style={{
                     color: 'var(--text)',
@@ -263,23 +352,6 @@ export function SwitchUser() {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {isActive && (
-                  <span style={{
-                    color: 'var(--accent, #aa3bff)',
-                    fontWeight: 'bold',
-                    fontSize: '0.85rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    background: 'var(--bg)',
-                    padding: '4px 10px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--accent-border)'
-                  }}>
-                    ● Active Now
-                  </span>
-                )}
-                
                 <button
                   onClick={(e) => handleRemove(e, u.token)}
                   style={{
@@ -310,34 +382,36 @@ export function SwitchUser() {
           )
         })}
 
-        {/* Add Account Card */}
-        <div
-          onClick={handleAddNew}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            padding: '18px',
-            borderRadius: '16px',
-            border: '2px dashed var(--border)',
-            cursor: 'pointer',
-            background: 'transparent',
-            color: 'var(--tab-active-text, #0366d6)',
-            transition: 'all 0.2s ease',
-            fontWeight: 600
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--tab-active-text)'
-            e.currentTarget.style.background = 'rgba(3, 102, 214, 0.03)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border)'
-            e.currentTarget.style.background = 'transparent'
-          }}
-        >
-          <span style={{ fontSize: '1.25rem' }}>+</span> Log In to Another Account
-        </div>
+        {/* Add Account Card — only show if under the 3-user limit */}
+        {users.length < 3 && (
+          <div
+            onClick={handleAddNew}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              padding: '18px',
+              borderRadius: '16px',
+              border: '2px dashed var(--border)',
+              cursor: 'pointer',
+              background: 'transparent',
+              color: 'var(--tab-active-text, #0366d6)',
+              transition: 'all 0.2s ease',
+              fontWeight: 600
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--tab-active-text)'
+              e.currentTarget.style.background = 'rgba(3, 102, 214, 0.03)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)'
+              e.currentTarget.style.background = 'transparent'
+            }}
+          >
+            <span style={{ fontSize: '1.25rem' }}>+</span> Log In to Another Account
+          </div>
+        )}
       </div>
 
       <div style={{ textAlign: 'center' }}>
