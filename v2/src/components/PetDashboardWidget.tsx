@@ -4,7 +4,7 @@ import { petService, ACHIEVEMENT_DEFS, DAILY_GOAL_VALUES } from '../lib/petServi
 import type { PetState, DailyGoalPreset, AchievementDef } from '../lib/petService';
 import './PetDashboardWidget.css';
 
-export function PetDashboardWidget() {
+export function PetDashboardWidget({ showChinese = false }: { showChinese?: boolean }) {
   const [petState, setPetState] = useState<PetState>(() => petService.getPetState());
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(petState.name);
@@ -171,7 +171,16 @@ export function PetDashboardWidget() {
       {/* Header */}
       <div className="pet-widget-header">
         <div className="pet-widget-header-row">
-          <h3 className="db-stats-title">Companion & Rewards (伙伴与奖励)</h3>
+          <h3 className="db-stats-title">
+            <span className="db-title-grid">
+              <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                Companion & Rewards
+              </span>
+              <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                伙伴与奖励
+              </span>
+            </span>
+          </h3>
           <button
             type="button"
             className="pet-help-btn"

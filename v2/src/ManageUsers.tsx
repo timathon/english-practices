@@ -673,9 +673,9 @@ export function ManageUsers() {
                           });
 
                           const count = dayRecords.length;
-                          const avgScore = count > 0
-                            ? Math.round(dayRecords.reduce((acc, r) => acc + r.score, 0) / count)
-                            : 0;
+                           const avgScore = count > 0
+                             ? Math.round(dayRecords.reduce((acc, r) => acc + (parseFloat(r.score) || 0), 0) / count)
+                             : 0;
 
                           const bookCounts: Record<string, number> = {};
                           dayRecords.forEach(r => {
@@ -698,12 +698,33 @@ export function ManageUsers() {
                             date: dateStr,
                             count,
                             avgScore,
-                            breakdown
+                            breakdown,
+                            columnClickArea: 100
                           });
                         }
                         return stats;
                       };
                       const last7DaysStats: any[] = getLast7DaysStats(selectedUserRecords);
+
+                      const handlePointClick = (...args: any[]) => {
+                        let data: any = null;
+                        let index: number = -1;
+                        if (args[0] && typeof args[0] === 'object' && 'date' in args[0]) {
+                          data = args[0];
+                        }
+                        if (typeof args[1] === 'number') {
+                          index = args[1];
+                        }
+                        if (index === -1 && data) {
+                          index = last7DaysStats.findIndex(s => s.date === data.date);
+                        }
+                        if (index >= 0 && index <= 6) {
+                          const offset = 6 - index;
+                          if (historyOffset !== offset) {
+                            setHistoryOffset(offset);
+                          }
+                        }
+                      };
 
                       const handleChartInteraction = (state: any) => {
                         if (!state) return;
@@ -748,6 +769,11 @@ export function ManageUsers() {
                                   tickLine={false} axisLine={false} dy={6}
                                   tickFormatter={(value, index) => [1, 3, 5].includes(index) ? '' : value}
                                 />
+                                <XAxis
+                                  xAxisId="hidden"
+                                  dataKey="date"
+                                  hide
+                                />
                                 <YAxis
                                   yAxisId="left" stroke="var(--text)" fontSize={11}
                                   tickLine={false} axisLine={false} tickCount={5}
@@ -775,6 +801,12 @@ export function ManageUsers() {
                                   name="Avg Score" stroke="var(--accent)" strokeWidth={2.5}
                                   dot={{ r: 3.5, fill: 'var(--card-bg)', strokeWidth: 2.5 }}
                                   activeDot={{ r: 5.5, fill: 'var(--accent)', strokeWidth: 0 }}
+                                />
+                                <Bar
+                                  xAxisId="hidden"
+                                  yAxisId="right" dataKey="columnClickArea"
+                                  fill="transparent" barSize={40}
+                                  onClick={handlePointClick}
                                 />
                               </ComposedChart>
                             </ResponsiveContainer>

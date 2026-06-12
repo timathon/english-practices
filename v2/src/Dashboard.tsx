@@ -122,6 +122,63 @@ const PRACTICE_TYPE_ICONS: Record<string, string> = {
   'Writing Map': '📝',
 }
 
+const translatePracticeName = (name: string): string => {
+  const norm = name.trim();
+  if (norm.startsWith('Text Navigator')) {
+    if (norm === 'Text Navigator 2 Start Up') return '阅读导航2 Start Up';
+    if (norm === 'Text Navigator 3 Speed Up') return '阅读导航3 Speed Up';
+    return norm.replace('Text Navigator', '阅读导航');
+  }
+  if (norm.startsWith('Writing Map')) {
+    if (norm === 'Writing Map Model 1') return '写作导图 Model 1';
+    if (norm === 'Writing Map Model 2') return '写作导图 Model 2';
+    return norm.replace('Writing Map', '写作导图');
+  }
+  if (norm.startsWith('Passage Decoder')) {
+    if (norm.toLowerCase().endsWith('w')) return '*练习册翻译*';
+    return '课文翻译';
+  }
+  const map: Record<string, string> = {
+    'Recall Map': '单元总览',
+    'Vocab Guide': '词汇导学',
+    'Vocab Master': '词汇大师',
+    'Spelling Hero': '拼写达人',
+    'Grammar Wizard': '语法向导',
+    'Sentence Architect': '句子架构师',
+  };
+  return map[norm] || map[norm.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')] || norm;
+};
+
+function FadingPracticeName({ name, showChinese }: { name: string; showChinese: boolean }) {
+  const cnName = translatePracticeName(name);
+  return (
+    <span className="db-practice-name-grid">
+      <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+        {name}
+      </span>
+      <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+        {cnName}
+      </span>
+    </span>
+  );
+}
+
+function FadingMistakeBadge({ type, showChinese }: { type: string; showChinese: boolean }) {
+  const formatted = type.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const cnName = translatePracticeName(formatted);
+  return (
+    <span className="db-mistake-type-badge-grid">
+      <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+        {formatted}
+      </span>
+      <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+        {cnName}
+      </span>
+    </span>
+  );
+}
+
+
 const LS_KEY = 'ep-last-units'
 
 function getLastUnit(tb: string): string | undefined {
@@ -135,7 +192,7 @@ function saveLastUnit(tb: string, unit: string) {
   } catch { }
 }
 
-function BookSection({ tb, units, records, initialUnit, initialPage }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string; initialPage?: string }) {
+function BookSection({ tb, units, records, initialUnit, initialPage, showChinese }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string; initialPage?: string; showChinese: boolean }) {
   const lettersScrollRef = useHorizontalScrollRef()
   const unitsScrollRef = useHorizontalScrollRef()
   const unitsContainerRef = useRef<HTMLDivElement | null>(null)
@@ -623,7 +680,9 @@ function BookSection({ tb, units, records, initialUnit, initialPage }: { tb: str
                             }}
                           >
                             <span className="db-practice-icon">{getIcon(p.type)}</span>
-                            <span className="db-practice-name">{formatType(p.type)}</span>
+                            <span className="db-practice-name">
+                              <FadingPracticeName name={formatType(p.type)} showChinese={showChinese} />
+                            </span>
                             {(isVM || isSH || isSA || isGW || isPD) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
@@ -694,7 +753,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export function Dashboard() {
+export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const historyScrollRef = useHorizontalScrollRef()
   const { data: session } = useSession()
   const location = useLocation()
@@ -859,7 +918,7 @@ export function Dashboard() {
 
       const count = dayRecords.length;
       const avgScore = count > 0
-        ? Math.round(dayRecords.reduce((acc, r) => acc + r.score, 0) / count)
+        ? Math.round(dayRecords.reduce((acc, r) => acc + (parseFloat(r.score) || 0), 0) / count)
         : 0;
 
       const bookCounts: Record<string, number> = {};
@@ -883,12 +942,33 @@ export function Dashboard() {
         date: dateStr,
         count,
         avgScore,
-        breakdown
+        breakdown,
+        columnClickArea: 100
       });
     }
     return stats;
   };
   const last7DaysStats = useMemo(() => getLast7DaysStats(records), [records, practices]);
+
+  const handlePointClick = (...args: any[]) => {
+    let data: any = null;
+    let index: number = -1;
+    if (args[0] && typeof args[0] === 'object' && 'date' in args[0]) {
+      data = args[0];
+    }
+    if (typeof args[1] === 'number') {
+      index = args[1];
+    }
+    if (index === -1 && data) {
+      index = last7DaysStats.findIndex(s => s.date === data.date);
+    }
+    if (index >= 0 && index <= 6) {
+      const offset = 6 - index;
+      if (historyOffset !== offset) {
+        setHistoryOffset(offset);
+      }
+    }
+  };
 
   const handleChartInteraction = (state: any) => {
     if (!state) return;
@@ -960,15 +1040,24 @@ export function Dashboard() {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.11-12:16</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v2026.06.12-11:58</span></p>
         </div>
       </div>
 
       <div className="db-books db-top-section">
-        <PetDashboardWidget />
+        <PetDashboardWidget showChinese={showChinese} />
         <div className="db-top-right">
         <div className="db-stats">
-          <h3 className="db-stats-title">Activity: Last 7 Days</h3>
+          <h3 className="db-stats-title">
+            <span className="db-title-grid">
+              <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                Activity: Last 7 Days
+              </span>
+              <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                最近7天活动
+              </span>
+            </span>
+          </h3>
           <div className="db-chart-card">
             <div className="db-chart-legend-left">
               <span className="db-chart-legend-bar" />
@@ -996,6 +1085,11 @@ export function Dashboard() {
                     dataKey="date" stroke="var(--text)" fontSize={11}
                     tickLine={false} axisLine={false} dy={6}
                     tickFormatter={(value, index) => [1, 3, 5].includes(index) ? '' : value}
+                  />
+                  <XAxis
+                    xAxisId="hidden"
+                    dataKey="date"
+                    hide
                   />
                   <YAxis
                     yAxisId="left" stroke="var(--text)" fontSize={11}
@@ -1025,6 +1119,12 @@ export function Dashboard() {
                     dot={{ r: 3.5, fill: 'var(--card-bg)', strokeWidth: 2.5 }}
                     activeDot={{ r: 5.5, fill: 'var(--accent)', strokeWidth: 0 }}
                   />
+                  <Bar
+                    xAxisId="hidden"
+                    yAxisId="right" dataKey="columnClickArea"
+                    fill="transparent" barSize={40}
+                    onClick={handlePointClick}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
@@ -1037,7 +1137,16 @@ export function Dashboard() {
 
         <div className="db-stats db-stats-history">
           <div className="db-history-header">
-            <h3 className="db-stats-title">Practice History</h3>
+            <h3 className="db-stats-title">
+              <span className="db-title-grid">
+                <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                  Practice History
+                </span>
+                <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                  练习历史
+                </span>
+              </span>
+            </h3>
             <div className="db-history-nav">
               <button
                 onClick={() => setHistoryOffset(prev => Math.min(6, prev + 1))}
@@ -1119,13 +1228,28 @@ export function Dashboard() {
               className={`db-view-tab ${activeView === 'textbooks' ? 'active' : ''}`}
               onClick={() => setActiveView('textbooks')}
             >
-              🎯 Practice Library
+              <span className="db-title-grid">
+                <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                  🎯 Practice Library
+                </span>
+                <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                  🎯 练习库
+                </span>
+              </span>
             </button>
             <button
               className={`db-view-tab ${activeView === 'mistakes' ? 'active' : ''}`}
               onClick={() => setActiveView('mistakes')}
             >
-              📓 Mistake Book {unresolvedCount > 0 && <span className="db-view-tab-badge">{unresolvedCount}</span>}
+              <span className="db-title-grid">
+                <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                  📓 Mistake Book
+                </span>
+                <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                  📓 错题本
+                </span>
+              </span>
+              {unresolvedCount > 0 && <span className="db-view-tab-badge">{unresolvedCount}</span>}
             </button>
           </div>
 
@@ -1139,6 +1263,7 @@ export function Dashboard() {
                   records={records}
                   initialUnit={targetTextbook === tb ? targetUnit : undefined}
                   initialPage={targetTextbook === tb ? targetPage : undefined}
+                  showChinese={showChinese}
                 />
               ))}
             </div>
@@ -1155,7 +1280,16 @@ export function Dashboard() {
                   {/* Sidebar: Books & Units */}
                   <div className="db-mistakes-sidebar">
                     <div className="db-mistakes-header-card">
-                      <h3 className="db-mistakes-title">📓 Mistake Book</h3>
+                      <h3 className="db-mistakes-title">
+                        <span className="db-title-grid">
+                          <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                            📓 Mistake Book
+                          </span>
+                          <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                            📓 错题本
+                          </span>
+                        </span>
+                      </h3>
                       <p className="db-mistakes-sub">You have {unresolvedCount} unresolved questions.</p>
                       <div className="db-mistakes-filter-control">
                         <label className="db-filter-switch">
@@ -1232,14 +1366,14 @@ export function Dashboard() {
                             <div key={m.id} className={`db-mistake-item-card ${m.resolved ? 'resolved' : ''}`}>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div className="db-mistake-meta">
-                                  <span className="db-mistake-type-badge">{m.practiceType.replace('-', ' ')}</span>
+                                  <FadingMistakeBadge type={m.practiceType} showChinese={showChinese} />
                                   <span className="db-mistake-attempts">Attempts: {m.attemptsCount}</span>
                                   {m.resolved && <span className="db-mistake-resolved-badge">Solved</span>}
                                 </div>
                                 <div className="db-mistake-prompt">
                                   {m.practiceType === 'vocab-master' && <strong>{m.question.prompt}</strong>}
                                   {m.practiceType === 'grammar-wizard' && <span>{m.question.prompt}</span>}
-                                  {m.practiceType === 'passage-decoder' && (
+                                  {m.practiceType.startsWith('passage-decoder') && (
                                     <>
                                       <div style={{ fontStyle: 'italic', color: 'var(--accent)', marginBottom: 4 }}>{m.question.en}</div>
                                       <div style={{ fontSize: '0.82rem', color: 'var(--text)' }}>Select correct translation</div>

@@ -443,11 +443,12 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                 updatedScoreLog[currentIndex] = "red"
                 updatedMistakes.push(q)
                 if (userId && !invisibleMode) {
+                    const practiceType = practiceId.endsWith('-w') ? 'passage-decoder-w' : (practiceId.endsWith('-s') ? 'passage-decoder-s' : 'passage-decoder');
                     mistakeService.addMistake(userId, {
                         practiceId,
                         textbook,
                         unit,
-                        practiceType: 'passage-decoder',
+                        practiceType,
                         question: q,
                         wrongAnswer: optionIdx !== null ? q.options[optionIdx] : undefined
                     });

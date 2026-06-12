@@ -13,7 +13,7 @@ import { IrregularVerbsModal } from './components/IrregularVerbsModal'
 import { SchulteGame } from './components/SchulteGame'
 import './App.css'
 
-function Navigation({ session }: { session: any }) {
+function Navigation({ session, showChinese, onCycleComplete }: { session: any; showChinese: boolean; onCycleComplete?: () => void }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isIrregularVerbsOpen, setIsIrregularVerbsOpen] = useState(false);
   const [delayedClosed, setDelayedClosed] = useState(false);
@@ -79,8 +79,33 @@ function Navigation({ session }: { session: any }) {
         className={`nav-btn${isMenuOpen || delayedClosed ? ' active' : ''}`}
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         aria-label="Toggle navigation menu"
+        style={{ position: 'relative' }}
       >
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        {session && (
+          <svg className="nav-btn-progress-ring" viewBox="0 0 80 80">
+            {/* Background ring */}
+            <circle
+              cx="40" cy="40" r="34"
+              fill="none"
+              stroke="var(--border)"
+              strokeWidth="3.2"
+              opacity="0.3"
+            />
+            {/* Progress ring */}
+            <circle
+              key={showChinese ? "drain" : "fill"}
+              cx="40" cy="40" r="34"
+              fill="none"
+              stroke="var(--accent)"
+              strokeWidth="3.2"
+              strokeLinecap="round"
+              className={showChinese ? "nav-progress-circle-drain" : "nav-progress-circle-fill"}
+              transform="rotate(-90 40 40)"
+              onAnimationEnd={onCycleComplete}
+            />
+          </svg>
+        )}
+        <svg className="nav-btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ zIndex: 1, position: 'relative' }}>
           <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
         </svg>
       </button>
@@ -173,6 +198,7 @@ function Navigation({ session }: { session: any }) {
 
 function App() {
   const { data: session, isPending } = useSession()
+  const [showChinese, setShowChinese] = useState(false);
 
   useEffect(() => {
     if (session) {
@@ -184,7 +210,7 @@ function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL.slice(0, -1) || ''}>
-      <Navigation session={session} />
+      <Navigation session={session} showChinese={showChinese} onCycleComplete={() => setShowChinese(prev => !prev)} />
       {session && <PetFloatingCompanion />}
       <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
         <Routes>
@@ -196,7 +222,7 @@ function App() {
           <Route path="/dashboard" element={
             <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <Dashboard />
+                <Dashboard showChinese={showChinese} />
               </div>
             </div>
           } />

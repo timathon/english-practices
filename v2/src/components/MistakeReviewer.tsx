@@ -144,7 +144,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
     const q = mistake.question;
 
     // Type-specific setups
-    if (['vocab-master', 'grammar-wizard', 'passage-decoder'].includes(mistake.practiceType)) {
+    if (['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s'].includes(mistake.practiceType)) {
       const mapped = q.options.map((text: string, idx: number) => ({ text, originalIdx: idx }));
       setShuffledOptions(shuffle(mapped));
       countdownTimer.reset(mistake.practiceType === 'grammar-wizard' ? 30 : 15);
@@ -187,7 +187,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
     let correct = false;
 
     if (!forceWrong) {
-      if (['vocab-master', 'grammar-wizard', 'passage-decoder'].includes(currentMistake.practiceType)) {
+      if (['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s'].includes(currentMistake.practiceType)) {
         correct = selectedOption === q.answer;
       } else if (currentMistake.practiceType === 'sentence-architect') {
         const selection = saSelection || userSelection;
@@ -311,7 +311,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
   if (!currentMistake) return null;
 
   const q = currentMistake.question;
-  const isMc = ['vocab-master', 'grammar-wizard', 'passage-decoder'].includes(currentMistake.practiceType);
+  const isMc = ['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s'].includes(currentMistake.practiceType);
 
   return (
     <div className="mr-overlay">
@@ -344,7 +344,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
           {isMc && (
             <div className="mr-mc-layout">
               <div className="mr-prompt">
-                {currentMistake.practiceType === 'passage-decoder' ? (
+                {currentMistake.practiceType.startsWith('passage-decoder') ? (
                   <>
                     {q.speaker && <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{q.speaker}: </span>}
                     {q.en}
@@ -483,7 +483,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
                     {q.explanation && <p className="mr-explanation-text">💡 {q.explanation}</p>}
                   </>
                 )}
-                {currentMistake.practiceType === 'passage-decoder' && (
+                {currentMistake.practiceType.startsWith('passage-decoder') && (
                   <>
                     <p className="mr-meaning-text"><strong>English:</strong> {q.en}</p>
                     <p className="mr-meaning-text"><strong>Translation:</strong> {q.options[q.answer]}</p>
