@@ -211,6 +211,7 @@ function BookSection({ tb, units, records, initialUnit, initialPage, showChinese
   const isRazB = tb === 'RAZ-B'
   const isBThink1 = tb === 'B-THINK1' || tb === 'B-Think1'
   const isBNce2 = tb === 'B-NCE2' || tb === 'B-Nce2'
+  const isCGiu = tb === 'C-GIU'
 
   const getNce2Unit = (lessonName: string): string => {
     const match = lessonName.match(/^L(\d+)/i)
@@ -264,6 +265,29 @@ function BookSection({ tb, units, records, initialUnit, initialPage, showChinese
     return activeUnit ? getNce2Unit(activeUnit) : 'U1'
   })
 
+  const cgiuGroups = isCGiu
+    ? Array.from(new Set(unitKeys.map(key => {
+        const firstPractice = (units[key] || [])[0];
+        if (firstPractice) {
+          const match = firstPractice.id.match(/^C-GIU_([a-zA-Z0-9-]+)_/i);
+          if (match) return match[1];
+        }
+        return 'c-giu-1-10';
+      }))).sort()
+    : []
+
+  const [activeCgiuGroup, setActiveCgiuGroup] = useState<string>(() => {
+    if (!isCGiu) return ''
+    if (activeUnit) {
+      const firstPractice = (units[activeUnit] || [])[0];
+      if (firstPractice) {
+        const match = firstPractice.id.match(/^C-GIU_([a-zA-Z0-9-]+)_/i);
+        if (match) return match[1];
+      }
+    }
+    return cgiuGroups[0] || ''
+  })
+
   const pageStarts = isBThink1
     ? Array.from(new Set((units[activeUnit] || []).map(p => getPageStart(p)).filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
     : []
@@ -299,6 +323,21 @@ function BookSection({ tb, units, records, initialUnit, initialPage, showChinese
     }
   }
 
+  const handleCgiuGroupChange = (group: string) => {
+    setActiveCgiuGroup(group)
+    const firstUnitForGroup = unitKeys.find(key => {
+      const firstPractice = (units[key] || [])[0];
+      if (firstPractice) {
+        const match = firstPractice.id.match(/^C-GIU_([a-zA-Z0-9-]+)_/i);
+        return match && match[1] === group;
+      }
+      return false;
+    })
+    if (firstUnitForGroup) {
+      handleUnitChange(firstUnitForGroup)
+    }
+  }
+
   useEffect(() => {
     if (!units[activeUnit] && unitKeys.length > 0) {
       handleUnitChange(unitKeys[0])
@@ -324,6 +363,19 @@ function BookSection({ tb, units, records, initialUnit, initialPage, showChinese
   }, [activeUnit, isBNce2, activeNce2Unit])
 
   useEffect(() => {
+    if (isCGiu && activeUnit) {
+      const firstPractice = (units[activeUnit] || [])[0];
+      if (firstPractice) {
+        const match = firstPractice.id.match(/^C-GIU_([a-zA-Z0-9-]+)_/i);
+        const group = match ? match[1] : '';
+        if (group && group !== activeCgiuGroup) {
+          setActiveCgiuGroup(group)
+        }
+      }
+    }
+  }, [activeUnit, isCGiu, activeCgiuGroup])
+
+  useEffect(() => {
     if (isBThink1 && activeUnit) {
       const activeUnitItems = units[activeUnit] || []
       const starts = Array.from(new Set(activeUnitItems.map(p => getPageStart(p)).filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
@@ -345,7 +397,16 @@ function BookSection({ tb, units, records, initialUnit, initialPage, showChinese
       ? unitKeys.filter(unit => unit.trim().charAt(0).toUpperCase() === activeLetter)
       : isBNce2
         ? unitKeys.filter(unit => getNce2Unit(unit) === activeNce2Unit)
-        : unitKeys
+        : isCGiu
+          ? unitKeys.filter(unit => {
+              const firstPractice = (units[unit] || [])[0];
+              if (firstPractice) {
+                const match = firstPractice.id.match(/^C-GIU_([a-zA-Z0-9-]+)_/i);
+                return match && match[1] === activeCgiuGroup;
+              }
+              return false;
+            })
+          : unitKeys
 
   const activeLevel2Tab = isBThink1 ? activePageStart : activeUnit
 
@@ -468,6 +529,37 @@ function BookSection({ tb, units, records, initialUnit, initialPage, showChinese
                 }}
               >
                 {u}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isCGiu && (
+          <div ref={lettersScrollRef} className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
+            {cgiuGroups.map(group => (
+              <button
+                key={group}
+                onClick={() => handleCgiuGroupChange(group)}
+                className={`db-tab-btn ${activeCgiuGroup === group ? 'active' : ''}`}
+                style={{
+                  padding: '4px 10px',
+                  border: 'none',
+                  borderBottom: activeCgiuGroup === group ? '2px solid var(--tab-active-text)' : '2px solid transparent',
+                  background: activeCgiuGroup === group ? 'var(--accent-bg)' : 'transparent',
+                  cursor: 'pointer',
+                  fontWeight: activeCgiuGroup === group ? 'bold' : 'normal',
+                  color: activeCgiuGroup === group ? 'var(--tab-active-text)' : 'var(--tab-text)',
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '28px'
+                }}
+              >
+                {group.replace(/^c-giu-/i, '')}
               </button>
             ))}
           </div>
@@ -1056,7 +1148,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v260612-2358</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v260613-1915</span></p>
         </div>
       </div>
 
