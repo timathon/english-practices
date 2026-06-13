@@ -207,7 +207,8 @@ async function seed() {
                 'recall-map',
                 'grammar-wizard',
                 'text-navigator',
-                'writing-map'
+                'writing-map',
+                'passage-decoder'
             ];
             
             for (const kt of knownTypes) {
