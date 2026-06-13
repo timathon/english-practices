@@ -56,30 +56,46 @@ function myFetch(url, options = {}) {
 function getChangedOrAddedJsonFiles() {
     try {
         const statusOutput = execSync('git status --porcelain "data/**/*.json"', { encoding: 'utf8' });
-        if (!statusOutput.trim()) return [];
-        
-        const files = [];
-        const lines = statusOutput.split('\n');
-        for (const line of lines) {
-            if (line.length < 4) continue;
-            const status = line.substring(0, 2);
-            // Skip deleted files (either staged delete or unstaged delete)
-            if (status.includes('D')) continue;
-            
-            let filePath = line.substring(3).trim();
-            // Handle renamed files: R  old -> new
-            if (status.startsWith('R') && filePath.includes(' -> ')) {
-                filePath = filePath.split(' -> ')[1].trim();
-            }
-            // Remove wrapping double quotes if present
-            if (filePath.startsWith('"') && filePath.endsWith('"')) {
-                filePath = filePath.substring(1, filePath.length - 1);
-            }
-            files.push(filePath);
+        let diffOutput = "";
+        try {
+            diffOutput = execSync('git diff --name-only origin/main "data/**/*.json"', { encoding: 'utf8' });
+        } catch (e) {
+            // In case origin/main is not found or fetched
         }
-        return files;
+        
+        const filesSet = new Set();
+        
+        if (statusOutput.trim()) {
+            const lines = statusOutput.split('\n');
+            for (const line of lines) {
+                if (line.length < 4) continue;
+                const status = line.substring(0, 2);
+                if (status.includes('D')) continue;
+                
+                let filePath = line.substring(3).trim();
+                if (status.startsWith('R') && filePath.includes(' -> ')) {
+                    filePath = filePath.split(' -> ')[1].trim();
+                }
+                if (filePath.startsWith('"') && filePath.endsWith('"')) {
+                    filePath = filePath.substring(1, filePath.length - 1);
+                }
+                filesSet.add(filePath);
+            }
+        }
+        
+        if (diffOutput.trim()) {
+            const lines = diffOutput.split('\n');
+            for (const line of lines) {
+                const filePath = line.trim();
+                if (filePath && fs.existsSync(filePath)) {
+                    filesSet.add(filePath);
+                }
+            }
+        }
+        
+        return Array.from(filesSet);
     } catch (e) {
-        console.error("Failed to run git status:", e.message);
+        console.error("Failed to run git status/diff:", e.message);
         return [];
     }
 }
