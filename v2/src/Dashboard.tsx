@@ -868,7 +868,29 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const [showMistakeAlertModal, setShowMistakeAlertModal] = useState(false)
   const modalTimeoutRef = useRef<number | null>(null)
 
-  const unresolvedMistakes = useMemo(() => mistakes.filter(m => !m.resolved), [mistakes])
+  const listedMistakes = useMemo(() => {
+    return mistakes.filter(m => {
+      if (!m.createdAt) return true;
+      const createdDate = new Date(m.createdAt);
+      const nextDay3AM = new Date(createdDate);
+      nextDay3AM.setDate(nextDay3AM.getDate() + 1);
+      nextDay3AM.setHours(3, 0, 0, 0);
+      return new Date() >= nextDay3AM;
+    });
+  }, [mistakes]);
+
+  const unlistedCount = useMemo(() => {
+    return mistakes.filter(m => {
+      if (!m.createdAt) return false;
+      const createdDate = new Date(m.createdAt);
+      const nextDay3AM = new Date(createdDate);
+      nextDay3AM.setDate(nextDay3AM.getDate() + 1);
+      nextDay3AM.setHours(3, 0, 0, 0);
+      return new Date() < nextDay3AM;
+    }).length;
+  }, [mistakes]);
+
+  const unresolvedMistakes = useMemo(() => listedMistakes.filter(m => !m.resolved), [listedMistakes])
   const unresolvedCount = unresolvedMistakes.length
 
   useEffect(() => {
@@ -973,7 +995,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   };
 
   const groupedMistakes = useMemo(() => {
-    const visibleMistakes = showResolved ? mistakes : mistakes.filter(m => !m.resolved);
+    const visibleMistakes = showResolved ? listedMistakes : listedMistakes.filter(m => !m.resolved);
     return visibleMistakes.reduce<Record<string, Record<string, Mistake[]>>>((acc, m) => {
       const tb = m.textbook || 'Other';
       const un = m.unit || 'General';
@@ -982,7 +1004,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
       acc[tb][un].push(m);
       return acc;
     }, {});
-  }, [mistakes, showResolved]);
+  }, [listedMistakes, showResolved]);
 
   const mistakeBooks = Object.keys(groupedMistakes).sort();
   const effectiveMistakeBook = mistakeBooks.includes(activeMistakeBook) ? activeMistakeBook : (mistakeBooks[0] || '');
@@ -1148,7 +1170,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         <span className="db-wave">👋</span>
         <div>
           <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v260613-1915</span></p>
+          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v260613-2016</span></p>
         </div>
       </div>
 
@@ -1369,7 +1391,11 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                   📓 错题本
                 </span>
               </span>
-              {unresolvedCount > 0 && <span className="db-view-tab-badge">{unresolvedCount}</span>}
+              {(unresolvedCount > 0 || unlistedCount > 0) && (
+                <span className="db-view-tab-badge">
+                  {unresolvedCount}{unlistedCount > 0 ? `+${unlistedCount}` : ''}
+                </span>
+              )}
             </button>
           </div>
 
@@ -1410,7 +1436,10 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                           </span>
                         </span>
                       </h3>
-                      <p className="db-mistakes-sub">You have {unresolvedCount} unresolved questions.</p>
+                      <p className="db-mistakes-sub">
+                        You have {unresolvedCount} unresolved questions.
+                        {unlistedCount > 0 && ` (${unlistedCount} unlisted)`}
+                      </p>
                       <div className="db-mistakes-filter-control">
                         <label className="db-filter-switch">
                           <input

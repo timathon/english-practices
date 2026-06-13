@@ -470,10 +470,10 @@ export const petService = {
   petPet(): { success: boolean; loveGained: number; left: number; nextAvailableInMs: number } {
     const state = this.getPetState();
     const now = Date.now();
-    const twoHoursAgo = now - 2 * 60 * 60 * 1000;
+    const oneHourAgo = now - 1 * 60 * 60 * 1000;
 
-    // Filter to keep only last 2 hours
-    state.petTimestamps = (state.petTimestamps || []).filter(t => t > twoHoursAgo);
+    // Filter to keep only last 1 hour
+    state.petTimestamps = (state.petTimestamps || []).filter(t => t > oneHourAgo);
 
     let loveGained = 0;
     let success = false;
@@ -500,17 +500,17 @@ export const petService = {
 
   getDailyPettingStatus(state: PetState): { current: number; max: number; left: number; nextAvailableInMs: number } {
     const now = Date.now();
-    const twoHoursAgo = now - 2 * 60 * 60 * 1000;
+    const oneHourAgo = now - 1 * 60 * 60 * 1000;
 
-    // Filter timestamps within the last 2 hours
-    const activeTimestamps = (state.petTimestamps || []).filter(t => t > twoHoursAgo);
+    // Filter timestamps within the last 1 hour
+    const activeTimestamps = (state.petTimestamps || []).filter(t => t > oneHourAgo);
 
     const left = Math.max(0, 5 - activeTimestamps.length);
     let nextAvailableInMs = 0;
 
     if (left === 0 && activeTimestamps.length > 0) {
       const oldest = Math.min(...activeTimestamps);
-      nextAvailableInMs = Math.max(0, (oldest + 2 * 60 * 60 * 1000) - now);
+      nextAvailableInMs = Math.max(0, (oldest + 1 * 60 * 60 * 1000) - now);
     }
 
     return {

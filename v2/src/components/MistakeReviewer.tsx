@@ -346,8 +346,8 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
       <div className="mr-card">
         {/* Progress Bar */}
         <div className="mr-progress-bar">
-          {queue.slice(activeIdx).map((_, i) => (
-            <div key={i} className={`mr-progress-dot ${i === 0 ? 'active' : ''}`} />
+          {queue.map((_, i) => (
+            <div key={i} className={`mr-progress-dot ${i === activeIdx ? 'active' : ''}`} />
           ))}
         </div>
 
@@ -497,43 +497,38 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
               <div className="mr-feedback-header">
                 <span className="mr-feedback-status">{isCorrect ? '✨ Correct!' : '❌ Keep Learning'}</span>
               </div>
-              <div className="mr-feedback-explanation">
-                {currentMistake.practiceType === 'vocab-master' && (
-                  <>
-                    <p className="mr-meaning-text"><strong>{q.word}</strong>: {q.meaning}</p>
-                    {q.context_sentence && <p className="mr-context-sentence">📖 {q.context_sentence}</p>}
-                    {q.cn && <p className="mr-context-sentence-cn">🇨🇳 {q.cn}</p>}
-                  </>
-                )}
-                {currentMistake.practiceType === 'grammar-wizard' && (
-                  <>
-                    <p className="mr-meaning-text"><strong>Correct:</strong> {q.options[q.answer]}</p>
-                    {q.explanation && <p className="mr-explanation-text">💡 {q.explanation}</p>}
-                  </>
-                )}
-                {currentMistake.practiceType.startsWith('passage-decoder') && (
-                  <>
-                    <p className="mr-meaning-text"><strong>English:</strong> {q.en}</p>
-                    <p className="mr-meaning-text"><strong>Translation:</strong> {q.options[q.answer]}</p>
-                    {q.remark && <p className="mr-explanation-text">💡 {q.remark}</p>}
-                  </>
-                )}
-                {currentMistake.practiceType === 'sentence-architect' && (
-                  <>
-                    <p className="mr-meaning-text"><strong>Target Sentence:</strong></p>
-                    <p className="mr-context-sentence">📖 {q.en}</p>
-                    {q.accept && q.accept.length > 1 && (
-                      <p className="mr-explanation-text">Accepted: {q.accept.join(" | ")}</p>
-                    )}
-                  </>
-                )}
-                {currentMistake.practiceType === 'spelling-hero' && (
-                  <>
-                    <p className="mr-meaning-text"><strong>Word:</strong> {q.word}</p>
-                    <p className="mr-explanation-text">Meaning: {q.meaning}</p>
-                  </>
-                )}
-              </div>
+              {!currentMistake.practiceType.startsWith('passage-decoder') && (
+                <div className="mr-feedback-explanation">
+                  {currentMistake.practiceType === 'vocab-master' && (
+                    <>
+                      <p className="mr-meaning-text"><strong>{q.word}</strong>: {q.meaning}</p>
+                      {q.context_sentence && <p className="mr-context-sentence">📖 {q.context_sentence}</p>}
+                      {q.cn && <p className="mr-context-sentence-cn">🇨🇳 {q.cn}</p>}
+                    </>
+                  )}
+                  {currentMistake.practiceType === 'grammar-wizard' && (
+                    <>
+                      <p className="mr-meaning-text"><strong>Correct:</strong> {q.options[q.answer]}</p>
+                      {q.explanation && <p className="mr-explanation-text">💡 {q.explanation}</p>}
+                    </>
+                  )}
+                  {currentMistake.practiceType === 'sentence-architect' && (
+                    <>
+                      <p className="mr-meaning-text"><strong>Target Sentence:</strong></p>
+                      <p className="mr-context-sentence">📖 {q.en}</p>
+                      {q.accept && q.accept.length > 1 && (
+                        <p className="mr-explanation-text">Accepted: {q.accept.join(" | ")}</p>
+                      )}
+                    </>
+                  )}
+                  {currentMistake.practiceType === 'spelling-hero' && (
+                    <>
+                      <p className="mr-meaning-text"><strong>Word:</strong> {q.word}</p>
+                      <p className="mr-explanation-text">Meaning: {q.meaning}</p>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
