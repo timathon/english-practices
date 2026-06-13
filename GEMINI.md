@@ -35,6 +35,12 @@ This document defines the rules for extracting and converting textbook data into
     - **Ambiguity & Hints:** The sentence context must provide sufficient information to uniquely identify the correct word. If the context is ambiguous (e.g., "I ____ all by myself." where any verb could fit), you **must** append a Chinese hint of the target word at the end of the prompt in the format: `(提示: [Chinese meaning])` (e.g., `I ____ all by myself. (提示: 唱歌; 唱)`).
   - `Cn2En`: Prompt is Chinese `meaning`. Options: Correct English + 5 distractors.
   - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 5 distractors.
+- **Distractor Selection & Relevance:** Distractors must be highly relevant, logical, and plausible options. Avoid lazy, random category padding.
+  - **Category/Semantic Matching**: Distractors should belong to the same semantic class or lexical category as the target word. For example, if the target is a school subject (e.g., "maths"), distractors should be other subjects (e.g., "science", "history"), NOT unrelated categories (e.g., weekdays like "Saturday"). If the target is a musical instrument (e.g., "piano"), distractors should be other instruments (e.g., "violin", "guitar", "drums").
+  - **Spelling & Visual-Similarity Traps**: For spelling-critical or easily confused words, include options that share common prefixes/suffixes, look visually similar, or sound phonetically similar. For example:
+    - Target `subject`: distract with `suggest`, `object`, `project`, `subway`, `subtract`.
+    - Target `maths`: distract with `baths`, `mouths`, `paths`, `mats`, `match`.
+    - Target `science`: distract with `silence`, `scene`, `scientist`, `since`, `service`.
 - **Answer Randomization:** Correct answer index must be randomized (0-5).
 - **Structure:** 
   - A top-level object with `level`, `title` (always `"Vocab Master"`), and `challenges` (an array).
