@@ -107,6 +107,16 @@ async function main() {
             } else if (file.includes('-text-navigator') || file.includes('-writing-map')) {
                 const treeData = content.tree || content;
                 extractTreeText(treeData, textsSet);
+            } else if (file.includes('-passage-decoder-s')) {
+                if (content.sections && Array.isArray(content.sections)) {
+                    content.sections.forEach(section => {
+                        if (section.sentences && Array.isArray(section.sentences)) {
+                            section.sentences.forEach(item => {
+                                if (item.en) textsSet.add(getCleanText(item.en));
+                            });
+                        }
+                    });
+                }
             }
         } catch (e) {
             console.error(`❌ Failed to parse ${file}: ${e.message}`);

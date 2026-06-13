@@ -55,6 +55,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const sfxRef = useRef<HTMLAudioElement | null>(null)
     const activeSentenceRef = useRef<HTMLSpanElement | null>(null)
     const lastActiveSectionIdRef = useRef<string | null>(null)
+    const sentenceAudioRef = useRef<HTMLAudioElement | null>(null)
 
     // Vocab Guide loading state
     const [vocabGuide, setVocabGuide] = useState<any>(null);
@@ -109,6 +110,25 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         } catch (e) {
             console.error("Word audio playback error:", e);
             setPlayingWordAudio(false);
+        }
+    };
+
+    const playActiveSentenceAudio = async (text: string) => {
+        if (!text || !textbook) return;
+        if (sentenceAudioRef.current) {
+            sentenceAudioRef.current.pause();
+            sentenceAudioRef.current = null;
+        }
+        const url = getAudioUrl(text, textbook);
+        try {
+            const blob = await audioCache.cacheAudio(url);
+            if (blob) {
+                const audio = new Audio(URL.createObjectURL(blob));
+                sentenceAudioRef.current = audio;
+                audio.play().catch(e => console.warn("Failed to play sentence audio:", e));
+            }
+        } catch (e) {
+            console.warn("Play sentence audio error:", e);
         }
     };
 
@@ -213,6 +233,19 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
+
+    // Play sentence audio automatically for student's book passage decoder (ending with -s)
+    useEffect(() => {
+        if (q && q.en && practiceId && practiceId.endsWith('-s') && textbook) {
+            playActiveSentenceAudio(q.en);
+        }
+
+        return () => {
+            if (sentenceAudioRef.current) {
+                sentenceAudioRef.current.pause();
+            }
+        };
+    }, [q, practiceId, textbook]);
     const [practiceRecords, setPracticeRecords] = useState<any[]>([])
     const [gainedXp, setGainedXp] = useState(0)
     const [gainedLove, setGainedLove] = useState(0)
@@ -891,6 +924,18 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                     className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
                                                 >
                                                     {renderSentenceText(sentence)}{' '}
+                                                    {isCurrent && practiceId?.endsWith('-s') && (
+                                                        <button
+                                                            className="pd-sentence-play-btn"
+                                                            title="Replay Audio"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                playActiveSentenceAudio(sentence.en);
+                                                            }}
+                                                        >
+                                                            🔊
+                                                        </button>
+                                                    )}
                                                 </span>
                                             );
                                         })}
