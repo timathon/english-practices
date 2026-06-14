@@ -341,7 +341,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
         setActiveSlot(i)
     }
 
-    const handleOptionSelect = (opt: string) => {
+    const handleOptionSelect = useCallback((opt: string) => {
         if (locked) return
         const lin = q as LinearQuestion
         const next = [...userChunks]
@@ -352,7 +352,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
         if (nextEmpty !== -1) setActiveSlot(nextEmpty)
         else if (next[activeSlot] === null) { /* stay */ }
         else if (activeSlot < lin.chunks.length - 1) setActiveSlot(activeSlot + 1)
-    }
+    }, [locked, q, userChunks, activeSlot])
 
     // ── Soup interactions ─────────────────────────────────────────────────────
 
@@ -574,11 +574,18 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                 } else {
                     nextQuestion();
                 }
+            } else if (!locked && q?.qtype === 'linear' && ['1', '2', '3'].includes(e.key)) {
+                e.preventDefault();
+                const idx = parseInt(e.key, 10) - 1;
+                const opts = shuffledOpts[activeSlot] || [];
+                if (opts[idx]) {
+                    handleOptionSelect(opts[idx]);
+                }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeChallenge, completed, historyChallenge, locked, isReady, checkAnswer, nextQuestion]);
+    }, [activeChallenge, completed, historyChallenge, locked, isReady, checkAnswer, nextQuestion, q, shuffledOpts, activeSlot, handleOptionSelect]);
 
     // ─── Render: Complete screen ──────────────────────────────────────────────
 
@@ -749,7 +756,8 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                                             onClick={() => handleOptionSelect(opt)}
                                             disabled={locked}
                                         >
-                                            {opt}
+                                            <span className="sh-option-marker">{idx + 1}</span>
+                                            <span>{opt}</span>
                                         </button>
                                     ))}
                                 </div>
