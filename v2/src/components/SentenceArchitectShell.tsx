@@ -694,7 +694,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                                             <>
                                                 <div className="sa-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `TODAY - ${c.title}`, logs: s.todayLogs })}>
                                                     <span className="sa-stat-label">TODAY</span>
-                                                    <span className="sa-stat-val">{s.todayRuns} Runs | Best: {s.todayBest}%</span>
+                                                    <span className="sa-stat-val" style={s.todayBest >= 70 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{s.todayRuns} Runs | Best: {s.todayBest}%</span>
                                                 </div>
                                                 <div className="sa-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${c.title}`, logs: s.lifeLogs })}>
                                                     <span className="sa-stat-label">LIFETIME</span>

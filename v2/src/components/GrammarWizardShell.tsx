@@ -513,7 +513,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                                         <>
                                            <div className="gw-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `TODAY - ${c.title}`, logs: s.todayLogs })}>
                                                <span className="gw-stat-label">TODAY</span>
-                                               <span className="gw-stat-val">{s.todayRuns} Runs | Best: {s.todayBest}%</span>
+                                               <span className="gw-stat-val" style={s.todayBest >= 70 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{s.todayRuns} Runs | Best: {s.todayBest}%</span>
                                            </div>
                                            <div className="gw-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${c.title}`, logs: s.lifeLogs })}>
                                                <span className="gw-stat-label">LIFETIME</span>

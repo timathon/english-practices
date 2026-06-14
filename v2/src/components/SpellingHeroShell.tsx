@@ -928,7 +928,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                                         onClick={() => setHistoryChallenge(c)}
                                     >
                                         <span className="sh-stat-label">TODAY</span>
-                                        <span className="sh-stat-val">{s.today.attempts} Runs | Best: {s.today.best}%</span>
+                                        <span className="sh-stat-val" style={s.today.best >= 70 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{s.today.attempts} Runs | Best: {s.today.best}%</span>
                                     </div>
                                     <div
                                         className="sh-stat-row"
