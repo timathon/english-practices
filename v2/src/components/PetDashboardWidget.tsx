@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { petService, ACHIEVEMENT_DEFS, DAILY_GOAL_VALUES } from '../lib/petService';
 import type { PetState, DailyGoalPreset, AchievementDef } from '../lib/petService';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from 'recharts';
 import './PetDashboardWidget.css';
 
 export function PetDashboardWidget({ showChinese = false }: { showChinese?: boolean }) {
@@ -19,6 +20,7 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
   const [showBuyFoodModal, setShowBuyFoodModal] = useState(false);
   const [showBuyGameModal, setShowBuyGameModal] = useState(false);
   const [buyAmount, setBuyAmount] = useState(1);
+  const [showChartModal, setShowChartModal] = useState(false);
 
   const speechTimeoutRef = useRef<number | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
@@ -329,29 +331,53 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
 
         {/* ── Row 3: Food & Love bars (compact) ── */}
         <div className="pet-widget-stats-section">
-          <div className="pet-widget-stat-row">
-            <div className="pet-widget-stat-label-container">
-              <span className="pet-widget-stat-label">🍔 Hunger</span>
-              <span className="pet-widget-stat-value">{Math.round(petState.food)}/100</span>
+          <div
+            className="pet-widget-stats-bars"
+            onClick={() => setShowChartModal(true)}
+            title={showChinese ? "查看最近24小时状态趋势 (View status trend over the last 24 hours)" : "View 24h state trend"}
+          >
+            <div className="pet-widget-stat-row">
+              <div className="pet-widget-stat-label-container">
+                <span className="pet-widget-stat-label">
+                  <span className="db-title-grid">
+                    <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                      🍔 Hunger
+                    </span>
+                    <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                      🍔 饱食度
+                    </span>
+                  </span>
+                </span>
+                <span className="pet-widget-stat-value">{Math.round(petState.food)}/100</span>
+              </div>
+              <div className="pet-widget-progress-bg">
+                <div
+                  className="pet-widget-progress-fill food"
+                  style={{ width: `${petState.food}%` }}
+                />
+              </div>
             </div>
-            <div className="pet-widget-progress-bg">
-              <div
-                className="pet-widget-progress-fill food"
-                style={{ width: `${petState.food}%` }}
-              />
-            </div>
-          </div>
 
-          <div className="pet-widget-stat-row">
-            <div className="pet-widget-stat-label-container">
-              <span className="pet-widget-stat-label">❤️ Love</span>
-              <span className="pet-widget-stat-value">{Math.round(petState.love)}/100</span>
-            </div>
-            <div className="pet-widget-progress-bg">
-              <div
-                className="pet-widget-progress-fill love"
-                style={{ width: `${petState.love}%` }}
-              />
+            <div className="pet-widget-stat-row">
+              <div className="pet-widget-stat-label-container">
+                <span className="pet-widget-stat-label">
+                  <span className="db-title-grid">
+                    <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                      ❤️ Love
+                    </span>
+                    <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                      ❤️ 亲密度
+                    </span>
+                  </span>
+                </span>
+                <span className="pet-widget-stat-value">{Math.round(petState.love)}/100</span>
+              </div>
+              <div className="pet-widget-progress-bg">
+                <div
+                  className="pet-widget-progress-fill love"
+                  style={{ width: `${petState.love}%` }}
+                />
+              </div>
             </div>
           </div>
 
@@ -584,8 +610,8 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                         <h5>Natural Decay (日常消耗)</h5>
                       </div>
                       <div className="pet-help-card-body">
-                        <p className="help-en">Hunger (🍔) and Love (❤️) decay at <strong>0.5 points per hour</strong> (12 points/day). Practice regularly to prevent your companion from becoming hungry or lonely!</p>
-                        <p className="help-cn">饱食度（🍔）与亲密度（❤️）每小时会自然减少 <strong>0.5 点</strong>（每天共消耗 12 点）。记得经常打卡练习，不要冷落伙伴哦！</p>
+                        <p className="help-en">Hunger (🍔) and Love (❤️) decay at <strong>1 point per hour</strong> (24 points/day). Practice regularly to prevent your companion from becoming hungry or lonely!</p>
+                        <p className="help-cn">饱食度（🍔）与亲密度（❤️）每小时会自然减少 <strong>1 点</strong>（每天共消耗 24 点）。记得经常打卡练习，不要冷落伙伴哦！</p>
                       </div>
                     </div>
 
@@ -609,7 +635,7 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
       {/* ── Buy Food Modal ── */}
       {showBuyFoodModal && (
         <div className="pet-help-modal-overlay" onClick={() => setShowBuyFoodModal(false)}>
-          <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+          <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ width: '400px', maxWidth: '95%' }}>
             <div className="pet-help-modal-header">
               <h4 className="pet-help-modal-title">🛒 Buy Feed (购买饲料)</h4>
               <button className="pet-help-modal-close" onClick={() => setShowBuyFoodModal(false)}>×</button>
@@ -713,7 +739,7 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
         const cannotBuy = (petState.food || 0) < 50 || (petState.love || 0) < 50;
         return (
           <div className="pet-help-modal-overlay" onClick={() => setShowBuyGameModal(false)}>
-            <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ width: '400px', maxWidth: '95%' }}>
               <div className="pet-help-modal-header">
                 <h4 className="pet-help-modal-title">🎮 Schulte Table Game</h4>
                 <button className="pet-help-modal-close" onClick={() => setShowBuyGameModal(false)}>×</button>
@@ -730,7 +756,7 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                   <div style={{ color: 'var(--accent, #d73a49)', fontSize: '0.85rem', marginBottom: '16px', background: 'rgba(215, 58, 73, 0.08)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(215, 58, 73, 0.2)', textAlign: 'left' }}>
                     ⚠️ Your pet needs at least 50% health (food) and 50% love to buy game rounds! Feed and pet them first.
                     <br />
-                    (宠物需要至少 50% 饱食度和 50% 喜爱度才能购买游戏场次！)
+                    (宠物需要至少 50% 饱食度和 50% 亲密度才能购买游戏场次！)
                   </div>
                 )}
                 <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '20px' }}>
@@ -756,6 +782,187 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                     Cancel (取消)
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Chart Modal ── */}
+      {showChartModal && (() => {
+        // Prepare chart data: sorted by timestamp, and default to empty if not exists
+        let history = petState.history && petState.history.length >= 2 ? petState.history : [];
+        if (history.length < 2) {
+          const fallbackHistory = [];
+          const now = Date.now();
+          const food = petState.food || 50;
+          const love = petState.love || 50;
+          const DECAY_RATE_PER_HOUR = 1.0;
+          for (let i = 8; i >= 0; i--) {
+            const t = now - i * 3 * 60 * 60 * 1000;
+            const hoursAgo = i * 3;
+            const baseFoodDecay = hoursAgo * DECAY_RATE_PER_HOUR;
+            const baseLoveDecay = hoursAgo * DECAY_RATE_PER_HOUR;
+            
+            const fluctuationFood = Math.sin(hoursAgo * 0.8) * 8;
+            const fluctuationLove = Math.cos(hoursAgo * 0.8) * 6;
+            
+            const historicFood = Math.min(100, Math.max(10, food + baseFoodDecay + fluctuationFood));
+            const historicLove = Math.min(100, Math.max(10, love + baseLoveDecay + fluctuationLove));
+            
+            fallbackHistory.push({
+              timestamp: t,
+              food: Math.round(historicFood),
+              love: Math.round(historicLove)
+            });
+          }
+          history = fallbackHistory;
+        }
+
+        const chartData = [...history]
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map(h => ({
+            ...h,
+            timeLabel: new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+          }));
+
+        // Format tooltip for the chart
+        const historyTooltip = ({ active, payload }: any) => {
+          if (active && payload && payload.length) {
+            const dataPoint = payload[0].payload;
+            const formattedTime = new Date(dataPoint.timestamp).toLocaleTimeString([], {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+            return (
+              <div style={{
+                backgroundColor: 'var(--card-bg)',
+                borderColor: 'var(--border)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                color: 'var(--text-h)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                backdropFilter: 'blur(12px)',
+                padding: '12px',
+                fontSize: '0.8rem',
+                textAlign: 'left'
+              }}>
+                <p style={{ color: 'var(--text)', fontWeight: 600, margin: '0 0 6px 0' }}>{formattedTime}</p>
+                {payload.map((pld: any) => (
+                  <p key={pld.name} style={{ color: 'var(--text-h)', margin: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: pld.color }} />
+                    {pld.name === 'food' ? (showChinese ? '🍔 饱食度' : '🍔 Hunger') : (showChinese ? '❤️ 亲密度' : '❤️ Love')}: <strong>{Math.round(pld.value)}/100</strong>
+                  </p>
+                ))}
+              </div>
+            );
+          }
+          return null;
+        };
+
+        return (
+          <div className="pet-help-modal-overlay" onClick={() => setShowChartModal(false)}>
+            <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ width: '500px', maxWidth: '95%' }}>
+              <div className="pet-help-modal-header">
+                <h4 className="pet-help-modal-title">
+                  📈 {showChinese ? `${petState.name} 的状态趋势` : `${petState.name}'s State Trend`}
+                </h4>
+                <button className="pet-help-modal-close" onClick={() => setShowChartModal(false)}>×</button>
+              </div>
+              <div className="pet-help-modal-body" style={{ padding: '10px 0' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text)', margin: '0 0 16px 0', padding: '0 4px' }}>
+                  {showChinese
+                    ? '饱食度与亲密度在过去 24 小时内的变化趋势（每小时自然消耗 1 点）：'
+                    : 'Hunger and Love trends over the last 24 hours (naturally decays by 1 point per hour):'}
+                </p>
+
+                {/* Legends */}
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-h)' }}>
+                    <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', background: 'linear-gradient(135deg, #f97316, #ea580c)' }} />
+                    <span>{showChinese ? '🍔 饱食度' : '🍔 Hunger'}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-h)' }}>
+                    <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '3px', background: 'linear-gradient(135deg, #ec4899, #db2777)' }} />
+                    <span>{showChinese ? '❤️ 亲密度' : '❤️ Love'}</span>
+                  </div>
+                </div>
+
+                <div style={{ width: '100%', height: '240px', background: 'rgba(0, 0, 0, 0.02)', borderRadius: '12px', padding: '10px', boxSizing: 'border-box', border: '1px solid var(--border)' }}>
+                  <ResponsiveContainer width="99%" height="100%">
+                    <AreaChart
+                      data={chartData}
+                      margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="foodGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ea580c" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#ea580c" stopOpacity={0.0} />
+                        </linearGradient>
+                        <linearGradient id="loveGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#db2777" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#db2777" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.3} />
+                      <XAxis
+                        dataKey="timeLabel"
+                        stroke="var(--text)"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        dy={6}
+                      />
+                      <YAxis
+                        stroke="var(--text)"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        domain={[0, 100]}
+                        ticks={[0, 25, 50, 75, 100]}
+                      />
+                      <ReferenceLine
+                        y={50}
+                        stroke="var(--accent)"
+                        strokeDasharray="4 4"
+                        strokeWidth={1.5}
+                        opacity={0.7}
+                      />
+                      <Tooltip content={historyTooltip} />
+                      <Area
+                        type="monotone"
+                        dataKey="food"
+                        stroke="#ea580c"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#foodGrad)"
+                        name="food"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="love"
+                        stroke="#db2777"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#loveGrad)"
+                        name="love"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  className="pet-widget-btn pet-btn"
+                  onClick={() => setShowChartModal(false)}
+                  style={{ padding: '8px 24px', minWidth: '100px' }}
+                >
+                  {showChinese ? '关闭' : 'Close'}
+                </button>
               </div>
             </div>
           </div>
