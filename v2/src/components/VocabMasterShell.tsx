@@ -741,7 +741,25 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                              <div className="vm-prompt-type" style={{ margin: 0 }}>{typeText}</div>
                              <button className="vm-prompt-hint-btn" onClick={handleShowHint}>💡</button>
                          </div>
-                        <div className="vm-prompt-val">{q.prompt}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                            <div className="vm-prompt-val" style={{ marginBottom: 0 }}>{q.prompt}</div>
+                            {q.unit && (
+                                <span className="vm-unit-badge" style={{
+                                    padding: '2px 8px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    background: '#f1f5f9',
+                                    color: '#64748b',
+                                    fontWeight: 'bold',
+                                    border: '1.5px solid #e2e8f0',
+                                    display: 'inline-block',
+                                    verticalAlign: 'middle',
+                                    lineHeight: 'normal'
+                                }}>
+                                    Unit {q.unit}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                    <div className="vm-options-grid">

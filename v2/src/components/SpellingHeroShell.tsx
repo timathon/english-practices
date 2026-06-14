@@ -80,7 +80,8 @@ function buildChallenges(data: ShellData, textbook: string): Challenge[] {
             cn: sw.meaning,
             chunks: sw.chunks,
             audio,
-        })
+            unit: (sw as any).unit,
+        } as any)
         rawQuestions.push({
             qtype: 'soup',
             word: sw.word,
@@ -88,7 +89,8 @@ function buildChallenges(data: ShellData, textbook: string): Challenge[] {
             correctChunks: sw.chunks.map(c => c.correct),
             distractors: sw.chunks.flatMap(c => c.options.filter(o => o !== c.correct)),
             audio,
-        })
+            unit: (sw as any).unit,
+        } as any)
     })
 
     // Pad to nearest multiple of 10
@@ -700,7 +702,25 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                         <div className="sh-type-badge">
                             {q.qtype === 'linear' ? 'Pick Each Part' : 'Build the Word'}
                         </div>
-                        <div className="sh-prompt-cn">{q.cn}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '25px' }}>
+                            <div className="sh-prompt-cn" style={{ marginBottom: 0 }}>{q.cn}</div>
+                            {(q as any).unit && (
+                                <span className="sh-unit-badge" style={{
+                                    padding: '2px 8px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    background: '#f1f5f9',
+                                    color: '#64748b',
+                                    fontWeight: 'bold',
+                                    border: '1.5px solid #e2e8f0',
+                                    display: 'inline-block',
+                                    verticalAlign: 'middle',
+                                    lineHeight: 'normal'
+                                }}>
+                                    Unit {(q as any).unit}
+                                </span>
+                            )}
+                        </div>
 
                         {/* ── Linear UI ── */}
                         {linQ && (
