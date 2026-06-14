@@ -22,6 +22,16 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [playingIndex, setPlayingIndex] = useState<number | null>(null)
     const [tempShowAll, setTempShowAll] = useState(true)
 
+    // Flashcard States
+    const [showFlashcards, setShowFlashcards] = useState(false)
+    const [deck, setDeck] = useState<any[]>([])
+    const [currentDeckIndex, setCurrentDeckIndex] = useState(0)
+    const [isFlipped, setIsFlipped] = useState(false)
+    const [countdown, setCountdown] = useState<number | null>(null)
+    const [slideDirection, setSlideDirection] = useState<'next' | null>(null)
+    const [hasClickedDontKnow, setHasClickedDontKnow] = useState(false)
+
+    const timerRef = useRef<any>(null)
     const shellRef = useRef<HTMLDivElement>(null)
     const unitKey = `ep-vg-hidden-${practiceId}`
 
@@ -78,6 +88,18 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         }, 3000)
         return () => clearTimeout(timer)
     }, [practiceId])
+
+    useEffect(() => {
+        if (showFlashcards && deck.length > 0 && deck[currentDeckIndex]) {
+            const currentItem = deck[currentDeckIndex]
+            if (currentItem.context_sentence) {
+                const timer = setTimeout(() => {
+                    playAudio(currentItem.context_sentence, currentItem.originalIndex)
+                }, 300)
+                return () => clearTimeout(timer)
+            }
+        }
+    }, [showFlashcards, currentDeckIndex, deck])
 
     const toggleSort = () => {
         const nextSort = !isAlphabetical
@@ -159,10 +181,100 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         }
     }
 
+    const openFlashcards = () => {
+        let activeDeck = vocab.filter(item => !hiddenIndices.has(item.originalIndex))
+        if (activeDeck.length === 0) {
+            activeDeck = [...vocab]
+        }
+        setDeck(activeDeck)
+        setCurrentDeckIndex(0)
+        setIsFlipped(false)
+        setCountdown(null)
+        setSlideDirection(null)
+        setHasClickedDontKnow(false)
+        setShowFlashcards(true)
+    }
+
+    const closeFlashcards = () => {
+        setShowFlashcards(false)
+        if (timerRef.current) {
+            clearInterval(timerRef.current)
+            timerRef.current = null
+        }
+    }
+
+    const moveToNextCard = () => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current)
+            timerRef.current = null
+        }
+        setCountdown(null)
+
+        setSlideDirection('next')
+        setTimeout(() => {
+            setCurrentDeckIndex(prev => {
+                if (prev + 1 < deck.length) {
+                    setIsFlipped(false)
+                    setSlideDirection(null)
+                    setHasClickedDontKnow(false)
+                    return prev + 1
+                } else {
+                    alert("Review completed! Great work!")
+                    setShowFlashcards(false)
+                    setSlideDirection(null)
+                    return prev
+                }
+            })
+        }, 300)
+    }
+
+    const handleKnow = () => {
+        if (deck.length === 0) return
+        const item = deck[currentDeckIndex]
+        if (!hiddenIndices.has(item.originalIndex)) {
+            const next = new Set(hiddenIndices)
+            next.add(item.originalIndex)
+            setHiddenIndices(next)
+            localStorage.setItem(unitKey, JSON.stringify(Array.from(next)))
+        }
+        moveToNextCard()
+    }
+
+    const handleDontKnow = () => {
+        if (deck.length === 0) return
+        setIsFlipped(true)
+        setCountdown(10)
+        setHasClickedDontKnow(true)
+
+        if (timerRef.current) {
+            clearInterval(timerRef.current)
+        }
+
+        let currentSec = 10
+        timerRef.current = setInterval(() => {
+            currentSec -= 1
+            if (currentSec <= 0) {
+                clearInterval(timerRef.current)
+                timerRef.current = null
+                setCountdown(null)
+                moveToNextCard()
+            } else {
+                setCountdown(currentSec)
+            }
+        }, 1000)
+    }
+
+    const handleCardClick = () => {
+        if (hasClickedDontKnow) {
+            setIsFlipped(prev => !prev)
+        }
+    }
+
     const scrollToTop = () => shellRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
     const scrollToBottom = () => shellRef.current?.scrollTo({ top: shellRef.current.scrollHeight, behavior: 'smooth' })
 
     const shownCount = vocab.length - hiddenIndices.size
+    const progressPercent = deck.length > 0 ? ((currentDeckIndex + 1) / deck.length) * 100 : 0
 
     return (
         <div className="vg-shell" ref={shellRef}>
@@ -175,7 +287,8 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             </header>
 
             <div className="vg-stats-bar">
-                Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b>
+                <span>Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b></span>
+                <button className="vg-play-cards-btn" onClick={openFlashcards} title="Start Flashcards">▶️ Play</button>
             </div>
 
             <div className="vg-controls-container desktop-only">
@@ -288,6 +401,107 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     <small>Reset</small>
                 </button>
             </div>
+
+            {showFlashcards && deck.length > 0 && (
+                <div className="vg-modal-backdrop" onClick={closeFlashcards}>
+                    <div className="vg-flashcard-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="vg-card-header">
+                            <span className="vg-card-header-title">Vocabulary Flashcards</span>
+                            <button className="vg-modal-close-btn" onClick={closeFlashcards}>&times;</button>
+                        </div>
+
+                        <div className="vg-card-progress-container">
+                            <div className="vg-card-progress-bar" style={{ width: `${progressPercent}%` }}></div>
+                        </div>
+
+                        <div 
+                            className={`vg-card-container ${isFlipped ? 'is-flipped' : ''} ${slideDirection ? `slide-${slideDirection}` : ''} ${hasClickedDontKnow ? 'clickable' : ''}`}
+                            onClick={handleCardClick}
+                        >
+                            <div className="vg-card-inner">
+                                {/* Front Side */}
+                                <div className="vg-card-front">
+                                    <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
+                                    <div className="vg-card-word-title">{deck[currentDeckIndex].word}</div>
+                                    {deck[currentDeckIndex].ipa && (
+                                        <div className="vg-card-detail">
+                                            <span className="vg-card-label">IPA:</span>
+                                            <span className="vg-card-value font-ipa">[{deck[currentDeckIndex].ipa}]</span>
+                                        </div>
+                                    )}
+                                    {deck[currentDeckIndex].syllable_type && (
+                                        <div className="vg-card-detail">
+                                            <span className="vg-card-label">Syllables:</span>
+                                            <span className="vg-card-value">{deck[currentDeckIndex].syllable_type}</span>
+                                        </div>
+                                    )}
+                                    {deck[currentDeckIndex].comparison && (
+                                        <div className="vg-card-detail">
+                                            <span className="vg-card-label">Comparison:</span>
+                                            <span className="vg-card-value">{deck[currentDeckIndex].comparison}</span>
+                                        </div>
+                                    )}
+                                    {deck[currentDeckIndex].context_sentence && (
+                                        <div className="vg-card-context">
+                                            <button 
+                                                className={`vg-play-btn ${playingIndex === deck[currentDeckIndex].originalIndex ? 'playing' : ''}`} 
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    playAudio(deck[currentDeckIndex].context_sentence, deck[currentDeckIndex].originalIndex)
+                                                }}
+                                                disabled={playingIndex === deck[currentDeckIndex].originalIndex}
+                                            >
+                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                            </button>
+                                            <span className="vg-sentence">"{deck[currentDeckIndex].context_sentence}"</span>
+                                        </div>
+                                    )}
+                                    {deck[currentDeckIndex].page_number && (
+                                        <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
+                                    )}
+                                </div>
+
+                                {/* Back Side */}
+                                <div className="vg-card-back">
+                                    <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
+                                    <div className="vg-card-word-title">{deck[currentDeckIndex].word}</div>
+                                    <div className="vg-card-meaning">{deck[currentDeckIndex].meaning}</div>
+                                    {(deck[currentDeckIndex].memorization_hook || deck[currentDeckIndex].hint) && (
+                                        <div className="vg-card-hook">
+                                            <span className="vg-hook-label">🧠 Hook:</span>
+                                            <span className="vg-hook-text">{deck[currentDeckIndex].memorization_hook || deck[currentDeckIndex].hint}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="vg-modal-footer">
+                            <button 
+                                className="vg-btn-know" 
+                                onClick={handleKnow}
+                                disabled={isFlipped}
+                            >
+                                Know
+                            </button>
+                            <button 
+                                className="vg-btn-dont-know" 
+                                onClick={handleDontKnow}
+                                disabled={isFlipped}
+                            >
+                                Don't Know
+                            </button>
+                            <button 
+                                className="vg-btn-next" 
+                                onClick={moveToNextCard}
+                                disabled={countdown !== null}
+                            >
+                                {countdown !== null ? `Next (${countdown}s)` : 'Next'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

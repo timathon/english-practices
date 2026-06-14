@@ -60,14 +60,16 @@ body.vg-active {
   font-size: 0.9em;
   color: #666;
   margin: 15px auto;
-  background: rgba(248, 249, 250, 0.9);
-  backdrop-filter: blur(5px);
-  padding: 5px 15px;
+  background: rgba(248, 249, 250, 0.95);
+  backdrop-filter: blur(8px);
+  padding: 6px 18px;
   border-radius: 20px;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   align-self: center;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   border: 1px solid rgba(0,0,0,0.05);
   position: sticky;
   top: 10px;
@@ -76,6 +78,43 @@ body.vg-active {
 
 .vg-stats-bar b {
   color: #2c3e50;
+}
+
+.vg-play-cards-btn {
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 0.8em;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  animation: vg-shake 5s infinite ease-in-out;
+  transform-origin: center;
+}
+
+.vg-play-cards-btn:hover {
+  background: #2980b9;
+  transform: translateY(-1px);
+  animation: none;
+}
+
+.vg-play-cards-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes vg-shake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  2% { transform: rotate(-8deg) scale(1.05); }
+  4% { transform: rotate(8deg) scale(1.05); }
+  6% { transform: rotate(-8deg) scale(1.05); }
+  8% { transform: rotate(8deg) scale(1.05); }
+  10% { transform: rotate(0deg) scale(1); }
 }
 
 /* Desktop Controls */
@@ -372,4 +411,304 @@ body.vg-active {
   }
   .vg-header-main h1 { font-size: 1.4em; }
   .vg-header-main h2 { font-size: 1.1em; }
+}
+
+/* Flashcards Modal Styles */
+.vg-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vg-flashcard-modal {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.vg-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.vg-card-header-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #2c3e50;
+}
+
+.vg-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #95a5a6;
+  transition: color 0.2s;
+  line-height: 1;
+}
+
+.vg-modal-close-btn:hover {
+  color: #2c3e50;
+}
+
+/* Progress bar */
+.vg-card-progress-container {
+  background-color: #f1f2f6;
+  border-radius: 4px;
+  height: 6px;
+  width: 100%;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.vg-card-progress-bar {
+  background-color: #2ecc71;
+  height: 100%;
+  transition: width 0.3s ease-out;
+}
+
+/* 3D Card container */
+.vg-card-container {
+  perspective: 1000px;
+  width: 100%;
+  height: 330px;
+  margin-bottom: 24px;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.vg-card-container.clickable {
+  cursor: pointer;
+}
+
+.vg-card-container.slide-next {
+  opacity: 0;
+  transform: translateX(-60px);
+}
+
+.vg-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.vg-card-container.is-flipped .vg-card-inner {
+  transform: rotateY(180deg);
+}
+
+.vg-card-front, .vg-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.vg-card-front {
+  background-color: #fafbfd;
+  color: #333;
+}
+
+.vg-card-back {
+  background-color: #f5fcfb;
+  color: #333;
+  transform: rotateY(180deg);
+}
+
+.vg-card-index {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  font-size: 0.75rem;
+  color: #95a5a6;
+}
+
+.vg-card-page {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-size: 0.7rem;
+  color: #bdc3c7;
+  background-color: #ecf0f1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.vg-card-detail {
+  display: flex;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  width: 100%;
+  max-width: 280px;
+  justify-content: space-between;
+}
+
+.vg-card-label {
+  font-weight: bold;
+  color: #7f8c8d;
+}
+
+.vg-card-value {
+  color: #2c3e50;
+  text-align: right;
+}
+
+.font-ipa {
+  font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif;
+  color: #e67e22;
+}
+
+.vg-card-context {
+  margin-top: 15px;
+  padding: 10px 14px;
+  background: white;
+  border-left: 4px solid #f39c12;
+  border-radius: 0 6px 6px 0;
+  font-style: italic;
+  font-size: 1rem;
+  color: #555;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vg-card-word-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2980b9;
+  margin-bottom: 12px;
+}
+
+.vg-card-meaning {
+  font-size: 1.25rem;
+  color: #2c3e50;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.vg-card-hook {
+  background-color: #e8f8f5;
+  border-left: 4px solid #1abc9c;
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.9rem;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.vg-card-hook .vg-hook-label {
+  font-weight: bold;
+  color: #16a085;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.vg-card-hook .vg-hook-text {
+  color: #333;
+}
+
+/* Modal Footer buttons */
+.vg-modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.vg-modal-footer button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.vg-modal-footer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none;
+}
+
+.vg-btn-know {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.vg-btn-know:hover:not(:disabled) {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
+
+.vg-btn-dont-know {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.vg-btn-dont-know:hover:not(:disabled) {
+  background-color: #c0392b;
+  transform: translateY(-2px);
+}
+
+.vg-btn-next {
+  background-color: #34495e;
+  color: white;
+}
+
+.vg-btn-next:hover:not(:disabled) {
+  background-color: #2c3e50;
+  transform: translateY(-2px);
+}
+
+.vg-modal-footer button:active:not(:disabled) {
+  transform: translateY(0);
 }

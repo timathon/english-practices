@@ -223,7 +223,7 @@ export function UsageGuide() {
                     <h4 className="ug-card-title">Vocab Guide</h4>
                   </div>
                   <p className="ug-card-desc">
-                    A study sheet extracted from unit vocabulary. It details the page source, standard UK IPA, syllable categories (e.g. VCe, Closed), phoneme comparisons (distractor pairs), and creative Chinese mnemonics (memorization hooks).
+                    A study sheet extracted from unit vocabulary. It details the page source, standard UK IPA, syllable categories (e.g. VCe, Closed), phoneme comparisons (distractor pairs), and creative Chinese mnemonics (memorization hooks). Includes an **interactive flashcard modal** (click ▶️ Play) with 3D card flipping, automatic context sentence audio read-alouds, manual toggle review, and a 10s auto-advancing spaced repetition review timer.
                   </p>
                 </div>
 
