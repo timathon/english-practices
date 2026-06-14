@@ -31,11 +31,25 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [slideDirection, setSlideDirection] = useState<'next' | null>(null)
     const [hasClickedDontKnow, setHasClickedDontKnow] = useState(false)
     const [knowCooldownSecs, setKnowCooldownSecs] = useState(0)
+    const [isPeeking, setIsPeeking] = useState(false)
 
     const timerRef = useRef<any>(null)
     const knowCooldownIntervalRef = useRef<any>(null)
+    const peekTimeout1Ref = useRef<any>(null)
+    const peekTimeout2Ref = useRef<any>(null)
+    const peekResetTimeoutRef = useRef<any>(null)
     const shellRef = useRef<HTMLDivElement>(null)
     const unitKey = `ep-vg-hidden-${practiceId}`
+
+    const clearPeekTimeouts = () => {
+        if (peekTimeout1Ref.current) clearTimeout(peekTimeout1Ref.current)
+        if (peekTimeout2Ref.current) clearTimeout(peekTimeout2Ref.current)
+        if (peekResetTimeoutRef.current) clearTimeout(peekResetTimeoutRef.current)
+        peekTimeout1Ref.current = null
+        peekTimeout2Ref.current = null
+        peekResetTimeoutRef.current = null
+        setIsPeeking(false)
+    }
 
     useEffect(() => {
         const originalStyle = {
@@ -83,6 +97,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             if (knowCooldownIntervalRef.current) {
                 clearInterval(knowCooldownIntervalRef.current)
             }
+            clearPeekTimeouts()
         }
     }, [data, practiceId, textbook, unitKey])
 
@@ -210,6 +225,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             clearInterval(knowCooldownIntervalRef.current)
             knowCooldownIntervalRef.current = null
         }
+        clearPeekTimeouts()
         setKnowCooldownSecs(0)
     }
 
@@ -218,6 +234,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             clearInterval(timerRef.current)
             timerRef.current = null
         }
+        clearPeekTimeouts()
         setCountdown(null)
 
         setSlideDirection('next')
@@ -271,6 +288,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         setIsFlipped(true)
         setCountdown(10)
         setHasClickedDontKnow(true)
+        clearPeekTimeouts()
 
         if (timerRef.current) {
             clearInterval(timerRef.current)
@@ -288,11 +306,28 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                 setCountdown(currentSec)
             }
         }, 1000)
+
+        // First peek after 1s
+        peekTimeout1Ref.current = setTimeout(() => {
+            setIsPeeking(true)
+            peekResetTimeoutRef.current = setTimeout(() => {
+                setIsPeeking(false)
+            }, 400)
+        }, 1000)
+
+        // Second peek after 4s
+        peekTimeout2Ref.current = setTimeout(() => {
+            setIsPeeking(true)
+            peekResetTimeoutRef.current = setTimeout(() => {
+                setIsPeeking(false)
+            }, 400)
+        }, 4000)
     }
 
     const handleCardClick = () => {
         if (hasClickedDontKnow) {
             setIsFlipped(prev => !prev)
+            clearPeekTimeouts()
         }
     }
 
@@ -442,7 +477,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                         </div>
 
                         <div 
-                            className={`vg-card-container ${isFlipped ? 'is-flipped' : ''} ${slideDirection ? `slide-${slideDirection}` : ''} ${hasClickedDontKnow ? 'clickable' : ''}`}
+                            className={`vg-card-container ${isFlipped ? 'is-flipped' : ''} ${isPeeking ? 'is-peeking' : ''} ${slideDirection ? `slide-${slideDirection}` : ''} ${hasClickedDontKnow ? 'clickable' : ''}`}
                             onClick={handleCardClick}
                         >
                             <div className="vg-card-inner">
@@ -514,14 +549,14 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                             <button 
                                 className="vg-btn-know" 
                                 onClick={handleKnow}
-                                disabled={isFlipped || knowCooldownSecs > 0}
+                                disabled={isFlipped || knowCooldownSecs > 0 || hasClickedDontKnow}
                             >
                                 {knowCooldownSecs > 0 ? `Know (${knowCooldownSecs}s)` : 'Know'}
                             </button>
                             <button 
                                 className="vg-btn-dont-know" 
                                 onClick={handleDontKnow}
-                                disabled={isFlipped}
+                                disabled={isFlipped || hasClickedDontKnow}
                             >
                                 Don't Know
                             </button>
