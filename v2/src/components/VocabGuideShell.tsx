@@ -20,6 +20,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [forceShowCN, setForceShowCN] = useState<Set<number>>(new Set())
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [playingIndex, setPlayingIndex] = useState<number | null>(null)
+    const [tempShowAll, setTempShowAll] = useState(true)
 
     const shellRef = useRef<HTMLDivElement>(null)
     const unitKey = `ep-vg-hidden-${practiceId}`
@@ -69,6 +70,14 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             document.body.classList.remove('vg-active')
         }
     }, [data, practiceId, textbook, unitKey])
+
+    useEffect(() => {
+        setTempShowAll(true)
+        const timer = setTimeout(() => {
+            setTempShowAll(false)
+        }, 3000)
+        return () => clearTimeout(timer)
+    }, [practiceId])
 
     const toggleSort = () => {
         const nextSort = !isAlphabetical
@@ -190,7 +199,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             <div className="vg-grid">
                 {vocab.map((item) => {
                     const isHidden = hiddenIndices.has(item.originalIndex)
-                    if (isHidden && !showHiddenMode) return null
+                    if (isHidden && !showHiddenMode && !tempShowAll) return null
 
                     return (
                         <div key={item.originalIndex} className={`vg-item ${isHidden ? 'is-hidden' : ''}`}>
