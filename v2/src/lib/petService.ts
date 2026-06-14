@@ -16,6 +16,7 @@ export interface PetState {
   goldCoins: number;
   foodItems: number;
   schulteRoundsLeft: number;
+  cardMatchRoundsLeft: number;
   totalCorrect: number;
   lastUpdated: number; // timestamp in ms
 
@@ -121,6 +122,7 @@ const INITIAL_STATE = (type: 'cat' | 'dog' | 'dino' = 'cat'): PetState => ({
   goldCoins: 0,
   foodItems: 0,
   schulteRoundsLeft: 0,
+  cardMatchRoundsLeft: 0,
   totalCorrect: 0,
   lastUpdated: 0, // 0 = uninitialized; never wins timestamp comparison vs real server data
   // Streak
@@ -234,6 +236,7 @@ export const petService = {
         goldCoins,
         foodItems,
         schulteRoundsLeft: typeof parsed.schulteRoundsLeft === 'number' ? parsed.schulteRoundsLeft : 0,
+        cardMatchRoundsLeft: typeof parsed.cardMatchRoundsLeft === 'number' ? parsed.cardMatchRoundsLeft : 0,
         totalCorrect: typeof parsed.totalCorrect === 'number' ? parsed.totalCorrect : 0,
         lastUpdated: parsed.lastUpdated || 0,
         // Streak (with migration defaults)
@@ -534,6 +537,27 @@ export const petService = {
     const state = this.getPetState();
     if ((state.schulteRoundsLeft || 0) > 0) {
       state.schulteRoundsLeft -= 1;
+      state.lastUpdated = Date.now();
+      this.savePetState(state);
+    }
+  },
+
+  buyCardMatchRounds(): boolean {
+    const state = this.getPetState();
+    if ((state.food || 0) < 50 || (state.love || 0) < 50) return false;
+    if ((state.goldCoins || 0) < 1) return false;
+
+    state.goldCoins = (state.goldCoins || 0) - 1;
+    state.cardMatchRoundsLeft = (state.cardMatchRoundsLeft || 0) + 3;
+    state.lastUpdated = Date.now();
+    this.savePetState(state);
+    return true;
+  },
+
+  decrementCardMatchRounds(): void {
+    const state = this.getPetState();
+    if ((state.cardMatchRoundsLeft || 0) > 0) {
+      state.cardMatchRoundsLeft -= 1;
       state.lastUpdated = Date.now();
       this.savePetState(state);
     }

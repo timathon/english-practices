@@ -18,7 +18,7 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
   const [activeTab, setActiveTab] = useState<'stats' | 'evolution' | 'activities'>('stats');
   const navigate = useNavigate();
   const [showBuyFoodModal, setShowBuyFoodModal] = useState(false);
-  const [showBuyGameModal, setShowBuyGameModal] = useState(false);
+  const [showGameCenterModal, setShowGameCenterModal] = useState(false);
   const [buyAmount, setBuyAmount] = useState(1);
   const [showChartModal, setShowChartModal] = useState(false);
 
@@ -97,14 +97,10 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
   };
 
   const handleGameClick = () => {
-    if ((petState.schulteRoundsLeft || 0) <= 0) {
-      setShowBuyGameModal(true);
-    } else {
-      navigate('/games/schulte');
-    }
+    setShowGameCenterModal(true);
   };
 
-  const handleBuyGameRounds = () => {
+  const handleBuySchulteRounds = () => {
     if ((petState.food || 0) < 50 || (petState.love || 0) < 50) {
       showSpeech(`Your pet needs at least 50% health (food) and 50% love to buy game rounds! 🍎❤️`);
       return;
@@ -115,8 +111,22 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
     }
     const success = petService.buySchulteRounds();
     if (success) {
-      setShowBuyGameModal(false);
-      navigate('/games/schulte');
+      showSpeech(`Successfully bought 3 Schulte Table rounds! 🧩`);
+    }
+  };
+
+  const handleBuyCardMatchRounds = () => {
+    if ((petState.food || 0) < 50 || (petState.love || 0) < 50) {
+      showSpeech(`Your pet needs at least 50% health (food) and 50% love to buy game rounds! 🍎❤️`);
+      return;
+    }
+    if ((petState.goldCoins || 0) < 1) {
+      showSpeech(`You need at least 1 🪙 to buy game rounds!`);
+      return;
+    }
+    const success = petService.buyCardMatchRounds();
+    if (success) {
+      showSpeech(`Successfully bought 3 Card Match rounds! 🎴`);
     }
   };
 
@@ -399,9 +409,9 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
             className="pet-widget-btn feed-btn"
             style={{ background: 'linear-gradient(135deg, #a855f7 0%, var(--accent) 100%)', borderColor: 'var(--accent)', color: '#fff' }}
             onClick={handleGameClick}
-            title="Play Schulte Table Game"
+            title="Open Game Center"
           >
-            🎮 Game (游戏 x{petState.schulteRoundsLeft || 0})
+            🎮 Games (游戏 x{(petState.schulteRoundsLeft || 0) + (petState.cardMatchRoundsLeft || 0)})
           </button>
         </div>
 
@@ -734,53 +744,110 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
         </div>
       )}
 
-      {/* ── Buy Game Modal ── */}
-      {showBuyGameModal && (() => {
+      {/* ── Game Center Modal ── */}
+      {showGameCenterModal && (() => {
         const cannotBuy = (petState.food || 0) < 50 || (petState.love || 0) < 50;
         return (
-          <div className="pet-help-modal-overlay" onClick={() => setShowBuyGameModal(false)}>
-            <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ width: '400px', maxWidth: '95%' }}>
+          <div className="pet-help-modal-overlay" onClick={() => setShowGameCenterModal(false)}>
+            <div className="pet-help-modal-content" onClick={(e) => e.stopPropagation()} style={{ width: '480px', maxWidth: '95%' }}>
               <div className="pet-help-modal-header">
-                <h4 className="pet-help-modal-title">🎮 Schulte Table Game</h4>
-                <button className="pet-help-modal-close" onClick={() => setShowBuyGameModal(false)}>×</button>
+                <h4 className="pet-help-modal-title">🎮 Game Center & Shop (游戏中心)</h4>
+                <button className="pet-help-modal-close" onClick={() => setShowGameCenterModal(false)}>×</button>
               </div>
-              <div className="pet-help-modal-body" style={{ textAlign: 'center', padding: '20px' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🧩</div>
-                <p style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: 600 }}>No game rounds left!</p>
-                <p style={{ margin: '0 0 16px 0', color: 'var(--text)', fontSize: '0.9rem' }}>
-                  Spend <strong>1 Gold Coin</strong> to buy <strong>3 play rounds</strong> of Schulte Table?
-                  <br />
-                  (花费 <strong>1 金币</strong> 购买 <strong>3 局</strong> 舒尔特方格游戏场次？)
-                </p>
+              <div className="pet-help-modal-body" style={{ padding: '16px' }}>
+                <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <span style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-h)' }}>🪙 Available Gold Coins:</span>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#eab308' }}>🪙 {petState.goldCoins || 0}</span>
+                </div>
+
                 {cannotBuy && (
-                  <div style={{ color: 'var(--accent, #d73a49)', fontSize: '0.85rem', marginBottom: '16px', background: 'rgba(215, 58, 73, 0.08)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(215, 58, 73, 0.2)', textAlign: 'left' }}>
+                  <div style={{ color: 'var(--accent, #d73a49)', fontSize: '0.85rem', marginBottom: '20px', background: 'rgba(215, 58, 73, 0.08)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(215, 58, 73, 0.2)', textAlign: 'left' }}>
                     ⚠️ Your pet needs at least 50% health (food) and 50% love to buy game rounds! Feed and pet them first.
                     <br />
                     (宠物需要至少 50% 饱食度和 50% 亲密度才能购买游戏场次！)
                   </div>
                 )}
-                <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '20px' }}>
-                  <span>🪙 Coins: <strong>{petState.goldCoins || 0}</strong></span>
-                  <span>🎮 Rounds: <strong>{petState.schulteRoundsLeft || 0}</strong></span>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                  <button
-                    type="button"
-                    className="pet-widget-btn feed-btn"
-                    onClick={handleBuyGameRounds}
-                    disabled={cannotBuy || (petState.goldCoins || 0) < 1}
-                    style={{ padding: '8px 20px', minWidth: '100px', ...(cannotBuy ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}
-                  >
-                    Buy & Play (购买并玩)
-                  </button>
-                  <button
-                    type="button"
-                    className="pet-widget-btn pet-btn"
-                    onClick={() => setShowBuyGameModal(false)}
-                    style={{ padding: '8px 20px', minWidth: '100px' }}
-                  >
-                    Cancel (取消)
-                  </button>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Game 1: Schulte Table */}
+                  <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '16px', background: 'var(--bg)', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-h)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>🧩</span> Schulte Table (舒尔特方格)
+                      </span>
+                      <span style={{ fontSize: '0.85rem', background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                        Rounds: {petState.schulteRoundsLeft || 0}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+                      Click numbers from 1 to N in order as fast as possible to train your focus!
+                      <br />
+                      (按顺序从 1 点击到 N，练习你的专注力！)
+                    </p>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        type="button"
+                        className="pet-widget-btn feed-btn"
+                        onClick={() => {
+                          setShowGameCenterModal(false);
+                          navigate('/games/schulte');
+                        }}
+                        disabled={(petState.schulteRoundsLeft || 0) <= 0}
+                        style={{ flex: 1, padding: '8px', fontSize: '0.85rem', opacity: (petState.schulteRoundsLeft || 0) <= 0 ? 0.5 : 1 }}
+                      >
+                        Play (开始游戏)
+                      </button>
+                      <button
+                        type="button"
+                        className="pet-widget-btn pet-btn"
+                        onClick={handleBuySchulteRounds}
+                        disabled={cannotBuy || (petState.goldCoins || 0) < 1}
+                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: 'var(--accent)', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
+                      >
+                        Buy 3 Rounds (1 🪙)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Game 2: Card Match */}
+                  <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '16px', background: 'var(--bg)', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-h)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>🎴</span> Card Match (卡片配对)
+                      </span>
+                      <span style={{ fontSize: '0.85rem', background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                        Rounds: {petState.cardMatchRoundsLeft || 0}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+                      Match English words to Chinese translations from your textbook's vocab guides!
+                      <br />
+                      (配对英文单词与课本词汇表的中文翻译！)
+                    </p>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        type="button"
+                        className="pet-widget-btn feed-btn"
+                        onClick={() => {
+                          setShowGameCenterModal(false);
+                          navigate('/games/card-match');
+                        }}
+                        disabled={(petState.cardMatchRoundsLeft || 0) <= 0}
+                        style={{ flex: 1, padding: '8px', fontSize: '0.85rem', opacity: (petState.cardMatchRoundsLeft || 0) <= 0 ? 0.5 : 1 }}
+                      >
+                        Play (开始游戏)
+                      </button>
+                      <button
+                        type="button"
+                        className="pet-widget-btn pet-btn"
+                        onClick={handleBuyCardMatchRounds}
+                        disabled={cannotBuy || (petState.goldCoins || 0) < 1}
+                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: 'var(--accent)', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
+                      >
+                        Buy 3 Rounds (1 🪙)
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

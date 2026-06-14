@@ -11,6 +11,8 @@ import { petService } from './lib/petService'
 import { SwitchUser } from './SwitchUser'
 import { IrregularVerbsModal } from './components/IrregularVerbsModal'
 import { SchulteGame } from './components/SchulteGame'
+// Memory card matching game
+import { CardMatchGame } from './components/CardMatchGame'
 import './App.css'
 
 function Navigation({ session, showChinese, onCycleComplete }: { session: any; showChinese: boolean; onCycleComplete?: () => void }) {
@@ -238,6 +240,13 @@ function App() {
             <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
                 <SchulteGame />
+              </div>
+            </div>
+          } />
+          <Route path="/games/card-match" element={
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <CardMatchGame showChinese={showChinese} />
               </div>
             </div>
           } />

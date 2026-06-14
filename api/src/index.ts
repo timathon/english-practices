@@ -637,4 +637,36 @@ app.get('/api/games/schulte/leaderboard', async (c) => {
   return c.json(records);
 })
 
+app.get('/api/games/cardmatch/leaderboard', async (c) => {
+  const auth = getCachedAuth(c.env)
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const db = drizzle(c.env.DB);
+  
+  const records = await db
+    .select({
+      id: practiceRecords.id,
+      userId: practiceRecords.userId,
+      name: user.name,
+      username: user.username,
+      unit: practiceRecords.unit,
+      score: practiceRecords.score,
+      createdAt: practiceRecords.createdAt,
+    })
+    .from(practiceRecords)
+    .innerJoin(user, eq(practiceRecords.userId, user.id))
+    .where(
+      or(
+        eq(practiceRecords.unit, 'game-cardmatch-4'),
+        eq(practiceRecords.unit, 'game-cardmatch-6'),
+        eq(practiceRecords.unit, 'game-cardmatch-8')
+      )
+    )
+    .orderBy(asc(practiceRecords.score))
+    .limit(50);
+
+  return c.json(records);
+})
+
 export default app
