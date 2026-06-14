@@ -61,14 +61,34 @@ const FALLBACK_VOCAB: VocabItem[] = [
   { word: 'water', meaning: '水' }
 ];
 
+const getDisplayLabel = (textbook: string, unit: string) => {
+  const tb = (textbook || '').trim();
+  let ut = (unit || '').trim();
+  if (tb && ut.toLowerCase().startsWith(tb.toLowerCase())) {
+    let rest = ut.substring(tb.length).trim();
+    if (rest.startsWith('-')) {
+      rest = rest.substring(1).trim();
+    }
+    if (rest) {
+      ut = rest;
+    }
+  }
+  return tb && ut ? `${tb} - ${ut}` : tb || ut;
+};
+
 export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }) {
   const [petState, setPetState] = useState<PetState>(() => petService.getPetState());
   const [difficulty, setDifficulty] = useState<4 | 6 | 8>(6); // 4 for Easy (8 cards), 6 for Normal (12 cards), 8 for Hard (16 cards)
   const [vocabGuides, setVocabGuides] = useState<any[]>([]);
   const [selectedGuideId, setSelectedGuideId] = useState<string>('fallback');
   const [loadingVocab, setLoadingVocab] = useState<boolean>(false);
-  const [loadedVocabulary, setLoadedVocabulary] = useState<VocabItem[]>(FALLBACK_VOCAB);
   
+  // Lottery State
+  const [isLotteryRunning, setIsLotteryRunning] = useState<boolean>(false);
+  const [isLotteryStopping, setIsLotteryStopping] = useState<boolean>(false);
+  const [lotteryDisplayLabel, setLotteryDisplayLabel] = useState<string>('');
+  const [lotteryTimer, setLotteryTimer] = useState<number>(5.0);
+
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCards, setSelectedCards] = useState<number[]>([]); // indices of currently selected cards
   const [isProcessingMatch, setIsProcessingMatch] = useState<boolean>(false);
@@ -87,6 +107,8 @@ export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const timerRef = useRef<number | null>(null);
+  const lotteryTimerId = useRef<number | null>(null);
+  const isStoppingRef = useRef<boolean>(false);
 
   // Sync pet state updates
   useEffect(() => {
@@ -121,8 +143,12 @@ export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }
     const cachedPractices = cache.getPractices();
     if (cachedPractices && cachedPractices.length > 0) {
       const guides = cachedPractices.filter((p: any) => p.type.toLowerCase().includes('vocab-guide'));
-      setVocabGuides(guides);
-      preSelectVocabGuide(guides);
+      const sorted = [...guides].sort((a, b) => {
+        const labelA = getDisplayLabel(a.textbook, a.unit).toLowerCase();
+        const labelB = getDisplayLabel(b.textbook, b.unit).toLowerCase();
+        return labelA.localeCompare(labelB, undefined, { numeric: true, sensitivity: 'base' });
+      });
+      setVocabGuides(sorted);
     } else {
       fetch(`${API_URL}/api/practices`, { credentials: 'include' })
         .then(res => res.json())
@@ -130,12 +156,22 @@ export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }
           if (Array.isArray(data)) {
             cache.setPractices(data);
             const guides = data.filter((p: any) => p.type.toLowerCase().includes('vocab-guide'));
-            setVocabGuides(guides);
-            preSelectVocabGuide(guides);
+            const sorted = [...guides].sort((a, b) => {
+              const labelA = getDisplayLabel(a.textbook, a.unit).toLowerCase();
+              const labelB = getDisplayLabel(b.textbook, b.unit).toLowerCase();
+              return labelA.localeCompare(labelB, undefined, { numeric: true, sensitivity: 'base' });
+            });
+            setVocabGuides(sorted);
           }
         })
         .catch(e => console.error('Failed to fetch practices:', e));
     }
+
+    return () => {
+      if (lotteryTimerId.current) {
+        window.clearTimeout(lotteryTimerId.current);
+      }
+    };
   }, []);
 
   // Timer logic
@@ -155,81 +191,133 @@ export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }
     };
   }, [isPlaying, startTime]);
 
-  // Try to pre-select a vocab guide based on what unit/textbook was active last
-  const preSelectVocabGuide = (guides: any[]) => {
-    if (guides.length === 0) return;
-    const lastBook = sessionStorage.getItem('last-active-textbook');
-    const lastUnit = sessionStorage.getItem('last-active-unit');
-    if (lastBook && lastUnit) {
-      const match = guides.find(g => g.textbook === lastBook && g.unit === lastUnit);
-      if (match) {
-        setSelectedGuideId(match.id);
-        fetchGuideVocabulary(match.id);
-        return;
-      }
-    }
-    // Select first by default
-    setSelectedGuideId(guides[0].id);
-    fetchGuideVocabulary(guides[0].id);
-  };
-
-  // Fetch full content of selected vocab guide
-  const fetchGuideVocabulary = async (guideId: string) => {
-    if (guideId === 'fallback') {
-      setLoadedVocabulary(FALLBACK_VOCAB);
+  const startLottery = () => {
+    if ((petState.cardMatchRoundsLeft || 0) <= 0) {
+      setErrorMsg(showChinese ? '没有剩余游戏场次，请先购买！' : 'No play rounds remaining! Spend 1 gold coin to unlock 3 rounds. 🪙');
       return;
     }
+    
+    setErrorMsg(null);
+    setUnlockedMsg(null);
+    setGameFinished(false);
+    setIsLotteryRunning(true);
+    setIsLotteryStopping(false);
+    isStoppingRef.current = false;
+    setLotteryTimer(5.0);
+    
+    const pool = [
+      { id: 'fallback', label: showChinese ? '常用词汇' : 'General Practice' },
+      ...vocabGuides.map(g => ({
+        id: g.id,
+        label: getDisplayLabel(g.textbook, g.unit)
+      }))
+    ];
+    
+    let currentIdx = Math.floor(Math.random() * pool.length);
+    setLotteryDisplayLabel(pool[currentIdx].label);
+    
+    let speed = 60;
+    let running = true;
+    let stopping = false;
+    let stopSteps = 0;
+    const maxStopSteps = 5;
+    
+    const startTime = Date.now();
+    
+    const tick = () => {
+      if (!running) return;
+      
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, (5000 - elapsed) / 1000);
+      setLotteryTimer(remaining);
+      
+      let nextIdx = Math.floor(Math.random() * pool.length);
+      if (pool.length > 1 && nextIdx === currentIdx) {
+        nextIdx = (nextIdx + 1) % pool.length;
+      }
+      currentIdx = nextIdx;
+      
+      setLotteryDisplayLabel(pool[currentIdx].label);
+      
+      if ((isStoppingRef.current || elapsed >= 5000) && !stopping) {
+        stopping = true;
+        setIsLotteryStopping(true);
+        stopSteps = 0;
+      }
+      
+      if (stopping) {
+        stopSteps++;
+        if (stopSteps >= maxStopSteps) {
+          running = false;
+          finishLottery(pool[currentIdx]);
+          return;
+        }
+        speed = speed * 2;
+      }
+      
+      lotteryTimerId.current = window.setTimeout(tick, speed);
+    };
+    
+    lotteryTimerId.current = window.setTimeout(tick, speed);
+  };
+
+  const finishLottery = (selectedOption: { id: string; label: string }) => {
+    setSelectedGuideId(selectedOption.id);
+    lotteryTimerId.current = window.setTimeout(() => {
+      fetchAndStartGame(selectedOption.id);
+    }, 1000);
+  };
+
+  const fetchAndStartGame = async (guideId: string) => {
     setLoadingVocab(true);
     setErrorMsg(null);
     try {
-      const res = await fetch(`${API_URL}/api/practices/${guideId}`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        let vocabData = data;
-        if (data.isEncrypted && typeof data.content === 'string') {
-          vocabData = decryptContent(data.content, OBSCURE_KEY);
-        } else {
-          vocabData = data.content;
+      let vocabList = FALLBACK_VOCAB;
+      if (guideId !== 'fallback') {
+        const res = await fetch(`${API_URL}/api/practices/${guideId}`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          let vocabData = data;
+          if (data.isEncrypted && typeof data.content === 'string') {
+            vocabData = decryptContent(data.content, OBSCURE_KEY);
+          } else {
+            vocabData = data.content;
+          }
+          if (vocabData && Array.isArray(vocabData.unit_vocabulary) && vocabData.unit_vocabulary.length > 0) {
+            vocabList = vocabData.unit_vocabulary;
+          }
         }
-        
-        if (vocabData && Array.isArray(vocabData.unit_vocabulary) && vocabData.unit_vocabulary.length > 0) {
-          setLoadedVocabulary(vocabData.unit_vocabulary);
-        } else {
-          setLoadedVocabulary(FALLBACK_VOCAB);
-        }
-      } else {
-        setLoadedVocabulary(FALLBACK_VOCAB);
       }
+      
+      petService.decrementCardMatchRounds();
+      initializeCards(vocabList);
+      
+      setIsPlaying(true);
+      setElapsedTime(0);
+      setStartTime(Date.now());
+      setIsLotteryRunning(false);
     } catch (e) {
-      console.error('Failed to load vocab guide content:', e);
-      setLoadedVocabulary(FALLBACK_VOCAB);
+      console.error(e);
+      setErrorMsg(showChinese ? '加载词汇失败，请重试！' : 'Failed to load vocabulary, please try again.');
+      setIsLotteryRunning(false);
     } finally {
       setLoadingVocab(false);
     }
   };
 
-  const handleGuideChange = (guideId: string) => {
-    setSelectedGuideId(guideId);
-    fetchGuideVocabulary(guideId);
-  };
-
-  const initializeCards = () => {
-    // 1. Pick N random unique words from loaded vocab list
-    const pool = [...loadedVocabulary];
+  const initializeCards = (vocabList: VocabItem[]) => {
+    const pool = [...vocabList];
     const selectedWords: VocabItem[] = [];
     
-    // Safety check: if pool is smaller than required difficulty, pad with fallback
     while (pool.length < difficulty) {
       pool.push(...FALLBACK_VOCAB);
     }
 
-    // Pick unique items
     for (let i = 0; i < difficulty; i++) {
       const index = Math.floor(Math.random() * pool.length);
       selectedWords.push(pool.splice(index, 1)[0]);
     }
 
-    // 2. Generate double cards: 1 English, 1 Chinese per pair
     const cardList: Card[] = [];
     selectedWords.forEach((item, index) => {
       const pairColor = PAIR_COLORS[index % PAIR_COLORS.length];
@@ -255,7 +343,6 @@ export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }
       });
     });
 
-    // 3. Fisher-Yates Shuffle
     for (let i = cardList.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [cardList[i], cardList[j]] = [cardList[j], cardList[i]];
@@ -266,21 +353,6 @@ export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }
     setIsProcessingMatch(false);
     setGameFinished(false);
     setFinalTime(null);
-  };
-
-  const handleStartGame = () => {
-    if ((petState.cardMatchRoundsLeft || 0) <= 0) {
-      setErrorMsg('No play rounds remaining! Spend 1 gold coin to unlock 3 rounds. 🪙');
-      return;
-    }
-    
-    petService.decrementCardMatchRounds();
-    setIsPlaying(true);
-    setElapsedTime(0);
-    setStartTime(Date.now());
-    initializeCards();
-    setErrorMsg(null);
-    setUnlockedMsg(null);
   };
 
   const handleCardClick = (clickedIndex: number) => {
@@ -389,6 +461,17 @@ export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }
     .sort((a, b) => a.score - b.score)
     .slice(0, 10);
 
+  const getDisplayLabelFromId = (id: string) => {
+    if (id === 'fallback') {
+      return showChinese ? '常用词汇' : 'General Practice';
+    }
+    const guide = vocabGuides.find(g => g.id === id);
+    if (guide) {
+      return getDisplayLabel(guide.textbook, guide.unit);
+    }
+    return showChinese ? '常用词汇' : 'General Practice';
+  };
+
   return (
     <div className="cardmatch-container">
       {/* Header */}
@@ -407,64 +490,126 @@ export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }
         <p className="cardmatch-subtitle">
           Flip cards to match the English word with its Chinese translation. Each matching pair is highlighted in a distinct font color!
           <br />
-          (翻牌配对英文单词与中文翻译。每一对正确的单词和翻译在翻开时会有专属的字体颜色以示区分！)
+          (翻牌配对英文单词与中文翻译。每一对正确的单词 and 翻译在翻开时会有专属的字体颜色以示区分！)
         </p>
       </div>
 
       <div className="cardmatch-layout">
         {/* Main Panel */}
         <div className="cardmatch-main-panel">
-          {/* Stats Bar */}
-          <div className="cardmatch-stats-row">
-            <div className="cardmatch-stat-card">
-              <span className="cardmatch-stat-emoji">🪙</span>
-              <div>
-                <div className="cardmatch-stat-lbl">
+          {/* Stats Bar or Victory Card */}
+          {gameFinished && finalTime !== null ? (
+            <div className="cardmatch-victory-card animate-bounce-in">
+              <span className="cardmatch-victory-emoji">🏆</span>
+              <h3 className="cardmatch-victory-title">
+                <span className="db-title-grid">
+                  <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                    Excellent Job!
+                  </span>
+                  <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                    太棒了！
+                  </span>
+                </span>
+              </h3>
+              <p className="cardmatch-victory-desc">
+                <span className="db-title-grid">
+                  <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                    You completed the {difficulty} pairs puzzle in:
+                  </span>
+                  <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                    你已成功完成 {difficulty} 对卡片配对：
+                  </span>
+                </span>
+              </p>
+              <div className="cardmatch-victory-time font-mono">{formatTime(finalTime)}</div>
+              <div className="cardmatch-victory-buttons">
+                <button className="cardmatch-play-again-btn" onClick={startLottery} disabled={(petState.cardMatchRoundsLeft || 0) <= 0}>
                   <span className="db-title-grid">
                     <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
-                      Gold Coins
+                      Play Again
                     </span>
                     <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
-                      金币
+                      再来一局
                     </span>
                   </span>
-                </div>
-                <div className="cardmatch-stat-val">{petState.goldCoins || 0}</div>
-              </div>
-            </div>
-            <div className="cardmatch-stat-card">
-              <span className="cardmatch-stat-emoji">🎮</span>
-              <div>
-                <div className="cardmatch-stat-lbl">
+                </button>
+                <button className="cardmatch-back-dash-btn" onClick={() => setGameFinished(false)}>
                   <span className="db-title-grid">
                     <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
-                      Rounds Left
+                      Reset
                     </span>
                     <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
-                      剩余场次
+                      重置
                     </span>
                   </span>
-                </div>
-                <div className="cardmatch-stat-val">{petState.cardMatchRoundsLeft || 0}</div>
+                </button>
               </div>
             </div>
-            <div className="cardmatch-stat-card">
-              <span className="cardmatch-stat-emoji">⏱️</span>
-              <div>
-                <div className="cardmatch-stat-lbl">
-                  <span className="db-title-grid">
-                    <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
-                      Stopwatch
+          ) : (
+            <div className="cardmatch-stats-row">
+              <div className="cardmatch-stat-card">
+                <span className="cardmatch-stat-emoji">🪙</span>
+                <div>
+                  <div className="cardmatch-stat-lbl">
+                    <span className="db-title-grid">
+                      <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                        Gold Coins
+                      </span>
+                      <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                        金币
+                      </span>
                     </span>
-                    <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
-                      计时器
-                    </span>
-                  </span>
+                  </div>
+                  <div className="cardmatch-stat-val">{petState.goldCoins || 0}</div>
                 </div>
-                <div className="cardmatch-stat-val font-mono">{formatTime(elapsedTime)}</div>
+              </div>
+              <div className="cardmatch-stat-card">
+                <span className="cardmatch-stat-emoji">🎮</span>
+                <div>
+                  <div className="cardmatch-stat-lbl">
+                    <span className="db-title-grid">
+                      <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                        Rounds Left
+                      </span>
+                      <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                        剩余场次
+                      </span>
+                    </span>
+                  </div>
+                  <div className="cardmatch-stat-val">{petState.cardMatchRoundsLeft || 0}</div>
+                </div>
+              </div>
+              <div className="cardmatch-stat-card">
+                <span className="cardmatch-stat-emoji">⏱️</span>
+                <div>
+                  <div className="cardmatch-stat-lbl">
+                    <span className="db-title-grid">
+                      <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                        Stopwatch
+                      </span>
+                      <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                        计时器
+                      </span>
+                    </span>
+                  </div>
+                  <div className="cardmatch-stat-val font-mono">{formatTime(elapsedTime)}</div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {(isPlaying || gameFinished) && (
+            <div className="cardmatch-source-badge animate-bounce-in">
+              <span className="db-title-grid">
+                <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                  Vocabulary Source: <strong>{getDisplayLabelFromId(selectedGuideId)}</strong>
+                </span>
+                <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                  词汇来源: <strong>{getDisplayLabelFromId(selectedGuideId)}</strong>
+                </span>
+              </span>
+            </div>
+          )}
 
           {/* Feedback alerts */}
           {errorMsg && <div className="cardmatch-alert error">{errorMsg}</div>}
@@ -499,79 +644,120 @@ export function CardMatchGame({ showChinese = false }: { showChinese?: boolean }
           {/* Configuration Selection */}
           {!isPlaying && !gameFinished && (
             <div className="cardmatch-config-section">
-              {/* Textbook Vocab Selection */}
-              <div className="cardmatch-config-row">
-                <span className="cardmatch-select-lbl">Select Vocabulary Source:</span>
-                <select
-                  value={selectedGuideId}
-                  onChange={(e) => handleGuideChange(e.target.value)}
-                  className="cardmatch-dropdown"
-                  disabled={loadingVocab}
-                >
-                  <option value="fallback">General Practice (常用词汇)</option>
-                  {vocabGuides.map(g => (
-                    <option key={g.id} value={g.id}>
-                      {g.textbook} - {g.unit} ({g.title || 'Vocab Guide'})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {isLotteryRunning ? (
+                /* Lottery Animation Screen */
+                <div className="cardmatch-lottery-panel">
+                  <h3 className="cardmatch-lottery-title">
+                    {showChinese ? '🎯 正在抽取词汇源...' : '🎯 Rolling Vocabulary Source...'}
+                  </h3>
+                  
+                  <div className="cardmatch-lottery-box">
+                    <span className="cardmatch-lottery-item">
+                      {lotteryDisplayLabel}
+                    </span>
+                  </div>
 
-              {/* Difficulty Selection */}
-              <div className="cardmatch-config-row">
-                <span className="cardmatch-select-lbl">Select Grid Size / Difficulty:</span>
-                <div className="cardmatch-options-buttons">
-                  <button 
-                    className={`cardmatch-diff-btn ${difficulty === 4 ? 'active' : ''}`}
-                    onClick={() => setDifficulty(4)}
-                  >
-                    Easy (4 pairs)
-                  </button>
-                  <button 
-                    className={`cardmatch-diff-btn ${difficulty === 6 ? 'active' : ''}`}
-                    onClick={() => setDifficulty(6)}
-                  >
-                    Normal (6 pairs)
-                  </button>
-                  <button 
-                    className={`cardmatch-diff-btn ${difficulty === 8 ? 'active' : ''}`}
-                    onClick={() => setDifficulty(8)}
-                  >
-                    Hard (8 pairs)
-                  </button>
+                  <div className="cardmatch-lottery-footer">
+                    <span className="cardmatch-lottery-countdown">
+                      {showChinese ? `自动停止倒计时: ${lotteryTimer.toFixed(1)}秒` : `Auto-stop in: ${lotteryTimer.toFixed(1)}s`}
+                    </span>
+                    <button
+                      className="cardmatch-lottery-stop-btn"
+                      onClick={() => { isStoppingRef.current = true; }}
+                      disabled={isLotteryStopping}
+                    >
+                      {isLotteryStopping 
+                        ? (showChinese ? '正在减速...' : 'Stopping...') 
+                        : (showChinese ? '🛑 停止' : '🛑 STOP')}
+                    </button>
+                  </div>
+                  
+                  {loadingVocab && (
+                    <div className="cardmatch-lottery-loading">
+                      {showChinese ? '🔄 正在准备词汇...' : '🔄 Preparing vocabulary...'}
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                /* Standard Config Screen (WITHOUT Select Vocabulary Source select dropdown) */
+                <>
+                  {/* Difficulty Selection */}
+                  <div className="cardmatch-config-row">
+                    <span className="cardmatch-select-lbl">
+                      <span className="db-title-grid">
+                        <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                          Select Grid Size / Difficulty:
+                        </span>
+                        <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                          选择难度/网格大小:
+                        </span>
+                      </span>
+                    </span>
+                    <div className="cardmatch-options-buttons">
+                      <button 
+                        className={`cardmatch-diff-btn ${difficulty === 4 ? 'active' : ''}`}
+                        onClick={() => setDifficulty(4)}
+                      >
+                        <span className="db-title-grid">
+                          <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                            Easy (4 pairs)
+                          </span>
+                          <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                            简单 (4对)
+                          </span>
+                        </span>
+                      </button>
+                      <button 
+                        className={`cardmatch-diff-btn ${difficulty === 6 ? 'active' : ''}`}
+                        onClick={() => setDifficulty(6)}
+                      >
+                        <span className="db-title-grid">
+                          <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                            Normal (6 pairs)
+                          </span>
+                          <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                            普通 (6对)
+                          </span>
+                        </span>
+                      </button>
+                      <button 
+                        className={`cardmatch-diff-btn ${difficulty === 8 ? 'active' : ''}`}
+                        onClick={() => setDifficulty(8)}
+                      >
+                        <span className="db-title-grid">
+                          <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                            Hard (8 pairs)
+                          </span>
+                          <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                            困难 (8对)
+                          </span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
 
-              <button 
-                className="cardmatch-start-btn" 
-                onClick={handleStartGame}
-                disabled={(petState.cardMatchRoundsLeft || 0) <= 0 || loadingVocab}
-              >
-                {loadingVocab ? 'Loading Vocabulary...' : '🚀 Start Game (消耗 1 场次)'}
-              </button>
+                  <button 
+                    className="cardmatch-start-btn" 
+                    onClick={startLottery}
+                    disabled={(petState.cardMatchRoundsLeft || 0) <= 0}
+                  >
+                    <span className="db-title-grid">
+                      <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                        🚀 Start Game (Costs 1 Round)
+                      </span>
+                      <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                        🚀 开始抽签并游戏 (消耗 1 场次)
+                      </span>
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           )}
 
-          {/* Victory Card */}
-          {gameFinished && finalTime !== null && (
-            <div className="cardmatch-victory-card animate-bounce-in">
-              <span className="cardmatch-victory-emoji">🏆</span>
-              <h3 className="cardmatch-victory-title">Excellent Job! (配对成功!)</h3>
-              <p className="cardmatch-victory-desc">You completed the {difficulty} pairs puzzle in:</p>
-              <div className="cardmatch-victory-time font-mono">{formatTime(finalTime)}</div>
-              <div className="cardmatch-victory-buttons">
-                <button className="cardmatch-play-again-btn" onClick={handleStartGame} disabled={(petState.cardMatchRoundsLeft || 0) <= 0}>
-                  Play Again (再来一局)
-                </button>
-                <button className="cardmatch-back-dash-btn" onClick={() => setGameFinished(false)}>
-                  Reset (重置)
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Game Board */}
-          {isPlaying && cards.length > 0 && (
+          {(isPlaying || gameFinished) && cards.length > 0 && (
             <div className="cardmatch-board-wrapper">
               <div className="cardmatch-board-grid" style={{ gridTemplateColumns: `repeat(${difficulty === 4 ? 4 : 4}, 1fr)` }}>
                 {cards.map((card, index) => {
