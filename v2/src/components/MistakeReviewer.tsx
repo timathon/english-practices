@@ -185,10 +185,12 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
 
     const q = currentMistake.question;
     let correct = false;
+    let wrongAnswer: any = undefined;
 
     if (!forceWrong) {
       if (['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s'].includes(currentMistake.practiceType)) {
         correct = selectedOption === q.answer;
+        wrongAnswer = selectedOption !== null ? q.options[selectedOption] : undefined;
       } else if (currentMistake.practiceType === 'sentence-architect') {
         const selection = saSelection || userSelection;
         const constructed = selection.map((item, idx) => {
@@ -205,8 +207,10 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
         if (!correct && q.accept) {
           correct = q.accept.some((alt: string) => alt.replace(/[.!?]$/, "") === constructed);
         }
+        wrongAnswer = constructed;
       } else if (currentMistake.practiceType === 'spelling-hero') {
         correct = spellingSelection.every((val, i) => val === q.chunks[i].correct);
+        wrongAnswer = spellingSelection.filter(Boolean).join("-");
       }
     }
 
@@ -229,6 +233,15 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
       }
     } else {
       playSfx('wrong');
+      // Update mistake: unresolved, reset streak, increment attempts, set createdAt = now (deferring to next day)
+      mistakeService.addMistake(userId, {
+        practiceId: currentMistake.practiceId,
+        textbook: currentMistake.textbook,
+        unit: currentMistake.unit,
+        practiceType: currentMistake.practiceType,
+        question: q,
+        wrongAnswer
+      });
     }
   }, [currentMistake, locked, selectedOption, userSelection, spellingSelection, userId, countdownTimer]);
 
