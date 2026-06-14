@@ -104,8 +104,27 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const [isNewHigh, setIsNewHigh] = useState(false)
     const [invisibleMode, setInvisibleMode] = useState(false)
     const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
+    const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
+    const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
     const timerExpiredRef = useRef(false)
     const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+
+    useEffect(() => {
+        if (!activeChallenge && lastFinishedChallengeId) {
+            setFlickeringChallengeId(lastFinishedChallengeId);
+            setTimeout(() => {
+                const el = document.getElementById(`sa-card-${lastFinishedChallengeId}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 50);
+
+            const timer = setTimeout(() => {
+                setFlickeringChallengeId(null);
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [activeChallenge, lastFinishedChallengeId])
 
     // Countdown timer (30s per question)
     const countdownTimer = useCountdown(30, {
@@ -670,7 +689,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
                     <div className="sa-challenge-grid">
                         {data.challenges.map((c: any) => (
-                            <div key={c.id} className="sa-challenge-card">
+                            <div key={c.id} id={`sa-card-${c.id}`} className={`sa-challenge-card ${flickeringChallengeId === c.id ? 'flicker-active' : ''}`}>
                                 <div className="sa-card-header">
                                     <div style={{ display: 'flex', alignItems: 'center' }}>
                                         <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>{c.icon}</span>
@@ -856,6 +875,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                     })()}
 
                     <button className="sa-check-btn" onClick={() => {
+                        setLastFinishedChallengeId(activeChallenge.id)
                         setActiveChallenge(null)
                         loadRecords()
                     }} style={{ maxWidth: '300px' }}>

@@ -66,8 +66,28 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
     const [isNewHigh, setIsNewHigh] = useState(false)
     const [invisibleMode, setInvisibleMode] = useState(false)
    const [historyModal, setHistoryModal] = useState<{title: string, logs: any[]} | null>(null)
+   const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
+   const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
    const timerExpiredRef = useRef(false)
    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+
+    useEffect(() => {
+        if (!activeChallenge && lastFinishedChallengeId) {
+            setFlickeringChallengeId(lastFinishedChallengeId);
+            // Wait slightly for DOM to settle/render
+            setTimeout(() => {
+                const el = document.getElementById(`vm-card-${lastFinishedChallengeId}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 50);
+
+            const timer = setTimeout(() => {
+                setFlickeringChallengeId(null);
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [activeChallenge, lastFinishedChallengeId])
 
    // Countdown timer (10s per question)
    const countdownTimer = useCountdown(10, {
@@ -547,7 +567,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
 
                     <div className="vm-challenge-grid">
                        {data.challenges.map((c: any) => (
-                           <div key={c.id} className="vm-challenge-card">
+                           <div key={c.id} id={`vm-card-${c.id}`} className={`vm-challenge-card ${flickeringChallengeId === c.id ? 'flicker-active' : ''}`}>
                                <div className="vm-card-header">
                                    <div style={{ display: 'flex', alignItems: 'center' }}>
                                        <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>{c.icon}</span>
@@ -691,6 +711,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                     </div>
 
                     <button className="vm-check-btn" onClick={() => {
+                        setLastFinishedChallengeId(activeChallenge.id)
                         setActiveChallenge(null)
                         loadRecords()
                     }} style={{ maxWidth: '300px' }}>

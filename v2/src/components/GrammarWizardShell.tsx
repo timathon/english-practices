@@ -57,8 +57,27 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    const [isNewHigh, setIsNewHigh] = useState(false)
    const [invisibleMode, setInvisibleMode] = useState(false)
    const [historyModal, setHistoryModal] = useState<{title: string, logs: any[]} | null>(null)
+   const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
+   const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
    const timerExpiredRef = useRef(false)
    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+
+   useEffect(() => {
+       if (!activeChallenge && lastFinishedChallengeId) {
+           setFlickeringChallengeId(lastFinishedChallengeId);
+           setTimeout(() => {
+               const el = document.getElementById(`gw-card-${lastFinishedChallengeId}`);
+               if (el) {
+                   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+               }
+           }, 50);
+
+           const timer = setTimeout(() => {
+               setFlickeringChallengeId(null);
+           }, 2000);
+           return () => clearTimeout(timer);
+       }
+   }, [activeChallenge, lastFinishedChallengeId])
 
    // Countdown timer (30s per question)
    const countdownTimer = useCountdown(30, {
@@ -489,7 +508,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                    
                    <div className="gw-challenge-grid">
                        {data.challenges.map((c: any) => (
-                           <div key={c.id} className="gw-challenge-card">
+                           <div key={c.id} id={`gw-card-${c.id}`} className={`gw-challenge-card ${flickeringChallengeId === c.id ? 'flicker-active' : ''}`}>
                                <div className="gw-card-header">
                                    <div style={{ display: 'flex', alignItems: 'center' }}>
                                        <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>{c.icon}</span>
@@ -632,12 +651,13 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                         )}
                     </div>
 
-                     <button className="gw-check-btn" onClick={() => {
-                         setActiveChallenge(null)
-                         loadRecords()
-                     }} style={{ maxWidth: '300px' }}>
-                         Back to Menu
-                     </button>
+                      <button className="gw-check-btn" onClick={() => {
+                          setLastFinishedChallengeId(activeChallenge.id)
+                          setActiveChallenge(null)
+                          loadRecords()
+                      }} style={{ maxWidth: '300px' }}>
+                          Back to Menu
+                      </button>
                 </div>
             </div>
         )

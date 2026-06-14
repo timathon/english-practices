@@ -203,6 +203,25 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
     // History modal
     const [historyChallenge, setHistoryChallenge] = useState<Challenge | null>(null)
+    const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
+    const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!activeChallenge && lastFinishedChallengeId) {
+            setFlickeringChallengeId(lastFinishedChallengeId);
+            setTimeout(() => {
+                const el = document.getElementById(`sh-card-${lastFinishedChallengeId}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 50);
+
+            const timer = setTimeout(() => {
+                setFlickeringChallengeId(null);
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [activeChallenge, lastFinishedChallengeId])
 
     // Refs for live game state (avoids stale closures in nextQuestion)
     const queueRef        = useRef<Question[]>([])
@@ -656,7 +675,12 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                     <button
                         className="sh-check-btn"
                         style={{ maxWidth: 300 }}
-                        onClick={() => setActiveChallenge(null)}
+                        onClick={() => {
+                            if (activeChallenge) {
+                                setLastFinishedChallengeId(activeChallenge.id)
+                            }
+                            setActiveChallenge(null)
+                        }}
                     >
                         Back to Menu
                     </button>
@@ -903,7 +927,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                         const s = getChallengeStats(practiceId, c.id)
                         const rem = trialsTracker.getRemainingTrials(practiceId, c.id)
                         return (
-                            <div key={c.id} className="sh-challenge-card">
+                             <div key={c.id} id={`sh-card-${c.id}`} className={`sh-challenge-card ${flickeringChallengeId === c.id ? 'flicker-active' : ''}`}>
                                 <div className="sh-card-header">
                                     <div style={{ display: 'flex', alignItems: 'center' }}>
                                         <span style={{ fontSize: '1.5rem', marginRight: 10 }}>{c.icon}</span>
