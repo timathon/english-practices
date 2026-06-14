@@ -319,7 +319,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                             <div className="vg-word-header">
                                 <h2 className="vg-word-title">
                                     {item.originalIndex + 1}. {item.word}
-                                    {item.ipa && <span className="vg-ipa">[{item.ipa}]</span>}
+                                    {item.ipa && <span className="vg-ipa">{item.ipa}</span>}
                                 </h2>
                                 <div className="vg-item-actions">
                                     {item.page_number && <span className="vg-page">P{item.page_number}</span>}
@@ -426,7 +426,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                     {deck[currentDeckIndex].ipa && (
                                         <div className="vg-card-detail">
                                             <span className="vg-card-label">IPA:</span>
-                                            <span className="vg-card-value font-ipa">[{deck[currentDeckIndex].ipa}]</span>
+                                            <span className="vg-card-value font-ipa">{deck[currentDeckIndex].ipa}</span>
                                         </div>
                                     )}
                                     {deck[currentDeckIndex].syllable_type && (
