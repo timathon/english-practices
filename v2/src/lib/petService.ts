@@ -318,7 +318,6 @@ export const petService = {
 
       const serverState = await res.json();
       const localState = this.getPetState();
-      const localIsUninitialized = !localState.userId || localState.lastUpdated === 0;
 
       // Check if local state belongs to another user
       if (localState.userId && localState.userId !== user.id) {
@@ -329,14 +328,22 @@ export const petService = {
         } else {
           const freshState = INITIAL_STATE();
           freshState.userId = user.id;
-          freshState.lastUpdated = Date.now();
+          freshState.lastUpdated = 0; // Keep as 0 so it won't override real progress elsewhere
           localStorage.setItem(LS_KEY, JSON.stringify(freshState));
           window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: freshState }));
         }
         return;
       }
 
-      // If local state is uninitialized (no userId or lastUpdated=0),
+      // Associate local state with user if not done yet (e.g. guest state)
+      if (!localState.userId) {
+        localState.userId = user.id;
+        localStorage.setItem(LS_KEY, JSON.stringify(localState));
+      }
+
+      const localIsUninitialized = localState.lastUpdated === 0;
+
+      // If local state is uninitialized (lastUpdated=0),
       // always prefer server data to avoid overwriting real progress.
       if (localIsUninitialized) {
         if (serverState) {
@@ -347,18 +354,12 @@ export const petService = {
           // No server data either — initialize a fresh state for this user
           const freshState = INITIAL_STATE();
           freshState.userId = user.id;
-          freshState.lastUpdated = Date.now();
+          freshState.lastUpdated = 0; // Keep as 0 so it won't override real progress elsewhere
           localStorage.setItem(LS_KEY, JSON.stringify(freshState));
           window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: freshState }));
           await this.syncSave(freshState);
         }
         return;
-      }
-
-      // Associate local state with user if not done yet
-      if (!localState.userId) {
-        localState.userId = user.id;
-        localStorage.setItem(LS_KEY, JSON.stringify(localState));
       }
 
       if (!serverState) {
