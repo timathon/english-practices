@@ -30,8 +30,10 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [countdown, setCountdown] = useState<number | null>(null)
     const [slideDirection, setSlideDirection] = useState<'next' | null>(null)
     const [hasClickedDontKnow, setHasClickedDontKnow] = useState(false)
+    const [knowCooldownSecs, setKnowCooldownSecs] = useState(0)
 
     const timerRef = useRef<any>(null)
+    const knowCooldownIntervalRef = useRef<any>(null)
     const shellRef = useRef<HTMLDivElement>(null)
     const unitKey = `ep-vg-hidden-${practiceId}`
 
@@ -78,6 +80,9 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         return () => {
             Object.assign(document.body.style, originalStyle)
             document.body.classList.remove('vg-active')
+            if (knowCooldownIntervalRef.current) {
+                clearInterval(knowCooldownIntervalRef.current)
+            }
         }
     }, [data, practiceId, textbook, unitKey])
 
@@ -201,6 +206,11 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             clearInterval(timerRef.current)
             timerRef.current = null
         }
+        if (knowCooldownIntervalRef.current) {
+            clearInterval(knowCooldownIntervalRef.current)
+            knowCooldownIntervalRef.current = null
+        }
+        setKnowCooldownSecs(0)
     }
 
     const moveToNextCard = () => {
@@ -229,7 +239,23 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     }
 
     const handleKnow = () => {
-        if (deck.length === 0) return
+        if (deck.length === 0 || knowCooldownSecs > 0) return
+        setKnowCooldownSecs(3)
+        if (knowCooldownIntervalRef.current) {
+            clearInterval(knowCooldownIntervalRef.current)
+        }
+        let secondsLeft = 3
+        knowCooldownIntervalRef.current = setInterval(() => {
+            secondsLeft -= 1
+            if (secondsLeft <= 0) {
+                clearInterval(knowCooldownIntervalRef.current)
+                knowCooldownIntervalRef.current = null
+                setKnowCooldownSecs(0)
+            } else {
+                setKnowCooldownSecs(secondsLeft)
+            }
+        }, 1000)
+
         const item = deck[currentDeckIndex]
         if (!hiddenIndices.has(item.originalIndex)) {
             const next = new Set(hiddenIndices)
@@ -270,8 +296,8 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         }
     }
 
-    const scrollToTop = () => shellRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-    const scrollToBottom = () => shellRef.current?.scrollTo({ top: shellRef.current.scrollHeight, behavior: 'smooth' })
+    const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
+    const scrollToBottom = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
     const shownCount = vocab.length - hiddenIndices.size
     const progressPercent = deck.length > 0 ? ((currentDeckIndex + 1) / deck.length) * 100 : 0
@@ -322,6 +348,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                     {item.ipa && <span className="vg-ipa">{item.ipa}</span>}
                                 </h2>
                                 <div className="vg-item-actions">
+                                    {item.unit && <span className="vg-unit">Unit {item.unit}</span>}
                                     {item.page_number && <span className="vg-page">P{item.page_number}</span>}
                                     <input 
                                         type="checkbox" 
@@ -456,8 +483,15 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                             <span className="vg-sentence">"{deck[currentDeckIndex].context_sentence}"</span>
                                         </div>
                                     )}
-                                    {deck[currentDeckIndex].page_number && (
-                                        <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
+                                    {(deck[currentDeckIndex].unit || deck[currentDeckIndex].page_number) && (
+                                        <div className="vg-card-meta">
+                                            {deck[currentDeckIndex].unit && (
+                                                <span className="vg-card-unit">Unit {deck[currentDeckIndex].unit}</span>
+                                            )}
+                                            {deck[currentDeckIndex].page_number && (
+                                                <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
 
@@ -480,9 +514,9 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                             <button 
                                 className="vg-btn-know" 
                                 onClick={handleKnow}
-                                disabled={isFlipped}
+                                disabled={isFlipped || knowCooldownSecs > 0}
                             >
-                                Know
+                                {knowCooldownSecs > 0 ? `Know (${knowCooldownSecs}s)` : 'Know'}
                             </button>
                             <button 
                                 className="vg-btn-dont-know" 
