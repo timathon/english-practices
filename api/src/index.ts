@@ -389,14 +389,29 @@ app.put('/api/records/:id', async (c) => {
   const body = await c.req.json();
   const db = drizzle(c.env.DB);
 
-  // Note: eq(practiceRecords.userId, session.user.id) is a secure restraint 
-  // but eq(practiceRecords.id, id) alone handles it in this simple environment setup
-  await db.update(practiceRecords).set({
-      score: body.score,
-      unfinished: body.unfinished !== undefined ? body.unfinished : false,
-      updatedAt: new Date()
-  })
-  .where(eq(practiceRecords.id, id));
+  const existing = await db.select().from(practiceRecords)
+    .where(eq(practiceRecords.id, id));
+
+  if (existing && existing.length > 0) {
+    const record = existing[0];
+    const isFinished = !record.unfinished;
+    const nextUnfinished = isFinished ? false : (body.unfinished !== undefined ? body.unfinished : false);
+    const nextScore = (isFinished && record.score > body.score) ? record.score : body.score;
+
+    await db.update(practiceRecords).set({
+        score: nextScore,
+        unfinished: nextUnfinished,
+        updatedAt: new Date()
+    })
+    .where(eq(practiceRecords.id, id));
+  } else {
+    await db.update(practiceRecords).set({
+        score: body.score,
+        unfinished: body.unfinished !== undefined ? body.unfinished : false,
+        updatedAt: new Date()
+    })
+    .where(eq(practiceRecords.id, id));
+  }
 
   return c.json({ success: true });
 })

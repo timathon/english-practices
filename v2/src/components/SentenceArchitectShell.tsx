@@ -97,6 +97,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
+    const hasFinishedRef = useRef(false)
     const [practiceRecords, setPracticeRecords] = useState<any[]>([])
     const [gainedXp, setGainedXp] = useState(0)
     const [gainedLove, setGainedLove] = useState(0)
@@ -174,6 +175,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         setGainedXp(0)
         setGainedLove(0)
         recordIdPromiseRef.current = null
+        hasFinishedRef.current = false
 
         // Clone and shuffle questions
         const shuffled = shuffle([...c.data]).map((q: any, i: number) => ({ ...q, originalIndex: i }))
@@ -337,6 +339,12 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
     const syncRecord = async (scorePercent: number, isFinished: boolean) => {
         try {
+            if (isFinished) {
+                hasFinishedRef.current = true
+            } else if (hasFinishedRef.current) {
+                return
+            }
+
             if (activeRecordId) {
                 const res = await fetch(`${API_URL}/api/records/${activeRecordId}`, {
                     method: 'PUT',

@@ -179,6 +179,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     const [isCorrect, setIsCorrect]       = useState(false)
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
+    const hasFinishedRef = useRef(false)
     const timerExpiredRef = useRef(false)
     const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
 
@@ -338,6 +339,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
         setActiveRecordId(null)
         recordIdPromiseRef.current = null
+        hasFinishedRef.current = false
         setGainedXp(0)
         setGainedLove(0)
         setActiveChallenge(c)
@@ -462,6 +464,12 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
     const syncRecord = async (scorePercent: number, isFinished: boolean) => {
         try {
+            if (isFinished) {
+                hasFinishedRef.current = true
+            } else if (hasFinishedRef.current) {
+                return
+            }
+
             if (activeRecordId) {
                 const res = await fetch(`${API_URL}/api/records/${activeRecordId}`, {
                     method: 'PUT',

@@ -233,6 +233,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
+    const hasFinishedRef = useRef(false)
 
     // Play sentence audio automatically for student's book passage decoder (ending with -s)
     useEffect(() => {
@@ -285,6 +286,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         setGainedXp(0)
         setGainedLove(0)
         recordIdPromiseRef.current = null
+        hasFinishedRef.current = false
 
         // Passages are played in linear narrative order (NOT shuffled)
         const linearQueue = sec.sentences.map((sentence: any, i: number) => ({
@@ -372,6 +374,12 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
     const syncRecord = async (scorePercent: number, isFinished: boolean) => {
         try {
+            if (isFinished) {
+                hasFinishedRef.current = true
+            } else if (hasFinishedRef.current) {
+                return
+            }
+
             const unitName = `${practiceId} (${activeSection.title})`;
             if (activeRecordId) {
                 const res = await fetch(`${API_URL}/api/records/${activeRecordId}`, {
