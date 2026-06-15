@@ -191,7 +191,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
           )}
           <div className="nav-divider"></div>
           <div style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit' }}>
-            v260615-2303
+            v260615-2312
           </div>
         </div>
       )}

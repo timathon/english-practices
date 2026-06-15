@@ -47,6 +47,31 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
 
     const response = await originalFetch(input, newInit);
 
+    // Intercept 401 revoked session due to device limit
+    if (response.status === 401) {
+        try {
+            const clone = response.clone();
+            const data = await clone.json();
+            if (data && (data.reason === 'device_limit' || data.error === 'Session revoked')) {
+                const revokedToken = localStorage.getItem('active_session_token');
+                localStorage.removeItem('active_session_token');
+                
+                let loggedInUsers = [];
+                try {
+                    loggedInUsers = JSON.parse(localStorage.getItem('logged_in_users') || '[]');
+                } catch (e) {}
+                if (Array.isArray(loggedInUsers)) {
+                    loggedInUsers = loggedInUsers.filter((u: any) => u.token !== revokedToken);
+                    localStorage.setItem('logged_in_users', JSON.stringify(loggedInUsers));
+                }
+                
+                window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin?reason=device_limit`;
+            }
+        } catch (e) {
+            console.error('[Auth Interceptor] Failed to parse 401 response:', e);
+        }
+    }
+
     // Intercept successful auth actions to cache/sync the user session list
     if (url && response.ok) {
         const isSignInAction = url.includes('/api/auth/sign-in') || url.includes('/api/auth/sign-up');

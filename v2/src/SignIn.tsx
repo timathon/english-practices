@@ -6,10 +6,16 @@ export function SignIn() {
   const [usernameOrEmail, setUsernameOrEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [infoMessage, setInfoMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [hasLoggedInUsers, setHasLoggedInUsers] = useState(false)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reason') === 'device_limit') {
+      setInfoMessage('You have been logged out because your account is active on too many devices (max 2 active devices allowed).');
+    }
+
     try {
       const stored = localStorage.getItem('logged_in_users')
       if (stored) {
@@ -63,6 +69,21 @@ export function SignIn() {
         <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text, #666)' }}>同步派 English Learning Portal</p>
       </div>
       
+      {infoMessage && (
+        <div style={{ 
+          color: '#8a6d3b', 
+          marginBottom: 16, 
+          padding: '10px 12px', 
+          background: '#fcf8e3', 
+          border: '1px solid #faebcc', 
+          borderRadius: 8, 
+          fontSize: '0.85rem',
+          lineHeight: '1.4'
+        }}>
+          ⚠️ {infoMessage}
+        </div>
+      )}
+
       {error && (
         <div style={{ 
           color: 'var(--accent, #d73a49)', 
