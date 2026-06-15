@@ -868,27 +868,42 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const [showMistakeAlertModal, setShowMistakeAlertModal] = useState(false)
   const modalTimeoutRef = useRef<number | null>(null)
 
+  const getThreshold3AM = () => {
+    const d = new Date();
+    if (d.getHours() < 3) {
+      d.setDate(d.getDate() - 1);
+    }
+    d.setHours(3, 0, 0, 0);
+    return d;
+  };
+
   const listedMistakes = useMemo(() => {
+    const threshold = getThreshold3AM();
     return mistakes.filter(m => {
       if (m.deleted) return false;
       if (!m.createdAt) return true;
-      const createdDate = new Date(m.createdAt);
-      const nextDay3AM = new Date(createdDate);
-      nextDay3AM.setDate(nextDay3AM.getDate() + 1);
-      nextDay3AM.setHours(3, 0, 0, 0);
-      return new Date() >= nextDay3AM;
+      return new Date(m.createdAt) < threshold;
     });
   }, [mistakes]);
 
   const unlistedCount = useMemo(() => {
+    const threshold = getThreshold3AM();
     return mistakes.filter(m => {
       if (m.deleted || m.resolved) return false;
       if (!m.createdAt) return false;
+      
       const createdDate = new Date(m.createdAt);
-      const nextDay3AM = new Date(createdDate);
-      nextDay3AM.setDate(nextDay3AM.getDate() + 1);
-      nextDay3AM.setHours(3, 0, 0, 0);
-      return new Date() < nextDay3AM;
+      if (createdDate >= threshold) {
+        return true;
+      }
+      
+      if (m.updatedAt) {
+        const updatedDate = new Date(m.updatedAt);
+        if (updatedDate >= threshold) {
+          return true;
+        }
+      }
+      return false;
     }).length;
   }, [mistakes]);
 

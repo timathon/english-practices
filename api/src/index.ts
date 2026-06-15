@@ -706,9 +706,9 @@ app.put('/api/mistakes', async (c) => {
         if (!existing) {
           mergedMap.set(m.id, m);
         } else {
-          const existingTime = existing.createdAt ? new Date(existing.createdAt).getTime() : 0;
-          const incomingTime = m.createdAt ? new Date(m.createdAt).getTime() : 0;
-          if (incomingTime > existingTime) {
+          const existingTime = (existing.updatedAt || existing.createdAt) ? new Date(existing.updatedAt || existing.createdAt).getTime() : 0;
+          const incomingTime = (m.updatedAt || m.createdAt) ? new Date(m.updatedAt || m.createdAt).getTime() : 0;
+          if (incomingTime > existingTime || (incomingTime === existingTime && m.attemptsCount > existing.attemptsCount)) {
             mergedMap.set(m.id, m);
           }
         }

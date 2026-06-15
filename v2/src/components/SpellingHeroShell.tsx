@@ -183,8 +183,8 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     const timerExpiredRef = useRef(false)
     const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
 
-    // Countdown timer (10s per question)
-    const countdownTimer = useCountdown(10, {
+    // Countdown timer (15s per question)
+    const countdownTimer = useCountdown(15, {
         onExpire: () => {
             if (timerExpiredRef.current) return
             timerExpiredRef.current = true
@@ -721,7 +721,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                                     if (!locked && !invisibleMode) countdownTimer.resume()
                                 }
                             }}>✕</button>
-                            {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={10} isRunning={countdownTimer.isRunning} />}
+                            {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={15} isRunning={countdownTimer.isRunning} />}
                         </div>
                         <div className="sh-progress-container">
                             {queue.map((_, i) => {

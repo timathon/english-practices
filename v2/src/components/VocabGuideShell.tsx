@@ -286,7 +286,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const handleDontKnow = () => {
         if (deck.length === 0) return
         setIsFlipped(true)
-        setCountdown(10)
+        setCountdown(5)
         setHasClickedDontKnow(true)
         clearPeekTimeouts()
 
@@ -294,14 +294,13 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             clearInterval(timerRef.current)
         }
 
-        let currentSec = 10
+        let currentSec = 5
         timerRef.current = setInterval(() => {
             currentSec -= 1
             if (currentSec <= 0) {
                 clearInterval(timerRef.current)
                 timerRef.current = null
                 setCountdown(null)
-                moveToNextCard()
             } else {
                 setCountdown(currentSec)
             }

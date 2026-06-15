@@ -9,6 +9,7 @@ export interface Mistake {
   question: any; // Entire question object for self-containment
   wrongAnswer: any; // Keep track of what they selected
   createdAt: string;
+  updatedAt?: string;
   attemptsCount: number;
   correctStreak: number;
   resolved?: boolean;
@@ -55,12 +56,13 @@ export const mistakeService = {
           wrongAnswer: params.wrongAnswer ?? mistakes[existingIndex].wrongAnswer,
           attemptsCount: mistakes[existingIndex].attemptsCount + 1,
           correctStreak: 0, // Reset streak since they made a mistake again
-          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           resolved: false,
           deleted: false,
         };
       } else {
         // Insert new mistake
+        const now = new Date().toISOString();
         mistakes.push({
           id: compositeId,
           practiceId: params.practiceId,
@@ -71,7 +73,8 @@ export const mistakeService = {
           wrongAnswer: params.wrongAnswer,
           attemptsCount: 1,
           correctStreak: 0,
-          createdAt: new Date().toISOString(),
+          createdAt: now,
+          updatedAt: now,
           resolved: false,
           deleted: false,
         });
@@ -91,7 +94,7 @@ export const mistakeService = {
       const index = mistakes.findIndex((m) => m.id === id);
       if (index > -1) {
         mistakes[index].deleted = true;
-        mistakes[index].createdAt = new Date().toISOString();
+        mistakes[index].updatedAt = new Date().toISOString();
         localStorage.setItem(getStorageKey(userId), JSON.stringify(mistakes));
         this.syncToServer(userId);
       }
@@ -107,7 +110,7 @@ export const mistakeService = {
       const index = mistakes.findIndex((m) => m.id === id);
       if (index > -1) {
         mistakes[index].resolved = resolved;
-        mistakes[index].createdAt = new Date().toISOString();
+        mistakes[index].updatedAt = new Date().toISOString();
         localStorage.setItem(getStorageKey(userId), JSON.stringify(mistakes));
         this.syncToServer(userId);
       }
@@ -123,7 +126,7 @@ export const mistakeService = {
       const cleared = mistakes.map(m => ({
         ...m,
         deleted: true,
-        createdAt: new Date().toISOString()
+        updatedAt: new Date().toISOString()
       }));
       localStorage.setItem(getStorageKey(userId), JSON.stringify(cleared));
       this.syncToServer(userId);
@@ -144,7 +147,7 @@ export const mistakeService = {
           mistakes[index].correctStreak = 0;
           mistakes[index].attemptsCount += 1;
         }
-        mistakes[index].createdAt = new Date().toISOString();
+        mistakes[index].updatedAt = new Date().toISOString();
         localStorage.setItem(getStorageKey(userId), JSON.stringify(mistakes));
         this.syncToServer(userId);
       }
@@ -168,9 +171,9 @@ export const mistakeService = {
       if (!serverM) {
         mergedMap.set(localM.id, localM);
       } else {
-        const localTime = localM.createdAt ? new Date(localM.createdAt).getTime() : 0;
-        const serverTime = serverM.createdAt ? new Date(serverM.createdAt).getTime() : 0;
-        if (localTime > serverTime) {
+        const localTime = (localM.updatedAt || localM.createdAt) ? new Date(localM.updatedAt || localM.createdAt).getTime() : 0;
+        const serverTime = (serverM.updatedAt || serverM.createdAt) ? new Date(serverM.updatedAt || serverM.createdAt).getTime() : 0;
+        if (localTime > serverTime || (localTime === serverTime && localM.attemptsCount > serverM.attemptsCount)) {
           mergedMap.set(localM.id, localM);
         }
       }
