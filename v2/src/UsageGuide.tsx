@@ -83,7 +83,7 @@ export function UsageGuide() {
         <div className="ug-header-content">
           <h2 className="ug-title">Game Manual</h2>
           <p className="ug-subtitle">
-            Welcome to the interactive companion manual. Learn how to master reading, vocabulary, spelling, and grammar rules using the tailored study tools in the v2 app.
+            Welcome to the interactive companion manual. Learn how to master reading, vocabulary, spelling, and grammar rules using the tailored study tools in TextbookPass (同步派).
           </p>
         </div>
       </div>
@@ -138,7 +138,7 @@ export function UsageGuide() {
           {activeTab === 'welcome' && (
             <>
               <div>
-                <h3 className="ug-section-title">🌟 Welcome to English Practices v2</h3>
+                <h3 className="ug-section-title">🌟 Welcome to TextbookPass (同步派)</h3>
                 <p className="ug-section-intro">
                   This application is designed to convert standard curriculum textbook units into highly engaging, interactive cognitive tasks.
                 </p>

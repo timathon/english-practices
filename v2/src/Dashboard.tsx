@@ -1169,8 +1169,17 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
       <div className="db-hero">
         <span className="db-wave">👋</span>
         <div>
-          <h2 className="db-title">Welcome back, {session.user.name}!</h2>
-          <p className="db-subtitle">Pick up where you left off <span style={{ fontSize: '0.65rem', opacity: 0.45, marginLeft: '6px', fontFamily: 'monospace', letterSpacing: '0.5px' }}>v260615-0131</span></p>
+          <h2 className="db-title">Hi, {session.user.name}!</h2>
+          <p className="db-subtitle">
+            <span className="db-title-grid">
+              <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                Welcome back to TextbookPass
+              </span>
+              <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                欢迎回到同步派
+              </span>
+            </span>
+          </p>
         </div>
       </div>
 

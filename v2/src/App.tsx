@@ -189,6 +189,10 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
               </button>
             </>
           )}
+          <div className="nav-divider"></div>
+          <div style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit' }}>
+            v260615-1651
+          </div>
         </div>
       )}
       {isIrregularVerbsOpen && (
@@ -207,6 +211,8 @@ function App() {
       petService.syncWithServer();
     }
   }, [session]);
+
+
 
   if (isPending) return <div style={{ padding: 20 }}>Loading...</div>
 
