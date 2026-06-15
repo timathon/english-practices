@@ -101,15 +101,18 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const primaryColor = data.primaryColor || '#3b82f6'
    const primaryDarkColor = data.primaryColorDark || '#2563eb'
 
-   const loadRecords = async () => {
-       try {
-           const res = await fetch(API_URL + '/api/records', { credentials: 'include' })
-           const json = await res.json()
-           if (Array.isArray(json)) setPracticeRecords(json)
-       } catch (e) {
-           console.error("Failed to load records", e)
-       }
-   }
+    const loadRecords = async () => {
+        try {
+            const res = await fetch(API_URL + '/api/records', { credentials: 'include' })
+            const json = await res.json()
+            if (Array.isArray(json)) {
+                cache.setRecords(json)
+                setPracticeRecords(json)
+            }
+        } catch (e) {
+            console.error("Failed to load records", e)
+        }
+    }
    
     useEffect(() => {
         loadRecords()

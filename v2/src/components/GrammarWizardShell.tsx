@@ -95,7 +95,10 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        try {
            const res = await fetch(API_URL + '/api/records', { credentials: 'include' })
            const json = await res.json()
-           if (Array.isArray(json)) setPracticeRecords(json)
+           if (Array.isArray(json)) {
+               cache.setRecords(json)
+               setPracticeRecords(json)
+           }
        } catch (e) {
            console.error("Failed to load records", e)
        }

@@ -927,35 +927,34 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         setLoading(false)
       } else {
         setLoading(true)
-        fetch(API_URL + '/api/practices', { credentials: 'include' })
-          .then(res => res.json())
-          .then(data => {
-            if (Array.isArray(data)) {
-              cache.setPractices(data)
-              setPractices(data)
-            }
-            setLoading(false)
-          })
-          .catch(e => {
-            console.error(e)
-            setLoading(false)
-          })
       }
+      fetch(API_URL + '/api/practices', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            cache.setPractices(data)
+            setPractices(data)
+          }
+          setLoading(false)
+        })
+        .catch(e => {
+          console.error(e)
+          setLoading(false)
+        })
 
       const cachedRecords = cache.getRecords()
       if (cachedRecords) {
         setRecords(cachedRecords.filter((r: any) => !r.unit.startsWith('game-')))
-      } else {
-        fetch(API_URL + '/api/records', { credentials: 'include' })
-          .then(res => res.json())
-          .then(data => {
-            if (Array.isArray(data)) {
-              cache.setRecords(data)
-              setRecords(data.filter((r: any) => !r.unit.startsWith('game-')))
-            }
-          })
-          .catch(console.error)
       }
+      fetch(API_URL + '/api/records', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            cache.setRecords(data)
+            setRecords(data.filter((r: any) => !r.unit.startsWith('game-')))
+          }
+        })
+        .catch(console.error)
 
       // Load mistakes
       mistakeService.syncFromServer(userId).then(synced => {
