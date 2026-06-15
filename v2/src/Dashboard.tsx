@@ -870,6 +870,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
   const listedMistakes = useMemo(() => {
     return mistakes.filter(m => {
+      if (m.deleted) return false;
       if (!m.createdAt) return true;
       const createdDate = new Date(m.createdAt);
       const nextDay3AM = new Date(createdDate);
@@ -881,6 +882,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
   const unlistedCount = useMemo(() => {
     return mistakes.filter(m => {
+      if (m.deleted || m.resolved) return false;
       if (!m.createdAt) return false;
       const createdDate = new Date(m.createdAt);
       const nextDay3AM = new Date(createdDate);
@@ -962,6 +964,20 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
       })
     }
   }, [userId])
+
+  useEffect(() => {
+    const handleTriggerSync = () => {
+      if (userId) {
+        mistakeService.syncFromServer(userId).then(synced => {
+          setMistakes(synced);
+        });
+      }
+    };
+    window.addEventListener('ep-trigger-sync', handleTriggerSync);
+    return () => {
+      window.removeEventListener('ep-trigger-sync', handleTriggerSync);
+    };
+  }, [userId]);
 
   useEffect(() => {
     if (!loading && targetTextbook) {

@@ -191,7 +191,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
           )}
           <div className="nav-divider"></div>
           <div style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit' }}>
-            v260615-2013
+            v260615-2303
           </div>
         </div>
       )}
@@ -207,9 +207,34 @@ function App() {
   const [showChinese, setShowChinese] = useState(false);
 
   useEffect(() => {
-    if (session) {
-      petService.syncWithServer();
-    }
+    if (!session) return;
+
+    // Initial sync
+    petService.syncWithServer();
+
+    let lastSyncTime = Date.now();
+    const handleSyncTrigger = () => {
+      const now = Date.now();
+      if (now - lastSyncTime > 15000) {
+        lastSyncTime = now;
+        petService.syncWithServer();
+        window.dispatchEvent(new CustomEvent('ep-trigger-sync'));
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleSyncTrigger();
+      }
+    };
+
+    window.addEventListener('focus', handleSyncTrigger);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleSyncTrigger);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [session]);
 
 

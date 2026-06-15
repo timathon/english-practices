@@ -585,6 +585,18 @@ app.put('/api/pet', async (c) => {
   const body = await c.req.json();
   const db = drizzle(c.env.DB);
 
+  // Fetch current state in DB to check for conflicts (LWW check)
+  const rows = await db.select({ petState: user.petState }).from(user).where(eq(user.id, session.user.id));
+  if (rows.length > 0 && rows[0].petState) {
+    const dbState = rows[0].petState as any;
+    const dbTime = dbState.lastUpdated || 0;
+    const clientTime = body.lastUpdated || 0;
+    if (dbTime > clientTime) {
+      // Conflict: server has a newer state!
+      return c.json({ error: "Conflict", serverState: dbState }, 409);
+    }
+  }
+
   await db.update(user).set({
     petState: body,
     updatedAt: new Date()
@@ -613,12 +625,39 @@ app.put('/api/mistakes', async (c) => {
   const body = await c.req.json();
   const db = drizzle(c.env.DB);
 
+  const rows = await db.select({ mistakeState: user.mistakeState }).from(user).where(eq(user.id, session.user.id));
+  let merged = body;
+  if (rows.length > 0 && rows[0].mistakeState) {
+    const dbState = rows[0].mistakeState as any[];
+    if (Array.isArray(dbState) && Array.isArray(body)) {
+      // Merge incoming mistakes with existing DB mistakes by ID
+      const mergedMap = new Map<string, any>();
+      for (const m of dbState) {
+        if (m && m.id) mergedMap.set(m.id, m);
+      }
+      for (const m of body) {
+        if (!m || !m.id) continue;
+        const existing = mergedMap.get(m.id);
+        if (!existing) {
+          mergedMap.set(m.id, m);
+        } else {
+          const existingTime = existing.createdAt ? new Date(existing.createdAt).getTime() : 0;
+          const incomingTime = m.createdAt ? new Date(m.createdAt).getTime() : 0;
+          if (incomingTime > existingTime) {
+            mergedMap.set(m.id, m);
+          }
+        }
+      }
+      merged = Array.from(mergedMap.values());
+    }
+  }
+
   await db.update(user).set({
-    mistakeState: body,
+    mistakeState: merged,
     updatedAt: new Date()
   }).where(eq(user.id, session.user.id));
 
-  return c.json({ success: true });
+  return c.json({ success: true, mistakeState: merged });
 })
 
 app.get('/api/games/schulte/leaderboard', async (c) => {

@@ -282,6 +282,78 @@ export const petService = {
     }
   },
 
+  mergePetState(local: PetState, server: PetState): PetState {
+    const newerState = local.lastUpdated > server.lastUpdated ? local : server;
+
+    // Merge achievements
+    const achievements = Array.from(new Set([...(local.achievements || []), ...(server.achievements || [])]));
+
+    // Merge pet timestamps (last 5, sorted)
+    const petTimestamps = Array.from(new Set([...(local.petTimestamps || []), ...(server.petTimestamps || [])]))
+      .sort((a, b) => b - a)
+      .slice(0, 5)
+      .reverse();
+
+    // Merge history
+    const historyMap = new Map<number, { timestamp: number; food: number; love: number }>();
+    [...(local.history || []), ...(server.history || [])].forEach(h => {
+      if (h && typeof h.timestamp === 'number') {
+        historyMap.set(h.timestamp, h);
+      }
+    });
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const history = Array.from(historyMap.values())
+      .filter(h => h.timestamp >= oneDayAgo)
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    // Determine daily progress based on dates
+    let dailyProgress = newerState.dailyProgress;
+    let dailyProgressDate = newerState.dailyProgressDate;
+    if (local.dailyProgressDate === server.dailyProgressDate) {
+      dailyProgress = Math.max(local.dailyProgress || 0, server.dailyProgress || 0);
+    }
+
+    const mergedState: PetState = {
+      // Transient properties from the newer state (LWW)
+      type: newerState.type,
+      name: newerState.name,
+      food: newerState.food,
+      love: newerState.love,
+      dailyGoalPreset: newerState.dailyGoalPreset,
+      schulteRoundsLeft: newerState.schulteRoundsLeft,
+      cardMatchRoundsLeft: newerState.cardMatchRoundsLeft,
+
+      goldCoins: newerState.goldCoins,
+      foodItems: newerState.foodItems,
+      totalCorrect: Math.max(local.totalCorrect || 0, server.totalCorrect || 0),
+
+      streak: Math.max(local.streak || 0, server.streak || 0),
+      longestStreak: Math.max(local.longestStreak || 0, server.longestStreak || 0),
+      lastPracticeDate: (local.lastPracticeDate || '') > (server.lastPracticeDate || '')
+        ? (local.lastPracticeDate || '')
+        : (server.lastPracticeDate || ''),
+
+      dailyProgress,
+      dailyProgressDate,
+      dailyGoalsCompleted: Math.max(local.dailyGoalsCompleted || 0, server.dailyGoalsCompleted || 0),
+
+      xp: Math.max(local.xp || 0, server.xp || 0),
+      level: Math.max(local.level || 1, server.level || 1),
+
+      achievements,
+      petTimestamps,
+      history,
+
+      userId: newerState.userId,
+      lastUpdated: Math.max(local.lastUpdated || 0, server.lastUpdated || 0)
+    };
+
+    // Re-calculate level just in case XP merged higher
+    mergedState.level = this.getLevel(mergedState.xp);
+
+    return mergedState;
+  },
+
   async syncSave(state: PetState) {
     try {
       // Ensure we have a userId on the state. If not, fetch it from session.
@@ -296,12 +368,24 @@ export const petService = {
         }
       }
 
-      await fetch(`${API_URL}/api/pet`, {
+      const res = await fetch(`${API_URL}/api/pet`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(state)
       });
+
+      if (res.status === 409) {
+        const data = await res.json();
+        if (data.serverState) {
+          // Conflict detected! Merge server state with our current local state.
+          const merged = this.mergePetState(state, data.serverState);
+          localStorage.setItem(LS_KEY, JSON.stringify(merged));
+          window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: merged }));
+          // Retry sync with the merged state
+          await this.syncSave(merged);
+        }
+      }
     } catch (e) {
       console.error('Failed to sync pet state to server', e);
     }
@@ -371,16 +455,18 @@ export const petService = {
         return;
       }
 
-      // Reconciliation based on lastUpdated timestamp
-      const serverTime = serverState.lastUpdated || 0;
-      const localTime = localState.lastUpdated || 0;
-
-      if (serverTime > localTime) {
-        serverState.userId = user.id;
-        localStorage.setItem(LS_KEY, JSON.stringify(serverState));
-        window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: serverState }));
-      } else if (localTime > serverTime) {
-        await this.syncSave(localState);
+      // Reconciliation by merging both states if they differ
+      const merged = this.mergePetState(localState, serverState);
+      const hasLocalChanged = JSON.stringify(merged) !== JSON.stringify(localState);
+      const hasServerChanged = JSON.stringify(merged) !== JSON.stringify(serverState);
+      
+      if (hasLocalChanged) {
+        localStorage.setItem(LS_KEY, JSON.stringify(merged));
+        window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: merged }));
+      }
+      
+      if (hasServerChanged || localState.lastUpdated !== merged.lastUpdated) {
+        await this.syncSave(merged);
       }
     } catch (e) {
       console.error('Failed to sync pet companion state with server', e);
