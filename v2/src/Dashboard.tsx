@@ -1203,10 +1203,10 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
           <p className="db-subtitle">
             <span className="db-title-grid">
               <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
-                Welcome back to TextbookPass
+                Welcome back to <span className="brand-highlight">TextbookPass</span>
               </span>
               <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
-                欢迎回到同步派
+                欢迎回到<span className="brand-highlight">同步派</span>
               </span>
             </span>
           </p>

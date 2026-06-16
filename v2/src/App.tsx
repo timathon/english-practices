@@ -114,7 +114,16 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
       
       {isMenuOpen && (
         <div className="nav-menu">
-          <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/">Home</Link>
+          <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/">
+            <span className="db-title-grid" style={{ verticalAlign: 'middle' }}>
+              <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "h-en-out" : "h-en-in"}>
+                <span className="brand-highlight">TextbookPass</span>
+              </span>
+              <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "h-cn-in" : "h-cn-out"}>
+                <span className="brand-highlight">同步派</span>
+              </span>
+            </span>
+          </Link>
           {!session ? (
             <>
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/signin">Sign In</Link>
@@ -191,7 +200,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
           )}
           <div className="nav-divider"></div>
           <div style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit' }}>
-            v260616-0722
+            v260616-1012
           </div>
         </div>
       )}
