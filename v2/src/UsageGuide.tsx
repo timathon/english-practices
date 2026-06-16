@@ -957,7 +957,7 @@ export function UsageGuide() {
                     <p style={{ fontStyle: 'italic', color: 'var(--accent)', fontSize: '0.9rem', marginBottom: 12 }}>
                       {petActionText}
                     </p>
-                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                    <div className="ug-pet-actions">
                       <button
                         className="ug-sidebar-btn"
                         onClick={handleFeedPet}
