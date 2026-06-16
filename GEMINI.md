@@ -70,6 +70,10 @@ This document defines the rules for extracting and converting textbook data into
   - **Single-Syllable:** Split by phonics graphemes (e.g., "cat" -> c, a, t; "boat" -> b, oa, t).
   - **Multi-Syllable:** Split by standard syllables (e.g., "animal" -> an, i, mal).
 - **Distractors:** Provide 2 phonetically or visually similar distractors for each chunk (3 options total).
+  - **Spelling & Phonetic Traps**: Distractors must be highly relevant, logical, and plausible spelling or pronunciation traps. Avoid lazy, random character substitutions.
+    - *Example (surprise -> sur / prise)*: For `sur`, use distractors like `ser` and `sir`. For `prise`, use distractors like `price` and `prize`.
+    - *Example (hamburger -> ham / bur / ger)*: For `bur`, use distractors like `ber` and `bir`.
+    - *Example (climb -> cl / i / mb)*: For `mb`, use distractors like `m` and `me` (silent 'b' trap).
 - **Randomization:** Shuffle the `options` array for every chunk.
 - **Structure:**
   - `level`: e.g., "Grade 7 Semester 2 - Unit 5".
