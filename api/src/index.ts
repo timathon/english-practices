@@ -149,24 +149,26 @@ app.get('/api/me', async (c) => {
 
   const db = drizzle(c.env.DB);
   
-  // Enforce concurrent session limit (max 2)
-  const activeSessions = await db.select()
-    .from(sessionTable)
-    .where(eq(sessionTable.userId, session.user.id))
-    .orderBy(desc(sessionTable.createdAt)); // Newest first
-    
-  if (activeSessions.length > 2) {
-    const sessionsToRevoke = activeSessions.slice(2); // Keep the 2 newest, expire the rest
-    for (const s of sessionsToRevoke) {
-      await db.update(sessionTable)
-        .set({ expiresAt: new Date(0) })
-        .where(eq(sessionTable.id, s.id));
-    }
-    
-    const currentSessionRevoked = sessionsToRevoke.some(s => s.id === session.session.id);
-    if (currentSessionRevoked) {
-      await db.delete(sessionTable).where(eq(sessionTable.id, session.session.id));
-      return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
+  // Enforce concurrent session limit (max 2), exempt adminx
+  if (session.user.username !== 'adminx') {
+    const activeSessions = await db.select()
+      .from(sessionTable)
+      .where(eq(sessionTable.userId, session.user.id))
+      .orderBy(desc(sessionTable.createdAt)); // Newest first
+      
+    if (activeSessions.length > 2) {
+      const sessionsToRevoke = activeSessions.slice(2); // Keep the 2 newest, expire the rest
+      for (const s of sessionsToRevoke) {
+        await db.update(sessionTable)
+          .set({ expiresAt: new Date(0) })
+          .where(eq(sessionTable.id, s.id));
+      }
+      
+      const currentSessionRevoked = sessionsToRevoke.some(s => s.id === session.session.id);
+      if (currentSessionRevoked) {
+        await db.delete(sessionTable).where(eq(sessionTable.id, session.session.id));
+        return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
+      }
     }
   }
 
