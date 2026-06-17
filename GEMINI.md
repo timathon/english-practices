@@ -33,7 +33,7 @@ This document defines the rules for extracting and converting textbook data into
 - **Prioritize Verbs:** Identify verbs from Chinese `meaning`. Verbs should ideally receive all 3 question types (especially `Cloze`).
 - **Question Types:**
   - `Cloze`: Target word replaced by "____". 5 distractors (different forms or visually similar).
-    - **Ambiguity & Hints:** The sentence context must provide sufficient information to uniquely identify the correct word. If the context is ambiguous (e.g., "I ____ all by myself." where any verb could fit), you **must** append a Chinese hint of the target word at the end of the prompt in the format: `(提示: [Chinese meaning])` (e.g., `I ____ all by myself. (提示: 唱歌; 唱)`).
+    - **Ambiguity & Hints:** The sentence context must provide sufficient information to uniquely identify the correct word among the provided options. You **must** append a Chinese hint of the target word at the end of the prompt in the format: `(提示: [Chinese meaning])` whenever the context alone could support more than one of the provided options as a correct answer (e.g., "I ____ all by myself." where any verb could fit, or "He is learning to play the ________" when multiple instruments are in the options).
   - `Cn2En`: Prompt is Chinese `meaning`. Options: Correct English + 5 distractors.
   - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 5 distractors.
 - **Distractor Selection & Relevance:** Distractors must be highly relevant, logical, and plausible options. Avoid lazy, random category padding.
