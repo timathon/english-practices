@@ -33,6 +33,7 @@ async function getAudioBatch(tasks, book, options = {}) {
     const voiceName = options.voiceName || "Kore";
     const silenceThreshold = options.silenceThreshold || "-30dB";
     const silenceDuration = options.silenceDuration || 0.3;
+    const skipUpload = options.skipUpload === true;
 
     const TEMP_DIR = path.join(BASE_DIR, 'temp', 'audio');
     if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -40,10 +41,11 @@ async function getAudioBatch(tasks, book, options = {}) {
     const batchId = crypto.randomBytes(4).toString('hex');
     const batchOutputDir = path.join(TEMP_DIR, `batch_${batchId}`);
     if (!fs.existsSync(batchOutputDir)) fs.mkdirSync(batchOutputDir, { recursive: true });
+    const generatedFiles = []; // { text, filename } entries accumulated during this batch
 
     const combinedWav = path.join(batchOutputDir, `batch_${batchId}_combined.wav`);
-    const tempPy = path.join(TEMP_DIR, `batch_${batchId}_tts.py`);
-    const pyLog = path.join(TEMP_DIR, `batch_${batchId}_py.log`);
+    const tempPy = path.join(batchOutputDir, `batch_${batchId}_tts.py`);
+    const pyLog = path.join(batchOutputDir, `batch_${batchId}_py.log`);
     const sentencesMd = path.join(batchOutputDir, 'tts-sentences.md');
 
     const separator = " [BREAK] . . . . . [BREAK] "; 
@@ -52,7 +54,14 @@ async function getAudioBatch(tasks, book, options = {}) {
     fs.writeFileSync(sentencesMd, sentences.join('\n'), 'utf8');
 
     const ttsSentences = sentences.map(text => text.replace(/Shenzhou V/g, 'Shenzhou <sub alias="five">V</sub>'));
-    const combinedText = ttsSentences.join(separator) + separator;
+    // A short warmup sentence is prepended so the TTS model reads every real
+    // sentence in "mid-list" position, preventing the first sentence from being
+    // repeated as a "heading". The warmup segment is discarded during cutting
+    // (startTime is set to the midpoint of silences[0], the silence after warmup).
+    // Unlike a leading [BREAK] marker, a spoken word is always reliably generated
+    // and its trailing silence falls well past the s.start > 0.1 filter threshold.
+    const WARMUP = 'Start.';
+    const combinedText = [WARMUP, ...ttsSentences].join(separator) + separator;
     
     console.log(`TTS Batch Request [ID: ${batchId}, Type: ${type}]: ${tasks.length} items.`);
 
@@ -134,8 +143,7 @@ except Exception as e:
     const MAX_TIMEOUTS = 3;
     let success = false;
 
-    try {
-        while (timeoutsCount < MAX_TIMEOUTS && !success) {
+    while (timeoutsCount < MAX_TIMEOUTS && !success) {
             try {
                 // If this is a retry due to insufficient pauses, delete the old wav to ensure a fresh one
                 if (fs.existsSync(combinedWav)) fs.unlinkSync(combinedWav);
@@ -153,34 +161,48 @@ except Exception as e:
                     const task = tasks[0];
                     const text = sentences[0];
                     const hash = crypto.createHash('md5').update(text).digest('hex');
-                    const segmentMp3 = path.join(batchOutputDir, `001_single_${hash}.mp3`);
+                    const segmentFileName = `${hash}.mp3`;
+                    const segmentMp3 = path.join(batchOutputDir, segmentFileName);
                     
                     execSync(`ffmpeg -i "${combinedWav}" -af "silenceremove=start_periods=1:start_threshold=-35dB,areverse,silenceremove=start_periods=1:start_threshold=-35dB,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
                     
                     const r2Key = `ep/${book}/${hash}.mp3`;
-                    
-                    let uploadSuccess = false;
-                    for (let attempt = 1; attempt <= 3; attempt++) {
-                        try {
-                            await s3Client.send(new PutObjectCommand({
-                                Bucket: BUCKET_NAME,
-                                Key: r2Key,
-                                Body: fs.readFileSync(segmentMp3),
-                                ContentType: "audio/mpeg",
-                            }));
-                            uploadSuccess = true;
-                            break;
-                        } catch (e) {
-                            console.warn(`[Batch: ${batchId}] Upload attempt ${attempt} failed for ${r2Key}: ${e.message}`);
-                            if (attempt < 3) await new Promise(res => setTimeout(res, 2000));
+                    let fileStatus = 1;
+
+                    if (skipUpload) {
+                        console.log(`[Batch: ${batchId}] --no-upload: skipping R2 upload for ${r2Key}`);
+                    } else {
+                        let uploadSuccess = false;
+                        for (let attempt = 1; attempt <= 3; attempt++) {
+                            try {
+                                await s3Client.send(new PutObjectCommand({
+                                    Bucket: BUCKET_NAME,
+                                    Key: r2Key,
+                                    Body: fs.readFileSync(segmentMp3),
+                                    ContentType: "audio/mpeg",
+                                }));
+                                uploadSuccess = true;
+                                break;
+                            } catch (e) {
+                                console.warn(`[Batch: ${batchId}] Upload attempt ${attempt} failed for ${r2Key}: ${e.message}`);
+                                if (attempt < 3) await new Promise(res => setTimeout(res, 2000));
+                            }
+                        }
+                        if (!uploadSuccess) {
+                            fileStatus = 2;
+                            console.error(`[Batch: ${batchId}] Failed to upload single audio to R2 after 3 attempts: ${r2Key}`);
+                        } else {
+                            task.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
                         }
                     }
-                    if (!uploadSuccess) throw new Error(`[Batch: ${batchId}] Failed to upload single audio to R2 after 3 attempts: ${r2Key}`);
-                    
-                    task.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
+
+                    generatedFiles.push({ text, hash, filename: segmentFileName, status: fileStatus });
                     success = true;
                 } else {
-                    const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=${silenceThreshold}:d=0.8" -f null - 2>&1`).toString();
+                    // d=2.0: only detect silences ≥ 2s. Genuine [BREAK] markers generate ~4s silences;
+                    // shorter pauses are intra-sentence breaths or failed [BREAK]s and should be ignored
+                    // (they trigger a retry via the candidateSilences.length < tasks.length check).
+                    const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=${silenceThreshold}:d=2.0" -f null - 2>&1`).toString();
                     const allSilences = [];
                     const startRe = /silence_start: ([\d.]+)/g;
                     const endRe = /silence_end: ([\d.]+)/g;
@@ -190,8 +212,9 @@ except Exception as e:
                     }
                     const candidateSilences = allSilences.filter(s => s.start > 0.1);
                     
-                    if (candidateSilences.length < tasks.length - 1) {
-                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length - 1} required). Retrying attempt ${timeoutsCount + 2}/${MAX_TIMEOUTS}...`);
+                    // We now expect tasks.length + 1 silences:  1 leading + N trailing (one after each sentence).
+                    if (candidateSilences.length < tasks.length) {
+                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length} required). Retrying attempt ${timeoutsCount + 2}/${MAX_TIMEOUTS}...`);
                         timeoutsCount++;
                         if (timeoutsCount >= MAX_TIMEOUTS) {
                             console.error("❌ CRITICAL: Failed to get enough pauses after 3 attempts. Terminating.");
@@ -200,81 +223,99 @@ except Exception as e:
                         continue;
                     }
 
-                    const silencesCount = Math.min(candidateSilences.length, tasks.length);
+                    // Select the N+1 longest silences (1 after warmup + N after sentences),
+                    // then re-sort by start time for correct cutting order.
+                    // Duration-based selection is reliable here because the warmup sentence
+                    // guarantees no extra early silence (s.start ≈ 0) can displace a real
+                    // boundary — the problem that originally forced the greedy minGap approach.
+                    const silencesCount = tasks.length + 1;
                     const silences = candidateSilences
                         .map(s => ({ ...s, duration: s.end - s.start }))
                         .sort((a, b) => b.duration - a.duration)
                         .slice(0, silencesCount)
                         .sort((a, b) => a.start - b.start);
 
-                    console.log(`Detected ${allSilences.length} pauses (>1.0s), using ${silences.length} longest as separators.`);
+                    console.log(`Detected ${allSilences.length} pauses, using ${silences.length} longest as N+1 separators.`);
 
                     // 1. Cut Phase: Generate all MP3s locally first
                     const uploadTasks = [];
-                    let startTime = 0;
+                    // Start from the midpoint of the leading silence (silences[0]),
+                    // then use silences[1..N] as the end boundaries for each sentence.
+                    let startTime = silences[0] ? (silences[0].start + silences[0].end) / 2 : 0;
                     for (let i = 0; i < tasks.length; i++) {
                         const task = tasks[i];
                         const text = sentences[i];
                         const hash = crypto.createHash('md5').update(text).digest('hex');
-                        const firstWord = text.split(' ')[0].replace(/[^a-zA-Z]/g, '');
-                        const segmentFileName = `${String(i + 1).padStart(3, '0')}_${firstWord}_${hash}.mp3`;
+                        const segmentFileName = `${hash}.mp3`;
                         const segmentMp3 = path.join(batchOutputDir, segmentFileName);
                         
-                        const s = silences[i];
+                        const s = silences[i + 1]; // silences[0] is the leading silence; [1..N] are inter-sentence
                         const endTime = s ? (s.start + s.end) / 2 : (i === tasks.length - 1 ? 99999 : startTime + 15); 
 
-                        const segmentWav = path.join(batchOutputDir, `${String(i + 1).padStart(3, '0')}_temp.wav`);
+                        const segmentWav = path.join(batchOutputDir, `${hash}_temp.wav`);
                         execSync(`ffmpeg -i "${combinedWav}" -ss ${startTime} -to ${endTime} -c copy "${segmentWav}" -y -loglevel error`);
                         execSync(`ffmpeg -i "${segmentWav}" -af "silenceremove=start_periods=1:start_threshold=-35dB,areverse,silenceremove=start_periods=1:start_threshold=-35dB,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
                         
                         if (fs.existsSync(segmentWav)) fs.unlinkSync(segmentWav);
 
-                        uploadTasks.push({ task, segmentMp3, hash, text });
+                        uploadTasks.push({ task, segmentMp3, hash, text, segmentFileName });
                         startTime = endTime;
                     }
 
                     // 2. Upload Phase: Upload all prepared MP3s to R2 with retries (Concurrency: 8)
-                    const CONCURRENCY_LIMIT = 8;
-                    const results = [];
-                    const pool = new Set();
-
-                    for (const item of uploadTasks) {
-                        const promise = (async () => {
-                            const { task, segmentMp3, hash } = item;
-                            const r2Key = `ep/${book}/${hash}.mp3`;
-                            console.log(`[Batch: ${batchId}] Uploading to R2: ${r2Key}`);
-                            let uploadSuccess = false;
-                            for (let attempt = 1; attempt <= 3; attempt++) {
-                                try {
-                                    await s3Client.send(new PutObjectCommand({
-                                        Bucket: BUCKET_NAME,
-                                        Key: r2Key,
-                                        Body: fs.readFileSync(segmentMp3),
-                                        ContentType: "audio/mpeg",
-                                    }));
-                                    uploadSuccess = true;
-                                    break;
-                                } catch (e) {
-                                    console.warn(`[Batch: ${batchId}] Upload attempt ${attempt} failed for ${r2Key}: ${e.message}`);
-                                    if (attempt < 3) await new Promise(res => setTimeout(res, 2000));
-                                }
-                            }
-                            if (!uploadSuccess) throw new Error(`[Batch: ${batchId}] Failed to upload ${r2Key} after 3 attempts.`);
-                            task.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
-                        })();
-
-                        results.push(promise);
-                        pool.add(promise);
-                        promise.finally(() => pool.delete(promise));
-
-                        if (pool.size >= CONCURRENCY_LIMIT) {
-                            await Promise.race(pool);
+                    if (skipUpload) {
+                        console.log(`[Batch: ${batchId}] --no-upload: skipping R2 upload for ${uploadTasks.length} files.`);
+                        for (const item of uploadTasks) {
+                            generatedFiles.push({ text: item.text, hash: item.hash, filename: item.segmentFileName, status: 1 });
                         }
+                    } else {
+                        const CONCURRENCY_LIMIT = 8;
+                        const results = [];
+                        const pool = new Set();
+
+                        for (const item of uploadTasks) {
+                            const promise = (async () => {
+                                const { task, segmentMp3, hash, text, segmentFileName } = item;
+                                const r2Key = `ep/${book}/${hash}.mp3`;
+                                console.log(`[Batch: ${batchId}] Uploading to R2: ${r2Key}`);
+                                let uploadSuccess = false;
+                                for (let attempt = 1; attempt <= 3; attempt++) {
+                                    try {
+                                        await s3Client.send(new PutObjectCommand({
+                                            Bucket: BUCKET_NAME,
+                                            Key: r2Key,
+                                            Body: fs.readFileSync(segmentMp3),
+                                            ContentType: "audio/mpeg",
+                                        }));
+                                        uploadSuccess = true;
+                                        break;
+                                    } catch (e) {
+                                        console.warn(`[Batch: ${batchId}] Upload attempt ${attempt} failed for ${r2Key}: ${e.message}`);
+                                        if (attempt < 3) await new Promise(res => setTimeout(res, 2000));
+                                    }
+                                }
+                                const fileStatus = uploadSuccess ? 1 : 2;
+                                if (uploadSuccess) {
+                                    task.audio = `${PUBLIC_URL_BASE}/${r2Key}`;
+                                } else {
+                                    console.error(`[Batch: ${batchId}] Failed to upload ${r2Key} after 3 attempts.`);
+                                }
+                                generatedFiles.push({ text, hash, filename: segmentFileName, status: fileStatus });
+                            })();
+
+                            results.push(promise);
+                            pool.add(promise);
+                            promise.finally(() => pool.delete(promise));
+
+                            if (pool.size >= CONCURRENCY_LIMIT) {
+                                await Promise.race(pool);
+                            }
+                        }
+                        await Promise.all(results);
                     }
-                    await Promise.all(results);
                     success = true;
                 }
-                return { success: true, quotaExhausted };
+                return { success: true, quotaExhausted, batchId, files: generatedFiles };
             } catch (err) {
                 if (err.code === 'ETIMEDOUT' || err.signal === 'SIGTERM') {
                     timeoutsCount++;
@@ -292,10 +333,6 @@ except Exception as e:
                 
                 return { success: false, reason: "ERROR", error: err.message, quotaExhausted };
             }
-        }
-    } finally {
-        if (fs.existsSync(tempPy)) fs.unlinkSync(tempPy);
-        if (fs.existsSync(pyLog)) fs.unlinkSync(pyLog);
     }
     return { success: false, reason: "UNKNOWN_FAILURE" };
 }
