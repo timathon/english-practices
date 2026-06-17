@@ -19,6 +19,7 @@ This document defines the rules for extracting and converting textbook data into
   - `syllable_type`: 
     - Single-syllable: 闭音节 (Closed), 开音节 (Open), 相对开音节 (VCe), 元音字母组合音节 (Vowel Team), r控制音节 (R-Controlled), 辅音+le音节 (C-le).
     - Multi-syllable: Exact syllable breakdown (e.g., `an-i-mal`).
+    - **Note:** Consonant digraphs (e.g., 'th', 'sh') between a vowel and a silent 'e' still follow the **相对开音节 (VCe)** pattern (e.g., 'clothes'). Avoid misclassifying these as Vowel Teams. Ensure precise classification based on spelling rules rather than heuristic phonetic impressions.
   - `memorization_hook`: Creative mnemonics in Chinese.
 - **Format:** Strict JSON following the `vocab-guide` template.
 
