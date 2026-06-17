@@ -204,7 +204,13 @@ async function seed() {
         } else {
             const parts = relPath.split(path.sep);
             if (parts.length > 1) {
-                const folderName = parts[0];
+                let folderName = parts[0];
+                
+                // Handle RAZ-B nested structure (e.g., RAZ-B/raz-b-a/raz-b-after-school/...)
+                if (tb === 'RAZ-B' && /^raz-b-[a-z]$/i.test(folderName) && parts.length > 2) {
+                    folderName = parts[1];
+                }
+
                 if (folderName.startsWith('raz-b-')) {
                     unit = folderName.replace(/^raz-b-/i, '')
                         .split('-')

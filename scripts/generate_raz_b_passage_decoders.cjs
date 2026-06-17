@@ -133,7 +133,17 @@ const dataDir = path.join(__dirname, '..', 'data', 'RAZ-B');
 
 for (const bookFolder of Object.keys(razBData)) {
     const bookInfo = razBData[bookFolder];
-    const bookPath = path.join(dataDir, bookFolder);
+    let bookPath = path.join(dataDir, bookFolder);
+    
+    // Check if the folder is in a nested structure (e.g., raz-b-a/raz-b-after-school)
+    if (!fs.existsSync(bookPath)) {
+        const letter = bookFolder.replace(/^raz-b-/i, '').charAt(0).toLowerCase();
+        const nestedPath = path.join(dataDir, `raz-b-${letter}`, bookFolder);
+        if (fs.existsSync(nestedPath)) {
+            bookPath = nestedPath;
+        }
+    }
+
     if (!fs.existsSync(bookPath)) {
         console.error(`Folder not found: ${bookPath}`);
         continue;
