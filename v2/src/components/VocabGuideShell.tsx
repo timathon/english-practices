@@ -82,6 +82,9 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             if (item.context_sentence && textbook) {
                 audioCache.preloadAndSync(getAudioUrl(item.context_sentence, textbook))
             }
+            if (item.word && textbook) {
+                audioCache.preloadAndSync(getAudioUrl(item.word, textbook))
+            }
         })
 
         const stored = localStorage.getItem(unitKey)
@@ -379,7 +382,19 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                             <div className="vg-word-header">
                                 <h2 className="vg-word-title">
                                     {item.originalIndex + 1}. {item.word}
-                                    {item.ipa && <span className="vg-ipa">{item.ipa}</span>}
+                                    <span className="vg-ipa-container">
+                                        {item.ipa && <span className="vg-ipa">{item.ipa}</span>}
+                                        <button 
+                                            className={`vg-word-play-btn ${playingIndex === item.originalIndex + 10000 ? 'playing' : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                playAudio(item.word, item.originalIndex + 10000);
+                                            }}
+                                            title="Play word audio"
+                                        >
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </button>
+                                    </span>
                                 </h2>
                                 <div className="vg-item-actions">
                                     {item.unit && <span className="vg-unit">Unit {item.unit}</span>}

@@ -77,6 +77,7 @@ async function main() {
                 if (content.unit_vocabulary && Array.isArray(content.unit_vocabulary)) {
                     content.unit_vocabulary.forEach(item => {
                         if (item.context_sentence) textsSet.add(getCleanText(item.context_sentence));
+                        if (item.word) textsSet.add(getCleanText(item.word));
                     });
                 }
             } else if (file.includes('-vocab-master')) {
