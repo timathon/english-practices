@@ -1209,6 +1209,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                 欢迎回到<span className="brand-highlight">同步派</span>
               </span>
             </span>
+            <span style={{ fontSize: '0.65rem', opacity: 0.5, marginLeft: '8px', verticalAlign: 'middle' }}>v260618-1520</span>
           </p>
         </div>
       </div>

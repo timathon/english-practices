@@ -51,12 +51,14 @@ export const mistakeService = {
 
       if (existingIndex > -1) {
         // Update existing mistake
+        const now = new Date().toISOString();
         mistakes[existingIndex] = {
           ...mistakes[existingIndex],
           wrongAnswer: params.wrongAnswer ?? mistakes[existingIndex].wrongAnswer,
           attemptsCount: mistakes[existingIndex].attemptsCount + 1,
           correctStreak: 0, // Reset streak since they made a mistake again
-          updatedAt: new Date().toISOString(),
+          updatedAt: now,
+          createdAt: now, // Defer to next day's review list
           resolved: false,
           deleted: false,
         };
@@ -141,13 +143,15 @@ export const mistakeService = {
       const mistakes = this.getMistakes(userId);
       const index = mistakes.findIndex((m) => m.id === id);
       if (index > -1) {
+        const now = new Date().toISOString();
         if (isCorrect) {
           mistakes[index].correctStreak += 1;
         } else {
           mistakes[index].correctStreak = 0;
           mistakes[index].attemptsCount += 1;
+          mistakes[index].createdAt = now; // Defer to next day
         }
-        mistakes[index].updatedAt = new Date().toISOString();
+        mistakes[index].updatedAt = now;
         localStorage.setItem(getStorageKey(userId), JSON.stringify(mistakes));
         this.syncToServer(userId);
       }
