@@ -66,13 +66,14 @@ async function getAudioBatch(tasks, book, options = {}) {
     console.log(`TTS Batch Request [ID: ${batchId}, Type: ${type}]: ${tasks.length} items.`);
 
     const pythonScript = `
+import os
 import wave
 import sys
 import time
 from google import genai
 from google.genai import types
 
-client = genai.Client(api_key="${process.env.GOOGLE_API_KEY}")
+client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
 
 def get_tts():
     # Use a highly structured prompt to enforce silences.
