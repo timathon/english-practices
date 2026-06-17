@@ -49,6 +49,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
   const [activeIdx, setActiveIdx] = useState(0);
   const [currentMistake, setCurrentMistake] = useState<Mistake | null>(null);
   const [completed, setCompleted] = useState(false);
+  const [failedIds, setFailedIds] = useState<Set<string>>(new Set());
 
   // Gameplay states
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -219,8 +220,10 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
 
     if (correct) {
       playSfx('correct');
-      // Resolve mistake locally immediately
-      mistakeService.resolveMistake(userId, currentMistake.id, true);
+      // Resolve mistake locally immediately IF it wasn't failed already in this session
+      if (!failedIds.has(currentMistake.id)) {
+        mistakeService.resolveMistake(userId, currentMistake.id, true);
+      }
       
       // Play voice audio if it exists
       if (currentMistake.practiceType === 'vocab-master' && q.context_sentence) {
@@ -233,6 +236,9 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
       }
     } else {
       playSfx('wrong');
+      // Mark as failed in this session
+      setFailedIds(prev => new Set(prev).add(currentMistake.id));
+      
       // Update mistake: unresolved, reset streak, increment attempts, set createdAt = now (deferring to next day)
       mistakeService.addMistake(userId, {
         practiceId: currentMistake.practiceId,
