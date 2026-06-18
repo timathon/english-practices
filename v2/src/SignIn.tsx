@@ -14,6 +14,8 @@ export function SignIn() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('reason') === 'device_limit') {
       setInfoMessage('You have been logged out because your account is active on too many devices (max 2 active devices allowed).');
+    } else if (params.get('reason') === 'testdrive_limit') {
+      setInfoMessage('Testdrive limit reached (max 30 concurrent devices). Please wait 15 minutes or try again later.');
     }
 
     try {

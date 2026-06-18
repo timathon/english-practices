@@ -6,7 +6,7 @@ import { ManageUsers } from './ManageUsers'
 import { UsageGuide } from './UsageGuide'
 import { PracticeShell } from './components/PracticeShell'
 import { PetFloatingCompanion } from './components/PetFloatingCompanion'
-import { useSession, signOut, authClient } from './lib/auth'
+import { useSession, signOut, authClient, API_URL } from './lib/auth'
 import { petService } from './lib/petService'
 import { SwitchUser } from './SwitchUser'
 import { IrregularVerbsModal } from './components/IrregularVerbsModal'
@@ -15,9 +15,70 @@ import { SchulteGame } from './components/SchulteGame'
 import { CardMatchGame } from './components/CardMatchGame'
 import './App.css'
 
+function TestdriveTimer({ startTime }: { startTime: string }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const start = new Date(startTime).getTime();
+    const limit = 20 * 60 * 1000;
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const elapsed = now - start;
+      const remaining = limit - elapsed;
+      if (remaining <= 0) {
+        setTimeLeft('00:00');
+        clearInterval(timer);
+        return;
+      }
+      const m = Math.floor(remaining / (1000 * 60));
+      const s = Math.floor((remaining % (1000 * 60)) / 1000);
+      setTimeLeft(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [startTime]);
+
+  return <span style={{ color: 'var(--accent)' }}>{timeLeft}</span>;
+}
+
 function Navigation({ session, showChinese, onCycleComplete }: { session: any; showChinese: boolean; onCycleComplete?: () => void }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isIrregularVerbsOpen, setIsIrregularVerbsOpen] = useState(false);
+  const [versionTapCount, setVersionTapCount] = useState(0);
+  const versionTapTimerRef = useRef<number | null>(null);
+
+  const handleVersionTap = () => {
+    if (versionTapTimerRef.current) {
+      window.clearTimeout(versionTapTimerRef.current);
+    }
+    
+    const newCount = versionTapCount + 1;
+    if (newCount >= 3) {
+      setVersionTapCount(0);
+      const pass = window.prompt(showChinese ? '请输入重置代码：' : 'Enter reset passcode:');
+      if (pass) {
+        fetch(`${API_URL}/api/testdrive/reset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passcode: pass }),
+          credentials: 'include'
+        }).then(res => {
+          if (res.ok) {
+            window.alert(showChinese ? '计时器已重置，请刷新页面。' : 'Timer reset successful. Please refresh the page.');
+            window.location.reload();
+          } else {
+            window.alert(showChinese ? '重置失败：代码错误。' : 'Reset failed: Invalid passcode.');
+          }
+        });
+      }
+    } else {
+      setVersionTapCount(newCount);
+      versionTapTimerRef.current = window.setTimeout(() => {
+        setVersionTapCount(0);
+        versionTapTimerRef.current = null;
+      }, 2000);
+    }
+  };
+
   const [delayedClosed, setDelayedClosed] = useState(false);
   const [hasLoggedInUsers, setHasLoggedInUsers] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -75,6 +136,13 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
     };
   }, [isMenuOpen]);
 
+  const displayCount = (() => {
+    const c = session?.user?.testdriveCount;
+    if (typeof c === 'number') return c;
+    const parsed = parseInt(c);
+    return isNaN(parsed) ? 30 : parsed;
+  })();
+
   return (
     <div ref={menuRef} className="nav-container">
       <button 
@@ -111,6 +179,31 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
           <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
         </svg>
       </button>
+
+      {session?.user?.role === 'testdrive' && session?.user?.testdriveWindowStart && (
+        <div style={{
+          position: 'fixed',
+          top: '70px',
+          right: '16px',
+          padding: '6px 12px',
+          background: 'rgba(170, 59, 255, 0.1)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(170, 59, 255, 0.2)',
+          borderRadius: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '0.85rem',
+          fontWeight: 'bold',
+          opacity: 0.5,
+          pointerEvents: 'none',
+          zIndex: 999
+        }}>
+          <span style={{ fontSize: '1rem' }}>⏱️</span>
+          <TestdriveTimer startTime={session.user.testdriveWindowStart} />
+          <span style={{ opacity: 0.8, fontSize: '0.75rem', marginLeft: '2px' }}>×{displayCount}</span>
+        </div>
+      )}
       
       {isMenuOpen && (
         <div className="nav-menu">
@@ -199,8 +292,11 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             </>
           )}
           <div className="nav-divider"></div>
-          <div style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit' }}>
-            v260618-1545
+          <div 
+            onClick={handleVersionTap}
+            style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
+          >
+            v260618-1422
           </div>
         </div>
       )}

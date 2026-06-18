@@ -13,6 +13,10 @@ export const user = sqliteTable("user", {
   image: text("image"),
   petState: text("petState", { mode: "json" }).$type<any>(),
   mistakeState: text("mistakeState", { mode: "json" }).$type<any>(),
+  testdriveWindowStart: integer("testdriveWindowStart", { mode: "timestamp" }),
+  testdriveCount: integer("testdriveCount").default(30),
+  testdriveDailyLimit: integer("testdriveDailyLimit").default(5),
+  testdriveLastDate: text("testdriveLastDate"),
   createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull()
 });

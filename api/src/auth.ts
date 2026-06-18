@@ -39,6 +39,15 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
                 subscriptionExpiry: {
                     type: "date",
                     required: false
+                },
+                testdriveWindowStart: {
+                    type: "date",
+                    required: false
+                },
+                testdriveCount: {
+                    type: "number",
+                    required: false,
+                    defaultValue: 30
                 }
             }
         },

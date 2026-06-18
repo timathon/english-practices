@@ -149,6 +149,22 @@ const translatePracticeName = (name: string): string => {
   return map[norm] || map[norm.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')] || norm;
 };
 
+const translateTextbookName = (name: string): string => {
+  const map: Record<string, string> = {
+    'A3A': '三上', 'A3B': '三下',
+    'A4A': '四上', 'A4B': '四下',
+    'A5A': '五上', 'A5B': '五下',
+    'A6A': '六上', 'A6B': '六下',
+    'A7A': '七上', 'A7B': '七下',
+    'A8A': '八上', 'A8B': '八下',
+    'A9A': '九上', 'A9B': '九下', 'A9': '九全',
+    'NCE1': '新一', 'NCE2': '新二', 'NCE3': '新三',
+    'B-NCE2': '新二',
+    'B-THINK1': 'Think 1',
+  };
+  return map[name.toUpperCase()] || name;
+};
+
 function FadingPracticeName({ name, showChinese }: { name: string; showChinese: boolean }) {
   const cnName = translatePracticeName(name);
   return (
@@ -192,7 +208,7 @@ function saveLastUnit(tb: string, unit: string) {
   } catch { }
 }
 
-function BookSection({ tb, units, records, initialUnit, initialPage, showChinese }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string; initialPage?: string; showChinese: boolean }) {
+function BookSection({ tb, units, records, initialUnit, initialPage, showChinese, isTestdrive, onResetTestdrive }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string; initialPage?: string; showChinese: boolean; isTestdrive?: boolean; onResetTestdrive?: () => void }) {
   const lettersScrollRef = useHorizontalScrollRef()
   const unitsScrollRef = useHorizontalScrollRef()
   const unitsContainerRef = useRef<HTMLDivElement | null>(null)
@@ -437,6 +453,33 @@ function BookSection({ tb, units, records, initialUnit, initialPage, showChinese
       <div className="db-book-header">
         <span className="db-book-emoji">{getTextbookEmoji(tb)}</span>
         <h3 className="db-book-title">{tb}</h3>
+        {isTestdrive && onResetTestdrive && (
+          <button 
+            className="db-book-change-btn"
+            onClick={onResetTestdrive}
+            style={{
+              padding: '4px 0',
+              width: '85px',
+              fontSize: '0.72rem',
+              background: 'var(--accent)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginRight: '10px',
+              overflow: 'hidden'
+            }}
+          >
+            <span className="db-title-grid">
+              <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                Change Book
+              </span>
+              <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                更换教材
+              </span>
+            </span>
+          </button>
+        )}
         <span className="db-book-count">{unitKeys.length} units</span>
       </div>
 
@@ -845,6 +888,152 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+function TestdriveSelector({ books, onSelect, showChinese }: { books: Record<string, Record<string, any[]>>, onSelect: (tb: string) => void, showChinese: boolean }) {
+  const sortedBooks = Object.keys(books).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+  
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+      backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)',
+      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000, padding: '20px'
+    }}>
+      <div style={{
+        background: 'var(--card-bg)', borderRadius: '24px', border: '2px solid var(--accent)',
+        width: '100%', maxWidth: '600px', padding: '40px', textAlign: 'center',
+        boxShadow: '0 20px 60px rgba(170, 59, 255, 0.3)', color: 'var(--text-h)'
+      }}>
+        <h2 style={{ fontSize: '2rem', marginBottom: '10px', color: 'var(--accent)' }}>
+          {showChinese ? '欢迎体验同步派！' : 'Welcome to TextbookPass!'}
+        </h2>
+        <p style={{ marginBottom: '30px', opacity: 0.9 }}>
+          {showChinese ? '请选择一本教材开始你的 20 分钟体验。' : 'Please select a textbook to start your 20-minute testdrive.'}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px', maxHeight: '60vh', overflowY: 'auto', padding: '10px' }}>
+          {sortedBooks.map(tb => (
+            <button
+              key={tb}
+              onClick={() => onSelect(tb)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px', padding: '16px',
+                background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '12px',
+                color: 'var(--text-h)', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; }}
+            >
+              <span style={{ fontSize: '1.5rem' }}>{getTextbookEmoji(tb)}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 'bold' }}>
+                  {tb} {showChinese && (
+                    <span style={{ fontSize: '0.9em', opacity: 0.8, marginLeft: '4px', fontWeight: 'normal' }}>
+                      ({translateTextbookName(tb)})
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{Object.keys(books[tb]).length} Units</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LockdownOverlay({ nextAvailableAt, showChinese }: { nextAvailableAt: string, showChinese: boolean }) {
+  const [timeLeft, setTimeLeft] = useState('');
+  const [tapCount, setTapCount] = useState(0);
+  const tapTimerRef = useRef<number | null>(null);
+
+  const handleHourglassTap = () => {
+    if (tapTimerRef.current) {
+      window.clearTimeout(tapTimerRef.current);
+    }
+    const newCount = tapCount + 1;
+    if (newCount >= 5) {
+      setTapCount(0);
+      const pass = window.prompt(showChinese ? '请输入重置代码：' : 'Enter reset passcode:');
+      if (pass) {
+        fetch(`${API_URL}/api/testdrive/reset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passcode: pass }),
+          credentials: 'include'
+        }).then(res => {
+          if (res.ok) {
+            window.alert(showChinese ? '计时器已重置，请刷新页面。' : 'Timer reset successful. Please refresh the page.');
+            window.location.reload();
+          } else {
+            window.alert(showChinese ? '重置失败：代码错误。' : 'Reset failed: Invalid passcode.');
+          }
+        });
+      }
+    } else {
+      setTapCount(newCount);
+      tapTimerRef.current = window.setTimeout(() => {
+        setTapCount(0);
+        tapTimerRef.current = null;
+      }, 2000);
+    }
+  };
+
+  useEffect(() => {
+    const target = new Date(nextAvailableAt).getTime();
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const diff = target - now;
+      if (diff <= 0) {
+        window.location.reload();
+        return;
+      }
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+      }, 1000);
+    return () => clearInterval(timer);
+  }, [nextAvailableAt]);
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+      backgroundColor: 'rgba(0, 0, 0, 0.95)', backdropFilter: 'blur(20px)',
+      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10001, padding: '20px'
+    }}>
+      <div style={{
+        background: 'var(--card-bg)', borderRadius: '24px', border: '2px solid var(--accent)',
+        width: '100%', maxWidth: '400px', padding: '40px', textAlign: 'center',
+        boxShadow: '0 20px 60px rgba(170, 59, 255, 0.3)', color: 'var(--text-h)'
+      }}>
+        <div 
+          onClick={handleHourglassTap}
+          style={{ fontSize: '4rem', marginBottom: '20px', cursor: 'pointer', userSelect: 'none' }}
+        >
+          ⌛
+        </div>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '10px', color: 'var(--accent)' }}>
+          {showChinese ? '体验时间已到' : 'Testdrive Expired'}
+        </h2>
+        <p style={{ marginBottom: '20px', opacity: 0.9 }}>
+          {showChinese ? '你的 20 分钟体验已结束。请在以下时间后再次尝试：' : 'Your 20-minute testdrive has ended. Please try again in:'}
+        </p>
+        <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '30px' }}>
+          {timeLeft}
+        </div>
+        <button
+          onClick={() => (window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`)}
+          style={{
+            padding: '12px 24px', background: 'var(--accent)', color: 'white',
+            border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer'
+          }}
+        >
+          {showChinese ? '返回登录' : 'Back to Sign In'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const historyScrollRef = useHorizontalScrollRef()
   const { data: session } = useSession()
@@ -867,6 +1056,19 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const [showResolved, setShowResolved] = useState(false)
   const [showMistakeAlertModal, setShowMistakeAlertModal] = useState(false)
   const modalTimeoutRef = useRef<number | null>(null)
+
+  const isTestdrive = session?.user?.role === 'testdrive'
+  const [testdriveBook, setTestdriveBook] = useState<string>(() => sessionStorage.getItem('testdrive_selected_book') || '')
+  const libraryRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (isTestdrive && testdriveBook && libraryRef.current) {
+      setTimeout(() => {
+        libraryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [testdriveBook, isTestdrive]);
+  const [testdriveLockdown, setTestdriveLockdown] = useState<{ nextAvailableAt: string } | null>(null)
 
   const getThreshold3AM = () => {
     const d = new Date();
@@ -935,6 +1137,26 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const userId = session?.user?.id
 
   useEffect(() => {
+    if (isTestdrive && session?.user?.testdriveWindowStart) {
+      const start = new Date(session.user.testdriveWindowStart).getTime();
+      const usageLimit = 20 * 60 * 1000;
+      const cooldownPeriod = 1 * 60 * 60 * 1000;
+      const nextAvailableAt = new Date(start + cooldownPeriod).toISOString();
+      
+      const checkExpiry = () => {
+        const now = Date.now();
+        if (now - start >= usageLimit) {
+          setTestdriveLockdown({ nextAvailableAt });
+        }
+      };
+      
+      checkExpiry();
+      const timer = setInterval(checkExpiry, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [isTestdrive, session?.user?.testdriveWindowStart]);
+
+  useEffect(() => {
     if (userId && fetchedUserIdRef.current !== userId) {
       fetchedUserIdRef.current = userId
 
@@ -946,7 +1168,17 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         setLoading(true)
       }
       fetch(API_URL + '/api/practices', { credentials: 'include' })
-        .then(res => res.json())
+        .then(res => {
+          if (res.status === 403) {
+            return res.json().then(data => {
+              if (data.reason === 'testdrive_expired' || data.reason === 'testdrive_daily_limit_reached') {
+                setTestdriveLockdown({ nextAvailableAt: data.nextAvailableAt || '' });
+              }
+              throw new Error(data.error);
+            });
+          }
+          return res.json();
+        })
         .then(data => {
           if (Array.isArray(data)) {
             cache.setPractices(data)
@@ -964,7 +1196,17 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         setRecords(cachedRecords.filter((r: any) => !r.unit.startsWith('game-')))
       }
       fetch(API_URL + '/api/records', { credentials: 'include' })
-        .then(res => res.json())
+        .then(res => {
+          if (res.status === 403) {
+            return res.json().then(data => {
+              if (data.reason === 'testdrive_expired' || data.reason === 'testdrive_daily_limit_reached') {
+                setTestdriveLockdown({ nextAvailableAt: data.nextAvailableAt || '' });
+              }
+              throw new Error(data.error);
+            });
+          }
+          return res.json();
+        })
         .then(data => {
           if (Array.isArray(data)) {
             cache.setRecords(data)
@@ -974,9 +1216,13 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         .catch(console.error)
 
       // Load mistakes
-      mistakeService.syncFromServer(userId).then(synced => {
-        setMistakes(synced)
-      })
+      if (session?.user?.role !== 'testdrive') {
+        mistakeService.syncFromServer(userId).then(synced => {
+          setMistakes(synced)
+        })
+      } else {
+        setMistakes(mistakeService.getMistakes(userId))
+      }
     }
   }, [userId])
 
@@ -1019,7 +1265,9 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const handleDeleteMistake = (id: string) => {
     if (userId && window.confirm("Are you sure you want to delete this mistake?")) {
       mistakeService.removeMistake(userId, id);
-      mistakeService.syncToServer(userId);
+      if (session?.user?.role !== 'testdrive') {
+        mistakeService.syncToServer(userId);
+      }
       setMistakes(mistakeService.getMistakes(userId));
     }
   };
@@ -1045,6 +1293,10 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const grouped: Record<string, Record<string, any[]>> = practices.reduce((acc, p) => {
     // Skip C-GIU General unit or GENERAL textbook
     if ((p.textbook === 'C-GIU' && p.unit === 'General') || p.textbook === 'GENERAL') {
+      return acc
+    }
+    // Filter for testdrive user
+    if (isTestdrive && testdriveBook && p.textbook !== testdriveBook) {
       return acc
     }
     if (!acc[p.textbook]) acc[p.textbook] = {}
@@ -1196,20 +1448,45 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
   return (
     <div className="db-root">
+      {isTestdrive && !testdriveBook && !loading && !testdriveLockdown && (
+        <TestdriveSelector 
+          books={practices.reduce((acc, p) => {
+            if ((p.textbook === 'C-GIU' && p.unit === 'General') || p.textbook === 'GENERAL') return acc;
+            if (!acc[p.textbook]) acc[p.textbook] = {};
+            if (!acc[p.textbook][p.unit]) acc[p.textbook][p.unit] = true;
+            return acc;
+          }, {} as Record<string, any>)} 
+          onSelect={(tb) => {
+            setTestdriveBook(tb);
+            sessionStorage.setItem('testdrive_selected_book', tb);
+          }}
+          showChinese={showChinese}
+        />
+      )}
+
+      {isTestdrive && testdriveLockdown && (
+        <LockdownOverlay 
+          nextAvailableAt={testdriveLockdown.nextAvailableAt} 
+          showChinese={showChinese} 
+        />
+      )}
+
       <div className="db-hero">
         <span className="db-wave">👋</span>
-        <div>
-          <h2 className="db-title">Hi, {session.user.name}!</h2>
-          <p className="db-subtitle">
-            <span className="db-title-grid">
-              <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
-                Welcome back to <span className="brand-highlight">TextbookPass</span>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 className="db-title">Hi, {session.user.name}!</h2>
+            <p className="db-subtitle">
+              <span className="db-title-grid">
+                <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+                  Welcome back to <span className="brand-highlight">TextbookPass</span>
+                </span>
+                <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+                  欢迎回到<span className="brand-highlight">同步派</span>
+                </span>
               </span>
-              <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
-                欢迎回到<span className="brand-highlight">同步派</span>
-              </span>
-            </span>
-          </p>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -1390,11 +1667,13 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
       {loading ? (
         <div className="db-empty">Loading textbooks...</div>
+      ) : isTestdrive && !testdriveBook ? (
+        <div className="db-empty">Please select a textbook to begin.</div>
       ) : Object.keys(grouped).length === 0 ? (
         <div className="db-empty">No textbooks assigned. Please contact your administrator.</div>
       ) : (
         <>
-          <div className="db-view-tabs">
+          <div className="db-view-tabs" ref={libraryRef}>
             <button
               className={`db-view-tab ${activeView === 'textbooks' ? 'active' : ''} ${unresolvedCount > 20 ? 'disabled' : ''}`}
               onClick={() => {
@@ -1451,6 +1730,11 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                   initialUnit={targetTextbook === tb ? targetUnit : undefined}
                   initialPage={targetTextbook === tb ? targetPage : undefined}
                   showChinese={showChinese}
+                  isTestdrive={isTestdrive}
+                  onResetTestdrive={() => {
+                    setTestdriveBook('');
+                    sessionStorage.removeItem('testdrive_selected_book');
+                  }}
                 />
               ))}
             </div>

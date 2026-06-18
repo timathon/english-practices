@@ -115,6 +115,8 @@ function getSessionToken(c: any): string | null {
 
 app.use('/api/*', async (c, next) => {
   const path = c.req.path;
+  const isResetPath = path === '/api/testdrive/reset' || path === '/api/testdrive/reset/';
+  
   if (path.startsWith('/api/auth') || path === '/api/setup') {
     return await next();
   }
@@ -132,6 +134,106 @@ app.use('/api/*', async (c, next) => {
         await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
         return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
       }
+
+      // Check user role and testdrive window
+      const userRows = await db.select().from(user).where(eq(user.id, dbSess.userId));
+      if (userRows.length > 0) {
+        const currentUser = userRows[0];
+        
+        if (currentUser.role === 'testdrive') {
+          // 1. Concurrency limit for testdrive (30 devices)
+          const activeSessions = await db.select()
+            .from(sessionTable)
+            .where(eq(sessionTable.userId, currentUser.id))
+            .orderBy(desc(sessionTable.createdAt));
+            
+          if (activeSessions.length > 30) {
+            const sessionsToRevoke = activeSessions.slice(30);
+            for (const s of sessionsToRevoke) {
+              await db.update(sessionTable)
+                .set({ expiresAt: new Date(0) })
+                .where(eq(sessionTable.id, s.id));
+            }
+            if (sessionsToRevoke.some(s => s.id === dbSess.id)) {
+              await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
+              return c.json({ error: "Testdrive limit reached. Please wait 15 minutes or try again later.", reason: "testdrive_limit" }, 403);
+            }
+          }
+
+          // 2. Usage window limit (20m/1h) - Skip for reset endpoint
+          if (isResetPath) {
+            // Allow reset even if window expired
+          } else {
+            const now = Date.now();
+            const oneHourMs = 1 * 60 * 60 * 1000;
+            const twentyMinsMs = 20 * 60 * 1000;
+            const todayStr = new Date(now).toISOString().split('T')[0];
+            
+            let windowStart = currentUser.testdriveWindowStart ? new Date(currentUser.testdriveWindowStart).getTime() : 0;
+            
+            if (windowStart === 0 || (now - windowStart) >= oneHourMs) {
+              // Check if we need to start a new window
+              let currentCount = typeof currentUser.testdriveCount === 'number' ? currentUser.testdriveCount : parseInt(currentUser.testdriveCount as any);
+              if (isNaN(currentCount)) currentCount = 30;
+
+              if (currentCount <= 0) {
+                return c.json({ error: "No testdrives left. Please contact the administrator.", reason: "testdrive_quota_exhausted" }, 403);
+              }
+
+              // Check daily limit (5 per day)
+              let dailyLimit = typeof currentUser.testdriveDailyLimit === 'number' ? currentUser.testdriveDailyLimit : 5;
+              const lastDate = currentUser.testdriveLastDate;
+              
+              if (lastDate !== todayStr) {
+                // New day, reset daily limit
+                dailyLimit = 5;
+              }
+
+              if (dailyLimit <= 0) {
+                return c.json({ 
+                  error: "Daily testdrive limit reached (5/day). Please come back tomorrow.", 
+                  reason: "testdrive_daily_limit_reached" 
+                }, 403);
+              }
+
+              // Start a new window
+              await db.update(user).set({ 
+                testdriveWindowStart: new Date(now),
+                testdriveCount: currentCount - 1,
+                testdriveDailyLimit: dailyLimit - 1,
+                testdriveLastDate: todayStr
+              }).where(eq(user.id, currentUser.id));
+            } else if ((now - windowStart) >= twentyMinsMs) {
+              // Still in the 1-hour cooldown but passed the 20-minute usage window
+              const nextAvailable = new Date(windowStart + oneHourMs);
+              return c.json({ 
+                error: "Your 20-minute testdrive session has expired. Please come back in 1 hour.", 
+                reason: "testdrive_expired",
+                nextAvailableAt: nextAvailable.toISOString()
+              }, 403);
+            }
+          }
+        } else if (currentUser.username !== 'adminx') {
+          // Standard user concurrency limit (2 devices)
+          const activeSessions = await db.select()
+            .from(sessionTable)
+            .where(eq(sessionTable.userId, currentUser.id))
+            .orderBy(desc(sessionTable.createdAt));
+            
+          if (activeSessions.length > 2) {
+            const sessionsToRevoke = activeSessions.slice(2);
+            for (const s of sessionsToRevoke) {
+              await db.update(sessionTable)
+                .set({ expiresAt: new Date(0) })
+                .where(eq(sessionTable.id, s.id));
+            }
+            if (sessionsToRevoke.some(s => s.id === dbSess.id)) {
+              await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
+              return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -146,32 +248,6 @@ app.get('/api/me', async (c) => {
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401);
   }
-
-  const db = drizzle(c.env.DB);
-  
-  // Enforce concurrent session limit (max 2), exempt adminx
-  if (session.user.username !== 'adminx') {
-    const activeSessions = await db.select()
-      .from(sessionTable)
-      .where(eq(sessionTable.userId, session.user.id))
-      .orderBy(desc(sessionTable.createdAt)); // Newest first
-      
-    if (activeSessions.length > 2) {
-      const sessionsToRevoke = activeSessions.slice(2); // Keep the 2 newest, expire the rest
-      for (const s of sessionsToRevoke) {
-        await db.update(sessionTable)
-          .set({ expiresAt: new Date(0) })
-          .where(eq(sessionTable.id, s.id));
-      }
-      
-      const currentSessionRevoked = sessionsToRevoke.some(s => s.id === session.session.id);
-      if (currentSessionRevoked) {
-        await db.delete(sessionTable).where(eq(sessionTable.id, session.session.id));
-        return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
-      }
-    }
-  }
-
   return c.json(session.user);
 })
 
@@ -179,24 +255,85 @@ app.post('/api/setup', async (c) => {
   try {
     const auth = getCachedAuth(c.env)
     const db = drizzle(c.env.DB)
-    const existing = await db.select().from(user).where(eq(user.username, "adminx"))
-    if (existing.length > 0) return c.json({ msg: "Already set up" })
 
-    const res = await auth.api.signUpEmail({
-      body: {
-          email: "adminx@system.local",
-          password: "adminy",
-          name: "Admin",
-          username: "adminx"
-      } as any
-    })
-    
-    if (res?.user?.id) {
-      await db.update(user).set({ role: "admin" }).where(eq(user.id, res.user.id))
+    let adminCreated = false;
+    const existing = await db.select().from(user).where(eq(user.username, "adminx"))
+    if (existing.length === 0) {
+      const res = await auth.api.signUpEmail({
+        body: {
+            email: "adminx@system.local",
+            password: "adminy",
+            name: "Admin",
+            username: "adminx"
+        } as any
+      })
+
+      if (res?.user?.id) {
+        await db.update(user).set({ role: "admin" }).where(eq(user.id, res.user.id))
+        adminCreated = true;
+      }
     }
-    return c.json(res)
+
+    // Seed testdrive account: test0 / abcd5678
+    const testdriveExisting = await db.select().from(user).where(eq(user.username, "test0"))
+    if (testdriveExisting.length === 0) {
+      await auth.api.signUpEmail({
+        body: {
+          email: "test0@system.local",
+          password: "abcd5678",
+          name: "Testdrive User",
+          username: "test0"
+        } as any
+      }).then(async (testRes: any) => {
+        if (testRes?.user?.id) {
+          await db.update(user).set({ role: "testdrive" }).where(eq(user.id, testRes.user.id))
+        }
+      })
+    }
+
+    return c.json({ msg: "Setup complete", adminCreated })
   } catch (e: any) {
     return c.json({ error: e.stack || e.message }, 500)
+  }
+})
+app.post('/api/testdrive/reset', async (c) => {
+  try {
+    const db = drizzle(c.env.DB);
+    const token = getSessionToken(c);
+    if (!token) {
+      console.error('[Reset API] No token found in headers or cookies');
+      return c.json({ error: "Unauthorized - No token" }, 401);
+    }
+
+    const sessRows = await db.select().from(sessionTable).where(eq(sessionTable.token, token));
+    if (sessRows.length === 0) {
+      console.error('[Reset API] Invalid or expired token');
+      return c.json({ error: "Unauthorized - Invalid token" }, 401);
+    }
+
+    const dbSess = sessRows[0];
+    const userRows = await db.select().from(user).where(eq(user.id, dbSess.userId));
+    if (userRows.length === 0) {
+      console.error('[Reset API] User not found for session');
+      return c.json({ error: "Unauthorized - User not found" }, 401);
+    }
+
+    const currentUser = userRows[0];
+    const body = await c.req.json();
+    const serverPasscode = c.env.TESTDRIVE_RESET_PASSCODE || '1234efgh';
+    
+    if (body.passcode !== serverPasscode) {
+      console.error(`[Reset API] Invalid passcode: ${body.passcode}`);
+      return c.json({ error: "Invalid passcode" }, 403);
+    }
+
+    const now = new Date();
+    await db.update(user).set({ testdriveWindowStart: now }).where(eq(user.id, currentUser.id));
+    console.log(`[Reset API] Successfully reset timer for user: ${currentUser.username} to ${now.toISOString()}`);
+    return c.json({ success: true, testdriveWindowStart: now.toISOString() });
+  } catch (e: any) {
+    console.error('[Reset API] Error:', e.message, e.stack);
+    return c.json({ error: e.message }, 500);
   }
 })
 
@@ -427,6 +564,7 @@ app.post('/api/records', async (c) => {
   const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) return c.json({ error: "Unauthorized" }, 401);
+  if (session.user.role === 'testdrive') return c.json({ error: "Testdrive records are not saved to the server." }, 403);
 
   const body = await c.req.json();
   if (!body.unit || body.score === undefined) return c.json({ error: "Bad request" }, 400);
@@ -451,6 +589,7 @@ app.put('/api/records/:id', async (c) => {
   const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) return c.json({ error: "Unauthorized" }, 401);
+  if (session.user.role === 'testdrive') return c.json({ error: "Testdrive records are not saved to the server." }, 403);
 
   const id = c.req.param('id');
   const body = await c.req.json();
@@ -535,7 +674,7 @@ app.get('/api/practices', async (c) => {
   }
   
   const userRole = (session.user as any).role?.toLowerCase();
-  if (userRole === 'admin') {
+  if (userRole === 'admin' || userRole === 'testdrive') {
       return c.json(cachedMappedPractices)
   }
   
@@ -568,7 +707,8 @@ app.get('/api/practices/:id', async (c) => {
   
   if (!item) return c.json({ error: 'Not found' }, 404)
   
-  if ((session.user as any).role !== 'admin') {
+  const userRole = (session.user as any).role?.toLowerCase();
+  if (userRole !== 'admin' && userRole !== 'testdrive') {
       const expiry = (session.user as any).subscriptionExpiry;
       if (expiry && new Date(expiry) < new Date()) {
           return c.json({ error: 'Subscription expired' }, 403)
@@ -648,6 +788,7 @@ app.put('/api/pet', async (c) => {
   const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) return c.json({ error: "Unauthorized" }, 401);
+  if (session.user.role === 'testdrive') return c.json({ error: "Testdrive pet state is not saved to the server." }, 403);
 
   const body = await c.req.json();
   const db = drizzle(c.env.DB);
@@ -688,6 +829,7 @@ app.put('/api/mistakes', async (c) => {
   const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session) return c.json({ error: "Unauthorized" }, 401);
+  if (session.user.role === 'testdrive') return c.json({ error: "Testdrive mistakes are not saved to the server." }, 403);
 
   const body = await c.req.json();
   const db = drizzle(c.env.DB);

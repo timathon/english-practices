@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `testdriveCount` integer DEFAULT 30;
