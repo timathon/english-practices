@@ -94,3 +94,26 @@ Always rebuild the index and data catalog after generating new releases:
 node scripts/update_index.cjs
 ```
 
+---
+
+## 🎙 On-Demand TTS Generation (`tts-for-sentences.cjs`)
+Generates TTS for a specific list of sentences and uploads them to R2 under a specified textbook category.
+```bash
+node scripts/tts-for-sentences.cjs [book_name] [sentences_file_or_string] [flags]
+```
+- **book_name**: The category name (e.g., `a3b`, `raz-b`) used for the R2 key prefix.
+- **sentences_file_or_string**: Either a path to a `.txt` file (one sentence per line) or a `\n`-separated string.
+- **Flags**:
+  - `--no-upload`: Skip R2 upload, save files locally only in `temp/audio/`.
+  - `--regenerate`: Force regeneration even if files might exist (handled by `getAudioBatch`).
+
+**Example (String):**
+```bash
+node scripts/tts-for-sentences.cjs a3b "Hello world.\nThis is a test."
+```
+
+**Example (File):**
+```bash
+node scripts/tts-for-sentences.cjs a3b temp/my-sentences.txt
+```
+
