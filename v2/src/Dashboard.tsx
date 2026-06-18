@@ -892,23 +892,15 @@ function TestdriveSelector({ books, onSelect, showChinese }: { books: Record<str
   const sortedBooks = Object.keys(books).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
   
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-      backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)',
-      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000, padding: '20px'
-    }}>
-      <div style={{
-        background: 'var(--card-bg)', borderRadius: '24px', border: '2px solid var(--accent)',
-        width: '100%', maxWidth: '600px', padding: '40px', textAlign: 'center',
-        boxShadow: '0 20px 60px rgba(170, 59, 255, 0.3)', color: 'var(--text-h)'
-      }}>
-        <h2 style={{ fontSize: '2rem', marginBottom: '10px', color: 'var(--accent)' }}>
+    <div className="db-overlay-wrapper">
+      <div className="db-lockdown-card db-testdrive-card">
+        <h2 className="db-lockdown-title" style={{ fontSize: '2rem' }}>
           {showChinese ? '欢迎体验同步派！' : 'Welcome to TextbookPass!'}
         </h2>
-        <p style={{ marginBottom: '30px', opacity: 0.9 }}>
+        <p className="db-lockdown-text" style={{ marginBottom: '30px' }}>
           {showChinese ? '请选择一本教材开始你的 20 分钟体验。' : 'Please select a textbook to start your 20-minute testdrive.'}
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px', maxHeight: '60vh', overflowY: 'auto', padding: '10px' }}>
+        <div className="db-testdrive-grid">
           {sortedBooks.map(tb => (
             <button
               key={tb}
@@ -995,43 +987,71 @@ function LockdownOverlay({ nextAvailableAt, showChinese }: { nextAvailableAt: st
   }, [nextAvailableAt]);
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-      backgroundColor: 'rgba(0, 0, 0, 0.95)', backdropFilter: 'blur(20px)',
-      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10001, padding: '20px'
-    }}>
-      <div style={{
-        background: 'var(--card-bg)', borderRadius: '24px', border: '2px solid var(--accent)',
-        width: '100%', maxWidth: '400px', padding: '40px', textAlign: 'center',
-        boxShadow: '0 20px 60px rgba(170, 59, 255, 0.3)', color: 'var(--text-h)'
-      }}>
+    <div className="db-overlay-wrapper">
+      <div className="db-lockdown-card">
         <div 
           onClick={handleHourglassTap}
-          style={{ fontSize: '4rem', marginBottom: '20px', cursor: 'pointer', userSelect: 'none' }}
+          className="db-lockdown-icon"
         >
           ⌛
         </div>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '10px', color: 'var(--accent)' }}>
+        <h2 className="db-lockdown-title">
           {showChinese ? '体验时间已到' : 'Testdrive Expired'}
         </h2>
-        <p style={{ marginBottom: '20px', opacity: 0.9 }}>
+        <p className="db-lockdown-text">
           {showChinese ? '你的 20 分钟体验已结束。请在以下时间后再次尝试：' : 'Your 20-minute testdrive has ended. Please try again in:'}
         </p>
-        <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)', marginBottom: '30px' }}>
+        <div className="db-lockdown-timer">
           {timeLeft}
         </div>
         <button
           onClick={() => (window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`)}
-          style={{
-            padding: '12px 24px', background: 'var(--accent)', color: 'white',
-            border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer'
-          }}
+          className="db-lockdown-btn"
         >
           {showChinese ? '返回登录' : 'Back to Sign In'}
         </button>
       </div>
     </div>
   );
+}
+
+function ScrollDownHint() {
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const checkScroll = () => {
+      const windowHeight = window.innerHeight
+      const documentHeight = document.documentElement.scrollHeight
+      const scrollTop = window.scrollY
+      
+      const atBottom = scrollTop + windowHeight >= documentHeight - 100
+      const isScrollable = documentHeight > windowHeight + 200
+      
+      setIsVisible(!atBottom && isScrollable)
+    }
+
+    window.addEventListener('scroll', checkScroll)
+    window.addEventListener('resize', checkScroll)
+    const timer = setTimeout(checkScroll, 500)
+    
+    return () => {
+      window.removeEventListener('scroll', checkScroll)
+      window.removeEventListener('resize', checkScroll)
+      clearTimeout(timer)
+    }
+  }, [])
+
+  if (!isVisible) return null
+
+  return (
+    <div className="db-scroll-down-hint" onClick={() => window.scrollBy({ top: window.innerHeight * 0.6, behavior: 'smooth' })}>
+      <svg width="30" height="45" viewBox="0 0 30 45">
+        <path d="M4 6 L15 17 L26 6" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="hint-arrow-1" />
+        <path d="M4 18 L15 29 L26 18" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="hint-arrow-2" />
+        <path d="M4 30 L15 41 L26 30" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="hint-arrow-3" />
+      </svg>
+    </div>
+  )
 }
 
 export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
@@ -1448,6 +1468,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
   return (
     <div className="db-root">
+      <ScrollDownHint />
       {isTestdrive && !testdriveBook && !loading && !testdriveLockdown && (
         <TestdriveSelector 
           books={practices.reduce((acc, p) => {
