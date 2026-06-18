@@ -120,7 +120,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const userId = session?.user?.id
 
   useEffect(() => {
-    if (isTestdrive && (session?.user as any)?.testdriveWindowStart) {
+    if (isTestdrive && session?.user?.username !== 'test0' && (session?.user as any)?.testdriveWindowStart) {
       const start = new Date((session.user as any).testdriveWindowStart).getTime();
       const usageLimit = 20 * 60 * 1000;
       const cooldownPeriod = 1 * 60 * 60 * 1000;
@@ -137,7 +137,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
       const timer = setInterval(checkExpiry, 1000);
       return () => clearInterval(timer);
     }
-  }, [isTestdrive, (session?.user as any)?.testdriveWindowStart]);
+  }, [isTestdrive, session?.user?.username, (session?.user as any)?.testdriveWindowStart]);
 
   useEffect(() => {
     if (userId && fetchedUserIdRef.current !== userId) {
@@ -268,7 +268,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   }, [listedMistakes, showResolved]);
 
   // group: textbook -> unit -> practices[]
-  const grouped: Record<string, Record<string, any[]>> = practices.reduce((acc, p) => {
+  const rawGrouped: Record<string, Record<string, any[]>> = practices.reduce((acc, p) => {
     // Skip C-GIU General unit or GENERAL textbook
     if ((p.textbook === 'C-GIU' && p.unit === 'General') || p.textbook === 'GENERAL') {
       return acc
@@ -282,6 +282,21 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
     acc[p.textbook][p.unit].push(p)
     return acc
   }, {})
+
+  const grouped = useMemo(() => {
+    if (isTestdrive && session?.user?.username === 'test0') {
+      const filtered: Record<string, Record<string, any[]>> = {};
+      Object.keys(rawGrouped).forEach(tb => {
+        const units = Object.keys(rawGrouped[tb]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        if (units.length > 0) {
+          const firstUnit = units[0];
+          filtered[tb] = { [firstUnit]: rawGrouped[tb][firstUnit] };
+        }
+      });
+      return filtered;
+    }
+    return rawGrouped;
+  }, [rawGrouped, isTestdrive, session?.user?.username]);
 
   if (!session) return (
     <div className="db-empty">Please sign in to view your dashboard.</div>
@@ -429,6 +444,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
       <ScrollDownHint />
       {isTestdrive && !testdriveBook && !loading && !testdriveLockdown && (
         <TestdriveSelector 
+          username={session.user.username}
           books={practices.reduce((acc, p) => {
             if ((p.textbook === 'C-GIU' && p.unit === 'General') || p.textbook === 'GENERAL') return acc;
             if (!acc[p.textbook]) acc[p.textbook] = {};

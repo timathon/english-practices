@@ -164,8 +164,30 @@ except Exception as e:
                     const hash = crypto.createHash('md5').update(text).digest('hex');
                     const segmentFileName = `${hash}.mp3`;
                     const segmentMp3 = path.join(batchOutputDir, segmentFileName);
-                    
-                    execSync(`ffmpeg -i "${combinedWav}" -af "silenceremove=start_periods=1:start_threshold=-35dB,areverse,silenceremove=start_periods=1:start_threshold=-35dB,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
+
+                    // Detect the leading silence (the gap after the "Start." warmup word).
+                    // Seek past its midpoint so the warmup is discarded, then trim trailing silence.
+                    const silenceOutput1 = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=${silenceThreshold}:d=2.0" -f null - 2>&1`).toString();
+                    const startRe1 = /silence_start: ([\d.]+)/g;
+                    const endRe1 = /silence_end: ([\d.]+)/g;
+                    const allSilences1 = [];
+                    let sm1, em1;
+                    while ((sm1 = startRe1.exec(silenceOutput1)) !== null && (em1 = endRe1.exec(silenceOutput1)) !== null) {
+                        allSilences1.push({ start: parseFloat(sm1[1]), end: parseFloat(em1[1]) });
+                    }
+                    // First qualifying silence (start > 0.1s) is the post-warmup gap
+                    const leadingSilence1 = allSilences1.find(s => s.start > 0.1);
+                    const skipTo = leadingSilence1 ? (leadingSilence1.start + leadingSilence1.end) / 2 : 0;
+                    if (skipTo > 0) {
+                        console.log(`[Batch: ${batchId}] Single-item warmup skip: seeking to ${skipTo.toFixed(3)}s to discard "Start." warmup.`);
+                    }
+                    const segmentWav1 = path.join(batchOutputDir, `${hash}_temp.wav`);
+                    if (skipTo > 0) {
+                        execSync(`ffmpeg -i "${combinedWav}" -ss ${skipTo} -c copy "${segmentWav1}" -y -loglevel error`);
+                    }
+                    const inputForTrim = skipTo > 0 ? segmentWav1 : combinedWav;
+                    execSync(`ffmpeg -i "${inputForTrim}" -af "silenceremove=start_periods=1:start_threshold=-35dB,areverse,silenceremove=start_periods=1:start_threshold=-35dB,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
+                    if (fs.existsSync(segmentWav1)) fs.unlinkSync(segmentWav1);
                     
                     const r2Key = `ep/${book}/${hash}.mp3`;
                     let fileStatus = 1;

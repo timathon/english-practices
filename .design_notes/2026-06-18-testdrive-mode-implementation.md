@@ -3,7 +3,27 @@
 ## Overview
 Implemented a "Testdrive Mode" to allow prospective users to explore the application without creating a permanent account. This mode provides full access to exercise content but restricts data persistence to the local browser and enforces strict usage windows.
 
-## Core Features
+## Simplified Testdrive Rules (Updated 2026-06-18)
+To further streamline the experience for prospective users, the default `test0` account has been moved to a content-restricted model instead of a time-restricted one.
+
+### 1. Account Specifics (test0)
+- **No Time Limit**: The 20-minute usage window and 1-hour cooldown are disabled.
+- **No Session Quota**: The 30-session total quota and 5/day limit are disabled.
+- **Unlimited Access**: Users can stay logged in and practice indefinitely.
+
+### 2. Content Restrictions
+- **Textbook Selection**: Restricted to a specific set: `A5B`, `A6B`, `A7A`, `B-NCE2`, and `RAZ-B`.
+- **Unit Limitation**: After selecting a textbook, only the **first unit** (alphabetically/numerically) is visible and accessible. Other units are hidden from the dashboard.
+
+### 3. Implementation Changes
+- **Backend**: Middleware in `api/src/index.ts` skips timing and quota checks if the username is `test0`.
+- **Frontend**: 
+    - `TestdriveSelector` filters the available books for `test0`.
+    - `Dashboard` restricts the `grouped` practices to only include the first unit for `test0`.
+    - `Dashboard` lockdown monitoring is disabled for `test0`.
+    - `App.tsx` hides the floating `TestdriveTimer` and session count for `test0`.
+
+## Core Features (Legacy/Other Testdrive Roles)
 
 ### 1. Testdrive User Role
 - Added a `testdrive` role to the user system.

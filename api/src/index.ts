@@ -160,9 +160,9 @@ app.use('/api/*', async (c, next) => {
             }
           }
 
-          // 2. Usage window limit (20m/1h) - Skip for reset endpoint
-          if (isResetPath) {
-            // Allow reset even if window expired
+          // 2. Usage window limit (20m/1h) - Skip for reset endpoint and 'test0'
+          if (isResetPath || currentUser.username === 'test0') {
+            // Allow reset even if window expired, and 'test0' has no limits
           } else {
             const now = Date.now();
             const oneHourMs = 1 * 60 * 60 * 1000;

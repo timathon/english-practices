@@ -41,6 +41,7 @@ function TestdriveTimer({ startTime }: { startTime: string }) {
 }
 
 function Navigation({ session, showChinese, onCycleComplete }: { session: any; showChinese: boolean; onCycleComplete?: () => void }) {
+  const isTestdrive = session?.user?.role === 'testdrive';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isIrregularVerbsOpen, setIsIrregularVerbsOpen] = useState(false);
   const [versionTapCount, setVersionTapCount] = useState(0);
@@ -180,11 +181,11 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
         </svg>
       </button>
 
-      {session?.user?.role === 'testdrive' && session?.user?.testdriveWindowStart && (
+      {isTestdrive && session?.user?.username !== 'test0' && session?.user?.testdriveWindowStart && (
         <div style={{
           position: 'fixed',
-          top: '70px',
-          right: '16px',
+          top: '20px',
+          right: '80px',
           padding: '6px 12px',
           background: 'rgba(170, 59, 255, 0.1)',
           backdropFilter: 'blur(8px)',
@@ -204,7 +205,6 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
           <span style={{ opacity: 0.8, fontSize: '0.75rem', marginLeft: '2px' }}>×{displayCount}</span>
         </div>
       )}
-      
       {isMenuOpen && (
         <div className="nav-menu">
           <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/">
@@ -296,7 +296,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260618-1528
+            v260618-1700
           </div>
         </div>
       )}
