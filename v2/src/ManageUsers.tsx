@@ -4,7 +4,7 @@ import { cache } from './lib/cache'
 import { ComposedChart, Bar, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import './Dashboard.css'
 import { getTextbookEmoji } from './lib/textbooks'
-import { useHorizontalScrollRef } from './Dashboard'
+import { useHorizontalScrollRef } from './hooks/useHorizontalScrollRef'
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
