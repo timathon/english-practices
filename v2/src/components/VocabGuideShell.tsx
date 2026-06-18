@@ -293,6 +293,10 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         setHasClickedDontKnow(true)
         clearPeekTimeouts()
 
+        // Play word audio when user clicks "Don't know"
+        const item = deck[currentDeckIndex]
+        playAudio(item.word, item.originalIndex + 20000)
+
         if (timerRef.current) {
             clearInterval(timerRef.current)
         }
@@ -547,7 +551,19 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                 {/* Back Side */}
                                 <div className="vg-card-back">
                                     <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
-                                    <div className="vg-card-word-title">{deck[currentDeckIndex].word}</div>
+                                    <div className="vg-card-word-title">
+                                        {deck[currentDeckIndex].word}
+                                        <button 
+                                            className={`vg-word-play-btn ${playingIndex === deck[currentDeckIndex].originalIndex + 20000 ? 'playing' : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                playAudio(deck[currentDeckIndex].word, deck[currentDeckIndex].originalIndex + 20000);
+                                            }}
+                                            title="Play word audio"
+                                        >
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </button>
+                                    </div>
                                     <div className="vg-card-meaning">{deck[currentDeckIndex].meaning}</div>
                                     {(deck[currentDeckIndex].memorization_hook || deck[currentDeckIndex].hint) && (
                                         <div className="vg-card-hook">
