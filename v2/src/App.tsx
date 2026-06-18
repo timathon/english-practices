@@ -1,18 +1,18 @@
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
-import { useState, useRef, useEffect } from 'react'
-import { SignIn } from './SignIn'
-import { Dashboard } from './Dashboard'
-import { ManageUsers } from './ManageUsers'
-import { UsageGuide } from './UsageGuide'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
+const SignIn = lazy(() => import('./SignIn').then(m => ({ default: m.SignIn })))
+const Dashboard = lazy(() => import('./Dashboard').then(m => ({ default: m.Dashboard })))
+const ManageUsers = lazy(() => import('./ManageUsers').then(m => ({ default: m.ManageUsers })))
+const UsageGuide = lazy(() => import('./UsageGuide').then(m => ({ default: m.UsageGuide })))
 import { PracticeShell } from './components/PracticeShell'
 import { PetFloatingCompanion } from './components/PetFloatingCompanion'
 import { useSession, signOut, authClient, API_URL } from './lib/auth'
 import { petService } from './lib/petService'
-import { SwitchUser } from './SwitchUser'
+const SwitchUser = lazy(() => import('./SwitchUser').then(m => ({ default: m.SwitchUser })))
 import { IrregularVerbsModal } from './components/IrregularVerbsModal'
-import { SchulteGame } from './components/SchulteGame'
+const SchulteGame = lazy(() => import('./components/SchulteGame').then(m => ({ default: m.SchulteGame })))
 // Memory card matching game
-import { CardMatchGame } from './components/CardMatchGame'
+const CardMatchGame = lazy(() => import('./components/CardMatchGame').then(m => ({ default: m.CardMatchGame })))
 import './App.css'
 
 function TestdriveTimer({ startTime }: { startTime: string }) {
@@ -296,7 +296,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260618-1825
+            v260618-1441
           </div>
         </div>
       )}
@@ -351,7 +351,8 @@ function App() {
       <Navigation session={session} showChinese={showChinese} onCycleComplete={() => setShowChinese(prev => !prev)} />
       {session && <PetFloatingCompanion />}
       <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
-        <Routes>
+        <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}>
+          <Routes>
           <Route path="/" element={
             session ? <Navigate to="/dashboard" replace /> : <Navigate to="/signin" replace />
           } />
@@ -395,6 +396,7 @@ function App() {
           } />
           <Route path="/admin/manage-users" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>} />
         </Routes>
+        </Suspense>
       </main>
     </BrowserRouter>
   )
