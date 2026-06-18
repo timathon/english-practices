@@ -1057,7 +1057,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const [showMistakeAlertModal, setShowMistakeAlertModal] = useState(false)
   const modalTimeoutRef = useRef<number | null>(null)
 
-  const isTestdrive = session?.user?.role === 'testdrive'
+  const isTestdrive = (session?.user as any)?.role === 'testdrive'
   const [testdriveBook, setTestdriveBook] = useState<string>(() => sessionStorage.getItem('testdrive_selected_book') || '')
   const libraryRef = useRef<HTMLDivElement>(null)
 
@@ -1137,8 +1137,8 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const userId = session?.user?.id
 
   useEffect(() => {
-    if (isTestdrive && session?.user?.testdriveWindowStart) {
-      const start = new Date(session.user.testdriveWindowStart).getTime();
+    if (isTestdrive && (session?.user as any)?.testdriveWindowStart) {
+      const start = new Date((session.user as any).testdriveWindowStart).getTime();
       const usageLimit = 20 * 60 * 1000;
       const cooldownPeriod = 1 * 60 * 60 * 1000;
       const nextAvailableAt = new Date(start + cooldownPeriod).toISOString();
@@ -1154,7 +1154,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
       const timer = setInterval(checkExpiry, 1000);
       return () => clearInterval(timer);
     }
-  }, [isTestdrive, session?.user?.testdriveWindowStart]);
+  }, [isTestdrive, (session?.user as any)?.testdriveWindowStart]);
 
   useEffect(() => {
     if (userId && fetchedUserIdRef.current !== userId) {
@@ -1216,7 +1216,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         .catch(console.error)
 
       // Load mistakes
-      if (session?.user?.role !== 'testdrive') {
+      if ((session?.user as any)?.role !== 'testdrive') {
         mistakeService.syncFromServer(userId).then(synced => {
           setMistakes(synced)
         })
@@ -1265,7 +1265,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const handleDeleteMistake = (id: string) => {
     if (userId && window.confirm("Are you sure you want to delete this mistake?")) {
       mistakeService.removeMistake(userId, id);
-      if (session?.user?.role !== 'testdrive') {
+      if ((session?.user as any)?.role !== 'testdrive') {
         mistakeService.syncToServer(userId);
       }
       setMistakes(mistakeService.getMistakes(userId));

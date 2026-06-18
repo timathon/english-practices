@@ -802,7 +802,7 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                         className="pet-widget-btn pet-btn"
                         onClick={handleBuySchulteRounds}
                         disabled={cannotBuy || (petState.goldCoins || 0) < 1}
-                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: 'var(--accent)', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
+                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: '#fff', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
                       >
                         Buy 3 Rounds (1 🪙)
                       </button>
@@ -842,7 +842,7 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                         className="pet-widget-btn pet-btn"
                         onClick={handleBuyCardMatchRounds}
                         disabled={cannotBuy || (petState.goldCoins || 0) < 1}
-                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: 'var(--accent)', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
+                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: '#fff', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
                       >
                         Buy 3 Rounds (1 🪙)
                       </button>
