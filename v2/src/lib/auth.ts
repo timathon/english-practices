@@ -88,7 +88,11 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
 
     // Only inject token if we have one and we're not hitting sign-in/signup endpoints
     const activeToken = localStorage.getItem('active_session_token');
-    const isSignInOrSignUp = url.includes('/api/auth/sign-in') || url.includes('/api/auth/signup') || url.includes('/api/auth/sign-up') || url.includes('/api/setup');
+    const isSignInOrSignUp = url.includes('/api/auth/sign-in') || 
+                             url.includes('/api/auth/signup') || 
+                             url.includes('/api/auth/sign-up') || 
+                             url.includes('/api/auth/set-active') || 
+                             url.includes('/api/setup');
     
     let newInit = init || {};
     if (activeToken && url && (url.startsWith(API_URL) || url.includes('/api/')) && !isSignInOrSignUp) {
@@ -148,9 +152,8 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
                     const user = data.user;
                     
                     // Only auto-set active token on explicit sign-in/sign-up,
-                    // NOT on passive session checks (which fire on page reload
-                    // and would restore the old user's token during add-new flow).
-                    if (isSignInAction) {
+                    // or passive session checks outside of the sign-in page.
+                    if (isSignInAction || (isSessionCheck && !window.location.pathname.endsWith('/signin'))) {
                         localStorage.setItem('active_session_token', token);
                     }
                     
