@@ -126,6 +126,20 @@ const razBData = {
             { en: "The cat is on a horse.", options: ["小猫在马上。", "小猫在马路边。", "小狗在马上。"], newline: true },
             { en: "Go animals go.", options: ["走吧，动物们，走吧。", "走吧，孩子们，走吧。", "停下，动物们，停下。"], newline: true }
         ]
+    },
+    "raz-b-bonkers-like-to-bark": {
+        level: "RAZ-B",
+        sectionTitle: "Main Story",
+        sentences: [
+            { en: "Bonkers likes to bark.", options: ["邦克斯喜欢吠叫。", "邦克斯喜欢奔跑。", "邦克斯喜欢睡觉。"], newline: true },
+            { en: "Bonkers likes to bark at cars.", options: ["邦克斯喜欢冲着汽车叫。", "邦克斯喜欢冲着自行车叫。", "邦克斯喜欢在汽车里睡觉。"], newline: true },
+            { en: "Bonkers likes to bark at cats.", options: ["邦克斯喜欢冲着猫叫。", "邦克斯喜欢冲着小狗叫。", "邦克斯喜欢抓猫。"], newline: true },
+            { en: "Bonkers likes to bark at bikes.", options: ["邦克斯喜欢冲着自行车叫。", "邦克斯喜欢冲着汽车叫。", "邦克斯喜欢骑自行车。"], newline: true },
+            { en: "Bonkers likes to bark at squirrels.", options: ["邦克斯喜欢冲着松鼠叫。", "邦克斯喜欢冲着小鸟叫。", "邦克斯喜欢追松鼠。"], newline: true },
+            { en: "Bonkers likes to bark at kids.", options: ["邦克斯喜欢冲着孩子们叫。", "邦克斯喜欢冲着大人叫。", "邦克斯喜欢和孩子们玩。"], newline: true },
+            { en: "Bonkers likes to bark at birds.", options: ["邦克斯喜欢冲着鸟叫。", "邦克斯喜欢冲着松鼠叫。", "邦克斯喜欢吃鸟。"], newline: true },
+            { en: "Bonkers likes to bark at Bonkers!", options: ["邦克斯喜欢冲着邦克斯叫！", "邦克斯喜欢大声叫！", "邦克斯喜欢冲着猫叫！"], newline: true }
+        ]
     }
 };
 
