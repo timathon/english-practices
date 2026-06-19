@@ -186,7 +186,7 @@ except Exception as e:
                         execSync(`ffmpeg -i "${combinedWav}" -ss ${skipTo} -c copy "${segmentWav1}" -y -loglevel error`);
                     }
                     const inputForTrim = skipTo > 0 ? segmentWav1 : combinedWav;
-                    execSync(`ffmpeg -i "${inputForTrim}" -af "silenceremove=start_periods=1:start_threshold=-35dB,areverse,silenceremove=start_periods=1:start_threshold=-35dB,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
+                    execSync(`ffmpeg -i "${inputForTrim}" -af "silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
                     if (fs.existsSync(segmentWav1)) fs.unlinkSync(segmentWav1);
                     
                     const r2Key = `ep/${book}/${hash}.mp3`;
@@ -277,7 +277,7 @@ except Exception as e:
 
                         const segmentWav = path.join(batchOutputDir, `${hash}_temp.wav`);
                         execSync(`ffmpeg -i "${combinedWav}" -ss ${startTime} -to ${endTime} -c copy "${segmentWav}" -y -loglevel error`);
-                        execSync(`ffmpeg -i "${segmentWav}" -af "silenceremove=start_periods=1:start_threshold=-35dB,areverse,silenceremove=start_periods=1:start_threshold=-35dB,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
+                        execSync(`ffmpeg -i "${segmentWav}" -af "silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
                         
                         if (fs.existsSync(segmentWav)) fs.unlinkSync(segmentWav);
 
