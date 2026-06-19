@@ -403,7 +403,14 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
             onClick={handleFeed}
             title="Feed your companion"
           >
-            {petService.getPetFoodEmoji(petState.type)} Feed (喂食伙伴)
+            <span className="db-title-grid">
+              <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "p-feed-en-out" : "p-feed-en-in"}>
+                {petService.getPetFoodEmoji(petState.type)} Feed
+              </span>
+              <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "p-feed-cn-in" : "p-feed-cn-out"}>
+                {petService.getPetFoodEmoji(petState.type)} 喂食伙伴
+              </span>
+            </span>
           </button>
           <button
             className="pet-widget-btn feed-btn"
@@ -411,7 +418,14 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
             onClick={handleGameClick}
             title="Open Game Center"
           >
-            🎮 Games (游戏 x{(petState.schulteRoundsLeft || 0) + (petState.cardMatchRoundsLeft || 0)})
+            <span className="db-title-grid">
+              <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "p-games-en-out" : "p-games-en-in"}>
+                🎮 Games (x{(petState.schulteRoundsLeft || 0) + (petState.cardMatchRoundsLeft || 0)})
+              </span>
+              <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "p-games-cn-in" : "p-games-cn-out"}>
+                🎮 游戏 (x{(petState.schulteRoundsLeft || 0) + (petState.cardMatchRoundsLeft || 0)})
+              </span>
+            </span>
           </button>
         </div>
 
