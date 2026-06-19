@@ -117,3 +117,16 @@ node scripts/tts-for-sentences.cjs a3b "Hello world.\nThis is a test."
 node scripts/tts-for-sentences.cjs a3b temp/my-sentences.txt
 ```
 
+---
+
+## 📊 TTS Generation HTML Reports & Duration Validation
+When running `tts-in-one.cjs` or `tts-for-sentences.cjs`, an HTML report is generated at `temp/audio/tts-report-[timestamp].html` once processing is complete.
+
+The report includes:
+- **Batch Details & Status**: Overview of generated audio files and upload status.
+- **Duration Validation**: Shows the actual MP3 length (via `ffprobe`) alongside an estimated length based on word count (`wordCount * 0.35 + 0.5` seconds).
+- **Outlier Warning**: Files are flagged red (using the `.bad-duration` style class) if the actual duration falls outside the expected range (`duration < estMin` or `duration > estMax`), where:
+  - `estMin = Math.max(0.5, wordCount * 0.15)`
+  - `estMax = Math.max(3.0, wordCount * 0.9 + 2.0)`
+- **Audio Previews**: Integrated audio elements for quick validation before deployment.
+

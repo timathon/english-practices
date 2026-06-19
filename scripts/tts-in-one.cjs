@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { execSync } = require('child_process');
 const { S3Client, HeadObjectCommand } = require("@aws-sdk/client-s3");
 const { getAudioBatch } = require('./tts-gen-cut-save-3.cjs');
 
@@ -224,12 +225,35 @@ async function main() {
             const audioCell = audioSrc
                 ? `<audio controls preload="none"><source src="${esc(audioSrc)}" type="audio/mpeg"></audio>`
                 : `<span class="na">—</span>`;
+
+            // Calculate duration using ffprobe
+            const audioPathOnDisk = hash ? path.join(reportDir, `batch_${batchId}`, `${hash}.mp3`) : '';
+            let durationStr = '—';
+            let isTooDifferent = false;
+            if (audioPathOnDisk && fs.existsSync(audioPathOnDisk)) {
+                try {
+                    const out = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPathOnDisk}"`, { encoding: 'utf8' });
+                    const duration = parseFloat(out.trim());
+                    if (!isNaN(duration)) {
+                        const words = text.split(/\s+/).filter(Boolean);
+                        const wordCount = words.length;
+                        const estMin = Math.max(0.5, wordCount * 0.15);
+                        const estMax = Math.max(3.0, wordCount * 0.9 + 2.0);
+                        isTooDifferent = duration < estMin || duration > estMax || duration === 0;
+                        durationStr = `${duration.toFixed(2)}s <span style="font-size:0.75rem;opacity:0.6;">(est: ${(wordCount * 0.35 + 0.5).toFixed(1)}s)</span>`;
+                    }
+                } catch (err) {
+                    console.error("Error reading mp3 duration:", err.message);
+                }
+            }
+
             return `
         <tr class="${idx % 2 === 0 ? 'even' : 'odd'}">
           <td class="mono">${esc(batchId)}</td>
           <td class="sentence">${esc(text)}</td>
           <td class="mono hash" title="${esc(hash || '')}">${hash ? hash.slice(0, 8) + '…' : ''}</td>
           <td>${statusCell}</td>
+          <td class="mono duration-cell${isTooDifferent ? ' bad-duration' : ''}">${durationStr}</td>
           <td class="audio-cell">${audioCell}</td>
         </tr>`;
         }).join('');
@@ -303,6 +327,11 @@ async function main() {
       font-size: 0.78rem;
       color: #7dd3fc;
     }
+    td.bad-duration {
+      color: #fca5a5 !important;
+      background-color: #7f1d1d !important;
+      font-weight: bold;
+    }
     td.hash { cursor: default; }
     td.sentence { color: #e2e8f0; line-height: 1.5; }
     td.audio-cell { min-width: 220px; }
@@ -346,6 +375,7 @@ async function main() {
         <th>Sentence</th>
         <th>Hash</th>
         <th>Status</th>
+        <th>Duration</th>
         <th>Audio</th>
       </tr>
     </thead>
