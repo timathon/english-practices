@@ -96,3 +96,13 @@ The greedy `minGap` approach (tried briefly) was abandoned because it dropped va
   - Dark-themed table with Batch ID, Sentence, Hash (8-char preview + full hash on hover), Status badge, and inline `<audio>` player.
   - Audio `src` paths are relative to the HTML file (e.g. `batch_{id}/{hash}.mp3`).
 - Temp files (`batch_{id}_tts.py`, `batch_{id}_py.log`) are now preserved in the batch subfolder alongside the combined WAV for debugging.
+
+---
+
+## Update (2026-06-19) — Hardcoded Silence Removal Threshold Bug
+
+**Symptom:** Cut MP3 segments had excessive leading/trailing silences (e.g., actual speaking duration was ~2s, but the MP3 was over 5s).
+
+**Cause:** The `silenceremove` filter in the ffmpeg command had a hardcoded threshold of `-35dB`. In cases where the Gemini TTS output possessed a slightly higher noise floor (e.g., `-33dB`), the filter would fail to trigger, leaving the silence un-trimmed.
+
+**Fix:** Modified the `ffmpeg` calls in `scripts/tts-gen-cut-save-3.cjs` to use the dynamic `silenceThreshold` variable (which defaults to `-30dB`) instead of a hardcoded `-35dB`. This aligns the trimming threshold with the silence detection threshold.
