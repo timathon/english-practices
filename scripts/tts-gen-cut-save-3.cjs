@@ -165,9 +165,7 @@ except Exception as e:
                     const segmentFileName = `${hash}.mp3`;
                     const segmentMp3 = path.join(batchOutputDir, segmentFileName);
 
-                    // Detect the leading silence (the gap after the "Start." warmup word).
-                    // Seek past its midpoint so the warmup is discarded, then trim trailing silence.
-                    const silenceOutput1 = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=${silenceThreshold}:d=2.0" -f null - 2>&1`).toString();
+                    const silenceOutput1 = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=2.0" -f null - 2>&1`).toString();
                     const startRe1 = /silence_start: ([\d.]+)/g;
                     const endRe1 = /silence_end: ([\d.]+)/g;
                     const allSilences1 = [];
@@ -186,7 +184,7 @@ except Exception as e:
                         execSync(`ffmpeg -i "${combinedWav}" -ss ${skipTo} -c copy "${segmentWav1}" -y -loglevel error`);
                     }
                     const inputForTrim = skipTo > 0 ? segmentWav1 : combinedWav;
-                    execSync(`ffmpeg -i "${inputForTrim}" -af "silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
+                    execSync(`ffmpeg -i "${inputForTrim}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
                     if (fs.existsSync(segmentWav1)) fs.unlinkSync(segmentWav1);
                     
                     const r2Key = `ep/${book}/${hash}.mp3`;
@@ -222,10 +220,7 @@ except Exception as e:
                     generatedFiles.push({ text, hash, filename: segmentFileName, status: fileStatus });
                     success = true;
                 } else {
-                    // d=2.0: only detect silences ≥ 2s. Genuine [BREAK] markers generate ~4s silences;
-                    // shorter pauses are intra-sentence breaths or failed [BREAK]s and should be ignored
-                    // (they trigger a retry via the candidateSilences.length < tasks.length check).
-                    const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "silencedetect=n=${silenceThreshold}:d=2.0" -f null - 2>&1`).toString();
+                    const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=2.0" -f null - 2>&1`).toString();
                     const allSilences = [];
                     const startRe = /silence_start: ([\d.]+)/g;
                     const endRe = /silence_end: ([\d.]+)/g;
@@ -277,7 +272,7 @@ except Exception as e:
 
                         const segmentWav = path.join(batchOutputDir, `${hash}_temp.wav`);
                         execSync(`ffmpeg -i "${combinedWav}" -ss ${startTime} -to ${endTime} -c copy "${segmentWav}" -y -loglevel error`);
-                        execSync(`ffmpeg -i "${segmentWav}" -af "silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
+                        execSync(`ffmpeg -i "${segmentWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
                         
                         if (fs.existsSync(segmentWav)) fs.unlinkSync(segmentWav);
 

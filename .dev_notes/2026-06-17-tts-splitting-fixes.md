@@ -106,3 +106,18 @@ The greedy `minGap` approach (tried briefly) was abandoned because it dropped va
 **Cause:** The `silenceremove` filter in the ffmpeg command had a hardcoded threshold of `-35dB`. In cases where the Gemini TTS output possessed a slightly higher noise floor (e.g., `-33dB`), the filter would fail to trigger, leaving the silence un-trimmed.
 
 **Fix:** Modified the `ffmpeg` calls in `scripts/tts-gen-cut-save-3.cjs` to use the dynamic `silenceThreshold` variable (which defaults to `-30dB`) instead of a hardcoded `-35dB`. This aligns the trimming threshold with the silence detection threshold.
+
+---
+
+## Update (2026-06-19) — Audio Gating to Combat Background Hiss/Noise
+
+**Symptom:** Split boundaries were incorrect or missed entirely (resulting in merged sentences or extremely short/empty files like `8d788385431273d11e8b43bb78f3aa41.mp3`) because background hiss/breaths during pause gaps exceeded the `-30dB` silence threshold.
+
+**Cause:** The Google TTS engine output sometimes has a noise floor (hiss/breaths) around `-28dB` to `-30dB`. This noise prevented `silencedetect` and `silenceremove` from recognizing the silent periods properly.
+
+**Fix:** Integrated `ffmpeg`'s audio gate filter (`agate`) into the processing chain before running silence detection and trimming. The gate is configured to suppress any audio below `-32dB` down to digital zero (`-60dB`), ensuring silent periods are perfectly silent:
+```js
+-af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=..."
+```
+This cleans up background hiss and guarantees reliable boundary detection.
+
