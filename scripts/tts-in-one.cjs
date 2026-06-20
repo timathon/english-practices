@@ -68,7 +68,7 @@ async function main() {
     const files = fs.readdirSync(absoluteDir);
     
     for (const file of files) {
-        if (!file.endsWith('.json') || file.includes('-recall-map')) continue;
+        if (!file.endsWith('.json') || file.includes('-recall-map') || file.includes('-writing-map') || file.includes('-grammar-wizard')) continue;
         const filePath = path.join(absoluteDir, file);
         console.log(`Reading file: ${file}`);
         
