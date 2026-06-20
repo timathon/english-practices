@@ -18,6 +18,20 @@ const getAudioUrl = (sentence: string, book: string) => {
     return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
 }
 
+const renderHighlightedSentence = (sentence: string, word: string) => {
+    if (!sentence || !word) return sentence;
+    const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp(`(${escapedWord})`, 'gi');
+    const parts = sentence.split(regex);
+    return parts.map((part, idx) => 
+        regex.test(part) ? (
+            <strong key={idx} style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{part}</strong>
+        ) : (
+            part
+        )
+    );
+};
+
 function shuffle<T>(array: T[]): T[] {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -843,7 +857,8 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                                    <h3 className="vm-feedback-title" style={{ color: '#58cc02' }}>Excellent!</h3>
                                </div>
                                <p className="vm-feedback-msg">{q.word} - {q.meaning}</p>
-                               <div className="vm-feedback-sentence">📖 {q.context_sentence}</div>
+                               <div className="vm-feedback-sentence">📖 {renderHighlightedSentence(q.context_sentence, q.word)}</div>
+                               {q.cn && <div className="vm-feedback-cn" style={{ marginTop: '4px', color: '#666', fontSize: '0.85rem' }}>{q.cn}</div>}
                            </>
                        ) : (
                            <>

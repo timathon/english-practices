@@ -327,7 +327,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     const handleChallengeSelect = (c: Challenge) => {
         if (!trialsTracker.consumeTrial(practiceId, c.id)) return
 
-        const shuffled = [...c.questions].sort(() => Math.random() - 0.5)
+        const shuffled = [...c.questions].sort(() => Math.random() - 0.5).map((q: any, i: number) => ({ ...q, originalIndex: i }))
         const emptyLog = new Array(c.questions.length).fill(null)
 
         activeChallengeRef.current = c
@@ -725,7 +725,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                         </div>
                         <div className="sh-progress-container">
                             {queue.map((_, i) => {
-                                const isActive = !isRedemption && i === currentIndex && !showFeedback
+                                const isActive = (!isRedemption && i === currentIndex && !showFeedback) || (isRedemption && q && (q as any).originalIndex === i && !showFeedback)
                                 return (
                                     <div
                                         key={i}

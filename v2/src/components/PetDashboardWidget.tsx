@@ -803,7 +803,6 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                         type="button"
                         className="pet-widget-btn feed-btn"
                         onClick={() => {
-                          setShowGameCenterModal(false);
                           navigate('/games/schulte');
                         }}
                         disabled={(petState.schulteRoundsLeft || 0) <= 0}
@@ -843,7 +842,6 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                         type="button"
                         className="pet-widget-btn feed-btn"
                         onClick={() => {
-                          setShowGameCenterModal(false);
                           navigate('/games/card-match');
                         }}
                         disabled={(petState.cardMatchRoundsLeft || 0) <= 0}

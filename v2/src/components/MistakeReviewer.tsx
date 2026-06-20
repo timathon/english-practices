@@ -429,7 +429,6 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
           {currentMistake.practiceType === 'sentence-architect' && (
             <div className="mr-sa-layout">
               <div className="mr-prompt">{q.cn}</div>
-              {q.hint && <div className="mr-hint-text">💡 Hint: {q.hint}</div>}
 
               {/* User construction slot */}
               <div className="mr-sa-selection">
