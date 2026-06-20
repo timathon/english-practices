@@ -39,9 +39,10 @@ interface MistakeReviewerProps {
   userId: string;
   initialMistakes: Mistake[];
   onClose: () => void;
+  isPreReview?: boolean;
 }
 
-export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeReviewerProps) {
+export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview }: MistakeReviewerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sfxRef = useRef<HTMLAudioElement | null>(null);
 
@@ -221,7 +222,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose }: MistakeRev
     if (correct) {
       playSfx('correct');
       // Resolve mistake locally immediately IF it wasn't failed already in this session
-      if (!failedIds.has(currentMistake.id)) {
+      if (!failedIds.has(currentMistake.id) && !isPreReview) {
         mistakeService.resolveMistake(userId, currentMistake.id, true);
       }
       

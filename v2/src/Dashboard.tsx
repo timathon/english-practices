@@ -34,6 +34,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const [activeView, setActiveView] = useState<'textbooks' | 'mistakes'>('textbooks')
   const [mistakes, setMistakes] = useState<Mistake[]>([])
   const [activeMistakeReview, setActiveMistakeReview] = useState<Mistake[] | null>(null)
+  const [isPreReview, setIsPreReview] = useState(false)
   const [activeMistakeBook, setActiveMistakeBook] = useState<string>('')
   const [activeMistakeUnit, setActiveMistakeUnit] = useState<string>('')
   const [showResolved, setShowResolved] = useState(false)
@@ -71,7 +72,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
     });
   }, [mistakes]);
 
-  const unlistedCount = useMemo(() => {
+  const unlistedMistakes = useMemo(() => {
     const threshold = getThreshold3AM();
     return mistakes.filter(m => {
       if (m.deleted || m.resolved) return false;
@@ -89,8 +90,10 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         }
       }
       return false;
-    }).length;
+    });
   }, [mistakes]);
+
+  const unlistedCount = unlistedMistakes.length;
 
   const unresolvedMistakes = useMemo(() => listedMistakes.filter(m => !m.resolved), [listedMistakes])
   const unresolvedCount = unresolvedMistakes.length
@@ -240,6 +243,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
   const handleCloseReviewer = () => {
     setActiveMistakeReview(null);
+    setIsPreReview(false);
     if (userId) {
       setMistakes(mistakeService.getMistakes(userId));
     }
@@ -749,6 +753,10 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
               unresolvedMistakes={unresolvedMistakes}
               setActiveMistakeReview={setActiveMistakeReview}
               handleDeleteMistake={handleDeleteMistake}
+              handleStartPreReview={() => {
+                setActiveMistakeReview(unlistedMistakes);
+                setIsPreReview(true);
+              }}
             />
           )}
         </>
@@ -759,6 +767,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
           userId={userId}
           initialMistakes={activeMistakeReview}
           onClose={handleCloseReviewer}
+          isPreReview={isPreReview}
         />
       )}
 

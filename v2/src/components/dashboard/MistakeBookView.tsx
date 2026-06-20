@@ -17,6 +17,7 @@ interface MistakeBookViewProps {
   unresolvedMistakes: Mistake[];
   setActiveMistakeReview: (mistakes: Mistake[]) => void;
   handleDeleteMistake: (id: string) => void;
+  handleStartPreReview: () => void;
 }
 
 export function MistakeBookView({
@@ -33,7 +34,8 @@ export function MistakeBookView({
   groupedMistakes,
   unresolvedMistakes,
   setActiveMistakeReview,
-  handleDeleteMistake
+  handleDeleteMistake,
+  handleStartPreReview
 }: MistakeBookViewProps) {
   const mistakeBooks = Object.keys(groupedMistakes).sort();
   const effectiveMistakeBook = activeMistakeBook || (mistakeBooks.length > 0 ? mistakeBooks[0] : '');
@@ -94,39 +96,67 @@ export function MistakeBookView({
             >
               ⚡ Quick Review All
             </button>
+            <button
+              className="db-pre-review-btn"
+              disabled={unlistedCount === 0}
+              onClick={handleStartPreReview}
+              style={{
+                marginTop: '8px',
+                background: 'rgba(168, 85, 247, 0.1)',
+                color: '#a855f7',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                borderRadius: '10px',
+                padding: '10px 16px',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                cursor: unlistedCount === 0 ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                opacity: unlistedCount === 0 ? 0.5 : 1
+              }}
+            >
+              🔮 Pre-Review ({unlistedCount})
+            </button>
           </div>
 
           <div className="db-mistakes-nav">
             <div className="db-mistakes-book-tabs">
-              {mistakeBooks.map(tb => (
-                <button
-                  key={tb}
-                  className={`db-mistakes-book-tab ${effectiveMistakeBook === tb ? 'active' : ''}`}
-                  onClick={() => {
-                    setActiveMistakeBook(tb);
-                    setActiveMistakeUnit('');
-                  }}
-                >
-                  <span className="db-mistakes-book-name">{getTextbookEmoji(tb)} {tb}</span>
-                  <span className="db-mistakes-count">{Object.values(groupedMistakes[tb]).flat().length}</span>
-                </button>
-              ))}
-            </div>
+              {mistakeBooks.map(tb => {
+                const isActive = effectiveMistakeBook === tb;
+                return (
+                  <div key={tb} className="db-mistakes-book-section" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <button
+                      className={`db-mistakes-book-tab ${isActive ? 'active' : ''}`}
+                      onClick={() => {
+                        setActiveMistakeBook(tb);
+                        setActiveMistakeUnit('');
+                      }}
+                    >
+                      <span className="db-mistakes-book-name">{getTextbookEmoji(tb)} {tb}</span>
+                      <span className="db-mistakes-count">{Object.values(groupedMistakes[tb]).flat().length}</span>
+                    </button>
 
-            {effectiveMistakeBook && (
-              <div className="db-mistakes-unit-tabs">
-                {mistakeUnits.map(un => (
-                  <button
-                    key={un}
-                    className={`db-mistakes-unit-tab ${effectiveMistakeUnit === un ? 'active' : ''}`}
-                    onClick={() => setActiveMistakeUnit(un)}
-                  >
-                    <span className="db-mistakes-unit-name">{un}</span>
-                    <span className="db-mistakes-count">{groupedMistakes[effectiveMistakeBook][un].length}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+                    {isActive && (
+                      <div className="db-mistakes-unit-tabs" style={{ marginTop: '2px', marginBottom: '6px' }}>
+                        {mistakeUnits.map(un => (
+                          <button
+                            key={un}
+                            className={`db-mistakes-unit-tab ${effectiveMistakeUnit === un ? 'active' : ''}`}
+                            onClick={() => setActiveMistakeUnit(un)}
+                          >
+                            <span className="db-mistakes-unit-name">{un}</span>
+                            <span className="db-mistakes-count">{groupedMistakes[tb][un].length}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
