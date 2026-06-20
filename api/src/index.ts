@@ -115,7 +115,6 @@ function getSessionToken(c: any): string | null {
 
 app.use('/api/*', async (c, next) => {
   const path = c.req.path;
-  const isResetPath = path === '/api/testdrive/reset' || path === '/api/testdrive/reset/';
   
   if (path.startsWith('/api/auth') || path === '/api/setup') {
     return await next();
@@ -160,9 +159,9 @@ app.use('/api/*', async (c, next) => {
             }
           }
 
-          // 2. Usage window limit (20m/1h) - Skip for reset endpoint and 'test0'
-          if (isResetPath || currentUser.username === 'test0') {
-            // Allow reset even if window expired, and 'test0' has no limits
+          // 2. Usage window limit (20m/1h) - Skip for 'test0'
+          if (currentUser.username === 'test0') {
+            // 'test0' has no limits
           } else {
             const now = Date.now();
             const oneHourMs = 1 * 60 * 60 * 1000;
@@ -294,46 +293,6 @@ app.post('/api/setup', async (c) => {
     return c.json({ msg: "Setup complete", adminCreated })
   } catch (e: any) {
     return c.json({ error: e.stack || e.message }, 500)
-  }
-})
-app.post('/api/testdrive/reset', async (c) => {
-  try {
-    const db = drizzle(c.env.DB);
-    const token = getSessionToken(c);
-    if (!token) {
-      console.error('[Reset API] No token found in headers or cookies');
-      return c.json({ error: "Unauthorized - No token" }, 401);
-    }
-
-    const sessRows = await db.select().from(sessionTable).where(eq(sessionTable.token, token));
-    if (sessRows.length === 0) {
-      console.error('[Reset API] Invalid or expired token');
-      return c.json({ error: "Unauthorized - Invalid token" }, 401);
-    }
-
-    const dbSess = sessRows[0];
-    const userRows = await db.select().from(user).where(eq(user.id, dbSess.userId));
-    if (userRows.length === 0) {
-      console.error('[Reset API] User not found for session');
-      return c.json({ error: "Unauthorized - User not found" }, 401);
-    }
-
-    const currentUser = userRows[0];
-    const body = await c.req.json();
-    const serverPasscode = c.env.TESTDRIVE_RESET_PASSCODE || '1234efgh';
-    
-    if (body.passcode !== serverPasscode) {
-      console.error(`[Reset API] Invalid passcode: ${body.passcode}`);
-      return c.json({ error: "Invalid passcode" }, 403);
-    }
-
-    const now = new Date();
-    await db.update(user).set({ testdriveWindowStart: now }).where(eq(user.id, currentUser.id));
-    console.log(`[Reset API] Successfully reset timer for user: ${currentUser.username} to ${now.toISOString()}`);
-    return c.json({ success: true, testdriveWindowStart: now.toISOString() });
-  } catch (e: any) {
-    console.error('[Reset API] Error:', e.message, e.stack);
-    return c.json({ error: e.message }, 500);
   }
 })
 

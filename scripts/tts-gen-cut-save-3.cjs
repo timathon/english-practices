@@ -98,6 +98,24 @@ def get_tts():
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         responseModalities=["AUDIO"],
+                        safetySettings=[
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            )
+                        ],
                         speechConfig=types.SpeechConfig(
                             voiceConfig=types.VoiceConfig(
                                 prebuiltVoiceConfig=types.PrebuiltVoiceConfig(
@@ -125,6 +143,10 @@ def get_tts():
 
 try:
     response = get_tts()
+    if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
+        print("Response candidate or content is None. Full response:")
+        print(response)
+        raise ValueError("Blocked or empty response from Gemini API.")
     with wave.open("${combinedWav}", "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
