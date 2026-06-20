@@ -14,9 +14,9 @@ import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
-const getAudioUrl = (sentence: string, book: string) => {
+const getAudioUrl = (sentence: string, book: string, isCf?: boolean) => {
     const hash = md5(sentence);
-    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
+    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`;
 }
 
 const findVocabItem = (vocabList: any[], highlightPattern: string, actualText: string) => {
@@ -119,7 +119,8 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
             sentenceAudioRef.current.pause();
             sentenceAudioRef.current = null;
         }
-        const url = getAudioUrl(text, textbook);
+        const isCf = !!(practiceId && practiceId.endsWith('-w') && data && data.tts === 1);
+        const url = getAudioUrl(text, textbook, isCf);
         try {
             const blob = await audioCache.cacheAudio(url);
             if (blob) {
@@ -204,6 +205,19 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     }));
 
     const [activeSection, setActiveSection] = useState<any>(null)
+    const [autoPlay, setAutoPlay] = useState<boolean>(() => {
+        const saved = localStorage.getItem('pd_autoplay');
+        return saved === null ? true : saved === 'true';
+    });
+
+    const toggleAutoPlay = () => {
+        setAutoPlay(prev => {
+            const newVal = !prev;
+            localStorage.setItem('pd_autoplay', String(newVal));
+            return newVal;
+        });
+    };
+
     const [flickeringSectionId, setFlickeringSectionId] = useState<string | null>(null)
     const [queue, setQueue] = useState<any[]>([])
     const [mistakeQueue, setMistakeQueue] = useState<any[]>([])
@@ -235,9 +249,12 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
     const hasFinishedRef = useRef(false)
 
-    // Play sentence audio automatically for student's book passage decoder (ending with -s)
+    // Play sentence audio automatically for student's book passage decoder (ending with -s) or workbook passage decoder (ending with -w) with tts: 1
     useEffect(() => {
-        if (q && q.en && practiceId && practiceId.endsWith('-s') && textbook) {
+        if (!autoPlay) return;
+        const isS = !!(practiceId && practiceId.endsWith('-s'));
+        const isWWithTts = !!(practiceId && practiceId.endsWith('-w') && data && data.tts === 1);
+        if (q && q.en && (isS || isWWithTts) && textbook) {
             playActiveSentenceAudio(q.en);
         }
 
@@ -246,7 +263,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                 sentenceAudioRef.current.pause();
             }
         };
-    }, [q, practiceId, textbook]);
+    }, [q, practiceId, textbook, data, autoPlay]);
     const [practiceRecords, setPracticeRecords] = useState<any[]>([])
     const [gainedXp, setGainedXp] = useState(0)
     const [gainedLove, setGainedLove] = useState(0)
@@ -705,7 +722,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                     cursor: 'pointer'
                                 }}
                             />
-                            <span>👻 Invisible Mode (No timer, no rewards/records)</span>
+                            <span>👻 Invisible Mode (No timer/records)</span>
                         </label>
                     </div>
 
@@ -935,7 +952,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                     className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
                                                 >
                                                     {renderSentenceText(sentence)}{' '}
-                                                    {isCurrent && practiceId?.endsWith('-s') && (
+                                                    {isCurrent && (practiceId?.endsWith('-s') || (practiceId?.endsWith('-w') && data.tts === 1)) && (
                                                         <button
                                                             className="pd-sentence-play-btn"
                                                             title="Replay Audio"
@@ -958,6 +975,16 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
                     {/* Lower Viewport: Handles interaction options and feedback */}
                     <div className="pd-lower-viewport">
+                        <div className="pd-autoplay-toggle-container">
+                            <label className="pd-autoplay-toggle-label">
+                                <input
+                                    type="checkbox"
+                                    checked={autoPlay}
+                                    onChange={toggleAutoPlay}
+                                />
+                                <span>🔊 Auto Play</span>
+                            </label>
+                        </div>
                         {!showOptions ? (
                             <div className="pd-think-area">
                                 <p className="pd-think-prompt">想一想这句话的中文翻译...</p>
