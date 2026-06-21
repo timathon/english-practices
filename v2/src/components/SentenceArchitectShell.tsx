@@ -13,9 +13,9 @@ import { CountdownRing } from './CountdownRing'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
-const getAudioUrl = (sentence: string, book: string) => {
+const getAudioUrl = (sentence: string, book: string, isCf?: boolean) => {
     const hash = md5(sentence);
-    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
+    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`;
 }
 
 function shuffle<T>(array: T[]): T[] {
@@ -43,6 +43,7 @@ interface SelectedWord {
 }
 
 export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any) {
+    const isCf = data?.tts?.by === 'melotts'
     const { data: session } = useSession()
     const userId = session?.user?.id
     const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -187,7 +188,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
         // Preload Audio
         shuffled.forEach((qItem: any) => {
-            const sentenceAudioUrl = qItem.audio || (textbook ? getAudioUrl(qItem.en, textbook) : null);
+            const sentenceAudioUrl = qItem.audio || (textbook ? getAudioUrl(qItem.en, textbook, isCf) : null);
             if (sentenceAudioUrl) {
                 audioCache.preloadAndSync(sentenceAudioUrl);
             }
@@ -494,7 +495,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         }
 
         // Sentence audio playback (after correct/wrong sfx if autoplay is on)
-        const sentenceAudioUrl = q.audio || (textbook ? getAudioUrl(q.en, textbook) : null);
+        const sentenceAudioUrl = q.audio || (textbook ? getAudioUrl(q.en, textbook, isCf) : null);
         if (autoplay && sentenceAudioUrl) {
             setTimeout(() => playAudio(sentenceAudioUrl), 600);
         }
@@ -528,7 +529,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                 })
             }, 1000)
         }
-    }, [locked, userSelection, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, autoplay, queue.length, countdownTimer, invisibleMode])
+    }, [locked, userSelection, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, autoplay, queue.length, countdownTimer, invisibleMode, isCf])
 
     // Keep ref in sync so onExpire uses the latest checkAnswer
     useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
@@ -997,7 +998,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                                     {(q.audio || textbook) && (
                                         <button
                                             className="sa-play-btn"
-                                            onClick={() => playAudio(q.audio || getAudioUrl(q.en, textbook))}
+                                            onClick={() => playAudio(q.audio || getAudioUrl(q.en, textbook, isCf))}
                                         >
                                             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                                         </button>
@@ -1012,7 +1013,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                                     {(q.audio || textbook) && (
                                         <button
                                             className="sa-play-btn"
-                                            onClick={() => playAudio(q.audio || getAudioUrl(q.en, textbook))}
+                                            onClick={() => playAudio(q.audio || getAudioUrl(q.en, textbook, isCf))}
                                         >
                                             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                                         </button>

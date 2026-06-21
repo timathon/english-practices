@@ -6,12 +6,13 @@ import { audioCache } from '../lib/audioCache'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
-const getAudioUrl = (sentence: string, book: string) => {
+const getAudioUrl = (sentence: string, book: string, isCf?: boolean) => {
     const hash = md5(sentence);
-    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
+    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`;
 }
 
 export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
+    const isCf = data?.tts?.by === 'melotts';
     const [vocab, setVocab] = useState<any[]>([])
     const [isAlphabetical, setIsAlphabetical] = useState(false)
     const [hideCN, setHideCN] = useState(true)
@@ -80,10 +81,10 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
 
         initialVocab.forEach((item: any) => {
             if (item.context_sentence && textbook) {
-                audioCache.preloadAndSync(getAudioUrl(item.context_sentence, textbook))
+                audioCache.preloadAndSync(getAudioUrl(item.context_sentence, textbook, isCf))
             }
             if (item.word && textbook) {
-                audioCache.preloadAndSync(getAudioUrl(item.word, textbook))
+                audioCache.preloadAndSync(getAudioUrl(item.word, textbook, isCf))
             }
         })
 
@@ -102,7 +103,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             }
             clearPeekTimeouts()
         }
-    }, [data, practiceId, textbook, unitKey])
+    }, [data, practiceId, textbook, unitKey, isCf])
 
     useEffect(() => {
         setTempShowAll(true)
@@ -156,7 +157,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         try {
             for (const item of vocab) {
                 if (!item.context_sentence || !textbook) continue
-                const url = getAudioUrl(item.context_sentence, textbook)
+                const url = getAudioUrl(item.context_sentence, textbook, isCf)
                 const baseUrl = url.split('?')[0]
                 const baseHash = md5(baseUrl)
                 const cacheKey = "ep-audio-" + baseHash
@@ -187,7 +188,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const playAudio = async (sentence: string, index: number) => {
         if (!textbook) return
         setPlayingIndex(index)
-        const url = getAudioUrl(sentence, textbook)
+        const url = getAudioUrl(sentence, textbook, isCf)
         try {
             const blob = await audioCache.cacheAudio(url)
             if (blob) {

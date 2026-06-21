@@ -96,7 +96,8 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const playWordSentenceAudio = async (sentence: string) => {
         if (!textbook || !sentence) return;
         setPlayingWordAudio(true);
-        const url = getAudioUrl(sentence, textbook);
+        const isCf = !!(practiceId && practiceId.endsWith('-w') && data && data.tts === 1) || data?.tts?.by === 'melotts';
+        const url = getAudioUrl(sentence, textbook, isCf);
         try {
             const blob = await audioCache.cacheAudio(url);
             if (blob) {
@@ -119,7 +120,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
             sentenceAudioRef.current.pause();
             sentenceAudioRef.current = null;
         }
-        const isCf = !!(practiceId && practiceId.endsWith('-w') && data && data.tts === 1);
+        const isCf = !!(practiceId && practiceId.endsWith('-w') && data && data.tts === 1) || data?.tts?.by === 'melotts';
         const url = getAudioUrl(text, textbook, isCf);
         try {
             const blob = await audioCache.cacheAudio(url);

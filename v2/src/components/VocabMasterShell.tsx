@@ -13,9 +13,9 @@ import { CountdownRing } from './CountdownRing'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
-const getAudioUrl = (sentence: string, book: string) => {
+const getAudioUrl = (sentence: string, book: string, isCf?: boolean) => {
     const hash = md5(sentence);
-    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`;
+    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`;
 }
 
 const renderHighlightedSentence = (sentence: string, word: string) => {
@@ -44,6 +44,7 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
+   const isCf = data?.tts?.by === 'melotts'
    const { data: session } = useSession()
    const userId = session?.user?.id
    const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -160,7 +161,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
            if (q.audio) {
                audioCache.preloadAndSync(q.audio);
            } else if (q.context_sentence && textbook) {
-               audioCache.preloadAndSync(getAudioUrl(q.context_sentence, textbook));
+               audioCache.preloadAndSync(getAudioUrl(q.context_sentence, textbook, isCf));
            }
        });
        audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3");
@@ -411,7 +412,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        }
 
        if (q.context_sentence && textbook) {
-           setTimeout(() => playAudio(getAudioUrl(q.context_sentence, textbook)), 200)
+           setTimeout(() => playAudio(getAudioUrl(q.context_sentence, textbook, isCf)), 200)
        }
 
        setMistakeQueue(updatedMistakes)
@@ -427,7 +428,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
         if (!invisibleMode) {
             syncRecord(scorePercent, false)
         }
-    }, [locked, selectedOption, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer, userId, practiceId, textbook, unit, invisibleMode])
+    }, [locked, selectedOption, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer, userId, practiceId, textbook, unit, invisibleMode, isCf])
 
    // Keep ref in sync so onExpire uses the latest checkAnswer
    useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
@@ -850,7 +851,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                                         </button>                                    
                                    )}
                                    {q.context_sentence && textbook && !q.audio && (
-                                       <button className="vm-play-btn" onClick={() => playAudio(getAudioUrl(q.context_sentence, textbook))}>
+                                       <button className="vm-play-btn" onClick={() => playAudio(getAudioUrl(q.context_sentence, textbook, isCf))}>
                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                        </button>
                                    )}
@@ -869,7 +870,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                                         </button>                                    
                                    )}
                                    {q.context_sentence && textbook && !q.audio && (
-                                       <button className="vm-play-btn" onClick={() => playAudio(getAudioUrl(q.context_sentence, textbook))}>
+                                       <button className="vm-play-btn" onClick={() => playAudio(getAudioUrl(q.context_sentence, textbook, isCf))}>
                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                        </button>
                                    )}

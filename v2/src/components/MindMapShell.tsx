@@ -29,6 +29,9 @@ interface MindMapShellProps {
     section: string
     tree: Node
     writingPrompt?: string
+    tts?: {
+      by: string
+    }
   }
   textbook: string
   unit: string
@@ -83,8 +86,9 @@ export function MindMapShell({ data, textbook, unit, isWritingMap }: MindMapShel
   // Calculate audio URL for a node
   const getAudioUrl = useCallback((text: string) => {
     const hash = md5(text)
-    return `${PUBLIC_URL_BASE}/ep/${textbook.toLowerCase()}/${hash}.mp3`
-  }, [textbook])
+    const isCf = data?.tts?.by === 'melotts'
+    return `${PUBLIC_URL_BASE}/ep/${textbook.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`
+  }, [textbook, data])
 
   // Get max depth of tree
   const getMaxDepth = useCallback((node: Node, currentDepth = 0): number => {
