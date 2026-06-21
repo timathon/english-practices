@@ -891,4 +891,30 @@ app.get('/api/games/cardmatch/leaderboard', async (c) => {
   return c.json(records);
 })
 
+app.get('/api/games/tetris/leaderboard', async (c) => {
+  const auth = getCachedAuth(c.env)
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+  const db = drizzle(c.env.DB);
+  
+  const records = await db
+    .select({
+      id: practiceRecords.id,
+      userId: practiceRecords.userId,
+      name: user.name,
+      username: user.username,
+      unit: practiceRecords.unit,
+      score: practiceRecords.score,
+      createdAt: practiceRecords.createdAt,
+    })
+    .from(practiceRecords)
+    .innerJoin(user, eq(practiceRecords.userId, user.id))
+    .where(eq(practiceRecords.unit, 'game-tetris'))
+    .orderBy(desc(practiceRecords.score))
+    .limit(50);
+
+  return c.json(records);
+})
+
 export default app

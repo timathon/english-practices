@@ -13,6 +13,8 @@ import { IrregularVerbsModal } from './components/IrregularVerbsModal'
 const SchulteGame = lazy(() => import('./components/SchulteGame').then(m => ({ default: m.SchulteGame })))
 // Memory card matching game
 const CardMatchGame = lazy(() => import('./components/CardMatchGame').then(m => ({ default: m.CardMatchGame })))
+// Vocab Tetris game
+const TetrisGame = lazy(() => import('./components/TetrisGame').then(m => ({ default: m.TetrisGame })))
 import './App.css'
 
 function TestdriveTimer({ startTime }: { startTime: string }) {
@@ -384,6 +386,13 @@ function App() {
             <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
               <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
                 <CardMatchGame showChinese={showChinese} />
+              </div>
+            </div>
+          } />
+          <Route path="/games/tetris" element={
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <TetrisGame showChinese={showChinese} />
               </div>
             </div>
           } />

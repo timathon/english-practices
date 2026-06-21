@@ -130,6 +130,21 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
     }
   };
 
+  const handleBuyTetrisRounds = () => {
+    if ((petState.food || 0) < 50 || (petState.love || 0) < 50) {
+      showSpeech(`Your pet needs at least 50% health (food) and 50% love to buy game rounds! 🍎❤️`);
+      return;
+    }
+    if ((petState.goldCoins || 0) < 1) {
+      showSpeech(`You need at least 1 🪙 to buy game rounds!`);
+      return;
+    }
+    const success = petService.buyTetrisRounds();
+    if (success) {
+      showSpeech(`Successfully bought 3 Vocab Tetris rounds! 🧱`);
+    }
+  };
+
   const handleSaveName = (e: React.FormEvent) => {
     e.preventDefault();
     petService.renamePet(newName);
@@ -420,10 +435,10 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
           >
             <span className="db-title-grid">
               <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "p-games-en-out" : "p-games-en-in"}>
-                🎮 Games (x{(petState.schulteRoundsLeft || 0) + (petState.cardMatchRoundsLeft || 0)})
+                🎮 Games (x{(petState.schulteRoundsLeft || 0) + (petState.cardMatchRoundsLeft || 0) + (petState.tetrisRoundsLeft || 0)})
               </span>
               <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "p-games-cn-in" : "p-games-cn-out"}>
-                🎮 游戏 (x{(petState.schulteRoundsLeft || 0) + (petState.cardMatchRoundsLeft || 0)})
+                🎮 游戏 (x{(petState.schulteRoundsLeft || 0) + (petState.cardMatchRoundsLeft || 0) + (petState.tetrisRoundsLeft || 0)})
               </span>
             </span>
           </button>
@@ -860,6 +875,46 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                       </button>
                     </div>
                   </div>
+
+                  {/* Game 3: Vocab Tetris */}
+                  <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '16px', background: 'var(--bg)', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-h)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>🧱</span> Vocab Tetris (单词方块)
+                      </span>
+                      <span style={{ fontSize: '0.85rem', background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                        Rounds: {petState.tetrisRoundsLeft || 0}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+                      Answer vocab questions to rotate falling blocks! Move with arrow keys.
+                      <br />
+                      (答对词汇题才能旋转方块，用方向键移动！)
+                    </p>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        type="button"
+                        className="pet-widget-btn feed-btn"
+                        onClick={() => {
+                          navigate('/games/tetris');
+                        }}
+                        disabled={(petState.tetrisRoundsLeft || 0) <= 0}
+                        style={{ flex: 1, padding: '8px', fontSize: '0.85rem', opacity: (petState.tetrisRoundsLeft || 0) <= 0 ? 0.5 : 1 }}
+                      >
+                        Play (开始游戏)
+                      </button>
+                      <button
+                        type="button"
+                        className="pet-widget-btn pet-btn"
+                        onClick={handleBuyTetrisRounds}
+                        disabled={cannotBuy || (petState.goldCoins || 0) < 1}
+                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: '#fff', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
+                      >
+                        Buy 3 Rounds (1 🪙)
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
