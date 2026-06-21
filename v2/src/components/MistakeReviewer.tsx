@@ -331,12 +331,31 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
         } else if (!continueDisabled) {
           handleContinue();
         }
+      } else if (isMc && !locked) {
+        const numKeys = Array.from({ length: shuffledOptions.length }, (_, i) => (i + 1).toString());
+        if (numKeys.includes(e.key)) {
+          e.preventDefault();
+          const idx = parseInt(e.key, 10) - 1;
+          if (shuffledOptions[idx]) {
+            handleOptionClick(shuffledOptions[idx].originalIdx);
+          }
+        }
+      } else if (currentMistake.practiceType === 'spelling-hero' && !locked) {
+        const currentOpts = shuffledChunkOpts[activeChunkIdx] || [];
+        const numKeys = Array.from({ length: currentOpts.length }, (_, i) => (i + 1).toString());
+        if (numKeys.includes(e.key)) {
+          e.preventDefault();
+          const idx = parseInt(e.key, 10) - 1;
+          if (currentOpts[idx]) {
+            handleSelectChunk(currentOpts[idx]);
+          }
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [completed, currentMistake, locked, selectedOption, userSelection, spellingSelection, continueDisabled, handleCheckAnswer, handleContinue]);
+  }, [completed, currentMistake, locked, selectedOption, userSelection, spellingSelection, continueDisabled, handleCheckAnswer, handleContinue, shuffledOptions, shuffledChunkOpts, activeChunkIdx, handleSelectChunk]);
 
   if (completed) {
     return (
