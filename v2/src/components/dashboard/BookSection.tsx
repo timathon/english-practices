@@ -593,6 +593,17 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                         return 'F';
                       };
 
+                      const cleanType = p.type.replace(/^p\d+-p\d+-/i, '').replace(/^p\d+-/i, '').toLowerCase();
+                      const isTest = cleanType === 'test' || cleanType.endsWith('-test');
+                      let highestGrade = null;
+                      if (isTest) {
+                        const testRecords = records.filter((r: any) => r.unit === `${p.id} (Test Sheet)` && !r.unfinished);
+                        if (testRecords.length > 0) {
+                          const highestScore = Math.max(...testRecords.map((r: any) => r.score));
+                          highestGrade = getGrade(highestScore);
+                        }
+                      }
+
                       const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0;
                       const getProgressColor = (p: number) => {
                         if (p <= 20) return '#f97316';
@@ -636,6 +647,13 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                     {getGrade(avg)}
                                   </span>
                                 )}
+                              </div>
+                            )}
+                            {isTest && highestGrade && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: '18px', width: '20px', background: 'var(--text-h)', color: 'var(--bg)', borderRadius: '4px', fontWeight: 'bold' }}>
+                                  {highestGrade}
+                                </span>
                               </div>
                             )}
                           </Link>

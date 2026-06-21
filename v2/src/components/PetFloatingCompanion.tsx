@@ -122,14 +122,18 @@ export function PetFloatingCompanion() {
       }
     };
 
-    const handleQuizComplete = () => {
+    const handleQuizComplete = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      const amount = typeof detail.amount === 'number' ? detail.amount : 1;
+      if (amount <= 0) return;
+
       setIsBouncing(true);
       setTimeout(() => setIsBouncing(false), 800);
 
       const id = particleIdRef.current++;
       setParticles(prev => [...prev, {
         id,
-        text: '+1 🪙',
+        text: `+${amount} 🪙`,
         x: 0,
         y: -30
       }]);
@@ -137,7 +141,7 @@ export function PetFloatingCompanion() {
         setParticles(prev => prev.filter(p => p.id !== id));
       }, 3500);
 
-      showSpeech('Quiz Completed! +1 🪙 🎉', 4000);
+      showSpeech(`Quiz Completed! +${amount} 🪙 🎉`, 4000);
     };
 
     window.addEventListener('ep-correct-answer', handleCorrect);

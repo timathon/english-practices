@@ -254,7 +254,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     useEffect(() => {
         if (!autoPlay) return;
         const isS = !!(practiceId && practiceId.endsWith('-s'));
-        const isWWithTts = !!(practiceId && practiceId.endsWith('-w') && data && data.tts === 1);
+        const isWWithTts = !!(practiceId && practiceId.endsWith('-w') && data && (data.tts === 1 || data.tts?.by === 'melotts'));
         if (q && q.en && (isS || isWWithTts) && textbook) {
             playActiveSentenceAudio(q.en);
         }
@@ -953,7 +953,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                     className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
                                                 >
                                                     {renderSentenceText(sentence)}{' '}
-                                                    {isCurrent && (practiceId?.endsWith('-s') || (practiceId?.endsWith('-w') && data.tts === 1)) && (
+                                                    {isCurrent && (practiceId?.endsWith('-s') || (practiceId?.endsWith('-w') && (data.tts === 1 || data.tts?.by === 'melotts'))) && (
                                                         <button
                                                             className="pd-sentence-play-btn"
                                                             title="Replay Audio"

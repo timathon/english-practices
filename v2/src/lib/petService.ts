@@ -560,15 +560,17 @@ export const petService = {
     return { xpGain, newAchievements };
   },
 
-  awardQuizCompletion(): void {
+  awardQuizCompletion(amount: number = 1): void {
+    if (amount <= 0) return;
     const state = this.getPetState();
-    state.goldCoins = (state.goldCoins || 0) + 1;
+    state.goldCoins = (state.goldCoins || 0) + amount;
     state.lastUpdated = Date.now();
     this.savePetState(state);
-
+ 
     window.dispatchEvent(new CustomEvent('ep-quiz-completion', {
       detail: {
-        goldCoins: state.goldCoins
+        goldCoins: state.goldCoins,
+        amount
       }
     }));
   },

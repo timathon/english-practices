@@ -230,7 +230,8 @@ async function seed() {
                 'grammar-wizard',
                 'text-navigator',
                 'writing-map',
-                'passage-decoder'
+                'passage-decoder',
+                'test'
             ];
             
             for (const kt of knownTypes) {

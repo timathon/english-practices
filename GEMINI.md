@@ -262,8 +262,36 @@ This document defines the rules for extracting and converting textbook data into
   - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline, highlight }`).
 - **Generation**: Avoid calling the Gemini API programmatically to parse or generate options. Perform translations and distractor generation directly within your own context.
 
+## 11. Test Sheet (TS)
+**Source:** Textbook PDF or Quiz markdown files (e.g., `data/A5Bx/a5bx-wm3/a5bx-wm3.md`).
+**Target:** `*-test.json` (Save in the same folder as source)
+
+- **Structure:**
+  - `level`: Grade/Semester info (e.g., `"Grade 5 Semester 2 - Unit 1-3"`).
+  - `title`: The display title of the test (e.g., `"Word Magician Exercise Unit 1-3"`).
+  - `sections`: Array of section objects.
+- **Section Fields:**
+  - `id`: Unique string ID identifying the section (e.g., `"s1"`, `"s2"`).
+  - `title`: Display title of the section (e.g., `"I. Read and choose"`).
+  - `instruction`: Instruction text in Chinese (e.g., `"从方框中选择恰当单词填空，每词只用 1 次。"`).
+  - `type`: The question type in this section:
+    - `"fill-in-the-blank-wordbank"`: Fill-in-the-blank from a shared word bank.
+    - `"fill-in-the-blank-firstletter"`: Fill-in-the-blank using a first-letter clue.
+    - `"multiple-choice"`: Traditional multiple-choice.
+  - `wordbank`: (Required for `fill-in-the-blank-wordbank` type) Array of strings representing the vocabulary choices.
+  - `questions`: Array of question items.
+- **Question Item Fields:**
+  - `id`: A unique 8-character alphanumeric string generated for this question.
+  - `prompt`: The question sentence. For blanks, use `"______"`.
+  - `options`: (Required for `multiple-choice` type) Array of strings.
+  - `answer`: 
+    - For fill-in-the-blanks: string representing the correct answer.
+    - For multiple-choice: integer index of the correct option (0-indexed).
+  - `translation`: Chinese translation of the sentence.
+  - `explanation`: Detailed grammatical explanation in Chinese.
+
 ---
-**Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file.
+**Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.**
 
 **V2 Focus:** The project primarily runs on the V2 single-page application (served from the `v2` directory, which loads exercises dynamically from the database). Therefore, **do NOT** run `scripts/*-release-gen-3.cjs` to generate static HTML files unless the user explicitly requests HTML generation or deployment of static pages. Instead, simply generate/modify the JSON files in the `data/` directory, run the database seed/sync scripts to update the database, and test using the V2 local development server. After generating practice JSONs, you only need to run `scripts/tts-in-one.cjs` for TTS generation, excluding passage decoder.
 

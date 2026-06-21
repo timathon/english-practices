@@ -10,6 +10,7 @@ import { MindMapShell } from './MindMapShell'
 import { SentenceArchitectShell } from './SentenceArchitectShell'
 import { GrammarWizardShell } from './GrammarWizardShell'
 import { PassageDecoderShell } from './PassageDecoderShell'
+import { TestSheetShell } from './TestSheetShell'
 
 
 // Render practice components based on type
@@ -71,6 +72,10 @@ export function PracticeShell() {
 
     if (cleanType.startsWith('passage-decoder')) {
         return <PassageDecoderShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
+    if (cleanType === 'test' || cleanType.endsWith('-test')) {
+        return <TestSheetShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
 

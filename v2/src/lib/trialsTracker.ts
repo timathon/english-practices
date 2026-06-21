@@ -57,5 +57,19 @@ export const trialsTracker = {
         } catch {
             return false;
         }
+    },
+
+    resetTrials(practiceId: string, challengeId: string): void {
+        try {
+            const todayStr = getTodayString();
+            const stored = localStorage.getItem('ep-trials');
+            if (!stored) return;
+            const data = JSON.parse(stored);
+            if (!data[todayStr]) return;
+            
+            const key = `${practiceId}_${challengeId}`;
+            delete data[todayStr][key];
+            localStorage.setItem('ep-trials', JSON.stringify(data));
+        } catch {}
     }
 };
