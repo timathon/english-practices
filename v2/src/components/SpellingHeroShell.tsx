@@ -10,6 +10,7 @@ import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
 import { CountdownRing } from './CountdownRing'
+import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
 
 const PUBLIC_URL_BASE = 'https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev'
 
@@ -206,6 +207,36 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     const [historyChallenge, setHistoryChallenge] = useState<Challenge | null>(null)
     const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
     const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
+    const [vocabGuide, setVocabGuide] = useState<any>(null)
+
+    useEffect(() => {
+        if (!practiceId) return;
+        const vocabGuideId = practiceId.replace(/-spelling-hero$/, '-vocab-guide');
+        
+        fetch(API_URL + `/api/practices/${vocabGuideId}`, { credentials: 'include' })
+            .then(res => res.json())
+            .then(resData => {
+                if (resData && !resData.error) {
+                    let content = resData.content;
+                    if (resData.isEncrypted && typeof content === 'string') {
+                        try {
+                            content = decryptContent(content, OBSCURE_KEY);
+                        } catch (decErr) {
+                            console.error("Decryption of vocab-guide failed:", decErr);
+                            return;
+                        }
+                    }
+                    setVocabGuide(content);
+                } else {
+                    console.warn(`Vocab guide not found or error loading: ${vocabGuideId}`, resData?.error);
+                    setVocabGuide(null);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to load vocab guide in SpellingHero:", err);
+                setVocabGuide(null);
+            });
+    }, [practiceId]);
 
     useEffect(() => {
         if (!activeChallenge && lastFinishedChallengeId) {
@@ -237,10 +268,21 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
         audioCache.preloadAndSync(`${PUBLIC_URL_BASE}/ep/sfx/error.mp3`)
     }, [])
 
+    const resolveAudioUrl = useCallback((originalUrl: string) => {
+        if (!originalUrl) return originalUrl;
+        const isCf = vocabGuide?.tts?.by === 'melotts';
+        if (isCf && !originalUrl.includes('/cf/')) {
+            const searchStr = `/ep/${textbook.toLowerCase()}/`;
+            return originalUrl.replace(searchStr, `${searchStr}cf/`);
+        }
+        return originalUrl;
+    }, [vocabGuide, textbook]);
+
     const playAudio = useCallback(async (url: string) => {
         if (!url) return
+        const resolvedUrl = resolveAudioUrl(url);
         try {
-            const blob = await audioCache.cacheAudio(url)
+            const blob = await audioCache.cacheAudio(resolvedUrl)
             if (!blob) return
             const blobUrl = URL.createObjectURL(blob)
             if (audioRef.current) {
@@ -254,7 +296,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                 audioRef.current = a
             }
         } catch (e) { console.error(e) }
-    }, [])
+    }, [resolveAudioUrl])
 
     const playSfx = useCallback(async (type: 'correct' | 'wrong') => {
         const url = type === 'correct'
@@ -350,7 +392,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
         // Preload only this challenge's audio (unique words only)
         const uniqueUrls = [...new Set(shuffled.map(q => q.audio))]
-        uniqueUrls.forEach(url => audioCache.preloadAndSync(url))
+        uniqueUrls.forEach(url => audioCache.preloadAndSync(resolveAudioUrl(url)))
 
         loadQuestion(shuffled, [], 0, false)
     }
@@ -833,19 +875,59 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
                     {/* Feedback area */}
                     <div className={`sh-feedback-area ${showFeedback ? 'visible ' + (isCorrect ? 'correct' : 'wrong') : ''}`}>
-                        {showFeedback && (
-                            <>
-                                <h3 className="sh-feedback-title" style={{ color: isCorrect ? '#58cc02' : '#ff4b4b' }}>
-                                    {isCorrect ? 'Excellent!' : 'Keep Trying!'}
-                                </h3>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                                    <button className="sh-play-btn" onClick={() => playAudio(q.audio)}>
-                                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                                    </button>
-                                    <p className="sh-feedback-word">{q.word}</p>
-                                </div>
-                            </>
-                        )}
+                        {showFeedback && (() => {
+                            const vocabItem = vocabGuide?.unit_vocabulary?.find((item: any) => item.word.trim().toLowerCase() === q.word.trim().toLowerCase());
+                            const memorizationHook = vocabItem?.memorization_hook;
+                            const rawIpa = vocabItem?.ipa;
+                            const ipa = rawIpa ? (rawIpa.startsWith('/') && rawIpa.endsWith('/') ? rawIpa : `/${rawIpa}/`) : '';
+                            const syllableType = vocabItem?.syllable_type;
+                            return (
+                                <>
+                                    <h3 className="sh-feedback-title" style={{ color: isCorrect ? '#58cc02' : '#ff4b4b' }}>
+                                        {isCorrect ? 'Excellent!' : 'Keep Trying!'}
+                                    </h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                        <button className="sh-play-btn" onClick={() => playAudio(q.audio)}>
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                        </button>
+                                        <p className="sh-feedback-word">{q.word}</p>
+                                    </div>
+                                    {(ipa || syllableType) && (
+                                        <div className="sh-feedback-phonics" style={{
+                                            marginTop: '6px',
+                                            fontSize: '0.85rem',
+                                            color: '#475569',
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            gap: '12px',
+                                            flexWrap: 'wrap',
+                                            fontWeight: 500
+                                        }}>
+                                            {ipa && <span>{ipa}</span>}
+                                            {syllableType && <span style={{ color: '#0891b2' }}>{syllableType}</span>}
+                                        </div>
+                                    )}
+                                    {memorizationHook && (
+                                        <div className="sh-feedback-hook" style={{
+                                            marginTop: '10px',
+                                            fontSize: '0.9rem',
+                                            color: '#ca8a04',
+                                            background: '#fef9c3',
+                                            padding: '8px 12px',
+                                            borderRadius: '8px',
+                                            border: '1.5px solid #fef08a',
+                                            textAlign: 'center',
+                                            maxWidth: '90%',
+                                            margin: '10px auto 0 auto',
+                                            fontWeight: 500,
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                        }}>
+                                            💡 记忆法：{memorizationHook}
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
 
                     {/* Footer */}
