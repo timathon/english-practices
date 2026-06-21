@@ -520,7 +520,8 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
                     disabled={locked}
                     onClick={() => handleSelectChunk(opt)}
                   >
-                    {opt}
+                    <span className="mr-opt-marker">{idx + 1}</span>
+                    <span className="mr-opt-text">{opt}</span>
                   </button>
                 ))}
               </div>
