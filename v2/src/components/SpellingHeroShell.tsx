@@ -638,6 +638,8 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
         }
     }
 
+    const soupQ = q?.qtype === 'soup' ? (q as SoupQuestion) : null
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!activeChallenge || completed || historyChallenge) return;
@@ -657,11 +659,23 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                 if (opts[idx]) {
                     handleOptionSelect(opts[idx]);
                 }
+            } else if (!locked && soupQ && ['1','2','3','4','a','s','d','f'].includes(e.key)) {
+                e.preventDefault();
+                const half = Math.ceil(brickPool.length / 2);
+                const markers = ['1','2','3','4','a','s','d','f'];
+                const markerIdx = markers.indexOf(e.key);
+                const row = markerIdx < 4 ? 0 : 1;
+                const col = markerIdx % 4;
+                const brickIdx = row * half + col;
+                if (brickIdx < brickPool.length) {
+                    const used = soupSelection.some(s => s.brickIdx === brickIdx);
+                    if (!used) handleBrickClick(brickPool[brickIdx], brickIdx);
+                }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeChallenge, completed, historyChallenge, locked, isReady, checkAnswer, nextQuestion, q, shuffledOpts, activeSlot, handleOptionSelect]);
+    }, [activeChallenge, completed, historyChallenge, locked, isReady, checkAnswer, nextQuestion, q, shuffledOpts, activeSlot, handleOptionSelect, soupQ, brickPool, soupSelection, handleBrickClick]);
 
     // ─── Render: Complete screen ──────────────────────────────────────────────
 
@@ -750,7 +764,6 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
     if (activeChallenge && q) {
         const linQ = q.qtype === 'linear' ? (q as LinearQuestion) : null
-        const soupQ = q.qtype === 'soup' ? (q as SoupQuestion) : null
 
         return (
             <div className="sh-container" style={{ '--primary': '#58cc02', '--primary-dark': '#46a302' } as any}>
@@ -862,20 +875,31 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                                         </div>
                                     ))}
                                 </div>
-                                <div className="sh-brick-pool">
-                                    {brickPool.map((brick, i) => {
-                                        const used = soupSelection.some(s => s.brickIdx === i)
-                                        return (
-                                            <div
-                                                key={i}
-                                                className={`sh-brick ${used ? 'used' : ''}`}
-                                                onClick={() => !used && handleBrickClick(brick, i)}
-                                            >
-                                                {brick}
-                                            </div>
-                                        )
-                                    })}
-                                </div>
+                                {[0, 1].map(row => {
+                                    const half = Math.ceil(brickPool.length / 2)
+                                    const start = row * half
+                                    const slice = brickPool.slice(start, start + half)
+                                    if (slice.length === 0) return null
+                                    const markers = row === 0 ? ['1','2','3','4'] : ['a','s','d','f']
+                                    return (
+                                        <div key={row} className="sh-brick-pool">
+                                            {slice.map((brick, i) => {
+                                                const brickIdx = start + i
+                                                const used = soupSelection.some(s => s.brickIdx === brickIdx)
+                                                return (
+                                                    <div
+                                                        key={brickIdx}
+                                                        className={`sh-brick ${used ? 'used' : ''}`}
+                                                        onClick={() => !used && handleBrickClick(brick, brickIdx)}
+                                                    >
+                                                        <span className="sh-option-marker">{markers[i]}</span>
+                                                        {brick}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )
+                                })}
                             </>
                         )}
                     </div>
