@@ -420,10 +420,6 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
   const lockAndSpawn = useCallback(() => {
     const p = pieceRef.current;
     if (!p) return;
-    if (holdIntervalRef.current) {
-      clearInterval(holdIntervalRef.current);
-      holdIntervalRef.current = null;
-    }
     downStreakActiveRef.current = false;
 
     const locked = lockPiece(boardRef.current, p);
@@ -495,30 +491,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
     else setP({ ...p, y: newY });
   }, [lockAndSpawn]);
 
-  const holdIntervalRef = useRef<number | null>(null);
 
-  const startFastDrop = useCallback(() => {
-    if (showQuestionRef.current) return;
-    if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
-    softDrop();
-    holdIntervalRef.current = window.setInterval(() => {
-      if (showQuestionRef.current) {
-        if (holdIntervalRef.current) {
-          clearInterval(holdIntervalRef.current);
-          holdIntervalRef.current = null;
-        }
-        return;
-      }
-      softDrop();
-    }, 60);
-  }, [softDrop]);
-
-  const stopFastDrop = useCallback(() => {
-    if (holdIntervalRef.current) {
-      clearInterval(holdIntervalRef.current);
-      holdIntervalRef.current = null;
-    }
-  }, []);
 
   /* ── Rotation helpers ────────────────────────────────────────── */
   const applyRotation = useCallback(() => {
@@ -1173,11 +1146,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
               <button className="tetris-ctrl-btn rotate" onClick={triggerRotation} aria-label="Rotate">🔄</button>
               <button 
                 className="tetris-ctrl-btn" 
-                onMouseDown={startFastDrop}
-                onMouseUp={stopFastDrop}
-                onMouseLeave={stopFastDrop}
-                onTouchStart={(e) => { e.preventDefault(); startFastDrop(); }}
-                onTouchEnd={stopFastDrop}
+                onClick={softDrop}
                 aria-label="Soft drop"
               >
                 ▼

@@ -53,7 +53,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
     if (versionTapTimerRef.current) {
       window.clearTimeout(versionTapTimerRef.current);
     }
-    
+
     const newCount = versionTapCount + 1;
     if (newCount >= 3) {
       setVersionTapCount(0);
@@ -127,13 +127,13 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
         setIsMenuOpen(false);
       }
     }
-    
+
     if (isMenuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -148,7 +148,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
 
   return (
     <div ref={menuRef} className="nav-container">
-      <button 
+      <button
         className={`nav-btn${isMenuOpen || delayedClosed ? ' active' : ''}`}
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         aria-label="Toggle navigation menu"
@@ -232,12 +232,12 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/manual">Game Manual</Link>
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/switch-user">Switch User</Link>
               {(session.user as any).role === 'admin' && (
-                  <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
+                <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
               )}
               <div className="nav-divider"></div>
               <div className="nav-section-title" style={{ padding: '4px 14px', fontSize: '0.75rem', fontWeight: 'bold', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reference (参考)</div>
-              <button 
-                className="nav-item" 
+              <button
+                className="nav-item"
                 onClick={() => {
                   setIsMenuOpen(false);
                   setIsIrregularVerbsOpen(true);
@@ -250,23 +250,23 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
               <div className="nav-user-info">
                 Logged in as <strong>{session.user.username || session.user.email}</strong>
               </div>
-              <button 
+              <button
                 className="nav-item danger"
                 onClick={async () => {
                   setIsMenuOpen(false);
-                  
+
                   const currentToken = localStorage.getItem('active_session_token');
                   let loggedInUsers = [];
                   try {
                     loggedInUsers = JSON.parse(localStorage.getItem('logged_in_users') || '[]');
-                  } catch (e) {}
-                  
+                  } catch (e) { }
+
                   if (Array.isArray(loggedInUsers)) {
                     loggedInUsers = loggedInUsers.filter((u: any) => u.token !== currentToken);
                     localStorage.setItem('logged_in_users', JSON.stringify(loggedInUsers));
                   }
                   localStorage.removeItem('active_session_token');
-                  
+
                   try {
                     await signOut();
                   } catch (e) {
@@ -294,11 +294,11 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             </>
           )}
           <div className="nav-divider"></div>
-          <div 
+          <div
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260622-1142
+            v260622-1157
           </div>
         </div>
       )}
@@ -355,56 +355,56 @@ function App() {
       <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
         <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}>
           <Routes>
-          <Route path="/" element={
-            session ? <Navigate to="/dashboard" replace /> : <Navigate to="/signin" replace />
-          } />
-          <Route path="/signin" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>} />
-          <Route path="/admin-login" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>} />
-          <Route path="/dashboard" element={
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <Dashboard showChinese={showChinese} />
+            <Route path="/" element={
+              session ? <Navigate to="/dashboard" replace /> : <Navigate to="/signin" replace />
+            } />
+            <Route path="/signin" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>} />
+            <Route path="/admin-login" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>} />
+            <Route path="/dashboard" element={
+              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                  <Dashboard showChinese={showChinese} />
+                </div>
               </div>
-            </div>
-          } />
-          <Route path="/manual" element={
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <UsageGuide />
+            } />
+            <Route path="/manual" element={
+              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                  <UsageGuide />
+                </div>
               </div>
-            </div>
-          } />
-          <Route path="/practice/:id" element={<PracticeShell />} />
-          <Route path="/games/schulte" element={
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <SchulteGame />
+            } />
+            <Route path="/practice/:id" element={<PracticeShell />} />
+            <Route path="/games/schulte" element={
+              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                  <SchulteGame />
+                </div>
               </div>
-            </div>
-          } />
-          <Route path="/games/card-match" element={
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <CardMatchGame showChinese={showChinese} />
+            } />
+            <Route path="/games/card-match" element={
+              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                  <CardMatchGame showChinese={showChinese} />
+                </div>
               </div>
-            </div>
-          } />
-          <Route path="/games/tetris" element={
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <TetrisGame showChinese={showChinese} />
+            } />
+            <Route path="/games/tetris" element={
+              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                  <TetrisGame showChinese={showChinese} />
+                </div>
               </div>
-            </div>
-          } />
-          <Route path="/switch-user" element={
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <SwitchUser />
+            } />
+            <Route path="/switch-user" element={
+              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                  <SwitchUser />
+                </div>
               </div>
-            </div>
-          } />
-          <Route path="/admin/manage-users" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>} />
-        </Routes>
+            } />
+            <Route path="/admin/manage-users" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>} />
+          </Routes>
         </Suspense>
       </main>
     </BrowserRouter>
