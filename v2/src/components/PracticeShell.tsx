@@ -74,7 +74,7 @@ export function PracticeShell() {
         return <PassageDecoderShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
-    if (cleanType === 'test' || cleanType.endsWith('-test')) {
+    if (cleanType === 'test' || cleanType.startsWith('test') || cleanType.endsWith('-test')) {
         return <TestSheetShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 

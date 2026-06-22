@@ -290,6 +290,68 @@ This document defines the rules for extracting and converting textbook data into
   - `translation`: Chinese translation of the sentence.
   - `explanation`: Detailed grammatical explanation in Chinese.
 
+- **Additional Question Type Schemas:**
+  To support other question types found in textbook sources, represent them using these distinct types and JSON schemas:
+
+  1. **`definition-matching`** (Matching definitions to a word list):
+     - `type`: `"definition-matching"`
+     - `wordbank`: Array of strings representing candidate words.
+     - `questions`: Array of question items where:
+       - `id`: 8-character alphanumeric string.
+       - `prompt`: Definition sentence.
+       - `answer`: Correct word string matching an item in `wordbank`.
+       - `translation` & `explanation`: Chinese text.
+
+  2. **`dialogue-completion`** (Completing dialogue with candidate sentences):
+     - `type`: `"dialogue-completion"`
+     - `dialogue`: Array of turn objects: `{ speaker: string, text: string }` where blanks are indicated by placeholders (e.g. `"[1]"`).
+     - `options`: Array of candidate sentences.
+     - `questions`: Array of question items mapping to each blank:
+       - `id`: 8-character alphanumeric string.
+       - `blankIndex`: 1-based index corresponding to `[1]`, `[2]`, etc.
+       - `answer`: Correct option sentence (or index/character). Prefer the exact option text string.
+       - `translation` & `explanation`: Chinese text.
+
+  3. **`cloze-passage`** (Passage with inline blanks and multiple options per blank):
+     - `type`: `"cloze-passage"`
+     - `passage`: Full text string with blanks represented by `"[1]"`, `"[2]"`, etc.
+     - `questions`: Array of question items mapping to each blank:
+       - `id`: 8-character alphanumeric string.
+       - `blankIndex`: 1-based index corresponding to the blank.
+       - `options`: Array of strings containing choices for this blank.
+       - `answer`: Integer index of correct option.
+       - `translation` & `explanation`: Chinese text.
+
+  4. **`true-false`** (True or False questions):
+     - `type`: `"true-false"`
+     - `passage`: (Optional) Text string context.
+     - `questions`: Array of question items:
+       - `id`: 8-character alphanumeric string.
+       - `prompt`: The statement.
+       - `answer`: Boolean (`true` or `false`).
+       - `translation` & `explanation`: Chinese text.
+
+  5. **`reading-comprehension`** (Reading passages with multiple-choice or short-answer questions):
+     - `type`: `"reading-comprehension"`
+     - `passage`: Full text string.
+     - `questions`: Array of question items where:
+       - `id`: 8-character alphanumeric string.
+       - `type`: `"multiple-choice"` or `"short-answer"`.
+       - `prompt`: Question prompt.
+       - `options`: Array of strings (required for `"multiple-choice"`).
+       - `answer`: Integer index of correct option (for `"multiple-choice"`) or a sample answer string (for `"short-answer"`).
+       - `translation` & `explanation`: Chinese text.
+
+  6. **`cloze-passage-wordbank`** (Passage with inline blanks filled from a shared word bank):
+     - `type`: `"cloze-passage-wordbank"`
+     - `passage`: Full text string with blanks represented by `"[1]"`, `"[2]"`, etc.
+     - `wordbank`: Array of strings representing candidate words.
+     - `questions`: Array of question items mapping to each blank:
+       - `id`: 8-character alphanumeric string.
+       - `blankIndex`: 1-based index corresponding to the blank.
+       - `answer`: Correct word string matching an item in `wordbank`.
+       - `translation` & `explanation`: Chinese text.
+
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.**
 

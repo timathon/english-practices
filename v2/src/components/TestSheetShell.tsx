@@ -20,19 +20,24 @@ const getOrdinal = (n: number) => {
 
 interface Question {
   id: string
-  prompt: string
-  answer: string | number
+  prompt?: string
+  answer: string | number | boolean
   options?: string[]
   translation?: string
   explanation?: string
+  blankIndex?: number
+  type?: 'multiple-choice' | 'short-answer'
 }
 
 interface Section {
   id: string
   title: string
   instruction: string
-  type: 'fill-in-the-blank-wordbank' | 'fill-in-the-blank-firstletter' | 'multiple-choice' | string
+  type: 'fill-in-the-blank-wordbank' | 'fill-in-the-blank-firstletter' | 'multiple-choice' | 'definition-matching' | 'dialogue-completion' | 'cloze-passage' | 'true-false' | 'reading-comprehension' | 'cloze-passage-wordbank' | string
   wordbank?: string[]
+  options?: string[]
+  passage?: string
+  dialogue?: { speaker: string; text: string }[]
   questions: Question[]
 }
 
@@ -58,12 +63,13 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
   const [showStartModal, setShowStartModal] = useState(true)
   const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false)
   const [activeSectionIdx, setActiveSectionIdx] = useState(0)
+  const [highlightedSentence, setHighlightedSentence] = useState<{ paraIdx: number; sentenceIdx: number } | null>(null)
 
   const handleResetAttempts = () => {
     trialsTracker.resetTrials(practiceId, 'test-sheet')
     setRemainingAttempts(trialsTracker.getRemainingTrials(practiceId, 'test-sheet'))
   }
-  const [userAnswers, setUserAnswers] = useState<Record<string, string | number>>({})
+  const [userAnswers, setUserAnswers] = useState<Record<string, string | number | boolean>>({})
   const [submitted, setSubmitted] = useState(false)
   const [score, setScore] = useState(0)
   const [gainedXp, setGainedXp] = useState(0)
@@ -73,6 +79,44 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
   const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
   const recordIdPromiseRef = useRef<Promise<string> | null>(null)
   const hasFinishedRef = useRef(false)
+
+  // Scroll active tab into view when section changes
+  useEffect(() => {
+    if (!tabsRef.current) return
+    const activeTab = tabsRef.current.querySelector('.ts-section-tab.active') as HTMLElement
+    if (activeTab) {
+      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    }
+  }, [activeSectionIdx])
+
+  // Drag to scroll tabs refs & state
+  const tabsRef = useRef<HTMLDivElement | null>(null)
+  const isDraggingRef = useRef(false)
+  const startXRef = useRef(0)
+  const scrollLeftRef = useRef(0)
+
+  const handleTabsMouseDown = (e: React.MouseEvent) => {
+    if (!tabsRef.current) return
+    isDraggingRef.current = true
+    startXRef.current = e.pageX - tabsRef.current.offsetLeft
+    scrollLeftRef.current = tabsRef.current.scrollLeft
+  }
+
+  const handleTabsMouseLeave = () => {
+    isDraggingRef.current = false
+  }
+
+  const handleTabsMouseUp = () => {
+    isDraggingRef.current = false
+  }
+
+  const handleTabsMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current || !tabsRef.current) return
+    e.preventDefault()
+    const x = e.pageX - tabsRef.current.offsetLeft
+    const walk = (x - startXRef.current) * 1.5 // multiplier for scroll speed
+    tabsRef.current.scrollLeft = scrollLeftRef.current - walk
+  }
 
   // Preload SFX
   useEffect(() => {
@@ -183,7 +227,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
   }
 
   // Handle value change
-  const handleAnswerChange = (qId: string, value: string | number, section?: Section) => {
+  const handleAnswerChange = (qId: string, value: string | number | boolean, section?: Section) => {
     if (submitted) return
     setUserAnswers(prev => {
       const next = { ...prev, [qId]: value }
@@ -221,12 +265,34 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
         totalQuestions++
         const userAns = userAnswers[q.id]
         
-        if (section.type === 'multiple-choice') {
-          if (userAns !== undefined && Number(userAns) === Number(q.answer)) {
+        if (section.type === 'multiple-choice' || section.type === 'cloze-passage') {
+          if (userAns !== undefined && userAns !== '' && Number(userAns) === Number(q.answer)) {
             correctCount++
           }
+        } else if (section.type === 'true-false') {
+          if (userAns !== undefined && userAns !== '' && String(userAns) === String(q.answer)) {
+            correctCount++
+          }
+        } else if (section.type === 'reading-comprehension') {
+          if (q.type === 'multiple-choice') {
+            if (userAns !== undefined && userAns !== '' && Number(userAns) === Number(q.answer)) {
+              correctCount++
+            }
+          } else if (q.type === 'short-answer') {
+            // Give points for writing anything to support student input
+            if (String(userAns || '').trim().length > 0) {
+              correctCount++
+            }
+          } else {
+            // Default string based check
+            const normalizedUser = String(userAns || '').trim().toLowerCase()
+            const normalizedCorrect = String(q.answer).trim().toLowerCase()
+            if (normalizedUser === normalizedCorrect) {
+              correctCount++
+            }
+          }
         } else {
-          // String based fill-in-the-blank
+          // String based fill-in-the-blank / matching
           const normalizedUser = String(userAns || '').trim().toLowerCase()
           const normalizedCorrect = String(q.answer).trim().toLowerCase()
           if (normalizedUser === normalizedCorrect) {
@@ -280,15 +346,102 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
     return currentSection.questions.some(q => userAnswers[q.id] === word)
   }
 
+  // Inline parser to render select elements for cloze passages & dialogue
+  const parseInlineBlanks = (text: string, section: Section) => {
+    const parts = text.split(/(\[\d+\])/g)
+    return parts.map((part, index) => {
+      const match = part.match(/^\[(\d+)\]$/)
+      if (match) {
+        const blankNum = parseInt(match[1], 10)
+        const q = section.questions.find(item => item.blankIndex === blankNum)
+        if (!q) return part
+
+        const isClozeIndex = section.type === 'cloze-passage'
+        const isUserCorrect = isClozeIndex
+          ? userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && Number(userAnswers[q.id]) === Number(q.answer)
+          : String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
+
+        let selectClass = "ts-inline-select"
+        if (submitted) {
+          selectClass += isUserCorrect ? " correct" : " wrong"
+        }
+
+        const correctDisplay = isClozeIndex
+          ? (q.options?.[Number(q.answer)] || '')
+          : String(q.answer)
+
+        return (
+          <span key={index} className="ts-inline-select-wrapper" style={{ margin: '0 4px', display: 'inline-block' }}>
+            <select
+              className={selectClass}
+              value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
+              disabled={submitted}
+              onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
+              style={{
+                padding: '4px 8px',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                background: submitted ? (isUserCorrect ? '#d1fae5' : '#fee2e2') : '#fff',
+                color: '#374151',
+                fontSize: '0.95em',
+                cursor: submitted ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <option value="">({blankNum})</option>
+              {section.type === 'cloze-passage' ? (
+                q.options?.map((opt, optIdx) => (
+                  <option key={optIdx} value={optIdx}>
+                    {opt}
+                  </option>
+                ))
+              ) : section.type === 'cloze-passage-wordbank' ? (
+                section.wordbank?.map((word, wordIdx) => (
+                  <option key={wordIdx} value={word}>
+                    {word}
+                  </option>
+                ))
+              ) : section.type === 'dialogue-completion' ? (
+                section.options?.map((opt, optIdx) => (
+                  <option key={optIdx} value={opt}>
+                    {opt}
+                  </option>
+                ))
+              ) : null}
+            </select>
+            {submitted && !isUserCorrect && (
+              <span className="ts-inline-reveal-word" style={{ marginLeft: '4px', color: '#10b981', fontWeight: 'bold' }}>
+                ({correctDisplay})
+              </span>
+            )}
+          </span>
+        )
+      }
+      return part
+    })
+  }
+
   // Render question types dynamically
   const renderQuestion = (q: Question, section: Section, index: number) => {
-    const isUserCorrect = section.type === 'multiple-choice'
-      ? userAnswers[q.id] !== undefined && Number(userAnswers[q.id]) === Number(q.answer)
-      : String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
+    let isUserCorrect = false
+    if (section.type === 'multiple-choice') {
+      isUserCorrect = userAnswers[q.id] !== undefined && Number(userAnswers[q.id]) === Number(q.answer)
+    } else if (section.type === 'true-false') {
+      isUserCorrect = userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && String(userAnswers[q.id]) === String(q.answer)
+    } else if (section.type === 'reading-comprehension') {
+      if (q.type === 'multiple-choice') {
+        isUserCorrect = userAnswers[q.id] !== undefined && Number(userAnswers[q.id]) === Number(q.answer)
+      } else {
+        isUserCorrect = String(userAnswers[q.id] || '').trim().length > 0
+      }
+    } else if (section.type === 'cloze-passage') {
+      isUserCorrect = userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && Number(userAnswers[q.id]) === Number(q.answer)
+    } else {
+      isUserCorrect = String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
+    }
 
     switch (section.type) {
       case 'fill-in-the-blank-wordbank': {
-        const parts = q.prompt.split(/______/)
+        const parts = (q.prompt || '').split(/______/)
         return (
           <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
             <div className="ts-question-header">
@@ -297,7 +450,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                 {parts[0]}
                 <select
                   className="ts-wordbank-select"
-                  value={userAnswers[q.id] || ''}
+                  value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
                   disabled={submitted}
                   onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
                 >
@@ -320,7 +473,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
             {submitted && (
               <div className="ts-feedback-detail">
                 {!isUserCorrect && (
-                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{q.answer}</strong></p>
+                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
                 )}
                 {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
                 {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
@@ -330,8 +483,183 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
         )
       }
 
+      case 'definition-matching': {
+        return (
+          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+            <div className="ts-question-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <span className="ts-question-prompt">
+                <span className="ts-question-num">{index + 1}.</span> {q.prompt}
+              </span>
+              <select
+                className="ts-wordbank-select"
+                value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
+                disabled={submitted}
+                onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
+              >
+                <option value="">-- Choose Word --</option>
+                {section.wordbank?.map(word => {
+                  const usingQIdx = section.questions.findIndex(otherQ => userAnswers[otherQ.id] === word)
+                  const showSuffix = usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id
+                  const suffix = showSuffix ? ` (${usingQIdx + 1})` : ''
+                  return (
+                    <option key={word} value={word}>
+                      {word}{suffix}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+
+            {submitted && (
+              <div className="ts-feedback-detail">
+                {!isUserCorrect && (
+                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
+                )}
+                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
+                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      case 'true-false': {
+        const userVal = userAnswers[q.id]
+        return (
+          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+            <div className="ts-question-header">
+              <span className="ts-question-num">{index + 1}.</span>
+              <span className="ts-question-prompt">{q.prompt}</span>
+            </div>
+            <div className="ts-tf-container" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              {[true, false].map((val) => {
+                const label = val ? 'T' : 'F'
+                let btnClass = "ts-option-btn ts-tf-btn"
+                if (userVal === val) btnClass += " selected"
+                if (submitted) {
+                  if (q.answer === val) btnClass += " correct-reveal"
+                  else if (userVal === val) btnClass += " wrong-reveal"
+                }
+                return (
+                  <button
+                    key={label}
+                    className={btnClass}
+                    disabled={submitted}
+                    style={{ padding: '6px 20px', minWidth: '60px' }}
+                    onClick={() => handleAnswerChange(q.id, val)}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+            {submitted && (
+              <div className="ts-feedback-detail">
+                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
+                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      case 'reading-comprehension': {
+        const isMultipleChoice = q.type === 'multiple-choice'
+        const activeOptIdx = (isMultipleChoice && userAnswers[q.id] !== undefined) ? Number(userAnswers[q.id]) : null
+
+        return (
+          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+            <div className="ts-question-header">
+              <span className="ts-question-num">{index + 1}.</span>
+              <span className="ts-question-prompt">{q.prompt}</span>
+            </div>
+
+            {isMultipleChoice ? (
+              <div className="ts-options-container">
+                {q.options?.map((option, oIdx) => {
+                  let btnClass = "ts-option-btn"
+                  if (activeOptIdx === oIdx) btnClass += " selected"
+                  
+                  if (submitted) {
+                    if (Number(q.answer) === oIdx) {
+                      btnClass += " correct-reveal"
+                    } else if (activeOptIdx === oIdx) {
+                      btnClass += " wrong-reveal"
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={oIdx}
+                      className={btnClass}
+                      disabled={submitted}
+                      onClick={() => handleAnswerChange(q.id, oIdx)}
+                    >
+                      <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
+                      <span className="ts-option-text">{option}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="ts-short-answer-container" style={{ marginTop: '10px' }}>
+                <textarea
+                  className="ts-blank-input"
+                  style={{ width: '100%', minHeight: '80px', padding: '10px', boxSizing: 'border-box' }}
+                  value={String(userAnswers[q.id] || '')}
+                  disabled={submitted}
+                  onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                  placeholder="Type your response here..."
+                />
+              </div>
+            )}
+
+            {submitted && (
+              <div className="ts-feedback-detail">
+                {!isMultipleChoice && (
+                  <p className="ts-correct-ans-reveal">Sample Answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
+                )}
+                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
+                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      case 'cloze-passage':
+      case 'cloze-passage-wordbank':
+      case 'dialogue-completion': {
+        const isClozeIndex = section.type === 'cloze-passage'
+        const correctDisplay = isClozeIndex
+          ? (q.options?.[Number(q.answer)] || '')
+          : String(q.answer)
+
+        const userDisplay = isClozeIndex
+          ? (userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' ? q.options?.[Number(userAnswers[q.id])] : '--')
+          : (userAnswers[q.id] || '--')
+
+        return (
+          <div key={q.id} className={`ts-question-card ${isUserCorrect ? 'correct' : 'wrong'}`}>
+            <div className="ts-question-header">
+              <span className="ts-question-num">Blank ({q.blankIndex}):</span>
+              <span className="ts-question-prompt">
+                Your Answer: <strong className="ts-user-ans">{String(userDisplay)}</strong>
+              </span>
+            </div>
+            <div className="ts-feedback-detail">
+              {!isUserCorrect && (
+                <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{correctDisplay}</strong></p>
+              )}
+              {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
+              {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
+            </div>
+          </div>
+        )
+      }
+
       case 'fill-in-the-blank-firstletter': {
-        const parts = q.prompt.split(/______/)
+        const parts = (q.prompt || '').split(/______/)
         return (
           <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
             <div className="ts-question-header">
@@ -341,7 +669,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                 <input
                   type="text"
                   className="ts-blank-input"
-                  value={userAnswers[q.id] || ''}
+                  value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
                   disabled={submitted}
                   onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                   placeholder="type here..."
@@ -353,7 +681,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
             {submitted && (
               <div className="ts-feedback-detail">
                 {!isUserCorrect && (
-                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{q.answer}</strong></p>
+                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
                 )}
                 {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
                 {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
@@ -435,49 +763,56 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
 
       {/* Main layout */}
       <div className="ts-layout">
-        {/* Navigation sidebar */}
-        <aside className="ts-sidebar">
-          <h3>Test Sections</h3>
-          <div className="ts-section-tabs">
-            {data.sections.map((sec, idx) => (
-              <button
-                key={sec.id}
-                className={`ts-section-tab ${activeSectionIdx === idx ? 'active' : ''}`}
-                onClick={() => setActiveSectionIdx(idx)}
-              >
-                <span className="ts-tab-num">{idx + 1}</span>
-                <span className="ts-tab-title">{sec.title}</span>
-              </button>
-            ))}
-          </div>
+        {/* Sticky section tabs */}
+        <div
+          ref={tabsRef}
+          className="ts-section-tabs"
+          onMouseDown={handleTabsMouseDown}
+          onMouseLeave={handleTabsMouseLeave}
+          onMouseUp={handleTabsMouseUp}
+          onMouseMove={handleTabsMouseMove}
+        >
+          {data.sections.map((sec, idx) => (
+            <button
+              key={sec.id}
+              className={`ts-section-tab ${activeSectionIdx === idx ? 'active' : ''}`}
+              onClick={() => setActiveSectionIdx(idx)}
+            >
+              <span className="ts-tab-num">{idx + 1}/{data.sections.length}</span>
+              <span className="ts-tab-title">{sec.title}</span>
+            </button>
+          ))}
+        </div>
 
-          {submitted && (
-            <div className="ts-score-summary">
-              <h4>Graded Result</h4>
-              <div className="ts-score-badge" style={{ borderColor: score >= 60 ? '#10b981' : '#ef4444' }}>
-                <span className="ts-score-num" style={{ color: score >= 60 ? '#10b981' : '#ef4444' }}>{score}%</span>
+        {/* Content area */}
+        <div className="ts-content-area">
+          <aside className="ts-sidebar">
+            {submitted && (
+              <div className="ts-score-summary">
+                <h4>Graded Result</h4>
+                <div className="ts-score-badge" style={{ borderColor: score >= 60 ? '#10b981' : '#ef4444' }}>
+                  <span className="ts-score-num" style={{ color: score >= 60 ? '#10b981' : '#ef4444' }}>{score}%</span>
+                </div>
+                <button className="ts-retry-btn" onClick={handleRetry}>Try Again</button>
               </div>
-              <button className="ts-retry-btn" onClick={handleRetry}>Try Again</button>
-            </div>
-          )}
-        </aside>
+            )}
+          </aside>
 
         {/* Content sheet */}
         <main className="ts-sheet-paper">
           {activeSection && (
             <div className="ts-section-view">
               <div className="ts-section-header">
-                <h2>{activeSection.title}</h2>
                 <p className="ts-instruction">{activeSection.instruction}</p>
               </div>
 
               {/* Word Bank Area */}
-              {activeSection.type === 'fill-in-the-blank-wordbank' && activeSection.wordbank && (
-                <div className="ts-wordbank-pool">
+              {(activeSection.type === 'fill-in-the-blank-wordbank' || activeSection.type === 'definition-matching' || activeSection.type === 'cloze-passage-wordbank') && activeSection.wordbank && (
+                <div className="ts-wordbank-pool" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '12px', background: '#f3f4f6', borderRadius: '8px', marginBottom: '15px' }}>
                   {activeSection.wordbank.map(word => {
                     const isUsed = isWordUsed(word, activeSection)
                     return (
-                      <span key={word} className={`ts-wordbank-chip ${isUsed ? 'used' : ''}`}>
+                      <span key={word} className={`ts-wordbank-chip ${isUsed ? 'used' : ''}`} style={{ padding: '6px 12px', background: isUsed ? '#e5e7eb' : '#fff', color: isUsed ? '#9ca3af' : '#1f2937', border: '1px solid #d1d5db', borderRadius: '20px', fontSize: '0.9em', textDecoration: isUsed ? 'line-through' : 'none' }}>
                         {word}
                       </span>
                     )
@@ -485,30 +820,105 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                 </div>
               )}
 
+              {/* Render Dialogue Completion Inline Text */}
+              {activeSection.type === 'dialogue-completion' && activeSection.dialogue && (
+                <div className="ts-dialogue-completion-container" style={{ margin: '20px 0', padding: '15px', background: '#fafafa', border: '1px solid #eaeaea', borderRadius: '8px' }}>
+                  {activeSection.dialogue.map((turn, tIdx) => {
+                    const elements = parseInlineBlanks(turn.text, activeSection)
+                    return (
+                      <div key={tIdx} className="ts-dialogue-turn" style={{ margin: '8px 0', lineHeight: '1.6' }}>
+                        <strong className="ts-speaker" style={{ color: '#4b5563', marginRight: '8px' }}>{turn.speaker}:</strong>
+                        <span className="ts-turn-text">{elements}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Render Cloze Passage Inline Text */}
+              {(activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank') && activeSection.passage && (
+                <div className="ts-cloze-passage-container" style={{ margin: '20px 0', padding: '15px', background: '#fafafa', border: '1px solid #eaeaea', borderRadius: '8px', lineHeight: '2.2', fontSize: '1.05em' }}>
+                  {parseInlineBlanks(activeSection.passage, activeSection)}
+                </div>
+              )}
+
+              {/* Render Reading/True-False Passage */}
+              {(activeSection.type === 'reading-comprehension' || activeSection.type === 'true-false') && activeSection.passage && (
+                <div className="ts-reading-comprehension-passage" style={{ margin: '20px 0', padding: '20px', background: '#fcfcfc', borderLeft: '4px solid #3b82f6', borderRadius: '4px', lineHeight: '1.8', fontSize: '1.05em', fontStyle: 'italic', color: '#374151' }}>
+                  {activeSection.passage.split('\n').map((para, pIdx) => para.trim() && (
+                    <p key={pIdx} style={{ marginBottom: '12px' }}>
+                      {para.split(/(?<=[.!?])\s+/).map((sentence, sIdx) => {
+                        const isHighlighted = highlightedSentence?.paraIdx === pIdx && highlightedSentence?.sentenceIdx === sIdx
+                        return (
+                          <span
+                            key={sIdx}
+                            className={`ts-passage-sentence ${isHighlighted ? 'highlighted' : ''}`}
+                            style={{ cursor: 'pointer', borderRadius: '3px', padding: '1px 3px', transition: 'background 0.2s ease' }}
+                            onClick={() => setHighlightedSentence(prev => prev?.paraIdx === pIdx && prev?.sentenceIdx === sIdx ? null : { paraIdx: pIdx, sentenceIdx: sIdx })}
+                          >
+                            {sentence}{' '}
+                          </span>
+                        )
+                      })}
+                    </p>
+                  ))}
+                </div>
+              )}
+
               {/* Questions List */}
               <div className="ts-questions-list">
-                {activeSection.questions.map((q, qIdx) => renderQuestion(q, activeSection, qIdx))}
+                {activeSection.questions.map((q, qIdx) => {
+                  // For inline questions, don't show the feedback cards before submission
+                  if ((activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank' || activeSection.type === 'dialogue-completion') && !submitted) {
+                    return null
+                  }
+                  return renderQuestion(q, activeSection, qIdx)
+                })}
               </div>
             </div>
           )}
 
           {/* Bottom actions */}
-          <div className="ts-footer-actions">
+          <div className="ts-footer-actions" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
             {!submitted ? (
               activeSectionIdx < data.sections.length - 1 ? (
-                <button
-                  className="ts-submit-btn ts-next-btn"
-                  onClick={() => setActiveSectionIdx(prev => prev + 1)}
-                >
-                  Next Section
-                </button>
+                <>
+                  {activeSectionIdx > 0 && (
+                    <button
+                      className="ts-submit-btn ts-prev-btn"
+                      onClick={() => setActiveSectionIdx(prev => prev - 1)}
+                      style={{ maxWidth: '80px' }}
+                    >
+                      &lt;
+                    </button>
+                  )}
+                  <button
+                    className="ts-submit-btn ts-next-btn"
+                    onClick={() => setActiveSectionIdx(prev => prev + 1)}
+                    style={{ margin: 0 }}
+                  >
+                    Next Section
+                  </button>
+                </>
               ) : (
-                <button
-                  className="ts-submit-btn"
-                  onClick={() => setShowConfirmSubmitModal(true)}
-                >
-                  Submit Test
-                </button>
+                <>
+                  {activeSectionIdx > 0 && (
+                    <button
+                      className="ts-submit-btn ts-prev-btn"
+                      onClick={() => setActiveSectionIdx(prev => prev - 1)}
+                      style={{ maxWidth: '80px' }}
+                    >
+                      &lt;
+                    </button>
+                  )}
+                  <button
+                    className="ts-submit-btn"
+                    onClick={() => setShowConfirmSubmitModal(true)}
+                    style={{ margin: 0 }}
+                  >
+                    Submit Test
+                  </button>
+                </>
               )
             ) : (
               <div className="ts-results-dashboard">
@@ -533,6 +943,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
             )}
           </div>
         </main>
+        </div>
       </div>
       {showStartModal && (
         <div className="ts-modal-overlay">

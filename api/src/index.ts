@@ -731,6 +731,18 @@ app.delete('/api/admin/practices', async (c) => {
   return c.json({ success: true })
 })
 
+app.delete('/api/admin/practices/:id', async (c) => {
+  const auth = getCachedAuth(c.env)
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
+
+  const id = c.req.param('id')
+  const db = drizzle(c.env.DB)
+  await db.delete(practice).where(eq(practice.id, id))
+  cachedMappedPractices = null;
+  return c.json({ success: true })
+})
+
 app.get('/api/pet', async (c) => {
   const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
