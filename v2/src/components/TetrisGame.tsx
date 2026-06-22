@@ -420,6 +420,10 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
   const lockAndSpawn = useCallback(() => {
     const p = pieceRef.current;
     if (!p) return;
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
     downStreakActiveRef.current = false;
 
     const locked = lockPiece(boardRef.current, p);
@@ -491,30 +495,30 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
     else setP({ ...p, y: newY });
   }, [lockAndSpawn]);
 
-  const hardDrop = useCallback(() => {
-    const p = pieceRef.current;
-    if (!p || showQuestionRef.current) return;
-    let currentY = p.y;
-    while (!collides(boardRef.current, p.shape, p.x, currentY + 1)) {
-      currentY++;
-    }
-    const updatedPiece = { ...p, y: currentY };
-    setP(updatedPiece);
-    pieceRef.current = updatedPiece;
-    lockAndSpawn();
-  }, [lockAndSpawn]);
+  const holdIntervalRef = useRef<number | null>(null);
 
-  const lastDownClickRef = useRef<number>(0);
-  const handleDownClick = useCallback(() => {
-    const now = Date.now();
-    const diff = now - lastDownClickRef.current;
-    lastDownClickRef.current = now;
-    if (diff < 300) {
-      hardDrop();
-    } else {
+  const startFastDrop = useCallback(() => {
+    if (showQuestionRef.current) return;
+    if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+    softDrop();
+    holdIntervalRef.current = window.setInterval(() => {
+      if (showQuestionRef.current) {
+        if (holdIntervalRef.current) {
+          clearInterval(holdIntervalRef.current);
+          holdIntervalRef.current = null;
+        }
+        return;
+      }
       softDrop();
+    }, 60);
+  }, [softDrop]);
+
+  const stopFastDrop = useCallback(() => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
     }
-  }, [softDrop, hardDrop]);
+  }, []);
 
   /* ── Rotation helpers ────────────────────────────────────────── */
   const applyRotation = useCallback(() => {
@@ -1167,7 +1171,17 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
             <div className="tetris-mobile-controls">
               <button className="tetris-ctrl-btn" onClick={moveLeft} aria-label="Move left">◀</button>
               <button className="tetris-ctrl-btn rotate" onClick={triggerRotation} aria-label="Rotate">🔄</button>
-              <button className="tetris-ctrl-btn" onClick={handleDownClick} aria-label="Soft drop">▼</button>
+              <button 
+                className="tetris-ctrl-btn" 
+                onMouseDown={startFastDrop}
+                onMouseUp={stopFastDrop}
+                onMouseLeave={stopFastDrop}
+                onTouchStart={(e) => { e.preventDefault(); startFastDrop(); }}
+                onTouchEnd={stopFastDrop}
+                aria-label="Soft drop"
+              >
+                ▼
+              </button>
               <button className="tetris-ctrl-btn" onClick={moveRight} aria-label="Move right">▶</button>
             </div>
           )}
