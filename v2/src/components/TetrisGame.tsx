@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import md5 from 'md5';
+import { audioCache } from '../lib/audioCache';
 import { petService } from '../lib/petService';
 import type { PetState } from '../lib/petService';
-import { API_URL } from '../lib/auth';
+import { API_URL, useSession } from '../lib/auth';
 import { decryptContent, OBSCURE_KEY } from '../lib/crypto';
 import { cache } from '../lib/cache';
 import './TetrisGame.css';
@@ -13,7 +15,14 @@ const COLS = 10;
 const ROWS = 20;
 const BASE_DROP_MS = 800;
 const MIN_DROP_MS = 100;
-const Q_SLOWDOWN = 10; // 10× slower drop interval while question is open
+const Q_SLOWDOWN = 5; // 5× slower drop interval (0.2x speed) while question is open
+
+const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
+
+const getAudioUrl = (sentence: string, book: string, isCf?: boolean) => {
+  const hash = md5(sentence);
+  return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`;
+};
 
 const TETROMINOES: Record<string, { shape: number[][]; color: string }> = {
   I: { shape: [[1, 1, 1, 1]],           color: '#06b6d4' },
@@ -51,13 +60,24 @@ interface Piece {
   color: string;
 }
 
-interface VocabItem { word: string; meaning: string; }
+interface VocabItem {
+  word: string;
+  meaning: string;
+  context_sentence?: string;
+  ipa?: string;
+  comparison?: string;
+  syllable_type?: string;
+  memorization_hook?: string;
+  hint?: string;
+}
 
 interface VocabQuestion {
   prompt: string;
   options: string[];
   answer: number;
   qType: 'En2Cn' | 'Cn2En';
+  word?: string;
+  context_sentence?: string;
 }
 
 interface LBRecord {
@@ -125,7 +145,14 @@ const makeQuestion = (vocab: VocabItem[]): VocabQuestion => {
   const correct = qType === 'En2Cn' ? target.meaning : target.word;
   const wrongs = distractors.map(d => qType === 'En2Cn' ? d.meaning : d.word);
   const opts = [correct, ...wrongs].sort(() => Math.random() - 0.5);
-  return { prompt, options: opts, answer: opts.indexOf(correct), qType };
+  return {
+    prompt,
+    options: opts,
+    answer: opts.indexOf(correct),
+    qType,
+    word: target.word,
+    context_sentence: target.context_sentence
+  };
 };
 
 const getLabel = (tb: string, ut: string): string => {
@@ -147,6 +174,9 @@ const formatTime = (seconds: number) => {
 /* ─── Component ─────────────────────────────────────────────────── */
 
 export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === 'admin';
+
   /* Pet */
   const [petState, setPetState] = useState<PetState>(() => petService.getPetState());
 
@@ -155,6 +185,45 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
   const [selectedGuideId, setSelectedGuideId] = useState('fallback');
   const [loadingVocab, setLoadingVocab] = useState(false);
   const vocabRef = useRef<VocabItem[]>(FALLBACK_VOCAB);
+  const textbookRef = useRef<string>('');
+  const isCfRef = useRef<boolean>(false);
+
+  const speakTTS = (text: string) => {
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (e) {
+      console.error('TTS failed:', e);
+    }
+  };
+
+  const playAudio = useCallback(async (text: string) => {
+    if (!text) return;
+    const tb = textbookRef.current;
+    if (tb) {
+      const url = getAudioUrl(text, tb, isCfRef.current);
+      try {
+        const blob = await audioCache.cacheAudio(url);
+        if (blob) {
+          const blobUrl = URL.createObjectURL(blob);
+          const audio = new Audio(blobUrl);
+          audio.onended = () => URL.revokeObjectURL(blobUrl);
+          audio.play().catch(e => {
+            console.error('Audio play failed, falling back to TTS:', e);
+            speakTTS(text);
+          });
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to play R2 audio, falling back to TTS:', e);
+      }
+    }
+    speakTTS(text);
+  }, []);
 
   /* Lottery */
   const [isLotteryRunning, setIsLotteryRunning] = useState(false);
@@ -172,9 +241,12 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
   const [level, setLevel] = useState(1);
   const [score, setScore] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [finalLines, setFinalLines] = useState<number | null>(null);
+  const [lastSavedRecordId, setLastSavedRecordId] = useState<string | null>(null);
+  const downStreakActiveRef = useRef(true);
 
   /* Game state — refs (for game loop, never stale) */
   const boardRef = useRef<Board>(emptyBoard());
@@ -300,12 +372,16 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
   /* ── Save score ─────────────────────────────────────────────── */
   const saveScore = useCallback(async (s: number) => {
     try {
-      await fetch(`${API_URL}/api/records`, {
+      const res = await fetch(`${API_URL}/api/records`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ unit: 'game-tetris', score: s }),
       });
+      const data = await res.json();
+      if (data && data.id) {
+        setLastSavedRecordId(data.id);
+      }
       fetchLeaderboard();
     } catch { /* ignore */ }
   }, [fetchLeaderboard]);
@@ -325,7 +401,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
 
   /* ── Game Time Limit Effect ──────────────────────────────────── */
   useEffect(() => {
-    if (!isPlaying || gameOver) return;
+    if (!isPlaying || gameOver || isPaused) return;
     const interval = window.setInterval(() => {
       setGameTimeLeft(prev => {
         if (prev <= 1) {
@@ -337,12 +413,13 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
       });
     }, 1000);
     return () => window.clearInterval(interval);
-  }, [isPlaying, gameOver, triggerGameOver]);
+  }, [isPlaying, gameOver, isPaused, triggerGameOver]);
 
   /* ── Lock & spawn ────────────────────────────────────────────── */
   const lockAndSpawn = useCallback(() => {
     const p = pieceRef.current;
     if (!p) return;
+    downStreakActiveRef.current = false;
 
     const locked = lockPiece(boardRef.current, p);
     const { board: swept, n } = sweepLines(locked);
@@ -385,10 +462,10 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
   const effectiveMs = showQuestion ? dropMs * Q_SLOWDOWN : dropMs;
 
   useEffect(() => {
-    if (!isPlaying || gameOver) return;
+    if (!isPlaying || gameOver || isPaused) return;
     const id = setInterval(() => latestDrop.current(), effectiveMs);
     return () => clearInterval(id);
-  }, [isPlaying, gameOver, effectiveMs]);
+  }, [isPlaying, gameOver, effectiveMs, isPaused]);
 
   /* ── Movement ────────────────────────────────────────────────── */
   const moveLeft = useCallback(() => {
@@ -441,6 +518,9 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
       return;
     }
     const q = makeQuestion(vocabRef.current);
+    if (q.word && textbookRef.current) {
+      audioCache.preloadAndSync(getAudioUrl(q.word, textbookRef.current, isCfRef.current));
+    }
     setQuestion(q);
     setAnswerResult(null);
     setShowQuestion(true);
@@ -452,6 +532,9 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
     if (countdownIntervalRef.current) window.clearInterval(countdownIntervalRef.current);
     const correct = idx === question.answer;
     setAnswerResult(correct ? 'correct' : 'wrong');
+    if (question.word) {
+      playAudio(question.word);
+    }
     if (correct) {
       petService.awardCorrectAnswer();
       correctStreakRef.current += 1;
@@ -480,26 +563,58 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
         setAnswerResult(null);
       }, 700);
     }
-  }, [question, answerResult, applyRotation]);
+  }, [question, answerResult, applyRotation, playAudio]);
 
-  /* ── Keyboard ────────────────────────────────────────────────── */
+  /* ── Keyboard: Question Options (always active when overlay is open) ── */
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!showQuestion) return;
+    const handler = (e: KeyboardEvent) => {
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        e.preventDefault();
+        const optionIdx = parseInt(e.key, 10) - 1;
+        handleAnswer(optionIdx);
+      }
+    };
+    window.addEventListener('keydown', handler, true); // Use capture phase to ensure it intercepts early
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [showQuestion, handleAnswer]);
+
+  /* ── Keyboard: Game Controls ────────────────────────────────── */
+  useEffect(() => {
+    if (!isPlaying || isPaused || showQuestion) return;
     const handler = (e: KeyboardEvent) => {
       if (['ArrowLeft', 'ArrowRight', 'ArrowDown', ' ', 'ArrowUp'].includes(e.key)) {
         e.preventDefault();
       }
+      if (e.key === 'ArrowDown') {
+        if (e.repeat) {
+          if (!downStreakActiveRef.current) return;
+          softDrop();
+        } else {
+          downStreakActiveRef.current = true;
+          softDrop();
+        }
+        return;
+      }
       switch (e.key) {
         case 'ArrowLeft':  moveLeft(); break;
         case 'ArrowRight': moveRight(); break;
-        case 'ArrowDown':  softDrop(); break;
         case ' ':
         case 'ArrowUp':    triggerRotation(); break;
       }
     };
+    const keyUpHandler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        downStreakActiveRef.current = true;
+      }
+    };
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [isPlaying, moveLeft, moveRight, softDrop, triggerRotation]);
+    window.addEventListener('keyup', keyUpHandler);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      window.removeEventListener('keyup', keyUpHandler);
+    };
+  }, [isPlaying, isPaused, showQuestion, moveLeft, moveRight, softDrop, triggerRotation]);
 
   /* ── Lottery ─────────────────────────────────────────────────── */
   const startLottery = () => {
@@ -562,16 +677,22 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
     setLoadingVocab(true);
     try {
       let vocab = FALLBACK_VOCAB;
+      let tb = '';
+      let cf = false;
       if (guideId !== 'fallback') {
         const res = await fetch(`${API_URL}/api/practices/${guideId}`, { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
+          tb = data.textbook || '';
           let content = data.isEncrypted && typeof data.content === 'string'
             ? decryptContent(data.content, OBSCURE_KEY)
             : data.content;
+          if (content?.tts?.by === 'melotts') cf = true;
           if (content?.unit_vocabulary?.length > 0) vocab = content.unit_vocabulary;
         }
       }
+      textbookRef.current = tb;
+      isCfRef.current = cf;
       vocabRef.current = vocab;
       petService.decrementTetrisRounds();
       startGame();
@@ -601,6 +722,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
     setGameOver(false);
     setFinalScore(null);
     setFinalLines(null);
+    setLastSavedRecordId(null);
     setShowQuestion(false);
     setQuestion(null);
     setCorrectStreak(0);
@@ -610,6 +732,10 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
     setGameTimeLeft(300);
     setEndReason('normal');
     setIsPlaying(true);
+    setIsPaused(false);
+    setTimeout(() => {
+      document.querySelector('.tetris-main-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
   };
 
   /* ── Unlock rounds ───────────────────────────────────────────── */
@@ -688,14 +814,17 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
     <div className="tetris-container">
 
       {/* ── Header ── */}
-      <div className="tetris-header">
-        <Link to="/dashboard" className="tetris-back-btn">← Back to Dashboard</Link>
-        <h2 className="tetris-title">
-          🧱 Vocab Tetris <span className="tetris-title-cn">（单词方块）</span>
-        </h2>
-        <p className="tetris-subtitle">
-          Move blocks with ← → ↓ keys. Press <kbd>Space</kbd> / ↑ to rotate — but first answer a vocab question! (用方向键移动，按空格键旋转——答对单词题才能转！)
-        </p>
+      <div className="tetris-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <Link to="/dashboard" className="tetris-back-btn">← Back to Dashboard</Link>
+          <h2 className="tetris-title">
+            🧱 Vocab Tetris <span className="tetris-title-cn">（单词方块）</span>
+          </h2>
+          <p className="tetris-subtitle">
+            Move blocks with ← → ↓ keys. Press <kbd>Space</kbd> / ↑ to rotate — but first answer a vocab question! (用方向键移动，按空格键旋转——答对单词题才能转！)
+          </p>
+        </div>
+        {/* Pause button removed from header */}
       </div>
 
       <div className="tetris-layout">
@@ -703,32 +832,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
         {/* ── Main panel ── */}
         <div className="tetris-main-panel">
 
-          {/* Stats bar */}
-          {!gameOver && (
-            <div className="tetris-stats-row">
-              <div className="tetris-stat-card">
-                <span className="tetris-stat-emoji">🪙</span>
-                <div>
-                  <div className="tetris-stat-lbl">{showChinese ? '金币' : 'Coins'}</div>
-                  <div className="tetris-stat-val">{petState.goldCoins || 0}</div>
-                </div>
-              </div>
-              <div className="tetris-stat-card">
-                <span className="tetris-stat-emoji">🎮</span>
-                <div>
-                  <div className="tetris-stat-lbl">{showChinese ? '剩余场次' : 'Rounds'}</div>
-                  <div className="tetris-stat-val">{petState.tetrisRoundsLeft || 0}</div>
-                </div>
-              </div>
-              <div className="tetris-stat-card">
-                <span className="tetris-stat-emoji">⭐</span>
-                <div>
-                  <div className="tetris-stat-lbl">{showChinese ? '分数' : 'Score'}</div>
-                  <div className="tetris-stat-val font-mono">{score.toLocaleString()}</div>
-                </div>
-              </div>
-            </div>
-          )}
+
 
           {/* Alerts */}
           {errorMsg && <div className="tetris-alert error">{errorMsg}</div>}
@@ -805,7 +909,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
 
           {/* Source badge */}
           {(isPlaying || gameOver) && (
-            <div className="tetris-source-badge">
+            <div className="tetris-source-badge" style={{ display: 'none' }}>
               {showChinese ? '词汇来源: ' : 'Vocab Source: '}
               <strong>{getLabelFromId(selectedGuideId)}</strong>
             </div>
@@ -851,10 +955,60 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
 
           {/* Game area */}
           {isPlaying && (
-            <div className="tetris-game-area">
+            <div className="tetris-game-area" style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
 
-              {/* Board */}
-              <div className="tetris-board-wrapper">
+              <div className="tetris-stat-card tetris-stats-consolidated-card">
+                
+                {/* Row 1: Rounds, Lines, Level */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
+                  <span style={{ fontSize: '1rem' }}>🎮</span>
+                  <span className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 700 }}>×{petState.tetrisRoundsLeft || 0}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
+                  <span style={{ fontSize: '1rem' }}>🧱</span>
+                  <span className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 700 }}>{lines}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
+                  <span style={{ fontSize: '1rem' }}>📈</span>
+                  <span className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 700 }}>{level}</span>
+                </div>
+
+                {/* Row 2: Timer, Score, Streak */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
+                  <span style={{ fontSize: '1rem' }}>⏱️</span>
+                  <span className={`tetris-ingame-val font-mono ${gameTimeLeft <= 30 ? 'time-critical' : ''}`} style={{ fontSize: '1.05rem', fontWeight: 700 }}>
+                    {formatTime(gameTimeLeft)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px' }}>
+                  <span style={{ fontSize: '1rem' }}>⭐</span>
+                  <span className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 700 }}>{score.toLocaleString()}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                  <div className={`tetris-streak-row ${(correctStreak > 0 || freeRotations > 0) ? 'has-streak' : ''}`} style={{ padding: 0, border: 'none', background: 'none', display: 'flex', alignItems: 'center', margin: 0 }}>
+                    <span className="tetris-streak-dots" style={{ display: 'flex', gap: '3px' }}>
+                      {[0,1,2,3,4].map(i => {
+                        let dotClass = 'tetris-dot';
+                        if (freeRotations > 0) {
+                          if (i < freeRotations) {
+                            dotClass += ' blue';
+                          }
+                        } else if (i < correctStreak) {
+                          dotClass += ' filled';
+                        }
+                        return <span key={i} className={dotClass} />;
+                      })}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Row below the stats */}
+              <div className="tetris-game-play-row">
+
+                {/* Board */}
+                <div className="tetris-board-wrapper">
                 <div className="tetris-board">
                   {displayBoard.map((row, r) =>
                     row.map((cell, c) => (
@@ -872,7 +1026,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
               </div>
 
               {/* Side info */}
-              <div className="tetris-side-panel">
+              <div className="tetris-side-panel" style={{ alignSelf: 'stretch' }}>
                 {/* Next piece */}
                 <div className="tetris-next-card">
                   <div className="tetris-next-label">{showChinese ? '下一个' : 'Next'}</div>
@@ -889,45 +1043,37 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
                   </div>
                 </div>
 
-                {/* In-game stats */}
-                <div className="tetris-ingame-stats">
-                  <div className="tetris-ingame-stat">
-                    <span className="tetris-ingame-lbl">{showChinese ? '时间' : 'Time'}</span>
-                    <span className={`tetris-ingame-val font-mono ${gameTimeLeft <= 30 ? 'time-critical' : ''}`}>
-                      {formatTime(gameTimeLeft)}
-                    </span>
+                {/* Inline Streak / Free Rotation Messages */}
+                {streakCelebration && (
+                  <div className="tetris-celebration-toast-inline" style={{
+                    padding: '8px',
+                    background: 'rgba(168, 85, 247, 0.15)',
+                    border: '1px solid var(--accent)',
+                    borderRadius: '8px',
+                    color: 'var(--accent)',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    animation: 'pulse 1.5s infinite'
+                  }}>
+                    🎉 {showChinese ? '连对 5 次！获得 5 次免费旋转！' : '5 in a row! +5 Free Rotations!'} 🔄
                   </div>
-                  <div className="tetris-ingame-stat">
-                    <span className="tetris-ingame-lbl">{showChinese ? '分数' : 'Score'}</span>
-                    <span className="tetris-ingame-val font-mono">{score.toLocaleString()}</span>
+                )}
+                {freeRotFlash && (
+                  <div className="tetris-free-rot-toast-inline" style={{
+                    padding: '8px',
+                    background: 'rgba(34, 197, 94, 0.15)',
+                    border: '1px solid #22c55e',
+                    borderRadius: '8px',
+                    color: '#22c55e',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    animation: 'pulse 1.5s infinite'
+                  }}>
+                    🔄 {showChinese ? '免费旋转！' : 'Free Rotation!'}
                   </div>
-                  <div className="tetris-ingame-stat">
-                    <span className="tetris-ingame-lbl">{showChinese ? '行数' : 'Lines'}</span>
-                    <span className="tetris-ingame-val">{lines}</span>
-                  </div>
-                  <div className="tetris-ingame-stat">
-                    <span className="tetris-ingame-lbl">{showChinese ? '等级' : 'Level'}</span>
-                    <span className="tetris-ingame-val">{level}</span>
-                  </div>
-                </div>
-
-                {/* Streak & free rotations */}
-                <div className="tetris-streak-panel">
-                  <div className={`tetris-streak-row ${correctStreak > 0 ? 'has-streak' : ''}`}>
-                    <span className="tetris-streak-fire">{correctStreak > 0 ? '🔥' : '⚡'}</span>
-                    <span className="tetris-streak-label">{showChinese ? '连对' : 'Streak'}</span>
-                    <span className="tetris-streak-dots">
-                      {[0,1,2,3,4].map(i => (
-                        <span key={i} className={`tetris-dot ${i < correctStreak ? 'filled' : ''}`} />
-                      ))}
-                    </span>
-                  </div>
-                  {freeRotations > 0 && (
-                    <div className="tetris-free-rot-badge">
-                      🔄 ×{freeRotations} {showChinese ? '免费旋转' : 'Free Rotates'}
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* Desktop hint */}
                 <div className="tetris-hint-card">
@@ -935,9 +1081,34 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
                   <div className="tetris-hint-row"><kbd>↓</kbd> <span>{showChinese ? '加速下落' : 'Soft drop'}</span></div>
                   <div className="tetris-hint-row"><kbd>Space</kbd> <span>{showChinese ? '旋转 (答题)' : 'Rotate (quiz)'}</span></div>
                 </div>
+
+                {/* Pause button for Admin at bottom */}
+                {isAdmin && isPlaying && (
+                  <button
+                    type="button"
+                    onClick={() => setIsPaused(prev => !prev)}
+                    className="tetris-back-btn"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      background: 'var(--accent)',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                      marginTop: 'auto',
+                      textAlign: 'center'
+                    }}
+                  >
+                    {isPaused ? (showChinese ? '▶️ 继续' : '▶️ Resume') : (showChinese ? '⏸️ 暂停' : '⏸️ Pause')}
+                  </button>
+                )}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
           {/* Mobile controls */}
           {isPlaying && (
@@ -952,41 +1123,46 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
         </div>{/* /tetris-main-panel */}
 
         {/* ── Leaderboard panel ── */}
-        <div className="tetris-leaderboard-panel">
-          <h3 className="tetris-leaderboard-title">🏅 {showChinese ? '排行榜' : 'Leaderboard'}</h3>
-          <div className="tetris-leaderboard-content">
-            {loadingLB ? (
-              <p className="tetris-loading-text">Loading…</p>
-            ) : sortedLB.length === 0 ? (
-              <p className="tetris-empty-lb">
-                {showChinese
-                  ? '暂无记录。你会是第一名吗？🏆'
-                  : 'No records yet. Be the first! 🏆'}
-              </p>
-            ) : (
-              <table className="tetris-lb-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>{showChinese ? '玩家' : 'Player'}</th>
-                    <th>{showChinese ? '分数' : 'Score'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedLB.map((r, i) => (
-                    <tr key={r.id}>
-                      <td className="rank-cell">
-                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-                      </td>
-                      <td>{r.name || r.username}</td>
-                      <td className="score-cell font-mono">{r.score.toLocaleString()}</td>
+        {!isPlaying && (
+          <div className="tetris-leaderboard-panel">
+            <h3 className="tetris-leaderboard-title">🏅 {showChinese ? '排行榜' : 'Leaderboard'}</h3>
+            <div className="tetris-leaderboard-content">
+              {loadingLB ? (
+                <p className="tetris-loading-text">Loading…</p>
+              ) : sortedLB.length === 0 ? (
+                <p className="tetris-empty-lb">
+                  {showChinese
+                    ? '暂无记录。你会是第一名吗？🏆'
+                    : 'No records yet. Be the first! 🏆'}
+                </p>
+              ) : (
+                <table className="tetris-lb-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>{showChinese ? '玩家' : 'Player'}</th>
+                      <th>{showChinese ? '分数' : 'Score'}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {sortedLB.map((r, i) => {
+                      const isLastPlay = lastSavedRecordId !== null && r.id === lastSavedRecordId;
+                      return (
+                        <tr key={r.id} style={isLastPlay ? { background: 'rgba(168, 85, 247, 0.18)', borderLeft: '3px solid var(--accent)' } : {}}>
+                          <td className="rank-cell">
+                            {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                          </td>
+                          <td>{r.name || r.username}</td>
+                          <td className="score-cell font-mono" style={isLastPlay ? { fontWeight: '800' } : {}}>{r.score.toLocaleString()}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>{/* /tetris-layout */}
 
@@ -995,30 +1171,40 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
         <div className="tetris-question-overlay">
           <div className="tetris-question-card">
 
-            {/* Countdown ring — top-left */}
-            <div
-              className="tetris-countdown"
-              style={{
-                '--pct': `${(questionCountdown / 10) * 100}%`,
-                '--col': questionCountdown > 6 ? '#10b981' : questionCountdown > 3 ? '#eab308' : '#ef4444',
-              } as React.CSSProperties}
-            >
-              {questionCountdown}
-            </div>
-
-            {/* Streak badge — top-right */}
-            {correctStreak > 0 && (
-              <div className="tetris-q-streak-badge">
-                🔥 {correctStreak}/5
+            {/* Modal header row lining up countdown, badge, and streak */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px', minHeight: '52px' }}>
+              {/* Countdown ring */}
+              <div
+                className="tetris-countdown"
+                style={{
+                  '--pct': `${(questionCountdown / 10) * 100}%`,
+                  '--col': questionCountdown > 6 ? '#10b981' : questionCountdown > 3 ? '#eab308' : '#ef4444',
+                } as React.CSSProperties}
+              >
+                {questionCountdown}
               </div>
-            )}
 
-            <div className="tetris-question-badge">
-              {question.qType === 'En2Cn'
-                ? (showChinese ? '英→中' : 'EN → CN')
-                : (showChinese ? '中→英' : 'CN → EN')}
-              &nbsp;·&nbsp;
-              {showChinese ? '答对才能旋转！' : 'Answer correctly to rotate!'}
+              {/* Question type badge */}
+              <div className="tetris-question-badge" style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', flex: 1 }}>
+                <div>
+                  {question.qType === 'En2Cn'
+                    ? (showChinese ? '英→中' : 'EN → CN')
+                    : (showChinese ? '中→英' : 'CN → EN')}
+                </div>
+                <div style={{ fontSize: '0.85rem', opacity: 0.85 }}>
+                  {showChinese ? '答对才能旋转！' : 'Answer correctly to rotate!'}
+                </div>
+              </div>
+
+              {/* Streak badge wrapper (equal width to countdown to keep badge centered) */}
+              <div style={{ width: '48px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                {correctStreak > 0 && (
+                  <div className="tetris-q-streak-badge">
+                    <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>🔥</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: '800' }}>{correctStreak}/5</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="tetris-question-prompt">{question.prompt}</div>
             <div className="tetris-question-options">
@@ -1033,39 +1219,53 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
                     className={cls}
                     onClick={() => handleAnswer(i)}
                     disabled={answerResult !== null || questionCountdown === 0}
+                    style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60px', padding: '16px 24px' }}
                   >
-                    {opt}
+                    <span className="tetris-opt-num" style={{
+                      position: 'absolute',
+                      top: '6px',
+                      left: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(168, 85, 247, 0.15)',
+                      border: '1px solid rgba(168, 85, 247, 0.3)',
+                      borderRadius: '4px',
+                      width: '16px',
+                      height: '16px',
+                      fontSize: '0.65rem',
+                      fontWeight: '800',
+                      color: 'var(--accent)'
+                    }}>{i + 1}</span>
+                    <span>{opt}</span>
                   </button>
                 );
               })}
             </div>
-            {answerResult === 'correct' && (
-              <div className="tetris-answer-feedback correct">✅ {showChinese ? '答对了！旋转中...' : 'Correct! Rotating…'}</div>
-            )}
-            {answerResult === 'wrong' && (
-              <div className="tetris-answer-feedback wrong">
-                {questionCountdown === 0
+            <div 
+              className={`tetris-answer-feedback ${answerResult === 'correct' ? 'correct' : answerResult === 'wrong' ? 'wrong' : ''}`}
+              style={{
+                visibility: answerResult ? 'visible' : 'hidden',
+                background: answerResult ? undefined : 'transparent',
+                borderColor: answerResult ? undefined : 'transparent',
+                minHeight: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '4px 0'
+              }}
+            >
+              {answerResult === 'correct' && `✅ ${showChinese ? '答对了！旋转中...' : 'Correct! Rotating…'}`}
+              {answerResult === 'wrong' && (
+                questionCountdown === 0
                   ? (showChinese ? '⏰ 时间到！' : '⏰ Time up!')
-                  : `❌ ${showChinese ? '答错了，继续加油！' : 'Wrong! No rotation.'}`}
-              </div>
-            )}
+                  : `❌ ${showChinese ? '答错了，继续加油！' : 'Wrong! No rotation.'}`
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Celebration toast (5-in-a-row) ── */}
-      {streakCelebration && (
-        <div className="tetris-celebration-toast">
-          🎉 {showChinese ? '连对 5 次！获得 5 次免费旋转！' : '5 in a row! +5 Free Rotations!'} 🔄
-        </div>
-      )}
-
-      {/* ── Free rotation flash ── */}
-      {freeRotFlash && (
-        <div className="tetris-free-rot-toast">
-          🔄 {showChinese ? '免费旋转！' : 'Free Rotation!'}
-        </div>
-      )}
 
     </div>
   );

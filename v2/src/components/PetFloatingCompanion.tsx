@@ -192,7 +192,7 @@ export function PetFloatingCompanion() {
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference * (1 - dailyProgress.percent / 100);
 
-  if (location.pathname === '/dashboard' || location.pathname.includes('vocab-guide')) {
+  if (location.pathname === '/dashboard' || location.pathname.includes('vocab-guide') || location.pathname.includes('tetris')) {
     return null;
   }
 

@@ -16,6 +16,7 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
   const [goalCelebrating, setGoalCelebrating] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'stats' | 'evolution' | 'activities'>('stats');
+  const [activeGameTab, setActiveGameTab] = useState<'schulte' | 'cardmatch' | 'tetris'>('schulte');
   const navigate = useNavigate();
   const [showBuyFoodModal, setShowBuyFoodModal] = useState(false);
   const [showGameCenterModal, setShowGameCenterModal] = useState(false);
@@ -797,124 +798,162 @@ export function PetDashboardWidget({ showChinese = false }: { showChinese?: bool
                   </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {/* Game 1: Schulte Table */}
-                  <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '16px', background: 'var(--bg)', textAlign: 'left' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-h)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🧩</span> Schulte Table (舒尔特方格)
-                      </span>
-                      <span style={{ fontSize: '0.85rem', background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
-                        Rounds: {petState.schulteRoundsLeft || 0}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
-                      Click numbers from 1 to N in order as fast as possible to train your focus!
-                      <br />
-                      (按顺序从 1 点击到 N，练习你的专注力！)
-                    </p>
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                {/* Horizontal tabs matching textbook unit selector style */}
+                <div className="db-units-tabs" style={{ display: 'flex', gap: '5px', overflowX: 'auto', marginBottom: '0', borderBottom: 'none' }}>
+                  {(['schulte', 'cardmatch', 'tetris'] as const).map(tab => {
+                    const isActive = activeGameTab === tab;
+                    let emoji = '🧩';
+                    if (tab === 'cardmatch') emoji = '🎴';
+                    if (tab === 'tetris') emoji = '🧱';
+                    return (
                       <button
+                        key={tab}
                         type="button"
-                        className="pet-widget-btn feed-btn"
-                        onClick={() => {
-                          navigate('/games/schulte');
+                        onClick={() => setActiveGameTab(tab)}
+                        className={`db-tab-btn ${isActive ? 'active' : ''}`}
+                        style={{
+                          padding: '8px 16px',
+                          border: 'none',
+                          borderBottom: isActive ? '3px solid var(--tab-active-text)' : '3px solid transparent',
+                          background: isActive ? 'var(--card-bg)' : 'transparent',
+                          cursor: 'pointer',
+                          fontSize: '1.25rem',
+                          borderRadius: '5px 5px 0 0',
+                          transition: 'all 0.2s',
+                          flex: 1,
+                          textAlign: 'center',
+                          justifyContent: 'center'
                         }}
-                        disabled={(petState.schulteRoundsLeft || 0) <= 0}
-                        style={{ flex: 1, padding: '8px', fontSize: '0.85rem', opacity: (petState.schulteRoundsLeft || 0) <= 0 ? 0.5 : 1 }}
                       >
-                        Play (开始游戏)
+                        {emoji}
                       </button>
-                      <button
-                        type="button"
-                        className="pet-widget-btn pet-btn"
-                        onClick={handleBuySchulteRounds}
-                        disabled={cannotBuy || (petState.goldCoins || 0) < 1}
-                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: '#fff', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
-                      >
-                        Buy 3 Rounds (1 🪙)
-                      </button>
-                    </div>
-                  </div>
+                    );
+                  })}
+                </div>
 
-                  {/* Game 2: Card Match */}
-                  <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '16px', background: 'var(--bg)', textAlign: 'left' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-h)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🎴</span> Card Match (卡片配对)
-                      </span>
-                      <span style={{ fontSize: '0.85rem', background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
-                        Rounds: {petState.cardMatchRoundsLeft || 0}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
-                      Match English words to Chinese translations from your textbook's vocab guides!
-                      <br />
-                      (配对英文单词与课本词汇表的中文翻译！)
-                    </p>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button
-                        type="button"
-                        className="pet-widget-btn feed-btn"
-                        onClick={() => {
-                          navigate('/games/card-match');
-                        }}
-                        disabled={(petState.cardMatchRoundsLeft || 0) <= 0}
-                        style={{ flex: 1, padding: '8px', fontSize: '0.85rem', opacity: (petState.cardMatchRoundsLeft || 0) <= 0 ? 0.5 : 1 }}
-                      >
-                        Play (开始游戏)
-                      </button>
-                      <button
-                        type="button"
-                        className="pet-widget-btn pet-btn"
-                        onClick={handleBuyCardMatchRounds}
-                        disabled={cannotBuy || (petState.goldCoins || 0) < 1}
-                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: '#fff', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
-                      >
-                        Buy 3 Rounds (1 🪙)
-                      </button>
-                    </div>
-                  </div>
+                {/* Card containing current active game content */}
+                <div className="db-unit-card" style={{ border: '1px solid var(--border)', borderRadius: '0 10px 10px 10px', background: 'var(--card-bg)', overflow: 'visible', position: 'relative' }}>
+                  <div className="db-unit-body" style={{ padding: '16px' }}>
+                    {activeGameTab === 'schulte' && (
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-h)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🧩</span> Schulte Table (舒尔特方格)
+                          </span>
+                          <span style={{ fontSize: '0.85rem', background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                            Rounds: {petState.schulteRoundsLeft || 0}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+                          Click numbers from 1 to N in order as fast as possible to train your focus!
+                          <br />
+                          (按顺序从 1 点击到 N，练习你的专注力！)
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            type="button"
+                            className="pet-widget-btn feed-btn"
+                            onClick={() => {
+                              navigate('/games/schulte');
+                            }}
+                            disabled={(petState.schulteRoundsLeft || 0) <= 0}
+                            style={{ flex: 1, padding: '8px', fontSize: '0.85rem', opacity: (petState.schulteRoundsLeft || 0) <= 0 ? 0.5 : 1 }}
+                          >
+                            Play (开始游戏)
+                          </button>
+                          <button
+                            type="button"
+                            className="pet-widget-btn pet-btn"
+                            onClick={handleBuySchulteRounds}
+                            disabled={cannotBuy || (petState.goldCoins || 0) < 1 || (petState.schulteRoundsLeft || 0) > 0}
+                            style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: '#fff', opacity: (cannotBuy || (petState.goldCoins || 0) < 1 || (petState.schulteRoundsLeft || 0) > 0) ? 0.5 : 1 }}
+                          >
+                            Buy 3 Rounds (1 🪙)
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Game 3: Vocab Tetris */}
-                  <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '16px', background: 'var(--bg)', textAlign: 'left' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-h)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🧱</span> Vocab Tetris (单词方块)
-                      </span>
-                      <span style={{ fontSize: '0.85rem', background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
-                        Rounds: {petState.tetrisRoundsLeft || 0}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
-                      Answer vocab questions to rotate falling blocks! Move with arrow keys.
-                      <br />
-                      (答对词汇题才能旋转方块，用方向键移动！)
-                    </p>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button
-                        type="button"
-                        className="pet-widget-btn feed-btn"
-                        onClick={() => {
-                          navigate('/games/tetris');
-                        }}
-                        disabled={(petState.tetrisRoundsLeft || 0) <= 0}
-                        style={{ flex: 1, padding: '8px', fontSize: '0.85rem', opacity: (petState.tetrisRoundsLeft || 0) <= 0 ? 0.5 : 1 }}
-                      >
-                        Play (开始游戏)
-                      </button>
-                      <button
-                        type="button"
-                        className="pet-widget-btn pet-btn"
-                        onClick={handleBuyTetrisRounds}
-                        disabled={cannotBuy || (petState.goldCoins || 0) < 1}
-                        style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: '#fff', opacity: (cannotBuy || (petState.goldCoins || 0) < 1) ? 0.5 : 1 }}
-                      >
-                        Buy 3 Rounds (1 🪙)
-                      </button>
-                    </div>
-                  </div>
+                    {activeGameTab === 'cardmatch' && (
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-h)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🎴</span> Card Match (卡片配对)
+                          </span>
+                          <span style={{ fontSize: '0.85rem', background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                            Rounds: {petState.cardMatchRoundsLeft || 0}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+                          Match English words to Chinese translations from your textbook's vocab guides!
+                          <br />
+                          (配对英文单词与课本词汇表的中文翻译！)
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            type="button"
+                            className="pet-widget-btn feed-btn"
+                            onClick={() => {
+                              navigate('/games/card-match');
+                            }}
+                            disabled={(petState.cardMatchRoundsLeft || 0) <= 0}
+                            style={{ flex: 1, padding: '8px', fontSize: '0.85rem', opacity: (petState.cardMatchRoundsLeft || 0) <= 0 ? 0.5 : 1 }}
+                          >
+                            Play (开始游戏)
+                          </button>
+                          <button
+                            type="button"
+                            className="pet-widget-btn pet-btn"
+                            onClick={handleBuyCardMatchRounds}
+                            disabled={cannotBuy || (petState.goldCoins || 0) < 1 || (petState.cardMatchRoundsLeft || 0) > 0}
+                            style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: '#fff', opacity: (cannotBuy || (petState.goldCoins || 0) < 1 || (petState.cardMatchRoundsLeft || 0) > 0) ? 0.5 : 1 }}
+                          >
+                            Buy 3 Rounds (1 🪙)
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
+                    {activeGameTab === 'tetris' && (
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-h)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🧱</span> Vocab Tetris (单词方块)
+                          </span>
+                          <span style={{ fontSize: '0.85rem', background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                            Rounds: {petState.tetrisRoundsLeft || 0}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+                          Answer vocab questions to rotate falling blocks! Move with arrow keys.
+                          <br />
+                          (答对词汇题才能旋转方块，用方向键移动！)
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            type="button"
+                            className="pet-widget-btn feed-btn"
+                            onClick={() => {
+                              navigate('/games/tetris');
+                            }}
+                            disabled={(petState.tetrisRoundsLeft || 0) <= 0}
+                            style={{ flex: 1, padding: '8px', fontSize: '0.85rem', opacity: (petState.tetrisRoundsLeft || 0) <= 0 ? 0.5 : 1 }}
+                          >
+                            Play (开始游戏)
+                          </button>
+                          <button
+                            type="button"
+                            className="pet-widget-btn pet-btn"
+                            onClick={handleBuyTetrisRounds}
+                            disabled={cannotBuy || (petState.goldCoins || 0) < 1 || (petState.tetrisRoundsLeft || 0) > 0}
+                            style={{ padding: '8px 12px', fontSize: '0.85rem', borderColor: 'var(--accent)', color: '#fff', opacity: (cannotBuy || (petState.goldCoins || 0) < 1 || (petState.tetrisRoundsLeft || 0) > 0) ? 0.5 : 1 }}
+                          >
+                            Buy 3 Rounds (1 🪙)
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
