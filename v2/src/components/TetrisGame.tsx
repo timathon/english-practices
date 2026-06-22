@@ -268,6 +268,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
   const freeRotationsRef = useRef(0);
   const [streakCelebration, setStreakCelebration] = useState(false);
   const [freeRotFlash, setFreeRotFlash] = useState(false);
+  const [wrongAnswerFlash, setWrongAnswerFlash] = useState(false);
 
   /* Countdown */
   const [questionCountdown, setQuestionCountdown] = useState(10);
@@ -490,6 +491,31 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
     else setP({ ...p, y: newY });
   }, [lockAndSpawn]);
 
+  const hardDrop = useCallback(() => {
+    const p = pieceRef.current;
+    if (!p || showQuestionRef.current) return;
+    let currentY = p.y;
+    while (!collides(boardRef.current, p.shape, p.x, currentY + 1)) {
+      currentY++;
+    }
+    const updatedPiece = { ...p, y: currentY };
+    setP(updatedPiece);
+    pieceRef.current = updatedPiece;
+    lockAndSpawn();
+  }, [lockAndSpawn]);
+
+  const lastDownClickRef = useRef<number>(0);
+  const handleDownClick = useCallback(() => {
+    const now = Date.now();
+    const diff = now - lastDownClickRef.current;
+    lastDownClickRef.current = now;
+    if (diff < 300) {
+      hardDrop();
+    } else {
+      softDrop();
+    }
+  }, [softDrop, hardDrop]);
+
   /* ── Rotation helpers ────────────────────────────────────────── */
   const applyRotation = useCallback(() => {
     const p = pieceRef.current;
@@ -557,6 +583,16 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
     } else {
       correctStreakRef.current = 0;
       setCorrectStreak(0);
+      setGameTimeLeft(prev => {
+        if (prev <= 10) {
+          triggerGameOver('timeup');
+          return 0;
+        }
+        return prev - 10;
+      });
+      setWrongAnswerFlash(true);
+      setTimeout(() => setWrongAnswerFlash(false), 2000);
+
       setTimeout(() => {
         setShowQuestion(false);
         setQuestion(null);
@@ -660,7 +696,6 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
         if (stopSteps >= maxStopSteps) {
           running = false;
           const chosen = pool[currentIdx];
-          setIsLotteryRunning(false);
           setIsLotteryStopping(false);
           setSelectedGuideId(chosen.id);
           lotteryTimerId.current = window.setTimeout(() => fetchAndStartGame(chosen.id), 800);
@@ -705,6 +740,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
   };
 
   const startGame = () => {
+    setIsLotteryRunning(false);
     const p = makePiece(), n = makePiece();
     boardRef.current = emptyBoard();
     pieceRef.current = p;
@@ -1074,6 +1110,22 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
                     🔄 {showChinese ? '免费旋转！' : 'Free Rotation!'}
                   </div>
                 )}
+                {wrongAnswerFlash && (
+                  <div className="tetris-wrong-flash-inline" style={{
+                    padding: '8px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid #ef4444',
+                    borderRadius: '8px',
+                    color: '#ef4444',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    animation: 'pulse 1.5s infinite',
+                    marginTop: '8px'
+                  }}>
+                    ❌ {showChinese ? '答错了！时间 -10 秒' : 'Wrong Answer! Time -10s'}
+                  </div>
+                )}
 
                 {/* Desktop hint */}
                 <div className="tetris-hint-card">
@@ -1115,7 +1167,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
             <div className="tetris-mobile-controls">
               <button className="tetris-ctrl-btn" onClick={moveLeft} aria-label="Move left">◀</button>
               <button className="tetris-ctrl-btn rotate" onClick={triggerRotation} aria-label="Rotate">🔄</button>
-              <button className="tetris-ctrl-btn" onClick={softDrop} aria-label="Soft drop">▼</button>
+              <button className="tetris-ctrl-btn" onClick={handleDownClick} aria-label="Soft drop">▼</button>
               <button className="tetris-ctrl-btn" onClick={moveRight} aria-label="Move right">▶</button>
             </div>
           )}
