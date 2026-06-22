@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import './GrammarWizardShell.css'
+import { DailyLockModal } from './DailyLockModal'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { useSession, API_URL } from '../lib/auth'
@@ -58,6 +59,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    const [isNewHigh, setIsNewHigh] = useState(false)
    const [invisibleMode, setInvisibleMode] = useState(false)
    const [historyModal, setHistoryModal] = useState<{title: string, logs: any[]} | null>(null)
+   const [lockModalOpen, setLockModalOpen] = useState(false)
    const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
    const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
    const timerExpiredRef = useRef(false)
@@ -113,6 +115,11 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    }, [])
 
    const handleChallengeSelect = (c: any) => {
+       const stats = getStats(c.title);
+        if (stats.todayBest === 100) {
+            setLockModalOpen(true);
+            return;
+        }
        const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
        if (!hasConsumed) return;
        
@@ -528,13 +535,19 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                                            {trialsTracker.getRemainingTrials(practiceId, c.id)} / 5 attempts left
                                        </div>
                                    </div>
-                                   <button 
-                                        className="gw-start-btn" 
-                                        onClick={() => handleChallengeSelect(c)}
-                                        style={trialsTracker.getRemainingTrials(practiceId, c.id) === 0 ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                   >
-                                        {trialsTracker.getRemainingTrials(practiceId, c.id) === 0 ? 'OUT OF ATTEMPTS' : 'START'}
-                                   </button>
+                                    {(() => {
+                                        const isLockedToday = getStats(c.title).todayBest === 100;
+                                        const isOutOfAttempts = trialsTracker.getRemainingTrials(practiceId, c.id) === 0;
+                                        return (
+                                            <button 
+                                                className="gw-start-btn" 
+                                                onClick={() => handleChallengeSelect(c)}
+                                                style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
+                                            >
+                                                {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'OUT OF ATTEMPTS' : 'START'}
+                                            </button>
+                                        );
+                                    })()}
                                 </div>
                                <div className="gw-card-stats">
                                    {(() => {
@@ -593,6 +606,10 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                            <button className="gw-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
                        </div>
                    </div>
+               )}
+
+               {lockModalOpen && (
+                   <DailyLockModal onClose={() => setLockModalOpen(false)} />
                )}
            </div>
        )
@@ -807,6 +824,10 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                             </div>
                         </div>
                     </div>
+                )}
+
+               {lockModalOpen && (
+                    <DailyLockModal onClose={() => setLockModalOpen(false)} />
                 )}
             </div>
        </div>

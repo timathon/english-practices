@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import './SpellingHeroShell.css'
+import { DailyLockModal } from './DailyLockModal'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
@@ -205,6 +206,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
     // History modal
     const [historyChallenge, setHistoryChallenge] = useState<Challenge | null>(null)
+    const [lockModalOpen, setLockModalOpen] = useState(false)
     const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
     const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
     const [vocabGuide, setVocabGuide] = useState<any>(null)
@@ -367,6 +369,11 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     // ── Start a challenge ─────────────────────────────────────────────────────
 
     const handleChallengeSelect = (c: Challenge) => {
+        const stats = getChallengeStats(practiceId, c.id);
+        if (stats.today.best === 100) {
+            setLockModalOpen(true);
+            return;
+        }
         if (!trialsTracker.consumeTrial(practiceId, c.id)) return
 
         const shuffled = [...c.questions].sort(() => Math.random() - 0.5).map((q: any, i: number) => ({ ...q, originalIndex: i }))
@@ -1026,14 +1033,19 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                                             {rem} / 5 left
                                         </span>
                                     </div>
-                                    <button
-                                        className="sh-start-btn"
-                                        onClick={() => handleChallengeSelect(c)}
-                                        disabled={rem === 0}
-                                        style={rem === 0 ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                    >
-                                        {rem === 0 ? 'LIMIT' : 'START'}
-                                    </button>
+                                    {(() => {
+                                        const isLockedToday = s.today.best === 100;
+                                        const isOutOfAttempts = rem === 0;
+                                        return (
+                                            <button
+                                                className="sh-start-btn"
+                                                onClick={() => handleChallengeSelect(c)}
+                                                style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
+                                            >
+                                                {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'LIMIT' : 'START'}
+                                            </button>
+                                        );
+                                    })()}
                                 </div>
                                 <div className="sh-card-stats">
                                     <div
@@ -1092,6 +1104,10 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                     </div>
                 </div>
             )}
+
+            {lockModalOpen && (
+                 <DailyLockModal onClose={() => setLockModalOpen(false)} />
+             )}
         </div>
     )
 }

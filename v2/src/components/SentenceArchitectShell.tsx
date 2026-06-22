@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import './SentenceArchitectShell.css'
+import { DailyLockModal } from './DailyLockModal'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
@@ -106,6 +107,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const [isNewHigh, setIsNewHigh] = useState(false)
     const [invisibleMode, setInvisibleMode] = useState(false)
     const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
+    const [lockModalOpen, setLockModalOpen] = useState(false)
     const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
     const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
     const timerExpiredRef = useRef(false)
@@ -168,6 +170,11 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     }, [])
 
     const handleChallengeSelect = (c: any) => {
+        const stats = getStats(c.title);
+        if (stats.todayBest === 100) {
+            setLockModalOpen(true);
+            return;
+        }
         const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
         if (!hasConsumed) return;
 
@@ -710,13 +717,19 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                                             {trialsTracker.getRemainingTrials(practiceId, c.id)} / 5 left
                                         </div>
                                     </div>
-                                    <button
-                                        className="sa-start-btn"
-                                        onClick={() => handleChallengeSelect(c)}
-                                        style={trialsTracker.getRemainingTrials(practiceId, c.id) === 0 ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                    >
-                                        {trialsTracker.getRemainingTrials(practiceId, c.id) === 0 ? 'LIMIT' : 'START'}
-                                    </button>
+                                    {(() => {
+                                        const isLockedToday = getStats(c.title).todayBest === 100;
+                                        const isOutOfAttempts = trialsTracker.getRemainingTrials(practiceId, c.id) === 0;
+                                        return (
+                                            <button 
+                                                className="sa-start-btn" 
+                                                onClick={() => handleChallengeSelect(c)}
+                                                style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
+                                            >
+                                                {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'LIMIT' : 'START'}
+                                            </button>
+                                        );
+                                    })()}
                                 </div>
                                 <div className="sa-card-stats">
                                     {(() => {
@@ -777,7 +790,6 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                         </div>
                     </div>
                 )}
-
                 {/* Settings Modal */}
                 {showSettings && (
                     <div className="sa-modal-overlay" onClick={() => setShowSettings(false)}>
@@ -805,6 +817,10 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                         </div>
                     </div>
                 )}
+
+                {lockModalOpen && (
+                     <DailyLockModal onClose={() => setLockModalOpen(false)} />
+                 )}
             </div>
         )
     }
@@ -1067,6 +1083,10 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                         </div>
                     </div>
                 )}
+
+                {lockModalOpen && (
+                     <DailyLockModal onClose={() => setLockModalOpen(false)} />
+                 )}
             </div>
         </div>
     )
