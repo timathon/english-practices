@@ -12,6 +12,8 @@ This document defines the rules for extracting and converting textbook data into
   - Identify up to **10 extra** difficult words or phrases (e.g., "has got", "have got", "Good work", "What's up", "work together").
 - **Data Points:**
   - `unit_vocabulary`: Array of extracted vocabulary objects.
+  - `word`: The English word or phrase.
+  - `meaning`: Chinese translation, prioritizing the Chinese in the appendix vocabulary list (including parts of speech where applicable).
   - `page_number`: Extract from the `--- PRINTED PAGE X ---` markers. If a page is `Unnumbered`, infer its number based on the surrounding pages (e.g., if it precedes page 15, it is 14).
   - `context_sentence`: Find the exact sentence from the dialogue or text.
   - `ipa`: Standard British (UK) IPA for single words.
@@ -21,7 +23,26 @@ This document defines the rules for extracting and converting textbook data into
     - Multi-syllable: Exact syllable breakdown (e.g., `an-i-mal`).
     - **Note:** Consonant digraphs (e.g., 'th', 'sh') between a vowel and a silent 'e' still follow the **相对开音节 (VCe)** pattern (e.g., 'clothes'). Avoid misclassifying these as Vowel Teams. Ensure precise classification based on spelling rules rather than heuristic phonetic impressions.
   - `memorization_hook`: Creative mnemonics in Chinese.
-- **Format:** Strict JSON following the `vocab-guide` template.
+- **Format:** Strict JSON following this template:
+```json
+{
+  "level": "Grade 8 Semester 1 Unit 1",
+  "source_file": "A8A-U1.md",
+  "unit_vocabulary": [
+    {
+      "word": "ancient",
+      "ipa": "/ˈeɪnʃənt/",
+      "meaning": "adj. 古代的；古老的",
+      "syllable_type": "an-cient",
+      "comparison": "ancient vs patient",
+      "page_number": "2",
+      "context_sentence": "Yaming saw...",
+      "memorization_hook": "联想记忆: ..."
+    }
+  ]
+}
+```
+
 
 ## 2. Vocab Master (VM)
 **Source:** `*-vocab-guide.json`
