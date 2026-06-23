@@ -75,7 +75,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     onExpire: () => {
       if (timerExpired) return;
       setTimerExpired(true);
-      handleCheckAnswer(null, true);
+      handleCheckAnswer(undefined, true);
     }
   });
 
@@ -232,8 +232,9 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
       } else if (currentMistake.practiceType === 'sentence-architect' && q.en) {
         const sentenceAudioUrl = q.audio || getAudioUrl(q.en, currentMistake.textbook);
         setTimeout(() => playAudio(sentenceAudioUrl), 250);
-      } else if (currentMistake.practiceType === 'spelling-hero' && q.audio) {
-        setTimeout(() => playAudio(q.audio), 250);
+      } else if (currentMistake.practiceType === 'spelling-hero') {
+        const wordAudioUrl = q.audio || getAudioUrl(q.word, currentMistake.textbook);
+        setTimeout(() => playAudio(wordAudioUrl), 250);
       }
     } else {
       playSfx('wrong');
@@ -249,6 +250,11 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
         question: q,
         wrongAnswer
       });
+
+      if (currentMistake.practiceType === 'spelling-hero') {
+        const wordAudioUrl = q.audio || getAudioUrl(q.word, currentMistake.textbook);
+        setTimeout(() => playAudio(wordAudioUrl), 250);
+      }
     }
   }, [currentMistake, locked, selectedOption, userSelection, spellingSelection, userId, countdownTimer]);
 
