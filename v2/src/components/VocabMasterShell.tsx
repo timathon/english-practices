@@ -433,7 +433,8 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        
         const scorePercent = Math.round((totalScore / queue.length) * 100)
         if (!invisibleMode) {
-            syncRecord(scorePercent, false)
+            const isLastMain = !isRedemption && currentIndex === queue.length - 1
+            syncRecord(scorePercent, isLastMain)
         }
     }, [locked, selectedOption, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer, userId, practiceId, textbook, unit, invisibleMode, isCf])
 

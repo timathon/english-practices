@@ -505,7 +505,8 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
         const totalCorrect = newLog.filter(s => s === 'green').length
         const scorePercent = Math.round((totalCorrect / queueRef.current.length) * 100)
-        syncRecord(scorePercent, false)
+        const isLastMain = !redemptionRef.current && indexRef.current === queueRef.current.length - 1
+        syncRecord(scorePercent, isLastMain)
     }, [q, locked, userChunks, soupSelection, playSfx, playAudio, isReady])
 
     // Keep ref in sync so onExpire uses the latest checkAnswer

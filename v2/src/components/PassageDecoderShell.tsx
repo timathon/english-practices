@@ -534,7 +534,8 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
         const scorePercent = Math.round((totalScore / queue.length) * 100)
         if (!invisibleMode) {
-            syncRecord(scorePercent, false)
+            const isLastMain = !isRedemption && currentIndex === queue.length - 1
+            syncRecord(scorePercent, isLastMain)
         }
     }, [locked, q, mistakeQueue, scoreLog, currentIndex, isRedemption, queue.length, countdownTimer, invisibleMode])
 
