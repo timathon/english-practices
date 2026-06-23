@@ -580,7 +580,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
     const getStats = (challengeTitle: string) => {
         const u = `${practiceId} (${challengeTitle})`
-        const logs = practiceRecords.filter(r => r.unit === u)
+        const logs = practiceRecords.filter(r => r.unit === u && !r.unfinished)
 
         const todayStr = new Date().toLocaleDateString()
         const todayLogs = logs.filter(r => new Date(r.createdAt).toLocaleDateString() === todayStr)
