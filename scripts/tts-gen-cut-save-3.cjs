@@ -39,13 +39,15 @@ async function getAudioBatch(tasks, book, options = {}) {
     if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
     const batchId = crypto.randomBytes(4).toString('hex');
-    const batchOutputDir = path.join(TEMP_DIR, `batch_${batchId}`);
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const folderName = `batch-${dateStr}-${batchId}`;
+    const batchOutputDir = path.join(TEMP_DIR, folderName);
     if (!fs.existsSync(batchOutputDir)) fs.mkdirSync(batchOutputDir, { recursive: true });
     const generatedFiles = []; // { text, filename } entries accumulated during this batch
 
-    const combinedWav = path.join(batchOutputDir, `batch_${batchId}_combined.wav`);
-    const tempPy = path.join(batchOutputDir, `batch_${batchId}_tts.py`);
-    const pyLog = path.join(batchOutputDir, `batch_${batchId}_py.log`);
+    const combinedWav = path.join(batchOutputDir, `${folderName}_combined.wav`);
+    const tempPy = path.join(batchOutputDir, `${folderName}_tts.py`);
+    const pyLog = path.join(batchOutputDir, `${folderName}_py.log`);
     const sentencesMd = path.join(batchOutputDir, 'tts-sentences.md');
 
     const separator = " [BREAK] . . . . . [BREAK] "; 
@@ -355,7 +357,7 @@ except Exception as e:
                     }
                     success = true;
                 }
-                return { success: true, quotaExhausted, batchId, files: generatedFiles };
+                return { success: true, quotaExhausted, batchId, folderName, files: generatedFiles };
             } catch (err) {
                 if (err.code === 'ETIMEDOUT' || err.signal === 'SIGTERM') {
                     timeoutsCount++;

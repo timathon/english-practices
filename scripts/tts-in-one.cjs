@@ -196,7 +196,7 @@ async function main() {
         // Collect per-file info from this batch
         if (result.files && result.batchId) {
             for (const f of result.files) {
-                generationLog.push({ batchId: result.batchId, text: f.text, hash: f.hash, filename: f.filename, status: f.status });
+                generationLog.push({ batchId: result.batchId, folderName: result.folderName, text: f.text, hash: f.hash, filename: f.filename, status: f.status });
             }
         }
     }
@@ -216,9 +216,9 @@ async function main() {
 
         const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-        const tableRows = generationLog.map(({ batchId, text, hash, status }, idx) => {
-            // MP3 is at batch_${batchId}/${hash}.mp3 relative to the report file
-            const audioSrc = hash ? `batch_${batchId}/${hash}.mp3` : '';
+        const tableRows = generationLog.map(({ batchId, folderName, text, hash, status }, idx) => {
+            const dirName = folderName || `batch_${batchId}`;
+            const audioSrc = hash ? `${dirName}/${hash}.mp3` : '';
             const statusCell = status === 1
                 ? `<span class="badge ok">✅ 1</span>`
                 : `<span class="badge fail">❌ 2</span>`;
@@ -227,7 +227,7 @@ async function main() {
                 : `<span class="na">—</span>`;
 
             // Calculate duration using ffprobe
-            const audioPathOnDisk = hash ? path.join(reportDir, `batch_${batchId}`, `${hash}.mp3`) : '';
+            const audioPathOnDisk = hash ? path.join(reportDir, dirName, `${hash}.mp3`) : '';
             let durationStr = '—';
             let isTooDifferent = false;
             if (audioPathOnDisk && fs.existsSync(audioPathOnDisk)) {
