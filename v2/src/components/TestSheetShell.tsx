@@ -231,7 +231,15 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
     if (submitted) return
     setUserAnswers(prev => {
       const next = { ...prev, [qId]: value }
-      if (section && typeof value === 'string' && value !== "") {
+      if (
+        section &&
+        typeof value === 'string' &&
+        value !== "" &&
+        (section.type === 'fill-in-the-blank-wordbank' ||
+         section.type === 'cloze-passage-wordbank' ||
+         section.type === 'definition-matching' ||
+         section.type === 'dialogue-completion')
+      ) {
         section.questions.forEach(otherQ => {
           if (otherQ.id !== qId && next[otherQ.id] === value) {
             next[otherQ.id] = ""
@@ -395,17 +403,27 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                   </option>
                 ))
               ) : section.type === 'cloze-passage-wordbank' ? (
-                section.wordbank?.map((word, wordIdx) => (
-                  <option key={wordIdx} value={word}>
-                    {word}
-                  </option>
-                ))
+                section.wordbank?.map((word, wordIdx) => {
+                  const usingQ = section.questions.find(otherQ => userAnswers[otherQ.id] === word)
+                  const showSuffix = usingQ && usingQ.id !== q.id
+                  const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
+                  return (
+                    <option key={wordIdx} value={word}>
+                      {word}{suffix}
+                    </option>
+                  )
+                })
               ) : section.type === 'dialogue-completion' ? (
-                section.options?.map((opt, optIdx) => (
-                  <option key={optIdx} value={opt}>
-                    {opt}
-                  </option>
-                ))
+                section.options?.map((opt, optIdx) => {
+                  const usingQ = section.questions.find(otherQ => userAnswers[otherQ.id] === opt)
+                  const showSuffix = usingQ && usingQ.id !== q.id
+                  const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
+                  return (
+                    <option key={optIdx} value={opt}>
+                      {opt}{suffix}
+                    </option>
+                  )
+                })
               ) : null}
             </select>
             {submitted && !isUserCorrect && (
