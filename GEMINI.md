@@ -150,7 +150,7 @@ This document defines the rules for extracting and converting textbook data into
   - **A6B (Modules):**
     - "Unit 1 Activity 2" -> `*-text-navigator-u1a2.json`
     - "Unit 2 Activity 2" -> `*-text-navigator-u2a2.json`
-- **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts).
+- **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts). Keep the hierarchy structured with a maximum nesting depth of 4 levels (i.e. `root` -> Level 1 -> Level 2 -> Level 3 -> Level 4) to ensure it is easy to navigate. Do not chain sentences infinitely into a single deep path.
 - **Node Rules:**
   - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`).
   - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence**.
@@ -415,3 +415,6 @@ Whenever any JSON files in the `data/` directory are added, modified, or deleted
    ```bash
    API_URL=https://epapi.vibequizzing.com node scripts/seed_practices.cjs
    ```
+
+> [!WARNING]
+> The agent MUST NOT run the seeding script with the `--force` flag (which clears the database) unless they have received clear, explicit permission from the user.
