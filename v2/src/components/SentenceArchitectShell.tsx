@@ -145,6 +145,10 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
     const loadRecords = async () => {
         try {
+            const cached = cache.getRecords()
+            if (cached) {
+                setPracticeRecords(cached)
+            }
             const res = await fetch(API_URL + '/api/records', { credentials: 'include' })
             const json = await res.json()
             if (Array.isArray(json)) {

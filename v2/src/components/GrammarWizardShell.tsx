@@ -94,18 +94,22 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    const primaryColor = data.primaryColor || '#8b5cf6' // Elegant purple for grammar wizards
    const primaryDarkColor = data.primaryColorDark || '#6d28d9'
 
-   const loadRecords = async () => {
-       try {
-           const res = await fetch(API_URL + '/api/records', { credentials: 'include' })
-           const json = await res.json()
-           if (Array.isArray(json)) {
-               cache.setRecords(json)
-               setPracticeRecords(json)
-           }
-       } catch (e) {
-           console.error("Failed to load records", e)
-       }
-   }
+    const loadRecords = async () => {
+        try {
+            const cached = cache.getRecords()
+            if (cached) {
+                setPracticeRecords(cached)
+            }
+            const res = await fetch(API_URL + '/api/records', { credentials: 'include' })
+            const json = await res.json()
+            if (Array.isArray(json)) {
+                cache.setRecords(json)
+                setPracticeRecords(json)
+            }
+        } catch (e) {
+            console.error("Failed to load records", e)
+        }
+    }
    
    useEffect(() => {
        loadRecords()
