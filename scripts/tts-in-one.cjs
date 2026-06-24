@@ -237,7 +237,7 @@ async function main() {
                     if (!isNaN(duration)) {
                         const words = text.split(/\s+/).filter(Boolean);
                         const wordCount = words.length;
-                        const estMin = Math.max(0.5, wordCount * 0.15);
+                        const estMin = Math.max(0.2, wordCount * 0.15);
                         const estMax = Math.max(3.0, wordCount * 0.9 + 2.0);
                         isTooDifferent = duration < estMin || duration > estMax || duration === 0;
                         durationStr = `${duration.toFixed(2)}s <span style="font-size:0.75rem;opacity:0.6;">(est: ${(wordCount * 0.35 + 0.5).toFixed(1)}s)</span>`;
