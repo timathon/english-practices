@@ -238,7 +238,8 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
         (section.type === 'fill-in-the-blank-wordbank' ||
          section.type === 'cloze-passage-wordbank' ||
          section.type === 'definition-matching' ||
-         section.type === 'dialogue-completion')
+         section.type === 'dialogue-completion' ||
+         section.type === 'cloze-passage')
       ) {
         section.questions.forEach(otherQ => {
           if (otherQ.id !== qId && next[otherQ.id] === value) {
@@ -397,11 +398,18 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
             >
               <option value="">({blankNum})</option>
               {section.type === 'cloze-passage' ? (
-                q.options?.map((opt, optIdx) => (
-                  <option key={optIdx} value={optIdx}>
-                    {opt}
-                  </option>
-                ))
+                q.options?.map((opt, optIdx) => {
+                  const usingQ = section.questions.find(
+                    otherQ => userAnswers[otherQ.id] !== undefined && userAnswers[otherQ.id] !== '' && Number(userAnswers[otherQ.id]) === optIdx
+                  )
+                  const showSuffix = usingQ && usingQ.id !== q.id
+                  const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
+                  return (
+                    <option key={optIdx} value={optIdx}>
+                      {opt}{suffix}
+                    </option>
+                  )
+                })
               ) : section.type === 'cloze-passage-wordbank' ? (
                 section.wordbank?.map((word, wordIdx) => {
                   const usingQ = section.questions.find(otherQ => userAnswers[otherQ.id] === word)
