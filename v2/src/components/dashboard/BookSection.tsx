@@ -461,6 +461,23 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 .filter((p: any) => p.type.toLowerCase().includes('text-navigator'))
                 .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
 
+              // Collapse multiple separate TN files into a single dashboard entry
+              const tnGroupItems: any[] = textNavigatorItems.length > 1
+                ? [{
+                    ...textNavigatorItems[0],
+                    type: 'text-navigator',
+                    _tnSiblingIds: textNavigatorItems.slice(1).map((i: any) => i.id),
+                    content: {
+                      level: textNavigatorItems[0].content?.level,
+                      part: textNavigatorItems[0].content?.part,
+                      sections: textNavigatorItems.map((i: any) => ({
+                        section: i.content?.section ?? i.type,
+                        tree: i.content?.tree ?? {},
+                      }))
+                    }
+                  }]
+                : textNavigatorItems;
+
               const passageDecoderItems = items
                 .filter((p: any) => p.type.toLowerCase().includes('passage-decoder'))
                 .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
@@ -491,7 +508,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
               const groups = [
                 { title: '1. Recall Map', items: recallMapItems },
                 { title: '2. Vocabulary & Spelling', items: vocabItems },
-                { title: '3. Text Navigators & Passage Decoders', items: [...textNavigatorItems, ...passageDecoderItems] },
+                { title: '3. Text Navigators & Passage Decoders', items: [...tnGroupItems, ...passageDecoderItems] },
                 { title: '4. Sentence & Grammar', items: [...grammarWizardItems, ...sentenceArchitectItems] },
                 { title: '5. Writing Maps', items: writingMapItems },
                 { title: 'Other Practices', items: otherItems }
@@ -527,6 +544,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                       const isSA = p.type.toLowerCase().includes('sentence-architect');
                       const isGW = p.type.toLowerCase().includes('grammar-wizard');
                       const isPD = p.type.toLowerCase().includes('passage-decoder');
+                      const isTN = p.type.toLowerCase().includes('text-navigator');
 
                       if ((isVM || isSA || isGW) && p.content?.challenges) {
                         total = p.content.challenges.length;
@@ -544,6 +562,19 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                         let sumMax = 0;
                         for (const sec of p.content.sections) {
                           const secRecords = records.filter((r: any) => r.unit === `${p.id} (${sec.title})` && !r.unfinished);
+                          if (secRecords.length > 0) {
+                            doneCount++;
+                            sumMax += Math.max(...secRecords.map((r: any) => r.score));
+                          }
+                        }
+                        if (doneCount > 0) avg = Math.round(sumMax / doneCount);
+                      } else if (isTN) {
+                        // Multi-section format: { sections: [{section, tree}] }; single: { tree, section }
+                        const tnSections: { section: string }[] = p.content?.sections ?? (p.content?.tree ? [{ section: p.content.section }] : []);
+                        total = tnSections.length;
+                        let sumMax = 0;
+                        for (const sec of tnSections) {
+                          const secRecords = records.filter((r: any) => r.unit === `${p.id} (${sec.section})` && !r.unfinished);
                           if (secRecords.length > 0) {
                             doneCount++;
                             sumMax += Math.max(...secRecords.map((r: any) => r.score));
@@ -616,7 +647,8 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                       return (
                         <li key={p.id}>
                           <Link 
-                            to={`/practice/${p.id}`} 
+                            to={`/practice/${p.id}`}
+                            state={p._tnSiblingIds ? { tnSiblingIds: p._tnSiblingIds } : undefined}
                             className="db-practice-link"
                             onClick={() => {
                               sessionStorage.setItem('last-active-textbook', p.textbook);
@@ -631,7 +663,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                             <span className="db-practice-name">
                               <FadingPracticeName name={formatType(p.type)} showChinese={showChinese} />
                             </span>
-                            {(isVM || isSH || isSA || isGW || isPD) && total > 0 && (
+                            {(isVM || isSH || isSA || isGW || isPD || isTN) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
                                 title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}

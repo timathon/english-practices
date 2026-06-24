@@ -158,22 +158,28 @@ This document defines the rules for extracting and converting textbook data into
   - **A3A - A5B:** "Start Up", "Speed Up".
   - **A7A - A8B:** "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".
   - **A6B:** "Unit 1 Activity 2", "Unit 2 Activity 2".
-**Target:** `*-text-navigator-[prefix]-[section-slug].json` (Save in the same folder as source)
+**Target:** `*-text-navigator.json` — a **single file per unit** containing all applicable sections. (Save in the same folder as source)
 
-- **Naming Convention:**
-  - **A3A - A5B:**
-    - "Start Up" -> `*-text-navigator-2-start-up.json`
-    - "Speed Up" -> `*-text-navigator-3-speed-up.json`
-  - **A7A - A8B:**
-    - "Section A Activity 2a" -> `*-text-navigator-a2a.json`
-    - "Section B Activity 1b" -> `*-text-navigator-b1b.json`
-    - "Section B Activity 2a" -> `*-text-navigator-b2a.json`
-  - **A6B (Modules):**
-    - "Unit 1 Activity 2" -> `*-text-navigator-u1a2.json`
-    - "Unit 2 Activity 2" -> `*-text-navigator-u2a2.json`
-- **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts). Keep the hierarchy structured with a maximum nesting depth of 4 levels (i.e. `root` -> Level 1 -> Level 2 -> Level 3 -> Level 4) to ensure it is easy to navigate. Do not chain sentences infinitely into a single deep path.
+- **File Format:** All sections for a unit are consolidated into one JSON file. The top-level structure has shared `level` and `part` metadata, plus a `sections` array. Each element of `sections` is an object with a `section` string (the section name) and a `tree` object (the hierarchical mindmap for that section).
+```json
+{
+  "level": "Grade 3 Semester 2",
+  "part": "Unit 2",
+  "sections": [
+    {
+      "section": "Start Up",
+      "tree": { "id": "root", ... }
+    },
+    {
+      "section": "Speed Up",
+      "tree": { "id": "root", ... }
+    }
+  ]
+}
+```
+- **Structure:** Each `tree` is a hierarchical mindmap (root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts). Keep the hierarchy structured with a maximum nesting depth of 4 levels (i.e. `root` -> Level 1 -> Level 2 -> Level 3 -> Level 4) to ensure it is easy to navigate. Do not chain sentences infinitely into a single deep path.
 - **Node Rules:**
-  - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`).
+  - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`). IDs must be unique within each `tree`.
   - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence**.
   - `cn`: Chinese translation of the sentence.
   - `notes`: Brief explanations of difficult vocabulary, expressions, or grammar points.
@@ -184,10 +190,9 @@ This document defines the rules for extracting and converting textbook data into
   - `keywords`: A **comma-separated string** of 2-5 trigger words acting as hints (e.g., `"huge, storm"`, not for `root`).
   - `highlight`: (Optional) A **comma-separated string** of glue words or transition phrases to be highlighted in the browser (e.g., `"However, but, For example"`). Use `...` for split patterns.
   - `children`: Recursive array of child nodes (empty array `[]` for leaf nodes).
-- **Metadata:**
+- **Metadata (top-level, shared across all sections):**
   - `level`: e.g., "Grade 3 Semester 2".
   - `part`: e.g., "Unit 2".
-  - `section`: The section name (e.g., "Start Up").
 
 ## 7. Model Writing Map (MWM)
 **Source:** `*-writing-task.md` (and the corresponding `*.md` unit data).
@@ -450,3 +455,14 @@ In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the re
 
 If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
 <!-- CODEGRAPH_END -->
+
+## General Agent Rules
+
+> [!IMPORTANT]
+> **Always plan before acting.** Before carrying out any task — including file creation, data extraction, JSON generation, or code changes — present a clear, step-by-step plan to the user and wait for explicit approval. The plan must include:
+> - What files will be read as sources
+> - What files will be created or modified (with target paths)
+> - The exact approach/method to be used (e.g., "merge via Python script", "manually write JSON", "use sed")
+> - Any assumptions or decisions made
+>
+> Do **not** begin execution until the user confirms the plan.

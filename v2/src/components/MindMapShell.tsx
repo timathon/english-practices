@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import type { ReactNode } from 'react'
 import md5 from 'md5'
 import { Link } from 'react-router-dom'
 import { audioCache } from '../lib/audioCache'
@@ -36,9 +37,10 @@ interface MindMapShellProps {
   textbook: string
   unit: string
   isWritingMap: boolean
+  headerSlot?: ReactNode
 }
 
-export function MindMapShell({ data, textbook, unit, isWritingMap }: MindMapShellProps) {
+export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }: MindMapShellProps) {
   const [treeData, setTreeData] = useState<Node>(() => JSON.parse(JSON.stringify(data.tree)))
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [actionSteps, setActionSteps] = useState<(() => void)[]>([])
@@ -809,9 +811,15 @@ export function MindMapShell({ data, textbook, unit, isWritingMap }: MindMapShel
           <div className="mm-header-titles">
             <h1>
               {isWritingMap ? "Writing Map" : "Text Navigator"}: {data.part} 
-              <span className="mm-section-title"> {data.section}</span>
+              <span className="mm-section-title"> {data.level}</span>
             </h1>
-            <p>{data.level}</p>
+            {headerSlot ? (
+              <div className="mm-header-slot" style={{ display: 'flex', overflow: 'hidden' }}>
+                {headerSlot}
+              </div>
+            ) : (
+              <p>{data.section}</p>
+            )}
           </div>
         </div>
 

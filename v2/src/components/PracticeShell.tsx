@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import { API_URL } from '../lib/auth'
 import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
 import { VocabMasterShell } from './VocabMasterShell'
@@ -7,6 +7,7 @@ import { RecallMapShell } from './RecallMapShell'
 import { VocabGuideShell } from './VocabGuideShell'
 import { SpellingHeroShell } from './SpellingHeroShell'
 import { MindMapShell } from './MindMapShell'
+import { TextNavigatorShell } from './TextNavigatorShell'
 import { SentenceArchitectShell } from './SentenceArchitectShell'
 import { GrammarWizardShell } from './GrammarWizardShell'
 import { PassageDecoderShell } from './PassageDecoderShell'
@@ -16,30 +17,53 @@ import { TestSheetShell } from './TestSheetShell'
 // Render practice components based on type
 export function PracticeShell() {
     const { id } = useParams()
+    const location = useLocation()
+    const tnSiblingIds: string[] = (location.state as any)?.tnSiblingIds || []
     const [practice, setPractice] = useState<any>(null)
     const [error, setError] = useState('')
+
+    const decrypt = (data: any) => {
+        if (data.isEncrypted && typeof data.content === 'string') {
+            try {
+                data.content = decryptContent(data.content, OBSCURE_KEY)
+            } catch (decErr: any) {
+                console.error('Decryption failed:', decErr)
+                throw new Error('Failed to decrypt practice content.')
+            }
+        }
+        return data
+    }
     
     useEffect(() => {
-        fetch(API_URL + `/api/practices/${id}`, { credentials: 'include' })
-           .then(res => res.json())
-           .then(data => {
-               if (data.error) {
-                   setError(data.error)
-               } else {
-                   if (data.isEncrypted && typeof data.content === 'string') {
-                       try {
-                           data.content = decryptContent(data.content, OBSCURE_KEY)
-                       } catch (decErr: any) {
-                           console.error("Decryption failed:", decErr)
-                           setError("Failed to decrypt practice content.")
-                           return
-                       }
-                   }
-                   setPractice(data)
-               }
-           })
-           .catch(e => setError(e.message))
-    }, [id])
+        const allIds = [id!, ...tnSiblingIds]
+        Promise.all(
+            allIds.map(pid =>
+                fetch(API_URL + `/api/practices/${pid}`, { credentials: 'include' }).then(r => r.json())
+            )
+        ).then(results => {
+            const [main, ...siblings] = results
+            if (main.error) { setError(main.error); return }
+            try {
+                const mainData = decrypt(main)
+                if (siblings.length > 0 && mainData.type?.toLowerCase().includes('text-navigator')) {
+                    const siblingData = siblings.map(decrypt)
+                    const allItems = [mainData, ...siblingData]
+                    mainData.content = {
+                        level: mainData.content?.level,
+                        part: mainData.content?.part,
+                        sections: allItems.map((item: any) => ({
+                            section: item.content?.section ?? item.type,
+                            tree: item.content?.tree ?? {},
+                        }))
+                    }
+                }
+                setPractice(mainData)
+            } catch (e: any) {
+                setError(e.message)
+            }
+        }).catch(e => setError(e.message))
+    }, [id, tnSiblingIds.join(',')])
+
     
     if (error) return <div className="practice-error">Error: {error}</div>
     if (!practice) return <div className="practice-loading">Loading...</div>
@@ -79,9 +103,12 @@ export function PracticeShell() {
     }
 
 
-    if (cleanType.startsWith('text-navigator') || cleanType.startsWith('writing-map')) {
-        const isWritingMap = cleanType.startsWith('writing-map')
-        return <MindMapShell data={practice.content} textbook={practice.textbook} unit={practice.unit} isWritingMap={isWritingMap} />
+    if (cleanType.startsWith('text-navigator')) {
+        return <TextNavigatorShell data={practice.content} textbook={practice.textbook} unit={practice.unit} />
+    }
+
+    if (cleanType.startsWith('writing-map')) {
+        return <MindMapShell data={practice.content} textbook={practice.textbook} unit={practice.unit} isWritingMap={true} />
     }
     
     return (
