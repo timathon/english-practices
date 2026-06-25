@@ -89,8 +89,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
     if (blocker.state === 'blocked') {
       const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
       if (proceed) {
-        setShowStartModal(true);
-        blocker.reset();
+        blocker.proceed();
       } else {
         blocker.reset();
       }
@@ -108,6 +107,17 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [showStartModal, submitted]);
+
+  useEffect(() => {
+    if (!showStartModal && !submitted) {
+      document.body.classList.add('taking-test');
+    } else {
+      document.body.classList.remove('taking-test');
+    }
+    return () => {
+      document.body.classList.remove('taking-test');
     };
   }, [showStartModal, submitted]);
 

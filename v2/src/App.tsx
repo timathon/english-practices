@@ -298,7 +298,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260625-1831
+            v260625-1851
           </div>
         </div>
       )}
@@ -309,7 +309,16 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
   );
 }
 
-function RootLayout({ session, showChinese, setShowChinese }: any) {
+import { createContext, useContext } from 'react'
+
+const LanguageContext = createContext<{ showChinese: boolean; setShowChinese: React.Dispatch<React.SetStateAction<boolean>> } | null>(null);
+
+function RootLayout() {
+  const { data: session } = useSession();
+  const lang = useContext(LanguageContext);
+  const showChinese = lang?.showChinese ?? false;
+  const setShowChinese = lang?.setShowChinese ?? (() => {});
+
   return (
     <>
       <Navigation session={session} showChinese={showChinese} onCycleComplete={() => setShowChinese((prev: boolean) => !prev)} />
@@ -323,6 +332,116 @@ function RootLayout({ session, showChinese, setShowChinese }: any) {
   );
 }
 
+function IndexRoute() {
+  const { data: session } = useSession();
+  return session ? <Navigate to="/dashboard" replace /> : <Navigate to="/signin" replace />;
+}
+
+function DashboardRoute() {
+  const lang = useContext(LanguageContext);
+  return (
+    <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+        <Dashboard showChinese={lang?.showChinese ?? false} />
+      </div>
+    </div>
+  );
+}
+
+function CardMatchRoute() {
+  const lang = useContext(LanguageContext);
+  return (
+    <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+        <CardMatchGame showChinese={lang?.showChinese ?? false} />
+      </div>
+    </div>
+  );
+}
+
+function TetrisRoute() {
+  const lang = useContext(LanguageContext);
+  return (
+    <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+        <TetrisGame showChinese={lang?.showChinese ?? false} />
+      </div>
+    </div>
+  );
+}
+
+const router = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
+      {
+        path: "/",
+        element: <IndexRoute />
+      },
+      {
+        path: "/signin",
+        element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>
+      },
+      {
+        path: "/admin-login",
+        element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>
+      },
+      {
+        path: "/dashboard",
+        element: <DashboardRoute />
+      },
+      {
+        path: "/manual",
+        element: (
+          <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+              <UsageGuide />
+            </div>
+          </div>
+        )
+      },
+      {
+        path: "/practice/:id",
+        element: <PracticeShell />
+      },
+      {
+        path: "/games/schulte",
+        element: (
+          <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+              <SchulteGame />
+            </div>
+          </div>
+        )
+      },
+      {
+        path: "/games/card-match",
+        element: <CardMatchRoute />
+      },
+      {
+        path: "/games/tetris",
+        element: <TetrisRoute />
+      },
+      {
+        path: "/switch-user",
+        element: (
+          <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+              <SwitchUser />
+            </div>
+          </div>
+        )
+      },
+      {
+        path: "/admin/manage-users",
+        element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>
+      }
+    ]
+  }
+], {
+  basename: import.meta.env.BASE_URL.slice(0, -1) || ''
+});
+
 function App() {
   const { data: session, isPending } = useSession()
   const [showChinese, setShowChinese] = useState(false);
@@ -335,9 +454,9 @@ function App() {
 
     let lastSyncTime = Date.now();
     const handleSyncTrigger = () => {
-      const now = Date.now();
-      if (now - lastSyncTime > 15000) {
-        lastSyncTime = now;
+      const wNow = Date.now();
+      if (wNow - lastSyncTime > 15000) {
+        lastSyncTime = wNow;
         petService.syncWithServer();
         window.dispatchEvent(new CustomEvent('ep-trigger-sync'));
       }
@@ -360,97 +479,11 @@ function App() {
 
   if (isPending) return <div style={{ padding: 20 }}>Loading...</div>
 
-  const router = createBrowserRouter([
-    {
-      element: <RootLayout session={session} showChinese={showChinese} setShowChinese={setShowChinese} />,
-      children: [
-        {
-          path: "/",
-          element: session ? <Navigate to="/dashboard" replace /> : <Navigate to="/signin" replace />
-        },
-        {
-          path: "/signin",
-          element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>
-        },
-        {
-          path: "/admin-login",
-          element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>
-        },
-        {
-          path: "/dashboard",
-          element: (
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <Dashboard showChinese={showChinese} />
-              </div>
-            </div>
-          )
-        },
-        {
-          path: "/manual",
-          element: (
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <UsageGuide />
-              </div>
-            </div>
-          )
-        },
-        {
-          path: "/practice/:id",
-          element: <PracticeShell />
-        },
-        {
-          path: "/games/schulte",
-          element: (
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <SchulteGame />
-              </div>
-            </div>
-          )
-        },
-        {
-          path: "/games/card-match",
-          element: (
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <CardMatchGame showChinese={showChinese} />
-              </div>
-            </div>
-          )
-        },
-        {
-          path: "/games/tetris",
-          element: (
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <TetrisGame showChinese={showChinese} />
-              </div>
-            </div>
-          )
-        },
-        {
-          path: "/switch-user",
-          element: (
-            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                <SwitchUser />
-              </div>
-            </div>
-          )
-        },
-        {
-          path: "/admin/manage-users",
-          element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>
-        }
-      ]
-    }
-  ], {
-    basename: import.meta.env.BASE_URL.slice(0, -1) || ''
-  });
-
-  return <RouterProvider router={router} />
+  return (
+    <LanguageContext.Provider value={{ showChinese, setShowChinese }}>
+      <RouterProvider router={router} />
+    </LanguageContext.Provider>
+  )
 }
 
 export default App;
