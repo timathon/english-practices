@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import './PassageDecoderShell.css'
+import { DailyLockModal } from './DailyLockModal'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { useSession, API_URL } from '../lib/auth'
@@ -272,6 +273,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const [isNewHigh, setIsNewHigh] = useState(false)
     const [invisibleMode, setInvisibleMode] = useState(false)
     const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
+    const [lockModalOpen, setLockModalOpen] = useState(false)
 
     const primaryColor = data.primaryColor || '#4f46e5'
     const primaryDarkColor = data.primaryColorDark || '#3730a3'
@@ -298,6 +300,11 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     }, [])
 
     const handleSectionSelect = (sec: any) => {
+        const stats = getStats(sec.title);
+        if (stats.todayBest === 100) {
+            setLockModalOpen(true);
+            return;
+        }
         const hasConsumed = trialsTracker.consumeTrial(practiceId, sec.id)
         if (!hasConsumed) return;
 
@@ -744,13 +751,19 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                 {trialsTracker.getRemainingTrials(practiceId, sec.id)} / 5 attempts left
                                             </div>
                                         </div>
-                                        <button
-                                            className="pd-start-btn"
-                                            onClick={() => handleSectionSelect(sec)}
-                                            style={trialsTracker.getRemainingTrials(practiceId, sec.id) === 0 ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                        >
-                                            {trialsTracker.getRemainingTrials(practiceId, sec.id) === 0 ? 'LOCKED' : 'START'}
-                                        </button>
+                                        {(() => {
+                                            const isLockedToday = getStats(sec.title).todayBest === 100;
+                                            const isOutOfAttempts = trialsTracker.getRemainingTrials(practiceId, sec.id) === 0;
+                                            return (
+                                                <button
+                                                    className="pd-start-btn"
+                                                    onClick={() => handleSectionSelect(sec)}
+                                                    style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
+                                                >
+                                                    {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'OUT OF ATTEMPTS' : 'START'}
+                                                </button>
+                                            );
+                                        })()}
                                     </div>
                                     <div className="pd-card-stats">
                                         {(() => {
@@ -810,6 +823,9 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                             <button className="pd-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
                         </div>
                     </div>
+                )}
+                {lockModalOpen && (
+                    <DailyLockModal onClose={() => setLockModalOpen(false)} />
                 )}
             </div>
         )
