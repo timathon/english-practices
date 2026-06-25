@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useBlocker } from 'react-router-dom'
 import './VocabMasterShell.css'
 import { DailyLockModal } from './DailyLockModal'
 import md5 from 'md5'
@@ -88,6 +88,37 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
    const timerExpiredRef = useRef(false)
    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+
+   const blocker = useBlocker(
+       ({ nextLocation, currentLocation }) =>
+           !!activeChallenge && !completed && nextLocation.pathname !== currentLocation.pathname
+   );
+
+    useEffect(() => {
+        if (blocker.state === 'blocked') {
+            const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
+            if (proceed) {
+                setActiveChallenge(null);
+                blocker.reset();
+            } else {
+                blocker.reset();
+            }
+        }
+    }, [blocker]);
+
+   useEffect(() => {
+       const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+           if (activeChallenge && !completed) {
+               e.preventDefault();
+               e.returnValue = '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
+               return '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
+           }
+       };
+       window.addEventListener('beforeunload', handleBeforeUnload);
+       return () => {
+           window.removeEventListener('beforeunload', handleBeforeUnload);
+       };
+   }, [activeChallenge, completed]);
 
     useEffect(() => {
         if (!activeChallenge && lastFinishedChallengeId) {

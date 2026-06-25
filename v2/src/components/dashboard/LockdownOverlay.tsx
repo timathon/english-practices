@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { API_URL } from '../../lib/auth'
 
 export function LockdownOverlay({ nextAvailableAt, showChinese }: { nextAvailableAt: string, showChinese: boolean }) {

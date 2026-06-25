@@ -362,7 +362,7 @@ export function TetrisGame({ showChinese = false }: { showChinese?: boolean }) {
         getLabel(a.textbook, a.unit).localeCompare(getLabel(b.textbook, b.unit), undefined, { numeric: true, sensitivity: 'base' })
       ));
     };
-    if (cached?.length > 0) loadGuides(cached);
+    if (cached && cached.length > 0) loadGuides(cached);
     else fetch(`${API_URL}/api/practices`, { credentials: 'include' })
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) { cache.setPractices(d); loadGuides(d); } })

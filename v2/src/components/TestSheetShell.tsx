@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useBlocker } from 'react-router-dom'
 import { audioCache } from '../lib/audioCache'
 import { API_URL, useSession } from '../lib/auth'
 import { cache } from '../lib/cache'
@@ -79,6 +79,37 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
   const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
   const recordIdPromiseRef = useRef<Promise<string> | null>(null)
   const hasFinishedRef = useRef(false)
+
+  const blocker = useBlocker(
+    ({ nextLocation, currentLocation }) =>
+      !showStartModal && !submitted && nextLocation.pathname !== currentLocation.pathname
+  );
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
+      if (proceed) {
+        setShowStartModal(true);
+        blocker.reset();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!showStartModal && !submitted) {
+        e.preventDefault();
+        e.returnValue = '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
+        return '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [showStartModal, submitted]);
 
   // Scroll active tab into view when section changes
   useEffect(() => {

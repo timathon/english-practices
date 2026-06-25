@@ -124,7 +124,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
   useEffect(() => {
     if (isTestdrive && session?.user?.username !== 'test0' && (session?.user as any)?.testdriveWindowStart) {
-      const start = new Date((session.user as any).testdriveWindowStart).getTime();
+      const start = new Date((session?.user as any).testdriveWindowStart).getTime();
       const usageLimit = 20 * 60 * 1000;
       const cooldownPeriod = 1 * 60 * 60 * 1000;
       const nextAvailableAt = new Date(start + cooldownPeriod).toISOString();
@@ -448,7 +448,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
       <ScrollDownHint />
       {isTestdrive && !testdriveBook && !loading && !testdriveLockdown && (
         <TestdriveSelector 
-          username={session.user.username}
+          username={session?.user?.username || undefined}
           books={practices.reduce((acc, p) => {
             if ((p.textbook === 'C-GIU' && p.unit === 'General') || p.textbook === 'GENERAL') return acc;
             if (!acc[p.textbook]) acc[p.textbook] = {};
@@ -764,7 +764,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
       {activeMistakeReview && (
         <MistakeReviewer
-          userId={userId}
+          userId={userId || ''}
           initialMistakes={activeMistakeReview}
           onClose={handleCloseReviewer}
           isPreReview={isPreReview}

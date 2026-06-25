@@ -1,4 +1,4 @@
-import React from 'react'
+
 
 export function QuickNav({ showChinese }: { showChinese: boolean }) {
   return (

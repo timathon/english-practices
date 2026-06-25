@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useBlocker } from 'react-router-dom'
 import './PassageDecoderShell.css'
 import { DailyLockModal } from './DailyLockModal'
 import { audioCache } from '../lib/audioCache'
@@ -251,6 +251,37 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
     const hasFinishedRef = useRef(false)
 
+    const blocker = useBlocker(
+        ({ nextLocation, currentLocation }) =>
+            !!activeSection && !completed && nextLocation.pathname !== currentLocation.pathname
+    );
+
+    useEffect(() => {
+        if (blocker.state === 'blocked') {
+            const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
+            if (proceed) {
+                setActiveSection(null);
+                blocker.reset();
+            } else {
+                blocker.reset();
+            }
+        }
+    }, [blocker]);
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (activeSection && !completed) {
+                e.preventDefault();
+                e.returnValue = '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
+                return '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [activeSection, completed]);
+
     // Play sentence audio automatically for student's book passage decoder (ending with -s) or workbook passage decoder (ending with -w) with tts: 1
     useEffect(() => {
         if (!autoPlay) return;
@@ -337,7 +368,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     }
 
     const loadQuestion = (currentQueue: any[], currentMistakes: any[], index: number, redemption: boolean) => {
-        let nextQ = null
+        let nextQ: any = null
         let isRedemp = redemption
 
         if (index < currentQueue.length) {

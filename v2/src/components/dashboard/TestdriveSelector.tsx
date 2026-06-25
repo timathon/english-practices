@@ -1,8 +1,7 @@
-import React from 'react'
 import { getTextbookEmoji } from '../../lib/textbooks'
 import { translateTextbookName } from '../../lib/dashboardUtils'
 
-export function TestdriveSelector({ username, books, onSelect, showChinese }: { username?: string, books: Record<string, Record<string, any[]>>, onSelect: (tb: string) => void, showChinese: boolean }) {
+export function TestdriveSelector({ username, books, onSelect }: { username?: string, books: Record<string, Record<string, any[]>>, onSelect: (tb: string) => void, showChinese: boolean }) {
   let sortedBooks = Object.keys(books).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
   
   const isTest0 = username === 'test0';

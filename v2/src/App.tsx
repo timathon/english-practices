@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate, Link, Outlet } from 'react-router-dom'
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 const SignIn = lazy(() => import('./SignIn').then(m => ({ default: m.SignIn })))
 const Dashboard = lazy(() => import('./Dashboard').then(m => ({ default: m.Dashboard })))
@@ -298,7 +298,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260625-1325
+            v260625-1831
           </div>
         </div>
       )}
@@ -306,6 +306,20 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
         <IrregularVerbsModal onClose={() => setIsIrregularVerbsOpen(false)} />
       )}
     </div>
+  );
+}
+
+function RootLayout({ session, showChinese, setShowChinese }: any) {
+  return (
+    <>
+      <Navigation session={session} showChinese={showChinese} onCycleComplete={() => setShowChinese((prev: boolean) => !prev)} />
+      {session && <PetFloatingCompanion />}
+      <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}>
+          <Outlet />
+        </Suspense>
+      </main>
+    </>
   );
 }
 
@@ -344,71 +358,99 @@ function App() {
     };
   }, [session]);
 
-
-
   if (isPending) return <div style={{ padding: 20 }}>Loading...</div>
 
-  return (
-    <BrowserRouter basename={import.meta.env.BASE_URL.slice(0, -1) || ''}>
-      <Navigation session={session} showChinese={showChinese} onCycleComplete={() => setShowChinese(prev => !prev)} />
-      {session && <PetFloatingCompanion />}
-      <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
-        <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}>
-          <Routes>
-            <Route path="/" element={
-              session ? <Navigate to="/dashboard" replace /> : <Navigate to="/signin" replace />
-            } />
-            <Route path="/signin" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>} />
-            <Route path="/admin-login" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>} />
-            <Route path="/dashboard" element={
-              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                  <Dashboard showChinese={showChinese} />
-                </div>
+  const router = createBrowserRouter([
+    {
+      element: <RootLayout session={session} showChinese={showChinese} setShowChinese={setShowChinese} />,
+      children: [
+        {
+          path: "/",
+          element: session ? <Navigate to="/dashboard" replace /> : <Navigate to="/signin" replace />
+        },
+        {
+          path: "/signin",
+          element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>
+        },
+        {
+          path: "/admin-login",
+          element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><SignIn /></div>
+        },
+        {
+          path: "/dashboard",
+          element: (
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <Dashboard showChinese={showChinese} />
               </div>
-            } />
-            <Route path="/manual" element={
-              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                  <UsageGuide />
-                </div>
+            </div>
+          )
+        },
+        {
+          path: "/manual",
+          element: (
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <UsageGuide />
               </div>
-            } />
-            <Route path="/practice/:id" element={<PracticeShell />} />
-            <Route path="/games/schulte" element={
-              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                  <SchulteGame />
-                </div>
+            </div>
+          )
+        },
+        {
+          path: "/practice/:id",
+          element: <PracticeShell />
+        },
+        {
+          path: "/games/schulte",
+          element: (
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <SchulteGame />
               </div>
-            } />
-            <Route path="/games/card-match" element={
-              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                  <CardMatchGame showChinese={showChinese} />
-                </div>
+            </div>
+          )
+        },
+        {
+          path: "/games/card-match",
+          element: (
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <CardMatchGame showChinese={showChinese} />
               </div>
-            } />
-            <Route path="/games/tetris" element={
-              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                  <TetrisGame showChinese={showChinese} />
-                </div>
+            </div>
+          )
+        },
+        {
+          path: "/games/tetris",
+          element: (
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <TetrisGame showChinese={showChinese} />
               </div>
-            } />
-            <Route path="/switch-user" element={
-              <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
-                  <SwitchUser />
-                </div>
+            </div>
+          )
+        },
+        {
+          path: "/switch-user",
+          element: (
+            <div style={{ background: 'var(--page-bg)', flexGrow: 1, width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box', flexGrow: 1 }}>
+                <SwitchUser />
               </div>
-            } />
-            <Route path="/admin/manage-users" element={<div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>} />
-          </Routes>
-        </Suspense>
-      </main>
-    </BrowserRouter>
-  )
+            </div>
+          )
+        },
+        {
+          path: "/admin/manage-users",
+          element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>
+        }
+      ]
+    }
+  ], {
+    basename: import.meta.env.BASE_URL.slice(0, -1) || ''
+  });
+
+  return <RouterProvider router={router} />
 }
 
-export default App
+export default App;
