@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { MindMapShell } from './MindMapShell'
 
 interface SingleSectionData {
@@ -30,9 +30,11 @@ interface TextNavigatorShellProps {
 
 export function TextNavigatorShell({ data, textbook, unit }: TextNavigatorShellProps) {
   // Normalize both formats into a unified sections array
-  const sections: { section: string; tree: any }[] = isSingleSection(data)
-    ? [{ section: data.section, tree: data.tree }]
-    : data.sections
+  const sections = useMemo((): { section: string; tree: any }[] => {
+    return isSingleSection(data)
+      ? [{ section: data.section, tree: data.tree }]
+      : data.sections
+  }, [data])
 
   const storageKey = `active-section-${textbook}-${unit}`
   const [activeIdx, setActiveIdx] = useState(() => {
@@ -58,16 +60,17 @@ export function TextNavigatorShell({ data, textbook, unit }: TextNavigatorShellP
     }
   }, [sections.length])
 
-  const activeSection = sections[activeIdx]
-
   // Build the data object MindMapShell expects
-  const mindMapData: SingleSectionData = {
-    level: data.level,
-    part: data.part,
-    section: activeSection.section,
-    tree: activeSection.tree,
-    ...(isSingleSection(data) ? { writingPrompt: data.writingPrompt, tts: data.tts } : {}),
-  }
+  const mindMapData = useMemo((): SingleSectionData => {
+    const activeSection = sections[activeIdx]
+    return {
+      level: data.level,
+      part: data.part,
+      section: activeSection.section,
+      tree: activeSection.tree,
+      ...(isSingleSection(data) ? { writingPrompt: data.writingPrompt, tts: data.tts } : {}),
+    }
+  }, [data, sections, activeIdx])
 
   const handleSelectChange = (val: number) => {
     setActiveIdx(val)

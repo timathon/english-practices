@@ -87,11 +87,12 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Calculate audio URL for a node
+  const ttsBy = data?.tts?.by
   const getAudioUrl = useCallback((text: string) => {
     const hash = md5(text)
-    const isCf = data?.tts?.by === 'melotts'
+    const isCf = ttsBy === 'melotts'
     return `${PUBLIC_URL_BASE}/ep/${textbook.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`
-  }, [textbook, data])
+  }, [textbook, ttsBy])
 
   // Get max depth of tree
   const getMaxDepth = useCallback((node: Node, currentDepth = 0): number => {
@@ -531,9 +532,11 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
   useEffect(() => {
     if (!isPlayingAll) return
 
+    let active = true
+
     const playNext = async () => {
       if (currentPlayIndex < 0 || currentPlayIndex >= playAllQueue.length) {
-        stopPlayAll()
+        if (active) stopPlayAll()
         return
       }
 
@@ -541,12 +544,23 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
       scrollToNode(node.id, true)
       await playNodeAudioAsync(node)
 
-      if (isPlayingAll) {
+      if (active && isPlayingAll) {
         setCurrentPlayIndex(prev => prev + 1)
       }
     }
 
     playNext()
+
+    return () => {
+      active = false
+      if (activeAudioRef.current) {
+        activeAudioRef.current.pause()
+        activeAudioRef.current = null
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+      }
+    }
   }, [isPlayingAll, currentPlayIndex, playAllQueue, playNodeAudioAsync, stopPlayAll, scrollToNode])
 
   const startPlayAll = () => {
