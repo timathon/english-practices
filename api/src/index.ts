@@ -677,6 +677,15 @@ app.get('/api/practices/:id', async (c) => {
       }
   }
   
+  const etag = `W/"${new Date(item.updatedAt).getTime()}"`
+  c.header('ETag', etag)
+  c.header('Cache-Control', 'no-cache')
+
+  const ifNoneMatch = c.req.header('If-None-Match')
+  if (ifNoneMatch === etag) {
+      return c.body(null, 304)
+  }
+
   const encryptedContent = encryptContent(item.content, OBSCURE_KEY);
   return c.json({
       ...item,
