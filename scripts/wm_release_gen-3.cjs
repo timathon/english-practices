@@ -54,7 +54,7 @@ function generateHtml(data, jsonPath, indexPath = "index.html") {
     const appTitle = (jsonPath.includes('-text-navigator-') || jsonPath.includes('-recall-map')) ? "Text Navigator" : "Writing Map";
 
     let writingPrompt = "";
-    if (jsonPath.includes('-writing-map-')) {
+    if (jsonPath.includes('writing-map')) {
         let mdPath = "";
         if (jsonPath.includes('-model-x')) {
             mdPath = jsonPath.replace(/-writing-map-model-x-?\d*\.json$/, '-writing-task-x.md');
@@ -65,7 +65,7 @@ function generateHtml(data, jsonPath, indexPath = "index.html") {
             }
         }
         if (!mdPath || !fs.existsSync(mdPath)) {
-            mdPath = jsonPath.replace(/-writing-map-.+\.json$/, '-writing-task.md');
+            mdPath = jsonPath.replace(/-writing-map.*\.json$/, '-writing-task.md');
         }
         if (!mdPath || !fs.existsSync(mdPath)) {
             mdPath = jsonPath.replace(/\.json$/, '.md');

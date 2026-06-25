@@ -253,7 +253,7 @@ async function seed() {
             const content = JSON.parse(raw);
             
             // Extract writing task prompt for writing maps
-            if (filename.includes('-writing-map-')) {
+            if (filename.includes('writing-map')) {
                 const dir = path.dirname(filePath);
                 let mdPath = "";
                 if (filename.includes('-model-x')) {
@@ -265,7 +265,7 @@ async function seed() {
                     }
                 }
                 if (!mdPath || !fs.existsSync(mdPath)) {
-                    mdPath = path.join(dir, filename.replace(/-writing-map-.+\.json$/, '-writing-task.md'));
+                    mdPath = path.join(dir, filename.replace(/-writing-map.*\.json$/, '-writing-task.md'));
                 }
                 if (!mdPath || !fs.existsSync(mdPath)) {
                     mdPath = path.join(dir, filename.replace(/\.json$/, '.md'));

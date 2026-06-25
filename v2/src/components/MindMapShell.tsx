@@ -41,6 +41,7 @@ interface MindMapShellProps {
 }
 
 export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }: MindMapShellProps) {
+  const enableAudio = !isWritingMap || !!data.tts
   const [treeData, setTreeData] = useState<Node>(() => JSON.parse(JSON.stringify(data.tree)))
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [actionSteps, setActionSteps] = useState<(() => void)[]>([])
@@ -564,14 +565,14 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
 
   // Preload visible audio files in Sentence mode
   useEffect(() => {
-    if (showAllMode === 3) {
+    if (enableAudio && showAllMode === 3) {
       const visible = collectVisibleNodes(treeData)
       visible.forEach(n => {
         const url = getAudioUrl(n.text)
         audioCache.preloadAndSync(url)
       })
     }
-  }, [showAllMode, treeData, collectVisibleNodes, getAudioUrl])
+  }, [enableAudio, showAllMode, treeData, collectVisibleNodes, getAudioUrl])
 
   // Question Modal Helpers
   const showQuestionModal = (node: Node, event?: React.MouseEvent) => {
@@ -736,13 +737,15 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
           {/* Action Overlay */}
           {state === 'full' && isActionsActive && (
             <div className="mm-node-actions" onClick={(e) => e.stopPropagation()}>
-              <button 
-                className="mm-action-btn" 
-                onClick={(e) => { playNodeAudio(node, e); refreshActionsTimeout(); }}
-                title="Play Audio"
-              >
-                🔊
-              </button>
+              {enableAudio && (
+                <button 
+                  className="mm-action-btn" 
+                  onClick={(e) => { playNodeAudio(node, e); refreshActionsTimeout(); }}
+                  title="Play Audio"
+                >
+                  🔊
+                </button>
+              )}
 
               {node.cn && (
                 <button 
@@ -814,7 +817,7 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
               <span className="mm-section-title"> {data.level}</span>
             </h1>
             {headerSlot ? (
-              <div className="mm-header-slot" style={{ display: 'flex', overflow: 'hidden' }}>
+              <div className="mm-header-slot" style={{ display: 'flex', overflow: 'visible', position: 'relative' }}>
                 {headerSlot}
               </div>
             ) : (
@@ -827,12 +830,12 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
           {isWritingMap && data.writingPrompt && (
             <button className="mm-ctrl-btn prompt" onClick={() => setShowPromptModal(true)} title="Writing Prompt (写作要求)">📝</button>
           )}
-          {showAllMode === 3 && maxDepthVisible === maxTreeDepth && (
+          {enableAudio && showAllMode === 3 && maxDepthVisible === maxTreeDepth && (
             <button className="mm-ctrl-btn play-all" onClick={startPlayAll} title={isPlayingAll ? "Stop Play All (停止播放)" : "Play All (顺序播放)"}>
               {isPlayingAll ? "⏹️" : "🔊"}
             </button>
           )}
-          {showAllMode === 3 && maxDepthVisible === maxTreeDepth && <div className="mm-btn-separator" />}
+          {enableAudio && showAllMode === 3 && maxDepthVisible === maxTreeDepth && <div className="mm-btn-separator" />}
           <button 
             className="mm-ctrl-btn layout-toggle" 
             onClick={toggleLayoutOrientation} 

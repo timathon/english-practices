@@ -14,21 +14,23 @@ interface MultiSectionData {
   level: string
   part: string
   sections: { section: string; tree: any }[]
+  writingPrompt?: string
+  tts?: { by: string }
 }
 
-type TextNavigatorData = SingleSectionData | MultiSectionData
+type WritingMapData = SingleSectionData | MultiSectionData
 
-function isSingleSection(data: TextNavigatorData): data is SingleSectionData {
+function isSingleSection(data: WritingMapData): data is SingleSectionData {
   return 'tree' in data && 'section' in data
 }
 
-interface TextNavigatorShellProps {
-  data: TextNavigatorData
+interface WritingMapShellProps {
+  data: WritingMapData
   textbook: string
   unit: string
 }
 
-export function TextNavigatorShell({ data, textbook, unit }: TextNavigatorShellProps) {
+export function WritingMapShell({ data, textbook, unit }: WritingMapShellProps) {
   // Normalize both formats into a unified sections array
   const sections: { section: string; tree: any }[] = isSingleSection(data)
     ? [{ section: data.section, tree: data.tree }]
@@ -66,7 +68,8 @@ export function TextNavigatorShell({ data, textbook, unit }: TextNavigatorShellP
     part: data.part,
     section: activeSection.section,
     tree: activeSection.tree,
-    ...(isSingleSection(data) ? { writingPrompt: data.writingPrompt, tts: data.tts } : {}),
+    writingPrompt: data.writingPrompt,
+    tts: data.tts,
   }
 
   const handleSelectChange = (val: number) => {
@@ -112,11 +115,11 @@ export function TextNavigatorShell({ data, textbook, unit }: TextNavigatorShellP
 
   return (
     <MindMapShell
-      key={`tn-${activeIdx}`}
+      key={`wm-${activeIdx}`}
       data={mindMapData}
       textbook={textbook}
       unit={unit}
-      isWritingMap={false}
+      isWritingMap={true}
       headerSlot={dropdown}
     />
   )

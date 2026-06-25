@@ -6,8 +6,8 @@ import { VocabMasterShell } from './VocabMasterShell'
 import { RecallMapShell } from './RecallMapShell'
 import { VocabGuideShell } from './VocabGuideShell'
 import { SpellingHeroShell } from './SpellingHeroShell'
-import { MindMapShell } from './MindMapShell'
 import { TextNavigatorShell } from './TextNavigatorShell'
+import { WritingMapShell } from './WritingMapShell'
 import { SentenceArchitectShell } from './SentenceArchitectShell'
 import { GrammarWizardShell } from './GrammarWizardShell'
 import { PassageDecoderShell } from './PassageDecoderShell'
@@ -45,12 +45,14 @@ export function PracticeShell() {
             if (main.error) { setError(main.error); return }
             try {
                 const mainData = decrypt(main)
-                if (siblings.length > 0 && mainData.type?.toLowerCase().includes('text-navigator')) {
+                if (siblings.length > 0 && (mainData.type?.toLowerCase().includes('text-navigator') || mainData.type?.toLowerCase().includes('writing-map'))) {
                     const siblingData = siblings.map(decrypt)
                     const allItems = [mainData, ...siblingData]
                     mainData.content = {
                         level: mainData.content?.level,
                         part: mainData.content?.part,
+                        writingPrompt: mainData.content?.writingPrompt,
+                        tts: mainData.content?.tts,
                         sections: allItems.map((item: any) => ({
                             section: item.content?.section ?? item.type,
                             tree: item.content?.tree ?? {},
@@ -108,7 +110,7 @@ export function PracticeShell() {
     }
 
     if (cleanType.startsWith('writing-map')) {
-        return <MindMapShell data={practice.content} textbook={practice.textbook} unit={practice.unit} isWritingMap={true} />
+        return <WritingMapShell data={practice.content} textbook={practice.textbook} unit={practice.unit} />
     }
     
     return (

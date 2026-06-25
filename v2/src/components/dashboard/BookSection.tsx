@@ -5,8 +5,7 @@ import { getTextbookEmoji } from '../../lib/textbooks'
 import { 
   PRACTICE_TYPE_ICONS, 
   getLastUnit, 
-  saveLastUnit,
-  translateTextbookName
+  saveLastUnit
 } from '../../lib/dashboardUtils'
 import { FadingPracticeName } from './DashboardShared'
 
@@ -486,6 +485,24 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 .filter((p: any) => p.type.toLowerCase().includes('writing-map'))
                 .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
 
+              const wmGroupItems: any[] = writingMapItems.length > 1
+                ? [{
+                    ...writingMapItems[0],
+                    type: 'writing-map',
+                    _tnSiblingIds: writingMapItems.slice(1).map((i: any) => i.id),
+                    content: {
+                      level: writingMapItems[0].content?.level,
+                      part: writingMapItems[0].content?.part,
+                      writingPrompt: writingMapItems[0].content?.writingPrompt,
+                      tts: writingMapItems[0].content?.tts,
+                      sections: writingMapItems.map((i: any) => ({
+                        section: i.content?.section ?? i.type,
+                        tree: i.content?.tree ?? {},
+                      }))
+                    }
+                  }]
+                : writingMapItems;
+
               const sentenceArchitectItems = items
                 .filter((p: any) => p.type.toLowerCase().includes('sentence-architect'))
                 .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
@@ -510,7 +527,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 { title: '2. Vocabulary & Spelling', items: vocabItems },
                 { title: '3. Text Navigators & Passage Decoders', items: [...tnGroupItems, ...passageDecoderItems] },
                 { title: '4. Sentence & Grammar', items: [...grammarWizardItems, ...sentenceArchitectItems] },
-                { title: '5. Writing Maps', items: writingMapItems },
+                { title: '5. Writing Maps', items: wmGroupItems },
                 { title: 'Other Practices', items: otherItems }
               ].filter(g => g.items.length > 0);
 
@@ -663,7 +680,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                             <span className="db-practice-name">
                               <FadingPracticeName name={formatType(p.type)} showChinese={showChinese} />
                             </span>
-                            {(isVM || isSH || isSA || isGW || isPD || isTN) && total > 0 && (
+                            {(isVM || isSH || isSA || isGW || isPD) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
                                 title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}
