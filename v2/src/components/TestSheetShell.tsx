@@ -279,11 +279,10 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
         (section.type === 'fill-in-the-blank-wordbank' ||
          section.type === 'cloze-passage-wordbank' ||
          section.type === 'definition-matching' ||
-         section.type === 'dialogue-completion' ||
-         section.type === 'cloze-passage')
+         section.type === 'dialogue-completion')
       ) {
         section.questions.forEach(otherQ => {
-          if (otherQ.id !== qId && next[otherQ.id] === value) {
+          if (otherQ.id !== qId && String(next[otherQ.id] || '') === String(value)) {
             next[otherQ.id] = ""
           }
         })
@@ -391,10 +390,6 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
     setActiveSectionIdx(0)
   }
 
-  // Helper to check if a word from the word bank is currently chosen
-  const isWordUsed = (word: string, currentSection: Section) => {
-    return currentSection.questions.some(q => userAnswers[q.id] === word)
-  }
 
   // Inline parser to render select elements for cloze passages & dialogue
   const parseInlineBlanks = (text: string, section: Section) => {
@@ -439,21 +434,14 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
             >
               <option value="">({blankNum})</option>
               {section.type === 'cloze-passage' ? (
-                q.options?.map((opt, optIdx) => {
-                  const usingQ = section.questions.find(
-                    otherQ => userAnswers[otherQ.id] !== undefined && userAnswers[otherQ.id] !== '' && Number(userAnswers[otherQ.id]) === optIdx
-                  )
-                  const showSuffix = usingQ && usingQ.id !== q.id
-                  const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
-                  return (
-                    <option key={optIdx} value={optIdx}>
-                      {opt}{suffix}
-                    </option>
-                  )
-                })
+                q.options?.map((opt, optIdx) => (
+                  <option key={optIdx} value={optIdx}>
+                    {opt}
+                  </option>
+                ))
               ) : section.type === 'cloze-passage-wordbank' ? (
                 section.wordbank?.map((word, wordIdx) => {
-                  const usingQ = section.questions.find(otherQ => userAnswers[otherQ.id] === word)
+                  const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(word))
                   const showSuffix = usingQ && usingQ.id !== q.id
                   const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
                   return (
@@ -464,7 +452,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                 })
               ) : section.type === 'dialogue-completion' ? (
                 section.options?.map((opt, optIdx) => {
-                  const usingQ = section.questions.find(otherQ => userAnswers[otherQ.id] === opt)
+                  const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(opt))
                   const showSuffix = usingQ && usingQ.id !== q.id
                   const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
                   return (
@@ -873,19 +861,6 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                 <p className="ts-instruction">{activeSection.instruction}</p>
               </div>
 
-              {/* Word Bank Area */}
-              {(activeSection.type === 'fill-in-the-blank-wordbank' || activeSection.type === 'definition-matching' || activeSection.type === 'cloze-passage-wordbank') && activeSection.wordbank && (
-                <div className="ts-wordbank-pool" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '12px', background: '#f3f4f6', borderRadius: '8px', marginBottom: '15px' }}>
-                  {activeSection.wordbank.map(word => {
-                    const isUsed = isWordUsed(word, activeSection)
-                    return (
-                      <span key={word} className={`ts-wordbank-chip ${isUsed ? 'used' : ''}`} style={{ padding: '6px 12px', background: isUsed ? '#e5e7eb' : '#fff', color: isUsed ? '#9ca3af' : '#1f2937', border: '1px solid #d1d5db', borderRadius: '20px', fontSize: '0.9em', textDecoration: isUsed ? 'line-through' : 'none' }}>
-                        {word}
-                      </span>
-                    )
-                  })}
-                </div>
-              )}
 
               {/* Render Dialogue Completion Inline Text */}
               {activeSection.type === 'dialogue-completion' && activeSection.dialogue && (

@@ -354,14 +354,14 @@ This document defines the rules for extracting and converting textbook data into
        - `answer`: Correct option sentence (or index/character). Prefer the exact option text string.
        - `translation` & `explanation`: Chinese text.
 
-  3. **`cloze-passage`** (Passage with inline blanks and multiple options per blank):
+  3. **`cloze-passage`** (Passage with inline blanks where each blank has its own independent options):
      - `type`: `"cloze-passage"`
      - `passage`: Full text string with blanks represented by `"[1]"`, `"[2]"`, etc.
      - `questions`: Array of question items mapping to each blank:
        - `id`: 8-character alphanumeric string.
        - `blankIndex`: 1-based index corresponding to the blank.
-       - `options`: Array of strings containing choices for this blank.
-       - `answer`: Integer index of correct option.
+       - `options`: Array of strings containing choices specific to this blank.
+       - `answer`: Integer index of correct option (0-indexed).
        - `translation` & `explanation`: Chinese text.
 
   4. **`true-false`** (True or False questions):
@@ -384,14 +384,14 @@ This document defines the rules for extracting and converting textbook data into
        - `answer`: Integer index of correct option (for `"multiple-choice"`) or a sample answer string (for `"short-answer"`).
        - `translation` & `explanation`: Chinese text.
 
-  6. **`cloze-passage-wordbank`** (Passage with inline blanks filled from a shared word bank):
+  6. **`cloze-passage-wordbank`** (Passage with inline blanks filled from a shared option/word pool; each option can be used once):
      - `type`: `"cloze-passage-wordbank"`
      - `passage`: Full text string with blanks represented by `"[1]"`, `"[2]"`, etc.
-     - `wordbank`: Array of strings representing candidate words.
+     - `wordbank`: Array of strings representing candidate words or sentences.
      - `questions`: Array of question items mapping to each blank:
        - `id`: 8-character alphanumeric string.
        - `blankIndex`: 1-based index corresponding to the blank.
-       - `answer`: Correct word string matching an item in `wordbank`.
+       - `answer`: Correct word or sentence string matching an item in `wordbank`.
        - `translation` & `explanation`: Chinese text.
 
 ---
