@@ -102,6 +102,8 @@ function getChangedOrAddedJsonFiles() {
 
 function checkChanges() {
     if (FORCE) return true;
+    const args = process.argv.slice(2).filter(a => a !== '--force');
+    if (args.length > 0) return true;
     const changed = getChangedOrAddedJsonFiles();
     return changed.length > 0;
 }
@@ -135,7 +137,8 @@ async function seed() {
     }
     
     const dataDir = path.join(__dirname, '..', 'data');
-    const changedFiles = FORCE ? null : getChangedOrAddedJsonFiles();
+    const args = process.argv.slice(2).filter(a => a !== '--force');
+    const changedFiles = args.length > 0 ? args : (FORCE ? null : getChangedOrAddedJsonFiles());
     
     const practices = [];
     const filesToProcess = [];
@@ -265,6 +268,9 @@ async function seed() {
                     }
                 }
                 if (!mdPath || !fs.existsSync(mdPath)) {
+                    mdPath = path.join(dir, filename.replace(/-writing-map(.*)\.json$/, '-writing-task$1.md'));
+                }
+                if (!mdPath || !fs.existsSync(mdPath)) {
                     mdPath = path.join(dir, filename.replace(/-writing-map.*\.json$/, '-writing-task.md'));
                 }
                 if (!mdPath || !fs.existsSync(mdPath)) {
@@ -272,7 +278,7 @@ async function seed() {
                 }
                 if (mdPath && fs.existsSync(mdPath)) {
                     let contentMd = fs.readFileSync(mdPath, 'utf8');
-                    contentMd = contentMd.split(/### Model Essay/i)[0].trim();
+                    contentMd = contentMd.split(/###\s*(?:\*\*)?(?:Model Essay|范文|Model Essay Basic|Model Essay Advanced)(?:\*\*)?/i)[0].trim();
                     content.writingPrompt = contentMd;
                     console.log(`[Prompt Embedded] for ${filename} from ${path.basename(mdPath)}`);
                 }

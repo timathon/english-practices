@@ -485,23 +485,42 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 .filter((p: any) => p.type.toLowerCase().includes('writing-map'))
                 .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
 
-              const wmGroupItems: any[] = writingMapItems.length > 1
-                ? [{
-                    ...writingMapItems[0],
+              // Group writing maps by base ID (strip -model-X to combine model essays, keep others separate)
+              const wmGroups: { [key: string]: any[] } = {};
+              for (const item of writingMapItems) {
+                const groupKey = item.id.replace(/-model-x-?\d+$/i, '').replace(/-model-?\d+$/i, '');
+                if (!wmGroups[groupKey]) {
+                  wmGroups[groupKey] = [];
+                }
+                wmGroups[groupKey].push(item);
+              }
+
+              const wmGroupItems: any[] = [];
+              for (const key of Object.keys(wmGroups)) {
+                const group = wmGroups[key];
+                if (group.length > 1) {
+                  wmGroupItems.push({
+                    ...group[0],
                     type: 'writing-map',
-                    _tnSiblingIds: writingMapItems.slice(1).map((i: any) => i.id),
+                    _tnSiblingIds: group.slice(1).map((i: any) => i.id),
                     content: {
-                      level: writingMapItems[0].content?.level,
-                      part: writingMapItems[0].content?.part,
-                      writingPrompt: writingMapItems[0].content?.writingPrompt,
-                      tts: writingMapItems[0].content?.tts,
-                      sections: writingMapItems.map((i: any) => ({
-                        section: i.content?.section ?? i.type,
-                        tree: i.content?.tree ?? {},
-                      }))
+                      level: group[0].content?.level,
+                      part: group[0].content?.part,
+                      writingPrompt: group[0].content?.writingPrompt,
+                      tts: group[0].content?.tts,
+                      sections: group.flatMap((i: any) => {
+                        if (i.content?.sections) return i.content.sections;
+                        return [{
+                          section: i.content?.section ?? i.type,
+                          tree: i.content?.tree ?? {},
+                        }];
+                      })
                     }
-                  }]
-                : writingMapItems;
+                  });
+                } else {
+                  wmGroupItems.push(group[0]);
+                }
+              }
 
               const sentenceArchitectItems = items
                 .filter((p: any) => p.type.toLowerCase().includes('sentence-architect'))
@@ -678,7 +697,23 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                           >
                             <span className="db-practice-icon">{getIcon(p.type)}</span>
                             <span className="db-practice-name">
-                              <FadingPracticeName name={formatType(p.type)} showChinese={showChinese} />
+                              <FadingPracticeName 
+                                name={(() => {
+                                  if (p.type.toLowerCase().includes('writing-map')) {
+                                    const matchSuffix = p.type.match(/writing-map-(.+)$/i);
+                                    if (matchSuffix) {
+                                      const suffix = matchSuffix[1];
+                                      if (suffix.toLowerCase() === 'jz') {
+                                        return 'Writing Map JZ';
+                                      }
+                                      return `Writing Map ${suffix.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`;
+                                    }
+                                    return 'Writing Map';
+                                  }
+                                  return formatType(p.type);
+                                })()} 
+                                showChinese={showChinese} 
+                              />
                             </span>
                             {(isVM || isSH || isSA || isGW || isPD) && total > 0 && (
                               <div

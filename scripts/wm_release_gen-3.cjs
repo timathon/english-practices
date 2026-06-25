@@ -65,6 +65,9 @@ function generateHtml(data, jsonPath, indexPath = "index.html") {
             }
         }
         if (!mdPath || !fs.existsSync(mdPath)) {
+            mdPath = jsonPath.replace(/-writing-map(.*)\.json$/, '-writing-task$1.md');
+        }
+        if (!mdPath || !fs.existsSync(mdPath)) {
             mdPath = jsonPath.replace(/-writing-map.*\.json$/, '-writing-task.md');
         }
         if (!mdPath || !fs.existsSync(mdPath)) {
@@ -73,7 +76,7 @@ function generateHtml(data, jsonPath, indexPath = "index.html") {
         if (mdPath && fs.existsSync(mdPath)) {
             let content = fs.readFileSync(mdPath, 'utf8');
             // Strip the Model Essay section
-            content = content.split(/### Model Essay/i)[0].trim();
+            content = content.split(/###\s*(?:\*\*)?(?:Model Essay|范文|Model Essay Basic|Model Essay Advanced)(?:\*\*)?/i)[0].trim();
             
             writingPrompt = content
                 .replace(/\n/g, '<br>')
