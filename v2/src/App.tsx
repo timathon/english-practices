@@ -92,18 +92,19 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
       const stored = localStorage.getItem('logged_in_users');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setHasLoggedInUsers(true);
-        } else {
-          setHasLoggedInUsers(false);
+        if (Array.isArray(parsed)) {
+          const hasOthers = session
+            ? parsed.some((u: any) => u.userId !== session.user.id)
+            : parsed.length > 0;
+          setHasLoggedInUsers(hasOthers);
+          return;
         }
-      } else {
-        setHasLoggedInUsers(false);
       }
+      setHasLoggedInUsers(false);
     } catch (e) {
       setHasLoggedInUsers(false);
     }
-  }, [isMenuOpen]);
+  }, [isMenuOpen, session]);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -285,25 +286,24 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
                     loggedInUsers = loggedInUsers.filter((u: any) => u.token !== currentToken);
                     localStorage.setItem('logged_in_users', JSON.stringify(loggedInUsers));
                   }
-                  localStorage.removeItem('active_session_token');
-
-                  try {
-                    await signOut();
-                  } catch (e) {
-                    console.error(e);
-                  }
 
                   if (loggedInUsers.length > 0) {
                     try {
+                      localStorage.setItem('active_session_token', loggedInUsers[0].token);
                       await authClient.multiSession.setActive({
                         sessionToken: loggedInUsers[0].token
                       })
                     } catch (err) {
                       console.error('Failed to set next active session on sign out:', err)
                     }
-                    localStorage.setItem('active_session_token', loggedInUsers[0].token);
                     window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/dashboard`;
                   } else {
+                    localStorage.removeItem('active_session_token');
+                    try {
+                      await signOut();
+                    } catch (e) {
+                      console.error(e);
+                    }
                     window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`;
                   }
                 }}
@@ -318,7 +318,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260626-2153
+            v260626-2225
           </div>
         </div>
       )}

@@ -27,7 +27,7 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
             }
         }),
         session: {
-            expiresIn: 60 * 60 * 24 * 365 * 10, // 10 years
+            expiresIn: 60 * 60 * 24 * 365, // 1 year (compliant with the 400-day browser Max-Age limit)
             updateAge: 60 * 60 * 24 * 30 // 30 days
         },
         user: {

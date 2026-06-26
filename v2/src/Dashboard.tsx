@@ -302,10 +302,6 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
     return rawGrouped;
   }, [rawGrouped, isTestdrive, session?.user?.username]);
 
-  if (!session) return (
-    <div className="db-empty">Please sign in to view your dashboard.</div>
-  )
-
   const getLast7DaysStats = (records: any[]) => {
     const stats = [];
     const today = new Date();
@@ -358,6 +354,10 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
     return stats;
   };
   const last7DaysStats = useMemo(() => getLast7DaysStats(records), [records, practices]);
+
+  if (!session) return (
+    <div className="db-empty">Please sign in to view your dashboard.</div>
+  )
 
   const handlePointClick = (...args: any[]) => {
     let data: any = null;

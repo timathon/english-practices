@@ -15,7 +15,6 @@ export function SwitchUser() {
   const [users, setUsers] = useState<LoggedInUser[]>([])
   const [switchingTo, setSwitchingTo] = useState<string | null>(null)
   const [invalidTokens, setInvalidTokens] = useState<Set<string>>(new Set())
-  const [validating, setValidating] = useState(true)
   const activeToken = localStorage.getItem('active_session_token')
   // Track invalid tokens to clean up when the user navigates away
   const invalidTokensRef = useRef<Set<string>>(new Set())
@@ -41,7 +40,6 @@ export function SwitchUser() {
     )
 
     if (othersToValidate.length === 0) {
-      setValidating(false)
       return
     }
 
@@ -64,7 +62,6 @@ export function SwitchUser() {
       if (!cancelled) {
         setInvalidTokens(dead)
         invalidTokensRef.current = dead
-        setValidating(false)
       }
     }
     validate()
@@ -99,13 +96,18 @@ export function SwitchUser() {
     const targetUser = users.find(u => u.token === token)
     setSwitchingTo(targetUser ? targetUser.name : 'another account')
     try {
+      localStorage.setItem('active_session_token', token)
       await authClient.multiSession.setActive({
         sessionToken: token
       })
-      localStorage.setItem('active_session_token', token)
       // Full page reload to reset all client states and cache
       window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/dashboard`
     } catch (e) {
+      // Revert if failed
+      const activeToken = localStorage.getItem('active_session_token')
+      if (activeToken === token) {
+        localStorage.removeItem('active_session_token')
+      }
       setSwitchingTo(null)
       console.error('Failed to switch active session:', e)
     }
@@ -130,28 +132,27 @@ export function SwitchUser() {
     setUsers(updatedUsers)
     localStorage.setItem('logged_in_users', JSON.stringify(updatedUsers))
 
-    // If we are removing the active user, we need to sign them out
+    // If we are removing the active user, we need to sign them out or switch to next
     if (activeToken === tokenToRemove) {
-      localStorage.removeItem('active_session_token')
-      try {
-        await signOut()
-      } catch (e) {
-        console.error(e)
-      }
-      
       if (updatedUsers.length > 0) {
         // Auto switch to next user
         setSwitchingTo(updatedUsers[0].name)
         try {
+          localStorage.setItem('active_session_token', updatedUsers[0].token)
           await authClient.multiSession.setActive({
             sessionToken: updatedUsers[0].token
           })
         } catch (err) {
           console.error('Failed to set next active session on removal:', err)
         }
-        localStorage.setItem('active_session_token', updatedUsers[0].token)
         window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/dashboard`
       } else {
+        localStorage.removeItem('active_session_token')
+        try {
+          await signOut()
+        } catch (e) {
+          console.error(e)
+        }
         window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`
       }
     }
