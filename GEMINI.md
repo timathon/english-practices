@@ -393,6 +393,7 @@ This document defines the rules for extracting and converting textbook data into
        - `blankIndex`: 1-based index corresponding to the blank.
        - `answer`: Correct word or sentence string matching an item in `wordbank`.
        - `translation` & `explanation`: Chinese text.
+     - **Instruction Mapping Rule:** Always map sections with instructions such as "阅读短文，从所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。" or "阅读短文，从方框内所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。" to this `"cloze-passage-wordbank"` type.
 
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.**
