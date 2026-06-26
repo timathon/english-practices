@@ -43,6 +43,8 @@ function myFetch(url, options = {}) {
     });
 }
 
+const path = require('path');
+
 async function deletePractices(ids) {
     console.log("Authenticating as Admin...");
     const authRes = await myFetch(`${API_URL}/api/auth/sign-in/email`, {
@@ -83,9 +85,34 @@ async function deletePractices(ids) {
     console.log("\nDone!");
 }
 
-const practiceIds = [
-    "A8A_a8a-u3_a8a-u3-text-navigator-a2a",
-    "A8A_a8a-u3_a8a-u3-text-navigator-b1b"
-];
+const args = process.argv.slice(2);
+let practiceIds = [];
+
+if (args.length > 0) {
+    for (const arg of args) {
+        if (arg.endsWith('.json') || arg.includes('/') || arg.includes('\\')) {
+            const normalized = path.normalize(arg).replace(/\\/g, '/');
+            const parts = normalized.split('/');
+            const dataIdx = parts.indexOf('data');
+            const tbIndex = dataIdx !== -1 ? dataIdx + 1 : 0;
+            
+            if (tbIndex < parts.length - 1) {
+                const tb = parts[tbIndex];
+                const relPathParts = parts.slice(tbIndex + 1);
+                const relPath = relPathParts.join('_').replace(/\.json$/, '');
+                practiceIds.push(`${tb}_${relPath}`);
+            } else {
+                practiceIds.push(arg.replace(/\.json$/, '').replace(/[\/\\]/g, '_'));
+            }
+        } else {
+            practiceIds.push(arg);
+        }
+    }
+} else {
+    practiceIds = [
+        "A7B_a7b-u8_a7b-u8-test"
+    ];
+}
 
 deletePractices(practiceIds).catch(console.error);
+

@@ -63,7 +63,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
   const [showStartModal, setShowStartModal] = useState(true)
   const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false)
   const [activeSectionIdx, setActiveSectionIdx] = useState(0)
-  const [highlightedSentence, setHighlightedSentence] = useState<{ paraIdx: number; sentenceIdx: number } | null>(null)
+  const [highlightedSentence, setHighlightedSentence] = useState<{ paraIdx: string | number; sentenceIdx: number } | null>(null)
 
   const handleResetAttempts = () => {
     trialsTracker.resetTrials(practiceId, 'test-sheet')
@@ -801,6 +801,114 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
     }
   }
 
+  const renderPassage = (passageText: string) => {
+    const lines = passageText.split('\n')
+    const renderedBlocks: React.ReactNode[] = []
+    
+    let inTable = false
+    let tableHeaders: string[] = []
+    let tableRows: string[][] = []
+
+    const renderInlineFormatting = (text: string) => {
+      const parts = text.split(/(\*\*.*?\*\*)/g)
+      return parts.map((part, idx) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={idx}>{part.slice(2, -2)}</strong>
+        }
+        return part
+      })
+    }
+
+    const renderSentences = (text: string, pIdx: string | number) => {
+      const sentences = text.split(/(?<=[.!?])\s+/)
+      return sentences.map((sentence, sIdx) => {
+        const isHighlighted = highlightedSentence?.paraIdx === pIdx && highlightedSentence?.sentenceIdx === sIdx
+        return (
+          <span
+            key={sIdx}
+            className={`ts-passage-sentence ${isHighlighted ? 'highlighted' : ''}`}
+            style={{ cursor: 'pointer', borderRadius: '3px', padding: '1px 3px', transition: 'background 0.2s ease' }}
+            onClick={() => setHighlightedSentence(prev => prev?.paraIdx === pIdx && prev?.sentenceIdx === sIdx ? null : { paraIdx: pIdx, sentenceIdx: sIdx })}
+          >
+            {renderInlineFormatting(sentence)}{' '}
+          </span>
+        )
+      })
+    }
+
+    const flushTable = (key: string | number) => {
+      if (tableRows.length > 0 || tableHeaders.length > 0) {
+        renderedBlocks.push(
+          <div key={`table-${key}`} className="ts-passage-table-wrapper">
+            <table className="ts-passage-table">
+              {tableHeaders.length > 0 && (
+                <thead>
+                  <tr>
+                    {tableHeaders.map((h, i) => (
+                      <th key={i}>
+                        {renderSentences(h, `th-${key}-${i}`)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+              )}
+              <tbody>
+                {tableRows.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map((cell, cellIndex) => (
+                      <td key={cellIndex}>
+                        {renderSentences(cell, `td-${key}-${rowIndex}-${cellIndex}`)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+        tableHeaders = []
+        tableRows = []
+      }
+      inTable = false
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (line.startsWith('|') && line.endsWith('|')) {
+        const cells = line.split('|').map(c => c.trim()).slice(1, -1)
+        
+        if (cells.every(c => /^:-*-*:*$/.test(c) || /^-+$/.test(c))) {
+          continue
+        }
+
+        if (!inTable) {
+          inTable = true
+          tableHeaders = cells
+        } else {
+          tableRows.push(cells)
+        }
+      } else {
+        if (inTable) {
+          flushTable(i)
+        }
+        
+        if (line) {
+          renderedBlocks.push(
+            <p key={`p-${i}`} style={{ marginBottom: '12px' }}>
+              {renderSentences(line, i)}
+            </p>
+          )
+        }
+      }
+    }
+
+    if (inTable) {
+      flushTable('end')
+    }
+
+    return renderedBlocks
+  }
+
   const activeSection = data.sections[activeSectionIdx]
 
   return (
@@ -887,23 +995,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
               {/* Render Reading/True-False Passage */}
               {(activeSection.type === 'reading-comprehension' || activeSection.type === 'true-false') && activeSection.passage && (
                 <div className="ts-reading-comprehension-passage" style={{ margin: '20px 0', padding: '20px', background: '#fcfcfc', borderLeft: '4px solid #3b82f6', borderRadius: '4px', lineHeight: '1.8', fontSize: '1.05em', fontStyle: 'italic', color: '#374151' }}>
-                  {activeSection.passage.split('\n').map((para, pIdx) => para.trim() && (
-                    <p key={pIdx} style={{ marginBottom: '12px' }}>
-                      {para.split(/(?<=[.!?])\s+/).map((sentence, sIdx) => {
-                        const isHighlighted = highlightedSentence?.paraIdx === pIdx && highlightedSentence?.sentenceIdx === sIdx
-                        return (
-                          <span
-                            key={sIdx}
-                            className={`ts-passage-sentence ${isHighlighted ? 'highlighted' : ''}`}
-                            style={{ cursor: 'pointer', borderRadius: '3px', padding: '1px 3px', transition: 'background 0.2s ease' }}
-                            onClick={() => setHighlightedSentence(prev => prev?.paraIdx === pIdx && prev?.sentenceIdx === sIdx ? null : { paraIdx: pIdx, sentenceIdx: sIdx })}
-                          >
-                            {sentence}{' '}
-                          </span>
-                        )
-                      })}
-                    </p>
-                  ))}
+                  {renderPassage(activeSection.passage)}
                 </div>
               )}
 
