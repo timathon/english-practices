@@ -460,6 +460,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                         unfinished: !isFinished,
                         updatedAt: new Date().toISOString()
                     })
+                    setPracticeRecords([...(cache.getRecords() || [])])
                 }
             } else if (recordIdPromiseRef.current) {
                 const recordId = await recordIdPromiseRef.current
@@ -481,6 +482,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                         unfinished: !isFinished,
                         updatedAt: new Date().toISOString()
                     })
+                    setPracticeRecords([...(cache.getRecords() || [])])
                 }
             } else {
                 const postPromise = (async () => {
@@ -505,6 +507,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                             createdAt: new Date().toISOString(),
                             updatedAt: new Date().toISOString()
                         } as any)
+                        setPracticeRecords([...(cache.getRecords() || [])])
                         return j.id as string
                     }
                     throw new Error("Failed to create record")
