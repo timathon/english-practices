@@ -15,6 +15,7 @@ import { TestSheetShell } from './TestSheetShell'
 
 
 import { practiceCache } from '../lib/practiceCache'
+import { cache } from '../lib/cache'
 
 
 // Render practice components based on type
@@ -71,6 +72,58 @@ export function PracticeShell() {
             }
         }
 
+        const triggerPrefetchUnitPractices = async (mainPracticeData: any) => {
+            if (!mainPracticeData || !mainPracticeData.textbook || !mainPracticeData.unit) return
+            
+            try {
+                let allPractices = cache.getPractices()
+                if (!allPractices) {
+                    const res = await fetch(API_URL + '/api/practices', { credentials: 'include', signal })
+                    const data = await res.json()
+                    if (Array.isArray(data)) {
+                        cache.setPractices(data)
+                        allPractices = data
+                    }
+                }
+
+                if (!allPractices || !Array.isArray(allPractices)) return
+
+                const siblings = allPractices.filter(
+                    (p: any) => 
+                        p.textbook === mainPracticeData.textbook && 
+                        p.unit === mainPracticeData.unit && 
+                        p.id !== mainPracticeData.id &&
+                        !allIds.includes(p.id)
+                )
+
+                const prefetchTask = async () => {
+                    for (const sibling of siblings) {
+                        if (!active) break
+                        try {
+                            const cached = await practiceCache.get(sibling.id)
+                            if (!cached) {
+                                const res = await fetch(API_URL + `/api/practices/${sibling.id}`, { credentials: 'include', signal })
+                                const resData = await res.json()
+                                if (resData && !resData.error) {
+                                    await practiceCache.set(sibling.id, resData)
+                                }
+                            }
+                        } catch (e) {
+                            console.warn(`Failed to prefetch sibling practice ${sibling.id}:`, e)
+                        }
+                    }
+                }
+
+                if ('requestIdleCallback' in window) {
+                    (window as any).requestIdleCallback(() => prefetchTask())
+                } else {
+                    setTimeout(prefetchTask, 1500)
+                }
+            } catch (err) {
+                console.warn('Failed to resolve unit practices list:', err)
+            }
+        }
+
         // 1. Try to load from cache
         Promise.all(allIds.map(pid => practiceCache.get(pid))).then(cachedResults => {
             if (!active) return
@@ -79,6 +132,7 @@ export function PracticeShell() {
                 const processed = processResults(cachedResults)
                 if (processed) {
                     setPractice(processed)
+                    triggerPrefetchUnitPractices(processed)
                 }
             }
         })
@@ -106,6 +160,12 @@ export function PracticeShell() {
                 const processed = processResults(fetchedResults)
                 if (processed) {
                     setPractice(processed)
+                    triggerPrefetchUnitPractices(processed)
+                }
+            } else {
+                const processed = processResults(fetchedResults)
+                if (processed) {
+                    triggerPrefetchUnitPractices(processed)
                 }
             }
         }).catch(e => {

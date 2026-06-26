@@ -25,6 +25,16 @@ This design document outlines a multi-step, phased approach to achieve a 0ms wai
 
 ---
 
+## Phase 1.5: Unit Practice Prefetching (Completed)
+**Goal**: Preload all other practices of the active unit in the background after the first one finishes loading, ensuring the user experiences a 0ms wait when switching between exercises in the same unit.
+
+### Actual Implementation
+- **Sibling Fetching**: Updated `PracticeShell.tsx` to automatically trigger `triggerPrefetchUnitPractices()` when the practice data finishes loading (from cache or network).
+- **Background Deferral**: Resolves the full practices list using the in-memory practices cache (or fetching `/api/practices` in the background if empty) and filters for other exercises belonging to the same `textbook` and `unit`.
+- **Idle Execution**: Initiates background fetches of these sibling files using `requestIdleCallback` (or `setTimeout` fallback) to prevent interfering with active user interactions.
+
+---
+
 ## Phase 2: Service Worker Integration for App Code & Assets
 **Goal**: Make static pages, stylesheets, scripts, and fonts load instantly (0ms) and work offline.
 
