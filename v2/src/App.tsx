@@ -298,7 +298,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260625-2056
+            v260626-1101
           </div>
         </div>
       )}
@@ -317,7 +317,7 @@ function RootLayout() {
   const { data: session } = useSession();
   const lang = useContext(LanguageContext);
   const showChinese = lang?.showChinese ?? false;
-  const setShowChinese = lang?.setShowChinese ?? (() => {});
+  const setShowChinese = lang?.setShowChinese ?? (() => { });
 
   return (
     <>

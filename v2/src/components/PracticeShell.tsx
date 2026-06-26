@@ -14,6 +14,9 @@ import { PassageDecoderShell } from './PassageDecoderShell'
 import { TestSheetShell } from './TestSheetShell'
 
 
+import { practiceCache } from '../lib/practiceCache'
+
+
 // Render practice components based on type
 export function PracticeShell() {
     const { id } = useParams()
@@ -35,35 +38,87 @@ export function PracticeShell() {
     }
     
     useEffect(() => {
+        let active = true
+        const controller = new AbortController()
+        const { signal } = controller
         const allIds = [id!, ...tnSiblingIds]
-        Promise.all(
-            allIds.map(pid =>
-                fetch(API_URL + `/api/practices/${pid}`, { credentials: 'include' }).then(r => r.json())
-            )
-        ).then(results => {
+        let currentRawDataStr = ''
+
+        const processResults = (results: any[]) => {
             const [main, ...siblings] = results
-            if (main.error) { setError(main.error); return }
+            if (main.error) { setError(main.error); return null }
             try {
-                const mainData = decrypt(main)
-                if (siblings.length > 0 && (mainData.type?.toLowerCase().includes('text-navigator') || mainData.type?.toLowerCase().includes('writing-map'))) {
-                    const siblingData = siblings.map(decrypt)
-                    const allItems = [mainData, ...siblingData]
-                    mainData.content = {
-                        level: mainData.content?.level,
-                        part: mainData.content?.part,
-                        writingPrompt: mainData.content?.writingPrompt,
-                        tts: mainData.content?.tts,
+                const mainData = JSON.parse(JSON.stringify(main))
+                const decryptedMain = decrypt(mainData)
+                if (siblings.length > 0 && (decryptedMain.type?.toLowerCase().includes('text-navigator') || decryptedMain.type?.toLowerCase().includes('writing-map'))) {
+                    const siblingData = siblings.map(s => decrypt(JSON.parse(JSON.stringify(s))))
+                    const allItems = [decryptedMain, ...siblingData]
+                    decryptedMain.content = {
+                        level: decryptedMain.content?.level,
+                        part: decryptedMain.content?.part,
+                        writingPrompt: decryptedMain.content?.writingPrompt,
+                        tts: decryptedMain.content?.tts,
                         sections: allItems.map((item: any) => ({
                             section: item.content?.section ?? item.type,
                             tree: item.content?.tree ?? {},
                         }))
                     }
                 }
-                setPractice(mainData)
+                return decryptedMain
             } catch (e: any) {
                 setError(e.message)
+                return null
             }
-        }).catch(e => setError(e.message))
+        }
+
+        // 1. Try to load from cache
+        Promise.all(allIds.map(pid => practiceCache.get(pid))).then(cachedResults => {
+            if (!active) return
+            if (cachedResults.every(item => item !== null)) {
+                currentRawDataStr = JSON.stringify(cachedResults)
+                const processed = processResults(cachedResults)
+                if (processed) {
+                    setPractice(processed)
+                }
+            }
+        })
+
+        // 2. Fetch from network in background/parallel and update cache
+        Promise.all(
+            allIds.map(pid =>
+                fetch(API_URL + `/api/practices/${pid}`, { credentials: 'include', signal }).then(r => r.json())
+            )
+        ).then(async (fetchedResults) => {
+            if (!active) return
+            
+            const [main] = fetchedResults
+            if (main.error) {
+                if (!currentRawDataStr) {
+                    setError(main.error)
+                }
+                return
+            }
+
+            const fetchedStr = JSON.stringify(fetchedResults)
+            if (fetchedStr !== currentRawDataStr) {
+                currentRawDataStr = fetchedStr
+                await Promise.all(allIds.map((pid, idx) => practiceCache.set(pid, fetchedResults[idx])))
+                const processed = processResults(fetchedResults)
+                if (processed) {
+                    setPractice(processed)
+                }
+            }
+        }).catch(e => {
+            if (!active || e.name === 'AbortError') return
+            if (!currentRawDataStr) {
+                setError(e.message)
+            }
+        })
+
+        return () => {
+            active = false
+            controller.abort()
+        }
     }, [id, tnSiblingIds.join(',')])
 
     
