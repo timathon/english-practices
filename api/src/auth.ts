@@ -26,6 +26,10 @@ export const getAuth = (dbBinding: D1Database, secret?: string, baseURL?: string
                 verification: schema.verification
             }
         }),
+        session: {
+            expiresIn: 60 * 60 * 24 * 365 * 10, // 10 years
+            updateAge: 60 * 60 * 24 * 30 // 30 days
+        },
         user: {
             additionalFields: {
                 role: {

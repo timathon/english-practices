@@ -257,11 +257,10 @@ export function SwitchUser() {
       }}>
         {otherUsers.map(u => {
           const isExpired = invalidTokens.has(u.token)
-          const isCheckingTokens = validating
           return (
             <div
               key={u.userId}
-              onClick={() => !isExpired && !isCheckingTokens && handleSwitch(u.token)}
+              onClick={() => !isExpired && handleSwitch(u.token)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -270,7 +269,7 @@ export function SwitchUser() {
                 borderRadius: '16px',
                 background: isExpired ? 'var(--code-bg, #f0f0f0)' : 'var(--card-bg, #ebf3fb)',
                 border: '2px solid transparent',
-                cursor: isExpired || isCheckingTokens ? 'not-allowed' : 'pointer',
+                cursor: isExpired ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
                 boxShadow: 'var(--shadow)',
                 position: 'relative',
@@ -279,7 +278,7 @@ export function SwitchUser() {
                 filter: isExpired ? 'grayscale(0.8)' : 'none'
               }}
               onMouseEnter={(e) => {
-                if (!isExpired && !isCheckingTokens) {
+                if (!isExpired) {
                   e.currentTarget.style.transform = 'translateY(-2px)'
                   e.currentTarget.style.borderColor = 'var(--border)'
                 }

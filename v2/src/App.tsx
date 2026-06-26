@@ -223,14 +223,34 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             <>
               <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/signin">Sign In</Link>
               {hasLoggedInUsers && (
-                <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/switch-user">Switch User</Link>
+                <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/switch-user">👥 Switch User</Link>
               )}
+              <button
+                className="nav-item"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  window.location.reload();
+                }}
+                style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+              >
+                🔄 Refresh Page (刷新)
+              </button>
             </>
           ) : (
             <>
-              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/dashboard">Dashboard</Link>
-              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/manual">Game Manual</Link>
-              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/switch-user">Switch User</Link>
+              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/dashboard">📊 Dashboard</Link>
+              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/manual">📖 Game Manual</Link>
+              <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/switch-user">👥 Switch User</Link>
+              <button
+                className="nav-item"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  window.location.reload();
+                }}
+                style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+              >
+                🔄 Refresh Page (刷新)
+              </button>
               {(session.user as any).role === 'admin' && (
                 <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
               )}
@@ -298,7 +318,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260626-1151
+            v260626-2153
           </div>
         </div>
       )}
