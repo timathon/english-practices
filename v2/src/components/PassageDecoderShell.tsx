@@ -2,11 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useBlocker } from 'react-router-dom'
 import './PassageDecoderShell.css'
 import { DailyLockModal } from './DailyLockModal'
+import { usePracticeRecords } from '../hooks/usePracticeRecords'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { useSession, API_URL } from '../lib/auth'
 import { mistakeService } from '../lib/mistakeService'
-import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
 import { CountdownRing } from './CountdownRing'
@@ -247,8 +247,14 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         }
     })
 
-    const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
-    const recordIdPromiseRef = useRef<Promise<string> | null>(null)
+    const {
+        practiceRecords,
+        setActiveRecordId,
+        recordIdPromiseRef,
+        loadRecords,
+        syncRecord: baseSyncRecord,
+        getStats
+    } = usePracticeRecords({ practiceId })
     const hasFinishedRef = useRef(false)
 
     const blocker = useBlocker(
@@ -297,7 +303,6 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
             }
         };
     }, [q, practiceId, textbook, data, autoPlay]);
-    const [practiceRecords, setPracticeRecords] = useState<any[]>([])
     const [gainedXp, setGainedXp] = useState(0)
     const [gainedLove, setGainedLove] = useState(0)
     const [historicalBest, setHistoricalBest] = useState(0)
@@ -308,27 +313,6 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
     const primaryColor = data.primaryColor || '#4f46e5'
     const primaryDarkColor = data.primaryColorDark || '#3730a3'
-
-    const loadRecords = async () => {
-        try {
-            const cached = cache.getRecords()
-            if (cached) {
-                setPracticeRecords(cached)
-            }
-            const res = await fetch(API_URL + '/api/records', { credentials: 'include' })
-            const json = await res.json()
-            if (Array.isArray(json)) {
-                cache.setRecords(json)
-                setPracticeRecords(json)
-            }
-        } catch (e) {
-            console.error("Failed to load records", e)
-        }
-    }
-
-    useEffect(() => {
-        loadRecords()
-    }, [])
 
     const handleSectionSelect = (sec: any) => {
         const stats = getStats(sec.title);
@@ -432,94 +416,16 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         } catch (e) { console.error(e) }
     }
 
-    const syncRecord = async (scorePercent: number, isFinished: boolean) => {
-        try {
-            if (isFinished) {
-                hasFinishedRef.current = true
-            } else if (hasFinishedRef.current) {
-                return
-            }
-
-            const unitName = `${practiceId} (${activeSection.title})`;
-            if (activeRecordId) {
-                const res = await fetch(`${API_URL}/api/records/${activeRecordId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        unit: unitName,
-                        score: scorePercent,
-                        unfinished: !isFinished
-                    })
-                })
-                const j = await res.json()
-                if (j.success) {
-                    cache.updateRecord({
-                        id: activeRecordId,
-                        score: scorePercent,
-                        unfinished: !isFinished,
-                        updatedAt: new Date().toISOString()
-                    })
-                    setPracticeRecords([...(cache.getRecords() || [])])
-                }
-            } else if (recordIdPromiseRef.current) {
-                const recordId = await recordIdPromiseRef.current
-                const res = await fetch(`${API_URL}/api/records/${recordId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        unit: unitName,
-                        score: scorePercent,
-                        unfinished: !isFinished
-                    })
-                })
-                const j = await res.json()
-                if (j.success) {
-                    cache.updateRecord({
-                        id: recordId,
-                        score: scorePercent,
-                        unfinished: !isFinished,
-                        updatedAt: new Date().toISOString()
-                    })
-                    setPracticeRecords([...(cache.getRecords() || [])])
-                }
-            } else {
-                const postPromise = (async () => {
-                    const res = await fetch(`${API_URL}/api/records`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            unit: unitName,
-                            score: scorePercent,
-                            unfinished: !isFinished
-                        })
-                    })
-                    const j = await res.json()
-                    if (j.success && j.id) {
-                        setActiveRecordId(j.id)
-                        cache.updateRecord({
-                            id: j.id,
-                            unit: unitName,
-                            score: scorePercent,
-                            unfinished: !isFinished,
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                        } as any)
-                        setPracticeRecords([...(cache.getRecords() || [])])
-                        return j.id as string
-                    }
-                    throw new Error("Failed to create record")
-                })()
-
-                recordIdPromiseRef.current = postPromise
-                await postPromise
-            }
-        } catch (e) {
-            console.error("Failed to sync record", e)
+    const syncRecord = useCallback(async (scorePercent: number, isFinished: boolean) => {
+        if (isFinished) {
+            hasFinishedRef.current = true
+        } else if (hasFinishedRef.current) {
+            return
         }
-    }
+        if (activeSection) {
+            await baseSyncRecord(activeSection.title, scorePercent, isFinished)
+        }
+    }, [baseSyncRecord, activeSection])
 
     const checkAnswer = useCallback((optionIdx: number | null, forceWrong?: boolean) => {
         if (locked) return
@@ -627,25 +533,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         }
     }
 
-    const getStats = (sectionTitle: string) => {
-        const u = `${practiceId} (${sectionTitle})`
-        const logs = practiceRecords.filter(r => r.unit === u && !r.unfinished)
 
-        const todayStr = new Date().toLocaleDateString()
-        const todayLogs = logs.filter(r => new Date(r.createdAt).toLocaleDateString() === todayStr)
-
-        const todayBest = todayLogs.length > 0 ? Math.max(...todayLogs.map(t => t.score)) : 0
-        const lifeBest = logs.length > 0 ? Math.max(...logs.map(t => t.score)) : 0
-
-        return {
-            todayRuns: todayLogs.length,
-            todayBest,
-            lifeRuns: logs.length,
-            lifeBest,
-            todayLogs,
-            lifeLogs: logs
-        }
-    }
 
     const revealOptions = () => {
         setShowOptions(true)
