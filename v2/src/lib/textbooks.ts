@@ -1,10 +1,19 @@
 export const TEXTBOOK_EMOJIS: Record<string, string> = {
   A3A: '🌱', A3B: '🌿',
+  A4B: '🍀',
   A5A: '🌸', A5B: '🌺',
   A6B: '🌟',
   A7A: '🚀', A7B: '🛸',
-  A8B: '🎓',
+  A8A: '🎓', A8B: '🎓',
+  A9: '🏆',
   'B-NCE2': '📘',
+  'B-Think1': '🧠',
+  'book-reviews': '📝',
+  'C-GIU': '📚',
+  'GENERAL': '⚙️',
+  'my-exercises': '✏️',
+  'RAZ-B': '🦖',
+  SA1: '🏫',
 }
 
 export function getTextbookEmoji(tb: string) {
