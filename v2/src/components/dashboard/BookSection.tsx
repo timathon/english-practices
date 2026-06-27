@@ -661,7 +661,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                       };
 
                       const cleanType = p.type.replace(/^p\d+-p\d+-/i, '').replace(/^p\d+-/i, '').toLowerCase();
-                      const isTest = cleanType === 'test' || cleanType.endsWith('-test');
+                      const isTest = cleanType === 'test' || cleanType.endsWith('-test') || cleanType.startsWith('test-') || cleanType.includes('-test-') || cleanType.split('-').includes('test');
                       let highestGrade = null;
                       if (isTest) {
                         const testRecords = records.filter((r: any) => r.unit === `${p.id} (Test Sheet)` && !r.unfinished);
