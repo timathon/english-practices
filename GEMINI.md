@@ -59,10 +59,11 @@ This document defines the rules for extracting and converting textbook data into
   - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 5 distractors.
 - **Distractor Selection & Relevance:** Distractors must be highly relevant, logical, and plausible options. Avoid lazy, random category padding.
   - **Category/Semantic Matching**: Distractors should belong to the same semantic class or lexical category as the target word. For example, if the target is a school subject (e.g., "maths"), distractors should be other subjects (e.g., "science", "history"), NOT unrelated categories (e.g., weekdays like "Saturday"). If the target is a musical instrument (e.g., "piano"), distractors should be other instruments (e.g., "violin", "guitar", "drums").
-  - **Spelling & Visual-Similarity Traps**: For spelling-critical or easily confused words, include options that share common prefixes/suffixes, look visually similar, or sound phonetically similar. For example:
+  - **Spelling & Visual-Similarity Traps**: For spelling-critical or easily confused words, include options that share common prefixes/suffixes, look visually similar, sound phonetically similar, or contain common misspellings. For example:
     - Target `subject`: distract with `suggest`, `object`, `project`, `subway`, `subtract`.
     - Target `maths`: distract with `baths`, `mouths`, `paths`, `mats`, `match`.
     - Target `science`: distract with `silence`, `scene`, `scientist`, `since`, `service`.
+    - Target `hello`: distract with misspelled variants like `hallo`.
 - **Answer Randomization:** Correct answer index must be randomized (0-5).
 - **Structure:** 
   - A top-level object with `level`, `title` (always `"Vocab Master"`), and `challenges` (an array).
