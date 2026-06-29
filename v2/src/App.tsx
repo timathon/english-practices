@@ -1,5 +1,12 @@
-import { createBrowserRouter, RouterProvider, Navigate, Link, Outlet } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate, Link, Outlet, useRouteError } from 'react-router-dom'
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', () => {
+    console.warn("Vite preload error detected, reloading page...");
+    window.location.reload();
+  });
+}
 const SignIn = lazy(() => import('./SignIn').then(m => ({ default: m.SignIn })))
 const Dashboard = lazy(() => import('./Dashboard').then(m => ({ default: m.Dashboard })))
 const ManageUsers = lazy(() => import('./ManageUsers').then(m => ({ default: m.ManageUsers })))
@@ -390,9 +397,67 @@ function TetrisRoute() {
   );
 }
 
+function GlobalErrorBoundary() {
+  const error: any = useRouteError();
+  console.error("ErrorBoundary caught error:", error);
+
+  // Check if it is a chunk load error
+  const isChunkError = 
+    error?.message?.includes('Failed to fetch') ||
+    error?.message?.includes('dynamically imported module') ||
+    error?.stack?.includes('dynamically imported module') ||
+    error?.message?.includes('Importing a module script failed') ||
+    (error instanceof TypeError && error.message.includes('dynamic'));
+
+  useEffect(() => {
+    if (isChunkError) {
+      const now = Date.now();
+      const lastReload = localStorage.getItem('last_chunk_error_reload');
+      const timeSinceLastReload = lastReload ? now - parseInt(lastReload, 10) : Infinity;
+
+      if (timeSinceLastReload > 10000) {
+        localStorage.setItem('last_chunk_error_reload', now.toString());
+        console.warn("Chunk loading error detected, reloading page to fetch latest version...");
+        window.location.reload();
+      }
+    }
+  }, [isChunkError]);
+
+  if (isChunkError) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center', fontFamily: 'sans-serif', color: 'var(--text-color, #e2e8f0)', background: 'var(--page-bg, #0f111a)', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+        <h2>Updating Application...</h2>
+        <p>A new version of the app is available. Loading the latest updates...</p>
+        <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', cursor: 'pointer', background: 'var(--accent, #a78bfa)', color: '#fff', border: 'none', borderRadius: 4, marginTop: 10 }}>
+          Reload Now
+        </button>
+      </div>
+    );
+  }
+
+  // Fallback for other errors
+  return (
+    <div style={{ padding: 40, textAlign: 'center', fontFamily: 'sans-serif', color: 'var(--text-color, #e2e8f0)', background: 'var(--page-bg, #0f111a)', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+      <h2>Unexpected Application Error!</h2>
+      <pre style={{ textAlign: 'left', background: '#1e1b4b', padding: 15, borderRadius: 5, overflow: 'auto', display: 'inline-block', maxWidth: '100%', color: '#a5b4fc' }}>
+        {error?.message || error?.toString() || 'Unknown error'}
+      </pre>
+      <div style={{ marginTop: 20 }}>
+        <button onClick={() => window.location.href = '/'} style={{ padding: '8px 16px', marginRight: 10, cursor: 'pointer', background: '#312e81', color: '#fff', border: 'none', borderRadius: 4 }}>
+          Back to Home
+        </button>
+        <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', cursor: 'pointer', background: 'var(--accent, #a78bfa)', color: '#fff', border: 'none', borderRadius: 4 }}>
+          Reload Page
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <GlobalErrorBoundary />,
     children: [
       {
         path: "/",
