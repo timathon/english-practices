@@ -402,7 +402,8 @@ async function main() {
             const isWsl = fs.existsSync('/proc/version') && fs.readFileSync('/proc/version', 'utf8').toLowerCase().includes('microsoft');
             if (isWsl) {
                 const winPath = execSync(`wslpath -w "${reportPath}"`, { encoding: 'utf8' }).trim();
-                execSync(`explorer.exe "${winPath}"`);
+                const escapedPath = winPath.replace(/\\/g, '\\\\');
+                execSync(`cmd.exe /c start "" "${escapedPath}"`);
                 console.log(`🌐 Opened report in Windows browser: ${winPath}`);
             } else {
                 // Fallback for native Linux/macOS/Windows
