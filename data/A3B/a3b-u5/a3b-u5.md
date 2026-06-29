@@ -314,7 +314,7 @@ We see many kinds of clocks every day. But do you know about this one? It is a c
 | English | Chinese |
 | :--- | :--- |
 | tick-tock | 嘀嗒声 |
-| tell | 告诉,告知 |
+| tell | 告诉，告知；辨别，报(时) |
 | clock | 时钟 |
 | o'clock | 点钟 |
 | fifteen | 十五 |
