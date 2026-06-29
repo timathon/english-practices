@@ -1,10 +1,16 @@
 import { createBrowserRouter, RouterProvider, Navigate, Link, Outlet, useRouteError } from 'react-router-dom'
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 
+export function forceRefreshBypassCache() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('t', Date.now().toString());
+  window.location.href = url.toString();
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('vite:preloadError', () => {
     console.warn("Vite preload error detected, reloading page...");
-    window.location.reload();
+    forceRefreshBypassCache();
   });
 }
 const SignIn = lazy(() => import('./SignIn').then(m => ({ default: m.SignIn })))
@@ -237,7 +243,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
                 className="nav-item"
                 onClick={() => {
                   setIsMenuOpen(false);
-                  window.location.reload();
+                  forceRefreshBypassCache();
                 }}
                 style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
               >
@@ -253,7 +259,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
                 className="nav-item"
                 onClick={() => {
                   setIsMenuOpen(false);
-                  window.location.reload();
+                  forceRefreshBypassCache();
                 }}
                 style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
               >
@@ -418,7 +424,7 @@ function GlobalErrorBoundary() {
       if (timeSinceLastReload > 10000) {
         localStorage.setItem('last_chunk_error_reload', now.toString());
         console.warn("Chunk loading error detected, reloading page to fetch latest version...");
-        window.location.reload();
+        forceRefreshBypassCache();
       }
     }
   }, [isChunkError]);
@@ -428,7 +434,7 @@ function GlobalErrorBoundary() {
       <div style={{ padding: 40, textAlign: 'center', fontFamily: 'sans-serif', color: 'var(--text-color, #e2e8f0)', background: 'var(--page-bg, #0f111a)', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
         <h2>Updating Application...</h2>
         <p>A new version of the app is available. Loading the latest updates...</p>
-        <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', cursor: 'pointer', background: 'var(--accent, #a78bfa)', color: '#fff', border: 'none', borderRadius: 4, marginTop: 10 }}>
+        <button onClick={() => forceRefreshBypassCache()} style={{ padding: '8px 16px', cursor: 'pointer', background: 'var(--accent, #a78bfa)', color: '#fff', border: 'none', borderRadius: 4, marginTop: 10 }}>
           Reload Now
         </button>
       </div>
@@ -446,7 +452,7 @@ function GlobalErrorBoundary() {
         <button onClick={() => window.location.href = '/'} style={{ padding: '8px 16px', marginRight: 10, cursor: 'pointer', background: '#312e81', color: '#fff', border: 'none', borderRadius: 4 }}>
           Back to Home
         </button>
-        <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', cursor: 'pointer', background: 'var(--accent, #a78bfa)', color: '#fff', border: 'none', borderRadius: 4 }}>
+        <button onClick={() => forceRefreshBypassCache()} style={{ padding: '8px 16px', cursor: 'pointer', background: 'var(--accent, #a78bfa)', color: '#fff', border: 'none', borderRadius: 4 }}>
           Reload Page
         </button>
       </div>
@@ -530,6 +536,15 @@ const router = createBrowserRouter([
 function App() {
   const { data: session, isPending } = useSession()
   const [showChinese, setShowChinese] = useState(false);
+
+  useEffect(() => {
+    // If the URL contains ?t=..., strip it after load so the URL bar remains clean
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('t')) {
+      url.searchParams.delete('t');
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    }
+  }, []);
 
   useEffect(() => {
     if (!session) return;
