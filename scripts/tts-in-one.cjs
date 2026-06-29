@@ -38,8 +38,10 @@ async function checkAudioExists(text, bookName) {
     const r2Key = `ep/${bookName}/${hash}.mp3`;
     try {
         await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
+        console.log(`Checking key: ${r2Key} for text: ${JSON.stringify(text)} -> EXISTS`);
         return { text, exists: true, hash, r2Key };
     } catch (e) {
+        console.log(`Checking key: ${r2Key} for text: ${JSON.stringify(text)} -> MISSING (${e.name})`);
         return { text, exists: false, hash, r2Key };
     }
 }
@@ -107,8 +109,14 @@ async function main() {
                     });
                 }
             } else if (file.includes('-text-navigator') || file.includes('-writing-map')) {
-                const treeData = content.tree || content;
-                extractTreeText(treeData, textsSet);
+                if (content.sections && Array.isArray(content.sections)) {
+                    content.sections.forEach(sec => {
+                        if (sec.tree) extractTreeText(sec.tree, textsSet);
+                    });
+                } else {
+                    const treeData = content.tree || content;
+                    extractTreeText(treeData, textsSet);
+                }
             } else if (file.includes('-passage-decoder-s')) {
                 if (content.sections && Array.isArray(content.sections)) {
                     content.sections.forEach(section => {
