@@ -388,6 +388,23 @@ async function main() {
 
         fs.writeFileSync(reportPath, html, 'utf8');
         console.log(`📄 Generation report saved: ${reportPath}`);
+
+        try {
+            // Check if running inside WSL
+            const isWsl = fs.existsSync('/proc/version') && fs.readFileSync('/proc/version', 'utf8').toLowerCase().includes('microsoft');
+            if (isWsl) {
+                const winPath = execSync(`wslpath -w "${reportPath}"`, { encoding: 'utf8' }).trim();
+                execSync(`explorer.exe "${winPath}"`);
+                console.log(`🌐 Opened report in Windows browser: ${winPath}`);
+            } else {
+                // Fallback for native Linux/macOS/Windows
+                const openCmd = process.platform === 'darwin' ? 'open' : (process.platform === 'win32' ? 'start' : 'xdg-open');
+                execSync(`${openCmd} "${reportPath}"`);
+                console.log(`🌐 Opened report: ${reportPath}`);
+            }
+        } catch (err) {
+            console.warn(`⚠️ Failed to automatically open browser: ${err.message}`);
+        }
     }
 }
 
