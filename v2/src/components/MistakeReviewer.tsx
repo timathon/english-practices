@@ -457,24 +457,38 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
               <div className="mr-prompt">{q.cn}</div>
 
               {/* User construction slot */}
-              <div className="mr-sa-selection">
-                {userSelection.length === 0 && <span className="mr-sa-placeholder">Tap words below to assemble...</span>}
-                {userSelection.map((item, idx) => {
-                  let text = item.text;
-                  if (idx === 0 && text.charAt(0) === text.charAt(0).toLowerCase()) {
-                    text = text.charAt(0).toUpperCase() + text.slice(1);
-                  }
-                  return (
-                    <button
-                      key={idx}
-                      className="mr-sa-word-btn active"
-                      disabled={locked}
-                      onClick={() => handleRemoveWord(idx, item)}
-                    >
-                      {text}
-                    </button>
-                  );
-                })}
+              <div className={locked ? "mr-sa-selection-text" : "mr-sa-selection"}>
+                {locked ? (
+                  <span className="mr-sa-assembled-sentence">
+                    {userSelection.map((item, idx) => {
+                      let text = item.text;
+                      if (idx === 0 && text.charAt(0) === text.charAt(0).toLowerCase()) {
+                        text = text.charAt(0).toUpperCase() + text.slice(1);
+                      }
+                      return text;
+                    }).join(" ")}
+                  </span>
+                ) : (
+                  <>
+                    {userSelection.length === 0 && <span className="mr-sa-placeholder">Tap words below to assemble...</span>}
+                    {userSelection.map((item, idx) => {
+                      let text = item.text;
+                      if (idx === 0 && text.charAt(0) === text.charAt(0).toLowerCase()) {
+                        text = text.charAt(0).toUpperCase() + text.slice(1);
+                      }
+                      return (
+                        <button
+                          key={idx}
+                          className="mr-sa-word-btn active"
+                          disabled={locked}
+                          onClick={() => handleRemoveWord(idx, item)}
+                        >
+                          {text}
+                        </button>
+                      );
+                    })}
+                  </>
+                )}
               </div>
 
               {/* Word pool */}
