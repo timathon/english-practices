@@ -396,6 +396,22 @@ This document defines the rules for extracting and converting textbook data into
        - `translation` & `explanation`: Chinese text.
      - **Instruction Mapping Rule:** Always map sections with instructions such as "阅读短文，从所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。" or "阅读短文，从方框内所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。" to this `"cloze-passage-wordbank"` type.
 
+## 12. Interchange Character Mapping (Tongjia CJS)
+**Source:** Textbook or classical Chinese unit text (`.md`).
+**Target:** `*-tongjia.cjs` (Save in the same folder as source)
+
+- **Purpose:** For Classical Chinese texts (文言文), certain characters are polyphones or interchange characters (通假字) that must be read with non-standard pronunciations in specific contexts (e.g., "属予" read as "zhǔ/嘱"). To ensure the TTS generator speaks the correct pronunciation while keeping the raw database practice JSONs displaying the original characters, define a substitution map.
+- **Format:** A CommonJS module exporting a flat mapping object:
+```javascript
+module.exports = {
+  "属予": "嘱予",
+  "属": "嘱",
+  "具": "俱",
+  "百废具兴": "百废俱兴"
+};
+```
+- **Constraint:** Do NOT write this mapping as a JSON file, to prevent the database seed scripts (`seed_practices.cjs`) or the V2 client from treating it as an active practice sheet. The TTS scripts (`tts-in-one.cjs`) will automatically look for and load this file if present.
+
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.**
 

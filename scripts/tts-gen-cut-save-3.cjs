@@ -55,7 +55,14 @@ async function getAudioBatch(tasks, book, options = {}) {
     const sentences = tasks.map(t => t.text || t.context_sentence || t.word || t.en);
     fs.writeFileSync(sentencesMd, sentences.join('\n'), 'utf8');
 
-    const ttsSentences = sentences.map(text => text.replace(/Shenzhou V/g, 'Shenzhou <sub alias="five">V</sub>'));
+    const tongjiaMap = options.tongjiaMap || {};
+    const ttsSentences = sentences.map(text => {
+        let t = text.replace(/Shenzhou V/g, 'Shenzhou <sub alias="five">V</sub>');
+        for (const [original, substitute] of Object.entries(tongjiaMap)) {
+            t = t.replaceAll(original, substitute);
+        }
+        return t;
+    });
     // A short warmup sentence is prepended so the TTS model reads every real
     // sentence in "mid-list" position, preventing the first sentence from being
     // repeated as a "heading". The warmup segment is discarded during cutting

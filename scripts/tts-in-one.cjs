@@ -69,6 +69,19 @@ async function main() {
     const textsSet = new Set();
     const files = fs.readdirSync(absoluteDir);
     
+    // Load tongjia mapping if it exists in this unit
+    let tongjiaMap = {};
+    const tongjiaFile = files.find(f => f.endsWith('tongjia.cjs'));
+    if (tongjiaFile) {
+        const tongjiaPath = path.join(absoluteDir, tongjiaFile);
+        try {
+            tongjiaMap = require(tongjiaPath);
+            console.log(`Loaded tongjia mapping from ${tongjiaFile}:`, tongjiaMap);
+        } catch (e) {
+            console.error(`⚠️ Failed to load tongjia mapping: ${e.message}`);
+        }
+    }
+    
     for (const file of files) {
         if (!file.endsWith('.json') || file.includes('-recall-map') || file.includes('-writing-map') || file.includes('-grammar-wizard')) continue;
         const filePath = path.join(absoluteDir, file);
@@ -190,7 +203,7 @@ async function main() {
 
         lastRequestTime = Date.now();
         // Spelling Hero words should be treated identically, so we call getAudioBatch
-        const result = await getAudioBatch(batch, bookName, { skipUpload: noUpload });
+        const result = await getAudioBatch(batch, bookName, { skipUpload: noUpload, tongjiaMap });
         
         if (!result.success) {
             console.error(`❌ Batch ${i + 1} failed: ${result.reason}`);

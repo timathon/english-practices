@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link, useBlocker } from 'react-router-dom'
 import './VocabMasterShell.css'
+import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
 import { DailyLockModal } from './DailyLockModal'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
@@ -88,6 +89,36 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
    const timerExpiredRef = useRef(false)
    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
+    const [vocabGuide, setVocabGuide] = useState<any>(null)
+
+    useEffect(() => {
+        if (!practiceId) return;
+        const vocabGuideId = practiceId.replace(/-vocab-master$/, '-vocab-guide');
+        
+        fetch(API_URL + `/api/practices/${vocabGuideId}`, { credentials: 'include' })
+            .then(res => res.json())
+            .then(resData => {
+                if (resData && !resData.error) {
+                    let content = resData.content;
+                    if (resData.isEncrypted && typeof content === 'string') {
+                        try {
+                            content = decryptContent(content, OBSCURE_KEY);
+                        } catch (decErr) {
+                            console.error("Decryption of vocab-guide failed:", decErr);
+                            return;
+                        }
+                    }
+                    setVocabGuide(content);
+                } else {
+                    console.warn(`Vocab guide not found or error loading: ${vocabGuideId}`, resData?.error);
+                    setVocabGuide(null);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to load vocab guide in VocabMaster:", err);
+                setVocabGuide(null);
+            });
+    }, [practiceId]);
 
    const blocker = useBlocker(
        ({ nextLocation, currentLocation }) =>
@@ -894,8 +925,20 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                </div>
 
                <div className={`vm-feedback-area ${showFeedback ? 'visible ' + (isCorrectFeedback ? 'correct' : 'wrong') : ''}`}>
-                   {showFeedback ? (
-                       isCorrectFeedback ? (
+                   {(() => {
+                       if (!showFeedback) return null;
+                        const matchingVocab = vocabGuide?.unit_vocabulary?.find((v: any) => v.word === q?.word);
+                        let ipa = '';
+                        if (matchingVocab?.ipa) {
+                            let cleanIpa = matchingVocab.ipa.trim();
+                            if (cleanIpa.startsWith('[') && cleanIpa.endsWith(']')) {
+                                cleanIpa = cleanIpa.slice(1, -1).trim();
+                            }
+                            if (!cleanIpa.startsWith('/')) cleanIpa = '/' + cleanIpa;
+                            if (!cleanIpa.endsWith('/')) cleanIpa = cleanIpa + '/';
+                            ipa = ` ${cleanIpa}`;
+                        }
+                       return isCorrectFeedback ? (
                            <>
                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                    {q.audio && (
@@ -910,7 +953,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                                    )}
                                    <h3 className="vm-feedback-title" style={{ color: '#58cc02' }}>Excellent!</h3>
                                </div>
-                               <p className="vm-feedback-msg">{q.word} - {q.meaning}</p>
+                               <p className="vm-feedback-msg">{q.word} - {q.meaning}{ipa}</p>
                                <div className="vm-feedback-sentence">📖 {renderHighlightedSentence(q.context_sentence, q.word)}</div>
                                {q.cn && <div className="vm-feedback-cn" style={{ marginTop: '4px', color: '#666', fontSize: '0.85rem' }}>{q.cn}</div>}
                            </>
@@ -929,11 +972,11 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                                    )}
                                    <h3 className="vm-feedback-title" style={{ color: '#ea2b2b' }}>Correct Answer:</h3>
                                </div>
-                               <p className="vm-feedback-msg">{q.options[q.answer]}</p>
+                               <p className="vm-feedback-msg">{q.options[q.answer]}{ipa}</p>
                                <div className="vm-feedback-sentence">💡 {q.hint}</div>
                            </>
-                       )
-                   ) : null}
+                       );
+                   })()}
                </div>
 
                <div className="vm-footer-action">
