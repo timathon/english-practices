@@ -14,6 +14,7 @@ export const TEXTBOOK_EMOJIS: Record<string, string> = {
   'my-exercises': '✏️',
   'RAZ-B': '🦖',
   SA1: '🏫',
+  W9A: '🏛️',
 }
 
 export function getTextbookEmoji(tb: string) {
