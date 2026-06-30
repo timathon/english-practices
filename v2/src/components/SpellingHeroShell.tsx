@@ -4,7 +4,7 @@ import './SpellingHeroShell.css'
 import { DailyLockModal } from './DailyLockModal'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
-import { trialsTracker } from '../lib/trialsTracker'
+import { trialsTracker, getActiveUserId } from '../lib/trialsTracker'
 import { useSession, API_URL } from '../lib/auth'
 import { mistakeService } from '../lib/mistakeService'
 import { cache } from '../lib/cache'
@@ -123,11 +123,17 @@ interface ChallengeStats {
 }
 
 function getStats(practiceId: string): Record<string, ChallengeStats> {
-    try { return JSON.parse(localStorage.getItem(`sh-stats-${practiceId}`) || '{}') } catch { return {} }
+    try {
+        const userId = getActiveUserId()
+        return JSON.parse(localStorage.getItem(`sh-stats-${userId}-${practiceId}`) || '{}')
+    } catch {
+        return {}
+    }
 }
 
 function saveStats(practiceId: string, s: Record<string, ChallengeStats>) {
-    localStorage.setItem(`sh-stats-${practiceId}`, JSON.stringify(s))
+    const userId = getActiveUserId()
+    localStorage.setItem(`sh-stats-${userId}-${practiceId}`, JSON.stringify(s))
 }
 
 function getChallengeStats(practiceId: string, challengeId: string): ChallengeStats {

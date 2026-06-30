@@ -145,7 +145,18 @@ const INITIAL_STATE = (type: 'cat' | 'dog' | 'dino' = 'cat'): PetState => ({
   history: [],
 });
 
-const LS_KEY = 'ep-pet-state';
+function getLSKey(): string {
+  try {
+    const activeToken = localStorage.getItem('active_session_token');
+    if (!activeToken) return 'ep-pet-state';
+    const loggedInUsers = JSON.parse(localStorage.getItem('logged_in_users') || '[]');
+    const currentUser = loggedInUsers.find((u: any) => u.token === activeToken);
+    const userId = currentUser ? currentUser.userId : 'default';
+    return `ep-pet-state-${userId}`;
+  } catch {
+    return 'ep-pet-state';
+  }
+}
 
 // Decay rate: 1.0 points per hour for both food and love (24 points per day)
 const DECAY_RATE_PER_HOUR = 1.0;
@@ -213,7 +224,7 @@ export const petService = {
 
   getPetState(): PetState {
     try {
-      const stored = localStorage.getItem(LS_KEY);
+      const stored = localStorage.getItem(getLSKey());
       if (!stored) {
         // Return a default in-memory state but do NOT save it to localStorage.
         // This prevents an uninitialized default from being treated as real data
@@ -263,7 +274,7 @@ export const petService = {
       const decayedState = this.applyDecay(state);
       if (!decayedState.history || decayedState.history.length < 2) {
         const populatedState = this.recordHistory(decayedState);
-        localStorage.setItem(LS_KEY, JSON.stringify(populatedState));
+        localStorage.setItem(getLSKey(), JSON.stringify(populatedState));
         return populatedState;
       }
       return decayedState;
@@ -275,7 +286,7 @@ export const petService = {
   savePetState(state: PetState) {
     try {
       state = this.recordHistory(state);
-      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      localStorage.setItem(getLSKey(), JSON.stringify(state));
       // Notify components about state change
       window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: state }));
       // Sync to remote database
@@ -366,7 +377,7 @@ export const petService = {
         const user = sessionRes?.data?.user;
         if (user) {
           state.userId = user.id;
-          localStorage.setItem(LS_KEY, JSON.stringify(state));
+          localStorage.setItem(getLSKey(), JSON.stringify(state));
         } else {
           return; // Skip sync if not logged in
         }
@@ -384,7 +395,7 @@ export const petService = {
         if (data.serverState) {
           // Conflict detected! Merge server state with our current local state.
           const merged = this.mergePetState(state, data.serverState);
-          localStorage.setItem(LS_KEY, JSON.stringify(merged));
+          localStorage.setItem(getLSKey(), JSON.stringify(merged));
           window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: merged }));
           // Retry sync with the merged state
           await this.syncSave(merged);
@@ -414,13 +425,13 @@ export const petService = {
       if (localState.userId && localState.userId !== user.id) {
         if (serverState) {
           serverState.userId = user.id;
-          localStorage.setItem(LS_KEY, JSON.stringify(serverState));
+          localStorage.setItem(getLSKey(), JSON.stringify(serverState));
           window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: serverState }));
         } else {
           const freshState = INITIAL_STATE();
           freshState.userId = user.id;
           freshState.lastUpdated = 0; // Keep as 0 so it won't override real progress elsewhere
-          localStorage.setItem(LS_KEY, JSON.stringify(freshState));
+          localStorage.setItem(getLSKey(), JSON.stringify(freshState));
           window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: freshState }));
         }
         return;
@@ -429,7 +440,7 @@ export const petService = {
       // Associate local state with user if not done yet (e.g. guest state)
       if (!localState.userId) {
         localState.userId = user.id;
-        localStorage.setItem(LS_KEY, JSON.stringify(localState));
+        localStorage.setItem(getLSKey(), JSON.stringify(localState));
       }
 
       const localIsUninitialized = localState.lastUpdated === 0;
@@ -439,14 +450,14 @@ export const petService = {
       if (localIsUninitialized) {
         if (serverState) {
           serverState.userId = user.id;
-          localStorage.setItem(LS_KEY, JSON.stringify(serverState));
+          localStorage.setItem(getLSKey(), JSON.stringify(serverState));
           window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: serverState }));
         } else {
           // No server data either — initialize a fresh state for this user
           const freshState = INITIAL_STATE();
           freshState.userId = user.id;
           freshState.lastUpdated = 0; // Keep as 0 so it won't override real progress elsewhere
-          localStorage.setItem(LS_KEY, JSON.stringify(freshState));
+          localStorage.setItem(getLSKey(), JSON.stringify(freshState));
           window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: freshState }));
           await this.syncSave(freshState);
         }
@@ -465,7 +476,7 @@ export const petService = {
       const hasServerChanged = JSON.stringify(merged) !== JSON.stringify(serverState);
       
       if (hasLocalChanged) {
-        localStorage.setItem(LS_KEY, JSON.stringify(merged));
+        localStorage.setItem(getLSKey(), JSON.stringify(merged));
         window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: merged }));
       }
       
@@ -490,7 +501,7 @@ export const petService = {
       state.love = Math.max(0, Math.round((state.love - decay) * 10) / 10);
       state.lastUpdated = now;
       state = this.recordHistory(state);
-      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      localStorage.setItem(getLSKey(), JSON.stringify(state));
     }
     return state;
   },

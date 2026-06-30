@@ -5,11 +5,25 @@ function getTodayString() {
     return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
 }
 
+export function getActiveUserId(): string {
+    try {
+        const activeToken = localStorage.getItem('active_session_token');
+        if (!activeToken) return 'default';
+        const loggedInUsers = JSON.parse(localStorage.getItem('logged_in_users') || '[]');
+        const currentUser = loggedInUsers.find((u: any) => u.token === activeToken);
+        return currentUser ? currentUser.userId : 'default';
+    } catch {
+        return 'default';
+    }
+}
+
 export const trialsTracker = {
     getConsumedTrials(practiceId: string, challengeId: string): number {
         try {
             const todayStr = getTodayString();
-            const stored = localStorage.getItem('ep-trials');
+            const userId = getActiveUserId();
+            const storageKey = `ep-trials-${userId}`;
+            const stored = localStorage.getItem(storageKey);
             if (!stored) return 0;
             const data = JSON.parse(stored);
             if (!data[todayStr]) return 0;
@@ -28,7 +42,9 @@ export const trialsTracker = {
     consumeTrial(practiceId: string, challengeId: string): boolean {
         try {
             const todayStr = getTodayString();
-            const stored = localStorage.getItem('ep-trials');
+            const userId = getActiveUserId();
+            const storageKey = `ep-trials-${userId}`;
+            const stored = localStorage.getItem(storageKey);
             let data: Record<string, Record<string, number>> = {};
             
             if (stored) {
@@ -52,7 +68,7 @@ export const trialsTracker = {
             }
 
             data[todayStr][key] = consumed + 1;
-            localStorage.setItem('ep-trials', JSON.stringify(data));
+            localStorage.setItem(storageKey, JSON.stringify(data));
             return true;
         } catch {
             return false;
@@ -62,14 +78,17 @@ export const trialsTracker = {
     resetTrials(practiceId: string, challengeId: string): void {
         try {
             const todayStr = getTodayString();
-            const stored = localStorage.getItem('ep-trials');
+            const userId = getActiveUserId();
+            const storageKey = `ep-trials-${userId}`;
+            const stored = localStorage.getItem(storageKey);
             if (!stored) return;
             const data = JSON.parse(stored);
             if (!data[todayStr]) return;
             
             const key = `${practiceId}_${challengeId}`;
             delete data[todayStr][key];
-            localStorage.setItem('ep-trials', JSON.stringify(data));
+            localStorage.setItem(storageKey, JSON.stringify(data));
         } catch {}
     }
 };
+
