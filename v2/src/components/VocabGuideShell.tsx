@@ -338,6 +338,14 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         }
     }
 
+    const handlePrint = () => {
+        const showChinese = window.confirm("是否在打印的词汇手册中包含中文释义？\n(确定: 包含中文 | 取消: 隐藏中文)");
+        setHideCN(!showChinese);
+        setTimeout(() => {
+            window.print();
+        }, 150);
+    };
+
     const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
     const scrollToBottom = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
@@ -374,6 +382,9 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                 </button>
                 <button id="refresh-cache" onClick={refreshCache} className={`vg-control-btn ${isRefreshing ? 'loading' : ''}`}>
                     <span>{isRefreshing ? 'Checking...' : 'Refresh 🔊'}</span>
+                </button>
+                <button id="print-btn" onClick={handlePrint} className="vg-control-btn">
+                    <span>Print 🖨️</span>
                 </button>
             </div>
 
@@ -476,6 +487,10 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                 <button onClick={refreshCache} className="vg-mobile-btn">
                     <span>🔄</span>
                     <small>Refresh</small>
+                </button>
+                <button onClick={handlePrint} className="vg-mobile-btn">
+                    <span>🖨️</span>
+                    <small>Print</small>
                 </button>
                 <button onClick={resetHidden} className="vg-mobile-btn danger">
                     <span>🧹</span>
