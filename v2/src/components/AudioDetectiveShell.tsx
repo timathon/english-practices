@@ -542,9 +542,9 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
 
     if (!activeSection) {
         return (
-            <div className="ad-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-                <div className="ad-screen">
-                    <div className="ad-header">
+            <div className="det-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
+                <div className="det-screen">
+                    <div className="det-header">
                         <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, fontSize: '1.5rem', textDecoration: 'none' }}>🏠</Link>
                         <h1>Audio Detective</h1>
                         <h2>
@@ -555,7 +555,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         </h2>
                     </div>
 
-                    <div className="ad-mode-switch">
+                    <div className="det-mode-switch">
                         <label>
                             <input 
                                 type="checkbox" 
@@ -566,7 +566,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         </label>
                     </div>
 
-                    <div className="ad-section-grid">
+                    <div className="det-section-grid">
                         {data.sections.map((sec: any) => {
                             const stats = getStats(sec.title);
                             const challengeId = sec.title.toLowerCase().replace(/\s+/g, '-');
@@ -574,17 +574,17 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                             const isOutOfAttempts = trialsTracker.getRemainingTrials(practiceId, challengeId) === 0;
 
                             return (
-                                <div key={sec.title} id={`ad-card-${challengeId}`} className={`ad-section-card ${flickeringSectionTitle === sec.title ? 'flicker-active' : ''}`}>
-                                    <div className="ad-card-header">
-                                        <div className="ad-card-title-group">
-                                            <span className="ad-card-icon">🕵️</span>
+                                <div key={sec.title} id={`ad-card-${challengeId}`} className={`det-section-card ${flickeringSectionTitle === sec.title ? 'flicker-active' : ''}`}>
+                                    <div className="det-card-header">
+                                        <div className="det-card-title-group">
+                                            <span className="det-card-icon">🕵️</span>
                                             <h3>{sec.title}</h3>
-                                            <span className="ad-attempts-left">
+                                            <span className="det-attempts-left">
                                                 {trialsTracker.getRemainingTrials(practiceId, challengeId)} / 5 attempts left
                                             </span>
                                         </div>
                                         <button 
-                                            className="ad-start-btn" 
+                                            className="det-start-btn" 
                                             onClick={() => handleSectionSelect(sec)}
                                             style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
                                             disabled={isOutOfAttempts && !isLockedToday}
@@ -592,14 +592,14 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                                             {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'OUT OF ATTEMPTS' : 'START'}
                                         </button>
                                     </div>
-                                    <div className="ad-card-stats">
-                                        <div className="ad-stat-row" onClick={() => setHistoryModal({ title: `TODAY - ${sec.title}`, logs: stats.todayLogs })}>
-                                            <span className="ad-stat-label">TODAY</span>
-                                            <span className="ad-stat-val" style={stats.todayBest >= 80 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{stats.todayRuns} Runs | Best: {stats.todayBest}%</span>
+                                    <div className="det-card-stats">
+                                        <div className="det-stat-row" onClick={() => setHistoryModal({ title: `TODAY - ${sec.title}`, logs: stats.todayLogs })}>
+                                            <span className="det-stat-label">TODAY</span>
+                                            <span className="det-stat-val" style={stats.todayBest >= 80 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{stats.todayRuns} Runs | Best: {stats.todayBest}%</span>
                                         </div>
-                                        <div className="ad-stat-row" onClick={() => setHistoryModal({ title: `LIFETIME - ${sec.title}`, logs: stats.lifeLogs })}>
-                                            <span className="ad-stat-label">LIFETIME</span>
-                                            <span className="ad-stat-val">{stats.lifeRuns} Runs | Best: {stats.lifeBest}%</span>
+                                        <div className="det-stat-row" onClick={() => setHistoryModal({ title: `LIFETIME - ${sec.title}`, logs: stats.lifeLogs })}>
+                                            <span className="det-stat-label">LIFETIME</span>
+                                            <span className="det-stat-val">{stats.lifeRuns} Runs | Best: {stats.lifeBest}%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -609,13 +609,13 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                 </div>
 
                 {historyModal && (
-                    <div className="ad-modal-overlay" onClick={() => setHistoryModal(null)}>
-                        <div className="ad-modal-content" onClick={e => e.stopPropagation()}>
-                            <h3 className="ad-modal-title">{historyModal.title}</h3>
+                    <div className="det-modal-overlay" onClick={() => setHistoryModal(null)}>
+                        <div className="det-modal-content" onClick={e => e.stopPropagation()}>
+                            <h3 className="det-modal-title">{historyModal.title}</h3>
                             {historyModal.logs.length === 0 ? (
                                 <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No records yet.</p>
                             ) : (
-                                <ul className="ad-history-list">
+                                <ul className="det-history-list">
                                     {historyModal.logs.map((log: any, i: number) => {
                                         const d = new Date(log.createdAt);
                                         const isUnfinished = log.unfinished ? ' (Unfinished)' : '';
@@ -630,9 +630,9 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                                         else if (diffDays <= 6) dateLabel = diffDays + ' days ago ' + timeStr;
                                         else dateLabel = d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
                                         return (
-                                            <li key={log.id || i} className="ad-history-item">
-                                                <span className="ad-history-date">{dateLabel}</span>
-                                                <span className="ad-history-score" style={{ color: log.score >= 80 ? 'var(--primary)' : 'inherit' }}>
+                                            <li key={log.id || i} className="det-history-item">
+                                                <span className="det-history-date">{dateLabel}</span>
+                                                <span className="det-history-score" style={{ color: log.score >= 80 ? 'var(--primary)' : 'inherit' }}>
                                                     {log.score}%{isUnfinished}
                                                 </span>
                                             </li>
@@ -640,7 +640,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                                     })}
                                 </ul>
                             )}
-                            <button className="ad-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
+                            <button className="det-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
                         </div>
                     </div>
                 )}
@@ -654,8 +654,8 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
 
     if (completed) {
         return (
-            <div className="ad-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-                <div className="ad-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '30px 20px' }}>
+            <div className="det-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
+                <div className="det-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '30px 20px' }}>
                     <h1 style={{ color: 'var(--primary)', fontSize: '3.5rem', margin: '0' }}>{finalScore}%</h1>
                     <h2 style={{ margin: '5px 0 10px 0', color: '#333', fontSize: '1.5rem', fontWeight: 'bold' }}>Challenge Complete!</h2>
                     
@@ -717,15 +717,15 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                     </div>
 
                     {mistakeQueue.length > 0 && (
-                        <div className="ad-mistakes-review" style={{ marginBottom: '25px', width: '100%', maxWidth: '400px' }}>
+                        <div className="det-mistakes-review" style={{ marginBottom: '25px', width: '100%', maxWidth: '400px' }}>
                             <h3 style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#475569', margin: '0 0 10px 0', textAlign: 'left' }}>Mistake Review</h3>
-                            <div className="ad-mistake-list">
+                            <div className="det-mistake-list">
                                 {mistakeQueue.map((item, idx) => (
-                                    <div key={idx} className="ad-mistake-item">
+                                    <div key={idx} className="det-mistake-item">
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <p className="ad-mistake-en">{item.en}</p>
+                                            <p className="det-mistake-en">{item.en}</p>
                                             <button 
-                                                className="ad-play-audio-btn small" 
+                                                className="det-play-audio-btn small" 
                                                 onClick={() => {
                                                     const url = getAudioUrl(item.en, textbook, isCf);
                                                     const audio = new Audio(url);
@@ -735,18 +735,18 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                                                 🔊
                                             </button>
                                         </div>
-                                        <p className="ad-mistake-cn">{item.options[item.answer]}</p>
+                                        <p className="det-mistake-cn">{item.options[item.answer]}</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    <div className="ad-actions" style={{ width: '100%', maxWidth: '400px' }}>
-                        <button className="ad-action-btn primary" onClick={() => handleSectionSelect(activeSection)}>
+                    <div className="det-actions" style={{ width: '100%', maxWidth: '400px' }}>
+                        <button className="det-action-btn primary" onClick={() => handleSectionSelect(activeSection)}>
                             Try Again
                         </button>
-                        <button className="ad-action-btn secondary" onClick={() => { setActiveSection(null); setCompleted(false); }}>
+                        <button className="det-action-btn secondary" onClick={() => { setActiveSection(null); setCompleted(false); }}>
                             Back to Sections
                         </button>
                     </div>
@@ -760,11 +760,11 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         : (currentIndex + 1 >= queue.length && mistakeQueue.length === 0);
 
     return (
-        <div className="ad-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-            <div className="ad-screen gameplay">
-                <div className="ad-top-bar">
+        <div className="det-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
+            <div className="det-screen gameplay">
+                <div className="det-top-bar">
                     <div style={{ position: 'relative', flexShrink: 0, width: 30 }}>
-                        <button className="ad-close-btn" onClick={() => {
+                        <button className="det-close-btn" onClick={() => {
                             countdownTimer.pause()
                             const challengeId = activeSection.title.toLowerCase().replace(/\s+/g, '-');
                             const rem = trialsTracker.getRemainingTrials(practiceId, challengeId);
@@ -780,31 +780,31 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         }}>✕</button>
                         {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={10} isRunning={countdownTimer.isRunning} />}
                     </div>
-                    <div className="ad-progress-container">
+                    <div className="det-progress-container">
                         {queue.map((_, i) => {
                             const isActive = (!isRedemption && i === currentIndex && !showFeedback) || (isRedemption && q && q.originalIndex === i && !showFeedback);
-                            return <div key={i} className={`ad-progress-segment ${scoreLog[i] || ''}${isActive ? ' active' : ''}`} />
+                            return <div key={i} className={`det-progress-segment ${scoreLog[i] || ''}${isActive ? ' active' : ''}`} />
                         })}
                     </div>
                 </div>
 
-                <div className="ad-question-card">
-                    <div className="ad-detective-avatar">
+                <div className="det-question-card">
+                    <div className="det-detective-avatar">
                         🕵️‍♂️
                     </div>
                     
-                    <div className="ad-audio-control-card">
+                    <div className="det-audio-control-card">
                         <button 
-                            className={`ad-detective-audio-btn ${isPlaying ? 'playing' : ''} ${(locked ? playedAfterCheck : playCount >= 3) ? 'disabled' : ''}`}
+                            className={`det-detective-audio-btn ${isPlaying ? 'playing' : ''} ${(locked ? playedAfterCheck : playCount >= 3) ? 'disabled' : ''}`}
                             onClick={() => playSentenceAudio(q.en)}
                             disabled={(locked ? playedAfterCheck : playCount >= 3) || isPlaying}
                         >
-                            <span className="ad-detective-icon">{isPlaying ? '🎧' : '🔊'}</span>
-                            <span className="ad-detective-status">
+                            <span className="det-detective-icon">{isPlaying ? '🎧' : '🔊'}</span>
+                            <span className="det-detective-status">
                                 {isPlaying ? 'Listening...' : 'Play Audio'}
                             </span>
                         </button>
-                        <div className="ad-play-counter">
+                        <div className="det-play-counter">
                             {locked ? (playedAfterCheck ? '0 plays remaining' : '1 review play remaining') : `${3 - playCount} plays remaining`}
                         </div>
                     </div>
@@ -813,7 +813,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
 
 
 
-                <div className="ad-options-container">
+                <div className="det-options-container">
                     {options.map((opt, index) => {
                         const isSelected = selectedOption === opt.originalIdx;
                         const isCorrectAnswer = opt.originalIdx === q.answer;
@@ -837,23 +837,23 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                                 onClick={() => handleOptionClick(opt.originalIdx)}
                                 disabled={locked}
                             >
-                                <span className="ad-option-number">{index + 1}</span>
-                                <span className="ad-option-text">{opt.text}</span>
+                                <span className="det-option-number">{index + 1}</span>
+                                <span className="det-option-text">{opt.text}</span>
                             </button>
                         )
                     })}
                 </div>
 
                 {/* Show corresponding English sentence AFTER check is clicked */}
-                <div className={`ad-revealed-sentence ${locked ? 'revealed' : 'hidden'}`}>
-                    <p className="ad-revealed-speaker">{q.speaker ? `${q.speaker}: ` : ''}</p>
-                    <p className="ad-revealed-text">{q.en}</p>
+                <div className={`det-revealed-sentence ${locked ? 'revealed' : 'hidden'}`}>
+                    <p className="det-revealed-speaker">{q.speaker ? `${q.speaker}: ` : ''}</p>
+                    <p className="det-revealed-text">{q.en}</p>
                 </div>
 
-                <div className="ad-game-footer">
+                <div className="det-game-footer">
                     {!locked ? (
                         <button 
-                            className="ad-action-btn primary"
+                            className="det-action-btn primary"
                             disabled={selectedOption === null}
                             onClick={() => checkAnswer()}
                         >
@@ -861,7 +861,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         </button>
                     ) : (
                         <button 
-                            className="ad-action-btn primary"
+                            className="det-action-btn primary"
                             disabled={continueDisabled}
                             onClick={() => nextQuestion()}
                         >
