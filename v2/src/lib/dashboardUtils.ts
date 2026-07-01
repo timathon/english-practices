@@ -5,6 +5,7 @@ export const PRACTICE_TYPE_ICONS: Record<string, string> = {
   'Recall Map': '🗺️',
   'Writing Map': '📝',
   'Audio Detective': '🎧',
+  'Bug Hunter': '🐛',
 }
 
 export const translatePracticeName = (name: string): string => {
@@ -31,6 +32,7 @@ export const translatePracticeName = (name: string): string => {
     'Grammar Wizard': '语法向导',
     'Sentence Architect': '句子架构师',
     'Audio Detective': '听力侦探',
+    'Bug Hunter': 'Bug 猎手',
   };
   return map[norm] || map[norm.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')] || norm;
 };

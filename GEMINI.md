@@ -413,6 +413,108 @@ module.exports = {
 - **Constraint:** Do NOT write this mapping as a JSON file, to prevent the database seed scripts (`seed_practices.cjs`) or the V2 client from treating it as an active practice sheet. The TTS scripts (`tts-in-one.cjs`) will automatically look for and load this file if present.
 
 ---
+
+## 13. Bug Hunter (BH)
+**Source:** A markdown file containing passages (e.g., `data/A3B/a3b-uz/a3b-uz-bug-hunter.md`).
+**Target:** `*-bug-hunter.json` (Save in the same folder as source)
+
+- **Concept:** Each original sentence is transformed into **two buggy variants** — one with **2 spelling mistakes** and one with **2 grammar mistakes**. Students tap a highlighted word in the buggy sentence and pick the correct fix from 4 options.
+- **Structure:**
+  - `level`: Grade/Semester/Unit info (e.g., `"Grade 3 Semester 2 - Unit Z"`).
+  - `title`: Always `"Bug Hunter"`.
+  - `sections`: Array of section objects, one per passage/story group.
+- **Section Fields:**
+  - `id`: Short unique string (e.g., `"s1"`, `"s2"`).
+  - `title`: Section title (e.g., `"Unit 1: My Growth Story"`).
+  - `sentences`: Array of sentence objects.
+- **Sentence Object Fields:**
+  - `id`: A unique 8-character alphanumeric string (e.g., `"bh1a1s"`).
+  - `en`: The original correct English sentence.
+  - `cn`: Chinese translation of the correct sentence.
+  - `bugs`: Array of exactly **2** bug objects — one with `type: "spelling"` and one with `type: "grammar"`, always in that order.
+- **Bug Object Fields:**
+  - `type`: `"spelling"` or `"grammar"`.
+  - `buggy`: The full sentence with **exactly 2 errors** of the given type introduced.
+  - `errors`: Array of exactly **2** error objects, one per introduced mistake.
+- **Error Object Fields:**
+  - `buggy_word`: The exact incorrect word as it appears in `buggy` (without punctuation).
+  - `context`: (Optional string) A short unique substring from the buggy sentence containing `buggy_word` (e.g. `"on a grass"`). Use this field to disambiguate which word is targeted if `buggy` contains multiple identical words (e.g. two `"a"` articles where only one is incorrect).
+  - `options`: Array of exactly **4** options (strings). Must include the correct word plus 3 plausible distractors.
+  - `answer`: Integer index (0–3) of the correct option. **Must be randomized** (not always 0).
+  - `label`: A brief descriptive tag (lowercase):
+    - For **spelling** errors: always `"spelling"`.
+    - For **grammar** errors: a concise grammar concept, e.g. `"past tense"`, `"subject-verb"`, `"article"`, `"plural noun"`, `"singular noun"`, `"adjective form"`, `"object pronoun"`, `"possessive pronoun"`, `"verb form"`, `"noun form"`.
+
+- **Spelling Bug Rules:**
+  - Introduce realistic misspellings (e.g., doubled letters, wrong vowel, phonetic misspelling).
+  - Distractors: other plausible but wrong spellings of the same word.
+  - The `buggy_word` must appear verbatim (without punctuation) inside `buggy`.
+
+- **Grammar Bug Rules:**
+  - Introduce grammatically incorrect forms (wrong tense, wrong article, wrong plural/singular, wrong pronoun, wrong adjective/adverb form).
+  - Distractors: other grammatically incorrect forms + one obviously wrong form; all 4 options must be plausible-looking.
+  - The `label` must reflect the specific grammar rule being tested.
+
+- **Example:**
+```json
+{
+  "level": "Grade 3 Semester 2 - Unit Z",
+  "title": "Bug Hunter",
+  "sections": [
+    {
+      "id": "s1",
+      "title": "Unit 1: My Growth Story",
+      "sentences": [
+        {
+          "id": "bh1a1s",
+          "en": "Last holiday, I went to a winter camp.",
+          "cn": "上个假期，我去了一个冬令营。",
+          "bugs": [
+            {
+              "type": "spelling",
+              "buggy": "Last holliday, I went to a wenter camp.",
+              "errors": [
+                {
+                  "buggy_word": "holliday",
+                  "options": ["holidey", "holiday", "halliday", "holyday"],
+                  "answer": 1,
+                  "label": "spelling"
+                },
+                {
+                  "buggy_word": "wenter",
+                  "options": ["wenter", "winter", "winer", "wintar"],
+                  "answer": 1,
+                  "label": "spelling"
+                }
+              ]
+            },
+            {
+              "type": "grammar",
+              "buggy": "Last holiday, I go to a winter camps.",
+              "errors": [
+                {
+                  "buggy_word": "go",
+                  "options": ["goes", "going", "gone", "went"],
+                  "answer": 3,
+                  "label": "past tense"
+                },
+                {
+                  "buggy_word": "camps",
+                  "options": ["camp", "campes", "camping", "camped"],
+                  "answer": 0,
+                  "label": "singular noun"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.**
 
 **V2 Focus:** The project primarily runs on the V2 single-page application (served from the `v2` directory, which loads exercises dynamically from the database). Therefore, **do NOT** run `scripts/*-release-gen-3.cjs` to generate static HTML files unless the user explicitly requests HTML generation or deployment of static pages. Instead, simply generate/modify the JSON files in the `data/` directory, run the database seed/sync scripts to update the database, and test using the V2 local development server. After generating practice JSONs, you only need to run `scripts/tts-in-one.cjs` for TTS generation, excluding passage decoder.

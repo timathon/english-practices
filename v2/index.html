@@ -7,6 +7,71 @@
     <title>同步派</title>
   </head>
   <body>
+    <!-- Mobile debug terminal panel -->
+    <div id="mobile-debug-terminal" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      max-height: 40vh;
+      background: rgba(0, 0, 0, 0.9);
+      color: #00ff00;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 8px;
+      overflow-y: auto;
+      z-index: 999999;
+      display: none;
+      border-bottom: 2px solid #ff0055;
+      box-sizing: border-box;
+      pointer-events: auto;
+    ">
+      <div style="font-weight: bold; border-bottom: 1px solid #00ff00; margin-bottom: 4px; display: flex; justify-content: space-between;">
+        <span>📱 Mobile Debug Console</span>
+        <button onclick="document.getElementById('mobile-debug-terminal').style.display='none'" style="background: red; color: white; border: none; font-size: 10px; cursor: pointer; padding: 2px 6px; border-radius: 3px;">Close</button>
+      </div>
+      <div id="debug-log-lines"></div>
+    </div>
+
+    <script>
+      (function() {
+        const terminal = document.getElementById('mobile-debug-terminal');
+        const linesContainer = document.getElementById('debug-log-lines');
+        
+        function log(message, color = '#00ff00') {
+          terminal.style.display = 'block';
+          const p = document.createElement('p');
+          p.style.margin = '2px 0';
+          p.style.color = color;
+          p.innerText = message;
+          linesContainer.appendChild(p);
+          terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        window.addEventListener('error', function(e) {
+          log('❌ Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno + ':' + e.colno, '#ff3333');
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+          log('❌ Promise Rejected: ' + e.reason, '#ff9900');
+        });
+
+        // Intercept console.error
+        const oldError = console.error;
+        console.error = function() {
+          log('console.error: ' + Array.from(arguments).map(x => typeof x === 'object' ? JSON.stringify(x) : x).join(' '), '#ff3388');
+          oldError.apply(console, arguments);
+        };
+
+        // Capture script loading failures (e.g. CORS, mime mismatch, resource block)
+        window.addEventListener('error', function(e) {
+          if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+            log('❌ Resource load failed: ' + (e.target.src || e.target.href), '#ffcc00');
+          }
+        }, true);
+      })();
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

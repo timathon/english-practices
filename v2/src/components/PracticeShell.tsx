@@ -13,6 +13,7 @@ import { GrammarWizardShell } from './GrammarWizardShell'
 import { PassageDecoderShell } from './PassageDecoderShell'
 import { TestSheetShell } from './TestSheetShell'
 import { AudioDetectiveShell } from './AudioDetectiveShell'
+import { BugHunterShell } from './BugHunterShell'
 
 import { practiceCache } from '../lib/practiceCache'
 import { cache } from '../lib/cache'
@@ -228,6 +229,10 @@ export function PracticeShell() {
 
     if (cleanType === 'test' || cleanType.startsWith('test') || cleanType.endsWith('-test')) {
         return <TestSheetShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
+    if (cleanType === 'bug-hunter' || cleanType.endsWith('bug-hunter')) {
+        return <BugHunterShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
 

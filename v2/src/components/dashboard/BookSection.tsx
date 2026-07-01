@@ -576,6 +576,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 if (t.includes('grammar-wizard')) return '🧙‍♂️';
                 if (t.includes('passage-decoder')) return '📖';
                 if (t.includes('audio-detective')) return '🎧';
+                if (t.includes('bug-hunter')) return '🐛';
                 return PRACTICE_TYPE_ICONS[typeStr] ?? '▶️';
               };
 
@@ -714,6 +715,9 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                             <span className="db-practice-name">
                               <FadingPracticeName 
                                 name={(() => {
+                                  if (p.type.toLowerCase().includes('bug-hunter')) {
+                                    return 'Bug Hunter';
+                                  }
                                   if (p.type.toLowerCase().includes('writing-map')) {
                                     const matchSuffix = p.type.match(/writing-map-(.+)$/i);
                                     if (matchSuffix) {
