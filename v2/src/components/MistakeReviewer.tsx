@@ -146,10 +146,15 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     const q = mistake.question;
 
     // Type-specific setups
-    if (['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s'].includes(mistake.practiceType)) {
+    if (['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(mistake.practiceType)) {
       const mapped = q.options.map((text: string, idx: number) => ({ text, originalIdx: idx }));
       setShuffledOptions(shuffle(mapped));
       countdownTimer.reset(mistake.practiceType === 'grammar-wizard' ? 30 : 15);
+      if (mistake.practiceType === 'audio-detective') {
+        setTimeout(() => {
+          playAudio(getAudioUrl(q.en, mistake.textbook));
+        }, 300);
+      }
     } else if (mistake.practiceType === 'sentence-architect') {
       const cleanEn = q.en.replace(/[.!?]$/, "");
       const originalWords = cleanEn.split(" ");
@@ -170,7 +175,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
       setShuffledChunkOpts(chunks.map((c: any) => shuffle([...c.options])));
       countdownTimer.reset(15);
     }
-  }, [countdownTimer]);
+  }, [countdownTimer, playAudio]);
 
   const handleOptionClick = (originalIdx: number) => {
     if (locked) return;
@@ -190,7 +195,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     let wrongAnswer: any = undefined;
 
     if (!forceWrong) {
-      if (['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s'].includes(currentMistake.practiceType)) {
+      if (['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType)) {
         correct = selectedOption === q.answer;
         wrongAnswer = selectedOption !== null ? q.options[selectedOption] : undefined;
       } else if (currentMistake.practiceType === 'sentence-architect') {
@@ -229,6 +234,8 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
       // Play voice audio if it exists
       if (currentMistake.practiceType === 'vocab-master' && q.context_sentence) {
         setTimeout(() => playAudio(getAudioUrl(q.context_sentence, currentMistake.textbook)), 250);
+      } else if (currentMistake.practiceType === 'audio-detective' && q.en) {
+        setTimeout(() => playAudio(getAudioUrl(q.en, currentMistake.textbook)), 250);
       } else if (currentMistake.practiceType === 'sentence-architect' && q.en) {
         const sentenceAudioUrl = q.audio || getAudioUrl(q.en, currentMistake.textbook);
         setTimeout(() => playAudio(sentenceAudioUrl), 250);
@@ -321,7 +328,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (completed || !currentMistake) return;
 
-      const isMc = ['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s'].includes(currentMistake.practiceType);
+      const isMc = ['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
 
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -384,7 +391,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
   if (!currentMistake) return null;
 
   const q = currentMistake.question;
-  const isMc = ['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s'].includes(currentMistake.practiceType);
+  const isMc = ['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
 
   return (
     <div className="mr-overlay">
@@ -422,6 +429,33 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
                     {q.speaker && <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{q.speaker}: </span>}
                     {q.en}
                   </>
+                ) : currentMistake.practiceType === 'audio-detective' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '100%' }}>
+                    <button 
+                      onClick={() => playAudio(getAudioUrl(q.en, currentMistake.textbook))}
+                      style={{
+                        padding: '10px 24px',
+                        borderRadius: '30px',
+                        background: 'var(--primary)',
+                        color: 'white',
+                        border: 'none',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      🔊 播放音频 (Play Audio)
+                    </button>
+                    {locked && (
+                      <p style={{ marginTop: '10px', fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b' }}>
+                        {q.speaker ? `${q.speaker}: ` : ''}{q.en}
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   q.prompt
                 )}
@@ -563,6 +597,12 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
                       <p className="mr-meaning-text"><strong>{q.word}</strong>: {q.meaning}</p>
                       {q.context_sentence && <p className="mr-context-sentence">📖 {q.context_sentence}</p>}
                       {q.cn && <p className="mr-context-sentence-cn">🇨🇳 {q.cn}</p>}
+                    </>
+                  )}
+                  {currentMistake.practiceType === 'audio-detective' && (
+                    <>
+                      <p className="mr-meaning-text"><strong>Sentence:</strong> {q.en}</p>
+                      <p className="mr-context-sentence-cn">🇨🇳 {q.options[q.answer]}</p>
                     </>
                   )}
                   {currentMistake.practiceType === 'grammar-wizard' && (

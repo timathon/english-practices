@@ -12,7 +12,7 @@ import { SentenceArchitectShell } from './SentenceArchitectShell'
 import { GrammarWizardShell } from './GrammarWizardShell'
 import { PassageDecoderShell } from './PassageDecoderShell'
 import { TestSheetShell } from './TestSheetShell'
-
+import { AudioDetectiveShell } from './AudioDetectiveShell'
 
 import { practiceCache } from '../lib/practiceCache'
 import { cache } from '../lib/cache'
@@ -37,12 +37,14 @@ export function PracticeShell() {
         }
         return data
     }
-    
+
     useEffect(() => {
         let active = true
         const controller = new AbortController()
         const { signal } = controller
-        const allIds = [id!, ...tnSiblingIds]
+        const isAudioDetective = id?.endsWith('-ad')
+        const realMainId = isAudioDetective ? id!.replace(/-ad$/, '') : id!
+        const allIds = [realMainId, ...tnSiblingIds]
         let currentRawDataStr = ''
 
         const processResults = (results: any[]) => {
@@ -51,6 +53,11 @@ export function PracticeShell() {
             try {
                 const mainData = JSON.parse(JSON.stringify(main))
                 const decryptedMain = decrypt(mainData)
+                if (isAudioDetective) {
+                    decryptedMain.type = 'audio-detective';
+                    decryptedMain.title = 'Audio Detective';
+                    decryptedMain.id = id; // keep original suffix so records save separately
+                }
                 if (siblings.length > 0 && (decryptedMain.type?.toLowerCase().includes('text-navigator') || decryptedMain.type?.toLowerCase().includes('writing-map'))) {
                     const siblingData = siblings.map(s => decrypt(JSON.parse(JSON.stringify(s))))
                     const allItems = [decryptedMain, ...siblingData]
@@ -74,7 +81,7 @@ export function PracticeShell() {
 
         const triggerPrefetchUnitPractices = async (mainPracticeData: any) => {
             if (!mainPracticeData || !mainPracticeData.textbook || !mainPracticeData.unit) return
-            
+
             try {
                 let allPractices = cache.getPractices()
                 if (!allPractices) {
@@ -89,9 +96,9 @@ export function PracticeShell() {
                 if (!allPractices || !Array.isArray(allPractices)) return
 
                 const siblings = allPractices.filter(
-                    (p: any) => 
-                        p.textbook === mainPracticeData.textbook && 
-                        p.unit === mainPracticeData.unit && 
+                    (p: any) =>
+                        p.textbook === mainPracticeData.textbook &&
+                        p.unit === mainPracticeData.unit &&
                         p.id !== mainPracticeData.id &&
                         !allIds.includes(p.id)
                 )
@@ -144,7 +151,7 @@ export function PracticeShell() {
             )
         ).then(async (fetchedResults) => {
             if (!active) return
-            
+
             const [main] = fetchedResults
             if (main.error) {
                 if (!currentRawDataStr) {
@@ -181,12 +188,12 @@ export function PracticeShell() {
         }
     }, [id, tnSiblingIds.join(',')])
 
-    
+
     if (error) return <div className="practice-error">Error: {error}</div>
     if (!practice) return <div className="practice-loading">Loading...</div>
-    
+
     const cleanType = practice.type.replace(/^p\d+-p\d+-/i, '').replace(/^p\d+-/i, '');
-    
+
     if (cleanType === 'vocab-master') {
         return <VocabMasterShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
@@ -215,6 +222,10 @@ export function PracticeShell() {
         return <PassageDecoderShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
+    if (cleanType === 'audio-detective') {
+        return <AudioDetectiveShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
     if (cleanType === 'test' || cleanType.startsWith('test') || cleanType.endsWith('-test')) {
         return <TestSheetShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
@@ -227,7 +238,7 @@ export function PracticeShell() {
     if (cleanType.startsWith('writing-map')) {
         return <WritingMapShell data={practice.content} textbook={practice.textbook} unit={practice.unit} />
     }
-    
+
     return (
         <div style={{ padding: 20 }}>
             <h2>{practice.title}</h2>
