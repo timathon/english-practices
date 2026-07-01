@@ -34,7 +34,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [hasClickedDontKnow, setHasClickedDontKnow] = useState(false)
     const [knowCooldownSecs, setKnowCooldownSecs] = useState(0)
     const [isPeeking, setIsPeeking] = useState(false)
-    const [showTrace, setShowTrace] = useState(false)
+    const [traceList, setTraceList] = useState<any[] | null>(null)
 
     const timerRef = useRef<any>(null)
     const knowCooldownIntervalRef = useRef<any>(null)
@@ -367,7 +367,6 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             <div className="vg-stats-bar">
                 <span>Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b></span>
                 <button className="vg-play-cards-btn" onClick={openFlashcards} title="Start Flashcards">▶️ Play</button>
-                <button className="vg-play-cards-btn no-shake" style={{ background: '#27ae60' }} onClick={() => setShowTrace(true)} title="Start Tracing">✍️ Trace</button>
             </div>
 
             <div className="vg-controls-container desktop-only">
@@ -399,7 +398,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     return (
                         <div key={item.originalIndex} className={`vg-item ${isHidden ? 'is-hidden' : ''}`}>
                             <div className="vg-word-header">
-                                <h2 className="vg-word-title">
+                                <h2 className="vg-word-title" onClick={() => setTraceList([item])}>
                                     {item.originalIndex + 1}. {item.word}
                                     <span className="vg-ipa-container">
                                         {item.ipa && <span className="vg-ipa">{item.ipa}</span>}
@@ -637,13 +636,11 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                 </div>
             )}
 
-            {showTrace && vocab.length > 0 && (
+            {traceList && traceList.length > 0 && (
                 <VocabTraceModal
-                    vocabList={vocab.filter(item => !hiddenIndices.has(item.originalIndex)).length > 0 
-                        ? vocab.filter(item => !hiddenIndices.has(item.originalIndex)) 
-                        : vocab}
+                    vocabList={traceList}
                     startIndex={0}
-                    onClose={() => setShowTrace(false)}
+                    onClose={() => setTraceList(null)}
                 />
             )}
         </div>
