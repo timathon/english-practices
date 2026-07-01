@@ -684,7 +684,19 @@ export function ManageUsers() {
                             if (match) {
                               practiceId = match[1];
                             }
-                            const practice = practices.find(p => p.id === practiceId);
+                            let practice = practices.find(p => p.id === practiceId);
+                            if (!practice && practiceId.endsWith('-ad')) {
+                              const baseId = practiceId.slice(0, -3);
+                              const basePractice = practices.find(p => p.id === baseId);
+                              if (basePractice) {
+                                practice = {
+                                  ...basePractice,
+                                  id: practiceId,
+                                  type: 'audio-detective',
+                                  title: 'Audio Detective'
+                                };
+                              }
+                            }
                             const book = practice ? practice.textbook : 'Unknown';
                             bookCounts[book] = (bookCounts[book] || 0) + 1;
                           });
@@ -860,12 +872,24 @@ export function ManageUsers() {
                           const match = r.unit.match(/^(.+?)\s\((.+)\)$/);
                           let practiceId = r.unit;
                           let challengeTitle = '';
-                          if (match) {
-                            practiceId = match[1];
-                            challengeTitle = match[2];
-                          }
-                          const practice = practices.find(p => p.id === practiceId);
-                          const timeStarted = new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                           if (match) {
+                             practiceId = match[1];
+                             challengeTitle = match[2];
+                           }
+                           let practice = practices.find(p => p.id === practiceId);
+                           if (!practice && practiceId.endsWith('-ad')) {
+                             const baseId = practiceId.slice(0, -3);
+                             const basePractice = practices.find(p => p.id === baseId);
+                             if (basePractice) {
+                               practice = {
+                                 ...basePractice,
+                                 id: practiceId,
+                                 type: 'audio-detective',
+                                 title: 'Audio Detective'
+                               };
+                             }
+                           }
+                           const timeStarted = new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                           const timeUsedMs = r.updatedAt ? new Date(r.updatedAt).getTime() - new Date(r.createdAt).getTime() : 0;
                           const timeUsed = timeUsedMs > 0 ? (timeUsedMs < 60000 ? '<1 min' : Math.round(timeUsedMs / 60000) + ' mins') : '-';
 

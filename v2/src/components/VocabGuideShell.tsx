@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import './VocabGuideShell.css'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
+import { VocabTraceModal, AnimatedWordSVG } from './VocabTraceModal'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
@@ -33,6 +34,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [hasClickedDontKnow, setHasClickedDontKnow] = useState(false)
     const [knowCooldownSecs, setKnowCooldownSecs] = useState(0)
     const [isPeeking, setIsPeeking] = useState(false)
+    const [showTrace, setShowTrace] = useState(false)
 
     const timerRef = useRef<any>(null)
     const knowCooldownIntervalRef = useRef<any>(null)
@@ -365,6 +367,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             <div className="vg-stats-bar">
                 <span>Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b></span>
                 <button className="vg-play-cards-btn" onClick={openFlashcards} title="Start Flashcards">▶️ Play</button>
+                <button className="vg-play-cards-btn no-shake" style={{ background: '#27ae60' }} onClick={() => setShowTrace(true)} title="Start Tracing">✍️ Trace</button>
             </div>
 
             <div className="vg-controls-container desktop-only">
@@ -518,7 +521,20 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                 {/* Front Side */}
                                 <div className="vg-card-front">
                                     <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
-                                    <div className="vg-card-word-title">{deck[currentDeckIndex].word}</div>
+                                    <div className="vg-card-top-right">
+                                        <div className="vg-card-word-title">{deck[currentDeckIndex].word}</div>
+                                        {(deck[currentDeckIndex].unit || deck[currentDeckIndex].page_number) && (
+                                            <div className="vg-card-meta">
+                                                {deck[currentDeckIndex].unit && (
+                                                    <span className="vg-card-unit">Unit {deck[currentDeckIndex].unit}</span>
+                                                )}
+                                                {deck[currentDeckIndex].page_number && (
+                                                    <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <AnimatedWordSVG word={deck[currentDeckIndex].word} />
                                     {deck[currentDeckIndex].ipa && (
                                         <div className="vg-card-detail">
                                             <span className="vg-card-label">IPA:</span>
@@ -552,34 +568,37 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                             <span className="vg-sentence">"{deck[currentDeckIndex].context_sentence}"</span>
                                         </div>
                                     )}
-                                    {(deck[currentDeckIndex].unit || deck[currentDeckIndex].page_number) && (
-                                        <div className="vg-card-meta">
-                                            {deck[currentDeckIndex].unit && (
-                                                <span className="vg-card-unit">Unit {deck[currentDeckIndex].unit}</span>
-                                            )}
-                                            {deck[currentDeckIndex].page_number && (
-                                                <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* Back Side */}
                                 <div className="vg-card-back">
                                     <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
-                                    <div className="vg-card-word-title">
-                                        {deck[currentDeckIndex].word}
-                                        <button 
-                                            className={`vg-word-play-btn ${playingIndex === deck[currentDeckIndex].originalIndex + 20000 ? 'playing' : ''}`}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                playAudio(deck[currentDeckIndex].word, deck[currentDeckIndex].originalIndex + 20000);
-                                            }}
-                                            title="Play word audio"
-                                        >
-                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                        </button>
+                                    <div className="vg-card-top-right">
+                                        <div className="vg-card-word-title">
+                                            {deck[currentDeckIndex].word}
+                                            <button 
+                                                className={`vg-word-play-btn ${playingIndex === deck[currentDeckIndex].originalIndex + 20000 ? 'playing' : ''}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    playAudio(deck[currentDeckIndex].word, deck[currentDeckIndex].originalIndex + 20000);
+                                                }}
+                                                title="Play word audio"
+                                            >
+                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            </button>
+                                        </div>
+                                        {(deck[currentDeckIndex].unit || deck[currentDeckIndex].page_number) && (
+                                            <div className="vg-card-meta">
+                                                {deck[currentDeckIndex].unit && (
+                                                    <span className="vg-card-unit">Unit {deck[currentDeckIndex].unit}</span>
+                                                )}
+                                                {deck[currentDeckIndex].page_number && (
+                                                    <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
+                                    <AnimatedWordSVG word={deck[currentDeckIndex].word} />
                                     <div className="vg-card-meaning">{deck[currentDeckIndex].meaning}</div>
                                     {(deck[currentDeckIndex].memorization_hook || deck[currentDeckIndex].hint) && (
                                         <div className="vg-card-hook">
@@ -616,6 +635,16 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showTrace && vocab.length > 0 && (
+                <VocabTraceModal
+                    vocabList={vocab.filter(item => !hiddenIndices.has(item.originalIndex)).length > 0 
+                        ? vocab.filter(item => !hiddenIndices.has(item.originalIndex)) 
+                        : vocab}
+                    startIndex={0}
+                    onClose={() => setShowTrace(false)}
+                />
             )}
         </div>
     )
