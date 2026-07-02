@@ -17,6 +17,7 @@ import { ActiveHeader } from './shell/ActiveHeader'
 import { FooterAction } from './shell/FooterAction'
 import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
 import { ShellHistoryModal } from './shell/ShellHistoryModal'
+import { CompleteScreenActions } from './shell/CompleteScreenActions'
 
 const renderHighlightedSentence = (sentence: string, word: string) => {
     if (!sentence || !word) return sentence;
@@ -163,14 +164,17 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
         }
     }, [])
 
-    const handleChallengeSelect = (c: any) => {
-        const stats = getStats(c.title);
-        if (stats.todayBest === 100) {
-            setLockModalOpen(true);
-            return;
-        }
-        const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
-        if (!hasConsumed) return;
+     const handleChallengeSelect = (c: any, overrideInvisible?: boolean) => {
+         const isInvisible = overrideInvisible !== undefined ? overrideInvisible : invisibleMode;
+         if (!isInvisible) {
+             const stats = getStats(c.title);
+             if (stats.todayBest === 100) {
+                 setLockModalOpen(true);
+                 return;
+             }
+             const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
+             if (!hasConsumed) return;
+         }
        
        setActiveChallenge(c)
        setActiveRecordId(null)
@@ -558,6 +562,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                     <ChallengeCardGrid
                         challenges={data.challenges}
                         onStart={handleChallengeSelect}
+                        invisibleMode={invisibleMode}
                         onShowHistory={(c) => {
                             const s = getStats(c.title);
                             setHistoryModal({ title: `TODAY - ${c.title}`, logs: s.todayLogs });
@@ -647,17 +652,24 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                          </div>
                      </div>
 
-                     <button 
-                         className="vm-check-btn" 
-                         onClick={() => {
-                             setLastFinishedChallengeId(activeChallenge.id)
-                             setActiveChallenge(null)
-                             setCompleted(false)
-                             loadRecords()
-                         }}
-                     >
-                         Back to Challenges
-                     </button>
+                      <CompleteScreenActions
+                          remainingTrials={trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)}
+                          onBack={() => {
+                              setLastFinishedChallengeId(activeChallenge.id)
+                              setActiveChallenge(null)
+                              setCompleted(false)
+                              loadRecords()
+                          }}
+                          onTryAgain={(overrideInvisible) => {
+                               if (overrideInvisible !== undefined) {
+                                   setInvisibleMode(overrideInvisible);
+                               }
+                               handleChallengeSelect(activeChallenge, overrideInvisible);
+                          }}
+                          prefix="vm"
+                          isLockedToday={getStats(activeChallenge.title).todayBest === 100}
+                          invisibleMode={invisibleMode}
+                      />
                 </div>
             </div>
         )

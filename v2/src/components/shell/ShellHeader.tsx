@@ -16,6 +16,8 @@ export const ShellHeader: React.FC<ShellHeaderProps> = ({
     unit,
     prefix
 }) => {
+    const formattedLevel = level ? level.replace(/\s*\/\s*/g, ' - ') : ''
+
     return (
         <header className={`${prefix}-header`}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: 40 }}>
@@ -28,7 +30,7 @@ export const ShellHeader: React.FC<ShellHeaderProps> = ({
                 </Link>
                 <h1>{title}</h1>
             </div>
-            <h2 style={{ marginTop: 15 }}>{level}</h2>
+            <h2 style={{ marginTop: 15 }}>{formattedLevel}</h2>
         </header>
     )
 }

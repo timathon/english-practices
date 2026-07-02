@@ -9,6 +9,7 @@ interface ChallengeCardGridProps {
     isLockedToday: (c: any) => boolean
     flickeringId: string | null
     prefix: string
+    invisibleMode?: boolean
 }
 
 export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
@@ -19,6 +20,7 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
     getChallengeStatsText,
     isLockedToday,
     flickeringId,
+    invisibleMode,
     prefix
 }) => {
     return (
@@ -34,6 +36,7 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
                         key={c.id}
                         id={`${prefix}-card-${c.id}`}
                         className={`${prefix}-challenge-card ${flickeringId === c.id ? 'flicker-active' : ''}`}
+                        style={invisibleMode ? { backgroundColor: '#f1f5f9', borderColor: '#cbd5e1' } : {}}
                     >
                         <div className={`${prefix}-card-header`}>
                             <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -55,7 +58,9 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
                                         ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } 
                                         : isOutOfAttempts 
                                             ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } 
-                                            : {}
+                                            : invisibleMode
+                                                ? { backgroundColor: '#64748b', borderBottomColor: '#475569', color: '#fff' }
+                                                : {}
                                 }
                             >
                                 {lockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? (prefix === 'sh' ? 'LIMIT' : 'OUT OF ATTEMPTS') : 'START'}

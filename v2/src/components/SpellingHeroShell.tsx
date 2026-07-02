@@ -17,6 +17,7 @@ import { ActiveHeader } from './shell/ActiveHeader'
 import { FooterAction } from './shell/FooterAction'
 import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
 import { ShellHistoryModal } from './shell/ShellHistoryModal'
+import { CompleteScreenActions } from './shell/CompleteScreenActions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -343,13 +344,16 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
     // ── Start a challenge ─────────────────────────────────────────────────────
 
-    const handleChallengeSelect = (c: Challenge) => {
-        const stats = getChallengeStats(practiceId, c.id);
-        if (stats.today.best === 100) {
-            setLockModalOpen(true);
-            return;
+    const handleChallengeSelect = (c: Challenge, overrideInvisible?: boolean) => {
+        const isInvisible = overrideInvisible !== undefined ? overrideInvisible : invisibleMode;
+        if (!isInvisible) {
+            const stats = getChallengeStats(practiceId, c.id);
+            if (stats.today.best === 100) {
+                setLockModalOpen(true);
+                return;
+            }
+            if (!trialsTracker.consumeTrial(practiceId, c.id)) return
         }
-        if (!trialsTracker.consumeTrial(practiceId, c.id)) return
 
         const shuffled = [...c.questions].sort(() => Math.random() - 0.5).map((q: any, i: number) => ({ ...q, originalIndex: i }))
         const emptyLog = new Array(c.questions.length).fill(null)
@@ -719,18 +723,24 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                         )}
                     </div>
 
-                    <button
-                        className="sh-check-btn"
-                        style={{ maxWidth: 300 }}
-                        onClick={() => {
+                    <CompleteScreenActions
+                        remainingTrials={trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)}
+                        onBack={() => {
                             if (activeChallenge) {
                                 setLastFinishedChallengeId(activeChallenge.id)
                             }
                             setActiveChallenge(null)
                         }}
-                    >
-                        Back to Menu
-                    </button>
+                        onTryAgain={(overrideInvisible) => {
+                            if (overrideInvisible !== undefined) {
+                                setInvisibleMode(overrideInvisible);
+                            }
+                            handleChallengeSelect(activeChallenge, overrideInvisible);
+                        }}
+                        prefix="sh"
+                        isLockedToday={getChallengeStats(practiceId, activeChallenge.id).today.best === 100}
+                        invisibleMode={invisibleMode}
+                    />
                 </div>
             </div>
         )
@@ -978,6 +988,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                     challenges={challenges}
                     onStart={handleChallengeSelect}
                     onShowHistory={setHistoryChallenge}
+                    invisibleMode={invisibleMode}
                     getRemainingTrials={(cId) => trialsTracker.getRemainingTrials(practiceId, cId)}
                     getChallengeStatsText={(c) => {
                         const s = getChallengeStats(practiceId, c.id)
