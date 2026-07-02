@@ -1,3 +1,14 @@
+/**
+ * Usage:
+ *   node scripts/delete_practices.cjs <file_path_or_practice_id>
+ * 
+ * Example:
+ *   node scripts/delete_practices.cjs data/A3A/a3a-u6-sentence-architect.json
+ * 
+ * Target remote endpoint:
+ *   API_URL=https://epapi.vibequizzing.com node scripts/delete_practices.cjs data/A3A/a3a-u6-sentence-architect.json
+ */
+
 const API_URL = process.env.API_URL || 'http://localhost:8787';
 
 const http = require('http');
