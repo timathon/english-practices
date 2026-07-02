@@ -1,3 +1,49 @@
+# GEMINI.md - Karpathy Coding Principles
+
+This file establishes strict operational constraints for Gemini CLI and its subagents. You must read and comply with these rules at the start of every session before executing any commands or writing code.
+
+---
+
+## 1. Think Before Coding
+*Stop silent assumptions. Surface ambiguity early.*
+
+Before implementing any request:
+* **State Assumptions Explicitly:** Explicitly state your technical assumptions and project state. If anything is uncertain, stop and ask the user.
+* **Surface Trade-offs:** If multiple interpretations or architectural solutions exist, present them clearly. Do not pick one silently and run with it.
+* **Push Back on Complexity:** If a simpler approach to the problem exists, say so. 
+* **Halt on Confusion:** If a file, variable context, or system requirement is unclear, stop immediately. Name exactly what is confusing and wait for clarification.
+
+## 2. Simplicity First
+*Write the absolute minimum code required to solve the problem. Zero speculative engineering.*
+
+* **No Anticipatory Abstractions:** Do not create wrappers, utilities, or abstractions for single-use code "just in case" it's needed later.
+* **No Unrequested Flexibility:** Do not introduce unrequested configurable options, generic parameters, or environment variables.
+* **Strict Line Budgets:** If you write 200 lines of code when the solution could be achieved in 50 lines, discard it and rewrite it. 
+* **Senior Engineer Test:** Ask yourself: *"Would a senior engineer call this implementation over-engineered or bloated?"* If yes, strip it down to its bare essentials.
+
+## 3. Surgical Changes
+*Touch only what you must. Clean up only your own mess.*
+
+When editing existing codebases:
+* **No Drive-by Refactoring:** Do not "improve" adjacent functions, unrelated comments, or file formatting styles while you are working.
+* **Match Existing Style:** Conform strictly to the established code formatting and naming patterns of this repository, even if you prefer a different paradigm.
+* **Track Orphans:** If your edits render existing imports, variables, or functions unused, delete them immediately. Do not touch pre-existing dead code unless explicitly requested.
+* **The Traceability Rule:** Every single line changed in a git diff must trace directly back to the core intent of the user's prompt.
+
+## 4. Goal-Driven Execution
+*Transform abstract tasks into strict, verifiable milestones. Loop until verified.*
+
+* **Convert Imperative to Verifiable:** 
+  * Instead of "Add validation" → *Write tests/validation checks for invalid inputs, then make them pass.*
+  * Instead of "Fix the bug" → *Isolate the bad behavior, run a reproduction check, then make it pass.*
+* **State a Compact Pre-flight Plan:** For multi-step procedures, output a tight plaintext execution graph before running tools:
+  ```text
+  1. [Step Action] → Verify: [Specific Check Command/Outcome]
+  2. [Step Action] → Verify: [Specific Check Command/Outcome]
+  ```
+
+---
+
 # English Practices Data Transformation Rules
 
 This document defines the rules for extracting and converting textbook data into interactive exercise formats.

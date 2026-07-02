@@ -841,6 +841,14 @@ app.put('/api/mistakes', async (c) => {
     }
   }
 
+  if (Array.isArray(merged)) {
+    merged = merged.filter((m: any) => {
+      const type = (m.practiceType || '').toLowerCase();
+      const id = (m.id || '').toLowerCase();
+      return !type.includes('bug-hunter') && !id.includes('bug-hunter') && !type.includes('bug_hunter') && !id.includes('bug_hunter');
+    });
+  }
+
   await db.update(user).set({
     mistakeState: merged,
     updatedAt: new Date()

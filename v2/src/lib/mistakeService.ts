@@ -23,7 +23,20 @@ export const mistakeService = {
     if (!userId) return [];
     try {
       const stored = localStorage.getItem(getStorageKey(userId));
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) return [];
+      const list = JSON.parse(stored);
+      if (Array.isArray(list)) {
+        const filtered = list.filter((m: any) => {
+          const type = (m.practiceType || '').toLowerCase();
+          const id = (m.id || '').toLowerCase();
+          return !type.includes('bug-hunter') && !id.includes('bug-hunter') && !type.includes('bug_hunter') && !id.includes('bug_hunter');
+        });
+        if (filtered.length !== list.length) {
+          localStorage.setItem(getStorageKey(userId), JSON.stringify(filtered));
+        }
+        return filtered;
+      }
+      return list;
     } catch (e) {
       console.error('Failed to read mistakes from localStorage:', e);
       return [];
