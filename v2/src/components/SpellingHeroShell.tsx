@@ -1,24 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Link, useBlocker } from 'react-router-dom'
+import { audioCache } from '../lib/audioCache'
 import './SpellingHeroShell.css'
 import { DailyLockModal } from './DailyLockModal'
-import md5 from 'md5'
-import { audioCache } from '../lib/audioCache'
 import { trialsTracker, getActiveUserId } from '../lib/trialsTracker'
 import { useSession, API_URL } from '../lib/auth'
 import { mistakeService } from '../lib/mistakeService'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
-import { CountdownRing } from './CountdownRing'
 import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
-
-const PUBLIC_URL_BASE = 'https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev'
-
-const getWordAudioUrl = (word: string, book: string) => {
-    const hash = md5(word)
-    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${hash}.mp3`
-}
+import { getWordAudioUrl, usePracticeAudio, CORRECT_SFX_URL, ERROR_SFX_URL } from '../lib/practiceAudio'
+import { useNavigationBlocker } from '../lib/useNavigationBlocker'
+import { ShellHeader } from './shell/ShellHeader'
+import { InvisibleModeCheckbox } from './shell/InvisibleModeCheckbox'
+import { ActiveHeader } from './shell/ActiveHeader'
+import { FooterAction } from './shell/FooterAction'
+import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
+import { ShellHistoryModal } from './shell/ShellHistoryModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -162,8 +160,8 @@ function recordFinish(practiceId: string, challengeId: string, score: number) {
 export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: ShellData; practiceId: string; unit: string; textbook: string }) {
     const { data: session } = useSession()
     const userId = session?.user?.id
-    const audioRef = useRef<HTMLAudioElement | null>(null)
-    const sfxRef  = useRef<HTMLAudioElement | null>(null)
+
+    const { playAudio, playSfx, resolveAudioUrl } = usePracticeAudio(textbook, () => vocabGuide?.tts?.by === 'melotts')
 
     const [challenges] = useState<Challenge[]>(() => buildChallenges(data, textbook))
     const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null)
@@ -191,22 +189,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     const timerExpiredRef = useRef(false)
     const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
 
-    const blocker = useBlocker(
-        ({ nextLocation, currentLocation }) =>
-            !!activeChallenge && !completed && nextLocation.pathname !== currentLocation.pathname
-    );
-
-    useEffect(() => {
-        if (blocker.state === 'blocked') {
-            const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
-            if (proceed) {
-                setActiveChallenge(null);
-                blocker.reset();
-            } else {
-                blocker.reset();
-            }
-        }
-    }, [blocker]);
+    useNavigationBlocker(!!activeChallenge && !completed);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -303,53 +286,8 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
 
     // Preload only SFX on mount; challenge audio is loaded lazily on challenge start
     useEffect(() => {
-        audioCache.preloadAndSync(`${PUBLIC_URL_BASE}/ep/sfx/correct.mp3`)
-        audioCache.preloadAndSync(`${PUBLIC_URL_BASE}/ep/sfx/error.mp3`)
-    }, [])
-
-    const resolveAudioUrl = useCallback((originalUrl: string) => {
-        if (!originalUrl) return originalUrl;
-        const isCf = vocabGuide?.tts?.by === 'melotts';
-        if (isCf && !originalUrl.includes('/cf/')) {
-            const searchStr = `/ep/${textbook.toLowerCase()}/`;
-            return originalUrl.replace(searchStr, `${searchStr}cf/`);
-        }
-        return originalUrl;
-    }, [vocabGuide, textbook]);
-
-    const playAudio = useCallback(async (url: string) => {
-        if (!url) return
-        const resolvedUrl = resolveAudioUrl(url);
-        try {
-            const blob = await audioCache.cacheAudio(resolvedUrl)
-            if (!blob) return
-            const blobUrl = URL.createObjectURL(blob)
-            if (audioRef.current) {
-                audioRef.current.src = blobUrl
-                audioRef.current.onended = () => URL.revokeObjectURL(blobUrl)
-                audioRef.current.play().catch(console.error)
-            } else {
-                const a = new Audio(blobUrl)
-                a.onended = () => URL.revokeObjectURL(blobUrl)
-                a.play().catch(console.error)
-                audioRef.current = a
-            }
-        } catch (e) { console.error(e) }
-    }, [resolveAudioUrl])
-
-    const playSfx = useCallback(async (type: 'correct' | 'wrong') => {
-        const url = type === 'correct'
-            ? `${PUBLIC_URL_BASE}/ep/sfx/correct.mp3`
-            : `${PUBLIC_URL_BASE}/ep/sfx/error.mp3`
-        try {
-            const blob = await audioCache.cacheAudio(url)
-            if (!blob) return
-            const blobUrl = URL.createObjectURL(blob)
-            const a = new Audio(blobUrl)
-            a.onended = () => URL.revokeObjectURL(blobUrl)
-            a.play().catch(console.error)
-            sfxRef.current = a
-        } catch (e) { console.error(e) }
+        audioCache.preloadAndSync(CORRECT_SFX_URL)
+        audioCache.preloadAndSync(ERROR_SFX_URL)
     }, [])
 
     // ── Load a question into state ────────────────────────────────────────────
@@ -807,34 +745,33 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
             <div className="sh-container" style={{ '--primary': '#58cc02', '--primary-dark': '#46a302' } as any}>
                 <div className="sh-screen">
                     {/* Top bar */}
-                    <div className="sh-top-bar">
-                        <div style={{ position: 'relative', flexShrink: 0, width: 30 }}>
-                            <button className="sh-close-btn" onClick={() => {
-                                countdownTimer.pause()
-                                const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)
-                                if (window.confirm(`Quit? You have ${rem} attempt(s) left today.`)) {
-                                    if (userId && !invisibleMode) {
-                                        mistakeService.syncToServer(userId);
-                                    }
-                                    setActiveChallenge(null)
-                                } else {
-                                    if (!locked && !invisibleMode) countdownTimer.resume()
+                    <ActiveHeader
+                        onClose={() => {
+                            countdownTimer.pause()
+                            const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)
+                            if (window.confirm(`Quit? You have ${rem} attempt(s) left today.`)) {
+                                if (userId && !invisibleMode) {
+                                    mistakeService.syncToServer(userId);
                                 }
-                            }}>✕</button>
-                            {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={15} isRunning={countdownTimer.isRunning} />}
-                        </div>
-                        <div className="sh-progress-container">
-                            {queue.map((_, i) => {
-                                const isActive = (!isRedemption && i === currentIndex && !showFeedback) || (isRedemption && q && (q as any).originalIndex === i && !showFeedback)
-                                return (
-                                    <div
-                                        key={i}
-                                        className={`sh-progress-segment ${scoreLog[i] || ''}${isActive ? ' active' : ''}`}
-                                    />
-                                )
-                            })}
-                        </div>
-                    </div>
+                                setActiveChallenge(null)
+                            } else {
+                                if (!locked && !invisibleMode) countdownTimer.resume()
+                            }
+                        }}
+                        countdownTimer={{
+                            secondsLeft: countdownTimer.secondsLeft,
+                            totalSeconds: 15,
+                            isRunning: countdownTimer.isRunning
+                        }}
+                        invisibleMode={invisibleMode}
+                        queue={queue}
+                        currentIndex={currentIndex}
+                        scoreLog={scoreLog}
+                        showFeedback={showFeedback}
+                        isRedemption={isRedemption}
+                        currentQuestion={q}
+                        prefix="sh"
+                    />
 
                     {/* Question area */}
                     <div className="sh-question-area">
@@ -1000,27 +937,20 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
                     </div>
 
                     {/* Footer */}
-                    <div className="sh-footer-action">
-                        {!locked ? (
-                            <button
-                                className="sh-check-btn"
-                                disabled={!isReady()}
-                            onClick={() => checkAnswer()}
-                            >
-                                Check
-                            </button>
-                        ) : (
-                            <button className="sh-check-btn continue" onClick={nextQuestion}>
-                                {(() => {
-                                    const mistakesCount = mistakeRef.current.length;
-                                    const isLast = redemptionRef.current 
-                                        ? (mistakesCount === 0)
-                                        : (indexRef.current + 1 >= queue.length && mistakesCount === 0);
-                                    return isLast ? 'Finish' : 'Continue';
-                                })()}
-                            </button>
-                        )}
-                    </div>
+                    <FooterAction
+                        locked={locked}
+                        disableCheck={!isReady()}
+                        onCheck={() => checkAnswer()}
+                        onContinue={nextQuestion}
+                        buttonText={(() => {
+                            const mistakesCount = mistakeRef.current.length;
+                            const isLast = redemptionRef.current 
+                                ? (mistakesCount === 0)
+                                : (indexRef.current + 1 >= queue.length && mistakesCount === 0);
+                            return isLast ? 'Finish' : 'Continue';
+                        })()}
+                        prefix="sh"
+                    />
                 </div>
             </div>
         )
@@ -1031,140 +961,71 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     return (
         <div className="sh-container" style={{ '--primary': '#58cc02', '--primary-dark': '#46a302' } as any}>
             <div className="sh-screen">
-                <header className="sh-header">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: 40 }}>
-                        <Link
-                            to="/dashboard"
-                            style={{ position: 'absolute', left: 0, fontSize: '1.5rem', textDecoration: 'none' }}
-                        >
-                            🏠
-                        </Link>
-                        <h1>{data.title}</h1>
-                    </div>
-                    <h2 style={{ marginTop: 15 }}>{data.level}</h2>
-                </header>
+                <ShellHeader
+                    title={data.title}
+                    level={data.level}
+                    textbook={textbook}
+                    unit={unit}
+                    prefix="sh"
+                />
 
-                    <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        alignItems: 'center', 
-                        gap: '10px', 
-                        marginBottom: '20px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '8px 16px',
-                        width: 'fit-content',
-                        margin: '0 auto 20px auto'
-                    }}>
-                        <label style={{ 
-                            fontSize: '0.95rem', 
-                            color: '#475569', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            cursor: 'pointer',
-                            fontWeight: 500
-                        }}>
-                            <input 
-                                type="checkbox" 
-                                checked={invisibleMode} 
-                                onChange={(e) => setInvisibleMode(e.target.checked)}
-                                style={{ 
-                                    width: '16px', 
-                                    height: '16px', 
-                                    accentColor: 'var(--primary)',
-                                    cursor: 'pointer'
-                                }}
-                            />
-                            <span>👻 Invisible Mode (No timer, no rewards/records)</span>
-                        </label>
-                    </div>
+                <InvisibleModeCheckbox
+                    checked={invisibleMode}
+                    onChange={setInvisibleMode}
+                />
 
-                    <div className="sh-challenge-grid">
-                    {challenges.map(c => {
+                <ChallengeCardGrid
+                    challenges={challenges}
+                    onStart={handleChallengeSelect}
+                    onShowHistory={setHistoryChallenge}
+                    getRemainingTrials={(cId) => trialsTracker.getRemainingTrials(practiceId, cId)}
+                    getChallengeStatsText={(c) => {
                         const s = getChallengeStats(practiceId, c.id)
-                        const rem = trialsTracker.getRemainingTrials(practiceId, c.id)
-                        return (
-                             <div key={c.id} id={`sh-card-${c.id}`} className={`sh-challenge-card ${flickeringChallengeId === c.id ? 'flicker-active' : ''}`}>
-                                <div className="sh-card-header">
-                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.5rem', marginRight: 10 }}>{c.icon}</span>
-                                        <h3 className="sh-card-title">{c.title}</h3>
-                                        <span style={{ fontSize: '0.7rem', color: '#bbb', marginLeft: 8, marginTop: 2 }}>
-                                            {rem} / 5 left
-                                        </span>
-                                    </div>
-                                    {(() => {
-                                        const isLockedToday = s.today.best === 100;
-                                        const isOutOfAttempts = rem === 0;
-                                        return (
-                                            <button
-                                                className="sh-start-btn"
-                                                onClick={() => handleChallengeSelect(c)}
-                                                style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                            >
-                                                {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'LIMIT' : 'START'}
-                                            </button>
-                                        );
-                                    })()}
-                                </div>
-                                <div className="sh-card-stats">
-                                    <div
-                                        className="sh-stat-row"
-                                        style={{ cursor: 'pointer' }}
-                                        onClick={() => setHistoryChallenge(c)}
-                                    >
-                                        <span className="sh-stat-label">TODAY</span>
-                                        <span className="sh-stat-val" style={s.today.best >= 70 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{s.today.attempts} Runs | Best: {s.today.best}%</span>
-                                    </div>
-                                    <div
-                                        className="sh-stat-row"
-                                        style={{ cursor: 'pointer' }}
-                                        onClick={() => setHistoryChallenge(c)}
-                                    >
-                                        <span className="sh-stat-label">LIFETIME</span>
-                                        <span className="sh-stat-val">{s.lifetime.attempts} Runs | Best: {s.lifetime.best}%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    })}
-                </div>
+                        return {
+                            today: `${s.today.attempts} Runs | Best: ${s.today.best}%`,
+                            lifetime: `${s.lifetime.attempts} Runs | Best: ${s.lifetime.best}%`,
+                            isTodayBestHigh: s.today.best >= 70
+                        }
+                    }}
+                    isLockedToday={(c) => {
+                        const s = getChallengeStats(practiceId, c.id)
+                        return s.today.best === 100
+                    }}
+                    flickeringId={flickeringChallengeId}
+                    prefix="sh"
+                />
             </div>
 
-            {/* History modal (simple stats — SH uses localStorage not server) */}
+            {/* History modal */}
             {historyChallenge && (
-                <div className="sh-modal-overlay" onClick={() => setHistoryChallenge(null)}>
-                    <div className="sh-modal-content" onClick={e => e.stopPropagation()}>
-                        <div className="sh-modal-header">
-                            <h3 className="sh-modal-title">{historyChallenge.title}</h3>
-                            <button className="sh-modal-close" onClick={() => setHistoryChallenge(null)}>✕</button>
-                        </div>
-                        {(() => {
-                            const s = getChallengeStats(practiceId, historyChallenge.id)
-                            return (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                    <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '10px 14px' }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#aaa', fontWeight: 'bold', textTransform: 'uppercase' }}>Today</div>
-                                        <div style={{ fontWeight: 600 }}>{s.today.attempts} runs &nbsp;|&nbsp; Best: {s.today.best}%</div>
-                                    </div>
-                                    <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '10px 14px' }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#aaa', fontWeight: 'bold', textTransform: 'uppercase' }}>Lifetime</div>
-                                        <div style={{ fontWeight: 600 }}>{s.lifetime.attempts} runs &nbsp;|&nbsp; Best: {s.lifetime.best}%</div>
-                                    </div>
-                                    <button
-                                        className="sh-check-btn"
-                                        style={{ marginTop: 10 }}
-                                        onClick={() => setHistoryChallenge(null)}
-                                    >
-                                        Close
-                                    </button>
+                <ShellHistoryModal
+                    title={historyChallenge.title}
+                    onClose={() => setHistoryChallenge(null)}
+                    prefix="sh"
+                >
+                    {(() => {
+                        const s = getChallengeStats(practiceId, historyChallenge.id)
+                        return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '10px 14px' }}>
+                                    <div style={{ fontSize: '0.7rem', color: '#aaa', fontWeight: 'bold', textTransform: 'uppercase' }}>Today</div>
+                                    <div style={{ fontWeight: 600 }}>{s.today.attempts} runs &nbsp;|&nbsp; Best: {s.today.best}%</div>
                                 </div>
-                            )
-                        })()}
-                    </div>
-                </div>
+                                <div style={{ background: '#f8f9fa', borderRadius: 10, padding: '10px 14px' }}>
+                                    <div style={{ fontSize: '0.7rem', color: '#aaa', fontWeight: 'bold', textTransform: 'uppercase' }}>Lifetime</div>
+                                    <div style={{ fontWeight: 600 }}>{s.lifetime.attempts} runs &nbsp;|&nbsp; Best: {s.lifetime.best}%</div>
+                                </div>
+                                <button
+                                    className="sh-check-btn"
+                                    style={{ marginTop: 10 }}
+                                    onClick={() => setHistoryChallenge(null)}
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        )
+                    })()}
+                </ShellHistoryModal>
             )}
 
             {lockModalOpen && (
