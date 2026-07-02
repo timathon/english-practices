@@ -233,7 +233,8 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
       
       // Play voice audio if it exists
       if (currentMistake.practiceType === 'vocab-master' && q.context_sentence) {
-        setTimeout(() => playAudio(getAudioUrl(q.context_sentence, currentMistake.textbook)), 250);
+        const sentenceAudioUrl = q.audio || getAudioUrl(q.context_sentence, currentMistake.textbook);
+        setTimeout(() => playAudio(sentenceAudioUrl), 250);
       } else if (currentMistake.practiceType === 'audio-detective' && q.en) {
         setTimeout(() => playAudio(getAudioUrl(q.en, currentMistake.textbook)), 250);
       } else if (currentMistake.practiceType === 'sentence-architect' && q.en) {
@@ -258,7 +259,10 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
         wrongAnswer
       });
 
-      if (currentMistake.practiceType === 'spelling-hero') {
+      if (currentMistake.practiceType === 'vocab-master' && q.context_sentence) {
+        const sentenceAudioUrl = q.audio || getAudioUrl(q.context_sentence, currentMistake.textbook);
+        setTimeout(() => playAudio(sentenceAudioUrl), 250);
+      } else if (currentMistake.practiceType === 'spelling-hero') {
         const wordAudioUrl = q.audio || getAudioUrl(q.word, currentMistake.textbook);
         setTimeout(() => playAudio(wordAudioUrl), 250);
       }

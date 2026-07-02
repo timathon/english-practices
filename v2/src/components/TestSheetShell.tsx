@@ -130,6 +130,11 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
     }
   }, [activeSectionIdx])
 
+  // Clear highlighted/marked sentence when switching sections
+  useEffect(() => {
+    setHighlightedSentence(null)
+  }, [activeSectionIdx])
+
   // Drag to scroll tabs refs & state
   const tabsRef = useRef<HTMLDivElement | null>(null)
   const isDraggingRef = useRef(false)
