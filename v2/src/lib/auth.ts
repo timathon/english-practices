@@ -8,6 +8,9 @@ const getBaseURL = () => {
     }
     // Dynamically match local hostnames (127.0.0.1 vs localhost) to avoid cross-site cookie restrictions
     const hostname = window.location.hostname;
+    if (hostname === "epv2.vibequizzing.com" || hostname.endsWith(".pages.dev")) {
+        return "https://epapi.vibequizzing.com";
+    }
     if (hostname === "127.0.0.1") {
         return "http://127.0.0.1:8787";
     }

@@ -178,7 +178,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         if (!activeSection && lastFinishedSectionTitle) {
             setFlickeringSectionTitle(lastFinishedSectionTitle);
             setTimeout(() => {
-                const el = document.getElementById(`ad-card-${lastFinishedSectionTitle.replace(/\s+/g, '-')}`);
+                const el = document.getElementById(`ad-card-${lastFinishedSectionTitle.toLowerCase().replace(/\s+/g, '-')}`);
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
@@ -817,7 +817,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                     {options.map((opt, index) => {
                         const isSelected = selectedOption === opt.originalIdx;
                         const isCorrectAnswer = opt.originalIdx === q.answer;
-                        let optionClass = "ad-option-btn";
+                        let optionClass = "det-option-btn";
                         if (locked) {
                             if (isCorrectAnswer) {
                                 optionClass += " correct-answer";

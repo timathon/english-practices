@@ -398,85 +398,102 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
 
   // Inline parser to render select elements for cloze passages & dialogue
   const parseInlineBlanks = (text: string, section: Section) => {
-    const parts = text.split(/(\[\d+\])/g)
-    return parts.map((part, index) => {
-      const match = part.match(/^\[(\d+)\]$/)
-      if (match) {
-        const blankNum = parseInt(match[1], 10)
-        const q = section.questions.find(item => item.blankIndex === blankNum)
-        if (!q) return part
+    const lines = text.split('\n')
+    return lines.map((line, lineIdx) => {
+      const parts = line.split(/(\[\d+\])/g)
+      const elements = parts.map((part, index) => {
+        const match = part.match(/^\[(\d+)\]$/)
+        if (match) {
+          const blankNum = parseInt(match[1], 10)
+          const q = section.questions.find(item => item.blankIndex === blankNum)
+          if (!q) return part
 
-        const isClozeIndex = section.type === 'cloze-passage'
-        const isUserCorrect = isClozeIndex
-          ? userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && Number(userAnswers[q.id]) === Number(q.answer)
-          : String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
+          const isClozeIndex = section.type === 'cloze-passage'
+          const isUserCorrect = isClozeIndex
+            ? userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && Number(userAnswers[q.id]) === Number(q.answer)
+            : String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
 
-        let selectClass = "ts-inline-select"
-        if (submitted) {
-          selectClass += isUserCorrect ? " correct" : " wrong"
+          let selectClass = "ts-inline-select"
+          if (submitted) {
+            selectClass += isUserCorrect ? " correct" : " wrong"
+          }
+
+          const correctDisplay = isClozeIndex
+            ? (q.options?.[Number(q.answer)] || '')
+            : String(q.answer)
+
+          return (
+            <span key={index} className="ts-inline-select-wrapper" style={{ margin: '0 4px', display: 'inline-block' }}>
+              <select
+                className={selectClass}
+                value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
+                disabled={submitted}
+                onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
+                style={{
+                  padding: '4px 8px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  background: submitted ? (isUserCorrect ? '#d1fae5' : '#fee2e2') : '#fff',
+                  color: '#374151',
+                  fontSize: '0.95em',
+                  cursor: submitted ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <option value="">({blankNum})</option>
+                {section.type === 'cloze-passage' ? (
+                  q.options?.map((opt, optIdx) => (
+                    <option key={optIdx} value={optIdx}>
+                      {opt}
+                    </option>
+                  ))
+                ) : section.type === 'cloze-passage-wordbank' ? (
+                  section.wordbank?.map((word, wordIdx) => {
+                    const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(word))
+                    const showSuffix = usingQ && usingQ.id !== q.id
+                    const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
+                    return (
+                      <option key={wordIdx} value={word}>
+                        {word}{suffix}
+                      </option>
+                    )
+                  })
+                ) : section.type === 'dialogue-completion' ? (
+                  section.options?.map((opt, optIdx) => {
+                    const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(opt))
+                    const showSuffix = usingQ && usingQ.id !== q.id
+                    const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
+                    return (
+                      <option key={optIdx} value={opt}>
+                        {opt}{suffix}
+                      </option>
+                    )
+                  })
+                ) : null}
+              </select>
+              {submitted && !isUserCorrect && (
+                <span className="ts-inline-reveal-word" style={{ marginLeft: '4px', color: '#10b981', fontWeight: 'bold' }}>
+                  ({correctDisplay})
+                </span>
+              )}
+            </span>
+          )
         }
 
-        const correctDisplay = isClozeIndex
-          ? (q.options?.[Number(q.answer)] || '')
-          : String(q.answer)
+        // Parse inline formatting (**bold**) for non-blank text
+        const boldParts = part.split(/(\*\*.*?\*\*)/g)
+        return boldParts.map((bp, bidx) => {
+          if (bp.startsWith('**') && bp.endsWith('**')) {
+            return <strong key={bidx}>{bp.slice(2, -2)}</strong>
+          }
+          return bp
+        })
+      })
 
-        return (
-          <span key={index} className="ts-inline-select-wrapper" style={{ margin: '0 4px', display: 'inline-block' }}>
-            <select
-              className={selectClass}
-              value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
-              disabled={submitted}
-              onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
-              style={{
-                padding: '4px 8px',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                background: submitted ? (isUserCorrect ? '#d1fae5' : '#fee2e2') : '#fff',
-                color: '#374151',
-                fontSize: '0.95em',
-                cursor: submitted ? 'not-allowed' : 'pointer'
-              }}
-            >
-              <option value="">({blankNum})</option>
-              {section.type === 'cloze-passage' ? (
-                q.options?.map((opt, optIdx) => (
-                  <option key={optIdx} value={optIdx}>
-                    {opt}
-                  </option>
-                ))
-              ) : section.type === 'cloze-passage-wordbank' ? (
-                section.wordbank?.map((word, wordIdx) => {
-                  const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(word))
-                  const showSuffix = usingQ && usingQ.id !== q.id
-                  const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
-                  return (
-                    <option key={wordIdx} value={word}>
-                      {word}{suffix}
-                    </option>
-                  )
-                })
-              ) : section.type === 'dialogue-completion' ? (
-                section.options?.map((opt, optIdx) => {
-                  const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(opt))
-                  const showSuffix = usingQ && usingQ.id !== q.id
-                  const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
-                  return (
-                    <option key={optIdx} value={opt}>
-                      {opt}{suffix}
-                    </option>
-                  )
-                })
-              ) : null}
-            </select>
-            {submitted && !isUserCorrect && (
-              <span className="ts-inline-reveal-word" style={{ marginLeft: '4px', color: '#10b981', fontWeight: 'bold' }}>
-                ({correctDisplay})
-              </span>
-            )}
-          </span>
-        )
-      }
-      return part
+      return (
+        <p key={lineIdx} style={{ margin: '12px 0', minHeight: line.trim() === '' ? '12px' : 'auto' }}>
+          {elements}
+        </p>
+      )
     })
   }
 
