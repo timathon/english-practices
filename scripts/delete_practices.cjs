@@ -9,10 +9,30 @@
  *   API_URL=https://epapi.vibequizzing.com node scripts/delete_practices.cjs data/A3A/a3a-u6-sentence-architect.json
  */
 
-const API_URL = process.env.API_URL || 'http://localhost:8787';
+/**
+ * Usage:
+ *   node scripts/delete_practices.cjs <file_path_or_folder_path_or_practice_id>
+ * 
+ * Example:
+ *   node scripts/delete_practices.cjs data/A5Bx/a5bx-wm3
+ *   node scripts/delete_practices.cjs data/A3A/a3a-u6-sentence-architect.json
+ * 
+ * Target remote endpoint:
+ *   API_URL=https://epapi.vibequizzing.com node scripts/delete_practices.cjs data/A3A/a3a-u6-sentence-architect.json
+ */
 
 const http = require('http');
 const https = require('https');
+const path = require('path');
+const fs = require('fs');
+
+const targetUrls = [];
+if (process.env.API_URL) {
+    targetUrls.push(process.env.API_URL);
+} else {
+    targetUrls.push('http://localhost:8787');
+    targetUrls.push('https://epapi.vibequizzing.com');
+}
 
 function myFetch(url, options = {}) {
     return new Promise((resolve, reject) => {
@@ -54,76 +74,119 @@ function myFetch(url, options = {}) {
     });
 }
 
-const path = require('path');
-
-async function deletePractices(ids) {
-    console.log("Authenticating as Admin...");
-    const authRes = await myFetch(`${API_URL}/api/auth/sign-in/email`, {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Origin': 'http://localhost:5173'
-        },
-        body: JSON.stringify({ email: 'adminx@system.local', password: 'adminy' })
+function getJsonFiles(dir) {
+    let results = [];
+    if (!fs.existsSync(dir)) return results;
+    const list = fs.readdirSync(dir);
+    list.forEach((file) => {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
+        if (stat && stat.isDirectory()) {
+            results = results.concat(getJsonFiles(filePath));
+        } else if (file.endsWith('.json')) {
+            results.push(filePath);
+        }
     });
-    
-    if (!authRes.ok) {
-        console.error('Failed to authenticate as admin. Status:', authRes.status);
-        console.error(await authRes.text());
-        return;
-    }
-    
-    const cookies = authRes.headers['set-cookie'] || "";
-    console.log("Authenticated.\n");
+    return results;
+}
 
-    for (const id of ids) {
-        console.log(`Deleting: ${id}`);
-        const deleteRes = await myFetch(`${API_URL}/api/admin/practices/${encodeURIComponent(id)}`, {
-            method: 'DELETE',
+function pathToId(arg) {
+    const normalized = path.normalize(arg).replace(/\\/g, '/');
+    const parts = normalized.split('/');
+    const dataIdx = parts.indexOf('data');
+    const tbIndex = dataIdx !== -1 ? dataIdx + 1 : 0;
+    
+    if (tbIndex < parts.length - 1) {
+        const tb = parts[tbIndex];
+        const relPathParts = parts.slice(tbIndex + 1);
+        const relPath = relPathParts.join('_').replace(/\.json$/, '');
+        return `${tb}_${relPath}`;
+    } else {
+        return arg.replace(/\.json$/, '').replace(/[\/\\]/g, '_');
+    }
+}
+
+async function deleteFromEndpoint(apiUrl, ids) {
+    console.log(`\n--- Deleting from DB at ${apiUrl} ---`);
+    console.log("Authenticating as Admin...");
+    try {
+        const authRes = await myFetch(`${apiUrl}/api/auth/sign-in/email`, {
+            method: 'POST',
             headers: { 
-                'Cookie': cookies 
-            }
+                'Content-Type': 'application/json',
+                'Origin': 'http://localhost:5173'
+            },
+            body: JSON.stringify({ email: 'adminx@system.local', password: 'adminy' })
         });
         
-        if (deleteRes.ok) {
-            console.log(`  ✓ Deleted`);
-        } else {
-            console.error(`  ✗ Failed (Status: ${deleteRes.status})`);
-            console.error(`  ${await deleteRes.text()}`);
+        if (!authRes.ok) {
+            console.error(`  ✗ Failed to authenticate as admin on ${apiUrl}. Status:`, authRes.status);
+            console.error(`  ${await authRes.text()}`);
+            return;
+        }
+        
+        const cookies = authRes.headers['set-cookie'] || "";
+        console.log("Authenticated.");
+
+        for (const id of ids) {
+            console.log(`Deleting: ${id}`);
+            const deleteRes = await myFetch(`${apiUrl}/api/admin/practices/${encodeURIComponent(id)}`, {
+                method: 'DELETE',
+                headers: { 
+                    'Cookie': cookies 
+                }
+            });
+            
+            if (deleteRes.ok) {
+                console.log(`  ✓ Deleted from DB`);
+            } else {
+                console.error(`  ✗ Failed to delete from DB (Status: ${deleteRes.status})`);
+                console.error(`  ${await deleteRes.text()}`);
+            }
+        }
+    } catch (err) {
+        console.error(`  ✗ Failed to connect or complete requests on ${apiUrl}:`, err.message);
+    }
+}
+
+async function main() {
+    const args = process.argv.slice(2);
+    let practiceIds = [];
+
+    if (args.length > 0) {
+        for (const arg of args) {
+            if (fs.existsSync(arg)) {
+                const stat = fs.statSync(arg);
+                if (stat.isDirectory()) {
+                    const jsonFiles = getJsonFiles(arg);
+                    for (const file of jsonFiles) {
+                        practiceIds.push(pathToId(file));
+                    }
+                } else {
+                    practiceIds.push(pathToId(arg));
+                }
+            } else {
+                // If it doesn't exist on disk, check if it's path-like or just practice ID
+                if (arg.endsWith('.json') || arg.includes('/') || arg.includes('\\')) {
+                    practiceIds.push(pathToId(arg));
+                } else {
+                    practiceIds.push(arg);
+                }
+            }
+        }
+    } else {
+        console.log("Usage: node scripts/delete_practices.cjs <file_path_or_folder_path_or_practice_id>");
+        process.exit(1);
+    }
+
+    if (practiceIds.length > 0) {
+        for (const url of targetUrls) {
+            await deleteFromEndpoint(url, practiceIds);
         }
     }
     
     console.log("\nDone!");
 }
 
-const args = process.argv.slice(2);
-let practiceIds = [];
-
-if (args.length > 0) {
-    for (const arg of args) {
-        if (arg.endsWith('.json') || arg.includes('/') || arg.includes('\\')) {
-            const normalized = path.normalize(arg).replace(/\\/g, '/');
-            const parts = normalized.split('/');
-            const dataIdx = parts.indexOf('data');
-            const tbIndex = dataIdx !== -1 ? dataIdx + 1 : 0;
-            
-            if (tbIndex < parts.length - 1) {
-                const tb = parts[tbIndex];
-                const relPathParts = parts.slice(tbIndex + 1);
-                const relPath = relPathParts.join('_').replace(/\.json$/, '');
-                practiceIds.push(`${tb}_${relPath}`);
-            } else {
-                practiceIds.push(arg.replace(/\.json$/, '').replace(/[\/\\]/g, '_'));
-            }
-        } else {
-            practiceIds.push(arg);
-        }
-    }
-} else {
-    practiceIds = [
-        "A7B_a7b-u8_a7b-u8-test"
-    ];
-}
-
-deletePractices(practiceIds).catch(console.error);
+main().catch(console.error);
 
