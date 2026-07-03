@@ -63,21 +63,44 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
     const [historicalBest, setHistoricalBest] = useState(0)
     const [isNewHigh, setIsNewHigh] = useState(false)
     const [invisibleMode, setInvisibleMode] = useState(false)
-    const [historyModal, setHistoryModal] = useState<{title: string, logs: any[]} | null>(null)
+    const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
     const [lockModalOpen, setLockModalOpen] = useState(false)
     const [lastFinishedSectionTitle, setLastFinishedSectionTitle] = useState<string | null>(null)
     const [flickeringSectionTitle, setFlickeringSectionTitle] = useState<string | null>(null)
-    
+
     // Play audio states
     const [playCount, setPlayCount] = useState(0)
     const [isPlaying, setIsPlaying] = useState(false)
     const [playedAfterCheck, setPlayedAfterCheck] = useState(false)
 
+    const timerExpiredRef = useRef(false);
+    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => { });
+
+    // 10s countdown timer
+    const countdownTimer = useCountdown(10, {
+        onExpire: () => {
+            if (timerExpiredRef.current) return;
+            timerExpiredRef.current = true;
+            checkAnswerRef.current(true);
+        }
+    });
+
+    const [isOptionsBlurred, setIsOptionsBlurred] = useState(false)
+    const isFirstPlayRef = useRef(true)
+
+    const revealOptions = useCallback(() => {
+        isFirstPlayRef.current = false;
+        setIsOptionsBlurred(false);
+        if (!invisibleMode) {
+            countdownTimer.resume();
+        }
+    }, [invisibleMode, countdownTimer]);
+
     const playSfx = (type: 'correct' | 'wrong') => {
         if (sfxRef.current) {
             sfxRef.current.pause();
         }
-        const sfxUrl = type === 'correct' 
+        const sfxUrl = type === 'correct'
             ? "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3"
             : "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3";
         const audio = new Audio(sfxUrl);
@@ -87,7 +110,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
 
     const playSentenceAudio = async (text: string, isAutoPlayAfterCheck = false) => {
         if (!text || !textbook) return;
-        
+
         if (locked && !isAutoPlayAfterCheck) {
             if (playedAfterCheck) return;
         } else if (!locked) {
@@ -108,9 +131,23 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                 sentenceAudioRef.current = audio;
                 audio.onended = () => {
                     setIsPlaying(false);
+                    if (isFirstPlayRef.current) {
+                        isFirstPlayRef.current = false;
+                        setIsOptionsBlurred(false);
+                        if (!invisibleMode) {
+                            countdownTimer.resume();
+                        }
+                    }
                 };
                 audio.onerror = () => {
                     setIsPlaying(false);
+                    if (isFirstPlayRef.current) {
+                        isFirstPlayRef.current = false;
+                        setIsOptionsBlurred(false);
+                        if (!invisibleMode) {
+                            countdownTimer.resume();
+                        }
+                    }
                 };
                 if (locked) {
                     if (!isAutoPlayAfterCheck) {
@@ -191,17 +228,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         }
     }, [activeSection, lastFinishedSectionTitle]);
 
-    const timerExpiredRef = useRef(false);
-    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {});
 
-    // 10s countdown timer
-    const countdownTimer = useCountdown(10, {
-        onExpire: () => {
-            if (timerExpiredRef.current) return;
-            timerExpiredRef.current = true;
-            checkAnswerRef.current(true);
-        }
-    });
 
     const primaryColor = data.primaryColor || '#4f46e5'
     const primaryDarkColor = data.primaryColorDark || '#3730a3'
@@ -305,6 +332,8 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         setPlayedAfterCheck(false);
         setIsPlaying(false);
         lastPlayedQuestionId.current = null;
+        setIsOptionsBlurred(true);
+        isFirstPlayRef.current = true;
 
         // Shuffled options
         const selectedOptions = nextQ.options.map((text: string, idx: number) => ({ text, originalIdx: idx }));
@@ -312,6 +341,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
 
         if (!invisibleMode) {
             countdownTimer.reset();
+            countdownTimer.pause();
         } else {
             countdownTimer.pause();
         }
@@ -528,7 +558,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         nextQuestion();
                     }
                 }
-            } else if (!locked && ['1', '2', '3', '4'].includes(e.key)) {
+            } else if (!locked && !isOptionsBlurred && ['1', '2', '3', '4'].includes(e.key)) {
                 e.preventDefault();
                 const idx = parseInt(e.key, 10) - 1;
                 if (options[idx]) {
@@ -538,7 +568,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeSection, completed, historyModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer, options]);
+    }, [activeSection, completed, historyModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer, options, isOptionsBlurred]);
 
     if (!activeSection) {
         return (
@@ -557,9 +587,9 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
 
                     <div className="det-mode-switch">
                         <label>
-                            <input 
-                                type="checkbox" 
-                                checked={invisibleMode} 
+                            <input
+                                type="checkbox"
+                                checked={invisibleMode}
                                 onChange={(e) => setInvisibleMode(e.target.checked)}
                             />
                             <span>👻 Invisible Mode (No timer, no records/XP)</span>
@@ -583,8 +613,8 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                                                 {trialsTracker.getRemainingTrials(practiceId, challengeId)} / 5 attempts left
                                             </span>
                                         </div>
-                                        <button 
-                                            className="det-start-btn" 
+                                        <button
+                                            className="det-start-btn"
                                             onClick={() => handleSectionSelect(sec)}
                                             style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
                                             disabled={isOutOfAttempts && !isLockedToday}
@@ -658,7 +688,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                 <div className="det-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '30px 20px' }}>
                     <h1 style={{ color: 'var(--primary)', fontSize: '3.5rem', margin: '0' }}>{finalScore}%</h1>
                     <h2 style={{ margin: '5px 0 10px 0', color: '#333', fontSize: '1.5rem', fontWeight: 'bold' }}>Challenge Complete!</h2>
-                    
+
                     {/* High Score / Record Status */}
                     <div style={{ margin: '10px 0 20px 0', fontSize: '1rem', color: '#555' }}>
                         {invisibleMode ? (
@@ -724,8 +754,8 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                                     <div key={idx} className="det-mistake-item">
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <p className="det-mistake-en">{item.en}</p>
-                                            <button 
-                                                className="det-play-audio-btn small" 
+                                            <button
+                                                className="det-play-audio-btn small"
                                                 onClick={() => {
                                                     const url = getAudioUrl(item.en, textbook, isCf);
                                                     const audio = new Audio(url);
@@ -755,8 +785,8 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         )
     }
 
-    const isLastQuestion = isRedemption 
-        ? (mistakeQueue.length === 0) 
+    const isLastQuestion = isRedemption
+        ? (mistakeQueue.length === 0)
         : (currentIndex + 1 >= queue.length && mistakeQueue.length === 0);
 
     return (
@@ -792,9 +822,9 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                     <div className="det-detective-avatar">
                         🕵️‍♂️
                     </div>
-                    
+
                     <div className="det-audio-control-card">
-                        <button 
+                        <button
                             className={`det-detective-audio-btn ${isPlaying ? 'playing' : ''} ${(locked ? playedAfterCheck : playCount >= 3) ? 'disabled' : ''}`}
                             onClick={() => playSentenceAudio(q.en)}
                             disabled={(locked ? playedAfterCheck : playCount >= 3) || isPlaying}
@@ -813,35 +843,70 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
 
 
 
-                <div className="det-options-container">
-                    {options.map((opt, index) => {
-                        const isSelected = selectedOption === opt.originalIdx;
-                        const isCorrectAnswer = opt.originalIdx === q.answer;
-                        let optionClass = "det-option-btn";
-                        if (locked) {
-                            if (isCorrectAnswer) {
-                                optionClass += " correct-answer";
+                <div className="det-options-wrapper" style={{ position: 'relative' }}>
+                    {isOptionsBlurred && (
+                        <div
+                            className="det-options-blur-overlay"
+                            onClick={revealOptions}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                zIndex: 10,
+                                background: 'rgba(255, 255, 255, 0.15)',
+                                backdropFilter: 'blur(12px)',
+                                WebkitBackdropFilter: 'blur(12px)',
+                                borderRadius: '16px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                border: '2px dashed var(--primary)',
+                                padding: '20px',
+                                textAlign: 'center',
+                                transition: 'all 0.2s ease',
+                            }}
+                        >
+                            <span style={{ fontSize: '1.5rem' }}>🕵️‍♂️</span>
+                            <span style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1rem' }}>
+                                点击显示选项并开始计时
+                            </span>
+                        </div>
+                    )}
+                    <div className="det-options-container" style={isOptionsBlurred ? { filter: 'blur(8px)', pointerEvents: 'none' } : {}}>
+                        {options.map((opt, index) => {
+                            const isSelected = selectedOption === opt.originalIdx;
+                            const isCorrectAnswer = opt.originalIdx === q.answer;
+                            let optionClass = "det-option-btn";
+                            if (locked) {
+                                if (isCorrectAnswer) {
+                                    optionClass += " correct-answer";
+                                } else if (isSelected) {
+                                    optionClass += " wrong-answer";
+                                } else {
+                                    optionClass += " disabled-answer";
+                                }
                             } else if (isSelected) {
-                                optionClass += " wrong-answer";
-                            } else {
-                                optionClass += " disabled-answer";
+                                optionClass += " selected-answer";
                             }
-                        } else if (isSelected) {
-                            optionClass += " selected-answer";
-                        }
 
-                        return (
-                            <button 
-                                key={index} 
-                                className={optionClass}
-                                onClick={() => handleOptionClick(opt.originalIdx)}
-                                disabled={locked}
-                            >
-                                <span className="det-option-number">{index + 1}</span>
-                                <span className="det-option-text">{opt.text}</span>
-                            </button>
-                        )
-                    })}
+                            return (
+                                <button
+                                    key={index}
+                                    className={optionClass}
+                                    onClick={() => handleOptionClick(opt.originalIdx)}
+                                    disabled={locked}
+                                >
+                                    <span className="det-option-number">{index + 1}</span>
+                                    <span className="det-option-text">{opt.text}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
                 </div>
 
                 {/* Show corresponding English sentence AFTER check is clicked */}
@@ -852,7 +917,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
 
                 <div className="det-game-footer">
                     {!locked ? (
-                        <button 
+                        <button
                             className="det-action-btn primary"
                             disabled={selectedOption === null}
                             onClick={() => checkAnswer()}
@@ -860,7 +925,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                             Check Answer
                         </button>
                     ) : (
-                        <button 
+                        <button
                             className="det-action-btn primary"
                             disabled={continueDisabled}
                             onClick={() => nextQuestion()}

@@ -58,6 +58,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
     const [isRedemption, setIsRedemption] = useState(false)
     const [q, setQ] = useState<any>(null)
+    const [questionTimeLimit, setQuestionTimeLimit] = useState(30)
     const [wordPool, setWordPool] = useState<PoolWord[]>([])
     const [userSelection, setUserSelection] = useState<SelectedWord[]>([])
 
@@ -318,8 +319,10 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
         setWordPool(poolItems)
         // Reset countdown timer
+        const timeLimit = Math.max(30, 15 + allWords.length * 2);
+        setQuestionTimeLimit(timeLimit);
         if (!invisibleMode) {
-            countdownTimer.reset()
+            countdownTimer.reset(timeLimit)
         } else {
             countdownTimer.pause()
         }
@@ -982,7 +985,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                                 if (!locked) countdownTimer.resume()
                             }
                         }}>✕</button>
-                        {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={30} isRunning={countdownTimer.isRunning} />}
+                        {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={questionTimeLimit} isRunning={countdownTimer.isRunning} />}
                     </div>
                     <div className="sa-progress-container">
                         {queue.map((_, i) => {
@@ -1003,26 +1006,43 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
                     {/* Answer Selection Area */}
                     <div className="sa-answer-area">
-                        {userSelection.length === 0 && (
-                            <span style={{ color: '#ccc', fontSize: '0.9rem' }}>Tap words below to assemble</span>
+                        {locked ? (
+                            <div className="sa-sentence-text" style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#1e293b', padding: '10px 0', width: '100%', textAlign: 'center' }}>
+                                {userSelection.map((item, idx) => {
+                                    let text = item.text;
+                                    if (idx === 0) {
+                                        if (text.charAt(0) === text.charAt(0).toLowerCase()) {
+                                            text = text.charAt(0).toUpperCase() + text.slice(1);
+                                        }
+                                    }
+                                    return text;
+                                }).join(" ")}
+                                {/[.!?]$/.test(q.en) && !/[.!?]$/.test(userSelection[userSelection.length - 1]?.text || '') ? q.en.slice(-1) : ''}
+                            </div>
+                        ) : (
+                            <>
+                                {userSelection.length === 0 && (
+                                    <span style={{ color: '#ccc', fontSize: '0.9rem' }}>Tap words below to assemble</span>
+                                )}
+                                {userSelection.map((item, idx) => {
+                                    let text = item.text;
+                                    if (idx === 0) {
+                                        if (text.charAt(0) === text.charAt(0).toLowerCase()) {
+                                            text = text.charAt(0).toUpperCase() + text.slice(1);
+                                        }
+                                    }
+                                    return (
+                                        <button
+                                            key={idx}
+                                            className="sa-word-btn-answer"
+                                            onClick={() => removeWord(idx, item)}
+                                        >
+                                            {text}
+                                        </button>
+                                    );
+                                })}
+                            </>
                         )}
-                        {userSelection.map((item, idx) => {
-                            let text = item.text;
-                            if (idx === 0) {
-                                if (text.charAt(0) === text.charAt(0).toLowerCase()) {
-                                    text = text.charAt(0).toUpperCase() + text.slice(1);
-                                }
-                            }
-                            return (
-                                <button
-                                    key={idx}
-                                    className="sa-word-btn-answer"
-                                    onClick={() => removeWord(idx, item)}
-                                >
-                                    {text}
-                                </button>
-                            );
-                        })}
                     </div>
 
                     {/* Word Pool Area */}
