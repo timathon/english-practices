@@ -38,7 +38,20 @@
         const terminal = document.getElementById('mobile-debug-terminal');
         const linesContainer = document.getElementById('debug-log-lines');
         
+        function isAdmin() {
+          try {
+            const activeToken = localStorage.getItem('active_session_token');
+            if (!activeToken) return false;
+            const loggedInUsers = JSON.parse(localStorage.getItem('logged_in_users') || '[]');
+            const currentUser = loggedInUsers.find(u => u.token === activeToken);
+            return currentUser && currentUser.role === 'admin';
+          } catch (e) {
+            return false;
+          }
+        }
+
         function log(message, color = '#00ff00') {
+          if (!isAdmin()) return;
           terminal.style.display = 'block';
           const p = document.createElement('p');
           p.style.margin = '2px 0';
