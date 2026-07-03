@@ -202,9 +202,8 @@ This document defines the rules for extracting and converting textbook data into
 ## 6. Text Navigator (TN)
 **Source:** Textbook PDF or extracted Markdown (e.g., `data/A3B/a3b-u2.md`).
 **Sections:**
-  - **A3A - A5B:** "Start Up", "Speed Up".
+  - **A3A - A6B:** "Start Up", "Speed Up", "Fuel Up - Activity 1", "Fuel Up - Activity [X]" (where [X] is the exact activity number, e.g., "Fuel Up - Activity 3", which has to be listening practice with a script in the appendix of the unit markdown).
   - **A7A - A8B:** "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".
-  - **A6B:** "Unit 1 Activity 2", "Unit 2 Activity 2".
 **Target:** `*-text-navigator.json` — a **single file per unit** containing all applicable sections. (Save in the same folder as source)
 
 - **File Format:** All sections for a unit are consolidated into one JSON file. The top-level structure has shared `level` and `part` metadata, plus a `sections` array. Each element of `sections` is an object with a `section` string (the section name) and a `tree` object (the hierarchical mindmap for that section).

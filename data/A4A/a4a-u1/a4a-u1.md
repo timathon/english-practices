@@ -1,420 +1,432 @@
-> ## **Target Filename Code:** A4A-New-U1
+> ## **Target Filename Code:** A4A-New-U1-v2
 > 
 > 
-> **Total PDF Pages:** 13
-> **Currently Processing:** Pages 1 to 13
+> **Total PDF Pages:** 14
+> **Currently Processing:** Pages 1 to 14
+
+### --- PRINTED PAGE 2 ---
+
+[*LAYOUT: Unit opener page titled "Unit 1 I love sports" with a song lyrics section and a matching activity layout*]
+
+**Unit 1 I love sports**
+
+**1 Listen and sing.**
+Do you like playing sports?
+Yes, I do.
+I can run and swim.
+I can jump high and far.
+I like playing sports.
+What about you?
+
+Do you like playing sports?
+Yes, I do.
+I can play football and basketball.
+I can play ping-pong and volleyball.
+I like playing sports.
+What about you?
+
+**2 Look and match. Then act and say.**
+[*VISUAL: An activity section containing letters P, a, b, d, e next to blank match lines*]
 
 ---
 
-### ### --- PRINTED PAGE 2 ---
+### --- PRINTED PAGE 3 ---
 
-[*LAYOUT: The page is a large colorful illustration of a school sports field with hills in the background. Different children are participating in various sports across the field, track, and courts. There is an inset circle magnifying a swimmer.*]
-
-[*VISUAL: An inset circular illustration shows a boy wearing a swim cap and goggles swimming in blue water.*]
-[*VISUAL: An indoor swimming pool building with glass roofing, showing silhouettes of people inside.*]
-[*VISUAL: Children playing football (soccer) on a green grass field with a goal net.*]
-[*VISUAL: Two boys playing basketball on an outdoor court, one shooting the ball into the hoop.*]
-[*VISUAL: Two girls playing ping-pong on a blue table with red paddles.*]
-[*VISUAL: A boy and a girl running on a red athletic track.*]
+[*LAYOUT: Double-page spread illustration titled "Get ready" and "Learn the words"*]
 
 Get ready
 Learn the words
-3
+
+[*VISUAL: A vibrant school sports field scene showing various children participating in activities. In the background, there is a blue indoor swimming pool building with a circular callout showing a boy swimming in the water. On the green field, children are actively playing football with a small net. On the red court to the right, three children are playing basketball around a hoop. In the middle area, two girls are playing ping-pong at a blue table. At the bottom, a boy and a girl are running along a red athletics track.*]
 
 ---
 
-### ### --- PRINTED PAGE 3 ---
+### --- PRINTED PAGE 4 ---
+
+[*LAYOUT: Section titled "Start up" containing a comic strip dialogue and a comprehension check*]
 
 Start up
 
-1 Read and answer.
+**1 Read and answer.**
 What can Daming do?
+Yes, I can!
 
-> **Yes, I can!**
-> **Panel 1**
-> [*VISUAL: A girl with blonde pigtails, a boy with curly brown hair, Daming in a blue shirt, and a girl with a black ponytail are standing outside. In a thought bubble, Daming is shown doing a high jump over a bar.*]
-> **Girl with blonde pigtails:** Can you jump high, Daming?
-> **Daming:** Yes, I can.
-> **Panel 2**
-> [*VISUAL: Daming and the girl with the black ponytail are standing by a running track. In a thought bubble, Daming is running fast on the track.*]
-> **Girl with black ponytail:** Can you run fast?
-> **Daming:** Yes, I can.
-> **Panel 3**
-> [*VISUAL: The blonde girl and Daming are talking. In a thought bubble, Daming is playing ping-pong against another boy.*]
-> **Girl with blonde pigtails:** Can you play ping-pong?
-> **Daming:** Yes, I can.
-> **Panel 4**
-> [*VISUAL: The boy with curly hair and Daming are talking. In a thought bubble, children are swimming in an outdoor pool with an instructor.*]
-> **Boy with curly hair:** Can you swim?
-> **Daming:** No, I can't. But I can learn.
-> **Panel 5**
-> [*VISUAL: Daming is swimming fast in an indoor swimming pool. The boy with curly hair is standing on the side watching and cheering.*]
-> **Daming:** I can swim now.
-> **Boy with curly hair:** Wow! You can swim fast!
+[*VISUAL: A 5-panel comic strip showing interactions between children*]
 
-2 Read again and circle.
-1 Daming **can / can't** jump high.
-2 Daming **can / can't** play ping-pong.
-3 Daming **can / can't** swim at first.
-4 Daming **can / can't** swim fast now.
+* **Panel 1:** [*Visual: A girl and three boys are standing together talking near a high jump bar.*]
+**Child:** Can you jump high, Daming?
+**Daming:** Yes, I can.
+* **Panel 2:** [*Visual: Daming is running fast on an outdoor running track while a boy and a girl watch him.*]
+**Child:** Can you run fast?
+**Daming:** Yes, I can.
+* **Panel 3:** [*Visual: Daming is playing ping-pong against a girl at an outdoor table.*]
+**Child:** Can you play ping-pong?
+**Daming:** Yes, I can.
+* **Panel 4:** [*Visual: A boy points toward an outdoor pool where children are swimming, while Daming looks on.*]
+**Child:** Can you swim?
+**Daming:** No, I can't. But I can learn.
+* **Panel 5:** [*Visual: Daming is swimming efficiently in an indoor swimming pool while a boy cheers from the pool deck.*]
+**Daming:** I can swim now.
+**Child:** Wow! You can swim fast!
 
-4
+**2 Read again and circle.**
+
+1. Daming **can / can't** jump high.
+2. Daming **can / can't** play ping-pong.
+3. Daming **can / can't** swim at first.
+4. Daming **can / can't** swim fast now.
+
 Let's read
 
 ---
 
-### ### --- PRINTED PAGE 4 ---
+### --- PRINTED PAGE 5 ---
+
+[*LAYOUT: Section titled "In focus" covering grammar practice and pair work*]
 
 In focus
 
-[*LAYOUT: A highlighted grammar box containing a sample dialogue and a tip box.*]
+[*VISUAL: Daming and his friend talking about swimming with a thought bubble showing people in a pool*]
+**Friend:** Can you swim?
+**Daming:** No, I can't. But I can learn.
 
-> **Boy with curly hair:** Can you swim?
-> **Daming:** No, I can't. But I can learn.
-> [*LAYOUT: Tip box*]
-> **Tip:** can + not = can't
+[*LAYOUT: A small highlight box with a grammar rule*]
 
-3 Look and write.
+> **Tip**
+> $can + not = can't$
 
-**Panel 1**
-[*VISUAL: Illustration of a girl with a long black ponytail running fast on a track.*]
-Lingling ________ run fast.
+**3 Look and write.**
+[*VISUAL: Panel 3 shows a blonde girl and a dark-haired boy playing ping-pong. Panel 4 shows a boy jumping into a long-jump sandbox next to a small white training robot.*]
 
-**Panel 2**
-[*VISUAL: Illustration of a boy jumping over a high jump bar.*]
-Sam ________ jump high.
+1. Lingling run fast.
+2. Sam jump high.
+3. Can Amy play ping-pong well? Yes, she
+4. Can Bobo jump far? Yes, he
 
-**Panel 3**
-[*VISUAL: Illustration of a blonde girl and a boy playing ping-pong.*]
-Can Amy play ping-pong well?
-________ she ________.
-
-**Panel 4**
-[*VISUAL: Illustration of a boy jumping far into a sandpit next to a small white training robot.*]
-Can Bobo jump far?
-________ he ________.
-
-4 Work in pairs. Ask and answer.
-[*VISUAL: Photograph of two schoolgirls wearing red scarves talking to each other.*]
+**4 Work in pairs. Ask and answer.**
+[*VISUAL: Two school girls wearing red scarves are practicing dialogue together face to face.*]
 **Girl 1:** Can you run fast?
 **Girl 2:** Yes, I can.
 **Girl 1:** Can you swim?
 **Girl 2:** No, I can't.
 
-5
-
 ---
 
-### ### --- PRINTED PAGE 5 ---
+### --- PRINTED PAGE 6 ---
+
+[*LAYOUT: Section titled "Speed up" featuring a story passage about Terry Fox*]
 
 Speed up
 
-1 Read and answer.
+**1 Read and answer.**
 Why does Terry run across Canada?
 
 > **Run for Hope**
-> **Panel 1**
-> [*VISUAL: A young man with curly brown hair and a prosthetic running leg is running along a road. A crowd of supportive spectators stands behind a barrier cheering him on.*]
-> **Terry:** I'm Terry Fox. I like running and playing basketball.
-> **Terry:** But I lose one leg because of cancer.
-> **Terry:** Can I help other people with cancer?
-> **Terry:** I know! I can run across Canada. And I can get money for people!
-> **Terry:** It's hard for me. Many kind people help me.
-> **Crowd:** Come on, Terry! You can do it!
-> **Terry (thought bubble):** Yes, I can do it!
+> ① I'm Terry Fox. I like running and playing basketball.
+> ② But I lose one leg because of cancer.
+> ③ Can I help other people with cancer?
+> ④ I know! I can run across Canada. And I can get money for people!
+> ⑤ It's hard for me. Many kind people help me.
 
-6
-Story time
+6 Story time
 
----
-
-### ### --- PRINTED PAGE 6 ---
-
-**Panel 2**
-[*VISUAL: Terry continues running down a long countryside road bordered by evergreen trees and mountains.*]
-I keep running for five months.
-
-**Panel 3**
-[*VISUAL: Terry is running along a snowy, icy highway during winter with power lines running alongside the road.*]
-But I'm very ill. I can't run anymore.
-
-**Panel 4**
-[*VISUAL: A large group of diverse people of all ages are participating together in an outdoor run.*]
-Now many people do the Terry Fox Run every year. Let's remember Terry with a run.
-
-2 Read again and write.
-
-### TERRY FOX
-
-1 Terry loses one ________.
-2 Running is ________ for him.
-3 A lot of kind people ________ him.
-4 Terry runs for ________ months.
-5 Terry stops running because he is very ________.
-6 People ________ the Terry Fox Run to remember him.
-
-3 Work in pairs. Talk about Terry Fox.
-Use Activity 2 to help you.
-
-7
+[*VISUAL: Terry Fox, an athlete with a prosthetic right leg, is determinedly running along an outdoor path. A crowd of supportive people cheer him on from the sidelines.*]
+**Terry's thought:** Yes, I can do it!
+**Crowd:** Come on, Terry! You can do it!
 
 ---
 
-### ### --- PRINTED PAGE 7 ---
+### --- PRINTED PAGE 7 ---
+
+[*VISUAL: Two illustrations tracking Terry's journey. The left image shows Terry running past tall green pine trees along a mountain road. The right image shows him running down an open highway during a cold, snowy winter season.*]
+
+> ⑤ I keep running for five months.
+> ⑥ But I'm very ill. I can't run anymore.
+> ⑦ Now many people do the Terry Fox Run every year. Let's remember Terry with a run.
+
+**2 Read again and write.**
+**TERRY FOX**
+
+1. Terry loses one .
+2. Running is for him.
+3. A lot of kind people him.
+4. Terry runs for months.
+5. Terry stops running because he is very .
+6. People the Terry Fox Run to remember him.
+
+**3 Work in pairs. Talk about Terry Fox. Use Activity 2 to help you.**
+
+---
+
+### --- PRINTED PAGE 8 ---
+
+[*LAYOUT: Section titled "Fuel up" focusing on phonics, pronunciation, and chants*]
 
 Fuel up
 
-1 Listen and chant.
+**1 Listen and chant.**
+Welcome to Sports Day!
+Sports Day! Sports Day!
+Come on, everybody!
 
-> Welcome to Sports Day!
-> Sports Day! Sports Day!
-> Come on, everybody!
-> I can't run very fast.
-> I can't jump very far.
-> It's OK. It's OK.
-> It's OK to fail.
-> Don't give up! Never stop!
-> Work hard and try your best!
+I can't run very fast.
+I can't jump very far.
+It's OK. It's OK.
+It's OK to fail.
 
-8
+Don't give up! Never stop!
+Work hard and try your best!
+
 Hear it, say it
 
-2 Read the chant and write.
-Which words have "v" or "f" sounds?
+**2 Read the chant and write. Which words have "v" or "f" sounds?**
 
-| Vv | Ff |
-| --- | --- |
-| everybody | fast |
-| ________ | ________ |
-| ________ | ________ |
+* **Vv:** everybody,
+* **Ff:** fast,
 
 ---
 
-### ### --- PRINTED PAGE 8 ---
+### --- PRINTED PAGE 9 ---
 
-3 Listen and write.
-[*LAYOUT: A sports star profile layout with photos of three students wearing red scarves.*]
+[*LAYOUT: Profiles of student athletes under a "Sports stars" banner followed by a speaking activity*]
 
-> ### Sports stars
-> 
-> 
-> [*VISUAL: Photo of a young girl with pigtails.*]
-> **Name:** Wang Qi
-> **Sport:** $^1$________________
-> **Ability:** She can $^2$________________.
-> [*VISUAL: Photo of a young boy with short hair.*]
-> **Name:** Li Ming
-> **Sport:** $^3$________________
-> **Ability:** He can $^4$________________.
-> [*VISUAL: Photo of a young girl with twin low ponytails.*]
-> **Name:** Xu Tiantian
-> **Sport:** $^5$________________
-> **Ability:** She can $^6$________________.
+**3 Listen and write.**
 
-4 Work in pairs. Find and talk.
-Find good sports players in your school. Talk about their abilities.
+### **Sports stars**
 
-[*VISUAL: Photograph of a schoolgirl and a schoolboy wearing red uniforms and red scarves talking in front of a school building.*]
+* **Name:** Wang Qi
+* **Sport:** ¹
+* **Ability:** She can ² .
+
+
+* **Name:** Li Ming
+* **Sport:** ³
+* **Ability:** He can ⁴ .
+
+
+* **Name:** Xu Tiantian
+* **Sport:** ⁵
+* **Ability:** She can ⁶ .
+
+
+
+**4 Work in pairs. Find and talk. Find good sports players in your school. Talk about their abilities.**
+[*VISUAL: A schoolboy and a schoolgirl with red scarves are discussing sports talents outside their brick school building.*]
 **Girl:** Do you know Li Fei?
 **Boy:** Yes. She can play ping-pong well.
 
-9
-
 ---
 
-### ### --- PRINTED PAGE 9 ---
+### --- PRINTED PAGE 10 ---
+
+[*LAYOUT: Section titled "Hit it big" centered around performing a class survey and creating a bar chart*]
 
 Hit it big
-Do a class survey about sports
+**Do a class survey about sports**
 
-1 Look and say the sports.
-[*VISUAL: A clipboard displaying a bar chart titled "Number of children". The vertical axis ranges from 1 to 8. The horizontal axis depicts four activities illustrated by cartoon children: a swimmer, a basketball player, a ping-pong player, and a runner.*]
+**1 Look and say the sports.**
+[*VISUAL: A customized grid graph illustrating the number of children capable of doing various sports. The vertical y-axis is labeled "Number of children" ranging from 1 to 8. The horizontal x-axis depicts cartoon drawings of four sports: swimming, basketball, ping-pong, and running.*]
 
-* **Swimming (Green bar):** level reaches 6
-* **Basketball (Red bar):** level reaches 4
-* **Ping-pong (Blue bar):** level reaches 7
-* **Running (Yellow bar):** level reaches 5
+* **Swimming column (Green):** reaches up to 6
+* **Basketball column (Red):** reaches up to 4
+* **Ping-pong column (Blue):** reaches up to 7
+* **Running column (Yellow):** reaches up to 5
 
-2 Look again. Find and write.
-1 Six children can swim.
-2 ________ children can play basketball.
-3 ________ children can ________.
-4 ________ children can ________.
+**2 Look again. Find and write.**
 
-10
+1. Six children can swim.
+2. children can play basketball.
+3. children can
+
 We can do it
 
 ---
 
-### ### --- PRINTED PAGE 10 ---
+### --- PRINTED PAGE 11 ---
 
-3 Work in groups and do the survey.
-[*LAYOUT: A blank bar chart template titled "Number of children" with a vertical scale from 1 to 8. The first column is labeled "swimming" and has a blue bar pre-filled up to the level of 5. Three other slots are blank.*]
-**Speech bubble 1:** Can you swim?
-**Speech bubble 2:** Can you...?
+[*LAYOUT: Survey creation and presentation activities*]
 
-4 Tell your class about your survey.
-[*VISUAL: A schoolgirl stands holding a completed bar chart report, presenting it to the class. Small circular graphics around her illustrate children swimming, playing basketball, running, and playing ping-pong.*]
-**Girl:** Five children can swim...
+**3 Work in groups and do the survey.**
+[*VISUAL: Speech bubbles outlining questions to ask classmates during the project.*]
 
-11
+* **Bubble 1:** Can you...?
+* **Bubble 2:** Can you swim?
+
+[*VISUAL: A blank grid template titled "Number of children" with numbers 1 to 8 on the vertical axis. The first column is pre-labeled "swimming" and displays a blue bar that reaches up to 5. The remaining three horizontal spaces are blank lines.*]
+
+
+$$\text{swimming} \quad \underline{\hspace{2cm}} \quad \underline{\hspace{2cm}} \quad \underline{\hspace{2cm}}$$
+
+**4 Tell your class about your survey.**
+[*VISUAL: A student stands at the front of the classroom confidently showing her completed colorful bar graph to her peers. Surrounding her are round graphic bubbles showing children swimming, playing football, playing basketball, and playing table tennis.*]
+**Student:** Five children can swim...
 
 ---
 
-### ### --- PRINTED PAGE 11 ---
+### --- PRINTED PAGE 12 ---
+
+[*LAYOUT: Review game page titled "Wrap up" featuring a board game structure and self-assessment checklist*]
 
 Wrap up
+**Play to win!**
 
-### Play to win!
+[*LAYOUT: A 4x4 grid board game layout containing text prompts and illustrations for students to review skills.*]
 
-[*LAYOUT: A 4x4 board game grid containing questions, fill-in-the-blanks, and image naming tasks.*]
-
-| Grid 1<br>
-
-<br>[*VISUAL: Girl running*]<br>
-
-<br>Write the word.<br>
-
-<br>_ _ _ | Grid 2<br>
-
-<br>[*VISUAL: Boy slipping*]<br>
-
-<br>He can't<br>
-
-<br>________. | Grid 3<br>
-
-<br>[*VISUAL: A soccer ball*]<br>
-
-<br>Name it. | Grid 4<br>
-
-<br>[*VISUAL: A basketball*]<br>
-
-<br>Write the word.<br>
-
-<br>b_s_ *tb* _l |
+|  |  |  |  |
 | --- | --- | --- | --- |
-| **Grid 5**<br>
+| **Write the word.**<br>
 
-<br>[*VISUAL: Girl in a swim ring*]<br>
+<br>$$\text{--- --- ---}$$
 
-<br>Can she swim? | **Grid 6**<br>
+<br>
 
-<br>[*VISUAL: A ping-pong paddle and ball*]<br>
+<br>[*Visual: Running boy*] | **He can't**<br>
 
-<br>Name it. | **Grid 7**<br>
+<br>$$\underline{\hspace{1.5cm}}.$$
 
-<br>[*VISUAL: Child swimming*]<br>
+<br>
 
-<br>Write the word.<br>
+<br>[*Visual: Boy slipping on long jump*] | **Name it.**<br>
 
-<br>s_ _m | **Grid 8**<br>
+<br>
 
-<br>[*VISUAL: Boy doing high jump*]<br>
+<br>[*Visual: A football*] | **Write the word.**<br>
 
-<br>Can he jump high? |
-| **Grid 9**<br>
+<br>$$\text{b\_s\_\_tb\_\_l}$$
 
-<br>[*VISUAL: A basketball*]<br>
+<br>
 
-<br>Name it. | **Grid 10**<br>
+<br>[*Visual: A basketball*] |
+| **Can she swim?**<br>
 
-<br>[*VISUAL: Girls running on track*]<br>
+<br>
 
-<br>Can she run fast? | **Grid 11**<br>
+<br>[*Visual: Girl in a swim ring*] | **Name it.**<br>
 
-<br>[*VISUAL: Boy playing ping-pong*]<br>
+<br>
 
-<br>He can<br>
+<br>[*Visual: A ping-pong paddle & ball*] | **Write the word.**<br>
 
-<br>________. | **Grid 12**<br>
+<br>$$\text{s\_\_m}$$
 
-<br>[*VISUAL: Girl playing volleyball*]<br>
+<br>
 
-<br>Can she play volleyball? |
-| **Grid 13**<br>
+<br>[*Visual: Swimming girl*] | **Can he jump high?**<br>
 
-<br>[*VISUAL: Girl doing a long jump*]<br>
+<br>
 
-<br>Can she jump far? | **Grid 14**<br>
+<br>[*Visual: Boy doing high jump*] |
+| **Name it.**<br>
 
-<br>[*VISUAL: Swimming pool icon*]<br>
+<br>
 
-<br>Name it. | **Grid 15**<br>
+<br>[*Visual: A volleyball*] | **Can she run fast?**<br>
 
-<br>[*VISUAL: Boy on gymnastics bar*]<br>
+<br>
 
-<br>He can<br>
+<br>[*Visual: Girls running a race*] | **He can**<br>
 
-<br>________. | **Grid 16**<br>
+<br>$$\underline{\hspace{1.5cm}}.$$
 
-<br>[*VISUAL: Boy kicking a football*]<br>
+<br>
 
-<br>Can he play football? |
+<br>[*Visual: Boy playing table tennis*] | **Can she play volleyball?**<br>
 
-### Check it
+<br>
 
+<br>[*Visual: Girl spiking a volleyball*] |
+| **Can she jump far?**<br>
+
+<br>
+
+<br>[*Visual: Girl doing long jump*] | **Name it.**<br>
+
+<br>
+
+<br>[*Visual: Swimming icon*] | **He can**<br>
+
+<br>$$\underline{\hspace{1.5cm}}.$$
+
+<br>
+
+<br>[*Visual: Boy doing gymnastics bar*] | **Can he play football?**<br>
+
+<br>
+
+<br>[*Visual: Boy kicking a football*] |
+
+**Check it**
 **Now I can**
 
-* [ ] name sports: ________________________________________________;
+* [ ] name sports: 
+$$\underline{\hspace{8cm}};$$
+
+
 * [ ] use "can" and "can't" to talk about abilities;
 * [ ] talk about sports players around me.
 
-12
-
 ---
 
-### ### --- PRINTED PAGE 12 ---
+### --- PRINTED PAGE 13 ---
+
+[*LAYOUT: Science and nature enrichment section titled "Let's explore — Nature: Animal sports stars"*]
 
 Let's explore
-Nature: Animal sports stars
+**Nature: Animal sports stars**
 
-1 Look and guess. Who wins?
+**1 Look and guess. Who wins?**
 
-1. [*VISUAL: An athlete running vs. a cheetah running.*]
-**Text:** I can run fast!
-2. [*VISUAL: An athlete high-jumping vs. a jackrabbit jumping.*]
-**Text:** I can jump high!
-3. [*VISUAL: A swimmer swimming vs. a sailfish swimming.*]
-**Text:** I can swim fast!
-4. [*VISUAL: An athlete long-jumping vs. a snow leopard jumping.*]
-**Text:** I can jump far!
+1. [*Visual: A human sprinter next to a running cheetah.*] — "I can run fast!"
+2. [*Visual: A human high jumper next to a jumping hare.*] — "I can jump high!"
+3. [*Visual: A human swimmer next to a swimming sailfish.*] — "I can swim fast!"
+4. [*Visual: A human long jumper next to a leaping snow leopard.*] — "I can jump far!"
 
-2 Look at the picture. Find the answers to Activity 1.
-[*VISUAL: A split diagram comparing the records of human athletes and animals in various track and field events.*]
+**2 Look at the picture. Find the answers to Activity 1.**
+[*VISUAL: An infographic comparing the performance limits of humans versus animals across dynamic track and field event settings.*]
 
-* **Running Track:** * Cheetah: 114 km/h
-* Human runner: 44 km/h
+* **Running Track:** * Cheetah: **114 km/h**
+* Human Runner: **44 km/h**
 
 
-* **Long Jump Pit:**
-* Human athlete: 8.95 m
-* Snow leopard: 15 m
+* **Long Jump Pit:** * Human Jumper: **8.95 m**
+* Snow Leopard: **15 m**
 
 
-* **High Jump Mat:**
-* Jackrabbit: 6 m
-* Human athlete: 2.45 m
+* **High Jump Bar:**
+* Human Jumper: **2.45 m**
+* Hare: **6 m**
 
 
 * **Swimming Pool:**
-* Sailfish: 110 km/h
-* Human swimmer: 7.08 km/h
+* Sailfish: **110 km/h**
+* Human Swimmer: **7.08 km/h**
 
 
 
-3 Find out about an animal sports star. Tell the class about it.
-
-13
+**3 Find out about an animal sports star. Tell the class about it.**
 
 ---
 
-### ### --- APPENDIX: PDF PAGE 13 ---
+### --- APPENDIX: PDF PAGE 13 ---
 
-### Vocabulary
+### **Listening Scripts**
 
-### Unit 1
+**P9 - Activity Three: Listen and Write**
+**Teacher:** Look, they are this year's sports stars!
+**Wang Li:** That is my friend, Wang Li. She can run very fast.
+**Li Min:** And that is Li Min. He can play basketball very well. He can jump very high.
+**Zhu Chen:** Is that Zhu Chen? Yes, she can swim very fast.
+**Teacher:** They're all good at sports and they all work very hard.
 
-| Word / Phrase | Part of Speech / Definition |
+---
+
+### --- APPENDIX: PDF PAGE 14 ---
+
+### **Vocabulary**
+
+### **Unit 1**
+
+| English Word / Phrase | Chinese Translation |
 | --- | --- |
 | **sport** | 体育运动 |
 | **jump** | 跳 |
@@ -422,7 +434,7 @@ Nature: Animal sports stars
 | **far** | 远 |
 | ping-pong | 乒乓球运动 |
 | volleyball | 排球(运动) |
-| across | 从一边到另一边; 穿过, 越过 |
+| across | 从一边到另一边;穿过,越过 |
 | hope | 希望 |
 | **lose** | 失去 |
 | **because** | 因为 |
@@ -430,20 +442,21 @@ Nature: Animal sports stars
 | cancer | 癌(症) |
 | **money** | 钱 |
 | **hard** | 困难的 |
-| **kind** | 亲切的; 友好的; 善良的 |
-| **keep** | 持续; 继续 |
+| **kind** | 亲切的;友好的;善良的 |
+| **keep** | 持续;继续 |
 | **month** | 一个月 |
 | **ill** | 生病的 |
-| **year** | 年; 年度 |
-| **remember** | 纪念; 记住 |
+| **year** | 年;年度 |
+| **remember** | 纪念;记住 |
 | fail | 失败 |
-| **give** | 给予 |
+| give | 给予 |
 | give up | 放弃 |
-| never | 决不, 永不 |
-| try | 努力; 尝试 |
+| **never** | 决不,永不 |
+| **try** | 努力;尝试 |
 | try your best | 尽最大努力 |
-| star | 明星, 最出色者 |
-| ability | 才能; 能力 |
-| player | 运动员, 选手, 球员 |
+| star | 明星,最出色者 |
+| ability | 才能;能力 |
+| player | 运动员,选手,球员 |
 
-*注：加粗词汇为义务教育英语课程标准要求掌握的二级词汇。*
+[*LAYOUT: Footer note regarding vocabulary criteria*]
+
