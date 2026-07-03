@@ -414,6 +414,9 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
             : String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
 
           let selectClass = "ts-inline-select"
+          if (section.type === 'dialogue-completion') {
+            selectClass += " dialogue-type"
+          }
           if (submitted) {
             selectClass += isUserCorrect ? " correct" : " wrong"
           }
@@ -489,11 +492,30 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
         })
       })
 
+      if (section.type === 'dialogue-completion') {
+        return (
+          <span key={lineIdx} style={{ display: 'inline' }}>
+            {elements}
+          </span>
+        )
+      }
+
       return (
         <p key={lineIdx} style={{ margin: '12px 0', minHeight: line.trim() === '' ? '12px' : 'auto' }}>
           {elements}
         </p>
       )
+    })
+  }
+
+  const renderPromptText = (text: string) => {
+    if (!text) return null
+    const parts = text.split(/(<u>.*?<\/u>)/g)
+    return parts.map((part, idx) => {
+      if (part.startsWith('<u>') && part.endsWith('</u>')) {
+        return <u key={idx}>{part.slice(3, -4)}</u>
+      }
+      return part
     })
   }
 
@@ -524,7 +546,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
             <div className="ts-question-header">
               <span className="ts-question-num">{index + 1}.</span>
               <span className="ts-question-prompt">
-                {parts[0]}
+                {renderPromptText(parts[0])}
                 <select
                   className="ts-wordbank-select"
                   value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
@@ -543,7 +565,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                     )
                   })}
                 </select>
-                {parts[1]}
+                {renderPromptText(parts[1])}
               </span>
             </div>
 
@@ -565,7 +587,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
           <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
             <div className="ts-question-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <span className="ts-question-prompt">
-                <span className="ts-question-num">{index + 1}.</span> {q.prompt}
+                <span className="ts-question-num">{index + 1}.</span> {renderPromptText(q.prompt)}
               </span>
               <select
                 className="ts-wordbank-select"
@@ -606,7 +628,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
           <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
             <div className="ts-question-header">
               <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">{q.prompt}</span>
+              <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
             </div>
             <div className="ts-tf-container" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               {[true, false].map((val) => {
@@ -648,7 +670,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
           <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
             <div className="ts-question-header">
               <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">{q.prompt}</span>
+              <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
             </div>
 
             {isMultipleChoice ? (
@@ -774,7 +796,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
           <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
             <div className="ts-question-header">
               <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">{q.prompt}</span>
+              <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
             </div>
 
             <div className="ts-options-container">
@@ -875,15 +897,22 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                 </thead>
               )}
               <tbody>
-                {tableRows.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {row.map((cell, cellIndex) => (
-                      <td key={cellIndex}>
-                        {renderSentences(cell, `td-${key}-${rowIndex}-${cellIndex}`)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {tableRows.map((row, rowIndex) => {
+                  const diff = tableHeaders.length - row.length
+                  return (
+                    <tr key={rowIndex}>
+                      {row.map((cell, cellIndex) => {
+                        const isLast = cellIndex === row.length - 1
+                        const colSpan = (isLast && diff > 0) ? diff + 1 : undefined
+                        return (
+                          <td key={cellIndex} colSpan={colSpan} style={colSpan ? { textAlign: 'center' } : undefined}>
+                            {renderSentences(cell, `td-${key}-${rowIndex}-${cellIndex}`)}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

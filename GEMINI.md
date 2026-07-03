@@ -372,6 +372,7 @@ This document defines the rules for extracting and converting textbook data into
 - **Question Item Fields:**
   - `id`: A unique 8-character alphanumeric string generated for this question.
   - `prompt`: The question sentence. For blanks, use `"______"`.
+  - **Underlining**: For phonetic/pronunciation questions requiring visual comparison of specific letters in words, wrap those target letters/groups inside HTML underline tags: `<u>letters</u>` (e.g., `Let's <u>g</u>o to the zoo and see the <u>g</u>iraffes.`).
   - `options`: (Required for `multiple-choice` type) Array of strings.
   - `answer`: 
     - For fill-in-the-blanks: string representing the correct answer.
