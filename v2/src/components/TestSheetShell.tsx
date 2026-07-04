@@ -399,9 +399,15 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
   // Inline parser to render select elements for cloze passages & dialogue
   const parseInlineBlanks = (text: string, section: Section) => {
     const lines = text.split('\n')
-    return lines.map((line, lineIdx) => {
-      const parts = line.split(/(\[\d+\])/g)
-      const elements = parts.map((part, index) => {
+    const renderedBlocks: React.ReactNode[] = []
+
+    let inTable = false
+    let tableHeaders: string[] = []
+    let tableRows: string[][] = []
+
+    const parseLineContent = (lineText: string) => {
+      const parts = lineText.split(/(\[\d+\])/g)
+      return parts.map((part, index) => {
         const match = part.match(/^\[(\d+)\]$/)
         if (match) {
           const blankNum = parseInt(match[1], 10)
@@ -491,21 +497,98 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
           return bp
         })
       })
+    }
 
-      if (section.type === 'dialogue-completion') {
-        return (
-          <span key={lineIdx} style={{ display: 'inline' }}>
-            {elements}
-          </span>
+    const flushTable = (key: string | number) => {
+      if (tableRows.length > 0 || tableHeaders.length > 0) {
+        renderedBlocks.push(
+          <div key={`table-${key}`} className="ts-passage-table-wrapper">
+            <table className="ts-passage-table">
+              {tableHeaders.length > 0 && (
+                <thead>
+                  <tr>
+                    {tableHeaders.map((h, i) => (
+                      <th key={i}>
+                        {parseLineContent(h)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+              )}
+              <tbody>
+                {tableRows.map((row, rowIndex) => {
+                  const diff = tableHeaders.length - row.length
+                  return (
+                    <tr key={rowIndex}>
+                      {row.map((cell, cellIndex) => {
+                        const isLast = cellIndex === row.length - 1
+                        const colSpan = (isLast && diff > 0) ? diff + 1 : undefined
+                        return (
+                          <td key={cellIndex} colSpan={colSpan} style={colSpan ? { textAlign: 'center' } : undefined}>
+                            {parseLineContent(cell)}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )
+        tableHeaders = []
+        tableRows = []
       }
+      inTable = false
+    }
 
-      return (
-        <p key={lineIdx} style={{ margin: '12px 0', minHeight: line.trim() === '' ? '12px' : 'auto' }}>
-          {elements}
-        </p>
-      )
-    })
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (line.startsWith('|') && line.endsWith('|')) {
+        const cells = line.split('|').map(c => c.trim()).slice(1, -1)
+
+        if (cells.every(c => /^:-*-*:*$/.test(c) || /^-+$/.test(c))) {
+          continue
+        }
+
+        if (!inTable) {
+          inTable = true
+          tableHeaders = cells
+        } else {
+          tableRows.push(cells)
+        }
+      } else {
+        if (inTable) {
+          flushTable(i)
+        }
+
+        if (line) {
+          if (section.type === 'dialogue-completion') {
+            renderedBlocks.push(
+              <span key={i} style={{ display: 'inline' }}>
+                {parseLineContent(line)}
+              </span>
+            )
+          } else {
+            renderedBlocks.push(
+              <p key={i} style={{ margin: '12px 0', minHeight: 'auto' }}>
+                {parseLineContent(line)}
+              </p>
+            )
+          }
+        } else {
+          renderedBlocks.push(
+            <div key={`empty-${i}`} style={{ minHeight: '12px' }} />
+          )
+        }
+      }
+    }
+
+    if (inTable) {
+      flushTable('end')
+    }
+
+    return renderedBlocks
   }
 
   const renderPromptText = (text: string) => {
@@ -695,7 +778,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                       onClick={() => handleAnswerChange(q.id, oIdx)}
                     >
                       <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                      <span className="ts-option-text">{option}</span>
+                      <span className="ts-option-text">{renderPromptText(option)}</span>
                     </button>
                   )
                 })}
@@ -820,7 +903,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                     onClick={() => handleAnswerChange(q.id, oIdx)}
                   >
                     <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                    <span className="ts-option-text">{option}</span>
+                    <span className="ts-option-text">{renderPromptText(option)}</span>
                   </button>
                 )
               })}
