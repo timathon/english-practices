@@ -271,37 +271,8 @@ This document defines the rules for extracting and converting textbook data into
 - **Structure:** Follow the standard hierarchical tree structure defined in **Section 6 (Writing Map)**.
 
 
-## 8. Reading & Expression (RE)
-**Source:** Reading and Expression Markdown (e.g., `data/A7B/a7b-workbooks/a7b-re-old.md`).
-**Target:** `*-re-old-u[x].json` (Save in the same folder as source)
 
-- **Conversion Scope:** Generate separate JSON files for each unit/test found in the markdown source.
-- **Format & Structure:**
-  - `id`: A unique string ID identifying the unit (e.g., `"a7b-re-old-u1"`).
-  - `level`: The grade/semester info (e.g., `"Grade 7 Semester 2"`).
-  - `unit`: The unit name (e.g., `"Unit 1"`).
-  - `title`: The display title for the workbook test.
-  - `passage`: Verbatim text of the reading passage.
-  - `questions`: Array of exactly 4 question objects:
-    - **Questions 1, 2, and 3 (细节题 / Index 0-2):**
-      - `id`: Unique 8-character alphanumeric or logical string (e.g., `"u1-q41"`).
-      - `number`: Question number matching the text (usually 41, 42, 43).
-      - `type`: `"multiple-choice"`.
-      - `prompt`: Question prompt from the markdown text.
-      - `options`: Array of 4 options containing the correct answer and 3 synthetically generated plausible distractors.
-      - `answer`: Index of the correct option (0-3). **Crucially, the correct answer index must be randomized (shuffled).**
-    - **Question 4 (开放题 / Index 3):**
-      - `id`: Unique string ID (e.g., `"u1-q44"`).
-      - `number`: Question number matching the text (usually 44).
-      - `type`: `"sentence-ordering"`.
-      - `prompt`: Open-ended question prompt (e.g., `"What club do you want to join? Why? Write 20 words or more."`).
-      - `blocks`: Array of exactly 6 sentence block objects, where exactly 3 are correct components forming a high-scoring cohesive answer and 3 are incorrect distractors.
-        - Each block has `id`, `text`, `isCorrect` (boolean), and `role` (`"opinion"`, `"reason"`, `"summary"`, or `"distractor"`).
-        - Correct Blocks: Include an **Opinion** (观点), a **Reason** (理由), and a **Summary/Significance** (升华) in the first person ("I", "my") that combined meet the word count requirement (e.g., ≥20 words).
-        - Distractors: 3 incorrect sentence options (e.g., third-person copy-pasted sentences from the passage or unrelated grammar points).
-      - `correctOrder`: Array of the 3 correct block IDs in chronological sequence (e.g., `["b1", "b2", "b3"]`).
-
-## 9. Grammar Wizard (GW)
+## 8. Grammar Wizard (GW)
 **Source:** Textbook contents JSON (e.g., `data/A7B/a7b-contents.json`) and the unit's Markdown file (e.g., `data/A7B/a7b-u1/a7b-u1.md`).
 **Target:** `*-grammar-wizard.json` (Save in the same folder as source)
 
@@ -326,7 +297,7 @@ This document defines the rules for extracting and converting textbook data into
   - `explanation`: Detailed explanation in Chinese explaining the grammar rule and options.
   - `hint`: A brief, helpful cue or reminder in Chinese.
 
-## 10. Passage Decoder (PD)
+## 9. Passage Decoder (PD)
 **Sources:**
 - **Student's Book:** Extracted from the textbook or Student's Book passages (which are identical to those in the corresponding Text Navigator JSON). The target JSON filename must end with the `-s.json` suffix (where `-s` stands for Student's Book). **For textbooks starting with S (e.g., SA1), you must also include the Reading passage from the appendix (e.g., "THE FACE-DOWN GENERATION" for SA1) in this Student's Book passage decoder.**
 - **Passage Decoder Markdown:** Extracted from a passage decoder markdown file (e.g., `data/A5B/a5b-u1/a5b-u1-passage-decoder-w.md`), if one exists. The target JSON filename should preserve the suffix from the source markdown file (e.g., target `*-w.json` for source `*-w.md`).
@@ -352,7 +323,7 @@ This document defines the rules for extracting and converting textbook data into
   - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline, highlight }`).
 - **Generation**: Avoid calling the Gemini API programmatically to parse or generate options. Perform translations and distractor generation directly within your own context.
 
-## 11. Test Sheet (TS)
+## 10. Test Sheet (TS)
 **Source:** Textbook PDF or Quiz markdown files (e.g., `data/A5Bx/a5bx-wm3/a5bx-wm3.md`).
 **Target:** `*-test.json` (Save in the same folder as source)
 
@@ -443,6 +414,39 @@ This document defines the rules for extracting and converting textbook data into
        - `answer`: Correct word or sentence string matching an item in `wordbank`.
        - `translation` & `explanation`: Chinese text.
      - **Instruction Mapping Rule:** Always map sections with instructions such as "阅读短文，从所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。" or "阅读短文，从方框内所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。" to this `"cloze-passage-wordbank"` type.
+
+
+## 11. Reading & Expression (RE)
+**Source:** Reading and Expression Markdown (e.g., `data/A7B/a7b-workbooks/a7b-re-old.md`).
+**Target:** `*-re-old-u[x].json` (Save in the same folder as source)
+
+- **Conversion Scope:** Generate separate JSON files for each unit/test found in the markdown source.
+- **Format & Structure:**
+  - `id`: A unique string ID identifying the unit (e.g., `"a7b-re-old-u1"`).
+  - `level`: The grade/semester info (e.g., `"Grade 7 Semester 2"`).
+  - `unit`: The unit name (e.g., `"Unit 1"`).
+  - `title`: The display title for the workbook test.
+  - `passage`: Verbatim text of the reading passage.
+  - `questions`: Array of exactly 4 question objects:
+    - **Questions 1, 2, and 3 (细节题 / Index 0-2):**
+      - `id`: Unique 8-character alphanumeric or logical string (e.g., `"u1-q41"`).
+      - `number`: Question number matching the text (usually 41, 42, 43).
+      - `type`: `"multiple-choice"`.
+      - `prompt`: Question prompt from the markdown text.
+      - `options`: Array of 4 options containing the correct answer and 3 synthetically generated plausible distractors.
+      - `answer`: Index of the correct option (0-3). **Crucially, the correct answer index must be randomized (shuffled).**
+    - **Question 4 (开放题 / Index 3):**
+      - `id`: Unique string ID (e.g., `"u1-q44"`).
+      - `number`: Question number matching the text (usually 44).
+      - `type`: `"sentence-ordering"`.
+      - `prompt`: Open-ended question prompt (e.g., `"What club do you want to join? Why? Write 20 words or more."`).
+      - `blocks`: Array of exactly 6 sentence block objects, where exactly 3 are correct components forming a high-scoring cohesive answer and 3 are incorrect distractors.
+        - Each block has `id`, `text`, `isCorrect` (boolean), and `role` (`"opinion"`, `"reason"`, `"summary"`, or `"distractor"`).
+        - Correct Blocks: Include an **Opinion** (观点), a **Reason** (理由), and a **Summary/Significance** (升华) in the first person ("I", "my") that combined meet the word count requirement (e.g., ≥20 words).
+        - Distractors: 3 incorrect sentence options (e.g., third-person copy-pasted sentences from the passage or unrelated grammar points).
+      - `correctOrder`: Array of the 3 correct block IDs in chronological sequence (e.g., `["b1", "b2", "b3"]`).
+
+
 
 ## 12. Interchange Character Mapping (Tongjia CJS)
 **Source:** Textbook or classical Chinese unit text (`.md`).
