@@ -204,6 +204,7 @@ This document defines the rules for extracting and converting textbook data into
 **Sections:**
   - **A3A - A6B:** "Start Up", "Speed Up", "Fuel Up - Activity 1", "Fuel Up - Activity [X]" (where [X] is the exact activity number, e.g., "Fuel Up - Activity 3", which has to be listening practice with a script in the appendix of the unit markdown). **CRITICAL:** You must include BOTH "Fuel Up - Activity 1" and the listening practice "Fuel Up - Activity [X]" if both are present in the source text.
   - **A7A - A8B:** "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".
+  - **S* (textbooks starting with S, e.g., SA1):** The main reading passage (e.g., "The Freshman Challenge" for SA1) AND the Reading passage in the appendix (e.g., "THE FACE-DOWN GENERATION" for SA1).
 
 **Target:** `*-text-navigator.json` — a **single file per unit** containing all applicable sections. (Save in the same folder as source)
 
@@ -327,7 +328,7 @@ This document defines the rules for extracting and converting textbook data into
 
 ## 10. Passage Decoder (PD)
 **Sources:**
-- **Student's Book:** Extracted from the textbook or Student's Book passages (which are identical to those in the corresponding Text Navigator JSON). The target JSON filename must end with the `-s.json` suffix (where `-s` stands for Student's Book).
+- **Student's Book:** Extracted from the textbook or Student's Book passages (which are identical to those in the corresponding Text Navigator JSON). The target JSON filename must end with the `-s.json` suffix (where `-s` stands for Student's Book). **For textbooks starting with S (e.g., SA1), you must also include the Reading passage from the appendix (e.g., "THE FACE-DOWN GENERATION" for SA1) in this Student's Book passage decoder.**
 - **Passage Decoder Markdown:** Extracted from a passage decoder markdown file (e.g., `data/A5B/a5b-u1/a5b-u1-passage-decoder-w.md`), if one exists. The target JSON filename should preserve the suffix from the source markdown file (e.g., target `*-w.json` for source `*-w.md`).
 
 **Target:** `*-passage-decoder-[suffix].json` (Save in the same folder as source)
@@ -649,3 +650,6 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is 
 > - Any assumptions or decisions made
 >
 > Do **not** begin execution until the user confirms the plan.
+
+> [!IMPORTANT]
+> **Ask for permission before running execution commands.** When you need to run execution commands like `npm` or `node` (including database synchronization scripts, builds, or package installations), you must explicitly ask the user for permission in the chat first and obtain their consent before invoking the tool.
