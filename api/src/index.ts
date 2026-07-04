@@ -530,12 +530,13 @@ app.post('/api/records', async (c) => {
 
   const db = drizzle(c.env.DB);
   const id = crypto.randomUUID();
+  const parsedScore = typeof body.score === 'string' ? parseInt(body.score, 10) : Number(body.score);
 
   await db.insert(practiceRecords).values({
     id,
     userId: session.user.id,
     unit: body.unit,
-    score: body.score,
+    score: isNaN(parsedScore) ? 0 : parsedScore,
     unfinished: body.unfinished !== undefined ? body.unfinished : false,
     createdAt: new Date(),
     updatedAt: new Date()
@@ -553,6 +554,8 @@ app.put('/api/records/:id', async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json();
   const db = drizzle(c.env.DB);
+  const parsedScore = typeof body.score === 'string' ? parseInt(body.score, 10) : Number(body.score);
+  const finalScore = isNaN(parsedScore) ? 0 : parsedScore;
 
   const existing = await db.select().from(practiceRecords)
     .where(eq(practiceRecords.id, id));
@@ -561,7 +564,7 @@ app.put('/api/records/:id', async (c) => {
     const record = existing[0];
     const isFinished = !record.unfinished;
     const nextUnfinished = isFinished ? false : (body.unfinished !== undefined ? body.unfinished : false);
-    const nextScore = (isFinished && record.score > body.score) ? record.score : body.score;
+    const nextScore = (isFinished && record.score > finalScore) ? record.score : finalScore;
 
     await db.update(practiceRecords).set({
         score: nextScore,
@@ -571,7 +574,7 @@ app.put('/api/records/:id', async (c) => {
     .where(eq(practiceRecords.id, id));
   } else {
     await db.update(practiceRecords).set({
-        score: body.score,
+        score: finalScore,
         unfinished: body.unfinished !== undefined ? body.unfinished : false,
         updatedAt: new Date()
     })
