@@ -205,6 +205,7 @@ This document defines the rules for extracting and converting textbook data into
   - **A3A - A6B:** "Start Up", "Speed Up", "Fuel Up - Activity 1", "Fuel Up - Activity [X]" (where [X] is the exact activity number, e.g., "Fuel Up - Activity 3", which has to be listening practice with a script in the appendix of the unit markdown). **CRITICAL:** You must include BOTH "Fuel Up - Activity 1" and the listening practice "Fuel Up - Activity [X]" if both are present in the source text.
   - **A7A - A8B:** "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".
   - **S* (textbooks starting with S, e.g., SA1):** The main reading passage (e.g., "The Freshman Challenge" for SA1) AND the Reading passage in the appendix (e.g., "THE FACE-DOWN GENERATION" for SA1).
+  - **Full Text Verification:** You must include the **entire full article/passage/dialogue** verbatim (every single sentence/line) as it appears in the source, without summarizing, omitting, or truncating paragraphs or sentences. Failure to include the full text is considered incomplete data.
 
 **Target:** `*-text-navigator.json` — a **single file per unit** containing all applicable sections. (Save in the same folder as source)
 
@@ -225,7 +226,9 @@ This document defines the rules for extracting and converting textbook data into
   ]
 }
 ```
-- **Structure:** Each `tree` is a hierarchical mindmap (root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts). Keep the hierarchy structured with a maximum nesting depth of 4 levels (i.e. `root` -> Level 1 -> Level 2 -> Level 3 -> Level 4) to ensure it is easy to navigate. Do not chain sentences infinitely into a single deep path.
+- **Structure:** Each `tree` is a hierarchical mindmap (root node ID `root`). Hierarchy should reflect the logical flow of the passage (e.g., nesting consequences under causes or responses under prompts). 
+  - **Avoid Flat/Poor Structures:** Do not put all sentences in a flat paragraph node or directly under a single parent. Group sentences logically by creating thematic sub-heading or conceptual nodes (Level 1 and Level 2) first, then placing sentences as child/grandchild nodes under these thematic buckets.
+  - **Nesting depth:** Keep the hierarchy structured with a maximum nesting depth of 4 levels (i.e. `root` -> Level 1 -> Level 2 -> Level 3 -> Level 4) to ensure it is easy to navigate. Do not chain sentences infinitely into a single deep path.
 - **Node Rules:**
   - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`). IDs must be unique within each `tree`.
   - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence**.
