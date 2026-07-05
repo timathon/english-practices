@@ -1,6 +1,6 @@
-# Vocab Master & Spelling Hero Shell Refactoring (2026-07-02)
+# Vocab Master, Spelling Hero, Sentence Architect & Grammar Wizard Shell Refactoring (2026-07-02 to 2026-07-05)
 
-This document details the refactoring performed on `VocabMasterShell.tsx` and `SpellingHeroShell.tsx` to eliminate redundant UI layouts, helper methods, audio handling, and window navigation blocking rules.
+This document details the refactoring performed on `VocabMasterShell.tsx`, `SpellingHeroShell.tsx`, `SentenceArchitectShell.tsx`, and `GrammarWizardShell.tsx` to eliminate redundant UI layouts, helper methods, audio handling, and window navigation blocking rules.
 
 ## 1. Shared Utilities and Hooks Extracted
 We extracted common functional logic into new libraries inside `v2/src/lib/`:
@@ -25,7 +25,7 @@ We designed and created reusable presentation components inside `v2/src/componen
 - **[ActiveHeader.tsx](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/shell/ActiveHeader.tsx) / [ActiveHeader.css](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/shell/ActiveHeader.css)**: Consolidates the vertical column container layout (top-left Close button, bottom Timer ring) and the horizontal Progress bar (with WeChat/native platform capsule menu overlay margins on mobile).
 
 ## 3. Shell Refactoring Results
-We refactored `VocabMasterShell.tsx` and `SpellingHeroShell.tsx` to consume the extracted modules. This resulted in:
-- **~250+ lines of duplicate rendering code removed** from the shells.
-- Replaced custom inline top-bar and navigation logic with cleaner, unit-tested shared components.
+We refactored `VocabMasterShell.tsx`, `SpellingHeroShell.tsx`, `SentenceArchitectShell.tsx`, and `GrammarWizardShell.tsx` to consume the extracted modules. This resulted in:
+- **~500+ lines of duplicate rendering code removed** across the shells.
+- Replaced custom inline top-bar, settings panels, and navigation logic with cleaner, unit-tested shared components.
 - Standardized styling via shared stylesheet properties.

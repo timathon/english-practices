@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Link, useBlocker } from 'react-router-dom'
 import './GrammarWizardShell.css'
 import { DailyLockModal } from './DailyLockModal'
 import { audioCache } from '../lib/audioCache'
@@ -9,23 +8,20 @@ import { mistakeService } from '../lib/mistakeService'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
-import { CountdownRing } from './CountdownRing'
-
-function shuffle<T>(array: T[]): T[] {
-    const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const temp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = temp;
-    }
-    return arr;
-}
+import { shuffle, usePracticeAudio } from '../lib/practiceAudio'
+import { useNavigationBlocker } from '../lib/useNavigationBlocker'
+import { ShellHeader } from './shell/ShellHeader'
+import { InvisibleModeCheckbox } from './shell/InvisibleModeCheckbox'
+import { ActiveHeader } from './shell/ActiveHeader'
+import { FooterAction } from './shell/FooterAction'
+import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
+import { ShellHistoryModal } from './shell/ShellHistoryModal'
+import { CompleteScreenActions } from './shell/CompleteScreenActions'
 
 export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    const { data: session } = useSession()
    const userId = session?.user?.id
-   const sfxRef = useRef<HTMLAudioElement | null>(null)
+   const { playSfx } = usePracticeAudio(textbook)
    
    const [activeChallenge, setActiveChallenge] = useState<any>(null)
    const [queue, setQueue] = useState<any[]>([])
@@ -65,36 +61,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    const timerExpiredRef = useRef(false)
    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
 
-   const blocker = useBlocker(
-       ({ nextLocation, currentLocation }) =>
-           !!activeChallenge && !completed && nextLocation.pathname !== currentLocation.pathname
-   );
-
-    useEffect(() => {
-        if (blocker.state === 'blocked') {
-            const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
-            if (proceed) {
-                setActiveChallenge(null);
-                blocker.reset();
-            } else {
-                blocker.reset();
-            }
-        }
-    }, [blocker]);
-
-   useEffect(() => {
-       const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-           if (activeChallenge && !completed) {
-               e.preventDefault();
-               e.returnValue = '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
-               return '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
-           }
-       };
-       window.addEventListener('beforeunload', handleBeforeUnload);
-       return () => {
-           window.removeEventListener('beforeunload', handleBeforeUnload);
-       };
-   }, [activeChallenge, completed]);
+   useNavigationBlocker(!!activeChallenge && !completed);
 
    useEffect(() => {
        if (!activeChallenge && lastFinishedChallengeId) {
@@ -149,36 +116,39 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        }
    }, [])
 
-   const handleChallengeSelect = (c: any) => {
-       const stats = getStats(c.title);
-        if (stats.todayBest === 100) {
-            setLockModalOpen(true);
-            return;
+    const handleChallengeSelect = (c: any, overrideInvisible?: boolean) => {
+        const isInvisible = overrideInvisible !== undefined ? overrideInvisible : invisibleMode;
+        if (!isInvisible) {
+            const stats = getStats(c.title);
+            if (stats.todayBest === 100) {
+                setLockModalOpen(true);
+                return;
+            }
+            const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
+            if (!hasConsumed) return;
         }
-       const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
-       if (!hasConsumed) return;
-       
-       setActiveChallenge(c)
-       setActiveRecordId(null)
-       setGainedXp(0)
-       setGainedLove(0)
-       recordIdPromiseRef.current = null
-       hasFinishedRef.current = false
-       
-       // Shuffle questions
-       const shuffled = shuffle([...c.questions]).map((q: any, i: number) => ({ ...q, originalIndex: i }))
-       setQueue(shuffled)
-       setMistakeQueue([])
-       setCurrentIndex(0)
-       setScoreLog(new Array(c.questions.length).fill(null))
-       setCompleted(false)
-       
-       // Preload audio SFX
-       audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3");
-       audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3");
-       
-       loadQuestion(shuffled, [], 0, false)
-   }
+        
+        setActiveChallenge(c)
+        setActiveRecordId(null)
+        setGainedXp(0)
+        setGainedLove(0)
+        recordIdPromiseRef.current = null
+        hasFinishedRef.current = false
+        
+        // Shuffle questions
+        const shuffled = shuffle([...c.questions]).map((q: any, i: number) => ({ ...q, originalIndex: i }))
+        setQueue(shuffled)
+        setMistakeQueue([])
+        setCurrentIndex(0)
+        setScoreLog(new Array(c.questions.length).fill(null))
+        setCompleted(false)
+        
+        // Preload audio SFX
+        audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3");
+        audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3");
+        
+        loadQuestion(shuffled, [], 0, false)
+    }
 
    const loadQuestion = (currentQueue: any[], currentMistakes: any[], index: number, redemption: boolean) => {
        let nextQ = null
@@ -220,244 +190,223 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
        }
    }
 
-   const playSfx = async (type: 'correct'|'wrong') => {
-       const url = type === 'correct' 
-           ? "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3"
-           : "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3";
-       try {
-           const blob = await audioCache.cacheAudio(url);
-           if (!blob) return;
-           const blobUrl = URL.createObjectURL(blob);
-           if (sfxRef.current) {
-               sfxRef.current.src = blobUrl;
-               sfxRef.current.onended = () => URL.revokeObjectURL(blobUrl)
-               sfxRef.current.play().catch(console.error)
-           } else {
-               const a = new Audio(blobUrl)
-               a.onended = () => URL.revokeObjectURL(blobUrl)
-               a.play().catch(console.error)
-               sfxRef.current = a
-           }
-       } catch (e) { console.error(e) }
-   }
+     const handleOptionClick = useCallback((idx: number) => {
+         if (locked) return
+         setSelectedOption(idx)
+     }, [locked])
 
-    const handleOptionClick = useCallback((idx: number) => {
-        if (locked) return
-        setSelectedOption(idx)
-    }, [locked])
+     const syncRecord = async (scorePercent: number, isFinished: boolean) => {
+         try {
+             if (isFinished) {
+                 hasFinishedRef.current = true
+             } else if (hasFinishedRef.current) {
+                 return
+             }
 
-    const syncRecord = async (scorePercent: number, isFinished: boolean) => {
-        try {
-            if (isFinished) {
-                hasFinishedRef.current = true
-            } else if (hasFinishedRef.current) {
-                return
+             if (activeRecordId) {
+                 const res = await fetch(`${API_URL}/api/records/${activeRecordId}`, {
+                     method: 'PUT',
+                     headers: { 'Content-Type': 'application/json' },
+                     credentials: 'include',
+                     body: JSON.stringify({ 
+                         unit: `${practiceId} (${activeChallenge.title})`, 
+                         score: scorePercent,
+                         unfinished: !isFinished
+                     })
+                 })
+                 const j = await res.json()
+                 if (j.success) {
+                     cache.updateRecord({
+                         id: activeRecordId,
+                         score: scorePercent,
+                         unfinished: !isFinished,
+                         updatedAt: new Date().toISOString()
+                     })
+                 }
+             } else if (recordIdPromiseRef.current) {
+                 const recordId = await recordIdPromiseRef.current
+                 const res = await fetch(`${API_URL}/api/records/${recordId}`, {
+                     method: 'PUT',
+                     headers: { 'Content-Type': 'application/json' },
+                     credentials: 'include',
+                     body: JSON.stringify({ 
+                         unit: `${practiceId} (${activeChallenge.title})`, 
+                         score: scorePercent,
+                         unfinished: !isFinished
+                     })
+                 })
+                 const j = await res.json()
+                 if (j.success) {
+                     cache.updateRecord({
+                         id: recordId,
+                         score: scorePercent,
+                         unfinished: !isFinished,
+                         updatedAt: new Date().toISOString()
+                     })
+                 }
+             } else {
+                 const postPromise = (async () => {
+                     const res = await fetch(`${API_URL}/api/records`, {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         credentials: 'include',
+                         body: JSON.stringify({ 
+                             unit: `${practiceId} (${activeChallenge.title})`, 
+                             score: scorePercent,
+                             unfinished: !isFinished
+                         })
+                     })
+                     const j = await res.json()
+                     if (j.success && j.id) {
+                         setActiveRecordId(j.id)
+                         cache.updateRecord({
+                             id: j.id,
+                             unit: `${practiceId} (${activeChallenge.title})`,
+                             score: scorePercent,
+                             unfinished: !isFinished,
+                             createdAt: new Date().toISOString(),
+                             updatedAt: new Date().toISOString()
+                         } as any)
+                         return j.id as string
+                     }
+                     throw new Error("Failed to create record")
+                 })()
+                 
+                 recordIdPromiseRef.current = postPromise
+                 await postPromise
+             }
+         } catch (e) {
+             console.error("Failed to sync record", e)
+         }
+     }
+
+     const checkAnswer = useCallback((forceWrong?: boolean) => {
+         if (locked) return
+         if (!forceWrong && selectedOption === null) return
+         setLocked(true)
+         countdownTimer.pause()
+         
+         setContinueDisabled(true)
+         setTimeout(() => setContinueDisabled(false), 1000)
+
+         const isCorrect = !forceWrong && selectedOption === q.answer
+        setIsCorrectFeedback(isCorrect)
+        setShowFeedback(true)
+
+        let updatedMistakes = [...mistakeQueue]
+        let updatedScoreLog = [...scoreLog]
+
+        if (isCorrect) {
+            playSfx('correct')
+            if (!invisibleMode) {
+                const { xpGain } = petService.awardCorrectAnswer()
+                setGainedXp(prev => prev + xpGain)
+                setGainedLove(prev => prev + 1)
             }
-
-            if (activeRecordId) {
-                const res = await fetch(`${API_URL}/api/records/${activeRecordId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ 
-                        unit: `${practiceId} (${activeChallenge.title})`, 
-                        score: scorePercent,
-                        unfinished: !isFinished
-                    })
-                })
-                const j = await res.json()
-                if (j.success) {
-                    cache.updateRecord({
-                        id: activeRecordId,
-                        score: scorePercent,
-                        unfinished: !isFinished,
-                        updatedAt: new Date().toISOString()
-                    })
-                }
-            } else if (recordIdPromiseRef.current) {
-                const recordId = await recordIdPromiseRef.current
-                const res = await fetch(`${API_URL}/api/records/${recordId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ 
-                        unit: `${practiceId} (${activeChallenge.title})`, 
-                        score: scorePercent,
-                        unfinished: !isFinished
-                    })
-                })
-                const j = await res.json()
-                if (j.success) {
-                    cache.updateRecord({
-                        id: recordId,
-                        score: scorePercent,
-                        unfinished: !isFinished,
-                        updatedAt: new Date().toISOString()
-                    })
+            let scoreType = "green"
+            if (isRedemption) {
+                scoreType = "redemption"
+                updatedScoreLog[q.originalIndex] = scoreType
+                updatedMistakes.shift() // Remove from mistake queue
+            } else {
+                if (hintUsed) scoreType = "yellow"
+                updatedScoreLog[currentIndex] = scoreType
+            }
+        } else {
+            playSfx('wrong')
+            if (!isRedemption) {
+                updatedScoreLog[currentIndex] = "red"
+                updatedMistakes.push(q)
+                if (userId && !invisibleMode) {
+                    mistakeService.addMistake(userId, {
+                        practiceId,
+                        textbook,
+                        unit,
+                        practiceType: 'grammar-wizard',
+                        question: q,
+                        wrongAnswer: selectedOption !== null ? q.options[selectedOption] : undefined
+                    });
                 }
             } else {
-                const postPromise = (async () => {
-                    const res = await fetch(`${API_URL}/api/records`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ 
-                            unit: `${practiceId} (${activeChallenge.title})`, 
-                            score: scorePercent,
-                            unfinished: !isFinished
-                        })
-                    })
-                    const j = await res.json()
-                    if (j.success && j.id) {
-                        setActiveRecordId(j.id)
-                        cache.updateRecord({
-                            id: j.id,
-                            unit: `${practiceId} (${activeChallenge.title})`,
-                            score: scorePercent,
-                            unfinished: !isFinished,
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                        } as any)
-                        return j.id as string
-                    }
-                    throw new Error("Failed to create record")
-                })()
-                
-                recordIdPromiseRef.current = postPromise
-                await postPromise
+                const missed = updatedMistakes.shift()
+                updatedMistakes.push(missed) // Move to back of the queue
             }
-        } catch (e) {
-            console.error("Failed to sync record", e)
         }
+
+        setMistakeQueue(updatedMistakes)
+        setScoreLog(updatedScoreLog)
+
+        const totalScore = updatedScoreLog.reduce((acc, curr) => {
+            if (curr === "green") return acc + 1
+            if (curr === "yellow") return acc + 0.5
+            return acc
+        }, 0)
+        
+        const scorePercent = Math.round((totalScore / queue.length) * 100)
+        if (!invisibleMode) {
+            const isLastMain = !isRedemption && currentIndex === queue.length - 1
+            syncRecord(scorePercent, isLastMain)
+        }
+     }, [locked, selectedOption, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer, userId, practiceId, textbook, unit, invisibleMode])
+
+     // Keep ref in sync so onExpire uses the latest checkAnswer
+     useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
+
+    const nextQuestion = () => {
+        let nextIndex = currentIndex
+        if (!isRedemption) {
+            nextIndex = currentIndex + 1
+            setCurrentIndex(nextIndex)
+        }
+        loadQuestion(queue, mistakeQueue, nextIndex, isRedemption)
     }
 
-    const checkAnswer = useCallback((forceWrong?: boolean) => {
-        if (locked) return
-        if (!forceWrong && selectedOption === null) return
-        setLocked(true)
-        countdownTimer.pause()
+    const finishGame = async (finalQueue: any[]) => {
+        setCompleted(true)
+
+        const totalScore = scoreLog.reduce((acc, curr) => {
+            if (curr === "green") return acc + 1
+            if (curr === "yellow") return acc + 0.5
+            return acc
+        }, 0)
         
-        setContinueDisabled(true)
-        setTimeout(() => setContinueDisabled(false), 1000)
+        const scorePercent = Math.round((totalScore / finalQueue.length) * 100)
+        setFinalScore(scorePercent)
 
-        const isCorrect = !forceWrong && selectedOption === q.answer
-       setIsCorrectFeedback(isCorrect)
-       setShowFeedback(true)
+        const u = `${practiceId} (${activeChallenge.title})`
+        const logs = practiceRecords.filter(r => r.unit === u)
+        const histBest = logs.length > 0 ? Math.max(...logs.map(t => t.score)) : 0
+        setHistoricalBest(histBest)
+        setIsNewHigh(histBest === 0 ? scorePercent > 0 : scorePercent > histBest)
 
-       let updatedMistakes = [...mistakeQueue]
-       let updatedScoreLog = [...scoreLog]
+        if (!invisibleMode) {
+            petService.awardQuizCompletion()
+            syncRecord(scorePercent, true)
+            if (userId) {
+                mistakeService.syncToServer(userId);
+            }
+        }
+    }
+    
+    const getStats = (challengeTitle: string) => {
+        const u = `${practiceId} (${challengeTitle})`
+        const logs = practiceRecords.filter(r => r.unit === u && !r.unfinished)
 
-       if (isCorrect) {
-           playSfx('correct')
-           if (!invisibleMode) {
-               const { xpGain } = petService.awardCorrectAnswer()
-               setGainedXp(prev => prev + xpGain)
-               setGainedLove(prev => prev + 1)
-           }
-           let scoreType = "green"
-           if (isRedemption) {
-               scoreType = "redemption"
-               updatedScoreLog[q.originalIndex] = scoreType
-               updatedMistakes.shift() // Remove from mistake queue
-           } else {
-               if (hintUsed) scoreType = "yellow"
-               updatedScoreLog[currentIndex] = scoreType
-           }
-       } else {
-           playSfx('wrong')
-           if (!isRedemption) {
-               updatedScoreLog[currentIndex] = "red"
-               updatedMistakes.push(q)
-               if (userId && !invisibleMode) {
-                   mistakeService.addMistake(userId, {
-                       practiceId,
-                       textbook,
-                       unit,
-                       practiceType: 'grammar-wizard',
-                       question: q,
-                       wrongAnswer: selectedOption !== null ? q.options[selectedOption] : undefined
-                   });
-               }
-           } else {
-               const missed = updatedMistakes.shift()
-               updatedMistakes.push(missed) // Move to back of the queue
-           }
-       }
+        const todayStr = new Date().toLocaleDateString()
+        const todayLogs = logs.filter(r => new Date(r.createdAt).toLocaleDateString() === todayStr)
 
-       setMistakeQueue(updatedMistakes)
-       setScoreLog(updatedScoreLog)
+        const todayBest = todayLogs.length > 0 ? Math.max(...todayLogs.map(t => t.score)) : 0
+        const lifeBest = logs.length > 0 ? Math.max(...logs.map(t => t.score)) : 0
 
-       const totalScore = updatedScoreLog.reduce((acc, curr) => {
-           if (curr === "green") return acc + 1
-           if (curr === "yellow") return acc + 0.5
-           return acc
-       }, 0)
-       
-       const scorePercent = Math.round((totalScore / queue.length) * 100)
-       if (!invisibleMode) {
-           const isLastMain = !isRedemption && currentIndex === queue.length - 1
-           syncRecord(scorePercent, isLastMain)
-       }
-    }, [locked, selectedOption, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer, userId, practiceId, textbook, unit, invisibleMode])
-
-    // Keep ref in sync so onExpire uses the latest checkAnswer
-    useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
-
-   const nextQuestion = () => {
-       let nextIndex = currentIndex
-       if (!isRedemption) {
-           nextIndex = currentIndex + 1
-           setCurrentIndex(nextIndex)
-       }
-       loadQuestion(queue, mistakeQueue, nextIndex, isRedemption)
-   }
-
-   const finishGame = async (finalQueue: any[]) => {
-       setCompleted(true)
-
-       const totalScore = scoreLog.reduce((acc, curr) => {
-           if (curr === "green") return acc + 1
-           if (curr === "yellow") return acc + 0.5
-           return acc
-       }, 0)
-       
-       const scorePercent = Math.round((totalScore / finalQueue.length) * 100)
-       setFinalScore(scorePercent)
-
-       const u = `${practiceId} (${activeChallenge.title})`
-       const logs = practiceRecords.filter(r => r.unit === u)
-       const histBest = logs.length > 0 ? Math.max(...logs.map(t => t.score)) : 0
-       setHistoricalBest(histBest)
-       setIsNewHigh(histBest === 0 ? scorePercent > 0 : scorePercent > histBest)
-
-       if (!invisibleMode) {
-           petService.awardQuizCompletion()
-           syncRecord(scorePercent, true)
-           if (userId) {
-               mistakeService.syncToServer(userId);
-           }
-       }
-   }
-   
-   const getStats = (challengeTitle: string) => {
-       const u = `${practiceId} (${challengeTitle})`
-       const logs = practiceRecords.filter(r => r.unit === u && !r.unfinished)
-
-       const todayStr = new Date().toLocaleDateString()
-       const todayLogs = logs.filter(r => new Date(r.createdAt).toLocaleDateString() === todayStr)
-
-       const todayBest = todayLogs.length > 0 ? Math.max(...todayLogs.map(t => t.score)) : 0
-       const lifeBest = logs.length > 0 ? Math.max(...logs.map(t => t.score)) : 0
-
-       return {
-           todayRuns: todayLogs.length,
-           todayBest,
-           lifeRuns: logs.length,
-           lifeBest,
-           todayLogs,
-           lifeLogs: logs
-       }
-   }
+        return {
+            todayRuns: todayLogs.length,
+            todayBest,
+            lifeRuns: logs.length,
+            lifeBest,
+            todayLogs,
+            lifeLogs: logs
+        }
+    }
 
     const closeHintModal = () => {
         setIsClosing(true)
@@ -514,144 +463,63 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [activeChallenge, completed, historyModal, showHintModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer, options, handleOptionClick]);
 
-   if (!activeChallenge) {
-       return (
-           <div className="gw-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-               <div className="gw-screen">
-                   <div className="gw-header">
-                       <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, fontSize: '1.5rem', textDecoration: 'none' }}>🏠</Link>
-                       <h1>{data.title}</h1>
-                       <h2>{data.level}</h2>
-                   </div>
-                    <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        alignItems: 'center', 
-                        gap: '10px', 
-                        marginBottom: '20px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '8px 16px',
-                        width: 'fit-content',
-                        margin: '0 auto 20px auto'
-                    }}>
-                        <label style={{ 
-                            fontSize: '0.95rem', 
-                            color: '#475569', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            cursor: 'pointer',
-                            fontWeight: 500
-                        }}>
-                            <input 
-                                type="checkbox" 
-                                checked={invisibleMode} 
-                                onChange={(e) => setInvisibleMode(e.target.checked)}
-                                style={{ 
-                                    width: '16px', 
-                                    height: '16px', 
-                                    accentColor: 'var(--primary)',
-                                    cursor: 'pointer'
-                                }}
-                            />
-                            <span>👻 Invisible Mode (No timer, no rewards/records)</span>
-                        </label>
-                    </div>
-                   
-                   <div className="gw-challenge-grid">
-                       {data.challenges.map((c: any) => (
-                           <div key={c.id} id={`gw-card-${c.id}`} className={`gw-challenge-card ${flickeringChallengeId === c.id ? 'flicker-active' : ''}`}>
-                               <div className="gw-card-header">
-                                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                                       <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>{c.icon}</span>
-                                       <h3 className="gw-card-title" style={{ marginRight: '8px' }}>{c.title}</h3>
-                                       <div style={{ fontSize: '0.7rem', color: 'rgb(153, 153, 153)', marginTop: '2px' }}>
-                                           {trialsTracker.getRemainingTrials(practiceId, c.id)} / 5 attempts left
-                                       </div>
-                                   </div>
-                                    {(() => {
-                                        const isLockedToday = getStats(c.title).todayBest === 100;
-                                        const isOutOfAttempts = trialsTracker.getRemainingTrials(practiceId, c.id) === 0;
-                                        return (
-                                            <button 
-                                                className="gw-start-btn" 
-                                                onClick={() => handleChallengeSelect(c)}
-                                                style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                            >
-                                                {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'OUT OF ATTEMPTS' : 'START'}
-                                            </button>
-                                        );
-                                    })()}
-                                </div>
-                               <div className="gw-card-stats">
-                                   {(() => {
-                                       const s = getStats(c.title);
-                                       return (
-                                        <>
-                                           <div className="gw-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `TODAY - ${c.title}`, logs: s.todayLogs })}>
-                                               <span className="gw-stat-label">TODAY</span>
-                                               <span className="gw-stat-val" style={s.todayBest >= 70 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{s.todayRuns} Runs | Best: {s.todayBest}%</span>
-                                           </div>
-                                           <div className="gw-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${c.title}`, logs: s.lifeLogs })}>
-                                               <span className="gw-stat-label">LIFETIME</span>
-                                               <span className="gw-stat-val">{s.lifeRuns} Runs | Best: {s.lifeBest}%</span>
-                                           </div>
-                                        </>
-                                       )
-                                   })()}
-                               </div>
-                           </div>
-                       ))}
-                   </div>
-               </div>
-               
-               {historyModal && (
-                   <div className="gw-modal-overlay" onClick={() => setHistoryModal(null)}>
-                       <div className="gw-modal-content" onClick={e => e.stopPropagation()}>
-                           <h3 className="gw-modal-title">{historyModal.title}</h3>
-                           {historyModal.logs.length === 0 ? (
-                               <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No records yet.</p>
-                           ) : (
-                               <ul className="gw-history-list">
-                                   {historyModal.logs.map((log: any, i: number) => {
-                                       const d = new Date(log.createdAt);
-                                       const isUnfinished = log.unfinished ? ' (Unfinished)' : '';
-                                       const now = new Date();
-                                       const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                                       const logMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-                                       const diffDays = Math.round((todayMidnight.getTime() - logMidnight.getTime()) / 86400000);
-                                       const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                       let dateLabel: string;
-                                       if (diffDays === 0) dateLabel = historyModal.title.startsWith('LIFETIME') ? 'Today ' + timeStr : timeStr;
-                                       else if (diffDays === 1) dateLabel = 'Yesterday ' + timeStr;
-                                       else if (diffDays <= 6) dateLabel = diffDays + ' days ago ' + timeStr;
-                                       else dateLabel = d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
-                                       return (
-                                           <li key={log.id || i} className="gw-history-item">
-                                               <span className="gw-history-date">{dateLabel}</span>
-                                               <span className="gw-history-score" style={{ color: log.score >= 80 ? 'var(--primary)' : 'inherit' }}>
-                                                   {log.score}%{isUnfinished}
-                                               </span>
-                                           </li>
-                                       );
-                                   })}
-                               </ul>
-                           )}
-                           <button className="gw-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
-                       </div>
-                   </div>
-               )}
+    if (!activeChallenge) {
+        return (
+            <div className="gw-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
+                <div className="gw-screen">
+                    <ShellHeader
+                        title={data.title}
+                        level={data.level}
+                        textbook={textbook}
+                        unit={unit}
+                        prefix="gw"
+                    />
+                    
+                    <InvisibleModeCheckbox
+                        checked={invisibleMode}
+                        onChange={setInvisibleMode}
+                    />
 
-               {lockModalOpen && (
-                   <DailyLockModal onClose={() => setLockModalOpen(false)} />
-               )}
-           </div>
-       )
-   }
+                    <ChallengeCardGrid
+                        challenges={data.challenges}
+                        onStart={handleChallengeSelect}
+                        invisibleMode={invisibleMode}
+                        onShowHistory={(c) => {
+                            const s = getStats(c.title);
+                            setHistoryModal({ title: `TODAY - ${c.title}`, logs: s.todayLogs });
+                        }}
+                        getRemainingTrials={(cId) => trialsTracker.getRemainingTrials(practiceId, cId)}
+                        getChallengeStatsText={(c) => {
+                            const s = getStats(c.title);
+                            return {
+                                today: `${s.todayRuns} Runs | Best: ${s.todayBest}%`,
+                                lifetime: `${s.lifeRuns} Runs | Best: ${s.lifeBest}%`,
+                                isTodayBestHigh: s.todayBest >= 70
+                            };
+                        }}
+                        isLockedToday={(c) => getStats(c.title).todayBest === 100}
+                        flickeringId={flickeringChallengeId}
+                        prefix="gw"
+                    />
+                </div>
+                
+                {historyModal && (
+                    <ShellHistoryModal
+                        title={historyModal.title}
+                        onClose={() => setHistoryModal(null)}
+                        logs={historyModal.logs}
+                        prefix="gw"
+                    />
+                )}
 
-   if (completed) {
+                {lockModalOpen && (
+                    <DailyLockModal onClose={() => setLockModalOpen(false)} />
+                )}
+            </div>
+        )
+    }
+
+    if (completed) {
         return (
             <div className="gw-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
                 <div className="gw-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '30px 20px' }}>
@@ -714,158 +582,155 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                             </>
                         )}
                     </div>
-
-                      <button className="gw-check-btn" onClick={() => {
-                          setLastFinishedChallengeId(activeChallenge.id)
-                          setActiveChallenge(null)
-                          loadRecords()
-                      }} style={{ maxWidth: '300px' }}>
-                          Back to Menu
-                      </button>
+                    
+                    <CompleteScreenActions
+                        remainingTrials={trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)}
+                        onBack={() => {
+                            setLastFinishedChallengeId(activeChallenge.id)
+                            setActiveChallenge(null)
+                            setCompleted(false)
+                            loadRecords()
+                        }}
+                        onTryAgain={(overrideInvisible) => {
+                            if (overrideInvisible !== undefined) {
+                                setInvisibleMode(overrideInvisible);
+                            }
+                            handleChallengeSelect(activeChallenge, overrideInvisible);
+                        }}
+                        prefix="gw"
+                        isLockedToday={getStats(activeChallenge.title).todayBest === 100}
+                        invisibleMode={invisibleMode}
+                    />
                 </div>
             </div>
         )
-   }
+    }
 
-   if (!q) return null
+    if (!q) return null
 
-   return (
-       <div className="gw-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-           <div className="gw-screen">
-                <div className="gw-top-bar">
-                    <div style={{ position: 'relative', flexShrink: 0, width: 30 }}>
-                        <button className="gw-close-btn" onClick={() => {
-                            countdownTimer.pause()
-                            const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
-                            if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
-                                if (userId) {
-                                    mistakeService.syncToServer(userId);
-                                }
-                                setActiveChallenge(null);
-                                loadRecords();
-                            } else {
-                                if (!locked) countdownTimer.resume()
+    const originalText = isRedemption
+        ? (mistakeQueue.length === 0 ? "Finish" : "Continue")
+        : (currentIndex >= queue.length - 1 && mistakeQueue.length === 0 ? "Finish" : "Continue");
+
+    return (
+        <div className="gw-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
+            <div className="gw-screen">
+                <ActiveHeader
+                    onClose={() => {
+                        countdownTimer.pause()
+                        const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)
+                        if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
+                            if (userId && !invisibleMode) {
+                                mistakeService.syncToServer(userId);
                             }
-                        }}>✕</button>
-                        {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={30} isRunning={countdownTimer.isRunning} />}
-                    </div>
-                   <div className="gw-progress-container">
-                        {queue.map((_, i) => {
-                            const isActive = (!isRedemption && i === currentIndex && !showFeedback) || (isRedemption && q && q.originalIndex === i && !showFeedback);
-                            return <div key={i} className={`gw-progress-segment ${scoreLog[i] || ''}${isActive ? ' active' : ''}`} />
-                        })}
-                   </div>
-               </div>
+                            setActiveChallenge(null);
+                            loadRecords();
+                        } else {
+                            if (!locked) countdownTimer.resume()
+                        }
+                    }}
+                    countdownTimer={{
+                        secondsLeft: countdownTimer.secondsLeft,
+                        totalSeconds: 30,
+                        isRunning: countdownTimer.isRunning
+                    }}
+                    invisibleMode={invisibleMode}
+                    queue={queue}
+                    currentIndex={currentIndex}
+                    scoreLog={scoreLog}
+                    showFeedback={showFeedback}
+                    isRedemption={isRedemption}
+                    currentQuestion={q}
+                    prefix="gw"
+                />
 
-               <div className="gw-question-area">
-                   <div className="gw-prompt-container">
-                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '10px' }}>
-                           <div className="gw-prompt-category" style={{ margin: 0 }}>{q.category.toUpperCase()}</div>
-                           <button className="gw-prompt-hint-btn" onClick={handleShowHint}>💡</button>
-                       </div>
-                       <div className="gw-prompt-val">{q.prompt}</div>
-                   </div>
-
-                   <div className="gw-options-list">
-                       {options.map((opt: any, idx: number) => {
-                           let classes = "gw-option-btn "
-                           if (locked) {
-                               if (opt.originalIdx === q.answer) {
-                                   classes += "correct "
-                               } else if (selectedOption === opt.originalIdx) {
-                                   classes += "wrong "
-                               }
-                           } else {
-                               if (selectedOption === opt.originalIdx) {
-                                   classes += "selected "
-                               }
-                           }
-
-                           return (
-                               <button 
-                                   key={`${opt.text}-${opt.originalIdx}`} 
-                                   className={classes}
-                                   onClick={() => handleOptionClick(opt.originalIdx)}
-                                   disabled={locked}
-                               >
-                                   <span className="gw-option-marker">{idx + 1}</span>
-                                   <span className="gw-option-text">{opt.text}</span>
-                               </button>
-                           )
-                       })}
-                   </div>
-               </div>
-
-               <div className={`gw-feedback-area ${showFeedback ? 'visible ' + (isCorrectFeedback ? 'correct' : 'wrong') : ''}`}>
-                   {showFeedback ? (
-                       <>
-                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                               <h3 className="gw-feedback-title" style={{ color: isCorrectFeedback ? '#10b981' : '#ef4444' }}>
-                                   {isCorrectFeedback ? 'Excellent!' : 'Incorrect'}
-                               </h3>
-                           </div>
-                           <p className="gw-feedback-msg">
-                               {isCorrectFeedback ? 'Great job!' : `Correct Answer: ${q.options[q.answer]}`}
-                           </p>
-                           <div className="gw-feedback-explanation">
-                               <strong>解析:</strong> {q.explanation}
-                           </div>
-                       </>
-                   ) : null}
-               </div>
-
-               <div className="gw-footer-action">
-                   {!locked ? (
-                       <button 
-                           className="gw-check-btn" 
-                           disabled={selectedOption === null}
-                           onClick={() => checkAnswer()}
-                       >
-                           Check
-                       </button>
-                   ) : (
-                        <button 
-                            className="gw-check-btn continue" 
-                            onClick={nextQuestion}
-                            disabled={continueDisabled}
-                        >
-                            {(() => {
-                                const isCorrect = selectedOption === q.answer;
-                                let mistakesCount = mistakeQueue.length;
-                                if (isRedemption) {
-                                    if (isCorrect) mistakesCount = Math.max(0, mistakesCount - 1);
-                                } else {
-                                    if (!isCorrect) mistakesCount += 1;
-                                }
-                                const isLast = isRedemption 
-                                    ? (mistakesCount === 0)
-                                    : (currentIndex + 1 >= queue.length && mistakesCount === 0);
-                                return isLast ? 'Finish' : 'Continue';
-                            })()}
-                        </button>
-                   )}
-               </div>
-
-               {(showHintModal || isClosing) && (
-                    <div className={`gw-modal-overlay${isClosing ? ' closing' : ''}`} onClick={closeHintModal}>
-                        <div className={`gw-modal-content${isClosing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary)' }}>
-                                    💡 Hint (提示) <span style={{ fontSize: '0.9rem', color: '#999', marginLeft: '6px' }}>({hintTimeLeft}s)</span>
-                                </span>
-                                <button className="gw-close-btn" style={{ margin: 0, width: 'auto', fontSize: '1.2rem' }} onClick={closeHintModal}>✕</button>
-                            </div>
-                            <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word' }}>
-                                {q.hint}
-                            </div>
+                <div className="gw-question-area">
+                    <div className="gw-prompt-container">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '10px' }}>
+                            <div className="gw-prompt-category" style={{ margin: 0 }}>{q.category.toUpperCase()}</div>
+                            <button className="gw-prompt-hint-btn" onClick={handleShowHint}>💡</button>
                         </div>
+                        <div className="gw-prompt-val">{q.prompt}</div>
                     </div>
-                )}
 
-               {lockModalOpen && (
-                    <DailyLockModal onClose={() => setLockModalOpen(false)} />
-                )}
+                    <div className="gw-options-list">
+                        {options.map((opt: any, idx: number) => {
+                            let classes = "gw-option-btn "
+                            if (locked) {
+                                if (opt.originalIdx === q.answer) {
+                                    classes += "correct "
+                                } else if (selectedOption === opt.originalIdx) {
+                                    classes += "wrong "
+                                }
+                            } else {
+                                if (selectedOption === opt.originalIdx) {
+                                    classes += "selected "
+                                }
+                            }
+
+                            return (
+                                <button 
+                                    key={`${opt.text}-${opt.originalIdx}`} 
+                                    className={classes}
+                                    onClick={() => handleOptionClick(opt.originalIdx)}
+                                    disabled={locked}
+                                >
+                                    <span className="gw-option-marker">{idx + 1}</span>
+                                    <span className="gw-option-text">{opt.text}</span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                <div className={`gw-feedback-area ${showFeedback ? 'visible ' + (isCorrectFeedback ? 'correct' : 'wrong') : ''}`}>
+                    {showFeedback ? (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <h3 className="gw-feedback-title" style={{ color: isCorrectFeedback ? '#10b981' : '#ef4444' }}>
+                                    {isCorrectFeedback ? 'Excellent!' : 'Incorrect'}
+                                </h3>
+                            </div>
+                            <p className="gw-feedback-msg">
+                                {isCorrectFeedback ? 'Great job!' : `Correct Answer: ${q.options[q.answer]}`}
+                            </p>
+                            <div className="gw-feedback-explanation">
+                                <strong>解析:</strong> {q.explanation}
+                            </div>
+                        </>
+                    ) : null}
+                </div>
+
+                <FooterAction
+                    locked={locked}
+                    disableCheck={selectedOption === null}
+                    continueDisabled={continueDisabled}
+                    onCheck={() => checkAnswer()}
+                    onContinue={nextQuestion}
+                    buttonText={originalText}
+                    prefix="gw"
+                />
+
+                {(showHintModal || isClosing) && (
+                     <div className={`gw-modal-overlay${isClosing ? ' closing' : ''}`} onClick={closeHintModal}>
+                         <div className={`gw-modal-content${isClosing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                 <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                                     💡 Hint (提示) <span style={{ fontSize: '0.9rem', color: '#999', marginLeft: '6px' }}>({hintTimeLeft}s)</span>
+                                 </span>
+                                 <button className="gw-close-btn" style={{ margin: 0, width: 'auto', fontSize: '1.2rem' }} onClick={closeHintModal}>✕</button>
+                             </div>
+                             <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                                 {q.hint}
+                             </div>
+                         </div>
+                     </div>
+                 )}
+
+                {lockModalOpen && (
+                     <DailyLockModal onClose={() => setLockModalOpen(false)} />
+                 )}
             </div>
-       </div>
-   )
+        </div>
+    )
 }

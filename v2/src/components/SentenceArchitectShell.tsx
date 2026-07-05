@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Link, useBlocker } from 'react-router-dom'
 import './SentenceArchitectShell.css'
 import { DailyLockModal } from './DailyLockModal'
-import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { useSession, API_URL } from '../lib/auth'
@@ -10,25 +8,15 @@ import { mistakeService } from '../lib/mistakeService'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
-import { CountdownRing } from './CountdownRing'
-
-const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
-
-const getAudioUrl = (sentence: string, book: string, isCf?: boolean) => {
-    const hash = md5(sentence);
-    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`;
-}
-
-function shuffle<T>(array: T[]): T[] {
-    const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const temp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = temp;
-    }
-    return arr;
-}
+import { getAudioUrl, shuffle, usePracticeAudio } from '../lib/practiceAudio'
+import { useNavigationBlocker } from '../lib/useNavigationBlocker'
+import { ShellHeader } from './shell/ShellHeader'
+import { InvisibleModeCheckbox } from './shell/InvisibleModeCheckbox'
+import { ActiveHeader } from './shell/ActiveHeader'
+import { FooterAction } from './shell/FooterAction'
+import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
+import { ShellHistoryModal } from './shell/ShellHistoryModal'
+import { CompleteScreenActions } from './shell/CompleteScreenActions'
 
 interface PoolWord {
     id: number;
@@ -47,8 +35,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const isCf = data?.tts?.by === 'melotts'
     const { data: session } = useSession()
     const userId = session?.user?.id
-    const audioRef = useRef<HTMLAudioElement | null>(null)
-    const sfxRef = useRef<HTMLAudioElement | null>(null)
+    const { playAudio, playSfx } = usePracticeAudio(textbook, () => isCf)
 
     const [activeChallenge, setActiveChallenge] = useState<any>(null)
     const [queue, setQueue] = useState<any[]>([])
@@ -75,24 +62,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const [isCorrectFeedback, setIsCorrectFeedback] = useState(false)
     const [, setUserSentenceStr] = useState("")
 
-    // Settings
-    const [autoplay, setAutoplay] = useState(() => {
-        try {
-            const saved = localStorage.getItem('sa-settings-autoplay')
-            return saved !== 'false'
-        } catch {
-            return true
-        }
-    })
-    const [sfxEnabled, setSfxEnabled] = useState(() => {
-        try {
-            const saved = localStorage.getItem('sa-settings-sfx')
-            return saved !== 'false'
-        } catch {
-            return true
-        }
-    })
-    const [showSettings, setShowSettings] = useState(false)
+
 
     // Countdown / Continue Disabled State
     const [continueCountdown, setContinueCountdown] = useState(0)
@@ -114,36 +84,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const timerExpiredRef = useRef(false)
     const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
 
-    const blocker = useBlocker(
-        ({ nextLocation, currentLocation }) =>
-            !!activeChallenge && !completed && nextLocation.pathname !== currentLocation.pathname
-    );
-
-    useEffect(() => {
-        if (blocker.state === 'blocked') {
-            const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
-            if (proceed) {
-                setActiveChallenge(null);
-                blocker.reset();
-            } else {
-                blocker.reset();
-            }
-        }
-    }, [blocker]);
-
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (activeChallenge && !completed) {
-                e.preventDefault();
-                e.returnValue = '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
-                return '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
-    }, [activeChallenge, completed]);
+    useNavigationBlocker(!!activeChallenge && !completed);
 
     useEffect(() => {
         if (!activeChallenge && lastFinishedChallengeId) {
@@ -205,14 +146,17 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3")
     }, [])
 
-    const handleChallengeSelect = (c: any) => {
-        const stats = getStats(c.title);
-        if (stats.todayBest === 100) {
-            setLockModalOpen(true);
-            return;
+    const handleChallengeSelect = (c: any, overrideInvisible?: boolean) => {
+        const isInvisible = overrideInvisible !== undefined ? overrideInvisible : invisibleMode;
+        if (!isInvisible) {
+            const stats = getStats(c.title);
+            if (stats.todayBest === 100) {
+                setLockModalOpen(true);
+                return;
+            }
+            const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
+            if (!hasConsumed) return;
         }
-        const hasConsumed = trialsTracker.consumeTrial(practiceId, c.id)
-        if (!hasConsumed) return;
 
         setActiveChallenge(c)
         setActiveRecordId(null)
@@ -328,46 +272,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         }
     }
 
-    const playAudio = async (url: string) => {
-        if (!url) return;
-        try {
-            const blob = await audioCache.cacheAudio(url);
-            if (!blob) return;
-            const blobUrl = URL.createObjectURL(blob);
-            if (audioRef.current) {
-                audioRef.current.src = blobUrl;
-                audioRef.current.onended = () => URL.revokeObjectURL(blobUrl)
-                audioRef.current.play().catch(console.error)
-            } else {
-                const a = new Audio(blobUrl)
-                a.onended = () => URL.revokeObjectURL(blobUrl)
-                a.play().catch(console.error)
-                audioRef.current = a
-            }
-        } catch (e) { console.error(e) }
-    }
 
-    const playSfx = async (type: 'correct' | 'wrong') => {
-        if (!sfxEnabled) return;
-        const url = type === 'correct'
-            ? "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3"
-            : "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3";
-        try {
-            const blob = await audioCache.cacheAudio(url);
-            if (!blob) return;
-            const blobUrl = URL.createObjectURL(blob);
-            if (sfxRef.current) {
-                sfxRef.current.src = blobUrl;
-                sfxRef.current.onended = () => URL.revokeObjectURL(blobUrl)
-                sfxRef.current.play().catch(console.error)
-            } else {
-                const a = new Audio(blobUrl)
-                a.onended = () => URL.revokeObjectURL(blobUrl)
-                a.play().catch(console.error)
-                sfxRef.current = a
-            }
-        } catch (e) { console.error(e) }
-    }
 
     const selectWord = (word: PoolWord) => {
         if (locked || word.selected) return;
@@ -539,9 +444,9 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
             }
         }
 
-        // Sentence audio playback (after correct/wrong sfx if autoplay is on)
+        // Sentence audio playback (after correct/wrong sfx)
         const sentenceAudioUrl = q.audio || (textbook ? getAudioUrl(q.en, textbook, isCf) : null);
-        if (autoplay && sentenceAudioUrl) {
+        if (sentenceAudioUrl) {
             setTimeout(() => playAudio(sentenceAudioUrl), 600);
         }
 
@@ -561,21 +466,19 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         }
 
         // Autoplay countdown timer
-        if (autoplay) {
-            setContinueDisabled(true)
-            setContinueCountdown(2)
-            const timer = setInterval(() => {
-                setContinueCountdown(c => {
-                    if (c <= 1) {
-                        clearInterval(timer)
-                        setContinueDisabled(false)
-                        return 0
-                    }
-                    return c - 1
-                })
-            }, 1000)
-        }
-    }, [locked, userSelection, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, autoplay, queue.length, countdownTimer, invisibleMode, isCf])
+        setContinueDisabled(true)
+        setContinueCountdown(2)
+        const timer = setInterval(() => {
+            setContinueCountdown(c => {
+                if (c <= 1) {
+                    clearInterval(timer)
+                    setContinueDisabled(false)
+                    return 0
+                }
+                return c - 1
+            })
+        }, 1000)
+    }, [locked, userSelection, q, mistakeQueue, scoreLog, currentIndex, isRedemption, hintUsed, queue.length, countdownTimer, invisibleMode, isCf])
 
     // Keep ref in sync so onExpire uses the latest checkAnswer
     useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer])
@@ -636,17 +539,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         }
     }
 
-    const toggleAutoplay = () => {
-        const next = !autoplay
-        setAutoplay(next)
-        try { localStorage.setItem('sa-settings-autoplay', String(next)) } catch {}
-    }
 
-    const toggleSfx = () => {
-        const next = !sfxEnabled
-        setSfxEnabled(next)
-        try { localStorage.setItem('sa-settings-sfx', String(next)) } catch {}
-    }
 
     const closeHintModal = () => {
         setIsClosing(true)
@@ -679,7 +572,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (!activeChallenge || completed || historyModal || showSettings || showHintModal) return;
+            if (!activeChallenge || completed || historyModal || showHintModal) return;
             if (e.key === 'Enter') {
                 e.preventDefault();
                 if (!locked) {
@@ -695,171 +588,60 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activeChallenge, completed, historyModal, showSettings, showHintModal, locked, userSelection.length, continueDisabled, nextQuestion, checkAnswer]);
+    }, [activeChallenge, completed, historyModal, showHintModal, locked, userSelection.length, continueDisabled, nextQuestion, checkAnswer]);
 
     if (!activeChallenge) {
         return (
             <div className="sa-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
                 <div className="sa-screen">
-                    <div className="sa-header">
-                        <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, fontSize: '1.5rem', textDecoration: 'none' }}>🏠</Link>
-                        <h1>{data.title}</h1>
-                        <h2>{data.level}</h2>
-                        <button className="sa-settings-toggle" onClick={() => setShowSettings(true)}>⚙️</button>
-                    </div>
+                    <ShellHeader
+                        title={data.title}
+                        level={data.level}
+                        textbook={textbook}
+                        unit={unit}
+                        prefix="sa"
+                    />
+                    
+                    <InvisibleModeCheckbox
+                        checked={invisibleMode}
+                        onChange={setInvisibleMode}
+                    />
 
-                    <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        alignItems: 'center', 
-                        gap: '10px', 
-                        marginBottom: '20px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '8px 16px',
-                        width: 'fit-content',
-                        margin: '0 auto 20px auto'
-                    }}>
-                        <label style={{ 
-                            fontSize: '0.95rem', 
-                            color: '#475569', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            cursor: 'pointer',
-                            fontWeight: 500
-                        }}>
-                            <input 
-                                type="checkbox" 
-                                checked={invisibleMode} 
-                                onChange={(e) => setInvisibleMode(e.target.checked)}
-                                style={{ 
-                                    width: '16px', 
-                                    height: '16px', 
-                                    accentColor: 'var(--primary)',
-                                    cursor: 'pointer'
-                                }}
-                            />
-                            <span>👻 Invisible Mode (No timer, no rewards/records)</span>
-                        </label>
-                    </div>
-
-                    <div className="sa-challenge-grid">
-                        {data.challenges.map((c: any) => (
-                            <div key={c.id} id={`sa-card-${c.id}`} className={`sa-challenge-card ${flickeringChallengeId === c.id ? 'flicker-active' : ''}`}>
-                                <div className="sa-card-header">
-                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>{c.icon}</span>
-                                        <h3 className="sa-card-title" style={{ marginRight: '8px' }}>{c.title}</h3>
-                                        <div style={{ fontSize: '0.7rem', color: 'rgb(153, 153, 153)', marginTop: '2px' }}>
-                                            {trialsTracker.getRemainingTrials(practiceId, c.id)} / 5 left
-                                        </div>
-                                    </div>
-                                    {(() => {
-                                        const isLockedToday = getStats(c.title).todayBest === 100;
-                                        const isOutOfAttempts = trialsTracker.getRemainingTrials(practiceId, c.id) === 0;
-                                        return (
-                                            <button 
-                                                className="sa-start-btn" 
-                                                onClick={() => handleChallengeSelect(c)}
-                                                style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                            >
-                                                {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'LIMIT' : 'START'}
-                                            </button>
-                                        );
-                                    })()}
-                                </div>
-                                <div className="sa-card-stats">
-                                    {(() => {
-                                        const s = getStats(c.title);
-                                        return (
-                                            <>
-                                                <div className="sa-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `TODAY - ${c.title}`, logs: s.todayLogs })}>
-                                                    <span className="sa-stat-label">TODAY</span>
-                                                    <span className="sa-stat-val" style={s.todayBest >= 70 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{s.todayRuns} Runs | Best: {s.todayBest}%</span>
-                                                </div>
-                                                <div className="sa-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${c.title}`, logs: s.lifeLogs })}>
-                                                    <span className="sa-stat-label">LIFETIME</span>
-                                                    <span className="sa-stat-val">{s.lifeRuns} Runs | Best: {s.lifeBest}%</span>
-                                                </div>
-                                            </>
-                                        )
-                                    })()}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <ChallengeCardGrid
+                        challenges={data.challenges}
+                        onStart={handleChallengeSelect}
+                        invisibleMode={invisibleMode}
+                        onShowHistory={(c) => {
+                            const s = getStats(c.title);
+                            setHistoryModal({ title: `TODAY - ${c.title}`, logs: s.todayLogs });
+                        }}
+                        getRemainingTrials={(cId) => trialsTracker.getRemainingTrials(practiceId, cId)}
+                        getChallengeStatsText={(c) => {
+                            const s = getStats(c.title);
+                            return {
+                                today: `${s.todayRuns} Runs | Best: ${s.todayBest}%`,
+                                lifetime: `${s.lifeRuns} Runs | Best: ${s.lifeBest}%`,
+                                isTodayBestHigh: s.todayBest >= 70
+                            };
+                        }}
+                        isLockedToday={(c) => getStats(c.title).todayBest === 100}
+                        flickeringId={flickeringChallengeId}
+                        prefix="sa"
+                    />
                 </div>
-
-                {/* History Modal */}
+                
                 {historyModal && (
-                    <div className="sa-modal-overlay" onClick={() => setHistoryModal(null)}>
-                        <div className="sa-modal-content" onClick={e => e.stopPropagation()}>
-                            <h3 className="sa-modal-title">{historyModal.title}</h3>
-                            {historyModal.logs.length === 0 ? (
-                                <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No records yet.</p>
-                            ) : (
-                                <ul className="sa-history-list">
-                                    {historyModal.logs.map((log: any, i: number) => {
-                                        const d = new Date(log.createdAt);
-                                        const isUnfinished = log.unfinished ? ' (Unfinished)' : '';
-                                        const now = new Date();
-                                        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                                        const logMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-                                        const diffDays = Math.round((todayMidnight.getTime() - logMidnight.getTime()) / 86400000);
-                                        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                        let dateLabel: string;
-                                        if (diffDays === 0) dateLabel = historyModal.title.startsWith('LIFETIME') ? 'Today ' + timeStr : timeStr;
-                                        else if (diffDays === 1) dateLabel = 'Yesterday ' + timeStr;
-                                        else if (diffDays <= 6) dateLabel = diffDays + ' days ago ' + timeStr;
-                                        else dateLabel = d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
-                                        return (
-                                            <li key={log.id || i} className="sa-history-item">
-                                                <span className="sa-history-date">{dateLabel}</span>
-                                                <span className="sa-history-score" style={{ color: log.score >= 80 ? 'var(--primary)' : 'inherit' }}>
-                                                    {log.score}%{isUnfinished}
-                                                </span>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            )}
-                            <button className="sa-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
-                        </div>
-                    </div>
-                )}
-                {/* Settings Modal */}
-                {showSettings && (
-                    <div className="sa-modal-overlay" onClick={() => setShowSettings(false)}>
-                        <div className="sa-modal-content" onClick={e => e.stopPropagation()}>
-                            <h3 className="sa-modal-title">Settings</h3>
-                            <div className="sa-settings-row">
-                                <label htmlFor="autoplay-check">Autoplay Audio</label>
-                                <input
-                                    id="autoplay-check"
-                                    type="checkbox"
-                                    checked={autoplay}
-                                    onChange={toggleAutoplay}
-                                />
-                            </div>
-                            <div className="sa-settings-row">
-                                <label htmlFor="sfx-check">Sound Effects</label>
-                                <input
-                                    id="sfx-check"
-                                    type="checkbox"
-                                    checked={sfxEnabled}
-                                    onChange={toggleSfx}
-                                />
-                            </div>
-                            <button className="sa-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setShowSettings(false)}>Save & Close</button>
-                        </div>
-                    </div>
+                    <ShellHistoryModal
+                        title={historyModal.title}
+                        onClose={() => setHistoryModal(null)}
+                        logs={historyModal.logs}
+                        prefix="sa"
+                    />
                 )}
 
                 {lockModalOpen && (
-                     <DailyLockModal onClose={() => setLockModalOpen(false)} />
-                 )}
+                    <DailyLockModal onClose={() => setLockModalOpen(false)} />
+                )}
             </div>
         )
     }
@@ -931,23 +713,34 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                     {/* Review Mistakes Section */}
                     {(() => {
                         if (finalScore === 100) {
-                            return <div className="sa-perfect-run-badge">🎉 Perfect Run! No mistakes.</div>;
+                            return <div className="sa-perfect-run-badge" style={{ marginBottom: '25px' }}>🎉 Perfect Run! No mistakes.</div>;
                         } else if (finalScore >= 80) {
-                            return <div className="sa-perfect-run-badge" style={{ color: '#0284c7' }}>✨ Great job! Challenge completed with mistakes corrected.</div>;
+                            return <div className="sa-perfect-run-badge" style={{ color: '#0284c7', marginBottom: '25px' }}>✨ Great job! Challenge completed with mistakes corrected.</div>;
                         } else if (finalScore >= 60) {
-                            return <div className="sa-perfect-run-badge" style={{ color: '#0f766e' }}>👍 Good effort! All mistakes corrected. Keep it up!</div>;
+                            return <div className="sa-perfect-run-badge" style={{ color: '#0f766e', marginBottom: '25px' }}>👍 Good effort! All mistakes corrected. Keep it up!</div>;
                         } else {
-                            return <div className="sa-perfect-run-badge" style={{ color: '#64748b' }}>💪 Nice practice! You corrected all mistakes. Keep improving!</div>;
+                            return <div className="sa-perfect-run-badge" style={{ color: '#64748b', marginBottom: '25px' }}>💪 Nice practice! You corrected all mistakes. Keep improving!</div>;
                         }
                     })()}
 
-                    <button className="sa-check-btn" onClick={() => {
-                        setLastFinishedChallengeId(activeChallenge.id)
-                        setActiveChallenge(null)
-                        loadRecords()
-                    }} style={{ maxWidth: '300px' }}>
-                        Back to Menu
-                    </button>
+                    <CompleteScreenActions
+                        remainingTrials={trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)}
+                        onBack={() => {
+                            setLastFinishedChallengeId(activeChallenge.id)
+                            setActiveChallenge(null)
+                            setCompleted(false)
+                            loadRecords()
+                        }}
+                        onTryAgain={(overrideInvisible) => {
+                            if (overrideInvisible !== undefined) {
+                                setInvisibleMode(overrideInvisible);
+                            }
+                            handleChallengeSelect(activeChallenge, overrideInvisible);
+                        }}
+                        prefix="sa"
+                        isLockedToday={getStats(activeChallenge.title).todayBest === 100}
+                        invisibleMode={invisibleMode}
+                    />
                 </div>
             </div>
         )
@@ -963,37 +756,39 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         ? `${originalText} (${continueCountdown}s)`
         : originalText;
 
-    const isLastItem = isRedemption
-        ? mistakeQueue.length === 0
-        : (currentIndex >= queue.length - 1 && mistakeQueue.length === 0);
+
 
     return (
         <div className="sa-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
             <div className="sa-screen">
-                <div className="sa-top-bar">
-                    <div style={{ position: 'relative', flexShrink: 0, width: 30 }}>
-                        <button className="sa-close-btn" onClick={() => {
-                            countdownTimer.pause()
-                            const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id);
-                            if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
-                                if (userId) {
-                                    mistakeService.syncToServer(userId);
-                                }
-                                setActiveChallenge(null);
-                                loadRecords();
-                            } else {
-                                if (!locked) countdownTimer.resume()
+                <ActiveHeader
+                    onClose={() => {
+                        countdownTimer.pause()
+                        const rem = trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)
+                        if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
+                            if (userId && !invisibleMode) {
+                                mistakeService.syncToServer(userId);
                             }
-                        }}>✕</button>
-                        {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={questionTimeLimit} isRunning={countdownTimer.isRunning} />}
-                    </div>
-                    <div className="sa-progress-container">
-                        {queue.map((_, i) => {
-                            const isActive = (!isRedemption && i === currentIndex && !showFeedback) || (isRedemption && q && q.originalIndex === i && !showFeedback);
-                            return <div key={i} className={`sa-progress-segment ${scoreLog[i] || ''}${isActive ? ' active' : ''}`} />
-                        })}
-                    </div>
-                </div>
+                            setActiveChallenge(null);
+                            loadRecords();
+                        } else {
+                            if (!locked) countdownTimer.resume()
+                        }
+                    }}
+                    countdownTimer={{
+                        secondsLeft: countdownTimer.secondsLeft,
+                        totalSeconds: questionTimeLimit,
+                        isRunning: countdownTimer.isRunning
+                    }}
+                    invisibleMode={invisibleMode}
+                    queue={queue}
+                    currentIndex={currentIndex}
+                    scoreLog={scoreLog}
+                    showFeedback={showFeedback}
+                    isRedemption={isRedemption}
+                    currentQuestion={q}
+                    prefix="sa"
+                />
 
                 <div className="sa-question-area">
                     <div className="sa-prompt-container">
@@ -1100,29 +895,15 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                 </div>
 
                 {/* Footer Action Button */}
-                <div className="sa-footer-action">
-                    {!locked ? (
-                        <button
-                            className="sa-check-btn"
-                            disabled={userSelection.length === 0}
-                            onClick={() => checkAnswer()}
-                        >
-                            Check
-                        </button>
-                    ) : (
-                        <button
-                            className={`sa-check-btn continue ${isLastItem ? 'finish' : ''}`}
-                            onClick={nextQuestion}
-                            disabled={continueDisabled}
-                            style={{
-                                backgroundColor: isLastItem ? 'var(--primary)' : 'var(--secondary)',
-                                borderBottomColor: isLastItem ? 'var(--primary-dark)' : 'var(--secondary-dark)'
-                            }}
-                        >
-                            {continueBtnText}
-                        </button>
-                    )}
-                </div>
+                <FooterAction
+                    locked={locked}
+                    disableCheck={userSelection.length === 0}
+                    continueDisabled={continueDisabled}
+                    onCheck={() => checkAnswer()}
+                    onContinue={nextQuestion}
+                    buttonText={continueBtnText}
+                    prefix="sa"
+                />
 
                 {(showHintModal || isClosing) && (
                     <div className={`sa-modal-overlay${isClosing ? ' closing' : ''}`} onClick={closeHintModal}>
