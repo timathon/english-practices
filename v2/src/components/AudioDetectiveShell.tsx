@@ -87,6 +87,12 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
 
     const [isOptionsBlurred, setIsOptionsBlurred] = useState(false)
     const isFirstPlayRef = useRef(true)
+    const transitioningRef = useRef(false)
+
+    useEffect(() => {
+        transitioningRef.current = false;
+    }, [q]);
+
 
     const revealOptions = useCallback(() => {
         isFirstPlayRef.current = false;
@@ -437,6 +443,10 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         setLocked(true);
         countdownTimer.pause();
 
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+
         setContinueDisabled(true);
         setTimeout(() => setContinueDisabled(false), 2000); // disable continue button for 2 seconds
 
@@ -505,6 +515,13 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
     useEffect(() => { checkAnswerRef.current = checkAnswer }, [checkAnswer]);
 
     const nextQuestion = () => {
+        if (transitioningRef.current) return;
+        transitioningRef.current = true;
+
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+
         let nextIndex = currentIndex;
         if (!isRedemption) {
             nextIndex = currentIndex + 1;
