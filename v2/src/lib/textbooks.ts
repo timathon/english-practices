@@ -10,6 +10,7 @@ export const TEXTBOOK_EMOJIS: Record<string, string> = {
   'B-Think1': '🧠',
   'book-reviews': '📝',
   'C-GIU': '📚',
+  'E-LYRICS': '❄️',
   'GENERAL': '⚙️',
   'my-exercises': '✏️',
   'RAZ-B': '🦖',

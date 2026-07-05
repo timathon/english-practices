@@ -214,6 +214,11 @@ async function seed() {
                     folderName = parts[1];
                 }
 
+                // Handle E-LYRICS nested structure (e.g., E-LYRICS/l/let-it-go/...)
+                if (tb === 'E-LYRICS' && folderName.length === 1 && parts.length > 2) {
+                    folderName = parts[1];
+                }
+
                 if (folderName.startsWith('raz-b-')) {
                     unit = folderName.replace(/^raz-b-/i, '')
                         .split('-')

@@ -189,43 +189,8 @@ async function main() {
     // Accumulate generation log across all batches
     const generationLog = []; // { batchId, text, hash, filename, status }[]
 
-    for (let i = 0; i < chunks.length; i++) {
-        const batch = chunks[i];
-        console.log(`\nProcessing batch ${i + 1}/${chunks.length} (${batch.length} items)...`);
-        
-        const now = Date.now();
-        const timeSinceLast = now - lastRequestTime;
-        if (i > 0 && timeSinceLast < MIN_INTERVAL) {
-            const waitTime = MIN_INTERVAL - timeSinceLast;
-            console.log(`Waiting ${waitTime / 1000}s to maintain RPM < 3...`);
-            await new Promise(r => setTimeout(r, waitTime));
-        }
-
-        lastRequestTime = Date.now();
-        // Spelling Hero words should be treated identically, so we call getAudioBatch
-        const result = await getAudioBatch(batch, bookName, { skipUpload: noUpload, tongjiaMap });
-        
-        if (!result.success) {
-            console.error(`❌ Batch ${i + 1} failed: ${result.reason}`);
-            process.exit(1);
-        }
-        
-        if (result.quotaExhausted) {
-            console.warn(`⚠️ Quota warning or limit hit in batch ${i + 1}.`);
-        }
-
-        // Collect per-file info from this batch
-        if (result.files && result.batchId) {
-            for (const f of result.files) {
-                generationLog.push({ batchId: result.batchId, folderName: result.folderName, text: f.text, hash: f.hash, filename: f.filename, status: f.status });
-            }
-        }
-    }
-    
-    console.log(`\n✅ Successfully generated${noUpload ? ' (local only, no R2 upload)' : ' and uploaded'} all missing audios!`);
-
-    // Write timestamped HTML generation report
-    if (generationLog.length > 0) {
+    const writeReport = () => {
+        if (generationLog.length === 0) return;
         const now = new Date();
         const pad = n => String(n).padStart(2, '0');
         const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
@@ -427,7 +392,52 @@ async function main() {
         } catch (err) {
             console.warn(`⚠️ Failed to automatically open browser: ${err.message}`);
         }
+    };
+
+    for (let i = 0; i < chunks.length; i++) {
+        const batch = chunks[i];
+        console.log(`\nProcessing batch ${i + 1}/${chunks.length} (${batch.length} items)...`);
+        
+        const now = Date.now();
+        const timeSinceLast = now - lastRequestTime;
+        if (i > 0 && timeSinceLast < MIN_INTERVAL) {
+            const waitTime = MIN_INTERVAL - timeSinceLast;
+            console.log(`Waiting ${waitTime / 1000}s to maintain RPM < 3...`);
+            await new Promise(r => setTimeout(r, waitTime));
+        }
+
+        lastRequestTime = Date.now();
+        // Spelling Hero words should be treated identically, so we call getAudioBatch
+        const result = await getAudioBatch(batch, bookName, { skipUpload: noUpload, tongjiaMap });
+        
+        if (!result.success) {
+            console.error(`❌ Batch ${i + 1} failed: ${result.reason}`);
+            // Add failed batch items to log so they show as failed in the report
+            for (const item of batch) {
+                generationLog.push({
+                    batchId: `Failed Batch ${i + 1}`,
+                    text: item.context_sentence,
+                    status: 2
+                });
+            }
+            writeReport();
+            process.exit(1);
+        }
+        
+        if (result.quotaExhausted) {
+            console.warn(`⚠️ Quota warning or limit hit in batch ${i + 1}.`);
+        }
+
+        // Collect per-file info from this batch
+        if (result.files && result.batchId) {
+            for (const f of result.files) {
+                generationLog.push({ batchId: result.batchId, folderName: result.folderName, text: f.text, hash: f.hash, filename: f.filename, status: f.status });
+            }
+        }
     }
+    
+    console.log(`\n✅ Successfully generated${noUpload ? ' (local only, no R2 upload)' : ' and uploaded'} all missing audios!`);
+    writeReport();
 }
 
 main().catch(e => {

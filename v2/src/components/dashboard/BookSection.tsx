@@ -29,6 +29,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
   const isBThink1 = tb === 'B-THINK1' || tb === 'B-Think1'
   const isBNce2 = tb === 'B-NCE2' || tb === 'B-Nce2'
   const isCGiu = tb === 'C-GIU'
+  const isELyrics = tb === 'E-LYRICS' || tb === 'E-Lyrics'
 
   const getNce2Unit = (lessonName: string): string => {
     const match = lessonName.match(/^L(\d+)/i)
@@ -64,12 +65,12 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
     return unitKeys[0] || ''
   })
 
-  const letters = isRazB
+  const letters = (isRazB || isELyrics)
     ? Array.from(new Set(unitKeys.map(key => key.trim().charAt(0).toUpperCase()))).sort()
     : []
 
   const [activeLetter, setActiveLetter] = useState<string>(() => {
-    if (!isRazB) return ''
+    if (!isRazB && !isELyrics) return ''
     return activeUnit ? activeUnit.trim().charAt(0).toUpperCase() : (letters[0] || '')
   })
 
@@ -162,13 +163,13 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
   }, [units, activeUnit, unitKeys])
 
   useEffect(() => {
-    if (isRazB && activeUnit) {
+    if ((isRazB || isELyrics) && activeUnit) {
       const letter = activeUnit.trim().charAt(0).toUpperCase()
       if (letter && letter !== activeLetter) {
         setActiveLetter(letter)
       }
     }
-  }, [activeUnit, isRazB, activeLetter])
+  }, [activeUnit, isRazB, isELyrics, activeLetter])
 
   useEffect(() => {
     if (isBNce2 && activeUnit) {
@@ -210,7 +211,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
 
   const level2Tabs = isBThink1
     ? pageStarts
-    : isRazB
+    : (isRazB || isELyrics)
       ? unitKeys.filter(unit => unit.trim().charAt(0).toUpperCase() === activeLetter)
       : isBNce2
         ? unitKeys.filter(unit => getNce2Unit(unit) === activeNce2Unit)
@@ -285,7 +286,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
       </div>
 
       <div>
-        {isRazB && (
+        {(isRazB || isELyrics) && (
           <div ref={lettersScrollRef} className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
             {letters.map(letter => (
               <button
