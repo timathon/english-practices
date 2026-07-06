@@ -1,10 +1,42 @@
 > ## **Target Filename Code:** SA1-U1
 > 
 > 
-> **Total PDF Pages:** 20
-> **Currently Processing:** Pages 1 to 20
+> **Total PDF Pages:** 21
+> **Currently Processing:** Pages 1 to 21
 
 ### --- PRINTED PAGE 11 ---
+
+[*LAYOUT: Unit Overview Table*]
+
+| Theme | Listening | Speaking | Reading |
+| --- | --- | --- | --- |
+| **UNIT 1 TEENAGE LIFE** <br>
+
+<br>
+
+<br> p. 11 | School clubs <br>
+
+<br> *Predict content* <br>
+
+<br>
+
+<br> Youth camps | Talking about future activities | The Freshman Challenge <br>
+
+<br> *Skim* <br>
+
+<br>
+
+<br> A Letter of Advice <br>
+
+<br> The Face-down Generation |
+
+| Writing | Pronunciation | Structure | *Project | *Video Time |
+| --- | --- | --- | --- | --- |
+| A letter of advice | "Vowel + consonant" combinations | Noun phrases, adjective phrases, and adverb phrases | Set up a student club | Learning Across Generations |
+
+---
+
+### --- PRINTED PAGE 11 (Main Content) ---
 
 [*LAYOUT: Opening page of Unit 1. Features a large heading, a quote, a unit overview, and discussion questions.*]
 

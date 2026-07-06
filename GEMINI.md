@@ -29,6 +29,7 @@ When editing existing codebases:
 * **Match Existing Style:** Conform strictly to the established code formatting and naming patterns of this repository, even if you prefer a different paradigm.
 * **Track Orphans:** If your edits render existing imports, variables, or functions unused, delete them immediately. Do not touch pre-existing dead code unless explicitly requested.
 * **The Traceability Rule:** Every single line changed in a git diff must trace directly back to the core intent of the user's prompt.
+* **Release Generators Rule:** Do not touch or use `scripts/*_release_gen-3.cjs`, unless asked.
 
 ## 4. Goal-Driven Execution
 *Transform abstract tasks into strict, verifiable milestones. Loop until verified.*
@@ -231,7 +232,7 @@ This document defines the rules for extracting and converting textbook data into
   - **Nesting depth:** Keep the hierarchy structured with a maximum nesting depth of 4 levels (i.e. `root` -> Level 1 -> Level 2 -> Level 3 -> Level 4) to ensure it is easy to navigate. Do not chain sentences infinitely into a single deep path.
 - **Node Rules:**
   - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`). IDs must be unique within each `tree`.
-  - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence**.
+  - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence, and occasionally two (for very short, closely related fragments)**.
   - `cn`: Chinese translation of the sentence.
   - `notes`: Brief explanations of difficult vocabulary, expressions, or grammar points.
   - `statement`: A simple true/false statement in Chinese about the sentence's grammar or vocabulary.

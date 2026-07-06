@@ -489,14 +489,6 @@ Words and Expressions in Each Unit
 
 
 
----
-
-### --- PRINTED PAGE 116 ---
-
-[*LAYOUT: Appendices Header Section*]
-
-## Appendices
-
 * **destroy** /dɪˈstrɔɪ/ *vt.* 摧毁；毁灭
 * **evacuate** /ɪˈvækjueɪt/
 * *vt.* 疏散；撤出
@@ -636,7 +628,7 @@ Words and Expressions in Each Unit
 
 ---
 
-### --- PRINTED PAGE 117 ---
+
 
 ### Unit 5
 
