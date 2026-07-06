@@ -8,41 +8,62 @@ function getMd5(text) {
     return crypto.createHash('md5').update(text).digest('hex');
 }
 
-const jsonPath = path.resolve(__dirname, '../data/W9A/w9a-u1/w9a-u1-passage-decoder-s.json');
-const srcAudio = path.resolve(__dirname, '../temp/audio/yylj/岳阳楼记老任.mp3');
-const outputDir = path.resolve(__dirname, '../temp/audio/yylj/output');
-const timingsPath = path.resolve(__dirname, '../temp/audio/yylj/timings.json');
+const srcAudio = path.resolve(__dirname, '../temp/audio/yx/yx.mp3');
+const outputDir = path.resolve(__dirname, '../temp/audio/yx/output');
+const timingsPath = path.resolve(__dirname, '../temp/audio/yx/timings.json');
+
+const items = [
+    { text: "咏雪 - 刘义庆" },
+    { text: "谢太傅寒雪日内集，与儿女讲论文义。" },
+    { text: "俄而雪骤，公欣然曰：“白雪纷纷何所似？”" },
+    { text: "兄子胡儿曰：“撒盐空中差可拟。”" },
+    { text: "兄女曰：“未若柳絮因风起。”" },
+    { text: "公大笑乐。" },
+    { text: "即公大兄无奕女，左将军王凝之妻也。" }
+];
 
 if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
 }
 
-// Copy the original mp3 to the output folder so the web UI can play it for global reference
+// Copy the original mp3 to the output folder so the web UI can play it
 const webSrcAudioPath = path.join(outputDir, 'source.mp3');
-if (!fs.existsSync(webSrcAudioPath)) {
+if (fs.existsSync(srcAudio)) {
     fs.copyFileSync(srcAudio, webSrcAudioPath);
+}
+
+// Initialize timings.json if not exists
+if (!fs.existsSync(timingsPath)) {
+    const initialTimings = items.map(() => ({ start: 0.0, end: 5.0 }));
+    fs.writeFileSync(timingsPath, JSON.stringify(initialTimings, null, 2), 'utf8');
 }
 
 function cutAudioSegments() {
     console.log("Loading timings configuration...");
+    if (!fs.existsSync(srcAudio)) {
+        console.error("Source audio not found at: " + srcAudio);
+        return false;
+    }
     const timings = JSON.parse(fs.readFileSync(timingsPath, 'utf8'));
-    const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-    const sentences = data.sections[0].sentences;
 
-    if (sentences.length !== timings.length) {
-        console.error(`Error: Sentences count (${sentences.length}) does not match timings count (${timings.length})`);
+    if (items.length !== timings.length) {
+        console.error(`Error: Items count (${items.length}) does not match timings count (${timings.length})`);
         return false;
     }
 
-    for (let i = 0; i < sentences.length; i++) {
-        const text = sentences[i].en;
+    for (let i = 0; i < items.length; i++) {
+        const text = items[i].text;
         const hash = getMd5(text);
         const time = timings[i];
         const outputFile = path.join(outputDir, `${hash}.mp3`);
 
-        console.log(`Cutting sentence #${i + 1}: [${time.start}s - ${time.end}s] -> ${hash}.mp3`);
+        console.log(`Cutting segment #${i + 1}: [${time.start}s - ${time.end}s] -> ${hash}.mp3 (${text})`);
         const cmd = `ffmpeg -i "${srcAudio}" -ss ${time.start} -to ${time.end} -c:a libmp3lame -qscale:a 2 "${outputFile}" -y -loglevel error`;
-        execSync(cmd);
+        try {
+            execSync(cmd);
+        } catch (err) {
+            console.error(`Failed to cut segment #${i + 1}`, err);
+        }
     }
     console.log("🎉 Successfully cut all segments.");
     return true;
@@ -52,7 +73,7 @@ function cutAudioSegments() {
 cutAudioSegments();
 
 // Create local server
-const PORT = 3010;
+const PORT = 3012;
 const server = http.createServer((req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -69,18 +90,15 @@ const server = http.createServer((req, res) => {
     const pathname = parsedUrl.pathname;
 
     if (pathname === '/' || pathname === '/index.html') {
-        // Serve HTML UI
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         const html = getHtmlUI();
         res.end(html);
     } else if (pathname === '/api/data') {
-        // Serve sentences and timings
         const timings = JSON.parse(fs.readFileSync(timingsPath, 'utf8'));
-        const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-        const sentences = data.sections[0].sentences.map((s, idx) => ({
+        const sentences = items.map((s, idx) => ({
             index: idx + 1,
-            text: s.en,
-            hash: getMd5(s.en),
+            text: s.text,
+            hash: getMd5(s.text),
             start: timings[idx].start,
             end: timings[idx].end
         }));
@@ -107,17 +125,34 @@ const server = http.createServer((req, res) => {
             }
         });
     } else {
-        // Serve static mp3 files from output directory
         const fileName = path.basename(pathname);
         const filePath = path.join(outputDir, fileName);
         if (fs.existsSync(filePath) && fileName.endsWith('.mp3')) {
             const stat = fs.statSync(filePath);
-            res.writeHead(200, {
-                'Content-Type': 'audio/mpeg',
-                'Content-Length': stat.size
-            });
-            const readStream = fs.createReadStream(filePath);
-            readStream.pipe(res);
+            const range = req.headers.range;
+            
+            if (range) {
+                const parts = range.replace(/bytes=/, "").split("-");
+                const start = parseInt(parts[0], 10);
+                const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+                const chunksize = (end - start) + 1;
+                const file = fs.createReadStream(filePath, {start, end});
+                res.writeHead(206, {
+                    'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+                    'Accept-Ranges': 'bytes',
+                    'Content-Length': chunksize,
+                    'Content-Type': 'audio/mpeg',
+                });
+                file.pipe(res);
+            } else {
+                res.writeHead(200, {
+                    'Content-Type': 'audio/mpeg',
+                    'Content-Length': stat.size,
+                    'Accept-Ranges': 'bytes'
+                });
+                const readStream = fs.createReadStream(filePath);
+                readStream.pipe(res);
+            }
         } else {
             res.writeHead(404);
             res.end('Not found');
@@ -147,7 +182,7 @@ function getHtmlUI() {
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>岳阳楼记 Audio Slicing Tuner</title>
+  <title>咏雪 Audio Slicing Tuner</title>
   <style>
     body {
       background: #0f172a;
@@ -159,7 +194,7 @@ function getHtmlUI() {
     }
     h1 {
       font-size: 2rem;
-      color: #c084fc;
+      color: #38bdf8;
       margin-bottom: 0.5rem;
       text-align: center;
     }
@@ -205,13 +240,13 @@ function getHtmlUI() {
       transition: all 0.2s ease;
     }
     .sentence-row:hover {
-      border-color: #818cf8;
-      box-shadow: 0 4px 12px rgba(129, 140, 248, 0.1);
+      border-color: #38bdf8;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1);
     }
     .index {
       font-size: 1.2rem;
       font-weight: 700;
-      color: #818cf8;
+      color: #38bdf8;
       text-align: center;
     }
     .sentence-text {
@@ -250,162 +285,159 @@ function getHtmlUI() {
       font-size: 0.9rem;
       text-align: center;
     }
-    .time-input:focus {
-      border-color: #818cf8;
-      outline: none;
-    }
     .btn {
-      background: #818cf8;
-      color: #ffffff;
+      background: #0284c7;
+      color: white;
       border: none;
       padding: 0.5rem 1rem;
       border-radius: 6px;
-      cursor: pointer;
       font-weight: 600;
-      transition: background 0.2s;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
     }
     .btn:hover {
-      background: #6366f1;
+      background: #0369a1;
     }
-    .btn-test {
-      background: #10b981;
+    .btn-secondary {
+      background: #334155;
+      color: #f1f5f9;
     }
-    .btn-test:hover {
-      background: #059669;
+    .btn-secondary:hover {
+      background: #475569;
     }
-    .btn-save-all {
-      background: #a855f7;
-      font-size: 1.1rem;
-      padding: 0.75rem 2rem;
-      border-radius: 8px;
-      display: block;
-      margin: 2rem auto;
-      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+    .action-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
     }
-    .btn-save-all:hover {
-      background: #9333ea;
-    }
-    .status-toast {
+    .play-icon::before { content: "▶"; }
+    .toast {
       position: fixed;
       bottom: 2rem;
       right: 2rem;
       background: #10b981;
       color: white;
-      padding: 1rem 2rem;
+      padding: 0.75rem 1.5rem;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      display: none;
       font-weight: 600;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      opacity: 0;
+      transform: translateY(100px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
     }
   </style>
 </head>
 <body>
-  <h1>🎙️ 岳阳楼记 Audio Slicing Tuner</h1>
-  <p class="subtitle">Use this interactive editor to visually adjust sentence audio start/end boundaries. Test each segment instantly, and save to re-cut.</p>
+  <h1>咏雪 Audio Slicing Tuner</h1>
+  <p class="subtitle">Visually fine-tune start and end times for each sentence segment and export to mp3</p>
 
   <div class="main-audio-container">
-    <h2>完整音频参考 (Full Reference)</h2>
-    <audio id="main-player" controls src="source.mp3"></audio>
-    <div style="font-size: 0.8rem; color: #94a3b8;">
-      Current time: <span id="current-ref-time" style="font-family: monospace; color: #818cf8;">0.00</span>s
-    </div>
+    <h2>Original Audio Source</h2>
+    <audio id="main-audio" src="/source.mp3" controls></audio>
   </div>
 
-  <div class="editor-grid" id="editor-grid">
-    <!-- Row items will be loaded dynamically -->
+  <div class="action-header">
+    <h2>Segments Editor</h2>
+    <button class="btn" onclick="saveAll()">💾 Save Timings & Cut Audio</button>
   </div>
 
-  <button class="btn btn-save-all" onclick="saveAll()">💾 Save Changes & Re-cut Audio</button>
+  <div class="editor-grid" id="grid">
+    <!-- Rows dynamically generated -->
+  </div>
 
-  <div class="status-toast" id="toast">Saved & Sliced successfully!</div>
+  <div class="toast" id="toast">✅ Timings saved and audio cut successfully!</div>
 
   <script>
-    let sentences = [];
-    const mainPlayer = document.getElementById('main-player');
-    const refTimeText = document.getElementById('current-ref-time');
-
-    mainPlayer.addEventListener('timeupdate', () => {
-      refTimeText.textContent = mainPlayer.currentTime.toFixed(2);
-    });
+    let mainAudio = document.getElementById('main-audio');
+    let sentenceData = [];
 
     async function loadData() {
       const res = await fetch('/api/data');
-      sentences = await res.json();
-      renderRows();
+      sentenceData = await res.json();
+      renderGrid();
     }
 
-    function renderRows() {
-      const grid = document.getElementById('editor-grid');
+    function renderGrid() {
+      const grid = document.getElementById('grid');
       grid.innerHTML = '';
-      sentences.forEach((s) => {
+      sentenceData.forEach((item, index) => {
         const row = document.createElement('div');
         row.className = 'sentence-row';
         row.innerHTML = \`
-          <div class="index">\${s.index}</div>
+          <div class="index">\${item.index}</div>
           <div>
-            <div class="sentence-text">\${s.text}</div>
-            <div class="hash-sub">MD5 Hash: \${s.hash}</div>
+            <div class="sentence-text">\${item.text}</div>
+            <div class="hash-sub">MD5: \${item.hash}</div>
           </div>
           <div class="controls">
             <div class="control-group">
               <label>Start (s)</label>
-              <input type="number" step="0.01" class="time-input" id="start-\${s.index}" value="\${s.start.toFixed(2)}" onchange="updateTime(\${s.index}, 'start', this.value)">
+              <input type="number" step="0.01" class="time-input" id="start-\${index}" value="\${item.start}" onchange="updateVal(\${index}, 'start', this.value)">
             </div>
             <div class="control-group">
               <label>End (s)</label>
-              <input type="number" step="0.01" class="time-input" id="end-\${s.index}" value="\${s.end.toFixed(2)}" onchange="updateTime(\${s.index}, 'end', this.value)">
+              <input type="number" step="0.01" class="time-input" id="end-\${index}" value="\${item.end}" onchange="updateVal(\${index}, 'end', this.value)">
             </div>
-            <button class="btn btn-test" style="margin-top: 1rem;" onclick="testSegment(\${s.index})">Play Segment</button>
+            <button class="btn btn-secondary" onclick="useCurrentTime(\${index}, 'start')">⏱️ Start</button>
+            <button class="btn btn-secondary" onclick="useCurrentTime(\${index}, 'end')">⏱️ End</button>
           </div>
-          <div class="audio-cell">
-            <audio id="player-\${s.index}" controls src="\${s.hash}.mp3?t=\${Date.now()}"></audio>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="playSegment(\${index})">▶ Play Cut</button>
           </div>
         \`;
         grid.appendChild(row);
       });
     }
 
-    function updateTime(idx, field, value) {
-      const val = parseFloat(value);
-      if (!isNaN(val)) {
-        sentences[idx - 1][field] = val;
-      }
+    function updateVal(index, key, val) {
+      sentenceData[index][key] = parseFloat(val) || 0;
     }
 
-    function testSegment(idx) {
-      const s = sentences[idx - 1];
-      mainPlayer.currentTime = s.start;
-      mainPlayer.play();
+    function useCurrentTime(index, key) {
+      const time = Math.round(mainAudio.currentTime * 100) / 100;
+      sentenceData[index][key] = time;
+      document.getElementById(\`\${key}-\${index}\`).value = time;
+    }
+
+    function playSegment(index) {
+      const item = sentenceData[index];
+      mainAudio.currentTime = item.start;
+      mainAudio.play();
       
       const checkEnd = () => {
-        if (mainPlayer.currentTime >= s.end) {
-          mainPlayer.pause();
-          mainPlayer.removeEventListener('timeupdate', checkEnd);
+        if (mainAudio.currentTime >= item.end) {
+          mainAudio.pause();
+          mainAudio.removeEventListener('timeupdate', checkEnd);
         }
       };
-      mainPlayer.addEventListener('timeupdate', checkEnd);
+      
+      // Remove any existing timeupdate listener first
+      mainAudio.removeEventListener('timeupdate', checkEnd);
+      mainAudio.addEventListener('timeupdate', checkEnd);
     }
 
     async function saveAll() {
-      const payload = sentences.map(s => ({
-        start: s.start,
-        end: s.end
+      const timings = sentenceData.map(item => ({
+        start: item.start,
+        end: item.end
       }));
       const res = await fetch('/api/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(timings)
       });
       const result = await res.json();
       if (result.success) {
         showToast();
-        // Reload individual segment players with cache busting
-        sentences.forEach((s) => {
-          const player = document.getElementById(\`player-\${s.index}\`);
-          if (player) {
-            player.src = \`\${s.hash}.mp3?t=\${Date.now()}\`;
-          }
-        });
       } else {
         alert('Error: ' + result.error);
       }
@@ -413,13 +445,13 @@ function getHtmlUI() {
 
     function showToast() {
       const toast = document.getElementById('toast');
-      toast.style.display = 'block';
+      toast.classList.add('show');
       setTimeout(() => {
-        toast.style.display = 'none';
+        toast.classList.remove('show');
       }, 3000);
     }
 
-    loadData();
+    window.onload = loadData;
   </script>
 </body>
 </html>`;

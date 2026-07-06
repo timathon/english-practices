@@ -37,6 +37,13 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const userId = session?.user?.id
     const { playAudio, playSfx } = usePracticeAudio(textbook, () => isCf)
 
+    const isWTextbook = textbook && /^w/i.test(textbook);
+    const getSentenceAudioUrl = (en: string) => {
+        if (!textbook) return '';
+        const cleanEn = isWTextbook ? en.replace(/\s+/g, '') : en;
+        return getAudioUrl(cleanEn, textbook, isCf);
+    };
+
     const [activeChallenge, setActiveChallenge] = useState<any>(null)
     const [queue, setQueue] = useState<any[]>([])
     const [mistakeQueue, setMistakeQueue] = useState<any[]>([])
@@ -175,7 +182,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
         // Preload Audio
         shuffled.forEach((qItem: any) => {
-            const sentenceAudioUrl = qItem.audio || (textbook ? getAudioUrl(qItem.en, textbook, isCf) : null);
+            const sentenceAudioUrl = qItem.audio || getSentenceAudioUrl(qItem.en);
             if (sentenceAudioUrl) {
                 audioCache.preloadAndSync(sentenceAudioUrl);
             }
@@ -445,7 +452,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         }
 
         // Sentence audio playback (after correct/wrong sfx)
-        const sentenceAudioUrl = q.audio || (textbook ? getAudioUrl(q.en, textbook, isCf) : null);
+        const sentenceAudioUrl = q.audio || getSentenceAudioUrl(q.en);
         if (sentenceAudioUrl) {
             setTimeout(() => playAudio(sentenceAudioUrl), 600);
         }
@@ -865,7 +872,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                                     {(q.audio || textbook) && (
                                         <button
                                             className="sa-play-btn"
-                                            onClick={() => playAudio(q.audio || getAudioUrl(q.en, textbook, isCf))}
+                                            onClick={() => playAudio(q.audio || getSentenceAudioUrl(q.en))}
                                         >
                                             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                                         </button>
@@ -880,7 +887,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                                     {(q.audio || textbook) && (
                                         <button
                                             className="sa-play-btn"
-                                            onClick={() => playAudio(q.audio || getAudioUrl(q.en, textbook, isCf))}
+                                            onClick={() => playAudio(q.audio || getSentenceAudioUrl(q.en))}
                                         >
                                             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                                         </button>
