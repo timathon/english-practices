@@ -1,10 +1,10 @@
-# Writing Task: An Unforgettable Holiday Story
+# Writing Task
 
-## Prompt
-Write a short story about an unforgettable holiday experience of yours. Describe where you went, who you went with, what interesting things you did, how you felt, and what you learned from the trip.
+在过往的经历中，同学们一定有难忘的旅行经历，或是和同学的研学旅行，或是跟家人的家庭旅行。请写一篇文章，介绍你的旅行经历，包括风景、活动、感受及意义等方面。
 
-## Requirements
-- Use simple past tense.
-- Include at least 3 vocabulary words or phrases from Unit 1 (e.g., scenery, fantastic, comfortable, take photos).
-- Use indefinite pronouns (e.g., somewhere, anything, everyone) and connectors (e.g., but, because, so).
-- Word count: 70-90 words.
+**要求：**
+
+1. 参考提示内容，可适当发挥；
+2. 语句通顺，意思连贯，书写工整；
+3. 文中不得出现你的任何真实信息（姓名、校名和地名等）；
+4. 词数不少于80。

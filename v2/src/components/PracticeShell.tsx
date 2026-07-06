@@ -60,7 +60,8 @@ export function PracticeShell() {
                     decryptedMain.id = id; // keep original suffix so records save separately
                 }
                 if (siblings.length > 0 && (decryptedMain.type?.toLowerCase().includes('text-navigator') || decryptedMain.type?.toLowerCase().includes('writing-map'))) {
-                    const siblingData = siblings.map(s => decrypt(JSON.parse(JSON.stringify(s))))
+                    const validSiblings = siblings.filter(s => s && !s.error && s.content)
+                    const siblingData = validSiblings.map(s => decrypt(JSON.parse(JSON.stringify(s))))
                     const allItems = [decryptedMain, ...siblingData]
                     decryptedMain.content = {
                         level: decryptedMain.content?.level,
