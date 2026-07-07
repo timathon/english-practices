@@ -597,11 +597,35 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
     closeActions()
   }
 
+  // Preload SFX
+  useEffect(() => {
+    audioCache.preloadAndSync(`${PUBLIC_URL_BASE}/ep/sfx/correct.mp3`)
+    audioCache.preloadAndSync(`${PUBLIC_URL_BASE}/ep/sfx/error.mp3`)
+  }, [])
+
+  const playSfx = useCallback(async (isCorrect: boolean) => {
+    const url = isCorrect
+      ? `${PUBLIC_URL_BASE}/ep/sfx/correct.mp3`
+      : `${PUBLIC_URL_BASE}/ep/sfx/error.mp3`
+    try {
+      const blob = await audioCache.cacheAudio(url)
+      if (!blob) return
+      const blobUrl = URL.createObjectURL(blob)
+      const a = new Audio(blobUrl)
+      a.onended = () => URL.revokeObjectURL(blobUrl)
+      a.play().catch(console.error)
+    } catch (e) {
+      console.error(e)
+    }
+  }, [])
+
   const handleCheckAnswer = (choice: boolean) => {
     if (!questionNode) return
     setUserAnswer(choice)
     setShowFeedback(true)
-    if (choice === questionNode.answer) {
+    const isCorrect = choice === questionNode.answer
+    playSfx(isCorrect)
+    if (isCorrect) {
       petService.awardCorrectAnswer()
     }
   }

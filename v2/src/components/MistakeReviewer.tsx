@@ -237,7 +237,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
         setTimeout(() => playAudio(sentenceAudioUrl), 250);
       } else if (currentMistake.practiceType === 'audio-detective' && q.en) {
         setTimeout(() => playAudio(getAudioUrl(q.en, currentMistake.textbook)), 250);
-      } else if (currentMistake.practiceType === 'sentence-architect' && q.en) {
+      } else if ((currentMistake.practiceType === 'sentence-architect' || currentMistake.practiceType.startsWith('passage-decoder')) && q.en) {
         const sentenceAudioUrl = q.audio || getAudioUrl(q.en, currentMistake.textbook);
         setTimeout(() => playAudio(sentenceAudioUrl), 250);
       } else if (currentMistake.practiceType === 'spelling-hero') {
@@ -248,6 +248,11 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
       playSfx('wrong');
       // Mark as failed in this session
       setFailedIds(prev => new Set(prev).add(currentMistake.id));
+
+      if ((currentMistake.practiceType === 'sentence-architect' || currentMistake.practiceType.startsWith('passage-decoder')) && q.en) {
+        const sentenceAudioUrl = q.audio || getAudioUrl(q.en, currentMistake.textbook);
+        setTimeout(() => playAudio(sentenceAudioUrl), 250);
+      }
       
       // Update mistake: unresolved, reset streak, increment attempts, set createdAt = now (deferring to next day)
       mistakeService.addMistake(userId, {
