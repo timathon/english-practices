@@ -275,6 +275,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                  recordIdPromiseRef.current = postPromise
                  await postPromise
              }
+             setPracticeRecords(cache.getRecords() || [])
          } catch (e) {
              console.error("Failed to sync record", e)
          }

@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Link, useBlocker } from 'react-router-dom'
+import { useBlocker } from 'react-router-dom'
 import './PassageDecoderShell.css'
 import { DailyLockModal } from './DailyLockModal'
+import { ShellHeader } from './shell/ShellHeader'
+import { InvisibleModeCheckbox } from './shell/InvisibleModeCheckbox'
+import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
+import { ShellHistoryModal } from './shell/ShellHistoryModal'
 import { usePracticeRecords } from '../hooks/usePracticeRecords'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
@@ -615,136 +619,62 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
     // Menu/Dashboard View
     if (!activeSection) {
+        const mappedChallenges = sections.map((sec: any) => ({
+            ...sec,
+            title: sec.title,
+            id: sec.id,
+            icon: sec.icon || '📖'
+        }));
+
         return (
             <div className="pd-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
                 <div className="pd-screen">
-                    <div className="pd-header">
-                        <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, fontSize: '1.5rem', textDecoration: 'none' }}>🏠</Link>
-                        <h1>{data.title}</h1>
-                        <h2>{data.level}</h2>
-                    </div>
+                    <ShellHeader
+                        title={data.title}
+                        level={data.level}
+                        textbook={textbook}
+                        unit={unit}
+                        prefix="pd"
+                    />
 
-                    <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        alignItems: 'center', 
-                        gap: '10px', 
-                        marginBottom: '20px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '8px 16px',
-                        width: 'fit-content',
-                        margin: '0 auto 20px auto'
-                    }}>
-                        <label style={{ 
-                            fontSize: '0.95rem', 
-                            color: '#475569', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            cursor: 'pointer',
-                            fontWeight: 500
-                        }}>
-                            <input 
-                                type="checkbox" 
-                                checked={invisibleMode} 
-                                onChange={(e) => setInvisibleMode(e.target.checked)}
-                                style={{ 
-                                    width: '16px', 
-                                    height: '16px', 
-                                    accentColor: 'var(--primary)',
-                                    cursor: 'pointer'
-                                }}
-                            />
-                            <span>👻 Invisible Mode (No timer/records)</span>
-                        </label>
-                    </div>
+                    <InvisibleModeCheckbox
+                        checked={invisibleMode}
+                        onChange={setInvisibleMode}
+                    />
 
-                    <div className="pd-section-grid">
-                        {sections.map((sec: any) => {
-                            const isFlickering = flickeringSectionId === sec.id;
-                            return (
-                                <div key={sec.id} id={`sec-card-${sec.id}`} className={`pd-section-card ${isFlickering ? 'flicker-active' : ''}`}>
-                                    <div className="pd-card-header">
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <h3 className="pd-card-title">{sec.title}</h3>
-                                            <div style={{ fontSize: '0.7rem', color: '#999', marginTop: '4px' }}>
-                                                {trialsTracker.getRemainingTrials(practiceId, sec.id)} / 5 attempts left
-                                            </div>
-                                        </div>
-                                        {(() => {
-                                            const isLockedToday = getStats(sec.title).todayBest === 100;
-                                            const isOutOfAttempts = trialsTracker.getRemainingTrials(practiceId, sec.id) === 0;
-                                            return (
-                                                <button
-                                                    className="pd-start-btn"
-                                                    onClick={() => handleSectionSelect(sec)}
-                                                    style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                                >
-                                                    {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'OUT OF ATTEMPTS' : 'START'}
-                                                </button>
-                                            );
-                                        })()}
-                                    </div>
-                                    <div className="pd-card-stats">
-                                        {(() => {
-                                            const s = getStats(sec.title);
-                                            return (
-                                                <>
-                                                    <div className="pd-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `TODAY - ${sec.title}`, logs: s.todayLogs })}>
-                                                        <span className="pd-stat-label">TODAY</span>
-                                                        <span className="pd-stat-val" style={s.todayBest >= 70 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{s.todayRuns} Runs | Best: {s.todayBest}%</span>
-                                                    </div>
-                                                    <div className="pd-stat-row" style={{ cursor: 'pointer' }} onClick={() => setHistoryModal({ title: `LIFETIME - ${sec.title}`, logs: s.lifeLogs })}>
-                                                        <span className="pd-stat-label">LIFETIME</span>
-                                                        <span className="pd-stat-val">{s.lifeRuns} Runs | Best: {s.lifeBest}%</span>
-                                                    </div>
-                                                </>
-                                            )
-                                        })()}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <ChallengeCardGrid
+                        challenges={mappedChallenges}
+                        onStart={handleSectionSelect}
+                        onShowHistory={(c) => {
+                            const stats = getStats(c.title);
+                            setHistoryModal({
+                                title: `TODAY - ${c.title}`,
+                                logs: stats.todayLogs
+                            });
+                        }}
+                        getRemainingTrials={(cId) => trialsTracker.getRemainingTrials(practiceId, cId)}
+                        getChallengeStatsText={(c) => {
+                            const stats = getStats(c.title);
+                            return {
+                                today: `${stats.todayRuns} Runs | Best: ${stats.todayBest}%`,
+                                lifetime: `${stats.lifeRuns} Runs | Best: ${stats.lifeBest}%`,
+                                isTodayBestHigh: stats.todayBest >= 70
+                            };
+                        }}
+                        isLockedToday={(c) => getStats(c.title).todayBest === 100}
+                        flickeringId={flickeringSectionId}
+                        prefix="pd"
+                        invisibleMode={invisibleMode}
+                    />
                 </div>
 
                 {historyModal && (
-                    <div className="pd-modal-overlay" onClick={() => setHistoryModal(null)}>
-                        <div className="pd-modal-content" onClick={e => e.stopPropagation()}>
-                            <h3 className="pd-modal-title">{historyModal.title}</h3>
-                            {historyModal.logs.length === 0 ? (
-                                <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No records yet.</p>
-                            ) : (
-                                <ul className="pd-history-list">
-                                    {historyModal.logs.map((log: any, i: number) => {
-                                        const d = new Date(log.createdAt);
-                                        const isUnfinished = log.unfinished ? ' (Unfinished)' : '';
-                                        const now = new Date();
-                                        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                                        const logMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-                                        const diffDays = Math.round((todayMidnight.getTime() - logMidnight.getTime()) / 86400000);
-                                        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                        let dateLabel: string;
-                                        if (diffDays === 0) dateLabel = historyModal.title.startsWith('LIFETIME') ? 'Today ' + timeStr : timeStr;
-                                        else if (diffDays === 1) dateLabel = 'Yesterday ' + timeStr;
-                                        else if (diffDays <= 6) dateLabel = diffDays + ' days ago ' + timeStr;
-                                        else dateLabel = d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
-                                        return (
-                                            <li key={log.id || i} className="pd-history-item">
-                                                <span className="pd-history-date">{dateLabel}</span>
-                                                <span className="pd-history-score" style={{ color: log.score >= 80 ? 'var(--primary)' : 'inherit' }}>
-                                                    {log.score}%{isUnfinished}
-                                                </span>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            )}
-                            <button className="pd-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
-                        </div>
-                    </div>
+                    <ShellHistoryModal
+                        title={historyModal.title}
+                        onClose={() => setHistoryModal(null)}
+                        logs={historyModal.logs}
+                        prefix="pd"
+                    />
                 )}
                 {lockModalOpen && (
                     <DailyLockModal onClose={() => setLockModalOpen(false)} />
@@ -919,15 +849,22 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
                     {/* Lower Viewport: Handles interaction options and feedback */}
                     <div className="pd-lower-viewport">
-                        <div className="pd-autoplay-toggle-container">
-                            <label className="pd-autoplay-toggle-label">
-                                <input
-                                    type="checkbox"
-                                    checked={autoPlay}
-                                    onChange={toggleAutoPlay}
-                                />
-                                <span>🔊 Auto Play</span>
-                            </label>
+                        <div className="pd-controls-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', padding: '0 4px' }}>
+                            <div className="pd-timer-container" style={{ margin: 0, height: '40px' }}>
+                                {showOptions && !invisibleMode && (
+                                    <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={15} isRunning={countdownTimer.isRunning} />
+                                )}
+                            </div>
+                            <div className="pd-autoplay-toggle-container" style={{ margin: 0 }}>
+                                <label className="pd-autoplay-toggle-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={autoPlay}
+                                        onChange={toggleAutoPlay}
+                                    />
+                                    <span>🔊 Auto Play</span>
+                                </label>
+                            </div>
                         </div>
                         {!showOptions ? (
                             <div className="pd-think-area">
@@ -939,9 +876,6 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                             </div>
                         ) : (
                             <div className="pd-options-area">
-                                <div className="pd-timer-container">
-                                    {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={15} isRunning={countdownTimer.isRunning} />}
-                                </div>
                                 <div className="pd-options-grid">
                                     {q.options.map((opt: string, optIdx: number) => {
                                         let btnClass = "pd-option-btn"

@@ -1,8 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { Link, useBlocker } from 'react-router-dom'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import './AudioDetectiveShell.css'
 import { DailyLockModal } from './DailyLockModal'
-import md5 from 'md5'
+import { getAudioUrl, shuffle, usePracticeAudio } from '../lib/practiceAudio'
 import { audioCache } from '../lib/audioCache'
 import { trialsTracker } from '../lib/trialsTracker'
 import { useSession, API_URL } from '../lib/auth'
@@ -10,32 +9,21 @@ import { mistakeService } from '../lib/mistakeService'
 import { cache } from '../lib/cache'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
-import { CountdownRing } from './CountdownRing'
-
-const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
-
-const getAudioUrl = (sentence: string, book: string, isCf?: boolean) => {
-    const hash = md5(sentence);
-    return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`;
-}
-
-function shuffle<T>(array: T[]): T[] {
-    const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const temp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = temp;
-    }
-    return arr;
-}
+import { useNavigationBlocker } from '../lib/useNavigationBlocker'
+import { ShellHeader } from './shell/ShellHeader'
+import { InvisibleModeCheckbox } from './shell/InvisibleModeCheckbox'
+import { ActiveHeader } from './shell/ActiveHeader'
+import { FooterAction } from './shell/FooterAction'
+import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
+import { ShellHistoryModal } from './shell/ShellHistoryModal'
+import { CompleteScreenActions } from './shell/CompleteScreenActions'
 
 export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
     const isCf = data?.tts?.by === 'melotts'
     const { data: session } = useSession()
     const userId = session?.user?.id
-    const sentenceAudioRef = useRef<HTMLAudioElement | null>(null)
-    const sfxRef = useRef<HTMLAudioElement | null>(null)
+
+    const { playSfx, resolveAudioUrl, audioRef } = usePracticeAudio(textbook, () => isCf)
 
     const [activeSection, setActiveSection] = useState<any>(null)
     const [queue, setQueue] = useState<any[]>([])
@@ -93,7 +81,6 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         transitioningRef.current = false;
     }, [q]);
 
-
     const revealOptions = useCallback(() => {
         isFirstPlayRef.current = false;
         setIsOptionsBlurred(false);
@@ -101,18 +88,6 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
             countdownTimer.resume();
         }
     }, [invisibleMode, countdownTimer]);
-
-    const playSfx = (type: 'correct' | 'wrong') => {
-        if (sfxRef.current) {
-            sfxRef.current.pause();
-        }
-        const sfxUrl = type === 'correct'
-            ? "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3"
-            : "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3";
-        const audio = new Audio(sfxUrl);
-        sfxRef.current = audio;
-        audio.play().catch(e => console.warn("Failed to play SFX:", e));
-    }
 
     const playSentenceAudio = async (text: string, isAutoPlayAfterCheck = false) => {
         if (!text || !textbook) return;
@@ -123,19 +98,20 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
             if (playCount >= 3) return;
         }
 
-        if (sentenceAudioRef.current) {
-            sentenceAudioRef.current.pause();
-            sentenceAudioRef.current = null;
-        }
-
         setIsPlaying(true);
-        const url = getAudioUrl(text, textbook, isCf);
+        const url = resolveAudioUrl(getAudioUrl(text, textbook));
         try {
             const blob = await audioCache.cacheAudio(url);
             if (blob) {
-                const audio = new Audio(URL.createObjectURL(blob));
-                sentenceAudioRef.current = audio;
-                audio.onended = () => {
+                const blobUrl = URL.createObjectURL(blob);
+                if (audioRef.current) {
+                    audioRef.current.src = blobUrl;
+                } else {
+                    audioRef.current = new Audio(blobUrl);
+                }
+
+                audioRef.current.onended = () => {
+                    URL.revokeObjectURL(blobUrl);
                     setIsPlaying(false);
                     if (isFirstPlayRef.current) {
                         isFirstPlayRef.current = false;
@@ -145,7 +121,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         }
                     }
                 };
-                audio.onerror = () => {
+                audioRef.current.onerror = () => {
                     setIsPlaying(false);
                     if (isFirstPlayRef.current) {
                         isFirstPlayRef.current = false;
@@ -155,6 +131,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         }
                     }
                 };
+
                 if (locked) {
                     if (!isAutoPlayAfterCheck) {
                         setPlayedAfterCheck(true);
@@ -162,7 +139,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                 } else {
                     setPlayCount(prev => prev + 1);
                 }
-                audio.play().catch(e => {
+                audioRef.current.play().catch(e => {
                     console.warn("Failed to play sentence audio:", e);
                     setIsPlaying(false);
                 });
@@ -175,36 +152,8 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         }
     }
 
-    const blocker = useBlocker(
-        ({ nextLocation, currentLocation }) =>
-            !!activeSection && !completed && nextLocation.pathname !== currentLocation.pathname
-    );
-
-    useEffect(() => {
-        if (blocker.state === 'blocked') {
-            const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
-            if (proceed) {
-                setActiveSection(null);
-                blocker.reset();
-            } else {
-                blocker.reset();
-            }
-        }
-    }, [blocker]);
-
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (activeSection && !completed) {
-                e.preventDefault();
-                e.returnValue = '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
-                return '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
-    }, [activeSection, completed]);
+    // Set up navigation blocker
+    useNavigationBlocker(!!activeSection && !completed);
 
     // Auto play audio when question changes and is not checked yet
     useEffect(() => {
@@ -215,13 +164,13 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
             }, 300);
             return () => clearTimeout(timer);
         }
-    }, [q, activeSection, completed, playSentenceAudio]);
+    }, [q, activeSection, completed]);
 
     useEffect(() => {
         if (!activeSection && lastFinishedSectionTitle) {
             setFlickeringSectionTitle(lastFinishedSectionTitle);
             setTimeout(() => {
-                const el = document.getElementById(`ad-card-${lastFinishedSectionTitle.toLowerCase().replace(/\s+/g, '-')}`);
+                const el = document.getElementById(`det-card-${lastFinishedSectionTitle.toLowerCase().replace(/\s+/g, '-')}`);
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
@@ -233,8 +182,6 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
             return () => clearTimeout(timer);
         }
     }, [activeSection, lastFinishedSectionTitle]);
-
-
 
     const primaryColor = data.primaryColor || '#4f46e5'
     const primaryDarkColor = data.primaryColorDark || '#3730a3'
@@ -260,7 +207,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         loadRecords();
     }, []);
 
-    const getStats = (sectionTitle: string) => {
+    const getStats = useCallback((sectionTitle: string) => {
         const u = `${practiceId} (${sectionTitle})`
         const logs = practiceRecords.filter(r => r.unit === u && !r.unfinished)
 
@@ -278,7 +225,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
             todayLogs,
             lifeLogs: logs
         }
-    }
+    }, [practiceRecords, practiceId]);
 
     const handleSectionSelect = (sec: any) => {
         const stats = getStats(sec.title);
@@ -298,17 +245,24 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         hasFinishedRef.current = false;
         lastPlayedQuestionId.current = null;
 
+        // Deduplicate sentences by their English text ('en')
+        const uniqueSentences: any[] = [];
+        const seenEn = new Set<string>();
+        for (const s of sec.sentences) {
+            const cleaned = (s.en || '').trim();
+            if (cleaned && !seenEn.has(cleaned)) {
+                seenEn.add(cleaned);
+                uniqueSentences.push(s);
+            }
+        }
+
         // Shuffle sentences
-        const shuffled = shuffle([...sec.sentences]).map((s: any, i: number) => ({ ...s, originalIndex: i }));
+        const shuffled = shuffle([...uniqueSentences]).map((s: any, i: number) => ({ ...s, originalIndex: i }));
         setQueue(shuffled);
         setMistakeQueue([]);
         setCurrentIndex(0);
-        setScoreLog(new Array(sec.sentences.length).fill(null));
+        setScoreLog(new Array(uniqueSentences.length).fill(null));
         setCompleted(false);
-
-        // Preload SFX
-        audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/correct.mp3");
-        audioCache.preloadAndSync("https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/ep/sfx/error.mp3");
 
         loadQuestion(shuffled, [], 0, false);
     }
@@ -351,7 +305,6 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         } else {
             countdownTimer.pause();
         }
-
     }
 
     const syncRecord = async (scorePercent: number, isFinished: boolean) => {
@@ -587,109 +540,73 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [activeSection, completed, historyModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer, options, isOptionsBlurred]);
 
+    // Format mapped challenges for ChallengeCardGrid
+    const mappedChallenges = useMemo(() => {
+        return data.sections.map((sec: any) => ({
+            ...sec,
+            id: sec.title.toLowerCase().replace(/\s+/g, '-'),
+            icon: sec.icon || '🕵️'
+        }));
+    }, [data.sections]);
+
+    const formattedLevel = useMemo(() => {
+        return [
+            data.level ? data.level.replace(/[-–—－\s]+$/, '').trim() : '',
+            data.part ? data.part.replace(/[-–—－\s]+$/, '').trim() : ''
+        ].filter(Boolean).join(' - ');
+    }, [data.level, data.part]);
+
+    // --- RENDER Lobby Screen ---
     if (!activeSection) {
         return (
             <div className="det-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
                 <div className="det-screen">
-                    <div className="det-header">
-                        <Link to="/dashboard" state={{ textbook: textbook, unit: unit }} style={{ position: 'absolute', left: 0, top: 0, fontSize: '1.5rem', textDecoration: 'none' }}>🏠</Link>
-                        <h1>Audio Detective</h1>
-                        <h2>
-                            {[
-                                data.level ? data.level.replace(/[-–—－\s]+$/, '').trim() : '',
-                                data.part ? data.part.replace(/[-–—－\s]+$/, '').trim() : ''
-                            ].filter(Boolean).join(' - ')}
-                        </h2>
-                    </div>
+                    <ShellHeader
+                        title="Audio Detective"
+                        level={formattedLevel}
+                        textbook={textbook}
+                        unit={unit}
+                        prefix="det"
+                    />
 
-                    <div className="det-mode-switch">
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={invisibleMode}
-                                onChange={(e) => setInvisibleMode(e.target.checked)}
-                            />
-                            <span>👻 Invisible Mode (No timer, no records/XP)</span>
-                        </label>
-                    </div>
+                    <InvisibleModeCheckbox
+                        checked={invisibleMode}
+                        onChange={setInvisibleMode}
+                    />
 
-                    <div className="det-section-grid">
-                        {data.sections.map((sec: any) => {
-                            const stats = getStats(sec.title);
-                            const challengeId = sec.title.toLowerCase().replace(/\s+/g, '-');
-                            const isLockedToday = stats.todayBest === 100;
-                            const isOutOfAttempts = trialsTracker.getRemainingTrials(practiceId, challengeId) === 0;
-
-                            return (
-                                <div key={sec.title} id={`ad-card-${challengeId}`} className={`det-section-card ${flickeringSectionTitle === sec.title ? 'flicker-active' : ''}`}>
-                                    <div className="det-card-header">
-                                        <div className="det-card-title-group">
-                                            <span className="det-card-icon">🕵️</span>
-                                            <h3>{sec.title}</h3>
-                                            <span className="det-attempts-left">
-                                                {trialsTracker.getRemainingTrials(practiceId, challengeId)} / 5 attempts left
-                                            </span>
-                                        </div>
-                                        <button
-                                            className="det-start-btn"
-                                            onClick={() => handleSectionSelect(sec)}
-                                            style={isLockedToday ? { backgroundColor: '#10b981', borderBottomColor: '#059669', color: '#fff' } : isOutOfAttempts ? { backgroundColor: '#aaa', borderBottomColor: '#888', cursor: 'not-allowed' } : {}}
-                                            disabled={isOutOfAttempts && !isLockedToday}
-                                        >
-                                            {isLockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? 'OUT OF ATTEMPTS' : 'START'}
-                                        </button>
-                                    </div>
-                                    <div className="det-card-stats">
-                                        <div className="det-stat-row" onClick={() => setHistoryModal({ title: `TODAY - ${sec.title}`, logs: stats.todayLogs })}>
-                                            <span className="det-stat-label">TODAY</span>
-                                            <span className="det-stat-val" style={stats.todayBest >= 80 ? { color: '#10b981', fontWeight: 'bold' } : {}}>{stats.todayRuns} Runs | Best: {stats.todayBest}%</span>
-                                        </div>
-                                        <div className="det-stat-row" onClick={() => setHistoryModal({ title: `LIFETIME - ${sec.title}`, logs: stats.lifeLogs })}>
-                                            <span className="det-stat-label">LIFETIME</span>
-                                            <span className="det-stat-val">{stats.lifeRuns} Runs | Best: {stats.lifeBest}%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <ChallengeCardGrid
+                        challenges={mappedChallenges}
+                        onStart={handleSectionSelect}
+                        onShowHistory={(c) => {
+                            const stats = getStats(c.title);
+                            setHistoryModal({
+                                title: `TODAY - ${c.title}`,
+                                logs: stats.todayLogs
+                            });
+                        }}
+                        getRemainingTrials={(cId) => trialsTracker.getRemainingTrials(practiceId, cId)}
+                        getChallengeStatsText={(c) => {
+                            const stats = getStats(c.title);
+                            return {
+                                today: `${stats.todayRuns} Runs | Best: ${stats.todayBest}%`,
+                                lifetime: `${stats.lifeRuns} Runs | Best: ${stats.lifeBest}%`,
+                                isTodayBestHigh: stats.todayBest >= 80
+                            };
+                        }}
+                        isLockedToday={(c) => getStats(c.title).todayBest === 100}
+                        flickeringId={flickeringSectionTitle ? flickeringSectionTitle.toLowerCase().replace(/\s+/g, '-') : null}
+                        prefix="det"
+                        invisibleMode={invisibleMode}
+                    />
                 </div>
 
                 {historyModal && (
-                    <div className="det-modal-overlay" onClick={() => setHistoryModal(null)}>
-                        <div className="det-modal-content" onClick={e => e.stopPropagation()}>
-                            <h3 className="det-modal-title">{historyModal.title}</h3>
-                            {historyModal.logs.length === 0 ? (
-                                <p style={{ color: '#888', textAlign: 'center', fontStyle: 'italic' }}>No records yet.</p>
-                            ) : (
-                                <ul className="det-history-list">
-                                    {historyModal.logs.map((log: any, i: number) => {
-                                        const d = new Date(log.createdAt);
-                                        const isUnfinished = log.unfinished ? ' (Unfinished)' : '';
-                                        const now = new Date();
-                                        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                                        const logMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-                                        const diffDays = Math.round((todayMidnight.getTime() - logMidnight.getTime()) / 86400000);
-                                        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                        let dateLabel: string;
-                                        if (diffDays === 0) dateLabel = historyModal.title.startsWith('LIFETIME') ? 'Today ' + timeStr : timeStr;
-                                        else if (diffDays === 1) dateLabel = 'Yesterday ' + timeStr;
-                                        else if (diffDays <= 6) dateLabel = diffDays + ' days ago ' + timeStr;
-                                        else dateLabel = d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
-                                        return (
-                                            <li key={log.id || i} className="det-history-item">
-                                                <span className="det-history-date">{dateLabel}</span>
-                                                <span className="det-history-score" style={{ color: log.score >= 80 ? 'var(--primary)' : 'inherit' }}>
-                                                    {log.score}%{isUnfinished}
-                                                </span>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            )}
-                            <button className="det-check-btn" style={{ marginTop: '20px', padding: '10px' }} onClick={() => setHistoryModal(null)}>Close</button>
-                        </div>
-                    </div>
+                    <ShellHistoryModal
+                        title={historyModal.title}
+                        onClose={() => setHistoryModal(null)}
+                        logs={historyModal.logs}
+                        prefix="det"
+                    />
                 )}
 
                 {lockModalOpen && (
@@ -699,14 +616,15 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         )
     }
 
+    // --- RENDER Complete Screen ---
     if (completed) {
+        const challengeId = activeSection.title.toLowerCase().replace(/\s+/g, '-');
         return (
             <div className="det-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
                 <div className="det-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '30px 20px' }}>
                     <h1 style={{ color: 'var(--primary)', fontSize: '3.5rem', margin: '0' }}>{finalScore}%</h1>
                     <h2 style={{ margin: '5px 0 10px 0', color: '#333', fontSize: '1.5rem', fontWeight: 'bold' }}>Challenge Complete!</h2>
 
-                    {/* High Score / Record Status */}
                     <div style={{ margin: '10px 0 20px 0', fontSize: '1rem', color: '#555' }}>
                         {invisibleMode ? (
                             <div style={{ color: '#64748b', fontStyle: 'italic' }}>
@@ -723,7 +641,6 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         )}
                     </div>
 
-                    {/* Rewards Summary Card */}
                     <div style={{
                         width: '100%',
                         maxWidth: '400px',
@@ -789,19 +706,30 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         </div>
                     )}
 
-                    <div className="det-actions" style={{ width: '100%', maxWidth: '400px' }}>
-                        <button className="det-action-btn primary" onClick={() => handleSectionSelect(activeSection)}>
-                            Try Again
-                        </button>
-                        <button className="det-action-btn secondary" onClick={() => { setActiveSection(null); setCompleted(false); }}>
-                            Back to Sections
-                        </button>
-                    </div>
+                    <CompleteScreenActions
+                        remainingTrials={trialsTracker.getRemainingTrials(practiceId, challengeId)}
+                        onBack={() => {
+                            setLastFinishedSectionTitle(activeSection.title)
+                            setActiveSection(null)
+                            setCompleted(false)
+                            loadRecords()
+                        }}
+                        onTryAgain={(overrideInvisible) => {
+                            if (overrideInvisible !== undefined) {
+                                setInvisibleMode(overrideInvisible);
+                            }
+                            handleSectionSelect(activeSection);
+                        }}
+                        prefix="det"
+                        isLockedToday={getStats(activeSection.title).todayBest === 100}
+                        invisibleMode={invisibleMode}
+                    />
                 </div>
             </div>
         )
     }
 
+    // --- RENDER Gameplay Screen ---
     const isLastQuestion = isRedemption
         ? (mistakeQueue.length === 0)
         : (currentIndex + 1 >= queue.length && mistakeQueue.length === 0);
@@ -809,31 +737,35 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
     return (
         <div className="det-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
             <div className="det-screen gameplay">
-                <div className="det-top-bar">
-                    <div style={{ position: 'relative', flexShrink: 0, width: 30 }}>
-                        <button className="det-close-btn" onClick={() => {
-                            countdownTimer.pause()
-                            const challengeId = activeSection.title.toLowerCase().replace(/\s+/g, '-');
-                            const rem = trialsTracker.getRemainingTrials(practiceId, challengeId);
-                            if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
-                                if (userId && !invisibleMode) {
-                                    mistakeService.syncToServer(userId);
-                                }
-                                setActiveSection(null);
-                                loadRecords();
-                            } else {
-                                if (!locked) countdownTimer.resume()
+                <ActiveHeader
+                    onClose={() => {
+                        countdownTimer.pause()
+                        const challengeId = activeSection.title.toLowerCase().replace(/\s+/g, '-');
+                        const rem = trialsTracker.getRemainingTrials(practiceId, challengeId);
+                        if (window.confirm(`Are you sure you want to quit?\nYou only have ${rem} attempt(s) left for this challenge today!`)) {
+                            if (userId && !invisibleMode) {
+                                mistakeService.syncToServer(userId);
                             }
-                        }}>✕</button>
-                        {!invisibleMode && <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={10} isRunning={countdownTimer.isRunning} />}
-                    </div>
-                    <div className="det-progress-container">
-                        {queue.map((_, i) => {
-                            const isActive = (!isRedemption && i === currentIndex && !showFeedback) || (isRedemption && q && q.originalIndex === i && !showFeedback);
-                            return <div key={i} className={`det-progress-segment ${scoreLog[i] || ''}${isActive ? ' active' : ''}`} />
-                        })}
-                    </div>
-                </div>
+                            setActiveSection(null);
+                            loadRecords();
+                        } else {
+                            if (!locked) countdownTimer.resume()
+                        }
+                    }}
+                    countdownTimer={{
+                        secondsLeft: countdownTimer.secondsLeft,
+                        totalSeconds: 10,
+                        isRunning: countdownTimer.isRunning
+                    }}
+                    invisibleMode={invisibleMode}
+                    queue={queue}
+                    currentIndex={currentIndex}
+                    scoreLog={scoreLog}
+                    showFeedback={showFeedback}
+                    isRedemption={isRedemption}
+                    currentQuestion={q}
+                    prefix="det"
+                />
 
                 <div className="det-question-card">
                     <div className="det-detective-avatar">
@@ -855,10 +787,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                             {locked ? (playedAfterCheck ? '0 plays remaining' : '1 review play remaining') : `${3 - playCount} plays remaining`}
                         </div>
                     </div>
-
                 </div>
-
-
 
                 <div className="det-options-wrapper" style={{ position: 'relative' }}>
                     {isOptionsBlurred && (
@@ -932,25 +861,15 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                     <p className="det-revealed-text">{q.en}</p>
                 </div>
 
-                <div className="det-game-footer">
-                    {!locked ? (
-                        <button
-                            className="det-action-btn primary"
-                            disabled={selectedOption === null}
-                            onClick={() => checkAnswer()}
-                        >
-                            Check Answer
-                        </button>
-                    ) : (
-                        <button
-                            className="det-action-btn primary"
-                            disabled={continueDisabled}
-                            onClick={() => nextQuestion()}
-                        >
-                            {continueDisabled ? 'Reviewing...' : (isLastQuestion ? 'Finish' : 'Continue')}
-                        </button>
-                    )}
-                </div>
+                <FooterAction
+                    locked={locked}
+                    disableCheck={selectedOption === null}
+                    continueDisabled={continueDisabled}
+                    onCheck={() => checkAnswer()}
+                    onContinue={isLastQuestion ? () => finishGame(queue) : () => nextQuestion()}
+                    buttonText={isLastQuestion ? "Finish" : "Continue"}
+                    prefix="det"
+                />
             </div>
         </div>
     )

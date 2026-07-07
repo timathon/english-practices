@@ -1,4 +1,5 @@
 import React from 'react'
+import './ChallengeCardGrid.css'
 
 interface ChallengeCardGridProps {
     challenges: any[]
@@ -24,7 +25,7 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
     prefix
 }) => {
     return (
-        <div className={`${prefix}-challenge-grid`}>
+        <div className="shell-challenge-grid">
             {challenges.map((c: any) => {
                 const rem = getRemainingTrials(c.id);
                 const stats = getChallengeStatsText(c);
@@ -35,19 +36,19 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
                     <div
                         key={c.id}
                         id={`${prefix}-card-${c.id}`}
-                        className={`${prefix}-challenge-card ${flickeringId === c.id ? 'flicker-active' : ''}`}
+                        className={`shell-challenge-card ${flickeringId === c.id ? 'flicker-active' : ''}`}
                         style={invisibleMode ? { backgroundColor: '#f1f5f9', borderColor: '#cbd5e1' } : {}}
                     >
-                        <div className={`${prefix}-card-header`}>
+                        <div className="shell-card-header">
                             <div style={{ display: 'flex', alignItems: 'center' }}>
                                 <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>{c.icon}</span>
-                                <h3 className={`${prefix}-card-title`} style={{ marginRight: '8px' }}>{c.title}</h3>
+                                <h3 className="shell-card-title" style={{ marginRight: '8px' }}>{c.title}</h3>
                                 <div style={{ fontSize: '0.7rem', color: 'rgb(153, 153, 153)', marginTop: '2px' }}>
                                     {rem} / 5 attempts left
                                 </div>
                             </div>
                             <button
-                                className={`${prefix}-start-btn`}
+                                className="shell-start-btn"
                                 onClick={() => {
                                     if (!isOutOfAttempts) {
                                         onStart(c);
@@ -66,27 +67,27 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
                                 {lockedToday ? 'LOCKED 🔒' : isOutOfAttempts ? (prefix === 'sh' ? 'LIMIT' : 'OUT OF ATTEMPTS') : 'START'}
                             </button>
                         </div>
-                        <div className={`${prefix}-card-stats`}>
+                        <div className="shell-card-stats">
                             <div
-                                className={`${prefix}-stat-row`}
+                                className="shell-stat-row"
                                 style={{ cursor: 'pointer' }}
                                 onClick={() => onShowHistory(c)}
                             >
-                                <span className={`${prefix}-stat-label`}>TODAY</span>
+                                <span className="shell-stat-label">TODAY</span>
                                 <span
-                                    className={`${prefix}-stat-val`}
+                                    className="shell-stat-val"
                                     style={stats.isTodayBestHigh ? { color: '#10b981', fontWeight: 'bold' } : {}}
                                 >
                                     {stats.today}
                                 </span>
                             </div>
                             <div
-                                className={`${prefix}-stat-row`}
+                                className="shell-stat-row"
                                 style={{ cursor: 'pointer' }}
                                 onClick={() => onShowHistory(c)}
                             >
-                                <span className={`${prefix}-stat-label`}>LIFETIME</span>
-                                <span className={`${prefix}-stat-val`}>{stats.lifetime}</span>
+                                <span className="shell-stat-label">LIFETIME</span>
+                                <span className="shell-stat-val">{stats.lifetime}</span>
                             </div>
                         </div>
                     </div>
