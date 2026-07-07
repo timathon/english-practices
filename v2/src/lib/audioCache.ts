@@ -87,6 +87,15 @@ class AudioCache {
         const cacheKey = "ep-audio-" + baseHash;
         const cached = await this.get(cacheKey);
         
+        if (!cached) {
+            try {
+                await this.cacheAudio(url, false);
+            } catch (e) {
+                console.error(`Failed to preload audio for ${url}`, e);
+            }
+            return;
+        }
+
         const currentVersion = cached?.meta?.lastModified || 0;
 
         try {
@@ -97,15 +106,11 @@ class AudioCache {
                 const lastModified = new Date(lastModifiedStr).getTime();
                 if (lastModified > currentVersion) {
                     await this.cacheAudio(url, true);
-                } else if (!cached) {
-                    // Not in cache, fetch cleanly
-                    await this.cacheAudio(url, false);
                 }
-            } else if (!cached) {
-                await this.cacheAudio(url, false);
             }
         } catch (e) {
-            console.error(`Failed to check/preload audio for ${url}`, e);
+            // Quietly ignore or warn about HEAD request failures since we already have a cached version
+            console.warn(`Failed to check updates (HEAD) for ${url}, using cached version:`, e);
         }
     }
 }
