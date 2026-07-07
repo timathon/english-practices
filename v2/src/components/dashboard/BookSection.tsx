@@ -9,7 +9,15 @@ import {
 } from '../../lib/dashboardUtils'
 import { FadingPracticeName } from './DashboardShared'
 
-export function BookSection({ tb, units, records, initialUnit, initialPage, showChinese, isTestdrive, onResetTestdrive }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string; initialPage?: string; showChinese: boolean; isTestdrive?: boolean; onResetTestdrive?: () => void }) {
+export function BookSection({ tb, units, records, initialUnit, initialPage, showChinese, isTestdrive, onResetTestdrive, initiallyOpen }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string; initialPage?: string; showChinese: boolean; isTestdrive?: boolean; onResetTestdrive?: () => void; initiallyOpen: boolean }) {
+  const [isOpen, setIsOpen] = useState(initiallyOpen)
+
+  useEffect(() => {
+    if (initiallyOpen) {
+      setIsOpen(true);
+    }
+  }, [initiallyOpen]);
+
   const lettersScrollRef = useHorizontalScrollRef()
   const unitsScrollRef = useHorizontalScrollRef()
   const unitsContainerRef = useRef<HTMLDivElement | null>(null)
@@ -283,9 +291,36 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
           </button>
         )}
         <span className="db-book-count">{unitKeys.length} units</span>
+        <button
+          className="db-book-toggle-btn"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label={isOpen ? "Fold book" : "Open book"}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            padding: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.2s',
+          }}
+        >
+          {isOpen ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          )}
+        </button>
       </div>
 
-      <div>
+      {isOpen && (
+        <div>
         {(isRazB || isELyrics) && (
           <div ref={lettersScrollRef} className="db-letters-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginBottom: '2px' }}>
             {letters.map(letter => (
@@ -771,6 +806,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
           </div>
         </div>
       </div>
+    )}
     </section>
   )
 }

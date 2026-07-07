@@ -464,6 +464,40 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
     return acc;
   }, {});
 
+  const lastDoneBook = useMemo(() => {
+    if (!records || records.length === 0 || !practices || practices.length === 0) return '';
+    const sorted = [...records].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    for (const r of sorted) {
+      const match = r.unit.match(/^(.+?)\s\((.+)\)$/);
+      let practiceId = r.unit;
+      if (match) {
+        practiceId = match[1];
+      }
+      if (practiceId.endsWith('-ad')) {
+        practiceId = practiceId.slice(0, -3);
+      }
+      const p = practices.find(item => item.id === practiceId);
+      if (p) {
+        return p.textbook;
+      }
+    }
+    return '';
+  }, [records, practices]);
+
+  const sortedTextbooks = useMemo(() => {
+    return Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+  }, [grouped]);
+
+  const defaultOpenBook = useMemo(() => {
+    if (targetTextbook && sortedTextbooks.includes(targetTextbook)) {
+      return targetTextbook;
+    }
+    if (lastDoneBook && sortedTextbooks.includes(lastDoneBook)) {
+      return lastDoneBook;
+    }
+    return sortedTextbooks[0] || '';
+  }, [targetTextbook, lastDoneBook, sortedTextbooks]);
+
   const todayBookKeys = Object.keys(todayRecordsByBook).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
   const activeBook = todayBookKeys.includes(activeTodayBook) ? activeTodayBook : (todayBookKeys[0] || '');
 
@@ -754,6 +788,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                   initialPage={targetTextbook === tb ? targetPage : undefined}
                   showChinese={showChinese}
                   isTestdrive={isTestdrive}
+                  initiallyOpen={tb === defaultOpenBook}
                   onResetTestdrive={() => {
                     setTestdriveBook('');
                     sessionStorage.removeItem('testdrive_selected_book');
