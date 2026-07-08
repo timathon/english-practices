@@ -19,6 +19,9 @@ import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
+const isWorkbook = (id?: string) => !!id && (id.endsWith('-w') || id.includes('-w-') || id.includes('-passage-decoder-w'));
+const isStudentBook = (id?: string) => !!id && (id.endsWith('-s') || id.includes('-s-') || id.includes('-passage-decoder-s'));
+
 const getAudioUrl = (sentence: string, book: string, isCf?: boolean) => {
     const hash = md5(sentence);
     return `${PUBLIC_URL_BASE}/ep/${book.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`;
@@ -101,7 +104,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const playWordSentenceAudio = async (sentence: string) => {
         if (!textbook || !sentence) return;
         setPlayingWordAudio(true);
-        const isCf = !!(practiceId && practiceId.endsWith('-w') && data && data.tts === 1) || data?.tts?.by === 'melotts';
+        const isCf = (!!(practiceId && isWorkbook(practiceId) && data && data.tts === 1) || data?.tts?.by === 'melotts') && data?.tts?.by !== 'gemini';
         const url = getAudioUrl(sentence, textbook, isCf);
         try {
             const blob = await audioCache.cacheAudio(url);
@@ -125,7 +128,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
             sentenceAudioRef.current.pause();
             sentenceAudioRef.current = null;
         }
-        const isCf = !!(practiceId && practiceId.endsWith('-w') && data && data.tts === 1) || data?.tts?.by === 'melotts';
+        const isCf = (!!(practiceId && isWorkbook(practiceId) && data && data.tts === 1) || data?.tts?.by === 'melotts') && data?.tts?.by !== 'gemini';
         const url = getAudioUrl(text, textbook, isCf);
         try {
             const blob = await audioCache.cacheAudio(url);
@@ -295,8 +298,8 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     // Play sentence audio automatically for student's book passage decoder (ending with -s) or workbook passage decoder (ending with -w) with tts: 1
     useEffect(() => {
         if (!autoPlay) return;
-        const isS = !!(practiceId && practiceId.endsWith('-s'));
-        const isWWithTts = !!(practiceId && practiceId.endsWith('-w') && data && (data.tts === 1 || data.tts?.by === 'melotts'));
+        const isS = !!(practiceId && isStudentBook(practiceId));
+        const isWWithTts = !!(practiceId && isWorkbook(practiceId) && data && data.tts);
         if (q && q.en && (isS || isWWithTts) && textbook) {
             playActiveSentenceAudio(q.en);
         }
@@ -463,7 +466,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                 updatedScoreLog[currentIndex] = "red"
                 updatedMistakes.push(q)
                 if (userId && !invisibleMode) {
-                    const practiceType = practiceId.endsWith('-w') ? 'passage-decoder-w' : (practiceId.endsWith('-s') ? 'passage-decoder-s' : 'passage-decoder');
+                    const practiceType = isWorkbook(practiceId) ? 'passage-decoder-w' : (isStudentBook(practiceId) ? 'passage-decoder-s' : 'passage-decoder');
                     mistakeService.addMistake(userId, {
                         practiceId,
                         textbook,
@@ -826,7 +829,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                     className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
                                                 >
                                                     {renderSentenceText(sentence)}{' '}
-                                                    {isCurrent && (practiceId?.endsWith('-s') || (practiceId?.endsWith('-w') && (data.tts === 1 || data.tts?.by === 'melotts'))) && (
+                                                    {isCurrent && (isStudentBook(practiceId) || (isWorkbook(practiceId) && data && data.tts)) && (
                                                         <button
                                                             className="pd-sentence-play-btn"
                                                             title="Replay Audio"

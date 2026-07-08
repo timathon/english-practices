@@ -81,7 +81,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
 
     useEffect(() => {
         if (!practiceId) return;
-        const vocabGuideId = practiceId.replace(/-vocab-master$/, '-vocab-guide');
+        const vocabGuideId = practiceId.replace(/-vocab-master(-[a-z0-9-]+)?$/, '-vocab-guide$1');
         
         fetch(API_URL + `/api/practices/${vocabGuideId}`, { credentials: 'include' })
             .then(res => res.json())

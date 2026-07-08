@@ -15,6 +15,7 @@ export const TEXTBOOK_EMOJIS: Record<string, string> = {
   'my-exercises': '✏️',
   'RAZ-B': '🦖',
   SA1: '🏫',
+  T8A: '🎯',
   W7A: '🏯', W7B: '🏰',
   W8A: '📜', W8B: '🎨',
   W9A: '🏛️', W9B: '🧭',

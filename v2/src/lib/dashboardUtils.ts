@@ -10,19 +10,23 @@ export const PRACTICE_TYPE_ICONS: Record<string, string> = {
 
 export const translatePracticeName = (name: string): string => {
   const norm = name.trim();
-  if (norm.startsWith('Text Navigator')) {
-    if (norm === 'Text Navigator 2 Start Up') return '阅读导航2 Start Up';
-    if (norm === 'Text Navigator 3 Speed Up') return '阅读导航3 Speed Up';
-    return norm.replace('Text Navigator', '阅读导航');
+  const suffixMatch = norm.match(/\s+(Test\s+\d+|Challenge\s+\d+|Model\s+\d+|\d+|[a-zA-Z]\d+|[a-zA-Z])$/i);
+  const suffix = suffixMatch ? suffixMatch[0] : '';
+  const baseName = suffixMatch ? norm.substring(0, norm.length - suffix.length).trim() : norm;
+
+  if (baseName.startsWith('Text Navigator')) {
+    if (baseName === 'Text Navigator 2 Start Up') return '阅读导航2 Start Up' + suffix;
+    if (baseName === 'Text Navigator 3 Speed Up') return '阅读导航3 Speed Up' + suffix;
+    return baseName.replace('Text Navigator', '阅读导航') + suffix;
   }
-  if (norm.startsWith('Writing Map')) {
-    if (norm === 'Writing Map Model 1') return '写作导图 Model 1';
-    if (norm === 'Writing Map Model 2') return '写作导图 Model 2';
-    return norm.replace('Writing Map', '写作导图');
+  if (baseName.startsWith('Writing Map')) {
+    if (baseName === 'Writing Map Model 1') return '写作导图 Model 1' + suffix;
+    if (baseName === 'Writing Map Model 2') return '写作导图 Model 2' + suffix;
+    return baseName.replace('Writing Map', '写作导图') + suffix;
   }
-  if (norm.startsWith('Passage Decoder')) {
-    if (norm.toLowerCase().endsWith('w')) return '*练习册翻译*';
-    return '课文翻译';
+  if (baseName.startsWith('Passage Decoder')) {
+    if (baseName.toLowerCase().endsWith('w')) return '*练习册翻译*' + suffix;
+    return '课文翻译' + suffix;
   }
   const map: Record<string, string> = {
     'Recall Map': '单元总览',
@@ -34,7 +38,8 @@ export const translatePracticeName = (name: string): string => {
     'Audio Detective': '听力侦探',
     'Bug Hunter': 'Bug 猎手',
   };
-  return map[norm] || map[norm.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')] || norm;
+  const translatedBase = map[baseName] || map[baseName.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')] || baseName;
+  return translatedBase + suffix;
 };
 
 export const translateTextbookName = (name: string): string => {

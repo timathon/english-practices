@@ -64,6 +64,57 @@ async function checkAudioExists(text, bookName) {
     }
 }
 
+function splitTextIntoChunks(text, maxLen = 50) {
+    const words = text.split(/\s+/);
+    const chunks = [];
+    let currentChunk = "";
+    for (const word of words) {
+        if ((currentChunk + " " + word).trim().length <= maxLen) {
+            currentChunk = (currentChunk + " " + word).trim();
+        } else {
+            if (currentChunk) chunks.push(currentChunk);
+            currentChunk = word;
+        }
+    }
+    if (currentChunk) chunks.push(currentChunk);
+    return chunks.filter(Boolean);
+}
+
+function concatenateWavBuffers(buffers) {
+    if (buffers.length === 0) return Buffer.alloc(0);
+    if (buffers.length === 1) return buffers[0];
+    
+    const chunks = [buffers[0]];
+    for (let i = 1; i < buffers.length; i++) {
+        chunks.push(buffers[i].subarray(44));
+    }
+    const combined = Buffer.concat(chunks);
+    
+    // Update WAV header sizes
+    const totalLength = combined.length;
+    combined.writeUInt32LE(totalLength - 8, 4);
+    combined.writeUInt32LE(totalLength - 44, 40);
+    
+    return combined;
+}
+
+async function callMeloTTSWithRetry(text, retries = 3, delay = 2000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await callMeloTTS(text);
+        } catch (err) {
+            console.log(`      ⚠️ Attempt ${i + 1} failed: ${err.message}. Retrying in ${delay}ms...`);
+            if (i === retries - 1) throw err;
+            await new Promise(r => setTimeout(r, delay));
+            delay *= 2;
+        }
+    }
+}
+
+async function getMeloTTSAudio(text) {
+    return await callMeloTTSWithRetry(text.trim());
+}
+
 function callMeloTTS(text) {
     return new Promise((resolve, reject) => {
         const body = JSON.stringify({ prompt: text, lang: 'en' });
@@ -189,34 +240,40 @@ async function main() {
         return { text, r2Key };
     });
 
-    console.log(`Processing all ${tasks.length} texts in batches of 10...`);
+    console.log(`Processing all ${tasks.length} texts sequentially...`);
 
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
-        const batch = tasks.slice(i, i + BATCH_SIZE);
-        console.log(`\n📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(tasks.length / BATCH_SIZE)} (${batch.length} items)...`);
-        
-        await Promise.all(batch.map(async (item, idx) => {
-            const itemIndex = i + idx + 1;
+    for (let idx = 0; idx < tasks.length; idx++) {
+        const item = tasks[idx];
+        const itemIndex = idx + 1;
+        try {
+            let exists = false;
             try {
-                const audioBuffer = await callMeloTTS(item.text);
-                const uploadParams = {
-                    Bucket: BUCKET_NAME,
-                    Key: item.r2Key,
-                    Body: audioBuffer,
-                    ContentType: "audio/mpeg",
-                };
-                await s3Client.send(new PutObjectCommand(uploadParams));
-                console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ✅ Uploaded to R2: ${item.r2Key} (${(audioBuffer.length / 1024).toFixed(1)} KB)`);
-            } catch (err) {
-                console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ❌ Failed: ${err.message}`);
+                await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: item.r2Key }));
+                exists = true;
+            } catch (e) {
+                // Keep exists = false
             }
-        }));
 
-        // Small delay between batches to avoid rate-limiting
-        if (i + BATCH_SIZE < tasks.length) {
-            await new Promise(r => setTimeout(r, 1000));
+            if (exists) {
+                console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ⏭️ Already exists in R2`);
+                continue;
+            }
+
+            const audioBuffer = await getMeloTTSAudio(item.text);
+            const uploadParams = {
+                Bucket: BUCKET_NAME,
+                Key: item.r2Key,
+                Body: audioBuffer,
+                ContentType: "audio/wav",
+            };
+            await s3Client.send(new PutObjectCommand(uploadParams));
+            console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ✅ Uploaded to R2: ${item.r2Key} (${(audioBuffer.length / 1024).toFixed(1)} KB)`);
+        } catch (err) {
+            console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ❌ Failed: ${err.message}`);
         }
+
+        // Small delay between requests to avoid rate-limiting
+        await new Promise(r => setTimeout(r, 200));
     }
 
     try {

@@ -407,8 +407,15 @@ async function main() {
         }
 
         lastRequestTime = Date.now();
+        const totalWords = batch.reduce((acc, item) => {
+            const text = item.text || item.context_sentence || item.word || item.en || "";
+            return acc + text.split(/\s+/).length;
+        }, 0);
+        const calculatedTimeout = Math.max(90000, totalWords * 1500);
+        console.log(`⏱️  Setting timeout to ${calculatedTimeout / 1000}s based on word count (${totalWords} words).`);
+
         // Spelling Hero words should be treated identically, so we call getAudioBatch
-        const result = await getAudioBatch(batch, bookName, { skipUpload: noUpload, tongjiaMap });
+        const result = await getAudioBatch(batch, bookName, { skipUpload: noUpload, tongjiaMap, timeout: calculatedTimeout });
         
         if (!result.success) {
             console.error(`❌ Batch ${i + 1} failed: ${result.reason}`);

@@ -180,8 +180,9 @@ except Exception as e:
                 // If this is a retry due to insufficient pauses, delete the old wav to ensure a fresh one
                 if (fs.existsSync(combinedWav)) fs.unlinkSync(combinedWav);
 
-                // 60 seconds timeout per attempt
-                execSync(`python3 "${tempPy}" > "${pyLog}" 2>&1`, { timeout: 60000 });
+                // Use custom timeout if provided, otherwise default to 60 seconds
+                const currentTimeout = options.timeout || 60000;
+                execSync(`python3 "${tempPy}" > "${pyLog}" 2>&1`, { timeout: currentTimeout });
                 
                 const pyOutput = fs.readFileSync(pyLog, 'utf8');
                 if (pyOutput.includes("MARK_QUOTA_EXHAUSTED")) quotaExhausted = true;
