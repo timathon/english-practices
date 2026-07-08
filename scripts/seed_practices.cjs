@@ -100,12 +100,74 @@ function getChangedOrAddedJsonFiles() {
     }
 }
 
+function getDeletedJsonFiles() {
+    const deletedSet = new Set();
+    try {
+        const statusOutput = execSync('git status --porcelain "data/**/*.json"', { encoding: 'utf8' });
+        if (statusOutput.trim()) {
+            const lines = statusOutput.split('\n');
+            for (const line of lines) {
+                if (line.length < 4) continue;
+                const status = line.substring(0, 2);
+                if (status.includes('D')) {
+                    let filePath = line.substring(3).trim();
+                    if (filePath.startsWith('"') && filePath.endsWith('"')) {
+                        filePath = filePath.substring(1, filePath.length - 1);
+                    }
+                    deletedSet.add(filePath);
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Failed to check deleted files from git status:", e.message);
+    }
+    
+    try {
+        let diffOutput = "";
+        try {
+            diffOutput = execSync('git diff --name-status origin/main "data/**/*.json"', { encoding: 'utf8' });
+        } catch (e) {
+            // Safe to ignore in case of no origin/main
+        }
+        if (diffOutput.trim()) {
+            const lines = diffOutput.split('\n');
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                const parts = line.split(/\s+/);
+                if (parts.length >= 2 && parts[0] === 'D') {
+                    deletedSet.add(parts[1].trim());
+                }
+            }
+        }
+    } catch (e) {
+        // Safe to ignore
+    }
+    return Array.from(deletedSet);
+}
+
+function pathToId(arg) {
+    const normalized = path.normalize(arg).replace(/\\/g, '/');
+    const parts = normalized.split('/');
+    const dataIdx = parts.indexOf('data');
+    const tbIndex = dataIdx !== -1 ? dataIdx + 1 : 0;
+    
+    if (tbIndex < parts.length - 1) {
+        const tb = parts[tbIndex];
+        const relPathParts = parts.slice(tbIndex + 1);
+        const relPath = relPathParts.join('_').replace(/\.json$/, '');
+        return `${tb}_${relPath}`;
+    } else {
+        return arg.replace(/\.json$/, '').replace(/[\/\\]/g, '_');
+    }
+}
+
 function checkChanges() {
     if (FORCE) return true;
     const args = process.argv.slice(2).filter(a => a !== '--force');
     if (args.length > 0) return true;
     const changed = getChangedOrAddedJsonFiles();
-    return changed.length > 0;
+    const deleted = getDeletedJsonFiles();
+    return changed.length > 0 || deleted.length > 0;
 }
 
 async function seed() {
@@ -134,6 +196,26 @@ async function seed() {
          // Some versions of standard fetch might return cookies differently
          console.warn("No Set-Cookie header found. The upload may fail if auth is required.");
          cookies = "";
+    }
+    
+    const deletedFiles = getDeletedJsonFiles();
+    const deletedIds = deletedFiles.map(pathToId);
+    if (deletedIds.length > 0) {
+        console.log(`Found ${deletedIds.length} deleted practice files. Deleting from DB on ${API_URL}...`);
+        for (const id of deletedIds) {
+            console.log(`Deleting: ${id}`);
+            const deleteRes = await myFetch(`${API_URL}/api/admin/practices/${encodeURIComponent(id)}`, {
+                method: 'DELETE',
+                headers: { 
+                    'Cookie': cookies 
+                }
+            });
+            if (deleteRes.ok) {
+                console.log(`  ✓ Deleted: ${id}`);
+            } else {
+                console.warn(`  ✗ Failed to delete ${id} (Status: ${deleteRes.status})`);
+            }
+        }
     }
     
     const dataDir = path.join(__dirname, '..', 'data');
