@@ -8,9 +8,8 @@ export function forceRefreshBypassCache() {
 }
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('vite:preloadError', () => {
-    console.warn("Vite preload error detected, reloading page...");
-    forceRefreshBypassCache();
+  window.addEventListener('vite:preloadError', (e) => {
+    console.warn("Vite preload error detected (likely due to temporary network loss on device wake-up). Letting navigation/ErrorBoundary handle it. Details:", e);
   });
 }
 const SignIn = lazy(() => import('./SignIn').then(m => ({ default: m.SignIn })))
@@ -331,7 +330,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260708-2340
+            v260709-0950
           </div>
         </div>
       )}
@@ -416,7 +415,7 @@ function GlobalErrorBoundary() {
     (error instanceof TypeError && error.message.includes('dynamic'));
 
   useEffect(() => {
-    if (isChunkError) {
+    if (isChunkError && navigator.onLine) {
       const now = Date.now();
       const lastReload = localStorage.getItem('last_chunk_error_reload');
       const timeSinceLastReload = lastReload ? now - parseInt(lastReload, 10) : Infinity;
