@@ -88,11 +88,15 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
       if (audioRef.current) {
         audioRef.current.src = blobUrl;
         audioRef.current.onended = () => URL.revokeObjectURL(blobUrl);
-        audioRef.current.play().catch(console.error);
+        audioRef.current.play().catch(e => {
+          if (e.name !== 'AbortError') console.error(e);
+        });
       } else {
         const a = new Audio(blobUrl);
         a.onended = () => URL.revokeObjectURL(blobUrl);
-        a.play().catch(console.error);
+        a.play().catch(e => {
+          if (e.name !== 'AbortError') console.error(e);
+        });
         audioRef.current = a;
       }
     } catch (e) {
@@ -110,7 +114,9 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
       const blobUrl = URL.createObjectURL(blob);
       const a = new Audio(blobUrl);
       a.onended = () => URL.revokeObjectURL(blobUrl);
-      a.play().catch(console.error);
+      a.play().catch(e => {
+        if (e.name !== 'AbortError') console.error(e);
+      });
       sfxRef.current = a;
     } catch (e) {
       console.error(e);
@@ -442,20 +448,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '100%' }}>
                     <button 
                       onClick={() => playAudio(getAudioUrl(q.en, currentMistake.textbook))}
-                      style={{
-                        padding: '10px 24px',
-                        borderRadius: '30px',
-                        background: 'var(--primary)',
-                        color: 'white',
-                        border: 'none',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
-                      }}
+                      className="mr-ad-play-btn"
                     >
                       🔊 播放音频 (Play Audio)
                     </button>
