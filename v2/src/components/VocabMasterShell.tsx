@@ -668,7 +668,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                                handleChallengeSelect(activeChallenge, overrideInvisible);
                           }}
                           prefix="vm"
-                          isLockedToday={getStats(activeChallenge.title).todayBest === 100}
+                          isLockedToday={getStats(activeChallenge.title).todayBest === 100 || finalScore === 100}
                           invisibleMode={invisibleMode}
                       />
                 </div>

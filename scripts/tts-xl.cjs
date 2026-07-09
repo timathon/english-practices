@@ -124,16 +124,30 @@ async function main() {
         const uniqueTexts = Array.from(textsSet).filter(Boolean);
         console.log(`\nFound ${uniqueTexts.length} unique sentences to check.`);
 
-        console.log("Checking R2 to see which audios already exist...");
+        const forceRegenerate = process.argv.includes('--regenerate');
+        let missingTasks = [];
+        let existingTasks = [];
         const checkedTasks = [];
-        for (let i = 0; i < uniqueTexts.length; i++) {
-            const text = uniqueTexts[i];
-            const check = await checkAudioExists(text, bookName);
-            checkedTasks.push(check);
-        }
 
-        const missingTasks = checkedTasks.filter(t => !t.exists);
-        const existingTasks = checkedTasks.filter(t => t.exists);
+        if (forceRegenerate) {
+            console.log(`--regenerate flag active. Forcing regeneration of all ${uniqueTexts.length} items...`);
+            for (let i = 0; i < uniqueTexts.length; i++) {
+                const text = uniqueTexts[i];
+                const hash = crypto.createHash('md5').update(text).digest('hex');
+                const r2Key = `ep/${bookName}/${hash}.mp3`;
+                checkedTasks.push({ text, exists: false, hash, r2Key });
+            }
+            missingTasks = checkedTasks;
+        } else {
+            console.log("Checking R2 to see which audios already exist...");
+            for (let i = 0; i < uniqueTexts.length; i++) {
+                const text = uniqueTexts[i];
+                const check = await checkAudioExists(text, bookName);
+                checkedTasks.push(check);
+            }
+            missingTasks = checkedTasks.filter(t => !t.exists);
+            existingTasks = checkedTasks.filter(t => t.exists);
+        }
 
         const generationLog = [];
 
