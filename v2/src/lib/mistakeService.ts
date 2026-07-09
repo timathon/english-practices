@@ -52,6 +52,7 @@ export const mistakeService = {
       practiceType: string;
       question: any;
       wrongAnswer?: any;
+      keepCreatedAt?: boolean;
     }
   ): void {
     if (!userId) return;
@@ -71,7 +72,7 @@ export const mistakeService = {
           attemptsCount: mistakes[existingIndex].attemptsCount + 1,
           correctStreak: 0, // Reset streak since they made a mistake again
           updatedAt: now,
-          createdAt: now, // Defer to next day's review list
+          createdAt: params.keepCreatedAt ? (mistakes[existingIndex].createdAt || now) : now, // Defer to next day's review list if not keepCreatedAt
           resolved: false,
           deleted: false,
         };

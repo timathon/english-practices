@@ -196,27 +196,27 @@ export function PracticeShell() {
 
     const cleanType = practice.type.replace(/^p\d+-p\d+-/i, '').replace(/^p\d+-/i, '');
 
-    if (cleanType === 'vocab-master') {
+    if (cleanType.startsWith('vocab-master')) {
         return <VocabMasterShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
-    if (cleanType === 'recall-map') {
+    if (cleanType.startsWith('recall-map')) {
         return <RecallMapShell data={practice.content} textbook={practice.textbook} unit={practice.unit} />
     }
 
-    if (cleanType === 'vocab-guide') {
+    if (cleanType.startsWith('vocab-guide')) {
         return <VocabGuideShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} unit={practice.unit} />
     }
 
-    if (cleanType === 'spelling-hero') {
+    if (cleanType.startsWith('spelling-hero')) {
         return <SpellingHeroShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
-    if (cleanType === 'sentence-architect') {
+    if (cleanType.startsWith('sentence-architect')) {
         return <SentenceArchitectShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
-    if (cleanType === 'grammar-wizard') {
+    if (cleanType.startsWith('grammar-wizard')) {
         return <GrammarWizardShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
@@ -224,7 +224,7 @@ export function PracticeShell() {
         return <PassageDecoderShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
-    if (cleanType === 'audio-detective') {
+    if (cleanType.startsWith('audio-detective')) {
         return <AudioDetectiveShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 

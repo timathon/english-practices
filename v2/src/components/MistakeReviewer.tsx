@@ -260,14 +260,15 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
         setTimeout(() => playAudio(sentenceAudioUrl), 250);
       }
       
-      // Update mistake: unresolved, reset streak, increment attempts, set createdAt = now (deferring to next day)
+      // Update mistake: unresolved, reset streak, increment attempts, KEEP original createdAt (so it doesn't deduct count today)
       mistakeService.addMistake(userId, {
         practiceId: currentMistake.practiceId,
         textbook: currentMistake.textbook,
         unit: currentMistake.unit,
         practiceType: currentMistake.practiceType,
         question: q,
-        wrongAnswer
+        wrongAnswer,
+        keepCreatedAt: true
       });
 
       if (currentMistake.practiceType === 'vocab-master' && q.context_sentence) {
