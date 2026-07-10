@@ -57,213 +57,203 @@ async function checkAudioExists(text, bookName) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-async function main() {
-    const inputFile = process.argv[2];
-    if (!inputFile) {
-        console.error("Usage: node scripts/tts-xl.cjs [passage_decoder_json_path]");
-        process.exit(1);
-    }
-
-    const absoluteFile = path.resolve(inputFile);
-    if (!fs.existsSync(absoluteFile) || !fs.statSync(absoluteFile).isFile()) {
-        console.error(`❌ File not found: ${absoluteFile}`);
-        process.exit(1);
-    }
-
-    const relativeToData = path.relative(path.resolve(__dirname, '../data'), absoluteFile);
-    const bookName = relativeToData.split(path.sep)[0].toLowerCase();
-
-    console.log(`📖 Reading file: ${absoluteFile}`);
-    console.log(`Resolved book/category name: ${bookName}`);
-
-    const content = JSON.parse(fs.readFileSync(absoluteFile, 'utf8'));
-
-    if (!content.sections || !Array.isArray(content.sections)) {
-        console.error("❌ Invalid JSON: 'sections' array not found.");
-        process.exit(1);
-    }
-
-    console.log("\nAvailable Sections:");
-    content.sections.forEach((section, idx) => {
-        console.log(`  [${idx + 1}] ${section.title || `Section ${idx + 1}`}`);
-    });
-
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    rl.question("\nChoose a section to process (1-" + content.sections.length + ") or 'all' to process all sections: ", async (answer) => {
-        rl.close();
-        let selectedSections = [];
-
-        const trimmedAns = answer.trim().toLowerCase();
-        if (trimmedAns === 'all') {
-            selectedSections = content.sections;
-            console.log("Selected all sections.");
-        } else {
-            const idx = parseInt(trimmedAns, 10) - 1;
-            if (isNaN(idx) || idx < 0 || idx >= content.sections.length) {
-                console.error("❌ Invalid choice. Exiting.");
-                process.exit(1);
-            }
-            selectedSections = [content.sections[idx]];
-            console.log(`Selected section: "${selectedSections[0].title}"`);
-        }
-
-        // Collect all sentences to process
-        const textsSet = new Set();
-        selectedSections.forEach(section => {
-            if (section.sentences && Array.isArray(section.sentences)) {
-                section.sentences.forEach(item => {
-                    if (item.en) textsSet.add(getCleanText(item.en));
-                });
-            }
-        });
-
-        const uniqueTexts = Array.from(textsSet).filter(Boolean);
-        console.log(`\nFound ${uniqueTexts.length} unique sentences to check.`);
-
-        const forceRegenerate = process.argv.includes('--regenerate');
-        let missingTasks = [];
-        let existingTasks = [];
-        const checkedTasks = [];
-
-        if (forceRegenerate) {
-            console.log(`--regenerate flag active. Forcing regeneration of all ${uniqueTexts.length} items...`);
-            for (let i = 0; i < uniqueTexts.length; i++) {
-                const text = uniqueTexts[i];
-                const hash = crypto.createHash('md5').update(text).digest('hex');
-                const r2Key = `ep/${bookName}/${hash}.mp3`;
-                checkedTasks.push({ text, exists: false, hash, r2Key });
-            }
-            missingTasks = checkedTasks;
-        } else {
-            console.log("Checking R2 to see which audios already exist...");
-            for (let i = 0; i < uniqueTexts.length; i++) {
-                const text = uniqueTexts[i];
-                const check = await checkAudioExists(text, bookName);
-                checkedTasks.push(check);
-            }
-            missingTasks = checkedTasks.filter(t => !t.exists);
-            existingTasks = checkedTasks.filter(t => t.exists);
-        }
-
-        const generationLog = [];
-
-        // Log existing tasks
-        existingTasks.forEach(t => {
-            generationLog.push({
-                batchId: 'R2_EXISTING',
-                folderName: '',
-                text: t.text,
-                hash: t.hash,
-                status: 1,
-                isRemote: true
+async function runTtsForSections(content, selectedSections, bookName, absoluteFile) {
+    // Collect all sentences to process
+    const textsSet = new Set();
+    selectedSections.forEach(section => {
+        if (section.sentences && Array.isArray(section.sentences)) {
+            section.sentences.forEach(item => {
+                if (item.en) textsSet.add(getCleanText(item.en));
             });
-        });
+        }
+    });
 
-        if (missingTasks.length > 0) {
-            console.log(`⏭️  Skipping ${existingTasks.length} already existing audios.`);
-            console.log(`🚨  Missing ${missingTasks.length} audios.`);
-            // Calculate a generous dynamic timeout proportional to the text length (e.g. 1.5 seconds per word, minimum 90 seconds)
-            const totalWords = missingTasks.reduce((acc, t) => acc + (t.text || "").split(/\s+/).length, 0);
-            const calculatedTimeout = Math.max(90000, totalWords * 1500);
-            console.log(`⏱️  Setting timeout to ${calculatedTimeout / 1000}s based on word count (${totalWords} words).`);
-
-            const result = await getAudioBatch(missingTasks, bookName, { skipUpload: false, timeout: calculatedTimeout });
-
-            if (result.success) {
-                console.log("\n✨  Generation complete!");
-                if (result.files && result.batchId) {
-                    for (const f of result.files) {
-                        generationLog.push({
-                            batchId: result.batchId,
-                            folderName: result.folderName,
-                            text: f.text,
-                            hash: f.hash,
-                            status: f.status,
-                            isRemote: false
-                        });
+    // Also extract title words from the vocab-guide.json if it exists in the same folder
+    const dir = path.dirname(absoluteFile);
+    const files = fs.readdirSync(dir);
+    const vocabGuideFile = files.find(f => f.endsWith('.json') && f.includes('vocab-guide'));
+    if (vocabGuideFile) {
+        const vgPath = path.join(dir, vocabGuideFile);
+        try {
+            const vgContent = JSON.parse(fs.readFileSync(vgPath, 'utf8'));
+            if (vgContent.unit_vocabulary && Array.isArray(vgContent.unit_vocabulary)) {
+                vgContent.unit_vocabulary.forEach(item => {
+                    if (item.word) {
+                        const wordClean = getCleanText(item.word);
+                        if (wordClean) textsSet.add(wordClean);
                     }
+                });
+                console.log(`📝 Loaded ${vgContent.unit_vocabulary.length} words from vocab guide: ${vocabGuideFile}`);
+            }
+        } catch (e) {
+            console.error(`⚠️ Failed to read vocab guide at ${vgPath}: ${e.message}`);
+        }
+    }
+
+    const uniqueTexts = Array.from(textsSet).filter(Boolean);
+    console.log(`\nFound ${uniqueTexts.length} unique sentences to check.`);
+
+    const forceRegenerate = process.argv.includes('--regenerate');
+    let missingTasks = [];
+    let existingTasks = [];
+    const checkedTasks = [];
+
+    if (forceRegenerate) {
+        console.log(`--regenerate flag active. Forcing regeneration of all ${uniqueTexts.length} items...`);
+        for (let i = 0; i < uniqueTexts.length; i++) {
+            const text = uniqueTexts[i];
+            const hash = crypto.createHash('md5').update(text).digest('hex');
+            const r2Key = `ep/${bookName}/${hash}.mp3`;
+            checkedTasks.push({ text, exists: false, hash, r2Key });
+        }
+        missingTasks = checkedTasks;
+    } else {
+        console.log("Checking R2 to see which audios already exist...");
+        for (let i = 0; i < uniqueTexts.length; i++) {
+            const text = uniqueTexts[i];
+            const check = await checkAudioExists(text, bookName);
+            checkedTasks.push(check);
+        }
+        missingTasks = checkedTasks.filter(t => !t.exists);
+        existingTasks = checkedTasks.filter(t => t.exists);
+    }
+
+    const generationLog = [];
+
+    // Log existing tasks
+    existingTasks.forEach(t => {
+        generationLog.push({
+            batchId: 'R2_EXISTING',
+            folderName: '',
+            text: t.text,
+            hash: t.hash,
+            status: 1,
+            isRemote: true
+        });
+    });
+
+    if (missingTasks.length > 0) {
+        console.log(`⏭️  Skipping ${existingTasks.length} already existing audios.`);
+        console.log(`🚨  Missing ${missingTasks.length} audios.`);
+        // Calculate a generous dynamic timeout proportional to the text length
+        const totalWords = missingTasks.reduce((acc, t) => acc + (t.text || "").split(/\s+/).length, 0);
+        const calculatedTimeout = Math.max(90000, totalWords * 1500);
+        console.log(`⏱️  Setting timeout to ${calculatedTimeout / 1000}s based on word count (${totalWords} words).`);
+
+        const result = await getAudioBatch(missingTasks, bookName, { skipUpload: false, timeout: calculatedTimeout });
+
+        if (result.success) {
+            console.log("\n✨  Generation complete!");
+            if (result.files && result.batchId) {
+                for (const f of result.files) {
+                    generationLog.push({
+                        batchId: result.batchId,
+                        folderName: result.folderName,
+                        text: f.text,
+                        hash: f.hash,
+                        status: f.status,
+                        isRemote: false
+                    });
                 }
-                
+            }
+            
+            // Only add tts node if file name contains 'passage-decoder-w'
+            if (path.basename(absoluteFile).includes('passage-decoder-w')) {
                 content.tts = { by: "gemini" };
-                fs.writeFileSync(absoluteFile, JSON.stringify(content, null, 2), 'utf8');
-                console.log(`📝 Updated JSON file metadata.`);
-            } else {
-                console.error(`❌ Generation failed: ${result.reason}`);
-                process.exit(1);
+            } else if (content.tts) {
+                delete content.tts;
+            }
+            fs.writeFileSync(absoluteFile, JSON.stringify(content, null, 2), 'utf8');
+            console.log(`📝 Updated JSON file metadata.`);
+        } else {
+            console.error(`❌ Generation failed: ${result.reason}`);
+            process.exit(1);
+        }
+    } else {
+        console.log("✨  All audios already exist. Nothing to generate!");
+        let changed = false;
+        if (path.basename(absoluteFile).includes('passage-decoder-w')) {
+            if (!content.tts) {
+                content.tts = { by: "gemini" };
+                changed = true;
             }
         } else {
-            console.log("✨  All audios already exist. Nothing to generate!");
+            if (content.tts) {
+                delete content.tts;
+                changed = true;
+            }
         }
+        if (changed) {
+            fs.writeFileSync(absoluteFile, JSON.stringify(content, null, 2), 'utf8');
+            console.log(`📝 Updated JSON file metadata.`);
+        }
+    }
 
-        // Write HTML report
-        if (generationLog.length > 0) {
-            const now = new Date();
-            const pad = n => String(n).padStart(2, '0');
-            const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-            const reportDir = path.resolve(__dirname, '../temp/audio');
-            if (!fs.existsSync(reportDir)) fs.mkdirSync(reportDir, { recursive: true });
-            const reportPath = path.join(reportDir, `tts-report-xl-${ts}.html`);
+    // Write HTML report
+    if (generationLog.length > 0) {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        const reportDir = path.resolve(__dirname, '../temp/audio');
+        if (!fs.existsSync(reportDir)) fs.mkdirSync(reportDir, { recursive: true });
+        const reportPath = path.join(reportDir, `tts-report-xl-${ts}.html`);
 
-            const failCount = generationLog.filter(e => e.status === 2).length;
-            const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const failCount = generationLog.filter(e => e.status === 2).length;
+        const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-            const tableRows = generationLog.map(({ batchId, folderName, text, hash, status, isRemote }, idx) => {
-                let audioSrc = '';
-                if (isRemote) {
-                    audioSrc = `${PUBLIC_URL_BASE}/ep/${bookName}/${hash}.mp3`;
-                } else {
-                    const dirName = folderName || `batch_${batchId}`;
-                    audioSrc = `${dirName}/${hash}.mp3`;
-                }
+        const tableRows = generationLog.map(({ batchId, folderName, text, hash, status, isRemote }, idx) => {
+            let audioSrc = '';
+            if (isRemote) {
+                audioSrc = `${PUBLIC_URL_BASE}/ep/${bookName}/${hash}.mp3`;
+            } else {
+                const dirName = folderName || `batch_${batchId}`;
+                audioSrc = `${dirName}/${hash}.mp3`;
+            }
 
-                const statusCell = status === 1
-                    ? `<span class="badge ok">${isRemote ? 'R2 EXISTING' : '✅ 1'}</span>`
-                    : `<span class="badge fail">❌ 2</span>`;
-                
-                const audioCell = audioSrc
-                    ? `<audio controls preload="none"><source src="${esc(audioSrc)}" type="audio/mpeg"></audio>`
-                    : `<span class="na">—</span>`;
+            const statusCell = status === 1
+                ? `<span class="badge ok">${isRemote ? 'R2 EXISTING' : '✅ 1'}</span>`
+                : `<span class="badge fail">❌ 2</span>`;
+            
+            const audioCell = audioSrc
+                ? `<audio controls preload="none"><source src="${esc(audioSrc)}" type="audio/mpeg"></audio>`
+                : `<span class="na">—</span>`;
 
-                let durationStr = '—';
-                let isTooDifferent = false;
+            let durationStr = '—';
+            let isTooDifferent = false;
 
-                if (!isRemote && hash) {
-                    const dirName = folderName || `batch_${batchId}`;
-                    const audioPathOnDisk = path.join(reportDir, dirName, `${hash}.mp3`);
-                    if (fs.existsSync(audioPathOnDisk)) {
-                        try {
-                            const out = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPathOnDisk}"`, { encoding: 'utf8' });
-                            const duration = parseFloat(out.trim());
-                            if (!isNaN(duration)) {
-                                const words = text.split(/\s+/).filter(Boolean);
-                                const wordCount = words.length;
-                                const estMin = Math.max(0.2, wordCount * 0.15);
-                                const estMax = Math.max(3.0, wordCount * 0.9 + 2.0);
-                                isTooDifferent = duration < estMin || duration > estMax || duration === 0;
-                                durationStr = `${duration.toFixed(2)}s <span style="font-size:0.75rem;opacity:0.6;">(est: ${(wordCount * 0.35 + 0.5).toFixed(1)}s)</span>`;
-                            }
-                        } catch (err) {
-                            console.error("Error reading mp3 duration:", err.message);
+            if (!isRemote && hash) {
+                const dirName = folderName || `batch_${batchId}`;
+                const audioPathOnDisk = path.join(reportDir, dirName, `${hash}.mp3`);
+                if (fs.existsSync(audioPathOnDisk)) {
+                    try {
+                        const out = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${audioPathOnDisk}"`, { encoding: 'utf8' });
+                        const duration = parseFloat(out.trim());
+                        if (!isNaN(duration)) {
+                            const words = text.split(/\s+/).filter(Boolean);
+                            const wordCount = words.length;
+                            const estMin = Math.max(0.2, wordCount * 0.15);
+                            const estMax = Math.max(3.0, wordCount * 0.9 + 2.0);
+                            isTooDifferent = duration < estMin || duration > estMax || duration === 0;
+                            durationStr = `${duration.toFixed(2)}s <span style="font-size:0.75rem;opacity:0.6;">(est: ${(wordCount * 0.35 + 0.5).toFixed(1)}s)</span>`;
                         }
+                    } catch (err) {
+                        console.error("Error reading mp3 duration:", err.message);
                     }
                 }
+            }
 
-                return `
-            <tr class="${idx % 2 === 0 ? 'even' : 'odd'}">
-              <td class="mono">${esc(batchId)}</td>
-              <td class="sentence">${esc(text)}</td>
-              <td class="mono hash" title="${esc(hash || '')}">${hash ? hash.slice(0, 8) + '…' : ''}</td>
-              <td>${statusCell}</td>
-              <td class="mono duration-cell${isTooDifferent ? ' bad-duration' : ''}">${durationStr}</td>
-              <td class="audio-cell">${audioCell}</td>
-            </tr>`;
-            }).join('');
+            return `
+        <tr class="${idx % 2 === 0 ? 'even' : 'odd'}">
+          <td class="mono">${esc(batchId)}</td>
+          <td class="sentence">${esc(text)}</td>
+          <td class="mono hash" title="${esc(hash || '')}">${hash ? hash.slice(0, 8) + '…' : ''}</td>
+          <td>${statusCell}</td>
+          <td class="mono duration-cell${isTooDifferent ? ' bad-duration' : ''}">${durationStr}</td>
+          <td class="audio-cell">${audioCell}</td>
+        </tr>`;
+        }).join('');
 
-            const html = `<!DOCTYPE html>
+        const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -390,26 +380,117 @@ async function main() {
 </body>
 </html>`;
 
-            fs.writeFileSync(reportPath, html, 'utf8');
-            console.log(`📄 Generation report saved: ${reportPath}`);
+        fs.writeFileSync(reportPath, html, 'utf8');
+        console.log(`📄 Generation report saved: ${reportPath}`);
 
-            try {
-                const isWsl = fs.existsSync('/proc/version') && fs.readFileSync('/proc/version', 'utf8').toLowerCase().includes('microsoft');
-                if (isWsl) {
-                    const winPath = execSync(`wslpath -w "${reportPath}"`, { encoding: 'utf8' }).trim();
-                    const escapedPath = winPath.replace(/\\/g, '\\\\');
-                    execSync(`cmd.exe /c start "" "${escapedPath}"`);
-                    console.log(`🌐 Opened report in Windows browser: ${winPath}`);
+        try {
+            const isWsl = fs.existsSync('/proc/version') && fs.readFileSync('/proc/version', 'utf8').toLowerCase().includes('microsoft');
+            if (isWsl) {
+                const winPath = execSync(`wslpath -w "${reportPath}"`, { encoding: 'utf8' }).trim();
+                const escapedPath = winPath.replace(/\\/g, '\\\\');
+                execSync(`cmd.exe /c start "" "${escapedPath}"`);
+                console.log(`🌐 Opened report in Windows browser: ${winPath}`);
+            } else {
+                const openCmd = process.platform === 'darwin' ? 'open' : (process.platform === 'win32' ? 'start' : 'xdg-open');
+                execSync(`${openCmd} "${reportPath}"`);
+                console.log(`🌐 Opened report: ${reportPath}`);
+            }
+        } catch (err) {
+            console.warn(`⚠️ Failed to automatically open browser: ${err.message}`);
+        }
+    }
+}
+
+async function processSingleFile(absoluteFile, autoAll) {
+    const relativeToData = path.relative(path.resolve(__dirname, '../data'), absoluteFile);
+    const bookName = relativeToData.split(path.sep)[0].toLowerCase();
+
+    console.log(`\n📖 Reading file: ${absoluteFile}`);
+    console.log(`Resolved book/category name: ${bookName}`);
+
+    const content = JSON.parse(fs.readFileSync(absoluteFile, 'utf8'));
+
+    if (!content.sections || !Array.isArray(content.sections)) {
+        console.error("❌ Invalid JSON: 'sections' array not found.");
+        return;
+    }
+
+    if (autoAll) {
+        console.log("Automatically selecting all sections for directory mode.");
+        await runTtsForSections(content, content.sections, bookName, absoluteFile);
+    } else {
+        console.log("\nAvailable Sections:");
+        content.sections.forEach((section, idx) => {
+            console.log(`  [${idx + 1}] ${section.title || `Section ${idx + 1}`}`);
+        });
+
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        await new Promise((resolve) => {
+            rl.question("\nChoose a section to process (1-" + content.sections.length + ") or 'all' to process all sections: ", async (answer) => {
+                rl.close();
+                let selectedSections = [];
+
+                const trimmedAns = answer.trim().toLowerCase();
+                if (trimmedAns === 'all') {
+                    selectedSections = content.sections;
+                    console.log("Selected all sections.");
                 } else {
-                    const openCmd = process.platform === 'darwin' ? 'open' : (process.platform === 'win32' ? 'start' : 'xdg-open');
-                    execSync(`${openCmd} "${reportPath}"`);
-                    console.log(`🌐 Opened report: ${reportPath}`);
+                    const idx = parseInt(trimmedAns, 10) - 1;
+                    if (isNaN(idx) || idx < 0 || idx >= content.sections.length) {
+                        console.error("❌ Invalid choice. Exiting.");
+                        process.exit(1);
+                    }
+                    selectedSections = [content.sections[idx]];
+                    console.log(`Selected section: "${selectedSections[0].title}"`);
                 }
-            } catch (err) {
-                console.warn(`⚠️ Failed to automatically open browser: ${err.message}`);
+
+                await runTtsForSections(content, selectedSections, bookName, absoluteFile);
+                resolve();
+            });
+        });
+    }
+}
+
+async function main() {
+    const inputPath = process.argv[2];
+    if (!inputPath) {
+        console.error("Usage: node scripts/tts-xl.cjs [passage_decoder_json_path_or_folder]");
+        process.exit(1);
+    }
+
+    const absolutePath = path.resolve(inputPath);
+    if (!fs.existsSync(absolutePath)) {
+        console.error(`❌ Path not found: ${absolutePath}`);
+        process.exit(1);
+    }
+
+    let filesToProcess = [];
+    let autoAll = false;
+
+    if (fs.statSync(absolutePath).isDirectory()) {
+        autoAll = true;
+        const files = fs.readdirSync(absolutePath);
+        for (const file of files) {
+            if (file.endsWith('.json') && file.includes('passage-decoder')) {
+                filesToProcess.push(path.join(absolutePath, file));
             }
         }
-    });
+    } else {
+        filesToProcess.push(absolutePath);
+    }
+
+    if (filesToProcess.length === 0) {
+        console.error("❌ No passage-decoder JSON files found to process.");
+        process.exit(1);
+    }
+
+    for (const absoluteFile of filesToProcess) {
+        await processSingleFile(absoluteFile, autoAll);
+    }
 }
 
 main().catch(e => {
