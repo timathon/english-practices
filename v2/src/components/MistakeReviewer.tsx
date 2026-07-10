@@ -235,6 +235,16 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
       // Resolve mistake locally immediately IF it wasn't failed already in this session
       if (!failedIds.has(currentMistake.id) && !isPreReview) {
         mistakeService.resolveMistake(userId, currentMistake.id, true);
+      } else if (failedIds.has(currentMistake.id) && !isPreReview) {
+        // Reschedule to Day 2 (createdAt = now) but keep unresolved (resolved = false)
+        mistakeService.addMistake(userId, {
+          practiceId: currentMistake.practiceId,
+          textbook: currentMistake.textbook,
+          unit: currentMistake.unit,
+          practiceType: currentMistake.practiceType,
+          question: q,
+          keepCreatedAt: false
+        });
       }
       
       // Play voice audio if it exists
