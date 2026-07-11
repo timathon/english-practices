@@ -52,6 +52,30 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
   const [layoutOrientation, setLayoutOrientation] = useState<'horizontal' | 'vertical'>(() => {
     return (localStorage.getItem('mm-layout-orientation') as 'horizontal' | 'vertical') || 'horizontal'
   })
+  const [isMobile, setIsMobile] = useState(false)
+  const [isCnMode, setIsCnMode] = useState(false)
+  const [tempEnNodeId, setTempEnNodeId] = useState<string | null>(null)
+  const tempEnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      if (tempEnTimeoutRef.current) clearTimeout(tempEnTimeoutRef.current)
+    }
+  }, [])
+
+  const showEnglishTemporarily = (nodeId: string) => {
+    if (tempEnTimeoutRef.current) clearTimeout(tempEnTimeoutRef.current)
+    setTempEnNodeId(nodeId)
+    tempEnTimeoutRef.current = setTimeout(() => {
+      setTempEnNodeId(null)
+    }, 5000)
+  }
 
   const toggleLayoutOrientation = () => {
     const next = layoutOrientation === 'horizontal' ? 'vertical' : 'horizontal'
@@ -642,6 +666,7 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
         e.preventDefault()
         prevStep()
       } else if (e.code === 'KeyA') {
+        if (isCnMode) return
         e.preventDefault()
         setShowAllMode(prev => {
           const next = Math.max(0, prev - 1)
@@ -649,6 +674,7 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
           return next
         })
       } else if (e.code === 'KeyD') {
+        if (isCnMode) return
         e.preventDefault()
         setShowAllMode(prev => {
           const next = Math.min(3, prev + 1)
@@ -660,7 +686,7 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [nextStep, prevStep, questionNode, showPromptModal])
+  }, [nextStep, prevStep, questionNode, showPromptModal, isCnMode])
 
   // Click outside listener to close inline overlays
   useEffect(() => {
@@ -687,9 +713,10 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
     const allChildrenFull = hasChildren && node.children!.every(c => c.state === 'full' || c.state === 'keywords')
     const hideChildren = (isCollapsed && allChildrenFull) || (isDepthLimited && hasChildren)
 
+    const isShowingTempEn = tempEnNodeId === node.id
     // Parse Highlight words
-    let displayedText: React.ReactNode = node.text
-    if (state === 'full' && node.highlight) {
+    let displayedText: React.ReactNode = (isCnMode && !isShowingTempEn) ? (node.cn || node.text) : node.text
+    if ((!isCnMode || isShowingTempEn) && state === 'full' && node.highlight) {
       const highlights = Array.from(new Set(node.highlight.split(',').map(s => s.trim()).filter(Boolean)))
 
       // Escape regex helper
@@ -737,10 +764,20 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
       <div className="mm-node-wrapper" key={node.id}>
         <div 
           id={isPlaying ? `playing-${node.id}` : `node-${node.id}`}
-          className={`mm-node-box ${state} level-${depth} ${allChildrenFull ? 'collapsible' : ''} ${activeNodeId === node.id ? 'active' : ''} ${isPlaying ? 'playing' : ''} ${isActionsActive ? 'actions-active' : ''}`}
+          className={`mm-node-box ${state} level-${depth} ${allChildrenFull ? 'collapsible' : ''} ${activeNodeId === node.id ? 'active' : ''} ${isPlaying ? 'playing' : ''} ${(isActionsActive && !isCnMode) ? 'actions-active' : ''}`}
           onClick={(e) => {
             e.stopPropagation()
             
+            if (isCnMode) {
+              if (state === 'full' || state === 'keywords') {
+                showEnglishTemporarily(node.id)
+              } else if (allChildrenFull) {
+                toggleCollapse(node.id)
+                setActiveNodeId(node.id)
+              }
+              return
+            }
+
             if (state === 'full') {
               if (activeActionsNodeId === node.id) {
                 closeActions()
@@ -758,7 +795,7 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
           {state === 'keywords' && (
             <>
               <span className="mm-node-content-emoji">{node.emoji}</span>
-              <span className="mm-node-content-keywords">{node.keywords}</span>
+              <span className="mm-node-content-keywords">{isCnMode && !isShowingTempEn ? (node.cn || node.text) : (isShowingTempEn ? node.text : node.keywords)}</span>
             </>
           )}
           {state === 'full' && (
@@ -773,7 +810,7 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
           )}
 
           {/* Action Overlay */}
-          {state === 'full' && isActionsActive && (
+          {state === 'full' && isActionsActive && !isCnMode && (
             <div className="mm-node-actions" onClick={(e) => e.stopPropagation()}>
               {enableAudio && (
                 <button 
@@ -873,17 +910,26 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
               {isPlayingAll ? "⏹️" : "🔊"}
             </button>
           )}
-          {enableAudio && showAllMode === 3 && maxDepthVisible === maxTreeDepth && <div className="mm-btn-separator" />}
-          <button 
-            className="mm-ctrl-btn layout-toggle" 
-            onClick={toggleLayoutOrientation} 
-            title={layoutOrientation === 'horizontal' ? "Switch to Vertical Layout (切换至垂直布局)" : "Switch to Horizontal Layout (切换至水平布局)"}
-          >
-            {layoutOrientation === 'horizontal' ? "📋" : "🌳"}
-          </button>
+          {enableAudio && showAllMode === 3 && maxDepthVisible === maxTreeDepth && !isMobile && <div className="mm-btn-separator" />}
+          {!isMobile && (
+            <button 
+              className="mm-ctrl-btn layout-toggle" 
+              onClick={toggleLayoutOrientation} 
+              title={layoutOrientation === 'horizontal' ? "Switch to Vertical Layout (切换至垂直布局)" : "Switch to Horizontal Layout (切换至水平布局)"}
+            >
+              {layoutOrientation === 'horizontal' ? "📋" : "🌳"}
+            </button>
+          )}
           <button className="mm-ctrl-btn" onClick={resetMap} title="Reset (重置)">🔄</button>
           <button className="mm-ctrl-btn" onClick={prevStep} disabled={currentStepIndex <= 1 || showAllMode > 0} title="Previous Step (上一步)">◀️</button>
           <button className="mm-ctrl-btn next" onClick={nextStep} disabled={(currentStepIndex >= actionSteps.length && showAllMode === 0) || showAllMode > 0} title="Next Step (下一步)">▶️</button>
+          <button 
+            className="mm-ctrl-btn cn-toggle" 
+            onClick={() => setIsCnMode(!isCnMode)} 
+            title={isCnMode ? "Switch to English (切换至英文)" : "Switch to Chinese (切换至中文)"}
+          >
+            {isCnMode ? "EN" : "CN"}
+          </button>
         </div>
 
         <div className="mm-progress-container">
@@ -893,12 +939,12 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
 
       {/* Sliders Overlay */}
       <div className="mm-sliders-wrapper">
-        <div className="mm-slider-container">
+        <div className={`mm-slider-container ${isCnMode ? 'disabled' : ''}`}>
           <div className="mm-slider-labels">
-            <span className={showAllMode === 0 ? 'active' : ''} onClick={() => updateMode(0)}>Manual</span>
-            <span className={showAllMode === 1 ? 'active' : ''} onClick={() => updateMode(1)}>Emoji</span>
-            <span className={showAllMode === 2 ? 'active' : ''} onClick={() => updateMode(2)}>Key Words</span>
-            <span className={showAllMode === 3 ? 'active' : ''} onClick={() => updateMode(3)}>Sentence</span>
+            <span className={showAllMode === 0 ? 'active' : ''} onClick={() => !isCnMode && updateMode(0)}>Manual</span>
+            <span className={showAllMode === 1 ? 'active' : ''} onClick={() => !isCnMode && updateMode(1)}>Emoji</span>
+            <span className={showAllMode === 2 ? 'active' : ''} onClick={() => !isCnMode && updateMode(2)}>Key Words</span>
+            <span className={showAllMode === 3 ? 'active' : ''} onClick={() => !isCnMode && updateMode(3)}>Sentence</span>
           </div>
           <input 
             type="range" 
@@ -908,17 +954,18 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
             value={showAllMode} 
             onChange={(e) => updateMode(parseInt(e.target.value))} 
             className="mm-range-slider"
+            disabled={isCnMode}
           />
         </div>
 
         {showAllMode > 0 && (
-          <div className="mm-slider-container depth">
+          <div className={`mm-slider-container depth ${isCnMode ? 'disabled' : ''}`}>
             <div className="mm-slider-labels">
               {Array.from({ length: maxTreeDepth + 1 }).map((_, idx) => (
                 <span 
                   key={idx} 
                   className={maxDepthVisible === idx ? 'active' : ''} 
-                  onClick={() => updateDepth(idx)}
+                  onClick={() => !isCnMode && updateDepth(idx)}
                 >
                   L{idx}
                 </span>
@@ -932,6 +979,7 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
               value={maxDepthVisible} 
               onChange={(e) => updateDepth(parseInt(e.target.value))} 
               className="mm-range-slider"
+              disabled={isCnMode}
             />
           </div>
         )}
