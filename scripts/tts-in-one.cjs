@@ -174,14 +174,14 @@ async function main() {
         return;
     }
 
-    console.log(`Generating audio for ${tasksToProcess.length} items using getAudioBatch (in chunks of 8)...`);
+    console.log(`Generating audio for ${tasksToProcess.length} items using getAudioBatch (in chunks of 10)...`);
     
     const MIN_INTERVAL = 21000; // 21 seconds for < 3 RPM
     let lastRequestTime = 0;
     
     const chunks = [];
-    for (let i = 0; i < tasksToProcess.length; i += 8) {
-        chunks.push(tasksToProcess.slice(i, i + 8));
+    for (let i = 0; i < tasksToProcess.length; i += 10) {
+        chunks.push(tasksToProcess.slice(i, i + 10));
     }
 
     console.log(`Split tasks into ${chunks.length} batches.`);
@@ -411,7 +411,7 @@ async function main() {
             const text = item.text || item.context_sentence || item.word || item.en || "";
             return acc + text.split(/\s+/).length;
         }, 0);
-        const calculatedTimeout = Math.max(90000, totalWords * 1500);
+        const calculatedTimeout = Math.max(120000, totalWords * 1500);
         console.log(`⏱️  Setting timeout to ${calculatedTimeout / 1000}s based on word count (${totalWords} words).`);
 
         // Spelling Hero words should be treated identically, so we call getAudioBatch

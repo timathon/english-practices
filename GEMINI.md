@@ -95,28 +95,42 @@ This document defines the rules for extracting and converting textbook data into
 **Source:** `*-vocab-guide.json`
 **Target:** `*-vocab-master.json` (Save in the same folder as source)
 
-- **Target Question Count:** `Total vocabulary items * 3`.
-  - Max **50 questions**.
-  - If result is < 50, round down to the nearest multiple of 10 (e.g., 14 words * 3 = 42 -> target: 40).
+- **Target Question Count:** `(Total vocabulary items - proper nouns) * 1.5`.
+  - Proper nouns (such as a person's name) are excluded from the calculation.
+  - Round up to the nearest multiple of 10 (e.g., 45 words where 6 are proper nouns -> 39 * 1.5 = 58.5 -> target: 60 questions and 6 challenges).
+  - **Coverage Requirement:** Each non-proper-noun item must be tested at least once.
 - **Prioritize Verbs:** Identify verbs from Chinese `meaning`. Verbs should ideally receive all 3 question types (especially `Cloze`).
 - **Question Types:**
   - `Cloze`: Target word replaced by "____". 5 distractors (different forms or visually similar).
     - **Ambiguity & Hints:** The sentence context must provide sufficient information to uniquely identify the correct word among the provided options. You **must** append a Chinese hint of the target word at the end of the prompt in the format: `(提示: [Chinese meaning])` whenever the context alone could support more than one of the provided options as a correct answer (e.g., "I ____ all by myself." where any verb could fit, or "He is learning to play the ________" when multiple instruments are in the options).
   - `Cn2En`: Prompt is Chinese `meaning`. Options: Correct English + 5 distractors.
   - `En2Cn`: Prompt is English `word`. Options: Correct Chinese + 5 distractors.
-- **Distractor Selection & Relevance:** Distractors must be highly relevant, logical, and plausible options. Avoid lazy, random category padding.
-  - **Category/Semantic Matching**: Distractors should belong to the same semantic class or lexical category as the target word. For example, if the target is a school subject (e.g., "maths"), distractors should be other subjects (e.g., "science", "history"), NOT unrelated categories (e.g., weekdays like "Saturday"). If the target is a musical instrument (e.g., "piano"), distractors should be other instruments (e.g., "violin", "guitar", "drums").
+- **Distractor Selection & Relevance:** Distractors must be highly relevant, logical, and plausible options. Avoid lazy, random category padding. Follow these detailed quality standards:
+  - **Syntactic Consistency:** Distractors must match the target word's Part of Speech (PoS) and structural form (e.g., if target is a past-tense phrasal verb, distractors must be past-tense phrasal verbs).
+  - **Part of Speech (PoS) Alignment**: Distractors must match the part of speech of the target word (e.g., prepositions for prepositions, pronouns for pronouns, adverbs for adverbs). If the unit has insufficient words of the same PoS, fall back to a curated global list of the same PoS (see reference table below).
+  - **Category/Semantic Matching**: Distractors should belong to the same semantic class or lexical category as the target word. For example, if the target is a school subject (e.g., "maths"), distractors should be other subjects (e.g., "science", "history"), NOT unrelated categories (e.g., weekdays like "Saturday").
   - **Spelling & Visual-Similarity Traps**: For spelling-critical or easily confused words, include options that share common prefixes/suffixes, look visually similar, sound phonetically similar, or contain common misspellings. For example:
     - Target `subject`: distract with `suggest`, `object`, `project`, `subway`, `subtract`.
     - Target `maths`: distract with `baths`, `mouths`, `paths`, `mats`, `match`.
     - Target `science`: distract with `silence`, `scene`, `scientist`, `since`, `service`.
     - Target `hello`: distract with misspelled variants like `hallo`.
   - **En2Cn Distractor Quality & Overlap Checks**: 
-    - **High-Quality Translations**: For `En2Cn` questions, options must strictly be in Chinese. Distractors should be high-quality Chinese translations of the English spelling/visual trap words (e.g. for `hello`, use the Chinese translations of *yellow*, *help*, *hero*, *jello*). Options must never contain raw English words.
-    - **Overlap Prevention**: Distractors must not overlap significantly in meaning or share key characters with the correct answer (e.g. if correct is `"adj. & n. 红色（的）"`, do not use `"n. 红色"` as a distractor) to avoid multiple potentially correct options.
+    - **High-Quality Translations**: For `En2Cn` questions, options must strictly be in Chinese. Distractors should be high-quality Chinese translations of the English spelling/visual trap words (e.g., for `hello`, use the Chinese translations of *yellow*, *help*, *hero*, *jello*). Options must never contain raw English words.
+    - **Overlap & Duplication Prevention**: Distractors must not overlap significantly in meaning, share key characters, or duplicate correct options (e.g., do not use both `"prep. 反对；与……相反"` and `"prep. 反对；与……相反；紧靠"` as separate options). Cleanly deduplicate all generated options so all 6 choices are unique.
+    - **Spelling-Visual Translation Traps**: If the English word has a common spelling trap, include the Chinese translation of that spelling trap (e.g., for target `tear` (眼泪), use `鹿` (translation of visual trap *deer*), `害怕` (translation of *fear*), `穿/戴` (translation of *wear*)).
+  - **Grammatical Inflection Matching in Cloze**: If the correct word is inflected in the sentence (e.g., past tense, plural, participle), the correct option and the distractors in the `options` list must also be inflected accordingly to maintain grammatical consistency with the sentence context (e.g., if the sentence uses `turned around`, the option must be `turned around` instead of the base form `turn around`).
+  - **Lexical Category Reference Table (for global fallbacks):**
+    | Target Category | Good Distractor Class | Example Fallbacks |
+    | :--- | :--- | :--- |
+    | **Prepositions** | Other Prepositions / Directions | `against`, `during`, `towards`, `between`, `behind`, `before`, `after`, `under` |
+    | **Pronouns** | Other Pronouns | `myself`, `nothing`, `somewhere`, `anywhere`, `himself`, `herself`, `yourselves` |
+    | **Adverbs of Sequence** | Other Sequence Adverbs | `first`, `next`, `then`, `after that`, `finally` |
+    | **School Subjects** | Other Subjects | `maths`, `science`, `history`, `geography`, `biology`, `physics`, `chemistry` |
+    | **Time/Seasons** | Other Time Units / Seasons | `autumn`, `spring`, `summer`, `winter`, `noon`, `midnight`, `century` |
+    | **Food Materials** | Other Food Ingredients | `flour`, `butter`, `cheese`, `sugar`, `salt`, `pepper`, `cream` |
 - **Answer Randomization:** Correct answer index must be randomized (0-5).
 - **Structure:** 
-  - A top-level object with `level`, `title` (always `"Vocab Master"`), and `challenges` (an array).
+  - A top-level object with `level`, `title` (always `"Vocab Master"`), `stats` (a stats object containing `vocab_guide_items` and `vocab_master_questions`), and `challenges` (an array).
   - Group questions into Challenges of exactly **10 questions** each.
   - Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`), a `title` (e.g., `"Challenge 1"`), a relevant emoji `icon`, and an array of 10 question objects under the key `questions`.
 - **Mapping (Required for EVERY question):**
@@ -126,7 +140,6 @@ This document defines the rules for extracting and converting textbook data into
   - `context_sentence`: Include the verbatim sentence from `vocab-guide`.
   - `cn`: Include the Chinese translation of the `context_sentence` from `vocab-guide`.
   - `hint`: Rename `memorization_hook` from `vocab-guide` to `hint`.
-  - `title`: "Vocab Master".
   - `type`: `Cloze`, `Cn2En`, or `En2Cn`.
   - `prompt`: The question prompt.
   - `options`: 6 shuffled options.
