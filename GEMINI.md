@@ -284,12 +284,22 @@ This document defines the rules for extracting and converting textbook data into
   ]
 }
 ```
+- **Node Schema:** The MWM tree node schema is identical to the **Text Navigator** node schema. Each node in the tree must contain:
+  - `id`: Unique, logical string ID.
+  - `text`: Exact English sentence.
+  - `cn`: Chinese translation.
+  - `notes`: Brief explanations of vocabulary, phrases, or grammar points.
+  - `statement`: A simple true/false statement in Chinese about the sentence's grammar or vocabulary.
+  - `answer`: (Boolean) The correct answer for the statement (`true` or `false`).
+  - `explanation`: Concise Chinese explanation for the true/false statement.
+  - `emoji`: One highly relevant emoji mnemonic per node.
+  - `keywords`: Comma-separated string of 2-5 trigger words/hints.
+  - `highlight`: (Optional) Comma-separated string of glue words or transition phrases.
+  - `children`: Recursive array of child nodes (empty array `[]` for leaf nodes).
 - **Content Strategy:** If a model essay is provided in the source material, generate the models based on it (correcting any grammatical or spelling mistakes if present). Otherwise, generate the model essays using AI to answer the prompt in `writing-task.md`.
   - **Model Basic:** Use simple, direct sentences (SVO). Focus on clarity and core vocabulary from the unit.
   - **Model Advanced:** An advanced extension of Model Basic. Use the same topic and structure but incorporate compound/complex sentences (e.g., relative clauses, `because`, `although`) and cohesive devices (e.g., `For example`, `As a result`, `In addition`).
-- **Highlighting:** As per **Section 6**, add a `highlight` field to any node containing "glue words" or key transition phrases.
-- **Textbook Alignment:** Ensure all vocabulary and grammar points remain within the level defined by the unit's Markdown file.
-- **Structure:** Follow the standard hierarchical tree structure defined in **Section 6 (Writing Map)**.
+- **Structure:** Follow the standard hierarchical tree structure defined in **Section 6 (Text Navigator)**.
 
 
 
