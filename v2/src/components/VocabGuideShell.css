@@ -55,6 +55,12 @@ body.vg-active {
   letter-spacing: normal !important;
 }
 
+.vg-stats-bar-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 .vg-stats-bar {
   text-align: center;
   font-size: 0.9em;
@@ -402,8 +408,8 @@ body.vg-active {
 .vg-hook-label {
   font-weight: bold;
   color: #16a085;
-  display: block;
-  margin-bottom: 4px;
+  display: inline;
+  margin-right: 6px;
 }
 
 /* Floating Scroll Buttons */
@@ -825,10 +831,36 @@ body.vg-active {
   100% { transform: rotateY(180deg); }
 }
 
+.vg-print-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vg-print-table > thead > tr > td,
+.vg-print-table > tbody > tr > td {
+  padding: 0;
+  border: none;
+}
+
+.vg-print-page-num {
+  display: none;
+}
+
+.vg-item-watermark {
+  display: none;
+}
+
 @media print {
   @page {
     size: A4;
-    margin: 8mm;
+    margin: 12mm 8mm 8mm 8mm;
+    @top-right {
+      content: "Page " counter(page);
+      font-size: 11px;
+      color: #555;
+      font-family: "Microsoft YaHei", Arial, sans-serif;
+      line-height: 48px;
+    }
   }
   body {
     padding: 0 !important;
@@ -842,11 +874,34 @@ body.vg-active {
     padding: 0 !important;
     max-width: none !important;
   }
+  .vg-word-num {
+    display: none !important;
+  }
+  .vg-item-watermark {
+    display: block !important;
+    position: absolute !important;
+    right: 4px !important;
+    bottom: -8px !important;
+    font-size: 3.5em !important;
+    font-weight: 900 !important;
+    color: rgba(0, 0, 0, 0.05) !important;
+    z-index: 1 !important;
+    pointer-events: none !important;
+    font-family: Arial, sans-serif !important;
+    line-height: 1 !important;
+  }
+  .vg-print-header-group {
+    display: table-header-group !important;
+  }
+  .vg-print-page-num {
+    display: none !important;
+  }
   .vg-header-main {
     border-bottom: 1px solid #3498db !important;
     padding-bottom: 5px !important;
     margin-bottom: 10px !important;
     text-align: center !important;
+    position: relative !important;
   }
   .vg-back-btn {
     display: none !important;
@@ -887,6 +942,8 @@ body.vg-active {
     flex-direction: column !important;
     opacity: 1 !important;
     filter: none !important;
+    position: relative !important;
+    overflow: hidden !important;
   }
   .vg-item.is-hidden {
     display: none !important;
@@ -947,6 +1004,7 @@ body.vg-active {
     font-size: 0.85em !important;
   }
   
+  .vg-stats-bar-wrapper,
   .vg-stats-bar,
   .vg-controls-container,
   .vg-scroll-btns,

@@ -356,117 +356,134 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
 
     return (
         <div className="vg-shell" ref={shellRef}>
-            <header className="vg-header-main">
-                <div className="vg-header-top">
-                    <Link to="/dashboard" state={{ textbook, unit }} className="vg-back-btn">🏠</Link>
-                    <h1>Vocabulary Guide</h1>
-                </div>
-                <h2>{data.level}</h2>
-            </header>
-
-            <div className="vg-stats-bar">
-                <span>Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b></span>
-                <button className="vg-play-cards-btn" onClick={openFlashcards} title="Start Flashcards">▶️ Play</button>
-            </div>
-
-            <div className="vg-controls-container desktop-only">
-                <button id="sort-toggle" onClick={toggleSort} className="vg-control-btn">
-                    <span>{isAlphabetical ? 'Textbook Order' : 'Sort A-Z'}</span>
-                </button>
-                <button id="toggle-cn" onClick={() => setHideCN(!hideCN)} className="vg-control-btn">
-                    <span>{hideCN ? 'Show CN' : 'Hide CN'}</span>
-                </button>
-                <button id="show-hidden-toggle" onClick={() => setShowHiddenMode(!showHiddenMode)} className={`vg-control-btn ${showHiddenMode ? 'active' : ''}`}>
-                    <span>{showHiddenMode ? 'Hide Learnt' : 'Show Hidden'}</span>
-                </button>
-                <button id="reset-hidden" onClick={resetHidden} className="vg-control-btn">
-                    <span>Reset Hidden</span>
-                </button>
-                <button id="refresh-cache" onClick={refreshCache} className={`vg-control-btn ${isRefreshing ? 'loading' : ''}`}>
-                    <span>{isRefreshing ? 'Checking...' : 'Refresh 🔊'}</span>
-                </button>
-                <button id="print-btn" onClick={handlePrint} className="vg-control-btn">
-                    <span>Print 🖨️</span>
-                </button>
-            </div>
-
-            <div className="vg-grid">
-                {vocab.map((item) => {
-                    const isHidden = hiddenIndices.has(item.originalIndex)
-                    if (isHidden && !showHiddenMode && !tempShowAll) return null
-
-                    return (
-                        <div key={item.originalIndex} className={`vg-item ${isHidden ? 'is-hidden' : ''}`}>
-                            <div className="vg-word-header">
-                                <h2 className="vg-word-title" onClick={() => setTraceList([item])}>
-                                    {item.originalIndex + 1}. {item.word}
-                                    <span className="vg-ipa-container">
-                                        {item.ipa && <span className="vg-ipa">{item.ipa}</span>}
-                                        <button 
-                                            className={`vg-word-play-btn ${playingIndex === item.originalIndex + 10000 ? 'playing' : ''}`}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                playAudio(item.word, item.originalIndex + 10000);
-                                            }}
-                                            title="Play word audio"
-                                        >
-                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                        </button>
-                                    </span>
-                                </h2>
-                                <div className="vg-item-actions">
-                                    {item.unit && <span className="vg-unit">Unit {item.unit}</span>}
-                                    {item.page_number && <span className="vg-page">P{item.page_number}</span>}
-                                    <input 
-                                        type="checkbox" 
-                                        checked={isHidden} 
-                                        onChange={() => toggleWordHidden(item.originalIndex)}
-                                        title="Mark as Learnt"
-                                    />
+            <table className="vg-print-table">
+                <thead className="vg-print-header-group">
+                    <tr>
+                        <td>
+                            <header className="vg-header-main">
+                                <div className="vg-header-top">
+                                    <Link to="/dashboard" state={{ textbook, unit }} className="vg-back-btn">🏠</Link>
+                                    <h1>Vocabulary Guide</h1>
+                                </div>
+                                <h2>{data.level}</h2>
+                                <span className="vg-print-page-num"></span>
+                            </header>
+                        </td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div className="vg-stats-bar-wrapper">
+                                <div className="vg-stats-bar">
+                                    <span>Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b></span>
+                                    <button className="vg-play-cards-btn" onClick={openFlashcards} title="Start Flashcards">▶️ Play</button>
                                 </div>
                             </div>
 
-                            <div className="vg-details" onClick={() => {
-                                const next = new Set(forceShowCN)
-                                if (next.has(item.originalIndex)) next.delete(item.originalIndex)
-                                else next.add(item.originalIndex)
-                                setForceShowCN(next)
-                            }}>
-                                <span className="vg-label">🇨🇳 中文释义:</span>
-                                <span className="vg-value">
-                                    {(!hideCN || forceShowCN.has(item.originalIndex)) ? item.meaning : <span className="vg-placeholder">Click to show</span>}
-                                </span>
-                            </div>
-
-                            <div className="vg-details">
-                                <span className="vg-label">🎵 音节类型:</span>
-                                <span className="vg-value">{item.syllable_type}</span>
-                            </div>
-
-                            <div className="vg-details">
-                                <span className="vg-label">🔍 易混辨析:</span>
-                                <span className="vg-value">{item.comparison}</span>
-                            </div>
-
-                            <div className="vg-context">
-                                <button 
-                                    className={`vg-play-btn ${playingIndex === item.originalIndex ? 'playing' : ''}`} 
-                                    onClick={() => playAudio(item.context_sentence, item.originalIndex)}
-                                    disabled={playingIndex === item.originalIndex}
-                                >
-                                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                            <div className="vg-controls-container desktop-only">
+                                <button id="sort-toggle" onClick={toggleSort} className="vg-control-btn">
+                                    <span>{isAlphabetical ? 'Textbook Order' : 'Sort A-Z'}</span>
                                 </button>
-                                <span className="vg-sentence">"{item.context_sentence}"</span>
+                                <button id="toggle-cn" onClick={() => setHideCN(!hideCN)} className="vg-control-btn">
+                                    <span>{hideCN ? 'Show CN' : 'Hide CN'}</span>
+                                </button>
+                                <button id="show-hidden-toggle" onClick={() => setShowHiddenMode(!showHiddenMode)} className={`vg-control-btn ${showHiddenMode ? 'active' : ''}`}>
+                                    <span>{showHiddenMode ? 'Hide Learnt' : 'Show Hidden'}</span>
+                                </button>
+                                <button id="reset-hidden" onClick={resetHidden} className="vg-control-btn">
+                                    <span>Reset Hidden</span>
+                                </button>
+                                <button id="refresh-cache" onClick={refreshCache} className={`vg-control-btn ${isRefreshing ? 'loading' : ''}`}>
+                                    <span>{isRefreshing ? 'Checking...' : 'Refresh 🔊'}</span>
+                                </button>
+                                <button id="print-btn" onClick={handlePrint} className="vg-control-btn">
+                                    <span>Print 🖨️</span>
+                                </button>
                             </div>
 
-                            <div className="vg-hook">
-                                <span className="vg-hook-label">🧠 核心记忆法:</span>
-                                {item.memorization_hook || item.hint}
+                            <div className="vg-grid">
+                                {vocab.map((item) => {
+                                    const isHidden = hiddenIndices.has(item.originalIndex)
+                                    if (isHidden && !showHiddenMode && !tempShowAll) return null
+
+                                    return (
+                                        <div key={item.originalIndex} className={`vg-item ${isHidden ? 'is-hidden' : ''}`}>
+                                            <div className="vg-item-watermark">{item.originalIndex + 1}</div>
+                                            <div className="vg-word-header">
+                                                <h2 className="vg-word-title" onClick={() => setTraceList([item])}>
+                                                    <span className="vg-word-num">{item.originalIndex + 1}. </span>{item.word}
+                                                    <span className="vg-ipa-container">
+                                                        {item.ipa && item.ipa !== 'none' && <span className="vg-ipa">{item.ipa}</span>}
+                                                        <button 
+                                                            className={`vg-word-play-btn ${playingIndex === item.originalIndex + 10000 ? 'playing' : ''}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                playAudio(item.word, item.originalIndex + 10000);
+                                                            }}
+                                                            title="Play word audio"
+                                                        >
+                                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                                        </button>
+                                                    </span>
+                                                </h2>
+                                                <div className="vg-item-actions">
+                                                    {item.unit && <span className="vg-unit">Unit {item.unit}</span>}
+                                                    {item.page_number && <span className="vg-page">P{item.page_number}</span>}
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={isHidden} 
+                                                        onChange={() => toggleWordHidden(item.originalIndex)}
+                                                        title="Mark as Learnt"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="vg-details" onClick={() => {
+                                                const next = new Set(forceShowCN)
+                                                if (next.has(item.originalIndex)) next.delete(item.originalIndex)
+                                                else next.add(item.originalIndex)
+                                                setForceShowCN(next)
+                                            }}>
+                                                <span className="vg-label">🇨🇳 中文释义:</span>
+                                                <span className="vg-value">
+                                                    {(!hideCN || forceShowCN.has(item.originalIndex)) ? item.meaning : <span className="vg-placeholder">Click to show</span>}
+                                                </span>
+                                            </div>
+
+                                            <div className="vg-details">
+                                                <span className="vg-label">🎵 音节类型:</span>
+                                                <span className="vg-value">{item.syllable_type}</span>
+                                            </div>
+
+                                            <div className="vg-details">
+                                                <span className="vg-label">🔍 易混辨析:</span>
+                                                <span className="vg-value">{item.comparison}</span>
+                                            </div>
+
+                                            <div className="vg-context">
+                                                <button 
+                                                    className={`vg-play-btn ${playingIndex === item.originalIndex ? 'playing' : ''}`} 
+                                                    onClick={() => playAudio(item.context_sentence, item.originalIndex)}
+                                                    disabled={playingIndex === item.originalIndex}
+                                                >
+                                                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                                </button>
+                                                <span className="vg-sentence">"{item.context_sentence}"</span>
+                                            </div>
+
+                                            <div className="vg-hook">
+                                                <span className="vg-hook-label">🧠 核心记忆法:</span>
+                                                {item.memorization_hook || item.hint}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
                             </div>
-                        </div>
-                    )
-                })}
-            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
 
             <div className="vg-scroll-btns">
                 <button className="vg-scroll-btn" onClick={scrollToTop}>▲</button>
@@ -534,7 +551,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                         )}
                                     </div>
                                     <AnimatedWordSVG word={deck[currentDeckIndex].word} />
-                                    {deck[currentDeckIndex].ipa && (
+                                    {deck[currentDeckIndex].ipa && deck[currentDeckIndex].ipa !== 'none' && (
                                         <div className="vg-card-detail">
                                             <span className="vg-card-label">IPA:</span>
                                             <span className="vg-card-value font-ipa">{deck[currentDeckIndex].ipa}</span>
