@@ -927,6 +927,11 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
             className="mm-ctrl-btn cn-toggle" 
             onClick={() => setIsCnMode(!isCnMode)} 
             title={isCnMode ? "Switch to English (切换至英文)" : "Switch to Chinese (切换至中文)"}
+            style={{
+              color: 'var(--tab-active-text)',
+              backgroundColor: 'rgba(var(--tab-active-text-rgb, 79, 70, 229), 0.1)',
+              borderColor: 'var(--tab-active-text)'
+            }}
           >
             {isCnMode ? "EN" : "CN"}
           </button>
