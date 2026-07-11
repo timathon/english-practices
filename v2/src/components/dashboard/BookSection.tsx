@@ -262,7 +262,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
     <section className="db-book" id={`book-${tb}`}>
       <div className="db-book-header">
         <span className="db-book-emoji">{getTextbookEmoji(tb)}</span>
-        <h3 className="db-book-title">{tb}</h3>
+        <h3 className="db-book-title" onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>{tb}</h3>
         {isTestdrive && onResetTestdrive && (
           <button 
             className="db-book-change-btn"
