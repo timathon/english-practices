@@ -70,11 +70,20 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
   }, [])
 
   const showEnglishTemporarily = (nodeId: string) => {
-    if (tempEnTimeoutRef.current) clearTimeout(tempEnTimeoutRef.current)
-    setTempEnNodeId(nodeId)
-    tempEnTimeoutRef.current = setTimeout(() => {
+    if (tempEnTimeoutRef.current) {
+      clearTimeout(tempEnTimeoutRef.current)
+      tempEnTimeoutRef.current = null
+    }
+
+    if (tempEnNodeId === nodeId) {
       setTempEnNodeId(null)
-    }, 5000)
+    } else {
+      setTempEnNodeId(nodeId)
+      tempEnTimeoutRef.current = setTimeout(() => {
+        setTempEnNodeId(null)
+        tempEnTimeoutRef.current = null
+      }, 5000)
+    }
   }
 
   const toggleLayoutOrientation = () => {
