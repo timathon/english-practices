@@ -94,7 +94,6 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
     const isSignInOrSignUp = url.includes('/api/auth/sign-in') || 
                              url.includes('/api/auth/signup') || 
                              url.includes('/api/auth/sign-up') || 
-                             url.includes('set-active') || 
                              url.includes('/api/setup');
     
     let newInit = init || {};
