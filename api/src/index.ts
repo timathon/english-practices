@@ -538,6 +538,7 @@ app.post('/api/records', async (c) => {
     unit: body.unit,
     score: isNaN(parsedScore) ? 0 : parsedScore,
     unfinished: body.unfinished !== undefined ? body.unfinished : false,
+    answers: body.answers !== undefined ? body.answers : null,
     createdAt: new Date(),
     updatedAt: new Date()
   });
@@ -569,6 +570,7 @@ app.put('/api/records/:id', async (c) => {
     await db.update(practiceRecords).set({
         score: nextScore,
         unfinished: nextUnfinished,
+        answers: body.answers !== undefined ? body.answers : record.answers,
         updatedAt: new Date()
     })
     .where(eq(practiceRecords.id, id));
@@ -576,6 +578,7 @@ app.put('/api/records/:id', async (c) => {
     await db.update(practiceRecords).set({
         score: finalScore,
         unfinished: body.unfinished !== undefined ? body.unfinished : false,
+        answers: body.answers !== undefined ? body.answers : null,
         updatedAt: new Date()
     })
     .where(eq(practiceRecords.id, id));

@@ -16,6 +16,8 @@ import { QuickNav } from './components/dashboard/QuickNav'
 import { MistakeBookView } from './components/dashboard/MistakeBookView'
 import './Dashboard.css'
 import { ComposedChart, Bar, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { TestSheetShell } from './components/TestSheetShell'
+import { decryptContent, OBSCURE_KEY } from './lib/crypto'
 
 export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const historyScrollRef = useHorizontalScrollRef()
@@ -32,6 +34,34 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const [historyOffset, setHistoryOffset] = useState(0)
   const [loading, setLoading] = useState(true)
   const [activeView, setActiveView] = useState<'textbooks' | 'mistakes'>('textbooks')
+  
+  const [selectedTestPractice, setSelectedTestPractice] = useState<any | null>(null)
+  const [selectedAttemptForDetails, setSelectedAttemptForDetails] = useState<any | null>(null)
+  const [activeTestFullContent, setActiveTestFullContent] = useState<any | null>(null)
+  const [loadingContent, setLoadingContent] = useState(false)
+
+  const handleViewAttemptDetails = async (practice: any, attempt: any) => {
+    setSelectedTestPractice(practice)
+    setSelectedAttemptForDetails(attempt)
+    if (practice) {
+      setLoadingContent(true)
+      try {
+        const res = await fetch(`${API_URL}/api/practices/${practice.id}`, { credentials: 'include' })
+        const json = await res.json()
+        if (json && json.content) {
+          let decrypted = json.content
+          if (json.isEncrypted && typeof json.content === 'string') {
+            decrypted = decryptContent(json.content, OBSCURE_KEY)
+          }
+          setActiveTestFullContent(decrypted)
+        }
+      } catch (e) {
+        console.error("Failed to load full practice content:", e)
+      } finally {
+        setLoadingContent(false)
+      }
+    }
+  }
   const [mistakes, setMistakes] = useState<Mistake[]>([])
   const [activeMistakeReview, setActiveMistakeReview] = useState<Mistake[] | null>(null)
   const [isPreReview, setIsPreReview] = useState(false)
@@ -453,7 +483,9 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         book: practice ? practice.textbook : 'Unknown',
         practiceName,
         score: r.score + '%',
-        timeUsed
+        timeUsed,
+        rawRecord: r,
+        practice
       };
     });
 
@@ -700,15 +732,27 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {(todayRecordsByBook[activeBook] || []).map(r => (
-                      <tr key={r.id}>
-                        <td>{r.timeStarted}</td>
-                        <td>{r.bookUnit}</td>
-                        <td>{r.practiceName}</td>
-                        <td>{r.score}</td>
-                        <td>{r.timeUsed}</td>
-                      </tr>
-                    ))}
+                    {(todayRecordsByBook[activeBook] || []).map(r => {
+                      const isTest = r.practice && (r.practice.type.toLowerCase().includes('test') || r.rawRecord.unit.includes('(Test Sheet)'));
+                      return (
+                        <tr 
+                          key={r.id}
+                          onClick={() => {
+                            if (isTest) {
+                              handleViewAttemptDetails(r.practice, r.rawRecord);
+                            }
+                          }}
+                          style={{ cursor: isTest ? 'pointer' : 'default' }}
+                          title={isTest ? (showChinese ? '点击查看测试详情' : 'Click to view test details') : undefined}
+                        >
+                          <td>{r.timeStarted}</td>
+                          <td>{r.bookUnit}</td>
+                          <td>{r.practiceName}</td>
+                          <td>{r.score}</td>
+                          <td>{r.timeUsed}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -875,6 +919,45 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
               {showChinese ? '(此窗口将在 5 秒后自动关闭)' : '(This window will close automatically in 5 seconds)'}
             </p>
           </div>
+        </div>
+      )}
+      
+      {selectedAttemptForDetails && selectedTestPractice && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'var(--bg)',
+          zIndex: 10000,
+          overflowY: 'auto'
+        }}>
+          {loadingContent ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-h)' }}>
+              <div style={{ width: '32px', height: '32px', border: '4px solid var(--border)', borderTopColor: 'var(--tab-active-text)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
+              <div>{showChinese ? '正在加载测试内容...' : 'Loading test content...'}</div>
+              <style>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
+          ) : activeTestFullContent ? (
+            <TestSheetShell 
+              data={activeTestFullContent}
+              practiceId={selectedTestPractice.id}
+              unit={selectedTestPractice.unit}
+              textbook={selectedTestPractice.textbook}
+              initialAnswers={selectedAttemptForDetails.answers || {}}
+              initialSubmitted={true}
+              initialScore={selectedAttemptForDetails.score}
+              onCloseReadOnly={() => {
+                setSelectedAttemptForDetails(null);
+                setActiveTestFullContent(null);
+              }}
+            />
+          ) : null}
         </div>
       )}
       <QuickNav showChinese={showChinese} />

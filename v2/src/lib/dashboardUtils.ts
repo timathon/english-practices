@@ -37,6 +37,7 @@ export const translatePracticeName = (name: string): string => {
     'Sentence Architect': '句子架构师',
     'Audio Detective': '听力侦探',
     'Bug Hunter': 'Bug 猎手',
+    'Test': '单元测试',
   };
   const translatedBase = map[baseName] || map[baseName.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')] || baseName;
   return translatedBase + suffix;

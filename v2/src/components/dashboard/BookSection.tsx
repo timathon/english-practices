@@ -8,9 +8,40 @@ import {
   saveLastUnit
 } from '../../lib/dashboardUtils'
 import { FadingPracticeName } from './DashboardShared'
+import { TestSheetShell } from '../TestSheetShell'
+import { decryptContent, OBSCURE_KEY } from '../../lib/crypto'
+import { API_URL } from '../../lib/auth'
 
 export function BookSection({ tb, units, records, initialUnit, initialPage, showChinese, isTestdrive, onResetTestdrive, initiallyOpen }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string; initialPage?: string; showChinese: boolean; isTestdrive?: boolean; onResetTestdrive?: () => void; initiallyOpen: boolean }) {
   const [isOpen, setIsOpen] = useState(initiallyOpen)
+  
+  const [selectedTestPractice, setSelectedTestPractice] = useState<any | null>(null)
+  const [selectedTestAttempts, setSelectedTestAttempts] = useState<any[] | null>(null)
+  const [selectedAttemptForDetails, setSelectedAttemptForDetails] = useState<any | null>(null)
+  const [activeTestFullContent, setActiveTestFullContent] = useState<any | null>(null)
+  const [loadingContent, setLoadingContent] = useState(false)
+
+  const handleViewAttemptDetails = async (attempt: any) => {
+    setSelectedAttemptForDetails(attempt)
+    if (selectedTestPractice) {
+      setLoadingContent(true)
+      try {
+        const res = await fetch(`${API_URL}/api/practices/${selectedTestPractice.id}`, { credentials: 'include' })
+        const json = await res.json()
+        if (json && json.content) {
+          let decrypted = json.content
+          if (json.isEncrypted && typeof json.content === 'string') {
+            decrypted = decryptContent(json.content, OBSCURE_KEY)
+          }
+          setActiveTestFullContent(decrypted)
+        }
+      } catch (e) {
+        console.error("Failed to load full practice content:", e)
+      } finally {
+        setLoadingContent(false)
+      }
+    }
+  }
 
   useEffect(() => {
     if (initiallyOpen) {
@@ -714,13 +745,11 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
 
                       const cleanType = p.type.replace(/^p\d+-p\d+-/i, '').replace(/^p\d+-/i, '').toLowerCase();
                       const isTest = cleanType === 'test' || cleanType.endsWith('-test') || cleanType.startsWith('test-') || cleanType.includes('-test-') || cleanType.split('-').includes('test');
+                      const testRecords = isTest ? records.filter((r: any) => r.unit === `${p.id} (Test Sheet)` && !r.unfinished) : [];
                       let highestGrade = null;
-                      if (isTest) {
-                        const testRecords = records.filter((r: any) => r.unit === `${p.id} (Test Sheet)` && !r.unfinished);
-                        if (testRecords.length > 0) {
-                          const highestScore = Math.max(...testRecords.map((r: any) => r.score));
-                          highestGrade = getGrade(highestScore);
-                        }
+                      if (isTest && testRecords.length > 0) {
+                        const highestScore = Math.max(...testRecords.map((r: any) => r.score));
+                        highestGrade = getGrade(highestScore);
                       }
 
                       const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0;
@@ -788,11 +817,40 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                 )}
                               </div>
                             )}
-                            {isTest && highestGrade && (
+                            {isTest && (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}>
-                                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: '18px', width: '20px', background: 'var(--text-h)', color: 'var(--bg)', borderRadius: '4px', fontWeight: 'bold' }}>
-                                  {highestGrade}
-                                </span>
+                                {highestGrade && (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: '18px', width: '20px', background: 'var(--text-h)', color: 'var(--bg)', borderRadius: '4px', fontWeight: 'bold' }}>
+                                    {highestGrade}
+                                  </span>
+                                )}
+                                {testRecords.length > 0 && (
+                                  <span 
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setSelectedTestPractice(p);
+                                      setSelectedTestAttempts(testRecords);
+                                    }}
+                                    className="test-attempts-count-badge"
+                                    style={{
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      height: '18px',
+                                      width: '20px',
+                                      background: 'var(--tab-active-text)',
+                                      color: 'var(--bg)',
+                                      borderRadius: '4px',
+                                      fontWeight: 'bold',
+                                      pointerEvents: 'auto'
+                                    }}
+                                    title={showChinese ? '查看测试历史' : 'View Test History'}
+                                  >
+                                    {testRecords.length}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </Link>
@@ -805,6 +863,163 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
             })()}
           </div>
         </div>
+      </div>
+    )}
+    
+    {selectedTestAttempts && selectedTestPractice && (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999
+      }}>
+        <div style={{
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border)',
+          borderRadius: '16px',
+          width: '90%',
+          maxWidth: '500px',
+          padding: '24px',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ color: 'var(--text-h)', margin: 0, fontSize: '1.2rem' }}>
+              {showChinese ? '测试记录历史' : 'Test Attempt History'}
+            </h3>
+            <button 
+              onClick={() => {
+                setSelectedTestAttempts(null);
+                setSelectedTestPractice(null);
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text)',
+                fontSize: '1.2rem',
+                cursor: 'pointer'
+              }}
+            >
+              ❌
+            </button>
+          </div>
+          
+          <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {selectedTestAttempts.map((attempt, index) => {
+              const dateStr = new Date(attempt.createdAt).toLocaleString();
+              const scorePercent = attempt.score;
+              const getAttemptGrade = (a: number) => {
+                if (a >= 100) return 'S';
+                if (a >= 90) return 'A';
+                if (a >= 80) return 'B';
+                if (a >= 70) return 'C';
+                return 'F';
+              };
+              return (
+                <div 
+                  key={attempt.id}
+                  onClick={() => handleViewAttemptDetails(attempt)}
+                  style={{
+                    padding: '12px 16px',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'transform 0.15s, border-color 0.15s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--tab-active-text)';
+                    e.currentTarget.style.transform = 'scale(1.02)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  <div>
+                    <div style={{ color: 'var(--text-h)', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                      Attempt #{selectedTestAttempts.length - index}
+                    </div>
+                    <div style={{ color: 'var(--text)', fontSize: '0.75rem', marginTop: '2px' }}>
+                      {dateStr}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      color: scorePercent >= 60 ? '#10b981' : '#ef4444'
+                    }}>
+                      {scorePercent}%
+                    </span>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '18px',
+                      width: '20px',
+                      background: 'var(--text-h)',
+                      color: 'var(--bg)',
+                      borderRadius: '4px',
+                      fontWeight: 'bold',
+                      fontSize: '0.7rem'
+                    }}>
+                      {getAttemptGrade(scorePercent)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {selectedAttemptForDetails && selectedTestPractice && (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: 'var(--bg)',
+        zIndex: 10000,
+        overflowY: 'auto'
+      }}>
+        {loadingContent ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-h)' }}>
+            <div style={{ width: '32px', height: '32px', border: '4px solid var(--border)', borderTopColor: 'var(--tab-active-text)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
+            <div>{showChinese ? '正在加载测试内容...' : 'Loading test content...'}</div>
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
+        ) : activeTestFullContent ? (
+          <TestSheetShell 
+            data={activeTestFullContent}
+            practiceId={selectedTestPractice.id}
+            unit={selectedTestPractice.unit}
+            textbook={selectedTestPractice.textbook}
+            initialAnswers={selectedAttemptForDetails.answers || {}}
+            initialSubmitted={true}
+            initialScore={selectedAttemptForDetails.score}
+            onCloseReadOnly={() => {
+              setSelectedAttemptForDetails(null);
+              setActiveTestFullContent(null);
+            }}
+          />
+        ) : null}
       </div>
     )}
     </section>

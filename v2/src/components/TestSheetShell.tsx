@@ -52,15 +52,30 @@ interface TestSheetShellProps {
   practiceId: string
   unit: string
   textbook: string
+  initialAnswers?: Record<string, string | number | boolean>
+  initialSubmitted?: boolean
+  initialScore?: number
+  onCloseReadOnly?: () => void
 }
 
-export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetShellProps) {
+export function TestSheetShell({
+  data,
+  practiceId,
+  unit,
+  textbook,
+  initialAnswers,
+  initialSubmitted,
+  initialScore,
+  onCloseReadOnly
+}: TestSheetShellProps) {
   const navigate = useNavigate()
   const { data: session } = useSession()
   const isAdmin = (session?.user as any)?.role === 'admin'
 
+  const isReadOnly = !!initialAnswers
+
   // State
-  const [showStartModal, setShowStartModal] = useState(true)
+  const [showStartModal, setShowStartModal] = useState(!isReadOnly)
   const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false)
   const [activeSectionIdx, setActiveSectionIdx] = useState(0)
   const [highlightedSentence, setHighlightedSentence] = useState<{ paraIdx: string | number; sentenceIdx: number } | null>(null)
@@ -69,9 +84,9 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
     trialsTracker.resetTrials(practiceId, 'test-sheet')
     setRemainingAttempts(trialsTracker.getRemainingTrials(practiceId, 'test-sheet'))
   }
-  const [userAnswers, setUserAnswers] = useState<Record<string, string | number | boolean>>({})
-  const [submitted, setSubmitted] = useState(false)
-  const [score, setScore] = useState(0)
+  const [userAnswers, setUserAnswers] = useState<Record<string, string | number | boolean>>(initialAnswers || {})
+  const [submitted, setSubmitted] = useState(!!initialSubmitted)
+  const [score, setScore] = useState(initialScore || 0)
   const [gainedXp, setGainedXp] = useState(0)
   const [gainedLove, setGainedLove] = useState(0)
   const [gainedCoins, setGainedCoins] = useState(0)
@@ -82,11 +97,11 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
 
   const blocker = useBlocker(
     ({ nextLocation, currentLocation }) =>
-      !showStartModal && !submitted && nextLocation.pathname !== currentLocation.pathname
+      !isReadOnly && !showStartModal && !submitted && nextLocation.pathname !== currentLocation.pathname
   );
 
   useEffect(() => {
-    if (blocker.state === 'blocked') {
+    if (!isReadOnly && blocker.state === 'blocked') {
       const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
       if (proceed) {
         blocker.proceed();
@@ -94,10 +109,11 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
         blocker.reset();
       }
     }
-  }, [blocker]);
+  }, [blocker, isReadOnly]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isReadOnly) return
       if (!showStartModal && !submitted) {
         e.preventDefault();
         e.returnValue = '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
@@ -172,8 +188,9 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
 
   // Scroll to top when active section changes
   useEffect(() => {
+    if (isReadOnly) return
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [activeSectionIdx])
+  }, [activeSectionIdx, isReadOnly])
 
   const playSfx = useCallback(async (isCorrect: boolean) => {
     const url = isCorrect
@@ -193,6 +210,7 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
 
   // Sync record with server
   const syncRecord = async (scorePercent: number, isFinished: boolean) => {
+    if (isReadOnly) return;
     try {
       console.log(`Syncing record for ${textbook} ${unit}`);
       if (isFinished) {
@@ -204,7 +222,8 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
       const bodyData = {
         unit: `${practiceId} (Test Sheet)`,
         score: scorePercent,
-        unfinished: !isFinished
+        unfinished: !isFinished,
+        answers: userAnswers
       }
 
       if (activeRecordId) {
@@ -1050,7 +1069,11 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
       {/* Header bar */}
       <header className="ts-header">
         <div className="ts-header-nav">
-          <Link to="/dashboard" className="ts-home-btn">🏠</Link>
+          {isReadOnly ? (
+            <button onClick={onCloseReadOnly} className="ts-home-btn" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', padding: 0 }}>❌</button>
+          ) : (
+            <Link to="/dashboard" className="ts-home-btn">🏠</Link>
+          )}
           <div className="ts-title-wrapper">
             <h1>{data.title}</h1>
             <h2>{data.level}</h2>
@@ -1090,7 +1113,11 @@ export function TestSheetShell({ data, practiceId, unit, textbook }: TestSheetSh
                 <div className="ts-score-badge" style={{ borderColor: score >= 60 ? '#10b981' : '#ef4444' }}>
                   <span className="ts-score-num" style={{ color: score >= 60 ? '#10b981' : '#ef4444' }}>{score}%</span>
                 </div>
-                <button className="ts-retry-btn" onClick={handleRetry}>Try Again</button>
+                {isReadOnly ? (
+                  <button className="ts-retry-btn" onClick={onCloseReadOnly} style={{ background: '#6b7280' }}>Close View</button>
+                ) : (
+                  <button className="ts-retry-btn" onClick={handleRetry}>Try Again</button>
+                )}
               </div>
             )}
           </aside>

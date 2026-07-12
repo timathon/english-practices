@@ -1,14 +1,40 @@
 import { translatePracticeName } from '../../lib/dashboardUtils'
 
-export function FadingPracticeName({ name, showChinese }: { name: string; showChinese: boolean }) {
+export function FadingPracticeName({ name, showChinese, finishedCount, onCountClick }: { name: string; showChinese: boolean; finishedCount?: number; onCountClick?: (e: React.MouseEvent) => void }) {
   const cnName = translatePracticeName(name);
+  const countBadge = finishedCount !== undefined && finishedCount > 0 ? (
+    <span 
+      onClick={onCountClick}
+      className="test-attempts-count-badge"
+      style={{
+        cursor: 'pointer',
+        background: 'var(--tab-active-text)',
+        color: 'var(--bg)',
+        borderRadius: '10px',
+        padding: '1px 6px',
+        fontSize: '0.62rem',
+        fontWeight: 'bold',
+        marginLeft: '6px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        verticalAlign: 'middle',
+        pointerEvents: 'auto'
+      }}
+    >
+      {finishedCount}
+    </span>
+  ) : null;
+
   return (
     <span className="db-practice-name-grid">
-      <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
+      <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"} style={{ display: 'inline-flex', alignItems: 'center' }}>
         {name}
+        {countBadge}
       </span>
-      <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
+      <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"} style={{ display: 'inline-flex', alignItems: 'center' }}>
         {cnName}
+        {countBadge}
       </span>
     </span>
   );
