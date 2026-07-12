@@ -1154,7 +1154,7 @@ export function TestSheetShell({
               )}
 
               {/* Render Reading/True-False Passage */}
-              {(activeSection.type === 'reading-comprehension' || activeSection.type === 'true-false') && activeSection.passage && (
+              {(activeSection.type === 'reading-comprehension' || activeSection.type === 'true-false' || activeSection.type === 'fill-in-the-blank-wordbank') && activeSection.passage && (
                 <div className="ts-reading-comprehension-passage" style={{ margin: '20px 0', padding: '20px', background: '#fcfcfc', borderLeft: '4px solid #3b82f6', borderRadius: '4px', lineHeight: '1.8', fontSize: '1.05em', fontStyle: 'italic', color: '#374151' }}>
                   {renderPassage(activeSection.passage)}
                 </div>
