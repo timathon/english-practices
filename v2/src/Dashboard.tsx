@@ -608,7 +608,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
           <div className="db-chart-card">
             <div className="db-chart-legend-left">
               <span className="db-chart-legend-bar" />
-              <span style={{ borderTop: '2px dashed #e67e22', display: 'inline-block', width: '12px', height: '0', margin: '4px 0' }} />
+              <span className="db-chart-legend-bar" style={{ backgroundColor: '#e67e22', marginTop: '4px' }} />
               <span>Practices & Time (m)</span>
             </div>
             <div className="db-chart-area">
@@ -622,6 +622,10 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                     <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--tab-active-text)" stopOpacity={0.9} />
                       <stop offset="100%" stopColor="var(--tab-active-text)" stopOpacity={0.4} />
+                    </linearGradient>
+                    <linearGradient id="durationBarGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#e67e22" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#e67e22" stopOpacity={0.4} />
                     </linearGradient>
                     <linearGradient id="lineGlow" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.25} />
@@ -659,14 +663,11 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                   />
                   <Bar
                     yAxisId="left" dataKey="count" name="Practices Done"
-                    fill="url(#barGrad)" radius={[6, 6, 0, 0]} barSize={20}
+                    fill="url(#barGrad)" radius={[4, 4, 0, 0]} barSize={10}
                   />
-                  <Line
-                    yAxisId="left" type="monotone" dataKey="totalDuration"
-                    name="Time Used" stroke="#e67e22" strokeWidth={2}
-                    strokeDasharray="4 4"
-                    dot={{ r: 2.5, fill: 'var(--card-bg)', strokeWidth: 1.5, stroke: '#e67e22' }}
-                    activeDot={{ r: 4, fill: '#e67e22', strokeWidth: 0 }}
+                  <Bar
+                    yAxisId="left" dataKey="totalDuration" name="Time Used"
+                    fill="url(#durationBarGrad)" radius={[4, 4, 0, 0]} barSize={10}
                   />
                   <Line
                     yAxisId="right" type="monotone" dataKey="avgScore"
