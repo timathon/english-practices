@@ -196,10 +196,12 @@ export function PetFloatingCompanion() {
     return null;
   }
 
+  const isPracticeView = location.pathname.startsWith('/practice/');
+
   if (isMinimized) {
     return (
       <button
-        className="pet-float-minimized"
+        className={`pet-float-minimized${isPracticeView ? ' in-practice' : ''}`}
         onClick={() => {
           setIsMinimized(false);
           showSpeech('I am back! 😊');
@@ -218,16 +220,23 @@ export function PetFloatingCompanion() {
         <span
           key={p.id}
           className="pet-float-particle"
-          style={{
-            right: `${58 - p.x}px`,
-            bottom: `${58 - p.y}px`,
-          }}
+          style={
+            isPracticeView
+              ? {
+                  left: `${58 - p.x}px`,
+                  bottom: `${58 - p.y}px`,
+                }
+              : {
+                  right: `${58 - p.x}px`,
+                  bottom: `${58 - p.y}px`,
+                }
+          }
         >
           {p.text}
         </span>
       ))}
 
-      <div className={`pet-float-wrapper${recentlyClicked ? ' active' : ''}`}>
+      <div className={`pet-float-wrapper${recentlyClicked ? ' active' : ''}${isPracticeView ? ' in-practice' : ''}`}>
         {/* Speech bubble */}
         {speech && (
           <div className="pet-float-speech">

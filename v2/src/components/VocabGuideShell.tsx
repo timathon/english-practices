@@ -4,6 +4,7 @@ import './VocabGuideShell.css'
 import md5 from 'md5'
 import { audioCache } from '../lib/audioCache'
 import { VocabTraceModal, AnimatedWordSVG } from './VocabTraceModal'
+import { shuffle } from '../lib/practiceAudio'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
@@ -32,9 +33,45 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [countdown, setCountdown] = useState<number | null>(null)
     const [slideDirection, setSlideDirection] = useState<'next' | null>(null)
     const [hasClickedDontKnow, setHasClickedDontKnow] = useState(false)
-    const [knowCooldownSecs, setKnowCooldownSecs] = useState(0)
     const [isPeeking, setIsPeeking] = useState(false)
     const [traceList, setTraceList] = useState<any[] | null>(null)
+    const [isNextButtonLocked, setIsNextButtonLocked] = useState(false)
+    const [flashcardsFinished, setFlashcardsFinished] = useState(false)
+
+    useEffect(() => {
+        if (!showFlashcards) {
+            setIsNextButtonLocked(false)
+            return
+        }
+        setIsNextButtonLocked(true)
+        const timer = setTimeout(() => {
+            setIsNextButtonLocked(false)
+        }, 2000)
+        return () => clearTimeout(timer)
+    }, [currentDeckIndex, showFlashcards])
+
+    // Dictation States
+    const [showDictationModal, setShowDictationModal] = useState(false)
+    const [selectedChunks, setSelectedChunks] = useState<boolean[]>([])
+    const [includeLearnt, setIncludeLearnt] = useState(false)
+    const [shuffleWords, setShuffleWords] = useState(true)
+
+    const [isDictating, setIsDictating] = useState(false)
+    const [dictationWords, setDictationWords] = useState<any[]>([])
+    const [dictationCurrentIndex, setDictationCurrentIndex] = useState(0)
+    const [dictationPlayCount, setDictationPlayCount] = useState(0) // 0, 1, 2
+    const [dictationState, setDictationState] = useState<'playing' | 'silence' | 'finished'>('playing')
+    const [dictationIsPaused, setDictationIsPaused] = useState(false)
+    const [silenceTimeLeft, setSilenceTimeLeft] = useState(0)
+    const [pausesLeft, setPausesLeft] = useState(0)
+
+    const dictationTimerRef = useRef<any>(null)
+    const dictationAudioRef = useRef<HTMLAudioElement | null>(null)
+
+    const chunks: any[][] = []
+    for (let i = 0; i < vocab.length; i += 10) {
+        chunks.push(vocab.slice(i, i + 10))
+    }
 
     const timerRef = useRef<any>(null)
     const knowCooldownIntervalRef = useRef<any>(null)
@@ -187,6 +224,271 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         }
     }
 
+    const playDictationWord = (wordText: string): Promise<void> => {
+        return new Promise(async (resolve) => {
+            const url = getAudioUrl(wordText, textbook || '', isCf)
+            try {
+                const blob = await audioCache.cacheAudio(url)
+                if (!blob) {
+                    resolve()
+                    return
+                }
+                const blobUrl = URL.createObjectURL(blob)
+                const audio = new Audio(blobUrl)
+                dictationAudioRef.current = audio
+                
+                audio.onended = () => {
+                    URL.revokeObjectURL(blobUrl)
+                    dictationAudioRef.current = null
+                    resolve()
+                }
+                audio.onerror = () => {
+                    URL.revokeObjectURL(blobUrl)
+                    dictationAudioRef.current = null
+                    resolve()
+                }
+                
+                audio.play().catch(err => {
+                    console.error("Audio play failed:", err)
+                    resolve()
+                })
+            } catch (e) {
+                console.error("Dictation audio cache failed:", e)
+                resolve()
+            }
+        })
+    }
+
+    const stopDictation = () => {
+        setIsDictating(false)
+        setDictationState('playing')
+        setDictationCurrentIndex(0)
+        setDictationPlayCount(0)
+        setSilenceTimeLeft(0)
+        setDictationIsPaused(false)
+        if (dictationTimerRef.current) {
+            clearTimeout(dictationTimerRef.current)
+            dictationTimerRef.current = null
+        }
+        if (dictationAudioRef.current) {
+            dictationAudioRef.current.pause()
+            dictationAudioRef.current = null
+        }
+    }
+
+    const openDictationSetup = () => {
+        setSelectedChunks(new Array(chunks.length).fill(false))
+        setIncludeLearnt(false)
+        setShuffleWords(true)
+        setShowDictationModal(true)
+    }
+
+    const getEligibleWords = () => {
+        let list: any[] = []
+        chunks.forEach((chunk, idx) => {
+            if (selectedChunks[idx]) {
+                chunk.forEach(wordItem => {
+                    const isHidden = hiddenIndices.has(wordItem.originalIndex)
+                    if (includeLearnt || !isHidden) {
+                        list.push(wordItem)
+                    }
+                })
+            }
+        })
+        return list
+    }
+
+    const startDictation = () => {
+        const eligible = getEligibleWords()
+        if (eligible.length === 0) {
+            alert("No words match the selected criteria.")
+            return
+        }
+        
+        let finalWords = [...eligible]
+        if (shuffleWords) {
+            finalWords = shuffle(finalWords)
+        }
+        
+        setDictationWords(finalWords)
+        setDictationCurrentIndex(0)
+        setDictationPlayCount(0)
+        setDictationState('playing')
+        setDictationIsPaused(false)
+        setPausesLeft(Math.ceil(finalWords.length / 5))
+        setIsDictating(true)
+        setShowDictationModal(false)
+    }
+
+    const togglePauseDictation = () => {
+        const nextPaused = !dictationIsPaused
+        if (nextPaused) {
+            if (pausesLeft <= 0) return
+            setPausesLeft(prev => prev - 1)
+        }
+        setDictationIsPaused(nextPaused)
+        if (nextPaused) {
+            if (dictationAudioRef.current) {
+                dictationAudioRef.current.pause()
+            }
+        } else {
+            if (dictationAudioRef.current) {
+                dictationAudioRef.current.play().catch(console.error)
+            }
+        }
+    }
+
+    const handleNextWord = () => {
+        if (dictationAudioRef.current) {
+            dictationAudioRef.current.pause()
+            dictationAudioRef.current = null
+        }
+        if (dictationTimerRef.current) {
+            clearTimeout(dictationTimerRef.current)
+            dictationTimerRef.current = null
+        }
+        setDictationPlayCount(0)
+        setDictationState('playing')
+        setDictationCurrentIndex(prev => prev + 1)
+    }
+
+    // Effect for the dictation player loop (playing audio)
+    useEffect(() => {
+        if (!isDictating || dictationIsPaused || dictationState === 'finished') {
+            return
+        }
+
+        // Check if finished
+        if (dictationCurrentIndex >= dictationWords.length) {
+            setDictationState('finished')
+            // Play correct sound
+            ;(async () => {
+                const correctUrl = `${PUBLIC_URL_BASE}/ep/sfx/correct.mp3`
+                try {
+                    const blob = await audioCache.cacheAudio(correctUrl)
+                    if (blob) {
+                        const audio = new Audio(URL.createObjectURL(blob))
+                        audio.play().catch(console.error)
+                    }
+                } catch(e) {
+                    console.error(e)
+                }
+            })()
+            return
+        }
+
+        const currentItem = dictationWords[dictationCurrentIndex]
+        const currentWord = currentItem?.word
+        const currentSentence = currentItem?.context_sentence || currentWord
+        const textToPlay = dictationPlayCount < 2 ? currentWord : currentSentence
+
+        if (dictationState === 'playing') {
+            if (dictationPlayCount < 3) {
+                let active = true
+                playDictationWord(textToPlay).then(() => {
+                    if (!active) return
+                    // Wait 1 second before the next state update
+                    dictationTimerRef.current = setTimeout(() => {
+                        setDictationPlayCount(prev => prev + 1)
+                    }, 1000)
+                })
+                return () => {
+                    active = false
+                    if (dictationTimerRef.current) clearTimeout(dictationTimerRef.current)
+                }
+            } else {
+                // Transition to silence
+                const silenceDuration = Math.max(3, Math.min(8, Math.round(currentWord.length * 0.4)))
+                setSilenceTimeLeft(silenceDuration)
+                setDictationState('silence')
+            }
+        }
+    }, [isDictating, dictationIsPaused, dictationState, dictationCurrentIndex, dictationPlayCount, dictationWords])
+
+    // Effect for the silence countdown
+    useEffect(() => {
+        if (!isDictating || dictationIsPaused || dictationState !== 'silence') {
+            return
+        }
+
+        if (silenceTimeLeft > 0) {
+            const timer = setTimeout(() => {
+                setSilenceTimeLeft(prev => prev - 1)
+            }, 1000)
+            return () => clearTimeout(timer)
+        } else {
+            setDictationPlayCount(0)
+            setDictationState('playing')
+            setDictationCurrentIndex(prev => prev + 1)
+        }
+    }, [isDictating, dictationIsPaused, dictationState, silenceTimeLeft])
+
+    // Enter keyboard control for start/restart dictation
+    useEffect(() => {
+        const handleEnterKey = (e: KeyboardEvent) => {
+            if (e.code !== 'Enter' && e.code !== 'NumpadEnter') {
+                return
+            }
+
+            const activeElement = document.activeElement
+            if (activeElement && (
+                activeElement.tagName === 'TEXTAREA' ||
+                (activeElement.tagName === 'INPUT' && (activeElement as HTMLInputElement).type !== 'checkbox')
+            )) {
+                return
+            }
+
+            if (showDictationModal) {
+                if (selectedChunks.some(Boolean)) {
+                    e.preventDefault()
+                    startDictation()
+                }
+            } else if (isDictating && dictationState === 'finished') {
+                e.preventDefault()
+                startDictation()
+            }
+        }
+
+        window.addEventListener('keydown', handleEnterKey)
+        return () => {
+            window.removeEventListener('keydown', handleEnterKey)
+        }
+    }, [showDictationModal, selectedChunks, isDictating, dictationState, startDictation])
+
+    // Keyboard controls for dictation
+    useEffect(() => {
+        if (!isDictating || dictationState === 'finished') {
+            return
+        }
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const activeElement = document.activeElement
+            if (activeElement && (
+                activeElement.tagName === 'TEXTAREA' ||
+                (activeElement.tagName === 'INPUT' && (activeElement as HTMLInputElement).type !== 'checkbox')
+            )) {
+                return
+            }
+
+            if (e.code === 'Space') {
+                e.preventDefault()
+                if (dictationIsPaused || pausesLeft > 0) {
+                    togglePauseDictation()
+                }
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault()
+                if (dictationState !== 'playing') {
+                    handleNextWord()
+                }
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [isDictating, dictationState, togglePauseDictation, handleNextWord, dictationIsPaused, pausesLeft])
+
     const playAudio = async (sentence: string, index: number) => {
         if (!textbook) return
         setPlayingIndex(index)
@@ -218,11 +520,13 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         setCountdown(null)
         setSlideDirection(null)
         setHasClickedDontKnow(false)
+        setFlashcardsFinished(false)
         setShowFlashcards(true)
     }
 
     const closeFlashcards = () => {
         setShowFlashcards(false)
+        setFlashcardsFinished(false)
         if (timerRef.current) {
             clearInterval(timerRef.current)
             timerRef.current = null
@@ -232,10 +536,10 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             knowCooldownIntervalRef.current = null
         }
         clearPeekTimeouts()
-        setKnowCooldownSecs(0)
     }
 
     const moveToNextCard = () => {
+        setIsNextButtonLocked(true)
         if (timerRef.current) {
             clearInterval(timerRef.current)
             timerRef.current = null
@@ -252,8 +556,20 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     setHasClickedDontKnow(false)
                     return prev + 1
                 } else {
-                    alert("Review completed! Great work!")
-                    setShowFlashcards(false)
+                    // Play correct sound
+                    ;(async () => {
+                        const correctUrl = `${PUBLIC_URL_BASE}/ep/sfx/correct.mp3`
+                        try {
+                            const blob = await audioCache.cacheAudio(correctUrl)
+                            if (blob) {
+                                const audio = new Audio(URL.createObjectURL(blob))
+                                audio.play().catch(console.error)
+                            }
+                        } catch(e) {
+                            console.error(e)
+                        }
+                    })()
+                    setFlashcardsFinished(true)
                     setSlideDirection(null)
                     return prev
                 }
@@ -262,22 +578,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     }
 
     const handleKnow = () => {
-        if (deck.length === 0 || knowCooldownSecs > 0) return
-        setKnowCooldownSecs(3)
-        if (knowCooldownIntervalRef.current) {
-            clearInterval(knowCooldownIntervalRef.current)
-        }
-        let secondsLeft = 3
-        knowCooldownIntervalRef.current = setInterval(() => {
-            secondsLeft -= 1
-            if (secondsLeft <= 0) {
-                clearInterval(knowCooldownIntervalRef.current)
-                knowCooldownIntervalRef.current = null
-                setKnowCooldownSecs(0)
-            } else {
-                setKnowCooldownSecs(secondsLeft)
-            }
-        }, 1000)
+        if (deck.length === 0 || isNextButtonLocked) return
 
         const item = deck[currentDeckIndex]
         if (!hiddenIndices.has(item.originalIndex)) {
@@ -377,7 +678,10 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                             <div className="vg-stats-bar-wrapper">
                                 <div className="vg-stats-bar">
                                     <span>Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b></span>
-                                    <button className="vg-play-cards-btn" onClick={openFlashcards} title="Start Flashcards">▶️ Play</button>
+                                    <div className="vg-stats-buttons">
+                                        <button className="vg-play-cards-btn" onClick={openFlashcards} title="Start Flashcards">▶️</button>
+                                        <button className="vg-dictation-btn" onClick={openDictationSetup} title="Start Dictation">✍️</button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -411,8 +715,15 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                         <div key={item.originalIndex} className={`vg-item ${isHidden ? 'is-hidden' : ''}`}>
                                             <div className="vg-item-watermark">{item.originalIndex + 1}</div>
                                             <div className="vg-word-header">
-                                                <h2 className="vg-word-title" onClick={() => setTraceList([item])}>
-                                                    <span className="vg-word-num">{item.originalIndex + 1}. </span>{item.word}
+                                                <h2 className="vg-word-title">
+                                                    <span className="vg-word-num">{item.originalIndex + 1}. </span>
+                                                    <span 
+                                                        className="vg-word-text" 
+                                                        onClick={() => setTraceList([item])}
+                                                        title="Click to see stroke order"
+                                                    >
+                                                        {item.word}
+                                                    </span>
                                                     <span className="vg-ipa-container">
                                                         {item.ipa && item.ipa !== 'none' && <span className="vg-ipa">{item.ipa}</span>}
                                                         <button 
@@ -518,136 +829,155 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             </div>
 
             {showFlashcards && deck.length > 0 && (
-                <div className="vg-modal-backdrop" onClick={closeFlashcards}>
+                <div className="vg-modal-backdrop" onClick={(e) => e.stopPropagation()}>
                     <div className="vg-flashcard-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="vg-card-header">
                             <span className="vg-card-header-title">Vocabulary Flashcards</span>
                             <button className="vg-modal-close-btn" onClick={closeFlashcards}>&times;</button>
                         </div>
-
+                        
                         <div className="vg-card-progress-container">
-                            <div className="vg-card-progress-bar" style={{ width: `${progressPercent}%` }}></div>
+                            <div className="vg-card-progress-bar" style={{ width: `${flashcardsFinished ? 100 : progressPercent}%` }}></div>
                         </div>
 
-                        <div 
-                            className={`vg-card-container ${isFlipped ? 'is-flipped' : ''} ${isPeeking ? 'is-peeking' : ''} ${slideDirection ? `slide-${slideDirection}` : ''} ${hasClickedDontKnow ? 'clickable' : ''}`}
-                            onClick={handleCardClick}
-                        >
-                            <div className="vg-card-inner">
-                                {/* Front Side */}
-                                <div className="vg-card-front">
-                                    <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
-                                    <div className="vg-card-top-right">
-                                        <div className="vg-card-word-title">{deck[currentDeckIndex].word}</div>
-                                        {(deck[currentDeckIndex].unit || deck[currentDeckIndex].page_number) && (
-                                            <div className="vg-card-meta">
-                                                {deck[currentDeckIndex].unit && (
-                                                    <span className="vg-card-unit">Unit {deck[currentDeckIndex].unit}</span>
-                                                )}
-                                                {deck[currentDeckIndex].page_number && (
-                                                    <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <AnimatedWordSVG word={deck[currentDeckIndex].word} />
-                                    {deck[currentDeckIndex].ipa && deck[currentDeckIndex].ipa !== 'none' && (
-                                        <div className="vg-card-detail">
-                                            <span className="vg-card-label">IPA:</span>
-                                            <span className="vg-card-value font-ipa">{deck[currentDeckIndex].ipa}</span>
-                                        </div>
-                                    )}
-                                    {deck[currentDeckIndex].syllable_type && (
-                                        <div className="vg-card-detail">
-                                            <span className="vg-card-label">Syllables:</span>
-                                            <span className="vg-card-value">{deck[currentDeckIndex].syllable_type}</span>
-                                        </div>
-                                    )}
-                                    {deck[currentDeckIndex].comparison && (
-                                        <div className="vg-card-detail">
-                                            <span className="vg-card-label">Comparison:</span>
-                                            <span className="vg-card-value">{deck[currentDeckIndex].comparison}</span>
-                                        </div>
-                                    )}
-                                    {deck[currentDeckIndex].context_sentence && (
-                                        <div className="vg-card-context">
-                                            <button 
-                                                className={`vg-play-btn ${playingIndex === deck[currentDeckIndex].originalIndex ? 'playing' : ''}`} 
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    playAudio(deck[currentDeckIndex].context_sentence, deck[currentDeckIndex].originalIndex)
-                                                }}
-                                                disabled={playingIndex === deck[currentDeckIndex].originalIndex}
-                                            >
-                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                                            </button>
-                                            <span className="vg-sentence">"{deck[currentDeckIndex].context_sentence}"</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Back Side */}
-                                <div className="vg-card-back">
-                                    <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
-                                    <div className="vg-card-top-right">
-                                        <div className="vg-card-word-title">
-                                            {deck[currentDeckIndex].word}
-                                            <button 
-                                                className={`vg-word-play-btn ${playingIndex === deck[currentDeckIndex].originalIndex + 20000 ? 'playing' : ''}`}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    playAudio(deck[currentDeckIndex].word, deck[currentDeckIndex].originalIndex + 20000);
-                                                }}
-                                                title="Play word audio"
-                                            >
-                                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                            </button>
-                                        </div>
-                                        {(deck[currentDeckIndex].unit || deck[currentDeckIndex].page_number) && (
-                                            <div className="vg-card-meta">
-                                                {deck[currentDeckIndex].unit && (
-                                                    <span className="vg-card-unit">Unit {deck[currentDeckIndex].unit}</span>
-                                                )}
-                                                {deck[currentDeckIndex].page_number && (
-                                                    <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <AnimatedWordSVG word={deck[currentDeckIndex].word} />
-                                    <div className="vg-card-meaning">{deck[currentDeckIndex].meaning}</div>
-                                    {(deck[currentDeckIndex].memorization_hook || deck[currentDeckIndex].hint) && (
-                                        <div className="vg-card-hook">
-                                            <span className="vg-hook-label">🧠 Hook:</span>
-                                            <span className="vg-hook-text">{deck[currentDeckIndex].memorization_hook || deck[currentDeckIndex].hint}</span>
-                                        </div>
-                                    )}
+                        {flashcardsFinished ? (
+                            <div className="vg-card-container" style={{ height: '266px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                                <div className="vg-flashcard-success-hero">
+                                    <div className="hero-emoji">🎉</div>
+                                    <h3>Review Completed!</h3>
+                                    <p>Great work reviewing your flashcards!</p>
                                 </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div 
+                                className={`vg-card-container ${isFlipped ? 'is-flipped' : ''} ${isPeeking ? 'is-peeking' : ''} ${slideDirection ? `slide-${slideDirection}` : ''} ${hasClickedDontKnow ? 'clickable' : ''}`}
+                                onClick={handleCardClick}
+                            >
+                                <div className="vg-card-inner">
+                                    {/* Front Side */}
+                                    <div className="vg-card-front">
+                                        <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
+                                        <div className="vg-card-top-right">
+                                            <div className="vg-card-word-title">{deck[currentDeckIndex].word}</div>
+                                            {(deck[currentDeckIndex].unit || deck[currentDeckIndex].page_number) && (
+                                                <div className="vg-card-meta">
+                                                    {deck[currentDeckIndex].unit && (
+                                                        <span className="vg-card-unit">Unit {deck[currentDeckIndex].unit}</span>
+                                                    )}
+                                                    {deck[currentDeckIndex].page_number && (
+                                                        <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <AnimatedWordSVG word={deck[currentDeckIndex].word} />
+                                        {deck[currentDeckIndex].ipa && deck[currentDeckIndex].ipa !== 'none' && (
+                                            <div className="vg-card-detail">
+                                                <span className="vg-card-label">IPA:</span>
+                                                <span className="vg-card-value font-ipa">{deck[currentDeckIndex].ipa}</span>
+                                            </div>
+                                        )}
+                                        {deck[currentDeckIndex].syllable_type && (
+                                            <div className="vg-card-detail">
+                                                <span className="vg-card-label">Syllables:</span>
+                                                <span className="vg-card-value">{deck[currentDeckIndex].syllable_type}</span>
+                                            </div>
+                                        )}
+                                        {deck[currentDeckIndex].comparison && (
+                                            <div className="vg-card-detail">
+                                                <span className="vg-card-label">Comparison:</span>
+                                                <span className="vg-card-value">{deck[currentDeckIndex].comparison}</span>
+                                            </div>
+                                        )}
+                                        {deck[currentDeckIndex].context_sentence && (
+                                            <div className="vg-card-context">
+                                                <button 
+                                                    className={`vg-play-btn ${playingIndex === deck[currentDeckIndex].originalIndex ? 'playing' : ''}`} 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        playAudio(deck[currentDeckIndex].context_sentence, deck[currentDeckIndex].originalIndex)
+                                                    }}
+                                                    disabled={playingIndex === deck[currentDeckIndex].originalIndex}
+                                                >
+                                                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                                </button>
+                                                <span className="vg-sentence">"{deck[currentDeckIndex].context_sentence}"</span>
+                                            </div>
+                                        )}
+                                    </div>
 
-                        <div className="vg-modal-footer">
-                            <button 
-                                className="vg-btn-know" 
-                                onClick={handleKnow}
-                                disabled={isFlipped || knowCooldownSecs > 0 || hasClickedDontKnow}
-                            >
-                                {knowCooldownSecs > 0 ? `Know (${knowCooldownSecs}s)` : 'Know'}
-                            </button>
-                            <button 
-                                className="vg-btn-dont-know" 
-                                onClick={handleDontKnow}
-                                disabled={isFlipped || hasClickedDontKnow}
-                            >
-                                Don't Know
-                            </button>
-                            <button 
-                                className="vg-btn-next" 
-                                onClick={moveToNextCard}
-                                disabled={countdown !== null}
-                            >
-                                {countdown !== null ? `Next (${countdown}s)` : 'Next'}
-                            </button>
+                                    {/* Back Side */}
+                                    <div className="vg-card-back">
+                                        <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
+                                        <div className="vg-card-top-right">
+                                            <div className="vg-card-word-title">
+                                                {deck[currentDeckIndex].word}
+                                                <button 
+                                                    className={`vg-word-play-btn ${playingIndex === deck[currentDeckIndex].originalIndex + 20000 ? 'playing' : ''}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        playAudio(deck[currentDeckIndex].word, deck[currentDeckIndex].originalIndex + 20000);
+                                                    }}
+                                                    title="Play word audio"
+                                                >
+                                                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                                </button>
+                                            </div>
+                                            {(deck[currentDeckIndex].unit || deck[currentDeckIndex].page_number) && (
+                                                <div className="vg-card-meta">
+                                                    {deck[currentDeckIndex].unit && (
+                                                        <span className="vg-card-unit">Unit {deck[currentDeckIndex].unit}</span>
+                                                    )}
+                                                    {deck[currentDeckIndex].page_number && (
+                                                        <div className="vg-card-page">P{deck[currentDeckIndex].page_number}</div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <AnimatedWordSVG word={deck[currentDeckIndex].word} />
+                                        <div className="vg-card-meaning">{deck[currentDeckIndex].meaning}</div>
+                                        {(deck[currentDeckIndex].memorization_hook || deck[currentDeckIndex].hint) && (
+                                            <div className="vg-card-hook">
+                                                <span className="vg-hook-label">🧠 Hook:</span>
+                                                <span className="vg-hook-text">{deck[currentDeckIndex].memorization_hook || deck[currentDeckIndex].hint}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={`vg-modal-footer ${flashcardsFinished ? 'vertical' : ''}`}>
+                            {flashcardsFinished ? (
+                                <>
+                                    <button className="vg-btn-primary" onClick={openFlashcards}>Restart</button>
+                                    <button className="vg-btn-secondary" onClick={closeFlashcards}>Exit</button>
+                                </>
+                            ) : (
+                                <>
+                                    <button 
+                                        className="vg-btn-know" 
+                                        onClick={handleKnow}
+                                        disabled={isFlipped || hasClickedDontKnow || isNextButtonLocked}
+                                    >
+                                        Know
+                                    </button>
+                                    <button 
+                                        className="vg-btn-dont-know" 
+                                        onClick={handleDontKnow}
+                                        disabled={isFlipped || hasClickedDontKnow}
+                                    >
+                                        Don't Know
+                                    </button>
+                                     <button 
+                                         className="vg-btn-next" 
+                                         onClick={moveToNextCard}
+                                         disabled={countdown !== null || isNextButtonLocked}
+                                     >
+                                         {countdown !== null ? `Next (${countdown}s)` : 'Next'}
+                                     </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -659,6 +989,176 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     startIndex={0}
                     onClose={() => setTraceList(null)}
                 />
+            )}
+
+            {/* Dictation Setup Modal */}
+            {showDictationModal && (
+                <div className="vg-modal-backdrop" onClick={(e) => e.stopPropagation()}>
+                    <div className="vg-dictation-setup-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="vg-card-header">
+                            <span className="vg-card-header-title">✍️ Dictation Settings</span>
+                            <button className="vg-modal-close-btn" onClick={() => setShowDictationModal(false)}>&times;</button>
+                        </div>
+                        
+                        <div className="vg-modal-body">
+                            <div className="vg-modal-section">
+                                <label className="vg-modal-section-title">Select Word Groups (Total: <span key={getEligibleWords().length} className="vg-dictation-pop-number">{getEligibleWords().length}</span> words):</label>
+                                <div className="vg-dictation-groups-grid">
+                                    {chunks.map((_, idx) => {
+                                        const start = idx * 10 + 1
+                                        const end = Math.min((idx + 1) * 10, vocab.length)
+                                        return (
+                                            <label key={idx} className="vg-dictation-checkbox-label">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedChunks[idx] || false}
+                                                    onChange={(e) => {
+                                                        const copy = [...selectedChunks]
+                                                        copy[idx] = e.target.checked
+                                                        setSelectedChunks(copy)
+                                                    }}
+                                                />
+                                                <span>Words {start} - {end}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                                <div className="vg-modal-actions-small">
+                                    <button type="button" className="vg-btn-secondary-sm" onClick={() => setSelectedChunks(new Array(chunks.length).fill(true))}>Select All</button>
+                                    <button type="button" className="vg-btn-secondary-sm" onClick={() => setSelectedChunks(new Array(chunks.length).fill(false))}>Deselect All</button>
+                                </div>
+                            </div>
+
+                            <div className="vg-modal-section settings-options">
+                                <label className="vg-dictation-checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={includeLearnt}
+                                        onChange={(e) => setIncludeLearnt(e.target.checked)}
+                                    />
+                                    <span>Include learnt/hidden words</span>
+                                </label>
+                                <label className="vg-dictation-checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={shuffleWords}
+                                        onChange={(e) => setShuffleWords(e.target.checked)}
+                                    />
+                                    <span>Shuffle word order</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="vg-modal-footer">
+                            <button 
+                                type="button" 
+                                className="vg-btn-primary" 
+                                onClick={startDictation}
+                                disabled={!selectedChunks.some(Boolean)}
+                            >
+                                Start
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Active Dictation View */}
+            {isDictating && (
+                <div className="vg-modal-backdrop" onClick={(e) => e.stopPropagation()}>
+                    <div className="vg-dictation-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="vg-card-header">
+                            <span className="vg-card-header-title">✍️ Dictation in Progress</span>
+                            <button 
+                                className="vg-modal-close-btn" 
+                                onClick={() => {
+                                    if (dictationState === 'finished' || window.confirm("Are you sure you want to exit dictation?")) {
+                                        stopDictation()
+                                    }
+                                }}
+                            >
+                                &times;
+                            </button>
+                        </div>
+
+                        {dictationState !== 'finished' ? (() => {
+                            const currentWord = dictationWords[dictationCurrentIndex]?.word || ''
+                            const silenceDuration = Math.max(3, Math.min(8, Math.round(currentWord.length * 0.4)))
+                            const displayTime = dictationState === 'playing' ? silenceDuration : silenceTimeLeft
+                            return (
+                                <>
+                                    <div className="vg-dictation-progress-container">
+                                        <div className="vg-dictation-progress-bar" style={{ width: `${((dictationCurrentIndex) / dictationWords.length) * 100}%` }}></div>
+                                    </div>
+
+                                    <div className="vg-dictation-body">
+                                        <div className="vg-dictation-stats">
+                                            Word <b>{dictationCurrentIndex + 1}</b> of <b>{dictationWords.length}</b>
+                                        </div>
+
+                                        <div className="vg-dictation-card">
+                                            <div className="vg-dictation-wave-animation">
+                                                <span></span><span></span><span></span><span></span>
+                                            </div>
+                                            <div className="status-text">
+                                                🔊 Reading Word...
+                                            </div>
+                                            <div className="vg-dictation-bottom-area">
+                                                <div className={`vg-dictation-countdown-small ${dictationState === 'playing' ? 'blurred' : ''}`}>
+                                                    {displayTime}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="vg-modal-footer">
+                                        <button 
+                                            className="vg-btn-pause" 
+                                            onClick={togglePauseDictation}
+                                            disabled={pausesLeft === 0 && !dictationIsPaused}
+                                        >
+                                            {dictationIsPaused ? '▶️ Resume' : `⏸️ Pause x${pausesLeft}`}
+                                        </button>
+                                        <button 
+                                            className="vg-btn-next-dictation" 
+                                            onClick={handleNextWord}
+                                            disabled={dictationState === 'playing'}
+                                        >
+                                            Next ➡️
+                                        </button>
+                                    </div>
+                                </>
+                            )
+                        })() : (
+                            // Finished Results view
+                            <div className="vg-dictation-results-body">
+                                <div className="vg-dictation-success-hero">
+                                    <div className="hero-emoji">🎉</div>
+                                    <h3>Dictation Finished!</h3>
+                                    <p>Please check your spelling against the list below:</p>
+                                </div>
+
+                                <div className="vg-dictation-results-list">
+                                    {dictationWords.map((item, idx) => (
+                                        <div key={idx} className="vg-dictation-result-item">
+                                            <span className="result-num">{idx + 1}.</span>
+                                            <div className="result-detail">
+                                                <span className="result-word">{item.word}</span>
+                                                {item.ipa && <span className="result-ipa">{item.ipa}</span>}
+                                                <span className="result-meaning">{item.meaning}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="vg-modal-footer">
+                                    <button className="vg-btn-primary" onClick={startDictation}>Restart</button>
+                                    <button className="vg-btn-secondary" onClick={stopDictation}>Close</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     )

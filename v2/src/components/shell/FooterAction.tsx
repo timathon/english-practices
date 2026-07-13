@@ -8,6 +8,7 @@ interface FooterActionProps {
     onContinue: () => void
     buttonText: string
     prefix: string
+    noCheckButton?: boolean
 }
 
 export const FooterAction: React.FC<FooterActionProps> = ({
@@ -17,11 +18,20 @@ export const FooterAction: React.FC<FooterActionProps> = ({
     onCheck,
     onContinue,
     buttonText,
-    prefix
+    prefix,
+    noCheckButton
 }) => {
     return (
         <div className={`${prefix}-footer-action`}>
-            {!locked ? (
+            {noCheckButton ? (
+                <button
+                    className={`${prefix}-check-btn continue`}
+                    onClick={onContinue}
+                    disabled={!locked || continueDisabled}
+                >
+                    {buttonText}
+                </button>
+            ) : !locked ? (
                 <button
                     className={`${prefix}-check-btn`}
                     disabled={disableCheck}

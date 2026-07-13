@@ -390,9 +390,10 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         }
     }
 
-    const checkAnswer = useCallback((forceWrong?: boolean) => {
+    const checkAnswer = useCallback((forceWrong?: boolean, overrideOption?: number | null) => {
         if (locked) return;
-        if (!forceWrong && selectedOption === null) return;
+        const currentSelectedOption = overrideOption !== undefined ? overrideOption : selectedOption;
+        if (!forceWrong && currentSelectedOption === null) return;
         setLocked(true);
         countdownTimer.pause();
 
@@ -403,7 +404,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
         setContinueDisabled(true);
         setTimeout(() => setContinueDisabled(false), 2000); // disable continue button for 2 seconds
 
-        const isCorrect = !forceWrong && selectedOption === q.answer;
+        const isCorrect = !forceWrong && currentSelectedOption === q.answer;
         setShowFeedback(true);
 
         let updatedMistakes = [...mistakeQueue];
@@ -436,7 +437,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                         unit,
                         practiceType: 'audio-detective',
                         question: q,
-                        wrongAnswer: selectedOption !== null ? q.options[selectedOption] : undefined
+                        wrongAnswer: currentSelectedOption !== null && currentSelectedOption !== undefined ? q.options[currentSelectedOption] : undefined
                     });
                 }
             } else {
@@ -512,6 +513,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
     const handleOptionClick = (originalIdx: number) => {
         if (locked) return;
         setSelectedOption(originalIdx);
+        checkAnswer(false, originalIdx);
     }
 
     useEffect(() => {
@@ -869,6 +871,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                     onContinue={isLastQuestion ? () => finishGame(queue) : () => nextQuestion()}
                     buttonText={isLastQuestion ? "Finish" : "Continue"}
                     prefix="det"
+                    noCheckButton={true}
                 />
             </div>
         </div>
