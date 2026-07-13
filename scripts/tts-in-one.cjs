@@ -21,6 +21,31 @@ function getCleanText(text) {
     return text.trim();
 }
 
+
+
+function chunkTasksByWordCount(tasks, maxWords) {
+    const chunks = [];
+    let currentChunk = [];
+    let currentWords = 0;
+    
+    for (const task of tasks) {
+        const text = task.context_sentence || task.text || task.word || task.en || "";
+        const wordCount = text.split(/\s+/).filter(Boolean).length;
+        if (currentChunk.length > 0 && currentWords + wordCount > maxWords) {
+            chunks.push(currentChunk);
+            currentChunk = [task];
+            currentWords = wordCount;
+        } else {
+            currentChunk.push(task);
+            currentWords += wordCount;
+        }
+    }
+    if (currentChunk.length > 0) {
+        chunks.push(currentChunk);
+    }
+    return chunks;
+}
+
 // Traverse node tree recursively for Text Navigator or Writing Map
 function extractTreeText(node, textsSet) {
     if (!node) return;
@@ -47,126 +72,191 @@ async function checkAudioExists(text, bookName) {
 }
 
 async function main() {
-    const inputDir = process.argv[2];
-    if (!inputDir) {
-        console.error("Usage: node scripts/tts-in-one.cjs [unit_directory_path] [--regenerate] [--no-upload]");
-        process.exit(1);
-    }
-
-    const absoluteDir = path.resolve(inputDir);
-    if (!fs.existsSync(absoluteDir) || !fs.statSync(absoluteDir).isDirectory()) {
-        console.error(`❌ Directory not found: ${absoluteDir}`);
-        process.exit(1);
-    }
-
-    // Determine bookName (e.g. raz-b) from the directory path relative to the data directory
-    const relativeToData = path.relative(path.resolve(__dirname, '../data'), absoluteDir);
-    const bookName = relativeToData.split(path.sep)[0].toLowerCase();
-    
-    console.log(`Scanning unit directory: ${absoluteDir}`);
-    console.log(`Resolved category/book name: ${bookName}`);
-
-    const textsSet = new Set();
-    const files = fs.readdirSync(absoluteDir);
-    
-    // Load tongjia mapping if it exists in this unit
-    let tongjiaMap = {};
-    const tongjiaFile = files.find(f => f.endsWith('tongjia.cjs'));
-    if (tongjiaFile) {
-        const tongjiaPath = path.join(absoluteDir, tongjiaFile);
-        try {
-            tongjiaMap = require(tongjiaPath);
-            console.log(`Loaded tongjia mapping from ${tongjiaFile}:`, tongjiaMap);
-        } catch (e) {
-            console.error(`⚠️ Failed to load tongjia mapping: ${e.message}`);
-        }
-    }
-    
-    for (const file of files) {
-        if (!file.endsWith('.json') || file.includes('-recall-map') || file.includes('-writing-map') || file.includes('-grammar-wizard')) continue;
-        const filePath = path.join(absoluteDir, file);
-        console.log(`Reading file: ${file}`);
-        
-        try {
-            const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-            if (file.includes('-vocab-guide')) {
-                if (content.unit_vocabulary && Array.isArray(content.unit_vocabulary)) {
-                    content.unit_vocabulary.forEach(item => {
-                        if (item.context_sentence) textsSet.add(getCleanText(item.context_sentence));
-                        if (item.word) textsSet.add(getCleanText(item.word));
-                    });
-                }
-            } else if (file.includes('-vocab-master')) {
-                if (content.challenges && Array.isArray(content.challenges)) {
-                    content.challenges.forEach(challenge => {
-                        if (challenge.questions && Array.isArray(challenge.questions)) {
-                            challenge.questions.forEach(q => {
-                                if (q.context_sentence) textsSet.add(getCleanText(q.context_sentence));
-                            });
-                        }
-                    });
-                }
-            } else if (file.includes('-spelling-hero')) {
-                if (content.spelling_words && Array.isArray(content.spelling_words)) {
-                    content.spelling_words.forEach(w => {
-                        if (w.word) textsSet.add(getCleanText(w.word));
-                    });
-                }
-            } else if (file.includes('-sentence-architect')) {
-                if (content.challenges && Array.isArray(content.challenges)) {
-                    content.challenges.forEach(challenge => {
-                        const items = challenge.sentences || challenge.data || [];
-                        items.forEach(item => {
-                            if (item.en) textsSet.add(getCleanText(item.en));
-                        });
-                    });
-                }
-            } else if (file.includes('-text-navigator') || file.includes('-writing-map')) {
-                if (content.sections && Array.isArray(content.sections)) {
-                    content.sections.forEach(sec => {
-                        if (sec.tree) extractTreeText(sec.tree, textsSet);
-                    });
-                } else {
-                    const treeData = content.tree || content;
-                    extractTreeText(treeData, textsSet);
-                }
-            } else if (file.includes('-passage-decoder-s')) {
-                if (content.sections && Array.isArray(content.sections)) {
-                    content.sections.forEach(section => {
-                        if (section.sentences && Array.isArray(section.sentences)) {
-                            section.sentences.forEach(item => {
-                                if (item.en) textsSet.add(getCleanText(item.en));
-                            });
-                        }
-                    });
-                }
-            }
-        } catch (e) {
-            console.error(`❌ Failed to parse ${file}: ${e.message}`);
-        }
-    }
-
-    console.log(`Found ${textsSet.size} unique texts requiring audio.`);
-
-    if (textsSet.size === 0) {
-        console.log("No texts found to process.");
-        return;
-    }
-
     const forceRegenerate = process.argv.includes('--regenerate');
     const noUpload = process.argv.includes('--no-upload');
+    const useXl = process.argv.includes('--xl') || process.argv.includes('xl');
+    const lastCheck = process.argv.includes('--last-check') || process.argv.includes('last-check');
+
+    if (useXl) {
+        if (process.env.GOOGLE_API_KEY_FREE) {
+            process.env.GOOGLE_API_KEY = process.env.GOOGLE_API_KEY_FREE;
+            console.log("🔑 Switched to GOOGLE_API_KEY_FREE");
+        } else {
+            console.warn("⚠️ Warning: GOOGLE_API_KEY_FREE is not set in environment!");
+        }
+    }
 
     let tasksToProcess = [];
-    if (forceRegenerate) {
-        tasksToProcess = Array.from(textsSet).map(text => ({ context_sentence: text }));
-        console.log(`--regenerate flag active. Processing all ${tasksToProcess.length} items...`);
-    } else {
-        console.log("Checking existing audios on R2...");
-        const checkResults = await Promise.all(Array.from(textsSet).map(text => checkAudioExists(text, bookName)));
-        const missing = checkResults.filter(r => !r.exists);
-        console.log(`R2 check complete: ${checkResults.length - missing.length} exist, ${missing.length} missing.`);
+    let bookName = "";
+    let tongjiaMap = {};
+    let processedViaLastCheck = false;
+
+    if (lastCheck) {
+        const reportDir = path.resolve(__dirname, '../temp/audio');
+        if (fs.existsSync(reportDir)) {
+            const missingFiles = fs.readdirSync(reportDir)
+                .filter(f => f.startsWith('tts-missing-') && f.endsWith('.json'))
+                .sort();
+            if (missingFiles.length > 0) {
+                const lastMissingFile = missingFiles[missingFiles.length - 1];
+                const lastMissingPath = path.join(reportDir, lastMissingFile);
+                console.log(`Using last missing list: ${lastMissingFile}`);
+                try {
+                    const content = JSON.parse(fs.readFileSync(lastMissingPath, 'utf8'));
+                    bookName = content.bookName;
+                    tongjiaMap = content.tongjiaMap || {};
+                    tasksToProcess = content.missing || [];
+                    processedViaLastCheck = true;
+                    console.log(`Loaded ${tasksToProcess.length} missing items for category/book name: ${bookName}`);
+                } catch (e) {
+                    console.error(`⚠️ Failed to parse last missing list: ${e.message}`);
+                }
+            } else {
+                console.log("No previous missing files found in temp/audio.");
+            }
+        }
+    }
+
+    if (!processedViaLastCheck) {
+        const inputDir = process.argv[2];
+        if (!inputDir) {
+            console.error("Usage: node scripts/tts-in-one.cjs [unit_directory_path] [--regenerate] [--no-upload] [--xl] [--last-check]");
+            process.exit(1);
+        }
+
+        const absoluteDir = path.resolve(inputDir);
+        if (!fs.existsSync(absoluteDir) || !fs.statSync(absoluteDir).isDirectory()) {
+            console.error(`❌ Directory not found: ${absoluteDir}`);
+            process.exit(1);
+        }
+
+        // Determine bookName (e.g. raz-b) from the directory path relative to the data directory
+        const relativeToData = path.relative(path.resolve(__dirname, '../data'), absoluteDir);
+        bookName = relativeToData.split(path.sep)[0].toLowerCase();
         
-        tasksToProcess = missing.map(m => ({ context_sentence: m.text }));
+        console.log(`Scanning unit directory: ${absoluteDir}`);
+        console.log(`Resolved category/book name: ${bookName}`);
+
+        const textsSet = new Set();
+        const files = fs.readdirSync(absoluteDir);
+        
+        // Load tongjia mapping if it exists in this unit
+        const tongjiaFile = files.find(f => f.endsWith('tongjia.cjs'));
+        if (tongjiaFile) {
+            const tongjiaPath = path.join(absoluteDir, tongjiaFile);
+            try {
+                tongjiaMap = require(tongjiaPath);
+                console.log(`Loaded tongjia mapping from ${tongjiaFile}:`, tongjiaMap);
+            } catch (e) {
+                console.error(`⚠️ Failed to load tongjia mapping: ${e.message}`);
+            }
+        }
+        
+        for (const file of files) {
+            if (!file.endsWith('.json') || file.includes('-recall-map') || file.includes('-writing-map') || file.includes('-grammar-wizard')) continue;
+            const filePath = path.join(absoluteDir, file);
+            console.log(`Reading file: ${file}`);
+            
+            try {
+                const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                if (file.includes('-vocab-guide')) {
+                    if (content.unit_vocabulary && Array.isArray(content.unit_vocabulary)) {
+                        content.unit_vocabulary.forEach(item => {
+                            if (item.context_sentence) textsSet.add(getCleanText(item.context_sentence));
+                            if (item.word) textsSet.add(getCleanText(item.word));
+                        });
+                    }
+                } else if (file.includes('-vocab-master')) {
+                    if (content.challenges && Array.isArray(content.challenges)) {
+                        content.challenges.forEach(challenge => {
+                            if (challenge.questions && Array.isArray(challenge.questions)) {
+                                challenge.questions.forEach(q => {
+                                    if (q.context_sentence) textsSet.add(getCleanText(q.context_sentence));
+                                });
+                            }
+                        });
+                    }
+                } else if (file.includes('-spelling-hero')) {
+                    if (content.spelling_words && Array.isArray(content.spelling_words)) {
+                        content.spelling_words.forEach(w => {
+                            if (w.word) textsSet.add(getCleanText(w.word));
+                        });
+                    }
+                } else if (file.includes('-sentence-architect')) {
+                    if (content.challenges && Array.isArray(content.challenges)) {
+                        content.challenges.forEach(challenge => {
+                            const items = challenge.sentences || challenge.data || [];
+                            items.forEach(item => {
+                                if (item.en) textsSet.add(getCleanText(item.en));
+                            });
+                        });
+                    }
+                } else if (file.includes('-text-navigator') || file.includes('-writing-map')) {
+                    if (content.sections && Array.isArray(content.sections)) {
+                        content.sections.forEach(sec => {
+                            if (sec.tree) extractTreeText(sec.tree, textsSet);
+                        });
+                    } else {
+                        const treeData = content.tree || content;
+                        extractTreeText(treeData, textsSet);
+                    }
+                } else if (file.includes('-passage-decoder-s')) {
+                    if (content.sections && Array.isArray(content.sections)) {
+                        content.sections.forEach(section => {
+                            if (section.sentences && Array.isArray(section.sentences)) {
+                                section.sentences.forEach(item => {
+                                    if (item.en) textsSet.add(getCleanText(item.en));
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error(`❌ Failed to parse ${file}: ${e.message}`);
+            }
+        }
+
+        console.log(`Found ${textsSet.size} unique texts requiring audio.`);
+
+        if (textsSet.size === 0) {
+            console.log("No texts found to process.");
+            return;
+        }
+
+        if (forceRegenerate) {
+            tasksToProcess = Array.from(textsSet).map(text => ({ context_sentence: text }));
+            console.log(`--regenerate flag active. Processing all ${tasksToProcess.length} items...`);
+        } else {
+            console.log("Checking existing audios on R2...");
+            const checkResults = [];
+            const checkBatchSize = 10;
+            const textsArray = Array.from(textsSet);
+            for (let i = 0; i < textsArray.length; i += checkBatchSize) {
+                const batch = textsArray.slice(i, i + checkBatchSize);
+                const batchResults = await Promise.all(batch.map(text => checkAudioExists(text, bookName)));
+                checkResults.push(...batchResults);
+            }
+            const missing = checkResults.filter(r => !r.exists);
+            console.log(`Check complete: ${checkResults.length - missing.length} exist, ${missing.length} missing.`);
+            
+            tasksToProcess = missing.map(m => ({ context_sentence: m.text }));
+
+            // Save list of missing items to temp/audio/tts-missing-[timestamp].json
+            if (tasksToProcess.length > 0) {
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+                const reportDir = path.resolve(__dirname, '../temp/audio');
+                if (!fs.existsSync(reportDir)) fs.mkdirSync(reportDir, { recursive: true });
+                const missingFilePath = path.join(reportDir, `tts-missing-${ts}.json`);
+                try {
+                    fs.writeFileSync(missingFilePath, JSON.stringify({ bookName, tongjiaMap, missing: tasksToProcess }, null, 2), 'utf8');
+                    console.log(`📄 Saved list of ${tasksToProcess.length} missing items to: ${missingFilePath}`);
+                } catch (e) {
+                    console.error(`⚠️ Failed to save missing items list: ${e.message}`);
+                }
+            }
+        }
     }
 
     if (tasksToProcess.length === 0) {
@@ -174,15 +264,19 @@ async function main() {
         return;
     }
 
-    console.log(`Generating audio for ${tasksToProcess.length} items using getAudioBatch (in chunks of 10)...`);
+    let chunks = [];
+    if (useXl) {
+        chunks = chunkTasksByWordCount(tasksToProcess, 300);
+        console.log(`Generating audio in batches of max 300 words using GOOGLE_API_KEY_FREE...`);
+    } else {
+        for (let i = 0; i < tasksToProcess.length; i += 10) {
+            chunks.push(tasksToProcess.slice(i, i + 10));
+        }
+        console.log(`Generating audio for ${tasksToProcess.length} items using getAudioBatch (in chunks of 10)...`);
+    }
     
     const MIN_INTERVAL = 21000; // 21 seconds for < 3 RPM
     let lastRequestTime = 0;
-    
-    const chunks = [];
-    for (let i = 0; i < tasksToProcess.length; i += 10) {
-        chunks.push(tasksToProcess.slice(i, i + 10));
-    }
 
     console.log(`Split tasks into ${chunks.length} batches.`);
 

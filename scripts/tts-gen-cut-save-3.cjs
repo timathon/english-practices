@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { execSync } = require('child_process');
+const { execSync, exec } = require('child_process');
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 const BASE_DIR = path.resolve(__dirname, '..');
@@ -17,6 +17,29 @@ const s3Client = new S3Client({
 });
 const BUCKET_NAME = "embroid-001";
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
+
+function runPythonScriptAsync(cmd, timeoutMs) {
+    return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        // Print initial status
+        process.stdout.write(`⏳ Generating TTS audio... [Elapsed: 0s]`);
+        const timer = setInterval(() => {
+            const elapsed = Math.round((Date.now() - startTime) / 1000);
+            process.stdout.write(`\r⏳ Generating TTS audio... [Elapsed: ${elapsed}s]`);
+        }, 1000);
+
+        const child = exec(cmd, { timeout: timeoutMs }, (error, stdout, stderr) => {
+            clearInterval(timer);
+            const elapsed = Math.round((Date.now() - startTime) / 1000);
+            process.stdout.write(`\r⏳ Generating TTS audio... [Elapsed: ${elapsed}s]\n`);
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
 
 /**
  * Common TTS Generation, Silence Cutting, and R2 Saving Module (V3)
@@ -74,6 +97,7 @@ async function getAudioBatch(tasks, book, options = {}) {
     
     console.log(`TTS Batch Request [ID: ${batchId}, Type: ${type}]: ${tasks.length} items.`);
 
+    const pythonTimeout = options.timeout || 60000;
     const pythonScript = `
 import os
 import wave
@@ -82,7 +106,10 @@ import time
 from google import genai
 from google.genai import types
 
-client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+client = genai.Client(
+    api_key=os.environ["GOOGLE_API_KEY"],
+    http_options=types.HttpOptions(timeout=${pythonTimeout})
+)
 
 def get_tts():
     # Use a highly structured prompt to enforce silences.
@@ -182,7 +209,7 @@ except Exception as e:
 
                 // Use custom timeout if provided, otherwise default to 60 seconds
                 const currentTimeout = options.timeout || 60000;
-                execSync(`python3 "${tempPy}" > "${pyLog}" 2>&1`, { timeout: currentTimeout });
+                await runPythonScriptAsync(`python3 "${tempPy}" > "${pyLog}" 2>&1`, currentTimeout);
                 
                 const pyOutput = fs.readFileSync(pyLog, 'utf8');
                 if (pyOutput.includes("MARK_QUOTA_EXHAUSTED")) quotaExhausted = true;
