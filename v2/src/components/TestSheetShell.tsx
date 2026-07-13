@@ -415,6 +415,13 @@ export function TestSheetShell({
   }
 
 
+  const cleanOptionText = (text: string, oIdx: number) => {
+    const prefix = String.fromCharCode(65 + oIdx);
+    const regex = new RegExp(`^${prefix}\\s*[.\\u3001]\\s*`, 'i');
+    return text.replace(regex, '');
+  };
+
+
   // Inline parser to render select elements for cloze passages & dialogue
   const parseInlineBlanks = (text: string, section: Section) => {
     const lines = text.split('\n')
@@ -446,9 +453,12 @@ export function TestSheetShell({
             selectClass += isUserCorrect ? " correct" : " wrong"
           }
 
-          const correctDisplay = isClozeIndex
+          const correctRaw = isClozeIndex
             ? (q.options?.[Number(q.answer)] || '')
             : String(q.answer)
+          const correctDisplay = isClozeIndex
+            ? cleanOptionText(correctRaw, Number(q.answer))
+            : correctRaw
 
           return (
             <span key={index} className="ts-inline-select-wrapper" style={{ margin: '0 4px', display: 'inline-block' }}>
@@ -797,7 +807,7 @@ export function TestSheetShell({
                       onClick={() => handleAnswerChange(q.id, oIdx)}
                     >
                       <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                      <span className="ts-option-text">{renderPromptText(option)}</span>
+                      <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx))}</span>
                     </button>
                   )
                 })}
@@ -922,7 +932,7 @@ export function TestSheetShell({
                     onClick={() => handleAnswerChange(q.id, oIdx)}
                   >
                     <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                    <span className="ts-option-text">{renderPromptText(option)}</span>
+                    <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx))}</span>
                   </button>
                 )
               })}
