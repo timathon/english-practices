@@ -84,6 +84,12 @@ export const CustomTooltip = ({ active, payload, label }: any) => {
           <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', border: '2px solid var(--accent)', boxSizing: 'border-box' }} />
           Avg Score: {data.avgScore}%
         </p>
+        {data.totalDuration !== undefined && (
+          <p style={{ color: 'var(--text-h)', margin: '2px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '2px', border: '2px dashed #e67e22', boxSizing: 'border-box' }} />
+            Time Used: {data.totalDuration} {data.totalDuration === 1 ? 'min' : 'mins'}
+          </p>
+        )}
       </div>
     );
   }

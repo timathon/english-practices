@@ -356,6 +356,15 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         ? Math.round(dayRecords.reduce((acc, r) => acc + (parseFloat(r.score) || 0), 0) / count)
         : 0;
 
+      let totalTimeMs = 0;
+      dayRecords.forEach(r => {
+        const timeUsedMs = r.updatedAt ? new Date(r.updatedAt).getTime() - new Date(r.createdAt).getTime() : 0;
+        if (timeUsedMs > 0) {
+          totalTimeMs += timeUsedMs;
+        }
+      });
+      const totalDuration = Math.round(totalTimeMs / 60000);
+
       const bookCounts: Record<string, number> = {};
       dayRecords.forEach(r => {
         const match = r.unit.match(/^(.+?)\s\((.+)\)$/);
@@ -390,7 +399,8 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         count,
         avgScore,
         breakdown,
-        columnClickArea: 100
+        columnClickArea: 100,
+        totalDuration
       });
     }
     return stats;
@@ -598,7 +608,8 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
           <div className="db-chart-card">
             <div className="db-chart-legend-left">
               <span className="db-chart-legend-bar" />
-              <span>Practices Done</span>
+              <span style={{ borderTop: '2px dashed #e67e22', display: 'inline-block', width: '12px', height: '0', margin: '4px 0' }} />
+              <span>Practices & Time (m)</span>
             </div>
             <div className="db-chart-area">
               <ResponsiveContainer width="100%" height="100%">
@@ -649,6 +660,13 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                   <Bar
                     yAxisId="left" dataKey="count" name="Practices Done"
                     fill="url(#barGrad)" radius={[6, 6, 0, 0]} barSize={20}
+                  />
+                  <Line
+                    yAxisId="left" type="monotone" dataKey="totalDuration"
+                    name="Time Used" stroke="#e67e22" strokeWidth={2}
+                    strokeDasharray="4 4"
+                    dot={{ r: 2.5, fill: 'var(--card-bg)', strokeWidth: 1.5, stroke: '#e67e22' }}
+                    activeDot={{ r: 4, fill: '#e67e22', strokeWidth: 0 }}
                   />
                   <Line
                     yAxisId="right" type="monotone" dataKey="avgScore"
