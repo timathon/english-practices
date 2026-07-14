@@ -61,7 +61,7 @@ async function getAudioBatch(tasks, book, options = {}) {
     const TEMP_DIR = path.join(BASE_DIR, 'temp', 'audio');
     if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
-    const batchId = options.batchId || crypto.randomBytes(4).toString('hex');
+    const batchId = crypto.randomBytes(4).toString('hex');
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const folderName = `batch-${dateStr}-${batchId}`;
     const batchOutputDir = path.join(TEMP_DIR, folderName);
@@ -73,7 +73,7 @@ async function getAudioBatch(tasks, book, options = {}) {
     const pyLog = path.join(batchOutputDir, `${folderName}_py.log`);
     const sentencesMd = path.join(batchOutputDir, 'tts-sentences.md');
 
-    const separator = ' <break time="4.0s"/> '; 
+    const separator = " [BREAK] . . . . . [BREAK] "; 
     
     const sentences = tasks.map(t => t.text || t.context_sentence || t.word || t.en);
     fs.writeFileSync(sentencesMd, sentences.join('\n'), 'utf8');
@@ -92,8 +92,8 @@ async function getAudioBatch(tasks, book, options = {}) {
     // (startTime is set to the midpoint of silences[0], the silence after warmup).
     // Unlike a leading [BREAK] marker, a spoken word is always reliably generated
     // and its trailing silence falls well past the s.start > 0.1 filter threshold.
-    const WARMUP = "Warmup sentence. Let's begin.";
-    const combinedText = `<speak>${[WARMUP, ...ttsSentences].join(separator)}${separator}</speak>`;
+    const WARMUP = 'Start.';
+    const combinedText = [WARMUP, ...ttsSentences].join(separator) + separator;
     
     console.log(`TTS Batch Request [ID: ${batchId}, Type: ${type}]: ${tasks.length} items.`);
 
@@ -112,35 +112,55 @@ client = genai.Client(
 )
 
 def get_tts():
-    # Use a simple prompt for the content, and specify the strict rules via system_instruction.
-    prompt = """${combinedText.replace(/"/g, '\\"')}"""
+    # Use a highly structured prompt to enforce silences.
+    prompt = """Task: Read the following list of sentences one by one.
     
-    last_exception = None
-    models = ["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts"]
+    Strict Rules:
+    1. Read ONLY the sentence text.
+    2. At every '[BREAK] . . . . . [BREAK]' marker, you MUST remain COMPLETELY SILENT for exactly 4 seconds.
+    3. Do NOT say the words 'BREAK', 'bracket', or 'dot'.
+    
+    Text to read:
+    ${combinedText.replace(/"/g, '\\"')}
+    """
+    
+    models = ["gemini-2.5-flash-preview-tts", "gemini-3.1-flash-tts-preview"]
     for model_name in models:
         max_retries = 5
         for attempt in range(max_retries):
             try:
-                config_kwargs = {
-                    "response_modalities": ["AUDIO"],
-                    "speech_config": types.SpeechConfig(
-                        voice_config=types.VoiceConfig(
-                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                                voice_name="${voiceName}"
-                            )
-                        ),
-                        language_code="en-GB"
-                    )
-                }
-
-
                 response = client.models.generate_content(
                     model=model_name,
                     contents=prompt,
-                    config=types.GenerateContentConfig(**config_kwargs)
+                    config=types.GenerateContentConfig(
+                        responseModalities=["AUDIO"],
+                        safetySettings=[
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            ),
+                            types.SafetySetting(
+                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                            )
+                        ],
+                        speechConfig=types.SpeechConfig(
+                            voiceConfig=types.VoiceConfig(
+                                prebuiltVoiceConfig=types.PrebuiltVoiceConfig(
+                                    voiceName="${voiceName}"
+                                )
+                            )
+                        )
+                    )
                 )
-                if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
-                    raise ValueError("Blocked or empty response from Gemini API.")
                 return response
             except Exception as e:
                 err_str = str(e)
@@ -149,15 +169,12 @@ def get_tts():
                     continue
                 if "429" in err_str:
                     if model_name == models[0]:
-                        print("SWITCHING_TO_2_5")
+                        print("SWITCHING_TO_3_1")
                         break
                     else:
                         print("MARK_QUOTA_EXHAUSTED")
                         sys.exit(1)
-                last_exception = e
-                break
-    if last_exception:
-        raise last_exception
+                raise e
     sys.exit(1)
 
 try:
@@ -184,26 +201,20 @@ except Exception as e:
     let timeoutsCount = 0;
     const MAX_TIMEOUTS = 3;
     let success = false;
-    const currentTimeout = options.timeout || 60000;
 
     while (timeoutsCount < MAX_TIMEOUTS && !success) {
             try {
-                // If this is a retry due to insufficient pauses, rename the old wav to keep it for analysis
-                if (fs.existsSync(combinedWav)) {
-                    const dir = path.dirname(combinedWav);
-                    const ext = path.extname(combinedWav);
-                    const base = path.basename(combinedWav, ext);
-                    const backupPath = path.join(dir, `${base}_failed_attempt_${timeoutsCount}${ext}`);
-                    fs.renameSync(combinedWav, backupPath);
-                    console.log(`Saved failed wav file to: ${backupPath}`);
-                }
+                // If this is a retry due to insufficient pauses, delete the old wav to ensure a fresh one
+                if (fs.existsSync(combinedWav)) fs.unlinkSync(combinedWav);
 
+                // Use custom timeout if provided, otherwise default to 60 seconds
+                const currentTimeout = options.timeout || 60000;
                 await runPythonScriptAsync(`python3 "${tempPy}" > "${pyLog}" 2>&1`, currentTimeout);
                 
                 const pyOutput = fs.readFileSync(pyLog, 'utf8');
                 if (pyOutput.includes("MARK_QUOTA_EXHAUSTED")) quotaExhausted = true;
-                if (pyOutput.includes("SWITCHING_TO_2_5")) {
-                    console.log("\x1b[36m%s\x1b[1m%s\x1b[22m\x1b[0m", "ℹ️ Gemini 3.1 Flash TTS quota exhausted. Switched to ", "Gemini 2.5 Flash TTS");
+                if (pyOutput.includes("SWITCHING_TO_3_1")) {
+                    console.log("\x1b[36m%s\x1b[1m%s\x1b[22m\x1b[0m", "ℹ️ Gemini 2.5 Flash TTS quota exhausted. Switched to ", "Gemini 3.1 Flash TTS");
                 }
 
                 if (tasks.length === 1) {
@@ -213,7 +224,7 @@ except Exception as e:
                     const segmentFileName = `${hash}.mp3`;
                     const segmentMp3 = path.join(batchOutputDir, segmentFileName);
 
-                    const silenceOutput1 = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=0.8" -f null - 2>&1`).toString();
+                    const silenceOutput1 = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=2.0" -f null - 2>&1`).toString();
                     const startRe1 = /silence_start: ([\d.]+)/g;
                     const endRe1 = /silence_end: ([\d.]+)/g;
                     const allSilences1 = [];
@@ -232,7 +243,7 @@ except Exception as e:
                         execSync(`ffmpeg -i "${combinedWav}" -ss ${skipTo} -c copy "${segmentWav1}" -y -loglevel error`);
                     }
                     const inputForTrim = skipTo > 0 ? segmentWav1 : combinedWav;
-                    execSync(`ffmpeg -i "${inputForTrim}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silenceremove=start_periods=1:start_threshold=${silenceThreshold}:start_silence=0.15,areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold}:start_silence=0.15,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
+                    execSync(`ffmpeg -i "${inputForTrim}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
                     if (fs.existsSync(segmentWav1)) fs.unlinkSync(segmentWav1);
                     
                     const r2Key = `ep/${book}/${hash}.mp3`;
@@ -268,7 +279,7 @@ except Exception as e:
                     generatedFiles.push({ text, hash, filename: segmentFileName, status: fileStatus });
                     success = true;
                 } else {
-                    const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=0.8" -f null - 2>&1`).toString();
+                    const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=2.0" -f null - 2>&1`).toString();
                     const allSilences = [];
                     const startRe = /silence_start: ([\d.]+)/g;
                     const endRe = /silence_end: ([\d.]+)/g;
@@ -320,7 +331,7 @@ except Exception as e:
 
                         const segmentWav = path.join(batchOutputDir, `${hash}_temp.wav`);
                         execSync(`ffmpeg -i "${combinedWav}" -ss ${startTime} -to ${endTime} -c copy "${segmentWav}" -y -loglevel error`);
-                        execSync(`ffmpeg -i "${segmentWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silenceremove=start_periods=1:start_threshold=${silenceThreshold}:start_silence=0.15,areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold}:start_silence=0.15,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
+                        execSync(`ffmpeg -i "${segmentWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold},areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`);
                         
                         if (fs.existsSync(segmentWav)) fs.unlinkSync(segmentWav);
 
@@ -385,7 +396,7 @@ except Exception as e:
             } catch (err) {
                 if (err.code === 'ETIMEDOUT' || err.signal === 'SIGTERM') {
                     timeoutsCount++;
-                    console.warn(`⚠️ TTS Attempt timed out (${currentTimeout / 1000}s). Timeout count: ${timeoutsCount}/${MAX_TIMEOUTS}`);
+                    console.warn(`⚠️ TTS Attempt timed out (60s). Timeout count: ${timeoutsCount}/${MAX_TIMEOUTS}`);
                     if (timeoutsCount >= MAX_TIMEOUTS) {
                         console.error("❌ CRITICAL: TTS timed out 3 times for the same batch. Terminating process.");
                         process.exit(1);

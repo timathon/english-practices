@@ -205,7 +205,7 @@ This document defines the rules for extracting and converting textbook data into
 
 - **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`).
 - **Core Branches:** 
-  - **Stories:** Summary of reading passages into "Memory Keys" (1-5 words).
+  - **Stories:** Summary of reading passages/texts into "Memory Keys" (1-5 words). For textbooks A3A to A6B, this must include summary branches for all 5 sections from the Text Navigator (Get Ready, Start Up, Speed Up, Fuel Up 1, and Fuel Up 3).
   - **Vocabulary:** Grouped into "Verbs (Actions)", "Nouns (Things)", and "Phrases (Expressions)".
   - **Grammar Focus:** Extract patterns from "Grammar Focus" or "In Focus" sections + practice examples.
 - **Node Rules:**
