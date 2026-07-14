@@ -37,10 +37,10 @@ Jenny: Hello. I'm Jenny. What's your name?
 Anna: Anna. My name's Anna. What's your name?
 Jim: I'm Jim. How old are you?
 Anna: I'm six. How old are you?
-Matt: Hello. My name's Matt, and I'm four.
-Jim: How old are you, Jim?
+Matt: Hello. My name's Matt, and I'm four. How old are you, Jim?
 Jenny: Er... I'm five.
-Jenny and Jim: and I'm five too. We're twins!
+Jenny: and I'm five too.
+Jenny and Jim: We're twins!
 
 Pupil’s Book, page 9, activity 2, Talk to Cameron.
 Track 1.05
