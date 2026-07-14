@@ -364,7 +364,7 @@ This document defines the rules for extracting and converting textbook data into
   - `sections`: Array of section objects.
 - **Section Fields:**
   - `id`: Unique string ID identifying the section (e.g., `"s1"`, `"s2"`).
-  - `title`: Display title of the section (e.g., `"I. Read and choose"`).
+  - `title`: Display title of the section (e.g., `"一、辨音选择"`, `"I. Read and choose"`). Keep section titles short, clean, and concise (do not put long, verbose instructions inside the title itself).
   - `instruction`: Instruction text in Chinese (e.g., `"从方框中选择恰当单词填空，每词只用 1 次。"`).
   - `type`: The question type in this section:
     - `"fill-in-the-blank-wordbank"`: Fill-in-the-blank from a shared word bank.
@@ -375,7 +375,7 @@ This document defines the rules for extracting and converting textbook data into
 - **Question Item Fields:**
   - `id`: A unique 8-character alphanumeric string generated for this question.
   - `prompt`: The question sentence. For blanks, use `"______"`.
-  - **Underlining**: For phonetic/pronunciation questions requiring visual comparison of specific letters in words, wrap those target letters/groups inside HTML underline tags: `<u>letters</u>` (e.g., `Let's <u>g</u>o to the zoo and see the <u>g</u>iraffes.`).
+  - **Underlining**: For phonetic/pronunciation questions requiring visual comparison of specific letters in words, wrap those target letters/groups inside HTML underline tags: `<u>letters</u>` (e.g., `Let's <u>g</u>o to the zoo and see the <u>g</u>iraffes.`). Any markdown bold markers (e.g., `**l**ove`) in phonetic/pronunciation questions must be converted to HTML underline tags (e.g., `<u>l</u>ove`).
   - `options`: (Required for `multiple-choice` type) Array of strings.
   - `answer`: 
     - For fill-in-the-blanks: string representing the correct answer.

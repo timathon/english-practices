@@ -646,6 +646,15 @@ export function TestSheetShell({
       }
     } else if (section.type === 'cloze-passage') {
       isUserCorrect = userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && Number(userAnswers[q.id]) === Number(q.answer)
+    } else if (section.type === 'short-answer') {
+      isUserCorrect = userAnswers[q.id] !== undefined && String(userAnswers[q.id]).trim() === String(q.answer).trim()
+    } else if (section.type === 'fill-in-the-blank-firstletter') {
+      const ans = String(q.answer).trim().toLowerCase()
+      const userAns = String(userAnswers[q.id] || '').trim().toLowerCase()
+      isUserCorrect = userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && (
+        userAns === ans ||
+        (ans.length > 1 && userAns === ans.substring(1))
+      )
     } else {
       isUserCorrect = String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
     }
@@ -940,6 +949,39 @@ export function TestSheetShell({
 
             {submitted && (
               <div className="ts-feedback-detail">
+                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
+                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      case 'short-answer': {
+        return (
+          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+            <div className="ts-question-header">
+              <span className="ts-question-num">{index + 1}.</span>
+              <span className="ts-question-prompt">{renderPromptText(q.prompt || '')}</span>
+            </div>
+
+            <div className="ts-short-answer-container" style={{ marginTop: '10px' }}>
+              <input
+                type="text"
+                className="ts-blank-input"
+                style={{ width: '100%', padding: '10px', boxSizing: 'border-box', borderRadius: '6px' }}
+                value={String(userAnswers[q.id] || '')}
+                disabled={submitted}
+                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                placeholder="Type your answer here..."
+              />
+            </div>
+
+            {submitted && (
+              <div className="ts-feedback-detail">
+                {!isUserCorrect && (
+                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
+                )}
                 {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
                 {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
               </div>
