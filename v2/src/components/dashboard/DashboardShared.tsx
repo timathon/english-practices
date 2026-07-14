@@ -1,4 +1,5 @@
 import { translatePracticeName } from '../../lib/dashboardUtils'
+import { ComposedChart, Bar, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export function FadingPracticeName({ name, showChinese, finishedCount, onCountClick }: { name: string; showChinese: boolean; finishedCount?: number; onCountClick?: (e: React.MouseEvent) => void }) {
   const cnName = translatePracticeName(name);
@@ -95,3 +96,100 @@ export const CustomTooltip = ({ active, payload, label }: any) => {
   }
   return null;
 };
+
+export function ActivityChart({
+  last7DaysStats,
+  handleChartInteraction,
+  handlePointClick
+}: {
+  last7DaysStats: any[];
+  handleChartInteraction: (state: any) => void;
+  handlePointClick: (...args: any[]) => void;
+}) {
+  return (
+    <div className="db-chart-card">
+      <div className="db-chart-legend-left">
+        <span className="db-chart-legend-bar" />
+        <span className="db-chart-legend-bar" style={{ backgroundColor: '#e67e22', marginTop: '4px' }} />
+        <span>Practices & Time (m)</span>
+      </div>
+      <div className="db-chart-area">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={last7DaysStats}
+            margin={{ top: 16, right: 12, bottom: 0, left: -8 }}
+            onClick={handleChartInteraction}
+          >
+            <defs>
+              <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--tab-active-text)" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="var(--tab-active-text)" stopOpacity={0.4} />
+              </linearGradient>
+              <linearGradient id="durationBarGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#e67e22" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#e67e22" stopOpacity={0.4} />
+              </linearGradient>
+              <linearGradient id="lineGlow" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.5} />
+            <XAxis
+              dataKey="date" stroke="var(--text)" fontSize={11}
+              tickLine={false} axisLine={false} dy={6}
+              tickFormatter={(value, index) => [1, 3, 5].includes(index) ? '' : value}
+            />
+            <XAxis
+              xAxisId="hidden"
+              dataKey="date"
+              hide
+            />
+            <YAxis
+              yAxisId="left" stroke="var(--text)" fontSize={11}
+              tickLine={false} axisLine={false} tickCount={5}
+              allowDecimals={false} width={28}
+            />
+            <YAxis
+              yAxisId="right" orientation="right" stroke="var(--text)"
+              fontSize={11} tickLine={false} axisLine={false}
+              tickFormatter={(v) => `${v}%`} domain={[0, 100]} width={36}
+            />
+            <Tooltip
+              cursor={{ fill: 'var(--accent-bg)', radius: 4 }}
+              content={<CustomTooltip />}
+            />
+            <Area
+              yAxisId="right" type="monotone" dataKey="avgScore"
+              fill="url(#lineGlow)" stroke="none" tooltipType="none"
+            />
+            <Bar
+              yAxisId="left" dataKey="count" name="Practices Done"
+              fill="url(#barGrad)" radius={[4, 4, 0, 0]} barSize={10}
+            />
+            <Bar
+              yAxisId="left" dataKey="totalDuration" name="Time Used"
+              fill="url(#durationBarGrad)" radius={[4, 4, 0, 0]} barSize={10}
+            />
+            <Line
+              yAxisId="right" type="monotone" dataKey="avgScore"
+              name="Avg Score" stroke="var(--accent)" strokeWidth={2.5}
+              dot={{ r: 3.5, fill: 'var(--card-bg)', strokeWidth: 2.5 }}
+              activeDot={{ r: 5.5, fill: 'var(--accent)', strokeWidth: 0 }}
+            />
+            <Bar
+              xAxisId="hidden"
+              yAxisId="right" dataKey="columnClickArea"
+              fill="transparent" barSize={40}
+              onClick={handlePointClick}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="db-chart-legend-right">
+        <span className="db-chart-legend-dot" />
+        <span>Avg Score</span>
+      </div>
+    </div>
+  );
+}
