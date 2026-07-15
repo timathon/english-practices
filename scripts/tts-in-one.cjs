@@ -29,7 +29,7 @@ function chunkTasksByWordCount(tasks, maxWords) {
     for (const task of tasks) {
         const text = task.context_sentence || task.text || task.word || task.en || "";
         const wordCount = text.split(/\s+/).filter(Boolean).length;
-        if (currentChunk.length > 0 && (currentWords + wordCount > maxWords || currentChunk.length >= 12)) {
+        if (currentChunk.length > 0 && (currentWords + wordCount > maxWords)) {
             chunks.push(currentChunk);
             currentChunk = [task];
             currentWords = wordCount;
@@ -71,7 +71,7 @@ async function checkAudioExists(text, bookName) {
 
 async function main() {
     const forceRegenerate = process.argv.includes('--regenerate');
-    const noUpload = process.argv.includes('--no-upload');
+    const noUpload = true; // Always skip upload, handle manually via report UI
     const useXl = process.argv.includes('--xl') || process.argv.includes('xl');
     const resume = process.argv.includes('--resume') || process.argv.includes('resume');
 
@@ -278,8 +278,8 @@ async function main() {
 
         let chunks = [];
         if (jobState.useXl) {
-            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 200);
-            console.log(`Generating audio in batches of max 200 words using GOOGLE_API_KEY_FREE...`);
+            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 100);
+            console.log(`Generating audio in batches of max 100 words using GOOGLE_API_KEY_FREE...`);
         } else {
             const tasksArray = remainingItems.map(item => ({ context_sentence: item.text }));
             for (let i = 0; i < tasksArray.length; i += 10) {
@@ -352,6 +352,9 @@ async function main() {
                     if (item) {
                         item.done = 1;
                         item.hash = f.hash;
+                        item.wav = f.wav;
+                        item.start = f.start;
+                        item.end = f.end;
                     }
                 }
                 try {

@@ -94,6 +94,7 @@ async function getAudioBatch(tasks, book, options = {}) {
     // and its trailing silence falls well past the s.start > 0.1 filter threshold.
     const WARMUP = "Warmup sentence. Let's begin.";
     const combinedText = `<speak>${[WARMUP, ...ttsSentences].join(separator)}${separator}</speak>`;
+    const combinedText_2_5 = [WARMUP, ...ttsSentences].join(' ... ... ... \n\n');
     
     console.log(`TTS Batch Request [ID: ${batchId}, Type: ${type}]: ${tasks.length} items.`);
 
@@ -112,8 +113,8 @@ client = genai.Client(
 )
 
 def get_tts():
-    # Use a simple prompt for the content, and specify the strict rules via system_instruction.
-    prompt = """${combinedText.replace(/"/g, '\\"')}"""
+    prompt_3_1 = """${combinedText.replace(/"/g, '\\"')}"""
+    prompt_2_5 = """${combinedText_2_5.replace(/"/g, '\\"')}"""
     
     last_exception = None
     models = ["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts"]
@@ -128,12 +129,12 @@ def get_tts():
                             prebuilt_voice_config=types.PrebuiltVoiceConfig(
                                 voice_name="${voiceName}"
                             )
-                        ),
-                        language_code="en-GB"
+                        )
                     )
                 }
 
 
+                prompt = prompt_2_5 if "2.5" in model_name else prompt_3_1
                 response = client.models.generate_content(
                     model=model_name,
                     contents=prompt,
@@ -324,7 +325,7 @@ except Exception as e:
                         
                         if (fs.existsSync(segmentWav)) fs.unlinkSync(segmentWav);
 
-                        uploadTasks.push({ task, segmentMp3, hash, text, segmentFileName });
+                        uploadTasks.push({ task, segmentMp3, hash, text, segmentFileName, wav: combinedWav, start: startTime, end: endTime });
                         startTime = endTime;
                     }
 
@@ -332,7 +333,7 @@ except Exception as e:
                     if (skipUpload) {
                         console.log(`[Batch: ${batchId}] --no-upload: skipping R2 upload for ${uploadTasks.length} files.`);
                         for (const item of uploadTasks) {
-                            generatedFiles.push({ text: item.text, hash: item.hash, filename: item.segmentFileName, status: 1 });
+                            generatedFiles.push({ text: item.text, hash: item.hash, filename: item.segmentFileName, status: 1, wav: item.wav, start: item.start, end: item.end });
                         }
                     } else {
                         const CONCURRENCY_LIMIT = 8;
@@ -366,7 +367,7 @@ except Exception as e:
                                 } else {
                                     console.error(`[Batch: ${batchId}] Failed to upload ${r2Key} after 3 attempts.`);
                                 }
-                                generatedFiles.push({ text, hash, filename: segmentFileName, status: fileStatus });
+                                generatedFiles.push({ text, hash, filename: segmentFileName, status: fileStatus, wav: item.wav, start: item.start, end: item.end });
                             })();
 
                             results.push(promise);
