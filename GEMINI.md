@@ -63,7 +63,7 @@ This document defines the rules for extracting and converting textbook data into
   - `meaning`: Chinese translation, prioritizing the Chinese in the appendix vocabulary list (including parts of speech where applicable).
   - `page_number`: Extract from the `--- PRINTED PAGE X ---` markers. If a page is `Unnumbered`, infer its number based on the surrounding pages (e.g., if it precedes page 15, it is 14).
   - `context_sentence`: Find the exact sentence from the dialogue or text.
-  - `ipa`: Standard British (UK) IPA for single words.
+  - `ipa`: Standard British (UK) IPA for single words, enclosed in forward slashes (e.g. `"/ˈpensl/"`).
   - `comparison`: A 'word vs distractor' string for visual or phonetic comparison (e.g., 'winner vs winter', 'hill vs pill').
   - `syllable_type`: 
     - Single-syllable: 闭音节 (Closed), 开音节 (Open), 相对开音节 (VCe), 元音字母组合音节 (Vowel Team), r控制音节 (R-Controlled), 辅音+le音节 (C-le).
@@ -205,7 +205,7 @@ This document defines the rules for extracting and converting textbook data into
 
 - **Structure:** Hierarchical mindmap tree (JSON key `tree`, root node ID `root`).
 - **Core Branches:** 
-  - **Stories:** Summary of reading passages/texts into "Memory Keys" (1-5 words). For textbooks A3A to A6B, this must include summary branches for all 5 sections from the Text Navigator (Get Ready, Start Up, Speed Up, Fuel Up 1, and Fuel Up 3).
+  - **Stories:** Summary of reading passages/texts into "Memory Keys" (1-5 words). For textbooks A3A to A6B, this must include summary branches for all 5 sections from the Text Navigator (Get Ready, Start Up, Speed Up, Fuel Up 1, and Fuel Up 3). For **PU1** textbooks, the Stories branch must include summary branches for **"The Friendly Farm"** (the comic strip story) and **"Literature"** (the play script, e.g. "The First Day") in addition to any other reading sections present in the unit.
   - **Vocabulary:** Grouped into "Verbs (Actions)", "Nouns (Things)", and "Phrases (Expressions)".
   - **Grammar Focus:** Extract patterns from "Grammar Focus" or "In Focus" sections + practice examples.
 - **Node Rules:**
@@ -223,6 +223,7 @@ This document defines the rules for extracting and converting textbook data into
   - **A3A - A6B:** "Get Ready - Activity 1", "Start Up", "Speed Up", "Fuel Up - Activity 1", "Fuel Up - Activity [X]" (where [X] is the exact activity number, e.g., "Fuel Up - Activity 3", which has to be listening practice with a script in the appendix of the unit markdown). **CRITICAL:** When generating text navigator for A4A to A6B, also include GET READY activity 1 (which is always the first activity for the unit, e.g., "1 Listen and sing.") and "Fuel Up - Activity 1". You must include BOTH "Fuel Up - Activity 1" and the listening practice "Fuel Up - Activity [X]" if both are present in the source text.
   - **A7A - A8B:** "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".
   - **S* (textbooks starting with S, e.g., SA1):** The main reading passage (e.g., "The Night the Earth Didn't Sleep" for SA1) AND the Reading for Writing activity 1 passage (e.g., "THE STORY OF AN EYEWITNESS" for SA1).
+  - **PU1:** "The Friendly Farm" and "Literature".
   - **Full Text Verification:** You must include the **entire full article/passage/dialogue** verbatim (every single sentence/line) as it appears in the source, without summarizing, omitting, or truncating paragraphs or sentences. Failure to include the full text is considered incomplete data.
 
 **Target:** `*-text-navigator.json` — a **single file per unit** containing all applicable sections. (Save in the same folder as source)
@@ -330,7 +331,7 @@ This document defines the rules for extracting and converting textbook data into
 
 ## 9. Passage Decoder (PD)
 **Sources:**
-- **Student's Book:** Extracted from the textbook or Student's Book passages (which are identical to those in the corresponding Text Navigator JSON). The target JSON filename must end with the `-s.json` suffix (where `-s` stands for Student's Book). **For textbooks starting with S (e.g., SA1), you must include both the main reading passage (e.g., "The Night the Earth Didn't Sleep" for SA1) and the Reading for Writing activity 1 passage (e.g., "THE STORY OF AN EYEWITNESS" for SA1) in this Student's Book passage decoder.**
+- **Student's Book:** Extracted from the textbook or Student's Book passages (which are identical to those in the corresponding Text Navigator JSON). The target JSON filename must end with the `-s.json` suffix (where `-s` stands for Student's Book). **For textbooks starting with S (e.g., SA1), you must include both the main reading passage (e.g., "The Night the Earth Didn't Sleep" for SA1) and the Reading for Writing activity 1 passage (e.g., "THE STORY OF AN EYEWITNESS" for SA1) in this Student's Book passage decoder.** **For PU1 textbooks, you must include "The Friendly Farm" and "Literature".**
 - **Passage Decoder Markdown:** Extracted from a passage decoder markdown file (e.g., `data/A5B/a5b-u1/a5b-u1-passage-decoder-w.md`), if one exists. The target JSON filename should preserve the suffix from the source markdown file (e.g., target `*-w.json` for source `*-w.md`).
 
 **Target:** `*-passage-decoder-[suffix].json` (Save in the same folder as source)
@@ -352,7 +353,7 @@ This document defines the rules for extracting and converting textbook data into
   - `level`: e.g., "Grade 5 Semester 2 - Unit 1".
   - `title`: e.g., "Passage Decoder".
   - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline, highlight }`).
-- **Generation**: Avoid calling the Gemini API programmatically to parse or generate options. Perform translations and distractor generation directly within your own context.
+- **Generation**: You may call the Gemini API programmatically (using `GOOGLE_API_KEY_FREE` and `gemini-3.1-flash-lite`) to parse and generate options, or you can perform translations and distractor generation directly within your own context.
 
 ## 10. Test Sheet (TS)
 **Source:** Textbook PDF or Quiz markdown files (e.g., `data/A5Bx/a5bx-wm3/a5bx-wm3.md`).

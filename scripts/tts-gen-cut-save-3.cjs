@@ -94,7 +94,7 @@ async function getAudioBatch(tasks, book, options = {}) {
     // and its trailing silence falls well past the s.start > 0.1 filter threshold.
     const WARMUP = "Warmup sentence. Let's begin.";
     const combinedText = `<speak>${[WARMUP, ...ttsSentences].join(separator)}${separator}</speak>`;
-    const combinedText_2_5 = [WARMUP, ...ttsSentences].join(' ... ... ... \n\n');
+    const combinedText_2_5 = [WARMUP, ...ttsSentences].join(' \\n\\n. . . . . . . . . .\\n\\n ');
     
     console.log(`TTS Batch Request [ID: ${batchId}, Type: ${type}]: ${tasks.length} items.`);
 
@@ -117,7 +117,7 @@ def get_tts():
     prompt_2_5 = """${combinedText_2_5.replace(/"/g, '\\"')}"""
     
     last_exception = None
-    models = ["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts"]
+    models = ["gemini-2.5-flash-preview-tts", "gemini-3.1-flash-tts-preview"]
     for model_name in models:
         max_retries = 5
         for attempt in range(max_retries):
@@ -279,36 +279,43 @@ except Exception as e:
                     }
                     const candidateSilences = allSilences.filter(s => s.start > 0.1);
                     
-                    // We now expect tasks.length + 1 silences:  1 leading + N trailing (one after each sentence).
-                    if (candidateSilences.length < tasks.length) {
-                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length} required). Retrying attempt ${timeoutsCount + 2}/${MAX_TIMEOUTS}...`);
+                    // If the TTS model ignores the WARMUP sentence, we will get (tasks.length - 1) pauses.
+                    let warmupSkipped = false;
+                    let expectedPauses = tasks.length;
+                    
+                    if (candidateSilences.length === tasks.length - 1) {
+                        warmupSkipped = true;
+                        expectedPauses = tasks.length - 1;
+                        console.log(`[Batch: ${batchId}] Detected ${candidateSilences.length} pauses. Assuming WARMUP sentence was skipped by the TTS model.`);
+                    } else if (candidateSilences.length < tasks.length - 1) {
+                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length - 1} minimum required). Retrying attempt ${timeoutsCount + 2}/${MAX_TIMEOUTS}...`);
                         timeoutsCount++;
                         if (timeoutsCount >= MAX_TIMEOUTS) {
                             console.error("❌ CRITICAL: Failed to get enough pauses after 3 attempts. Terminating.");
                             process.exit(1);
                         }
                         continue;
+                    } else if (candidateSilences.length > tasks.length) {
+                        expectedPauses = tasks.length + 1; // It might have a trailing pause
                     }
 
-                    // Select the N+1 longest silences (1 after warmup + N after sentences),
-                    // then re-sort by start time for correct cutting order.
-                    // Duration-based selection is reliable here because the warmup sentence
-                    // guarantees no extra early silence (s.start ≈ 0) can displace a real
-                    // boundary — the problem that originally forced the greedy minGap approach.
-                    const silencesCount = tasks.length + 1;
+                    // Select the longest silences
                     const silences = candidateSilences
                         .map(s => ({ ...s, duration: s.end - s.start }))
                         .sort((a, b) => b.duration - a.duration)
-                        .slice(0, silencesCount)
+                        .slice(0, expectedPauses)
                         .sort((a, b) => a.start - b.start);
 
-                    console.log(`Detected ${allSilences.length} pauses, using ${silences.length} longest as N+1 separators.`);
+                    console.log(`Detected ${allSilences.length} pauses, using ${silences.length} longest as separators (Warmup skipped: ${warmupSkipped}).`);
 
                     // 1. Cut Phase: Generate all MP3s locally first
                     const uploadTasks = [];
-                    // Start from the midpoint of the leading silence (silences[0]),
-                    // then use silences[1..N] as the end boundaries for each sentence.
-                    let startTime = silences[0] ? (silences[0].start + silences[0].end) / 2 : 0;
+                    
+                    let startTime = 0;
+                    if (!warmupSkipped && silences.length > 0) {
+                        startTime = (silences[0].start + silences[0].end) / 2;
+                    }
+                    
                     for (let i = 0; i < tasks.length; i++) {
                         const task = tasks[i];
                         const text = sentences[i];
@@ -316,7 +323,8 @@ except Exception as e:
                         const segmentFileName = `${hash}.mp3`;
                         const segmentMp3 = path.join(batchOutputDir, segmentFileName);
                         
-                        const s = silences[i + 1]; // silences[0] is the leading silence; [1..N] are inter-sentence
+                        const silenceIndex = warmupSkipped ? i : i + 1;
+                        const s = silences[silenceIndex]; 
                         const endTime = s ? (s.start + s.end) / 2 : (i === tasks.length - 1 ? 99999 : startTime + 15); 
 
                         const segmentWav = path.join(batchOutputDir, `${hash}_temp.wav`);
