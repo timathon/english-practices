@@ -345,12 +345,12 @@ async function main() {
                 console.warn(`⚠️ Quota warning or limit hit in batch ${i + 1}.`);
             }
 
-            // Mark items as done and update hash
+            // Update hash/wav/timing after TTS+cutting; done stays 0 until upload completes
             if (result.files) {
                 for (const f of result.files) {
                     const item = jobState.items.find(it => it.text === f.text && it.done !== 1);
                     if (item) {
-                        item.done = 1;
+                        // done remains 0; set to 1 only after upload via report UI
                         item.hash = f.hash;
                         item.wav = f.wav;
                         item.start = f.start;

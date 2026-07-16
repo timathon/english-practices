@@ -136,6 +136,12 @@ function main() {
                     if (item) {
                         item.done = 1;
                         fs.writeFileSync(jobFilePath, JSON.stringify(jobState, null, 2), 'utf8');
+                        const doneCount = jobState.items.filter(i => i.done === 1).length;
+                        const totalCount = jobState.items.length;
+                        console.log(`✅ Uploaded [${doneCount}/${totalCount}]: "${item.text}" -> ${r2Key}`);
+                        if (doneCount === totalCount) {
+                            console.log(`\n🎉 All ${totalCount} items uploaded successfully!`);
+                        }
                     }
 
                     res.writeHead(200, { 'Content-Type': 'application/json' });
