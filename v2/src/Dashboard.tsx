@@ -288,6 +288,17 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
     }
   };
 
+  const handleDeleteUnitMistakes = (textbook: string, unit: string) => {
+    if (userId && window.confirm(`Are you sure you want to delete ALL mistakes in ${textbook} - ${unit}?`)) {
+      const unitMistakes = mistakes.filter(m => (m.textbook || 'Other') === textbook && (m.unit || 'General') === unit);
+      unitMistakes.forEach(m => mistakeService.removeMistake(userId, m.id));
+      if ((session?.user as any)?.role !== 'testdrive') {
+        mistakeService.syncToServer(userId);
+      }
+      setMistakes(mistakeService.getMistakes(userId));
+    }
+  };
+
   const groupedMistakes = useMemo(() => {
     const visibleMistakes = showResolved ? listedMistakes : listedMistakes.filter(m => !m.resolved);
     return visibleMistakes.reduce<Record<string, Record<string, Mistake[]>>>((acc, m) => {
@@ -795,6 +806,8 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
               unresolvedMistakes={unresolvedMistakes}
               setActiveMistakeReview={setActiveMistakeReview}
               handleDeleteMistake={handleDeleteMistake}
+              isAdmin={(session?.user as any)?.role === 'admin'}
+              handleDeleteUnitMistakes={handleDeleteUnitMistakes}
               handleStartPreReview={() => {
                 setActiveMistakeReview(unlistedMistakes);
                 setIsPreReview(true);

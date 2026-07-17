@@ -17,6 +17,8 @@ interface MistakeBookViewProps {
   unresolvedMistakes: Mistake[];
   setActiveMistakeReview: (mistakes: Mistake[]) => void;
   handleDeleteMistake: (id: string) => void;
+  isAdmin?: boolean;
+  handleDeleteUnitMistakes?: (textbook: string, unit: string) => void;
   handleStartPreReview: () => void;
 }
 
@@ -35,16 +37,22 @@ export function MistakeBookView({
   unresolvedMistakes,
   setActiveMistakeReview,
   handleDeleteMistake,
+  isAdmin,
+  handleDeleteUnitMistakes,
   handleStartPreReview
 }: MistakeBookViewProps) {
   const mistakeBooks = Object.keys(groupedMistakes).sort();
-  const effectiveMistakeBook = activeMistakeBook || (mistakeBooks.length > 0 ? mistakeBooks[0] : '');
+  const effectiveMistakeBook = (activeMistakeBook && groupedMistakes[activeMistakeBook])
+    ? activeMistakeBook
+    : (mistakeBooks.length > 0 ? mistakeBooks[0] : '');
   
   const mistakeUnits = effectiveMistakeBook ? Object.keys(groupedMistakes[effectiveMistakeBook]).sort((a, b) => {
     return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
   }) : [];
   
-  const effectiveMistakeUnit = activeMistakeUnit || (mistakeUnits.length > 0 ? mistakeUnits[0] : '');
+  const effectiveMistakeUnit = (activeMistakeUnit && mistakeUnits.includes(activeMistakeUnit))
+    ? activeMistakeUnit
+    : (mistakeUnits.length > 0 ? mistakeUnits[0] : '');
 
   if (mistakes.length === 0) {
     return (
@@ -168,13 +176,26 @@ export function MistakeBookView({
                 <h4 style={{ margin: 0, color: 'var(--text-h)' }}>
                   {effectiveMistakeBook} - {effectiveMistakeUnit} ({groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].length})
                 </h4>
-                <button
-                  className="db-unit-review-btn"
-                  disabled={groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].filter(m => !m.resolved).length === 0}
-                  onClick={() => setActiveMistakeReview(groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].filter(m => !m.resolved))}
-                >
-                  ✏️ Review Unit
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {isAdmin && handleDeleteUnitMistakes && (
+                    <button
+                      className="db-unit-review-btn"
+                      style={{ background: 'var(--red)', color: 'white', border: 'none' }}
+                      onClick={() => handleDeleteUnitMistakes(effectiveMistakeBook, effectiveMistakeUnit)}
+                      title="Remove Unit Mistakes"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                  <button
+                    className="db-unit-review-btn"
+                    disabled={groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].filter(m => !m.resolved).length === 0}
+                    onClick={() => setActiveMistakeReview(groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].filter(m => !m.resolved))}
+                    title="Review Unit"
+                  >
+                    ✏️
+                  </button>
+                </div>
               </div>
               <div className="db-mistakes-list">
                 {groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].map((m) => (
