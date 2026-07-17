@@ -62,7 +62,7 @@ This document defines the rules for extracting and converting textbook data into
   - `word`: The English word or phrase.
   - `meaning`: Chinese translation, prioritizing the Chinese in the appendix vocabulary list (including parts of speech where applicable).
   - `page_number`: Extract from the `--- PRINTED PAGE X ---` markers. If a page is `Unnumbered`, infer its number based on the surrounding pages (e.g., if it precedes page 15, it is 14).
-  - `context_sentence`: Find the exact sentence from the dialogue or text.
+  - `context_sentence`: Find the exact sentence from the dialogue or text. Sentences with blanks (like "This is your ____.") cannot be used as a context sentence.
   - `ipa`: Standard British (UK) IPA for single words, enclosed in forward slashes (e.g. `"/ˈpensl/"`).
   - `comparison`: A 'word vs distractor' string for visual or phonetic comparison (e.g., 'winner vs winter', 'hill vs pill').
   - `syllable_type`: 
@@ -137,7 +137,7 @@ This document defines the rules for extracting and converting textbook data into
   - `id`: A unique 8-character alphanumeric string generated for this specific question (e.g., "v8k2m9p1").
   - `word`: The English word/phrase from `vocab-guide`.
   - `meaning`: The Chinese meaning from `vocab-guide`.
-  - `context_sentence`: Include the verbatim sentence from `vocab-guide`.
+  - `context_sentence`: Include the verbatim sentence from `vocab-guide`. Sentences with blanks (like "This is your ____.") cannot be used as a context sentence.
   - `cn`: Include the Chinese translation of the `context_sentence` from `vocab-guide`.
   - `hint`: Rename `memorization_hook` from `vocab-guide` to `hint`.
   - `type`: `Cloze`, `Cn2En`, or `En2Cn`.

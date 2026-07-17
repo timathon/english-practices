@@ -278,8 +278,8 @@ async function main() {
 
         let chunks = [];
         if (jobState.useXl) {
-            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 100);
-            console.log(`Generating audio in batches of max 100 words using GOOGLE_API_KEY_FREE...`);
+            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 150);
+            console.log(`Generating audio in batches of max 150 words using GOOGLE_API_KEY_FREE...`);
         } else {
             const tasksArray = remainingItems.map(item => ({ context_sentence: item.text }));
             for (let i = 0; i < tasksArray.length; i += 10) {
