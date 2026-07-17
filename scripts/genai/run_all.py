@@ -73,6 +73,9 @@ def main():
         cmd = [sys.executable, str(script_path), str(input_file)]
         try:
             subprocess.run(cmd, check=True)
+            import time
+            print("Sleeping 5 seconds to respect 15 RPM rate limit...")
+            time.sleep(5)
         except subprocess.CalledProcessError as e:
             print(f"Error running {script_name}: {e}")
             ans = input("Continue with next script? (Y/n): ").strip().lower()

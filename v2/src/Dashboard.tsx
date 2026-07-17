@@ -38,6 +38,54 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const [selectedAttemptForDetails, setSelectedAttemptForDetails] = useState<any | null>(null)
   const [activeTestFullContent, setActiveTestFullContent] = useState<any | null>(null)
   const [loadingContent, setLoadingContent] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    if (!userId) return;
+    setIsRefreshing(true);
+    try {
+      cache.clear();
+
+      const practicesRes = await fetch(API_URL + '/api/practices', { credentials: 'include' });
+      if (practicesRes.status === 403) {
+        const data = await practicesRes.json();
+        if (data.reason === 'testdrive_expired' || data.reason === 'testdrive_daily_limit_reached') {
+          setTestdriveLockdown({ nextAvailableAt: data.nextAvailableAt || '' });
+        }
+        throw new Error(data.error);
+      }
+      const practicesData = await practicesRes.json();
+      if (Array.isArray(practicesData)) {
+        cache.setPractices(practicesData);
+        setPractices(practicesData);
+      }
+
+      const recordsRes = await fetch(API_URL + '/api/records', { credentials: 'include' });
+      if (recordsRes.status === 403) {
+        const data = await recordsRes.json();
+        if (data.reason === 'testdrive_expired' || data.reason === 'testdrive_daily_limit_reached') {
+          setTestdriveLockdown({ nextAvailableAt: data.nextAvailableAt || '' });
+        }
+        throw new Error(data.error);
+      }
+      const recordsData = await recordsRes.json();
+      if (Array.isArray(recordsData)) {
+        cache.setRecords(recordsData);
+        setRecords(recordsData.filter((r: any) => !r.unit.startsWith('game-')));
+      }
+
+      if ((session?.user as any)?.role !== 'testdrive') {
+        const syncedMistakes = await mistakeService.syncFromServer(userId);
+        setMistakes(syncedMistakes);
+      } else {
+        setMistakes(mistakeService.getMistakes(userId));
+      }
+    } catch (e) {
+      console.error("Failed to refresh practice list:", e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleViewAttemptDetails = async (practice: any, attempt: any) => {
     setSelectedTestPractice(practice)
@@ -741,12 +789,32 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
                 }
               }}
             >
-              <span className="db-title-grid">
+              <span className="db-title-grid" style={{ position: 'relative', paddingRight: '28px' }}>
                 <span className={showChinese ? "anim-fade-out" : "anim-fade-in"} key={showChinese ? "en-out" : "en-in"}>
                   🎯 Practice Library
                 </span>
                 <span className={showChinese ? "anim-fade-in" : "anim-fade-out"} key={showChinese ? "cn-in" : "cn-out"}>
                   🎯 练习库
+                </span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRefresh();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRefresh();
+                    }
+                  }}
+                  className={`db-refresh-btn ${isRefreshing ? 'spinning' : ''}`}
+                  title={showChinese ? "刷新练习列表" : "Refresh practice list"}
+                  style={{ cursor: 'pointer' }}
+                >
+                  🔄
                 </span>
               </span>
             </button>

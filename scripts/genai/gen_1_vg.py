@@ -102,10 +102,13 @@ def main():
 
     # Ensure all IPA values have slashes
     for item in parsed.get("unit_vocabulary", []):
-        if "ipa" in item:
-            ipa = item["ipa"]
+        if "ipa" in item and isinstance(item["ipa"], str) and item["ipa"].strip():
+            ipa = item["ipa"].strip()
             if not ipa.startswith("/"):
-                item["ipa"] = f"/{ipa}/"
+                ipa = f"/{ipa}"
+            if not ipa.endswith("/"):
+                ipa = f"{ipa}/"
+            item["ipa"] = ipa
 
     stem = md_path.stem  # e.g. "b-pu1-u1"
     out_path = md_path.parent / f"{stem}-vocab-guide.json"

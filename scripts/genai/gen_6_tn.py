@@ -29,8 +29,7 @@ You are an expert English curriculum designer. Generate a text-navigator JSON fo
 === STRUCTURE REQUIREMENTS ===
 - Top level fields: "level" (e.g. "{level}"), "part" (e.g. "{part}"), and "sections" (array).
 - "sections" array: One object for each required section. Each object has a "section" string and a "tree" object (the hierarchical mindmap).
-- Sections to include for PU1 textbooks: "The Friendly Farm" and "Literature".
-- Sections to include for non-PU1 textbooks: any sections with long english articles/passages/dialogues
+{section_instructions}
 - CRITICAL: You must include the entire full article/passage/dialogue verbatim as it appears in the source, without summarizing, omitting, or truncating paragraphs or sentences.
 
 === TREE RULES ===
@@ -141,8 +140,19 @@ def main():
         print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
         sys.exit(1)
 
+    is_pu1 = "pu1" in str(md_path).lower() or "pu1" in args.level.lower()
+    if is_pu1:
+        section_instructions = '- Sections to include: "The Friendly Farm" and "Literature" (the comic strip and playscript sections).'
+    else:
+        section_instructions = '- Sections to include: any sections containing long English articles/passages/dialogues (e.g. "Start Up", "Speed Up", "Fuel Up"). DO NOT include "The Friendly Farm" or "Literature" sections.'
+
     client = genai.Client(api_key=api_key)
-    prompt = PROMPT_TEMPLATE.format(level=args.level, part=args.part, source=source)
+    prompt = PROMPT_TEMPLATE.format(
+        level=args.level, 
+        part=args.part, 
+        section_instructions=section_instructions, 
+        source=source
+    )
 
     print(f"Calling Gemini 3.1 Flash Lite for: {md_path}", file=sys.stderr)
 

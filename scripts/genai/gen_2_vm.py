@@ -173,6 +173,22 @@ def main():
 
     parsed = extract_json(response.text)
 
+    # Post-process to ensure context_sentence is verbatim from vocab-guide (no blanks)
+    word_to_sentence = {}
+    for item in items:
+        w = item.get("word")
+        s = item.get("context_sentence")
+        if w and s:
+            word_to_sentence[w.lower()] = s
+
+    for challenge in parsed.get("challenges", []):
+        for q in challenge.get("questions", []):
+            word = q.get("word")
+            if word:
+                correct_sentence = word_to_sentence.get(word.lower())
+                if correct_sentence:
+                    q["context_sentence"] = correct_sentence
+
     stem = vg_path.stem.replace("-vocab-guide", "")
     out_path = vg_path.parent / f"{stem}-vocab-master.json"
     with open(out_path, "w", encoding="utf-8") as f:
