@@ -65,7 +65,7 @@ Generate a vocab-master JSON from the vocab-guide below.
 - "id": unique 8-character alphanumeric string
 - "word": English word from vocab-guide
 - "meaning": Chinese meaning from vocab-guide (without PoS prefix for display)
-- "context_sentence": verbatim from vocab-guide
+- "context_sentence": verbatim from vocab-guide (sentences with blanks like "This is your ____." cannot be used as a context sentence)
 - "cn": Chinese translation of context_sentence
 - "hint": the memorization_hook from vocab-guide (renamed)
 - "type": "Cloze" | "Cn2En" | "En2Cn"

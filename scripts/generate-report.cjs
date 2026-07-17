@@ -78,9 +78,18 @@ function main() {
                     const batchFolder = path.dirname(wav);
                     const segmentMp3 = path.join(batchFolder, `${hash}.mp3`);
 
-                    const cmd = `ffmpeg -i "${wav}" -ss ${start} -to ${end} -c:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`;
-                    console.log(`Re-cutting segment: ${cmd}`);
-                    execSync(cmd);
+                    const silenceThreshold = "-30dB";
+                    const segmentWav = path.join(batchFolder, `${hash}_temp.wav`);
+                    
+                    const cmdCut = `ffmpeg -i "${wav}" -ss ${start} -to ${end} -c copy "${segmentWav}" -y -loglevel error`;
+                    console.log(`Re-cutting segment: ${cmdCut}`);
+                    execSync(cmdCut);
+
+                    const cmdProcess = `ffmpeg -i "${segmentWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silenceremove=start_periods=1:start_threshold=${silenceThreshold}:start_silence=0.15,areverse,silenceremove=start_periods=1:start_threshold=${silenceThreshold}:start_silence=0.15,areverse,asetpts=N/SR/TB" -codec:a libmp3lame -qscale:a 2 "${segmentMp3}" -y -loglevel error`;
+                    console.log(`Applying silence removal: ${cmdProcess}`);
+                    execSync(cmdProcess);
+
+                    if (fs.existsSync(segmentWav)) fs.unlinkSync(segmentWav);
 
                     // Update job file
                     let jobState = JSON.parse(fs.readFileSync(jobFilePath, 'utf8'));

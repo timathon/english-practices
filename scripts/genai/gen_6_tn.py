@@ -30,6 +30,7 @@ You are an expert English curriculum designer. Generate a text-navigator JSON fo
 - Top level fields: "level" (e.g. "{level}"), "part" (e.g. "{part}"), and "sections" (array).
 - "sections" array: One object for each required section. Each object has a "section" string and a "tree" object (the hierarchical mindmap).
 - Sections to include for PU1 textbooks: "The Friendly Farm" and "Literature".
+- Sections to include for non-PU1 textbooks: any sections with long english articles/passages/dialogues
 - CRITICAL: You must include the entire full article/passage/dialogue verbatim as it appears in the source, without summarizing, omitting, or truncating paragraphs or sentences.
 
 === TREE RULES ===

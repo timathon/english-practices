@@ -270,7 +270,7 @@ async function main() {
     }
 
     try {
-        const remainingItems = jobState.items.filter(item => item.done !== 1);
+        const remainingItems = jobState.items.filter(item => item.hash === null);
         if (remainingItems.length === 0) {
             console.log("✨ All items in the job are already done.");
             return;
@@ -311,7 +311,7 @@ async function main() {
             // Update batchId in JSON state for the items in this batch
             const batchTexts = new Set(batch.map(item => item.context_sentence));
             for (const item of jobState.items) {
-                if (batchTexts.has(item.text) && item.done !== 1) {
+                if (batchTexts.has(item.text) && item.hash === null) {
                     item.batchId = batchId;
                 }
             }
@@ -348,7 +348,7 @@ async function main() {
             // Update hash/wav/timing after TTS+cutting; done stays 0 until upload completes
             if (result.files) {
                 for (const f of result.files) {
-                    const item = jobState.items.find(it => it.text === f.text && it.done !== 1);
+                    const item = jobState.items.find(it => it.text === f.text && it.hash === null);
                     if (item) {
                         // done remains 0; set to 1 only after upload via report UI
                         item.hash = f.hash;

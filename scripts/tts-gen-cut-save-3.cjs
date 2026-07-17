@@ -62,7 +62,9 @@ async function getAudioBatch(tasks, book, options = {}) {
     if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
     const batchId = options.batchId || crypto.randomBytes(4).toString('hex');
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const folderName = `batch-${dateStr}-${batchId}`;
     const batchOutputDir = path.join(TEMP_DIR, folderName);
     if (!fs.existsSync(batchOutputDir)) fs.mkdirSync(batchOutputDir, { recursive: true });
@@ -145,7 +147,7 @@ def get_tts():
                 return response
             except Exception as e:
                 err_str = str(e)
-                if ("500" in err_str or "Internal Server Error" in err_str) and attempt < max_retries - 1:
+                if (("500" in err_str or "Internal Server Error" in err_str or "SSL" in err_str or "ConnectError" in err_str) and attempt < max_retries - 1):
                     time.sleep((attempt + 1) * 2)
                     continue
                 if "429" in err_str:
@@ -266,7 +268,7 @@ except Exception as e:
                         }
                     }
 
-                    generatedFiles.push({ text, hash, filename: segmentFileName, status: fileStatus });
+                    generatedFiles.push({ text, hash, filename: segmentFileName, status: fileStatus, wav: combinedWav, start: skipTo, end: skipTo + 300 });
                     success = true;
                 } else {
                     const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=0.8" -f null - 2>&1`).toString();
