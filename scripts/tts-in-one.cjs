@@ -251,7 +251,6 @@ async function main() {
             bookName,
             tongjiaMap,
             noUpload,
-            useXl,
             forceRegenerate,
             items: tasksToProcess.map(t => ({
                 text: t.context_sentence,
@@ -277,7 +276,7 @@ async function main() {
         }
 
         let chunks = [];
-        if (jobState.useXl) {
+        if (useXl) {
             chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 150);
             console.log(`Generating audio in batches of max 150 words using GOOGLE_API_KEY_FREE...`);
         } else {

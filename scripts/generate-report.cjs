@@ -254,7 +254,13 @@ function getHtml(jobState, dateStr) {
         
         items.forEach((item, index) => {
             const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
-            const mp3Path = `/audio/batch-${dateStr}-${batchId}/${item.hash}.mp3`;
+            let mp3Path = '';
+            if (item.wav) {
+                const batchFolder = path.basename(path.dirname(item.wav));
+                mp3Path = `/audio/${batchFolder}/${item.hash}.mp3`;
+            } else {
+                mp3Path = `/audio/batch-${dateStr}-${batchId}/${item.hash}.mp3`;
+            }
             const rowClass = item.done === 0 ? 'item-row ready-to-upload' : 'item-row';
             batchesHtml += `
                 <div class="${rowClass}" data-item="${itemJson}">

@@ -95,7 +95,18 @@ async function getAudioBatch(tasks, book, options = {}) {
     // Unlike a leading [BREAK] marker, a spoken word is always reliably generated
     // and its trailing silence falls well past the s.start > 0.1 filter threshold.
     const WARMUP = "Warmup sentence. Let's begin.";
-    const combinedText = `<speak>${[WARMUP, ...ttsSentences].join(separator)}${separator}</speak>`;
+    const parts_3_1 = [];
+    parts_3_1.push("Read the provided sentences one by one. Insert a silent 3-second gap between every single sentence. Do not blend the sentences together. Do not shorten the silence. Treat each line break as a hard stop.\n");
+    parts_3_1.push(`${WARMUP} ...`);
+    for (let i = 0; i < ttsSentences.length; i++) {
+        const sentence = ttsSentences[i];
+        if (i === ttsSentences.length - 1) {
+            parts_3_1.push(`... ${sentence}`);
+        } else {
+            parts_3_1.push(`... ${sentence} ...`);
+        }
+    }
+    const combinedText = parts_3_1.join('\n[long pause: hold silence for 3 seconds]\n');
     const combinedText_2_5 = [WARMUP, ...ttsSentences].join(' \\n\\n. . . . . . . . . .\\n\\n ');
     
     console.log(`TTS Batch Request [ID: ${batchId}, Type: ${type}]: ${tasks.length} items.`);
