@@ -122,6 +122,10 @@ def extract_json(text: str) -> dict:
 
 
 def main():
+    use_3_5 = "model=3.5" in sys.argv
+    if use_3_5:
+        sys.argv.remove("model=3.5")
+
     parser = argparse.ArgumentParser(description="Generate text-navigator JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to the unit markdown file")
     parser.add_argument("--level", default="Pupil's Book 1", help='Level label')
@@ -135,16 +139,41 @@ def main():
 
     source = md_path.read_text(encoding="utf-8")
     
-    api_key = os.environ.get("GOOGLE_API_KEY_FREE")
-    if not api_key:
-        print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
-        sys.exit(1)
-
-    is_pu1 = "pu1" in str(md_path).lower() or "pu1" in args.level.lower()
-    if is_pu1:
-        section_instructions = '- Sections to include: "The Friendly Farm" and "Literature" (the comic strip and playscript sections).'
+    if use_3_5:
+        api_key = os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            print("Error: GOOGLE_API_KEY environment variable not set.", file=sys.stderr)
+            sys.exit(1)
+        model_name = "gemini-3.5-flash"
     else:
-        section_instructions = '- Sections to include: any sections containing long English articles/passages/dialogues (e.g. "Start Up", "Speed Up", "Fuel Up"). DO NOT include "The Friendly Farm" or "Literature" sections.'
+        api_key = os.environ.get("GOOGLE_API_KEY_FREE")
+        if not api_key:
+            print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
+            sys.exit(1)
+        model_name = "gemini-3.1-flash-lite"
+
+    path_upper = str(md_path).upper()
+    level_upper = args.level.upper() if args.level else ""
+
+    if "PU1" in path_upper or "PU1" in level_upper:
+        section_instructions = '- Sections to include: "The Friendly Farm" and "Literature" (the comic strip and playscript sections).'
+    elif any(x in path_upper or x in level_upper for x in ["A3A", "A3B", "A4A", "A4B", "A5A", "A5B", "A6A", "A6B"]):
+        section_instructions = (
+            '- Sections to include: "Get Ready - Activity 1", "Start Up", "Speed Up", "Fuel Up - Activity 1", '
+            'and "Fuel Up - Activity [X]" (where [X] is the exact activity number, e.g., "Fuel Up - Activity 3", '
+            'which has to be listening practice with a script in the appendix of the unit markdown). '
+            'CRITICAL: You must include BOTH "Fuel Up - Activity 1" and the listening practice "Fuel Up - Activity [X]" '
+            'if both are present in the source text.'
+        )
+    elif any(x in path_upper or x in level_upper for x in ["A7A", "A7B", "A8A", "A8B"]):
+        section_instructions = '- Sections to include: "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".'
+    elif "SA" in path_upper or "SB" in path_upper or md_path.name.upper().startswith("S"):
+        section_instructions = (
+            '- Sections to include: The main reading passage (e.g., "The Night the Earth Didn\'t Sleep" or "Explore the Chinese writing system") '
+            'AND the Reading for Writing activity 1 passage (e.g., "THE STORY OF AN EYEWITNESS" or "Write a blog about English study").'
+        )
+    else:
+        section_instructions = '- Sections to include: any sections containing long English articles/passages/dialogues. DO NOT include "The Friendly Farm" or "Literature" sections.'
 
     client = genai.Client(api_key=api_key)
     prompt = PROMPT_TEMPLATE.format(
@@ -154,22 +183,33 @@ def main():
         source=source
     )
 
-    print(f"Calling Gemini 3.1 Flash Lite for: {md_path}", file=sys.stderr)
+    print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
 
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(thinking_level="low"),
-            temperature=0.3,
-            response_mime_type="application/json"
-        )
-    )
+    import time
+    response = None
+    for attempt in range(5):
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    thinking_config=types.ThinkingConfig(thinking_level="low"),
+                    temperature=0.3,
+                    response_mime_type="application/json"
+                )
+            )
+            break
+        except Exception as e:
+            print(f"Error calling Gemini API (attempt {attempt + 1}/5): {e}", file=sys.stderr)
+            if attempt == 4:
+                raise e
+            time.sleep(2 ** attempt)
 
     parsed = extract_json(response.text)
 
     stem = md_path.stem
     out_path = md_path.parent / f"{stem}-text-navigator.json"
+    parsed["generated_by"] = model_name
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(parsed, f, ensure_ascii=False, indent=2)
 

@@ -65,6 +65,10 @@ SOURCE MARKDOWN:
 
 
 def main():
+    use_3_5 = "model=3.5" in sys.argv
+    if use_3_5:
+        sys.argv.remove("model=3.5")
+
     parser = argparse.ArgumentParser(description="Generate vocab-guide JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to the unit markdown file (e.g. data/B-PU1/b-pu1-u1/b-pu1-u1.md)")
     parser.add_argument("--level", default="", help='Level label, e.g. "Pupil\'s Book 1 - Unit 1"')
@@ -79,24 +83,42 @@ def main():
     source_file = md_path.name
     level = args.level or source_file.replace("-", " ").replace(".md", "").title()
 
-    api_key = os.environ.get("GOOGLE_API_KEY_FREE")
-    if not api_key:
-        print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
-        sys.exit(1)
+    if use_3_5:
+        api_key = os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            print("Error: GOOGLE_API_KEY environment variable not set.", file=sys.stderr)
+            sys.exit(1)
+        model_name = "gemini-3.5-flash"
+    else:
+        api_key = os.environ.get("GOOGLE_API_KEY_FREE")
+        if not api_key:
+            print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
+            sys.exit(1)
+        model_name = "gemini-3.1-flash-lite"
 
     client = genai.Client(api_key=api_key)
     prompt = PROMPT_TEMPLATE.format(level=level, source_file=source_file, source=source)
 
-    print(f"Calling Gemini 3.1 Flash Lite for: {md_path}", file=sys.stderr)
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(thinking_level="minimal"),
-            temperature=0.2,
-            response_mime_type="application/json"
-        )
-    )
+    print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
+    import time
+    response = None
+    for attempt in range(5):
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    thinking_config=types.ThinkingConfig(thinking_level="minimal"),
+                    temperature=0.2,
+                    response_mime_type="application/json"
+                )
+            )
+            break
+        except Exception as e:
+            print(f"Error calling Gemini API (attempt {attempt + 1}/5): {e}", file=sys.stderr)
+            if attempt == 4:
+                raise e
+            time.sleep(2 ** attempt)
 
     parsed = json.loads(response.text)
 
@@ -112,6 +134,7 @@ def main():
 
     stem = md_path.stem  # e.g. "b-pu1-u1"
     out_path = md_path.parent / f"{stem}-vocab-guide.json"
+    parsed["generated_by"] = model_name
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(parsed, f, ensure_ascii=False, indent=2)
 

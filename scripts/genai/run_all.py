@@ -7,6 +7,7 @@ Usage:
 
 Example:
     python3 scripts/genai/run_all.py data/A4A/a4a-u4
+    python3 scripts/genai/run_all.py data/SA1/sa1-u5 model=3.5
 """
 
 import os
@@ -27,9 +28,13 @@ SCRIPTS = [
 ]
 
 def main():
+    use_3_5 = "model=3.5" in sys.argv
+    if use_3_5:
+        sys.argv.remove("model=3.5")
+
     if len(sys.argv) < 2:
-        print("Usage: python3 scripts/genai/run_all.py <path-to-unit-folder>")
-        print("Example: python3 scripts/genai/run_all.py data/A4A/a4a-u4")
+        print("Usage: python3 scripts/genai/run_all.py <path-to-unit-folder> [model=3.5]")
+        print("Example: python3 scripts/genai/run_all.py data/A4A/a4a-u4 model=3.5")
         sys.exit(1)
         
     folder_path = Path(sys.argv[1])
@@ -71,6 +76,8 @@ def main():
 
         print(f"\n--- Running {script_name} ---")
         cmd = [sys.executable, str(script_path), str(input_file)]
+        if use_3_5:
+            cmd.append("model=3.5")
         try:
             subprocess.run(cmd, check=True)
             import time

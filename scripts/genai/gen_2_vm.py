@@ -130,6 +130,10 @@ def extract_json(text: str) -> dict:
 
 
 def main():
+    use_3_5 = "model=3.5" in sys.argv
+    if use_3_5:
+        sys.argv.remove("model=3.5")
+
     parser = argparse.ArgumentParser(description="Generate vocab-master JSON via Gemini API.")
     parser.add_argument("vg_file", help="Path to the vocab-guide JSON (e.g. data/B-PU1/b-pu1-u1/b-pu1-u1-vocab-guide.json)")
     args = parser.parse_args()
@@ -146,10 +150,18 @@ def main():
     items = vg.get("unit_vocabulary", [])
     targets = calc_targets(items)
 
-    api_key = os.environ.get("GOOGLE_API_KEY_FREE")
-    if not api_key:
-        print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
-        sys.exit(1)
+    if use_3_5:
+        api_key = os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            print("Error: GOOGLE_API_KEY environment variable not set.", file=sys.stderr)
+            sys.exit(1)
+        model_name = "gemini-3.5-flash"
+    else:
+        api_key = os.environ.get("GOOGLE_API_KEY_FREE")
+        if not api_key:
+            print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
+            sys.exit(1)
+        model_name = "gemini-3.1-flash-lite"
 
     client = genai.Client(api_key=api_key)
     prompt = PROMPT_TEMPLATE.format(
@@ -158,24 +170,34 @@ def main():
         **targets
     )
 
-    print(f"Calling Gemini 3.1 Flash Lite for: {vg_path}", file=sys.stderr)
+    print(f"Calling {model_name} for: {vg_path}", file=sys.stderr)
     print(f"  {targets['total_items']} items → {targets['target_questions']} questions / {targets['num_challenges']} challenges", file=sys.stderr)
 
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(thinking_level="low"),
-            temperature=0.4,
-            response_mime_type="application/json"
-        )
-    )
+    import time
+    response = None
+    for attempt in range(5):
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    thinking_config=types.ThinkingConfig(thinking_level="low"),
+                    temperature=0.4,
+                    response_mime_type="application/json"
+                )
+            )
+            break
+        except Exception as e:
+            print(f"Error calling Gemini API (attempt {attempt + 1}/5): {e}", file=sys.stderr)
+            if attempt == 4:
+                raise e
+            time.sleep(2 ** attempt)
 
-    parsed = extract_json(response.text)
+    parsed = json.loads(response.text)
 
-    # Post-process to ensure context_sentence is verbatim from vocab-guide (no blanks)
+    # Inject context sentences for cloze questions if not filled by LLM
     word_to_sentence = {}
-    for item in items:
+    for item in vg.get("unit_vocabulary", []):
         w = item.get("word")
         s = item.get("context_sentence")
         if w and s:
@@ -191,6 +213,7 @@ def main():
 
     stem = vg_path.stem.replace("-vocab-guide", "")
     out_path = vg_path.parent / f"{stem}-vocab-master.json"
+    parsed["generated_by"] = model_name
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(parsed, f, ensure_ascii=False, indent=2)
 
