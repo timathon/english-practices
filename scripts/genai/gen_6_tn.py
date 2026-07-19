@@ -37,7 +37,7 @@ You are an expert English curriculum designer. Generate a text-navigator JSON fo
 - Hierarchy should reflect the logical flow. Do not put all sentences in a flat list. Group sentences logically by creating thematic sub-heading nodes (Level 1 and Level 2) first, then placing sentences as child nodes. Max nesting depth is 4 levels.
 - "id": Unique, logical string IDs (e.g., "root", "p1", "p1_1"). Must be unique within each tree.
 - "text": Exact verbatim text from the passage. Each leaf node should generally contain only one sentence. If a speaker is specified, omit the speaker name/prefix (e.g. "Emma:") from the "text" field.
-- "speaker": (Optional) The name of the speaker if the sentence is a dialogue (e.g., "Rocky", "Emma").
+- "speaker": (Optional) The name of the speaker if the sentence is a dialogue (e.g., "Rocky", "Emma"). If the text includes narrative speech verbs (e.g. 'I say', 'she says', 'says Mum'), keep the full narrative text intact and do NOT use the "speaker" field.
 - "cn": Chinese translation of the sentence (do not include the speaker name prefix here either).
 - "notes": Brief explanations of difficult vocabulary, expressions, or grammar points.
 - "statement": A simple true/false statement in Chinese about the sentence's grammar or vocabulary.

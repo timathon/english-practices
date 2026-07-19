@@ -1,3 +1,17 @@
+/**
+ * tts-in-one.cjs
+ * 
+ * Usage:
+ *   node scripts/tts-in-one.cjs <unit_directory_path> [flags]
+ * 
+ * Flags:
+ *   --regenerate   Force regeneration of all audios even if they exist on R2.
+ *   --xl           Increase word count limit to 200 words per batch for larger inputs.
+ *   --resume       Resume from the last saved tts-job-*.json job state file.
+ *   --3.1, --flash-tts
+ *                  Force priority of gemini-3.1-flash-tts-preview model over gemini-2.5.
+ */
+
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -73,6 +87,7 @@ async function main() {
     const forceRegenerate = process.argv.includes('--regenerate');
     const noUpload = true; // Always skip upload, handle manually via report UI
     const useXl = process.argv.includes('--xl') || process.argv.includes('xl');
+    let use31 = process.argv.includes('--3.1') || process.argv.includes('--flash-tts');
     const resume = process.argv.includes('--resume') || process.argv.includes('resume');
 
     if (useXl) {
@@ -103,6 +118,9 @@ async function main() {
                     jobState = JSON.parse(fs.readFileSync(jobFilePath, 'utf8'));
                     bookName = jobState.bookName;
                     tongjiaMap = jobState.tongjiaMap || {};
+                    if (jobState.use31 !== undefined) {
+                        use31 = jobState.use31;
+                    }
                 } catch (e) {
                     console.error(`❌ Failed to parse job file: ${e.message}`);
                     process.exit(1);
@@ -118,7 +136,7 @@ async function main() {
     } else {
         const inputDir = process.argv[2];
         if (!inputDir) {
-            console.error("Usage: node scripts/tts-in-one.cjs [unit_directory_path] [--regenerate] [--no-upload] [--xl] [--resume]");
+            console.error("Usage: node scripts/tts-in-one.cjs [unit_directory_path] [--regenerate] [--xl] [--resume] [--3.1] [--flash-tts]");
             process.exit(1);
         }
 
@@ -268,6 +286,7 @@ async function main() {
             tongjiaMap,
             noUpload,
             forceRegenerate,
+            use31,
             items: tasksToProcess.map(t => ({
                 text: t.context_sentence,
                 done: 0,
@@ -348,7 +367,8 @@ async function main() {
                 skipUpload: jobState.noUpload,
                 tongjiaMap,
                 timeout: calculatedTimeout,
-                batchId: batchId
+                batchId: batchId,
+                use31: use31
             });
             
             if (!result.success) {

@@ -251,7 +251,7 @@ This document defines the rules for extracting and converting textbook data into
 - **Node Rules:**
   - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`). IDs must be unique within each `tree`.
   - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence, and occasionally two (for very short, closely related fragments)**. If a speaker is specified, the speaker prefix must be omitted from `text`.
-  - `speaker`: (Optional) The name of the speaker if the sentence is a dialogue (e.g. `"Emma"`). If present, the speaker prefix (e.g. `"Emma:"`) must NOT be part of the `text` field.
+  - `speaker`: (Optional) The name of the speaker if the sentence is a dialogue (e.g. `"Emma"`). If present, the speaker prefix (e.g. `"Emma:"`) must NOT be part of the `text` field. **Important**: If the text includes narrative speech verbs (e.g. `I say`, `says Mum`, `she says`), keep the full narrative text intact and do NOT populate the `speaker` field.
   - `cn`: Chinese translation of the sentence.
   - `notes`: Brief explanations of difficult vocabulary, expressions, or grammar points.
   - `statement`: A simple true/false statement in Chinese about the sentence's grammar or vocabulary.

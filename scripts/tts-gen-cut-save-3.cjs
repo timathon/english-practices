@@ -130,7 +130,7 @@ def get_tts():
     prompt_2_5 = """${combinedText_2_5.replace(/"/g, '\\"')}"""
     
     last_exception = None
-    models = ["gemini-2.5-flash-preview-tts", "gemini-3.1-flash-tts-preview"]
+    models = ${options.use31 ? '["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts"]' : '["gemini-2.5-flash-preview-tts", "gemini-3.1-flash-tts-preview"]'}
     for model_name in models:
         max_retries = 5
         for attempt in range(max_retries):
@@ -140,7 +140,7 @@ def get_tts():
                     "speech_config": types.SpeechConfig(
                         voice_config=types.VoiceConfig(
                             prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                                voice_name="${voiceName}"
+                                voice_name="Achernar" if "3.1" in model_name else "${voiceName}"
                             )
                         )
                     )
@@ -155,6 +155,7 @@ def get_tts():
                 )
                 if not response.candidates or not response.candidates[0].content or not response.candidates[0].content.parts:
                     raise ValueError("Blocked or empty response from Gemini API.")
+                print(f"USING_MODEL: {model_name}")
                 return response
             except Exception as e:
                 err_str = str(e)
@@ -200,21 +201,31 @@ except Exception as e:
     let success = false;
     const currentTimeout = options.timeout || 60000;
 
+    let skipTtsCall = false;
+    let detectionDuration = 0.8;
+
     while (timeoutsCount < MAX_TIMEOUTS && !success) {
             try {
-                // If this is a retry due to insufficient pauses, rename the old wav to keep it for analysis
-                if (fs.existsSync(combinedWav)) {
-                    const dir = path.dirname(combinedWav);
-                    const ext = path.extname(combinedWav);
-                    const base = path.basename(combinedWav, ext);
-                    const backupPath = path.join(dir, `${base}_failed_attempt_${timeoutsCount}${ext}`);
-                    fs.renameSync(combinedWav, backupPath);
-                    console.log(`Saved failed wav file to: ${backupPath}`);
-                }
+                if (!skipTtsCall) {
+                    // If this is a retry due to insufficient pauses, rename the old wav to keep it for analysis
+                    if (fs.existsSync(combinedWav)) {
+                        const dir = path.dirname(combinedWav);
+                        const ext = path.extname(combinedWav);
+                        const base = path.basename(combinedWav, ext);
+                        const backupPath = path.join(dir, `${base}_failed_attempt_${timeoutsCount}${ext}`);
+                        fs.renameSync(combinedWav, backupPath);
+                        console.log(`Saved failed wav file to: ${backupPath}`);
+                    }
 
-                await runPythonScriptAsync(`python3 "${tempPy}" > "${pyLog}" 2>&1`, currentTimeout);
+                    await runPythonScriptAsync(`python3 "${tempPy}" > "${pyLog}" 2>&1`, currentTimeout);
+                }
+                skipTtsCall = false; // Reset for next iteration if any
                 
                 const pyOutput = fs.readFileSync(pyLog, 'utf8');
+                const modelMatch = pyOutput.match(/USING_MODEL: ([\w\-.]+)/);
+                if (modelMatch) {
+                    console.log(`🎙️  Using model: ${modelMatch[1]}`);
+                }
                 if (pyOutput.includes("MARK_QUOTA_EXHAUSTED")) quotaExhausted = true;
                 if (pyOutput.includes("SWITCHING_TO_2_5")) {
                     console.log("\x1b[36m%s\x1b[1m%s\x1b[22m\x1b[0m", "ℹ️ Gemini 3.1 Flash TTS quota exhausted. Switched to ", "Gemini 2.5 Flash TTS");
@@ -227,7 +238,7 @@ except Exception as e:
                     const segmentFileName = `${hash}.mp3`;
                     const segmentMp3 = path.join(batchOutputDir, segmentFileName);
 
-                    const silenceOutput1 = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=0.8" -f null - 2>&1`).toString();
+                    const silenceOutput1 = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=${detectionDuration}" -f null - 2>&1`).toString();
                     const startRe1 = /silence_start: ([\d.]+)/g;
                     const endRe1 = /silence_end: ([\d.]+)/g;
                     const allSilences1 = [];
@@ -282,7 +293,7 @@ except Exception as e:
                     generatedFiles.push({ text, hash, filename: segmentFileName, status: fileStatus, wav: combinedWav, start: skipTo, end: skipTo + 300 });
                     success = true;
                 } else {
-                    const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=0.8" -f null - 2>&1`).toString();
+                    const silenceOutput = execSync(`ffmpeg -i "${combinedWav}" -af "agate=threshold=-32dB:ratio=10:range=-60dB,silencedetect=n=${silenceThreshold}:d=${detectionDuration}" -f null - 2>&1`).toString();
                     const allSilences = [];
                     const startRe = /silence_start: ([\d.]+)/g;
                     const endRe = /silence_end: ([\d.]+)/g;
@@ -302,20 +313,27 @@ except Exception as e:
                         expectedPauses = tasks.length - 1;
                         console.log(`[Batch: ${batchId}] Detected ${candidateSilences.length} pauses. Assuming WARMUP sentence was skipped by the TTS model.`);
                     } else if (candidateSilences.length < tasks.length - 1) {
-                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length - 1} minimum required).`);
+                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length - 1} minimum required with duration threshold ${detectionDuration}s).`);
                         
                         let choice = 'r';
                         try {
                             const readline = require('readline');
                             const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
                             const question = (q) => new Promise(res => rl.question(q, res));
-                            const ans = await question(`\nWould you like to (r)etry API call or (m)ove on to next and manually cut in HTML report? [r/m]: `);
+                            const ans = await question(`\nWould you like to (r)etry API call, (s)try shorter pause time (0.4s), or (m)ove on to next and manually cut in HTML report? [r/s/m]: `);
                             rl.close();
                             choice = ans.trim().toLowerCase();
                         } catch (e) {
                             console.warn("Non-interactive terminal, defaulting to retry.");
                         }
 
+                        if (choice === 's') {
+                            console.log("Retrying pause detection on the current audio with shorter duration (0.4s)...");
+                            detectionDuration = 0.4;
+                            skipTtsCall = true;
+                            continue;
+                        }
+                        detectionDuration = 0.8; // reset for API retry
                         if (choice === 'm') {
                             console.log("Moving on. Distributing segments evenly for manual cutting...");
                             let duration = 30;

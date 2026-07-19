@@ -304,6 +304,7 @@ function getHtml(jobState, dateStr) {
         .item-row { border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #fafbfc; transition: background 0.2s; cursor: pointer; }
         .item-row:hover { background: #f0f4f8; }
         .item-row.changed { border-color: #f59e0b; background: #fffbeb; }
+        .item-row.active { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
         .item-text { font-weight: 500; font-size: 1.1rem; }
         .item-meta { font-size: 0.85rem; color: #64748b; }
         .item-controls { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
@@ -347,9 +348,15 @@ function getHtml(jobState, dateStr) {
             }
         }
 
+        let activeRow = null;
+
         document.querySelectorAll('.item-row').forEach(row => {
             row.addEventListener('click', (e) => {
                 if (['INPUT', 'BUTTON', 'AUDIO'].includes(e.target.tagName)) return;
+                
+                document.querySelectorAll('.item-row').forEach(r => r.classList.remove('active'));
+                row.classList.add('active');
+                activeRow = row;
                 
                 document.querySelectorAll('.copy-up-btn').forEach(b => b.style.display = 'none');
                 document.querySelectorAll('.copy-down-btn').forEach(b => b.style.display = 'none');
@@ -387,6 +394,33 @@ function getHtml(jobState, dateStr) {
                     updateFloatingBtn();
                 });
             });
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (!activeRow) return;
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+            const item = JSON.parse(activeRow.getAttribute('data-item'));
+            const audio = document.getElementById('audio-' + item.batchId);
+            if (!audio) return;
+
+            const currentTimeStr = (Math.round(audio.currentTime * 100) / 100).toFixed(2);
+
+            if (e.key.toLowerCase() === 's') {
+                const startInput = activeRow.querySelector('.start-input');
+                if (startInput) {
+                    startInput.value = currentTimeStr;
+                    activeRow.classList.add('changed');
+                    updateFloatingBtn();
+                }
+            } else if (e.key.toLowerCase() === 'e') {
+                const endInput = activeRow.querySelector('.end-input');
+                if (endInput) {
+                    endInput.value = currentTimeStr;
+                    activeRow.classList.add('changed');
+                    updateFloatingBtn();
+                }
+            }
         });
 
         document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
