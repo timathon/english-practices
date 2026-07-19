@@ -21,6 +21,7 @@ interface Node {
   highlight?: string
   state?: 'hidden' | 'empty' | 'emoji' | 'keywords' | 'full'
   children?: Node[]
+  speaker?: string
 }
 
 interface MindMapShellProps {
@@ -760,6 +761,15 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
       })
     }
 
+    if (node.speaker && (!isCnMode || isShowingTempEn)) {
+      displayedText = (
+        <>
+          <strong className="mm-node-speaker">{node.speaker}: </strong>
+          {displayedText}
+        </>
+      )
+    }
+
     const visibleChildren = hasChildren && !hideChildren
       ? node.children!
           .map(child => ({ child, el: renderNode(child, depth + 1) }))
@@ -804,7 +814,16 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
           {state === 'keywords' && (
             <>
               <span className="mm-node-content-emoji">{node.emoji}</span>
-              <span className="mm-node-content-keywords">{isCnMode && !isShowingTempEn ? (node.cn || node.text) : (isShowingTempEn ? node.text : node.keywords)}</span>
+              <span className="mm-node-content-keywords">
+                {isCnMode && !isShowingTempEn ? (
+                  node.cn || node.text
+                ) : (
+                  <>
+                    {node.speaker && <strong className="mm-node-speaker">{node.speaker}: </strong>}
+                    {isShowingTempEn ? node.text : node.keywords}
+                  </>
+                )}
+              </span>
             </>
           )}
           {state === 'full' && (

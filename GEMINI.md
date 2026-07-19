@@ -221,7 +221,7 @@ This document defines the rules for extracting and converting textbook data into
 **Source:** Textbook PDF or extracted Markdown (e.g., `data/A3B/a3b-u2.md`).
 **Sections:**
   - **A3A - A6B:** "Get Ready - Activity 1", "Start Up", "Speed Up", "Fuel Up - Activity 1", "Fuel Up - Activity [X]" (where [X] is the exact activity number, e.g., "Fuel Up - Activity 3", which has to be listening practice with a script in the appendix of the unit markdown). **CRITICAL:** When generating text navigator for A4A to A6B, also include GET READY activity 1 (which is always the first activity for the unit, e.g., "1 Listen and sing.") and "Fuel Up - Activity 1". You must include BOTH "Fuel Up - Activity 1" and the listening practice "Fuel Up - Activity [X]" if both are present in the source text.
-  - **A7A - A8B:** "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".
+  - **A7A - A9 (including A7A, A7B, A8A, A8B, A9):** "Section A, 1b and 1c" (or "Section A, 1b, 1c, and 1d" etc., only if the first section of the listening scripts in the appendix is long and meaningful enough to include; otherwise skip this section), "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".
   - **S* (textbooks starting with S, e.g., SA1):** The main reading passage (e.g., "The Night the Earth Didn't Sleep" for SA1) AND the Reading for Writing activity 1 passage (e.g., "THE STORY OF AN EYEWITNESS" for SA1).
   - **PU1:** "The Friendly Farm" and "Literature".
   - **Full Text Verification:** You must include the **entire full article/passage/dialogue** verbatim (every single sentence/line) as it appears in the source, without summarizing, omitting, or truncating paragraphs or sentences. Failure to include the full text is considered incomplete data.
@@ -250,7 +250,8 @@ This document defines the rules for extracting and converting textbook data into
   - **Nesting depth:** Keep the hierarchy structured with a maximum nesting depth of 4 levels (i.e. `root` -> Level 1 -> Level 2 -> Level 3 -> Level 4) to ensure it is easy to navigate. Do not chain sentences infinitely into a single deep path.
 - **Node Rules:**
   - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`). IDs must be unique within each `tree`.
-  - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence, and occasionally two (for very short, closely related fragments)**.
+  - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence, and occasionally two (for very short, closely related fragments)**. If a speaker is specified, the speaker prefix must be omitted from `text`.
+  - `speaker`: (Optional) The name of the speaker if the sentence is a dialogue (e.g. `"Emma"`). If present, the speaker prefix (e.g. `"Emma:"`) must NOT be part of the `text` field.
   - `cn`: Chinese translation of the sentence.
   - `notes`: Brief explanations of difficult vocabulary, expressions, or grammar points.
   - `statement`: A simple true/false statement in Chinese about the sentence's grammar or vocabulary.

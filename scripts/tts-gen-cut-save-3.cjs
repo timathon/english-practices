@@ -158,9 +158,6 @@ def get_tts():
                 return response
             except Exception as e:
                 err_str = str(e)
-                if (("500" in err_str or "Internal Server Error" in err_str or "SSL" in err_str or "ConnectError" in err_str) and attempt < max_retries - 1):
-                    time.sleep((attempt + 1) * 2)
-                    continue
                 if "429" in err_str:
                     if model_name == models[0]:
                         print("SWITCHING_TO_2_5")
@@ -168,6 +165,9 @@ def get_tts():
                     else:
                         print("MARK_QUOTA_EXHAUSTED")
                         sys.exit(1)
+                if attempt < max_retries - 1:
+                    time.sleep((attempt + 1) * 2)
+                    continue
                 last_exception = e
                 break
     if last_exception:
@@ -295,29 +295,67 @@ except Exception as e:
                     // If the TTS model ignores the WARMUP sentence, we will get (tasks.length - 1) pauses.
                     let warmupSkipped = false;
                     let expectedPauses = tasks.length;
+                    let silences = [];
                     
                     if (candidateSilences.length === tasks.length - 1) {
                         warmupSkipped = true;
                         expectedPauses = tasks.length - 1;
                         console.log(`[Batch: ${batchId}] Detected ${candidateSilences.length} pauses. Assuming WARMUP sentence was skipped by the TTS model.`);
                     } else if (candidateSilences.length < tasks.length - 1) {
-                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length - 1} minimum required). Retrying attempt ${timeoutsCount + 2}/${MAX_TIMEOUTS}...`);
-                        timeoutsCount++;
-                        if (timeoutsCount >= MAX_TIMEOUTS) {
-                            console.error("❌ CRITICAL: Failed to get enough pauses after 3 attempts. Terminating.");
-                            process.exit(1);
+                        console.warn(`⚠️ Insufficient pauses detected (${candidateSilences.length}/${tasks.length - 1} minimum required).`);
+                        
+                        let choice = 'r';
+                        try {
+                            const readline = require('readline');
+                            const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+                            const question = (q) => new Promise(res => rl.question(q, res));
+                            const ans = await question(`\nWould you like to (r)etry API call or (m)ove on to next and manually cut in HTML report? [r/m]: `);
+                            rl.close();
+                            choice = ans.trim().toLowerCase();
+                        } catch (e) {
+                            console.warn("Non-interactive terminal, defaulting to retry.");
                         }
-                        continue;
+
+                        if (choice === 'm') {
+                            console.log("Moving on. Distributing segments evenly for manual cutting...");
+                            let duration = 30;
+                            try {
+                                duration = parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${combinedWav}"`).toString().trim());
+                            } catch (e) {
+                                console.warn("Failed to get duration via ffprobe, defaulting to 30s");
+                            }
+                            const step = duration / tasks.length;
+                            if (warmupSkipped) {
+                                for (let idx = 0; idx < tasks.length; idx++) {
+                                    const t = (idx + 1) * step;
+                                    silences.push({ start: t - 0.05, end: t + 0.05 });
+                                }
+                            } else {
+                                silences.push({ start: 0.5 * step - 0.05, end: 0.5 * step + 0.05 });
+                                for (let idx = 0; idx < tasks.length; idx++) {
+                                    const t = (idx + 1) * step;
+                                    silences.push({ start: t - 0.05, end: t + 0.05 });
+                                }
+                            }
+                        } else {
+                            timeoutsCount++;
+                            if (timeoutsCount >= MAX_TIMEOUTS) {
+                                console.error("❌ CRITICAL: Failed to get enough pauses after 3 attempts. Terminating.");
+                                process.exit(1);
+                            }
+                            continue;
+                        }
                     } else if (candidateSilences.length > tasks.length) {
                         expectedPauses = tasks.length + 1; // It might have a trailing pause
                     }
 
-                    // Select the longest silences
-                    const silences = candidateSilences
-                        .map(s => ({ ...s, duration: s.end - s.start }))
-                        .sort((a, b) => b.duration - a.duration)
-                        .slice(0, expectedPauses)
-                        .sort((a, b) => a.start - b.start);
+                    if (silences.length === 0) {
+                        silences = candidateSilences
+                            .map(s => ({ ...s, duration: s.end - s.start }))
+                            .sort((a, b) => b.duration - a.duration)
+                            .slice(0, expectedPauses)
+                            .sort((a, b) => a.start - b.start);
+                    }
 
                     console.log(`Detected ${allSilences.length} pauses, using ${silences.length} longest as separators (Warmup skipped: ${warmupSkipped}).`);
 

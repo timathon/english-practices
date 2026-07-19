@@ -44,7 +44,7 @@ PROMPT_TEMPLATE = """\
 You are an expert English curriculum designer. Generate a Passage Decoder JSON for the following primary school textbook unit.
 
 RULES:
-- Extraction Scope: Extract every sentence/dialogue line from the reading passages or listening dialogue sections. For textbooks starting with PU1, you MUST include both "The Friendly Farm" and "Literature".
+- Extraction Scope: Extract every sentence/dialogue line from the reading passages or listening dialogue sections. For textbooks starting with PU1, you MUST include both "The Friendly Farm" and "Literature". For grade levels A7A, A7B, A8A, A8B, and A9, if the first section of the listening scripts (e.g. "Section A, 1b and 1c" or "Section A, 1b, 1c, and 1d" etc.) is long and meaningful enough, include it as the first section in addition to the other sections.
 - Dialogue Formatting:
   - If a line is spoken by a character (e.g., `Jack: Hi, Lucy!`), extract the name as `speaker` and set `newline: true` on the first sentence of the turn.
   - Subsequent sentences spoken in the same turn share the `speaker` property but do NOT have `newline: true`.

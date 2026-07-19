@@ -3,6 +3,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { exec } = require('child_process');
 
 // Extract the file path from command line arguments
 const fileArg = process.argv[2];
@@ -52,6 +53,28 @@ const server = http.createServer((req, res) => {
             });
         });
     } 
+    // API: Run Gemini audit on JSON data
+    else if (req.method === 'POST' && req.url === '/api/audit') {
+        const auditScript = path.join(__dirname, 'genai', 'audit_tn_nodes.py');
+        console.log(`Running audit script on ${filePath}...`);
+        exec(`python3 "${auditScript}" "${filePath}"`, (err, stdout, stderr) => {
+            if (err) {
+                console.error('Audit script error:', stderr || err.message);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify({ error: stderr || err.message }));
+            }
+            console.log('Audit completed successfully.');
+            // Read updated file and return it
+            fs.readFile(filePath, 'utf8', (err, data) => {
+                if (err) {
+                    res.writeHead(500);
+                    return res.end(JSON.stringify({ error: 'Failed to read audited file.' }));
+                }
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(data);
+            });
+        });
+    }
     // Fallback 404
     else {
         res.writeHead(404);
@@ -303,6 +326,7 @@ const htmlContent = `
         <button id="btn-merge" title="Merge selected sibling nodes into one">🔗 Merge Selected</button>
         <button id="btn-delete-selected" style="color: var(--danger); border-color: var(--danger);">🗑 Delete Selected</button>
         <button class="primary" id="btn-save">💾 Save to Disk</button>
+        <button id="btn-audit" style="background: var(--success); color: white; border-color: var(--success); font-weight: bold;">🤖 Audit with Gemini</button>
         <span id="status">Loading...</span>
     </div>
 
@@ -403,6 +427,7 @@ const htmlContent = `
         const appContainer = document.getElementById('app');
         const statusEl = document.getElementById('status');
         const btnSave = document.getElementById('btn-save');
+        const btnAudit = document.getElementById('btn-audit');
         const btnUndo = document.getElementById('btn-undo');
         const btnGroup = document.getElementById('btn-group');
         const btnMerge = document.getElementById('btn-merge');
@@ -598,19 +623,37 @@ const htmlContent = `
             // Normalize spaces and convert line breaks into single space literal
             const normalizedText = text.replace(/\\r?\\n/g, ' ').replace(/\\s+/g, ' ').trim();
             
-            // Regex splits on sentence-end punctuation followed by space, avoiding ongoing ellipsis continuation
-            const sentenceBoundaryRegex = /(?<=[.!?])\\s+(?=[A-Z0-9"'“"「（]|\\w+:)/;
+            let sentences = [];
+            let current = "";
+            let inQuotes = false;
             
-            let sentences = normalizedText.split(sentenceBoundaryRegex);
-            
-            if (sentences.length === 1) {
-                const placeholder = "___ELLIPSIS___";
-                const protectedText = normalizedText.replace(/\\.\\.\\./g, placeholder);
-                const splitTemp = protectedText.split(/(?<=[.!?])\\s+/);
-                sentences = splitTemp.map(s => s.replace(/___ELLIPSIS___/g, '...'));
+            for (let i = 0; i < normalizedText.length; i++) {
+                const char = normalizedText[i];
+                current += char;
+                
+                if ((char === '"' || char === '“' || char === '”' || char === '「' || char === '」') && (i === 0 || normalizedText[i-1] !== '\\\\')) {
+                    inQuotes = !inQuotes;
+                }
+                
+                const canSplit = !inQuotes || /[!?]["'”’“»]?$/.test(current);
+                if (canSplit) {
+                    if (/[.!?]["'”’“»]?$/.test(current)) {
+                        const remaining = normalizedText.substring(i + 1);
+                        const match = remaining.match(/^\\s+(?=[A-Z0-9"'“"「（]|\\w+:)/);
+                        if (match) {
+                            sentences.push(current.trim());
+                            current = "";
+                            i += match[0].length - 1;
+                        }
+                    }
+                }
             }
             
-            return sentences.map(s => s.trim()).filter(s => s.length > 0);
+            if (current.trim()) {
+                sentences.push(current.trim());
+            }
+            
+            return sentences.filter(s => s.length > 0);
         }
 
         function handleMoveSibling(id, direction) {
@@ -1340,6 +1383,34 @@ const htmlContent = `
         }
 
         btnSave.addEventListener('click', saveData);
+
+        async function runAudit() {
+            try {
+                await saveData();
+                statusEl.textContent = 'Running Gemini Audit... 🤖';
+                btnAudit.disabled = true;
+                const response = await fetch('/api/audit', {
+                    method: 'POST'
+                });
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Audit failed');
+                }
+                const auditedData = await response.json();
+                appData = auditedData;
+                undoStack = [];
+                render();
+                statusEl.textContent = 'Gemini Audit Completed! 🤖✅';
+                setTimeout(() => { statusEl.textContent = 'Ready.'; }, 3000);
+            } catch (err) {
+                statusEl.textContent = 'Audit Error: ' + err.message;
+                statusEl.style.color = 'var(--danger)';
+            } finally {
+                btnAudit.disabled = false;
+            }
+        }
+
+        btnAudit.addEventListener('click', runAudit);
 
         loadData();
     </script>

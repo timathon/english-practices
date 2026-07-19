@@ -36,8 +36,9 @@ You are an expert English curriculum designer. Generate a text-navigator JSON fo
 - Each "tree" is a hierarchical mindmap (root node ID "root").
 - Hierarchy should reflect the logical flow. Do not put all sentences in a flat list. Group sentences logically by creating thematic sub-heading nodes (Level 1 and Level 2) first, then placing sentences as child nodes. Max nesting depth is 4 levels.
 - "id": Unique, logical string IDs (e.g., "root", "p1", "p1_1"). Must be unique within each tree.
-- "text": Exact verbatim text from the passage. Each leaf node should generally contain only one sentence.
-- "cn": Chinese translation of the sentence.
+- "text": Exact verbatim text from the passage. Each leaf node should generally contain only one sentence. If a speaker is specified, omit the speaker name/prefix (e.g. "Emma:") from the "text" field.
+- "speaker": (Optional) The name of the speaker if the sentence is a dialogue (e.g., "Rocky", "Emma").
+- "cn": Chinese translation of the sentence (do not include the speaker name prefix here either).
 - "notes": Brief explanations of difficult vocabulary, expressions, or grammar points.
 - "statement": A simple true/false statement in Chinese about the sentence's grammar or vocabulary.
 - "answer": Boolean true or false for the statement.
@@ -70,6 +71,7 @@ Output ONLY valid JSON, no markdown fences, no commentary.
               {{
                 "id": "p1_1",
                 "text": "Look at the bag!",
+                "speaker": "Rocky",
                 "cn": "看那个包！",
                 "notes": "Look at... = 看……",
                 "statement": "这句话是一个祈使句。",
@@ -83,6 +85,7 @@ Output ONLY valid JSON, no markdown fences, no commentary.
               {{
                 "id": "p1_2",
                 "text": "Yes, I'm the teacher!",
+                "speaker": "Mary",
                 "cn": "是的，我是老师！",
                 "notes": "I'm = I am 的缩写",
                 "statement": "句中的 I'm 指的是别人。",
@@ -165,8 +168,11 @@ def main():
             'CRITICAL: You must include BOTH "Fuel Up - Activity 1" and the listening practice "Fuel Up - Activity [X]" '
             'if both are present in the source text.'
         )
-    elif any(x in path_upper or x in level_upper for x in ["A7A", "A7B", "A8A", "A8B"]):
-        section_instructions = '- Sections to include: "Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".'
+    elif any(x in path_upper or x in level_upper for x in ["A7A", "A7B", "A8A", "A8B", "A9"]):
+        section_instructions = (
+            '- Sections to include: "Section A, 1b and 1c" (or "Section A, 1b, 1c, and 1d" etc., only if the first section of the listening scripts in the appendix is long and meaningful enough to include; otherwise skip this section), '
+            '"Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".'
+        )
     elif "SA" in path_upper or "SB" in path_upper or md_path.name.upper().startswith("S"):
         section_instructions = (
             '- Sections to include: The main reading passage (e.g., "The Night the Earth Didn\'t Sleep" or "Explore the Chinese writing system") '

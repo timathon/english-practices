@@ -136,24 +136,40 @@ async function main() {
         console.log(`Resolved category/book name: ${bookName}`);
 
         const textsSet = new Set();
-        const files = fs.readdirSync(absoluteDir);
+
+        function getFilesRecursively(dir) {
+            let results = [];
+            const list = fs.readdirSync(dir);
+            list.forEach(file => {
+                const filePath = path.join(dir, file);
+                const stat = fs.statSync(filePath);
+                if (stat && stat.isDirectory()) {
+                    results = results.concat(getFilesRecursively(filePath));
+                } else {
+                    results.push(filePath);
+                }
+            });
+            return results;
+        }
+
+        const files = getFilesRecursively(absoluteDir);
         
-        // Load tongjia mapping if it exists in this unit
-        const tongjiaFile = files.find(f => f.endsWith('tongjia.cjs'));
-        if (tongjiaFile) {
-            const tongjiaPath = path.join(absoluteDir, tongjiaFile);
+        // Load tongjia mapping if it exists in any directory
+        const tongjiaFiles = files.filter(f => f.endsWith('tongjia.cjs'));
+        for (const tongjiaPath of tongjiaFiles) {
             try {
-                tongjiaMap = require(tongjiaPath);
-                console.log(`Loaded tongjia mapping from ${tongjiaFile}:`, tongjiaMap);
+                const subMap = require(tongjiaPath);
+                tongjiaMap = { ...tongjiaMap, ...subMap };
+                console.log(`Loaded tongjia mapping from ${path.basename(tongjiaPath)}`);
             } catch (e) {
-                console.error(`⚠️ Failed to load tongjia mapping: ${e.message}`);
+                console.error(`⚠️ Failed to load tongjia mapping from ${tongjiaPath}: ${e.message}`);
             }
         }
         
-        for (const file of files) {
+        for (const filePath of files) {
+            const file = path.basename(filePath);
             if (!file.endsWith('.json') || file.includes('-recall-map') || file.includes('-writing-map') || file.includes('-grammar-wizard')) continue;
-            const filePath = path.join(absoluteDir, file);
-            console.log(`Reading file: ${file}`);
+            console.log(`Reading file: ${filePath}`);
             
             try {
                 const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -210,7 +226,7 @@ async function main() {
                     }
                 }
             } catch (e) {
-                console.error(`❌ Failed to parse ${file}: ${e.message}`);
+                console.error(`❌ Failed to parse ${filePath}: ${e.message}`);
             }
         }
 
@@ -277,8 +293,8 @@ async function main() {
 
         let chunks = [];
         if (useXl) {
-            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 150);
-            console.log(`Generating audio in batches of max 150 words using GOOGLE_API_KEY_FREE...`);
+            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 200);
+            console.log(`Generating audio in batches of max 200 words using GOOGLE_API_KEY_FREE...`);
         } else {
             const tasksArray = remainingItems.map(item => ({ context_sentence: item.text }));
             for (let i = 0; i < tasksArray.length; i += 10) {
