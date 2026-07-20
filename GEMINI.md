@@ -446,7 +446,13 @@ This document defines the rules for extracting and converting textbook data into
        - `blankIndex`: 1-based index corresponding to the blank.
        - `answer`: Correct word or sentence string matching an item in `wordbank`.
        - `translation` & `explanation`: Chinese text.
-     - **Instruction Mapping Rule:** Always map sections with instructions such as "阅读短文，从所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。" or "阅读短文，从方框内所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。" to this `"cloze-passage-wordbank"` type.
+     - **Instruction Mapping Rule:** Always map sections with instructions such as "阅读短文，从所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。", "阅读短文，从方框内所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。", or "从文后的七个选项中选择五个还原到文章中" (typically known as "阅读还原") to this `"cloze-passage-wordbank"` type.
+     - **Cloze-Passage Conversion Rule for A7A-A9:** For textbooks A7A, A7B, A8A, A8B, and A9, the section "短文填空" (which asks to fill in the blanks with correct forms of bracketed words) must be converted into the `"cloze-passage"` type (multiple-choice format with distractors). In the `passage` text, keep the bracketed hint in place next to the blank placeholder (e.g. `"... [20] (wonder) ..."`).
+     - **任务型阅读 Conversion Rule:** Always map the section "任务型阅读" (Task-based Reading, which traditionally has open-ended or short-answer questions based on a passage) to the `"multiple-choice"` type under a `"reading-comprehension"` section (instead of short-answer), and generate 4 plausible multiple-choice options (`options` array) with one correct answer index (0-3) for each question using AI.
+
+
+
+      - **Visual Diagram Conversion Rule:** If there is any `[*VISUAL: ...*]` diagram description (like a bar chart or graph) inside a passage, convert it into a beautiful, styled, responsive HTML/CSS diagram/chart (with proper bars, colors, labels, legends, etc. using inline CSS layout styles) wrapped in `[HTML: <chart-html>]`. The design must be extremely clean, polished, use modern color palettes, and be readable on light background themes.
 
 
 ## 11. Reading & Expression (RE)

@@ -25,6 +25,7 @@ SCRIPTS = [
     ("gen_6_tn.py", "-text-navigator.json", "md"),
     ("gen_8_gw.py", "-grammar-wizard.json", "md"),
     ("gen_9_pd.py", "-passage-decoder-s.json", "md"),
+    ("gen_10_test.py", "-test.json", "test_md"),
 ]
 
 def main():
@@ -70,6 +71,11 @@ def main():
             input_file = md_file.with_name(f"{md_file.stem}-vocab-guide.json")
             if not input_file.exists():
                 print(f"Error: Required input {input_file.name} for {script_name} not found. Skipping.")
+                continue
+        elif in_type == "test_md":
+            input_file = md_file.with_name(f"{md_file.stem}-test.md")
+            if not input_file.exists():
+                print(f"Skipping {script_name} because {input_file.name} does not exist.")
                 continue
         else:
             input_file = md_file

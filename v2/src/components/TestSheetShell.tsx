@@ -1097,7 +1097,29 @@ export function TestSheetShell({
           flushTable(i)
         }
         
+        if (line.startsWith('[HTML:') && line.endsWith(']')) {
+          const rawHtml = line.slice(6, -1)
+          renderedBlocks.push(
+            <div key={`html-${i}`} dangerouslySetInnerHTML={{ __html: rawHtml }} style={{ margin: '15px 0' }} />
+          )
+          continue
+        }
+
         if (line) {
+          if (line.startsWith('#')) {
+            const match = line.match(/^(#+)\s*(.*)$/)
+            if (match) {
+              const headerLevel = Math.min(match[1].length + 1, 6)
+              const content = match[2]
+              const Tag = `h${headerLevel}` as keyof JSX.IntrinsicElements
+              renderedBlocks.push(
+                <Tag key={`h-${i}`} style={{ marginBottom: '12px', fontWeight: 'bold', color: '#1e293b' }}>
+                  {renderInlineFormatting(content)}
+                </Tag>
+              )
+              continue
+            }
+          }
           renderedBlocks.push(
             <p key={`p-${i}`} style={{ marginBottom: '12px' }}>
               {renderSentences(line, i)}
