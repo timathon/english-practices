@@ -6,7 +6,8 @@
  * 
  * Flags:
  *   --regenerate   Force regeneration of all audios even if they exist on R2.
- *   --xl           Increase word count limit to 200 words per batch for larger inputs.
+ *   --xs           Use GOOGLE_API_KEY with small batches (chunks of 10).
+ *   --xl           (Default) Increase word count limit to 200 words per batch using GOOGLE_API_KEY_FREE.
  *   --resume       Resume from the last saved tts-job-*.json job state file.
  *   --3.1, --flash-tts
  *                  Force priority of gemini-3.1-flash-tts-preview model over gemini-2.5.
@@ -86,17 +87,20 @@ async function checkAudioExists(text, bookName) {
 async function main() {
     const forceRegenerate = process.argv.includes('--regenerate');
     const noUpload = true; // Always skip upload, handle manually via report UI
-    const useXl = process.argv.includes('--xl') || process.argv.includes('xl');
+    const useXs = process.argv.includes('--xs') || process.argv.includes('xs');
+    const useXl = !useXs; // xl is now default, unless --xs/xs flag is specified
     let use31 = process.argv.includes('--3.1') || process.argv.includes('--flash-tts');
     const resume = process.argv.includes('--resume') || process.argv.includes('resume');
 
     if (useXl) {
         if (process.env.GOOGLE_API_KEY_FREE) {
             process.env.GOOGLE_API_KEY = process.env.GOOGLE_API_KEY_FREE;
-            console.log("🔑 Switched to GOOGLE_API_KEY_FREE");
+            console.log("🔑 Switched to GOOGLE_API_KEY_FREE (xl mode)");
         } else {
             console.warn("⚠️ Warning: GOOGLE_API_KEY_FREE is not set in environment!");
         }
+    } else {
+        console.log("🔑 Using GOOGLE_API_KEY (xs mode)");
     }
 
     let bookName = "";
@@ -136,7 +140,7 @@ async function main() {
     } else {
         const inputDir = process.argv[2];
         if (!inputDir) {
-            console.error("Usage: node scripts/tts-in-one.cjs [unit_directory_path] [--regenerate] [--xl] [--resume] [--3.1] [--flash-tts]");
+            console.error("Usage: node scripts/tts-in-one.cjs [unit_directory_path] [--regenerate] [--xs] [--resume] [--3.1] [--flash-tts]");
             process.exit(1);
         }
 
@@ -313,13 +317,13 @@ async function main() {
         let chunks = [];
         if (useXl) {
             chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 200);
-            console.log(`Generating audio in batches of max 200 words using GOOGLE_API_KEY_FREE...`);
+            console.log(`Generating audio in batches of max 200 words (xl mode, using GOOGLE_API_KEY_FREE)...`);
         } else {
             const tasksArray = remainingItems.map(item => ({ context_sentence: item.text }));
             for (let i = 0; i < tasksArray.length; i += 10) {
                 chunks.push(tasksArray.slice(i, i + 10));
             }
-            console.log(`Generating audio for ${remainingItems.length} items using getAudioBatch (in chunks of 10)...`);
+            console.log(`Generating audio for ${remainingItems.length} items in chunks of 10 (xs mode, using GOOGLE_API_KEY)...`);
         }
 
         const MIN_INTERVAL = 21000; // 21 seconds for < 3 RPM
