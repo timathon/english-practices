@@ -678,6 +678,11 @@ export function TestSheetShell({
 
   const renderPromptText = (text?: string) => {
     if (!text) return null
+    const trimmed = text.trim()
+    if (trimmed.startsWith('[HTML:') && trimmed.endsWith(']')) {
+      const rawHtml = trimmed.slice(6, -1)
+      return <span dangerouslySetInnerHTML={{ __html: rawHtml }} />
+    }
     const parts = text.split(/(<u>.*?<\/u>)/g)
     return parts.map((part, idx) => {
       if (part.startsWith('<u>') && part.endsWith('</u>')) {

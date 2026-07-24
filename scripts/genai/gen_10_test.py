@@ -26,19 +26,47 @@ def generate_id(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 def extract_json(text: str) -> dict:
-    """Extract the first balanced JSON object from a string."""
+    """Extract the first balanced JSON object from a string with fallback repair logic."""
     start = text.find("{")
     if start == -1:
         raise ValueError("No JSON object found in response")
     depth = 0
+    end_idx = -1
     for i, ch in enumerate(text[start:], start):
         if ch == "{":
             depth += 1
         elif ch == "}":
             depth -= 1
             if depth == 0:
-                return json.loads(text[start:i + 1])
-    raise ValueError("Unbalanced JSON in response")
+                end_idx = i
+                break
+    if end_idx == -1:
+        raise ValueError("Unbalanced JSON in response")
+
+    candidate = text[start:end_idx + 1]
+
+    # 1. Try standard json.loads with strict=False (allows raw control characters in strings)
+    try:
+        return json.loads(candidate, strict=False)
+    except Exception:
+        pass
+
+    # 2. Try trailing comma removal
+    cleaned_commas = re.sub(r',\s*([}\]])', r'\1', candidate)
+    try:
+        return json.loads(cleaned_commas, strict=False)
+    except Exception:
+        pass
+
+    # 3. Try removing single-line comments // ...
+    cleaned_comments = re.sub(r'//.*$', '', cleaned_commas, flags=re.MULTILINE)
+    try:
+        return json.loads(cleaned_comments, strict=False)
+    except Exception:
+        pass
+
+    # Fallback to raise exact parse exception
+    return json.loads(candidate)
 
 PROMPT_TEMPLATE = """\
 You are an expert English curriculum designer and test generator. Generate a Test Sheet JSON by parsing the following test markdown.
@@ -149,7 +177,7 @@ def main():
 
     print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
     import time
-    response = None
+    parsed = None
     for attempt in range(5):
         try:
             response = client.models.generate_content(
@@ -161,14 +189,13 @@ def main():
                     response_mime_type="application/json"
                 )
             )
+            parsed = extract_json(response.text)
             break
         except Exception as e:
-            print(f"Error calling Gemini API (attempt {attempt + 1}/5): {e}", file=sys.stderr)
+            print(f"Error calling Gemini API / parsing JSON (attempt {attempt + 1}/5): {e}", file=sys.stderr)
             if attempt == 4:
                 raise e
             time.sleep(2 ** attempt)
-
-    parsed = extract_json(response.text)
 
     # Post-process to ensure all sections and questions have valid structure/IDs
     for i, section in enumerate(parsed.get("sections", []), 1):
