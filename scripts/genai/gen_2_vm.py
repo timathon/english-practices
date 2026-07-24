@@ -20,6 +20,7 @@ import os, sys, json, argparse, math, random, string
 from pathlib import Path
 from google import genai
 from google.genai import types
+from config import get_genai_config, parse_high_flag
 
 PROMPT_TEMPLATE = """\
 You are an expert English curriculum question designer for primary school students.
@@ -130,9 +131,7 @@ def extract_json(text: str) -> dict:
 
 
 def main():
-    use_3_5 = "model=3.5" in sys.argv
-    if use_3_5:
-        sys.argv.remove("model=3.5")
+    use_high = parse_high_flag()
 
     parser = argparse.ArgumentParser(description="Generate vocab-master JSON via Gemini API.")
     parser.add_argument("vg_file", help="Path to the vocab-guide JSON (e.g. data/B-PU1/b-pu1-u1/b-pu1-u1-vocab-guide.json)")
@@ -150,18 +149,7 @@ def main():
     items = vg.get("unit_vocabulary", [])
     targets = calc_targets(items)
 
-    if use_3_5:
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            print("Error: GOOGLE_API_KEY environment variable not set.", file=sys.stderr)
-            sys.exit(1)
-        model_name = "gemini-3.5-flash"
-    else:
-        api_key = os.environ.get("GOOGLE_API_KEY_FREE")
-        if not api_key:
-            print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
-            sys.exit(1)
-        model_name = "gemini-3.1-flash-lite"
+    api_key, model_name = get_genai_config(use_high)
 
     client = genai.Client(api_key=api_key)
     prompt = PROMPT_TEMPLATE.format(

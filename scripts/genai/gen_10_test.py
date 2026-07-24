@@ -20,6 +20,7 @@ import os, sys, json, argparse, re, random, string
 from pathlib import Path
 from google import genai
 from google.genai import types
+from config import get_genai_config, parse_high_flag
 
 def generate_id(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -66,6 +67,7 @@ RULES:
      - "definition-matching" (Matching definitions to a word list)
      - "dialogue-completion" (Completing dialogue with candidate sentences)
      - "true-false" (True or False questions)
+     - "put-words-in-order" (Putting words/punctuation blocks in order to form a sentence / 连词成句)
    - `passage`: (Required for `cloze-passage`, `cloze-passage-wordbank`, `reading-comprehension`, `true-false` if applicable) Full text string with blanks represented by "[1]", "[2]", etc.
    - `wordbank`: (Required for `fill-in-the-blank-wordbank`, `cloze-passage-wordbank`, `definition-matching`) Array of strings representing candidate words or sentences.
    - `dialogue`: (Required for `dialogue-completion`) Array of turn objects: `{{ "speaker": string, "text": string }}` where blanks are indicated by placeholders like "[1]".
@@ -93,6 +95,9 @@ RULES:
    - For `fill-in-the-blank-firstletter`:
      - `prompt`: Question sentence. Use "______" for the blank.
      - `answer`: Correct word string.
+   - For `put-words-in-order`:
+     - `prompt`: Sequence of scrambled word/punctuation blocks separated by commas or spaces (e.g. `"do, Amy, can, chores, well (.)"`). Punctuation inside brackets such as `(.)` or `(?)` must be treated as an individual word block.
+     - `answer`: The correctly ordered full target sentence string (e.g. `"Amy can do chores well."`).
    - For `true-false`:
      - `prompt`: The statement.
      - `answer`: Boolean (`true` or `false`).
@@ -106,9 +111,7 @@ TEST MARKDOWN:
 """
 
 def main():
-    use_3_5 = "model=3.5" in sys.argv
-    if use_3_5:
-        sys.argv.remove("model=3.5")
+    use_high = parse_high_flag()
 
     parser = argparse.ArgumentParser(description="Generate test JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to the test markdown file (e.g. data/A8A/a8a-u1/a8a-u1-test.md)")
@@ -139,18 +142,7 @@ def main():
             "(0-indexed integer)."
         )
 
-    if use_3_5:
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            print("Error: GOOGLE_API_KEY environment variable not set.", file=sys.stderr)
-            sys.exit(1)
-        model_name = "gemini-3.5-flash"
-    else:
-        api_key = os.environ.get("GOOGLE_API_KEY_FREE")
-        if not api_key:
-            print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
-            sys.exit(1)
-        model_name = "gemini-3.1-flash-lite"
+    api_key, model_name = get_genai_config(use_high)
 
     client = genai.Client(api_key=api_key)
     prompt = PROMPT_TEMPLATE.format(level=level, conversion_instruction=conversion_instruction, source=source)

@@ -21,6 +21,7 @@ import os, sys, json, argparse, re, random, string
 from pathlib import Path
 from google import genai
 from google.genai import types
+from config import get_genai_config, parse_high_flag
 
 def generate_id(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -98,9 +99,7 @@ UNIT MARKDOWN:
 """
 
 def main():
-    use_3_5 = "model=3.5" in sys.argv
-    if use_3_5:
-        sys.argv.remove("model=3.5")
+    use_high = parse_high_flag()
 
     parser = argparse.ArgumentParser(description="Generate passage-decoder JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to the unit markdown file (e.g. data/B-PU1/b-pu1-u1/b-pu1-u1.md)")
@@ -131,18 +130,7 @@ def main():
         except Exception as e:
             print(f"Warning: could not parse {vocab_file}: {e}", file=sys.stderr)
 
-    if use_3_5:
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            print("Error: GOOGLE_API_KEY environment variable not set.", file=sys.stderr)
-            sys.exit(1)
-        model_name = "gemini-3.5-flash"
-    else:
-        api_key = os.environ.get("GOOGLE_API_KEY_FREE")
-        if not api_key:
-            print("Error: GOOGLE_API_KEY_FREE environment variable not set.", file=sys.stderr)
-            sys.exit(1)
-        model_name = "gemini-3.1-flash-lite"
+    api_key, model_name = get_genai_config(use_high)
 
     client = genai.Client(api_key=api_key)
     prompt = PROMPT_TEMPLATE.format(level=level, vocab=vocab_str, source=source)

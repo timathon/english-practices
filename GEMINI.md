@@ -354,7 +354,7 @@ This document defines the rules for extracting and converting textbook data into
   - `level`: e.g., "Grade 5 Semester 2 - Unit 1".
   - `title`: e.g., "Passage Decoder".
   - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline, highlight }`).
-- **Generation**: You may call the Gemini API programmatically (using `GOOGLE_API_KEY_FREE` and `gemini-3.1-flash-lite`) to parse and generate options, or you can perform translations and distractor generation directly within your own context.
+- **Generation**: You may call the Gemini API programmatically (using `GOOGLE_API_KEY_FREE` and `gemini-3.5-flash-lite`) to parse and generate options, or you can perform translations and distractor generation directly within your own context.
 
 ## 10. Test Sheet (TS)
 **Source:** Textbook PDF or Quiz markdown files (e.g., `data/A5Bx/a5bx-wm3/a5bx-wm3.md`).
@@ -372,6 +372,7 @@ This document defines the rules for extracting and converting textbook data into
     - `"fill-in-the-blank-wordbank"`: Fill-in-the-blank from a shared word bank.
     - `"fill-in-the-blank-firstletter"`: Fill-in-the-blank using a first-letter clue.
     - `"multiple-choice"`: Traditional multiple-choice.
+    - `"put-words-in-order"`: Reordering scrambled words/punctuation into a complete sentence (连词成句).
   - `wordbank`: (Required for `fill-in-the-blank-wordbank` type) Array of strings representing the vocabulary choices.
   - `questions`: Array of question items.
 - **Question Item Fields:**
@@ -449,6 +450,14 @@ This document defines the rules for extracting and converting textbook data into
      - **Instruction Mapping Rule:** Always map sections with instructions such as "阅读短文，从所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。", "阅读短文，从方框内所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。", or "从文后的七个选项中选择五个还原到文章中" (typically known as "阅读还原") to this `"cloze-passage-wordbank"` type.
      - **Cloze-Passage Conversion Rule for A7A-A9:** For textbooks A7A, A7B, A8A, A8B, and A9, the section "短文填空" (which asks to fill in the blanks with correct forms of bracketed words) must be converted into the `"cloze-passage"` type (multiple-choice format with distractors). In the `passage` text, keep the bracketed hint in place next to the blank placeholder (e.g. `"... [20] (wonder) ..."`).
      - **任务型阅读 Conversion Rule:** Always map the section "任务型阅读" (Task-based Reading, which traditionally has open-ended or short-answer questions based on a passage) to the `"multiple-choice"` type under a `"reading-comprehension"` section (instead of short-answer), and generate 4 plausible multiple-choice options (`options` array) with one correct answer index (0-3) for each question using AI.
+
+  7. **`put-words-in-order`** (Putting words in order to form a sentence / 连词成句):
+     - `type`: `"put-words-in-order"`
+     - `questions`: Array of question items where:
+       - `id`: 8-character alphanumeric string.
+       - `prompt`: The sequence of scrambled word/punctuation blocks separated by commas or spaces (e.g. `"do, Amy, can, chores, well (.)"`). Punctuation inside brackets such as `(.)` or `(?)` must be treated as an individual word block.
+       - `answer`: The correctly ordered full sentence string (e.g. `"Amy can do chores well."`).
+       - `translation` & `explanation`: Chinese text.
 
 
 

@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 from google import genai
 from google.genai import types
+from config import get_genai_config, parse_high_flag
 
 PROMPT_TEMPLATE = """\
 You are an expert English curriculum designer. Audit the following list of nodes from a primary school English textbook mindmap.
@@ -122,6 +123,7 @@ def extract_json(text: str) -> list:
     raise ValueError("Unbalanced JSON in response")
 
 def main():
+    use_high = parse_high_flag()
     if len(sys.argv) < 2:
         print("Usage: python3 scripts/genai/audit_tn_nodes.py <path-to-json-file>", file=sys.stderr)
         sys.exit(1)
@@ -154,12 +156,7 @@ def main():
     print(f"Found {len(nodes_to_audit)} nodes to audit.", file=sys.stderr)
     
     # Setup client
-    api_key = os.environ.get("GOOGLE_API_KEY_FREE") or os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        print("Error: GOOGLE_API_KEY_FREE or GOOGLE_API_KEY environment variable not set.", file=sys.stderr)
-        sys.exit(1)
-        
-    model_name = "gemini-3.1-flash-lite" if os.environ.get("GOOGLE_API_KEY_FREE") else "gemini-3.5-flash"
+    api_key, model_name = get_genai_config(use_high)
     client = genai.Client(api_key=api_key)
     
     # Split into batches of 15 to stay within limits and ensure quality

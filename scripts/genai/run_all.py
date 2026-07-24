@@ -3,17 +3,18 @@
 run_all.py — Run all genai scripts sequentially for a given unit folder.
 
 Usage:
-    python3 scripts/genai/run_all.py <path-to-unit-folder>
+    python3 scripts/genai/run_all.py <path-to-unit-folder> [high]
 
 Example:
     python3 scripts/genai/run_all.py data/A4A/a4a-u4
-    python3 scripts/genai/run_all.py data/SA1/sa1-u5 model=3.5
+    python3 scripts/genai/run_all.py data/SA1/sa1-u5 high
 """
 
 import os
 import sys
 import subprocess
 from pathlib import Path
+from config import parse_high_flag
 
 # List of scripts, their expected output file suffixes, and their required input type
 SCRIPTS = [
@@ -29,13 +30,11 @@ SCRIPTS = [
 ]
 
 def main():
-    use_3_5 = "model=3.5" in sys.argv
-    if use_3_5:
-        sys.argv.remove("model=3.5")
+    use_high = parse_high_flag()
 
     if len(sys.argv) < 2:
-        print("Usage: python3 scripts/genai/run_all.py <path-to-unit-folder> [model=3.5]")
-        print("Example: python3 scripts/genai/run_all.py data/A4A/a4a-u4 model=3.5")
+        print("Usage: python3 scripts/genai/run_all.py <path-to-unit-folder> [high]")
+        print("Example: python3 scripts/genai/run_all.py data/A4A/a4a-u4 high")
         sys.exit(1)
         
     folder_path = Path(sys.argv[1])
@@ -82,8 +81,8 @@ def main():
 
         print(f"\n--- Running {script_name} ---")
         cmd = [sys.executable, str(script_path), str(input_file)]
-        if use_3_5:
-            cmd.append("model=3.5")
+        if use_high:
+            cmd.append("high")
         try:
             subprocess.run(cmd, check=True)
             import time

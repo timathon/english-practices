@@ -18,6 +18,55 @@ const getOrdinal = (n: number) => {
   return `${n}th`
 }
 
+const parseWordBlocks = (prompt?: string): string[] => {
+  if (!prompt) return []
+  const result: string[] = []
+  const rawParts = prompt.includes(',')
+    ? prompt.split(',').map(s => s.trim()).filter(Boolean)
+    : prompt.split(/\s+/).filter(Boolean)
+
+  for (const part of rawParts) {
+    const match = part.match(/^(.*?)\s*(\([.?!,;:]+\))$/)
+    if (match) {
+      if (match[1]) result.push(match[1])
+      if (match[2]) result.push(match[2])
+    } else {
+      result.push(part)
+    }
+  }
+  return result
+}
+
+const unwrapBlockText = (raw: string): string => {
+  if (raw.startsWith('(') && raw.endsWith(')')) {
+    return raw.slice(1, -1)
+  }
+  return raw
+}
+
+const formatSentenceFromBlocks = (blocks: string[]): string => {
+  let sentence = ""
+  for (let i = 0; i < blocks.length; i++) {
+    const text = unwrapBlockText(blocks[i])
+    const isPunct = /^[.?!,;:]+$/.test(text)
+    if (i === 0 || isPunct) {
+      sentence += text
+    } else {
+      sentence += " " + text
+    }
+  }
+  return sentence
+}
+
+const normalizeSentence = (str: string): string => {
+  return String(str || '')
+    .trim()
+    .toLowerCase()
+    .replace(/,/g, '')
+    .replace(/\s+([.?!])/g, '$1')
+    .replace(/\s+/g, ' ')
+}
+
 interface Question {
   id: string
   prompt?: string
@@ -33,7 +82,7 @@ interface Section {
   id: string
   title: string
   instruction: string
-  type: 'fill-in-the-blank-wordbank' | 'fill-in-the-blank-firstletter' | 'multiple-choice' | 'definition-matching' | 'dialogue-completion' | 'cloze-passage' | 'true-false' | 'reading-comprehension' | 'cloze-passage-wordbank' | string
+  type: 'fill-in-the-blank-wordbank' | 'fill-in-the-blank-firstletter' | 'multiple-choice' | 'definition-matching' | 'dialogue-completion' | 'cloze-passage' | 'true-false' | 'reading-comprehension' | 'cloze-passage-wordbank' | 'put-words-in-order' | string
   wordbank?: string[]
   options?: string[]
   passage?: string
@@ -85,6 +134,7 @@ export function TestSheetShell({
     setRemainingAttempts(trialsTracker.getRemainingTrials(practiceId, 'test-sheet'))
   }
   const [userAnswers, setUserAnswers] = useState<Record<string, string | number | boolean>>(initialAnswers || {})
+  const [selectedBlocksMap, setSelectedBlocksMap] = useState<Record<string, number[]>>({})
   const [submitted, setSubmitted] = useState(!!initialSubmitted)
   const [score, setScore] = useState(initialScore || 0)
   const [gainedXp, setGainedXp] = useState(0)
@@ -364,6 +414,12 @@ export function TestSheetShell({
               correctCount++
             }
           }
+        } else if (section.type === 'put-words-in-order') {
+          const normUser = normalizeSentence(String(userAns || ''))
+          const normAns = normalizeSentence(String(q.answer || ''))
+          if (normUser && normUser === normAns) {
+            correctCount++
+          }
         } else {
           // String based fill-in-the-blank / matching
           const normalizedUser = String(userAns || '').trim().toLowerCase()
@@ -620,7 +676,7 @@ export function TestSheetShell({
     return renderedBlocks
   }
 
-  const renderPromptText = (text: string) => {
+  const renderPromptText = (text?: string) => {
     if (!text) return null
     const parts = text.split(/(<u>.*?<\/u>)/g)
     return parts.map((part, idx) => {
@@ -655,6 +711,10 @@ export function TestSheetShell({
         userAns === ans ||
         (ans.length > 1 && userAns === ans.substring(1))
       )
+    } else if (section.type === 'put-words-in-order') {
+      const normUser = normalizeSentence(String(userAnswers[q.id] || ''))
+      const normAns = normalizeSentence(String(q.answer || ''))
+      isUserCorrect = userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && normUser === normAns
     } else {
       isUserCorrect = String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
     }
@@ -990,6 +1050,133 @@ export function TestSheetShell({
         )
       }
 
+      case 'put-words-in-order': {
+        const availableBlocks = parseWordBlocks(q.prompt)
+        const selectedIndices = selectedBlocksMap[q.id] || []
+        const userVal = String(userAnswers[q.id] || '')
+
+        return (
+          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+            <div className="ts-question-header">
+              <span className="ts-question-num">{index + 1}.</span>
+              <span className="ts-question-prompt">
+                <span style={{ fontSize: '0.85em', color: '#64748b', fontWeight: 500, marginRight: '8px' }}>
+                  (Click words to form sentence)
+                </span>
+              </span>
+            </div>
+
+            {/* Available Word Blocks / Scrambled Pool */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px', marginBottom: '14px' }}>
+              {availableBlocks.map((block, bIdx) => {
+                const isUsed = selectedIndices.includes(bIdx)
+                return (
+                  <button
+                    key={bIdx}
+                    disabled={submitted || isUsed}
+                    className="ts-option-btn"
+                    style={{
+                      padding: '6px 14px',
+                      fontSize: '0.95rem',
+                      fontWeight: 600,
+                      borderRadius: '8px',
+                      opacity: isUsed ? 0.35 : 1,
+                      cursor: (submitted || isUsed) ? 'default' : 'pointer',
+                      border: '1.5px solid #cbd5e1',
+                      background: isUsed ? '#f1f5f9' : '#ffffff',
+                      color: isUsed ? '#94a3b8' : '#334155',
+                      boxShadow: isUsed ? 'none' : '0 1px 2px rgba(0,0,0,0.05)'
+                    }}
+                    onClick={() => {
+                      if (submitted || isUsed) return
+                      const newIndices = [...selectedIndices, bIdx]
+                      setSelectedBlocksMap(prev => ({ ...prev, [q.id]: newIndices }))
+                      const newAns = formatSentenceFromBlocks(newIndices.map(i => availableBlocks[i]))
+                      handleAnswerChange(q.id, newAns, section)
+                    }}
+                  >
+                    {block}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Assembled Sentence Display */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '10px', minHeight: '44px', padding: '10px 14px', borderRadius: '8px', border: '1.5px solid #cbd5e1', background: '#f8fafc' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 600, color: userVal ? '#1e293b' : '#94a3b8', flex: 1 }}>
+                {userVal || <span style={{ fontWeight: 400, fontStyle: 'italic' }}>Click word blocks above to form sentence...</span>}
+              </div>
+
+              {!submitted && userVal && (
+                <button
+                  type="button"
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    color: '#64748b',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    setSelectedBlocksMap(prev => ({ ...prev, [q.id]: [] }))
+                    handleAnswerChange(q.id, '', section)
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Assembled Chips / Tokens Preview when clicked */}
+            {selectedIndices.length > 0 && !submitted && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', marginRight: '4px' }}>Selected:</span>
+                {selectedIndices.map((bIdx, pos) => (
+                  <span
+                    key={pos}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '3px 10px',
+                      borderRadius: '6px',
+                      background: '#eff6ff',
+                      border: '1px solid #bfdbfe',
+                      color: '#1d4ed8',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                    title="Click to remove"
+                    onClick={() => {
+                      const newIndices = selectedIndices.filter((_, p) => p !== pos)
+                      setSelectedBlocksMap(prev => ({ ...prev, [q.id]: newIndices }))
+                      const newAns = formatSentenceFromBlocks(newIndices.map(i => availableBlocks[i]))
+                      handleAnswerChange(q.id, newAns, section)
+                    }}
+                  >
+                    {availableBlocks[bIdx]} ✕
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {submitted && (
+              <div className="ts-feedback-detail">
+                {!isUserCorrect && (
+                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
+                )}
+                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
+                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
+              </div>
+            )}
+          </div>
+        )
+      }
+
       default:
         return (
           <div key={q.id} className="ts-question-card">
@@ -1111,7 +1298,7 @@ export function TestSheetShell({
             if (match) {
               const headerLevel = Math.min(match[1].length + 1, 6)
               const content = match[2]
-              const Tag = `h${headerLevel}` as keyof JSX.IntrinsicElements
+              const Tag = `h${headerLevel}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
               renderedBlocks.push(
                 <Tag key={`h-${i}`} style={{ marginBottom: '12px', fontWeight: 'bold', color: '#1e293b' }}>
                   {renderInlineFormatting(content)}
