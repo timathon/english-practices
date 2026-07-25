@@ -101,27 +101,34 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">
             演示快捷填充账号 (Quick Demo Logins)
           </div>
-          <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="grid grid-cols-4 gap-1.5 text-xs">
             <button
               onClick={() => handleQuickFill('mmd', 'zhiyuzhishan')}
-              className="p-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded text-purple-900 font-medium text-center"
+              className="p-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded text-purple-900 font-medium text-center"
             >
-              <div className="font-bold">⚙️ Admin</div>
-              <div className="text-[10px] text-purple-700">mmd</div>
+              <div className="font-bold text-[11px]">⚙️ Admin</div>
+              <div className="text-[9px] text-purple-700">mmd</div>
+            </button>
+            <button
+              onClick={() => handleQuickFill('editor_li', 'editor123')}
+              className="p-1.5 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded text-teal-900 font-medium text-center"
+            >
+              <div className="font-bold text-[11px]">✍️ Editor</div>
+              <div className="text-[9px] text-teal-700">editor_li</div>
             </button>
             <button
               onClick={() => handleQuickFill('zhang_laoshi', 'teacher123')}
-              className="p-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded text-blue-900 font-medium text-center"
+              className="p-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded text-blue-900 font-medium text-center"
             >
-              <div className="font-bold">👩‍🏫 Teacher</div>
-              <div className="text-[10px] text-blue-700">zhang_laoshi</div>
+              <div className="font-bold text-[11px]">👩‍🏫 Teacher</div>
+              <div className="text-[9px] text-blue-700">zhang_laoshi</div>
             </button>
             <button
               onClick={() => handleQuickFill('yaming', 'student123')}
-              className="p-2 bg-jade-50 hover:bg-jade-100 border border-jade-200 rounded text-jade-900 font-medium text-center"
+              className="p-1.5 bg-jade-50 hover:bg-jade-100 border border-jade-200 rounded text-jade-900 font-medium text-center"
             >
-              <div className="font-bold">🎓 Student</div>
-              <div className="text-[10px] text-jade-700">yaming</div>
+              <div className="font-bold text-[11px]">🎓 Student</div>
+              <div className="text-[9px] text-jade-700">yaming</div>
             </button>
           </div>
         </div>

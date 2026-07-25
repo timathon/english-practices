@@ -1,5 +1,3 @@
-Here is the transcribed list from the image:
-
 1. 《池上》唐·白居易
 2. 《江南》汉乐府
 3. 《悯农》（其一）唐·李绅

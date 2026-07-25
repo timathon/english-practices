@@ -5,8 +5,8 @@ interface ViewSwitcherProps {
   isOpen: boolean;
   onClose: () => void;
   user: UserSession;
-  activeView: 'student' | 'parent' | 'teacher' | 'admin';
-  onSwitchView: (view: 'student' | 'parent' | 'teacher' | 'admin') => void;
+  activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
+  onSwitchView: (view: 'student' | 'parent' | 'teacher' | 'editor' | 'admin') => void;
 }
 
 export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
@@ -17,12 +17,12 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
   onSwitchView,
 }) => {
   const [pin, setPin] = useState('');
-  const [pinPrompt, setPinPrompt] = useState<'parent' | 'teacher' | 'admin' | null>(null);
+  const [pinPrompt, setPinPrompt] = useState<'parent' | 'teacher' | 'editor' | 'admin' | null>(null);
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSelectView = (targetView: 'student' | 'parent' | 'teacher' | 'admin') => {
+  const handleSelectView = (targetView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin') => {
     setError('');
     // Student view is unlocked by default
     if (targetView === 'student') {
@@ -32,11 +32,11 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
     }
 
     // Direct permission check or PIN lock guard
-    if (user.role === 'admin' || user.capabilities.includes(`${targetView}_cms`) || user.role === targetView) {
+    if (user.role === 'admin' || user.capabilities.includes(`${targetView}_cms`) || user.capabilities.includes(`quiz_${targetView}`) || user.role === targetView) {
       onSwitchView(targetView);
       onClose();
     } else {
-      // Require 4-digit PIN for parent/teacher lock guard demo (PIN: 8848)
+      // Require 4-digit PIN for parent/teacher/editor lock guard demo (PIN: 8848)
       setPinPrompt(targetView);
       setPin('');
     }
@@ -68,7 +68,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
 
         <div className="text-center space-y-1">
           <span className="text-xs font-mono uppercase text-jade-700 font-bold bg-jade-50 px-2.5 py-1 rounded-full border border-jade-200">
-            单账号多视图架构 (1 Account, 4 Views)
+            单账号多视图架构 (1 Account, 5 Views)
           </span>
           <h2 className="text-xl font-bold font-serif text-ink pt-1">切换应用功能视图</h2>
           <p className="text-xs text-slate-500">登录身份: {user.name} ({user.role})</p>
@@ -77,9 +77,9 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
         {pinPrompt ? (
           <form onSubmit={handleVerifyPin} className="space-y-4 bg-amber-50/50 p-4 rounded-xl border border-amber-200">
             <div className="text-xs font-bold text-amber-900">
-              🔒 解锁 {pinPrompt === 'parent' ? '家长防护视图' : pinPrompt === 'teacher' ? '教师管理视图' : '管理员视图'}
+              🔒 解锁 {pinPrompt === 'parent' ? '家长防护视图' : pinPrompt === 'teacher' ? '教师管理视图' : pinPrompt === 'editor' ? '题目编辑视图' : '管理员视图'}
             </div>
-            <p className="text-xs text-slate-600">防止儿童误操作，请输入4位防护PIN码（默认演示PIN: 8848）</p>
+            <p className="text-xs text-slate-600">防止未授权操作，请输入4位防护PIN码（默认演示PIN: 8848）</p>
             {error && <div className="text-xs text-red-600 font-bold">{error}</div>}
             <input
               type="password"
@@ -159,6 +159,23 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
               {activeView === 'teacher' && <span className="text-xs font-bold text-blue-700">当前激活</span>}
             </button>
 
+            {/* Editor View */}
+            <button
+              onClick={() => handleSelectView('editor')}
+              className={`w-full p-4 rounded-xl border text-left flex items-center justify-between transition ${
+                activeView === 'editor' ? 'border-teal-500 bg-teal-50/80 shadow-sm' : 'border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">✍️</span>
+                <div>
+                  <div className="font-bold text-sm text-ink">题目编辑视图 (Quiz Editor / Question Manager)</div>
+                  <div className="text-xs text-slate-600">古诗题库管理、干扰项陷阱设计、难度与音轨校对</div>
+                </div>
+              </div>
+              {activeView === 'editor' && <span className="text-xs font-bold text-teal-700">当前激活</span>}
+            </button>
+
             {/* Admin View */}
             <button
               onClick={() => handleSelectView('admin')}
@@ -170,7 +187,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
                 <span className="text-2xl">⚙️</span>
                 <div>
                   <div className="font-bold text-sm text-ink">系统管理视图 (System Admin)</div>
-                  <div className="text-xs text-slate-500">教师账号开通、古诗库编辑、Cloudflare边缘日志</div>
+                  <div className="text-xs text-slate-500">教师与编辑账号开通、系统权限配置、Cloudflare边缘日志</div>
                 </div>
               </div>
               {activeView === 'admin' && <span className="text-xs font-bold text-purple-700">当前激活</span>}

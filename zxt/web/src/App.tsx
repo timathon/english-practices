@@ -7,13 +7,21 @@ import { BaiLianGe } from './pages/BaiLianGe';
 import { apiService, UserSession } from './services/api';
 
 export const App: React.FC = () => {
-  const [currentPath, setCurrentPath] = useState<string>(window.location.pathname || '/');
+  const [currentPath, setCurrentPath] = useState<string>(
+    window.location.pathname === '/' || !window.location.pathname ? '/blg' : window.location.pathname
+  );
   const [user, setUser] = useState<UserSession | null>(null);
-  const [activeView, setActiveView] = useState<'student' | 'parent' | 'teacher' | 'admin'>('student');
+  const [activeView, setActiveView] = useState<'student' | 'parent' | 'teacher' | 'editor' | 'admin'>('student');
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isViewSwitcherOpen, setIsViewSwitcherOpen] = useState(false);
 
   useEffect(() => {
+    // Auto-redirect to /blg if accessing root '/'
+    if (window.location.pathname === '/' || !window.location.pathname) {
+      window.history.replaceState({}, '', '/blg');
+      setCurrentPath('/blg');
+    }
+
     // Check initial logged-in user
     const existing = apiService.getSession();
     if (existing) {
@@ -22,7 +30,13 @@ export const App: React.FC = () => {
     }
 
     const handlePopState = () => {
-      setCurrentPath(window.location.pathname || '/');
+      const path = window.location.pathname || '/blg';
+      if (path === '/') {
+        window.history.replaceState({}, '', '/blg');
+        setCurrentPath('/blg');
+      } else {
+        setCurrentPath(path);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -71,14 +85,9 @@ export const App: React.FC = () => {
       <footer className="bg-ink text-slate-400 py-8 border-t border-slate-800 text-xs text-center space-y-2">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center space-x-2 font-serif text-slate-200">
-            <span className="text-jade-500 font-bold">知新堂 Zhī Xīn Táng</span>
+            <span className="text-jade-500 font-bold">知新堂</span>
             <span>•</span>
-            <span>白莲阁 Bái Lián Gé</span>
-          </div>
-          <div className="flex space-x-4 text-slate-400">
-            <span>Edge API: zxtapi.vibequizzing.com</span>
-            <span>•</span>
-            <span>Frontend: zxt.vibequizzing.com</span>
+            <span>白莲阁</span>
           </div>
         </div>
       </footer>

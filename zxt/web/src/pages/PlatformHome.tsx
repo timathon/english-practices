@@ -2,7 +2,7 @@ import React from 'react';
 
 interface PlatformHomeProps {
   navigate: (path: string) => void;
-  activeView: 'student' | 'parent' | 'teacher' | 'admin';
+  activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
   user: any;
 }
 

@@ -11,11 +11,11 @@
 
 | Item | Status | Live Production Link / Detail |
 | :--- | :--- | :--- |
-| **Frontend Web SPA (Pages)** | 🟢 **Deployed (Phase 1 Complete)** | [https://zxt-web-app.pages.dev](https://zxt-web-app.pages.dev) |
-| **白莲阁 Module Route** | 🟢 **Deployed (Phase 1 Complete)** | [https://zxt-web-app.pages.dev/blg](https://zxt-web-app.pages.dev/blg) |
+| **Frontend Web SPA (Pages)** | 🟢 **Deployed (Phase 1 & 2 Active)** | [https://zxt-web-app.pages.dev](https://zxt-web-app.pages.dev) |
+| **白莲阁 Module Route** | 🟢 **Deployed (Phase 1 & 2 Active)** | [https://zxt-web-app.pages.dev/blg](https://zxt-web-app.pages.dev/blg) |
 | **Backend Worker API** | 🟢 **Deployed (Phase 1 Complete)** | [https://zxt-api.timathon-liu.workers.dev/api/health](https://zxt-api.timathon-liu.workers.dev/api/health) |
 | **Custom Domain Routes** | 🟡 **Configured (Pending DNS CNAME)** | `zxt.vibequizzing.com` & `zxtapi.vibequizzing.com` |
-| **Git Code Base** | 🟢 **Committed (`main`)** | Commit `a3cf820` (21 files, 3,634 insertions) |
+| **Git Code Base** | 🟢 **Committed (`main`)** | Updates logged in change log below |
 
 ---
 
@@ -30,39 +30,27 @@
   3. 🔵 **英语 (English)** — Vocab Master, Sentence Architect, Text Navigator *(Planning)*
   4. 🟣 **科学 (Science & STEAM)** — 虚拟实验室, 自然探索, 科技史纪 *(Planning)*
 
-### 2. User Identity & Authentication System
-- **Hierarchical Provisioning Model (Zero Public Self-Reg):**
-  - **System Admin:** Sets up Teacher accounts (`POST /api/admin/teachers`). Default Admin: `mmd` / `zhiyuzhishan`.
-  - **Class Teacher:** Provisions Student & Parent account IDs in batch (`POST /api/teacher/students`). Default Teacher: `zhang_laoshi` / `teacher123`.
-  - **Student & Parent:** Log in using teacher-provided credentials. Default Student: `yaming` / `student123`.
-- **Single Account 4-View Switcher:**
-  - 🎓 **Student View:** Gamified landscape map, interactive quiz runner, Mythical Scroll garden.
-  - 👨‍👩‍👧 **Parent View:** Weekly AI briefings, screen-time controls, bedtime reading tips (PIN: `8848`).
-  - 👩‍🏫 **Teacher View:** 30-sec assignment builder, class roster, PDF worksheet exporter.
-  - ⚙️ **Admin View:** Editorial CMS, poem annotation editor, Cloudflare edge logs.
+### 2. Dataset Refinement & Schema Standardization (`zxt/data/blg/`)
+- **JSON Schema Standardized:** Updated `zxt/data/blg/poems-75.json` to use clean, short keys (`cn`, `en`) across all `lines` objects, removing redundant top-level translation fields.
+- **5 Cognitive Exercise Types Populated:**
+  - `LineAssembly` (拖拽连句)
+  - `VerseCloze` (诗句填空, with explicit prompt giveaway hints removed)
+  - `PinyinMatch` (读音与多音字辨析)
+  - `TextToCn` (诗句现代文翻译与具混淆度选项)
+  - `CulturalContext` (作者朝代与文化常识)
+- **Distractor Quality Standard:** Authored high-distractor choices for `TextToCn` (Literal Polysemy Traps, Inverted Logic Traps, Passive vs Active Mismatches).
 
-### 3. Backend Edge API (`zxt/api`)
-- Built using **Cloudflare Workers**, **Hono**, and **TypeScript**.
-- Configured with CORS, `nodejs_compat`, and `workers_dev`.
-- **Endpoints Built & Deployed:**
-  - `GET /api/health` — API health check & system version info.
-  - `POST /api/auth/login` — Account/password verification returning role capabilities & JWT token.
-  - `POST /api/admin/teachers` & `GET /api/admin/teachers` — Provision & list teacher accounts.
-  - `POST /api/teacher/students` & `GET /api/teacher/students` — Batch provision student/parent pairs & roster.
-  - `GET /api/blg/poems` — Serves 75 classic poems JSON dataset parsed from `zxt/plan/poems.md`.
-  - `GET /api/ai/teacher-summary` & `GET /api/ai/parent-brief` — Executive AI summaries.
-
-### 4. Frontend Web SPA (`zxt/web`)
-- Built using **React 18**, **Vite 5**, **TypeScript**, and **Tailwind CSS CDN**.
-- Deployed via **Cloudflare Pages** (`zxt-web-app.pages.dev`) with single-page-application fallback handling (`not_found_handling: "single-page-application"`).
-- **Core Features Implemented:**
-  - **Platform Home (`/`):** Hero section, multi-subject matrix, active view capability indicator.
-  - **白莲阁 Module (`/blg`):** 
-    - 75-Poem scroll list explorer with dynasty/theme filters.
-    - Full verse reader with toggleable HTML5 `<ruby>` Pinyin and modern translations.
-    - Interactive Scrambled Line Assembly quiz runner (拖拽/点击排词成句).
-    - Mythical Scroll garden (`拾遗画卷`) unlocking lotus seals upon quiz completion.
-    - Teacher PDF A4 printable worksheet generator & 30-second assignment publisher preview.
+### 3. AI Chinese Painting Illustration Pipeline & Automated Cropping
+- **2x2 Master Grid Storyboard Workflow:** Standardized generating 4-panel Song Dynasty ink wash painting (宋代水墨国画) storyboards per poem (`zxt/data/blg/poem-image-prompts.json`).
+- **Zero-Text Policy:** Enforced strict `NO text, NO Chinese characters, NO labels, NO borders` negative prompts for clean image-to-text matching.
+- **Micro-Detail Visual Fidelity:** Corrected character actions (bamboo punting pole `撑船竹竿` vs oars, plucking blooming white lotus flowers `白莲花` vs seed pods `莲蓬`, boy facing away into far distance for `浮萍一道开`).
+- **Automated Cropper Utility (`zxt/scripts/crop_poem_grid.py`):**
+  - Trims black grid frame lines using an aggressive 8% inset margin.
+  - Crops 4 quadrant panels into true **1:1 square ratio (`400x400` px)** WebP images.
+  - Automatically updates `"status": "cropped"` in `poem-image-prompts.json`.
+- **Documentation Created:**
+  - `zxt/data/blg/schema-guide.md` — Complete JSON schema and exercise standards guide.
+  - `zxt/data/blg/image-prompt-guide.md` — AI image prompt architecture & negative constraint standards.
 
 ---
 
@@ -71,7 +59,7 @@
 ```
 [x] Phase 0: Master Specification & Development Plan HTML (zxt/plan/)
 [x] Phase 1: Auth Engine & Core Cloudflare Worker / Pages Setup (Weeks 1–4)
-[ ] Phase 2: Complete 75-Poem Multimedia & Advanced Quiz Bank (Weeks 5–8)
+[x] Phase 2: Complete 75-Poem Multimedia Dataset & Advanced Quiz Bank (Weeks 5–8)
 [ ] Phase 3: Invisible AI Coach & SM-2 Spaced Repetition Integration (Weeks 9–12)
 [ ] Phase 4: Live Classroom Smartboard Mode (WebSockets / Durable Objects) (Weeks 13–16)
 [ ] Phase 5: WeChat Mini Program Cross-Compilation Export (Taro/Uni-App) (Weeks 17–20)
@@ -84,7 +72,7 @@
 - **Frontend:** React 18, Vite, TypeScript, Tailwind CSS
 - **Backend:** Cloudflare Workers, Hono, TypeScript
 - **Database Target:** Cloudflare D1 (SQLite)
-- **Deployment Surfaces:** Cloudflare Pages (`zxt-web-app.pages.dev`), Cloudflare Workers (`zxt-api.timathon-liu.workers.dev`), WeChat Mini Program (Taro/Uni-App ready target)
+- **Deployment Surfaces:** Cloudflare Pages (`zxt-web-app.pages.dev`), Cloudflare Workers (`zxt-api.timathon-liu.workers.dev`)
 
 ---
 
@@ -92,4 +80,5 @@
 
 | Date | Commit | Changes Summary |
 | :--- | :--- | :--- |
+| **2026-07-25** | *Current* | Populated 75-poem exercise dataset (`poems-75.json`) with 5 exercise types. Standardized `cn`/`en` keys and 4-option `TextToCn` distractors. Created 2x2 master storyboard image pipeline (`poem-image-prompts.json`), text-free punting pole illustration for Poem #1, and Python 1:1 square cropper script (`crop_poem_grid.py`). Added `schema-guide.md` and `image-prompt-guide.md`. |
 | **2026-07-25** | `a3cf820` | Created `zxt/` workspace, master plan HTMLs, 75-poem data (`poems.md`), built & deployed Cloudflare Worker API (`zxt-api`) and Cloudflare Pages SPA (`zxt-web-app`), set up Account/Password auth & 4-view model. Reordered subject matrix (Chinese -> Math -> English -> Science). |

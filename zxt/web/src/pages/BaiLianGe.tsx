@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { apiService, Poem } from '../services/api';
 
 interface BaiLianGeProps {
-  activeView: 'student' | 'parent' | 'teacher' | 'admin';
+  activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
   user: any;
 }
 
 export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [selectedPoem, setSelectedPoem] = useState<Poem | null>(null);
-  const [activeTab, setActiveTab] = useState<'map' | 'quiz' | 'garden' | 'teacher'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'quiz' | 'garden' | 'teacher' | 'editor'>('map');
   const [showPinyin, setShowPinyin] = useState(true);
+
+  // Quiz editor state
+  const [editingPoem, setEditingPoem] = useState<Poem | null>(null);
+  const [editorSuccessMsg, setEditorSuccessMsg] = useState('');
   
   // Quiz runner state
   const [quizScore, setQuizScore] = useState(0);
@@ -34,7 +38,8 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
 
   const setupQuiz = (poem: Poem) => {
     if (!poem || !poem.lines || poem.lines.length === 0) return;
-    const targetLine = poem.lines[0]; // e.g. "小娃撑小艇"
+    const firstLineObj = poem.lines[0];
+    const targetLine = typeof firstLineObj === 'string' ? firstLineObj : firstLineObj.text; // e.g. "小娃撑小艇"
     const chars = targetLine.split('');
     // Shuffle chars
     const shuffled = [...chars].sort(() => Math.random() - 0.5);
@@ -60,7 +65,8 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const handleVerifyQuiz = () => {
     if (!selectedPoem) return;
     const answer = selectedWords.join('');
-    const targetLine = selectedPoem.lines[0];
+    const firstLineObj = selectedPoem.lines[0];
+    const targetLine = typeof firstLineObj === 'string' ? firstLineObj : firstLineObj.text;
     if (answer === targetLine) {
       setQuizScore(quizScore + 10);
       setQuizCompleted(true);
@@ -84,11 +90,8 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
             <span>•</span>
             <span>全集75首经典古诗词</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black font-serif tracking-tight text-white flex items-center space-x-3">
-            <span>白莲阁</span>
-            <span className="text-sm font-sans font-normal text-emerald-300 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-700">
-              Bái Lián Gé
-            </span>
+          <h1 className="text-3xl sm:text-4xl font-black font-serif tracking-tight bg-gradient-to-r from-emerald-300 via-jade-300 to-teal-100 bg-clip-text text-transparent">
+            白莲阁
           </h1>
           <p className="text-emerald-100 text-sm italic font-serif">
             “小娃撑小艇，偷采白莲回。不解藏踪迹，浮萍一道开。” —— 唐·白居易《池上》
@@ -123,6 +126,20 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
           >
             📜 拾遗画卷 ({unlockedScrolls.length})
           </button>
+
+          {(activeView === 'editor' || activeView === 'admin') && (
+            <button
+              onClick={() => {
+                setActiveTab('editor');
+                setEditingPoem(selectedPoem || poems[0]);
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                activeTab === 'editor' ? 'bg-teal-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              ✍️ 题库/题目编辑
+            </button>
+          )}
 
           {(activeView === 'teacher' || activeView === 'admin') && (
             <button
@@ -212,20 +229,30 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
 
               {/* Verses Rendering with Ruby Pinyin */}
               <div className="space-y-6 text-center py-4 bg-white/70 p-6 rounded-xl border border-amber-100">
-                {selectedPoem.lines.map((line, idx) => (
-                  <div key={idx} className="text-2xl sm:text-3xl font-serif text-slate-800 tracking-widest font-bold leading-loose">
-                    {showPinyin ? (
-                      <ruby className="ruby-text">
-                        {line}
-                        <rt className="text-xs font-mono font-normal text-amber-800 tracking-normal block mb-1">
-                          {selectedPoem.pinyin[idx] || ''}
-                        </rt>
-                      </ruby>
-                    ) : (
-                      line
-                    )}
-                  </div>
-                ))}
+                {selectedPoem.lines.map((lineObj, idx) => {
+                  const text = typeof lineObj === 'string' ? lineObj : lineObj.text;
+                  const pinyin = typeof lineObj === 'string' ? '' : lineObj.pinyin;
+                  const en = typeof lineObj === 'string' ? '' : lineObj.en;
+                  return (
+                    <div key={idx} className="space-y-1">
+                      <div className="text-2xl sm:text-3xl font-serif text-slate-800 tracking-widest font-bold leading-loose">
+                        {showPinyin && pinyin ? (
+                          <ruby className="ruby-text">
+                            {text}
+                            <rt className="text-xs font-mono font-normal text-amber-800 tracking-normal block mb-1">
+                              {pinyin}
+                            </rt>
+                          </ruby>
+                        ) : (
+                          text
+                        )}
+                      </div>
+                      {en && (
+                        <p className="text-xs text-slate-400 font-sans tracking-normal italic">{en}</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Translation & Pedagogy */}
@@ -233,7 +260,16 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 <div className="font-bold text-amber-900 flex items-center">
                   <span className="mr-1">📜</span> 赏析与译文 (Modern Translation):
                 </div>
-                <p className="leading-relaxed text-slate-600 italic">"{selectedPoem.translation}"</p>
+                {(() => {
+                  const fullCn = selectedPoem.lines.map(l => typeof l === 'string' ? '' : l.cn || '').filter(Boolean).join('；');
+                  const fullEn = selectedPoem.lines.map(l => typeof l === 'string' ? '' : l.en || '').filter(Boolean).join(' ');
+                  return (
+                    <>
+                      {fullCn && <p className="leading-relaxed text-slate-600 italic">"{fullCn}"</p>}
+                      {fullEn && <p className="leading-relaxed text-slate-500 font-sans">"{fullEn}"</p>}
+                    </>
+                  );
+                })()}
                 <div className="flex items-center space-x-2 pt-2 border-t border-slate-100 text-[11px]">
                   <span className="font-bold text-slate-500">核心词汇 (Keywords):</span>
                   {selectedPoem.keywords.map((kw, i) => (
@@ -342,6 +378,165 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* QUIZ MANAGER / QUESTION EDITOR TOOLKIT */}
+      {activeTab === 'editor' && (
+        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+          <div className="border-b border-slate-100 pb-4 flex justify-between items-center">
+            <div>
+              <div className="inline-flex items-center space-x-2 bg-teal-50 text-teal-800 border border-teal-200 px-3 py-1 rounded-full text-xs font-bold mb-1">
+                <span>✍️ 题目编辑器 (Quiz Manager & Question Editor)</span>
+              </div>
+              <h2 className="text-2xl font-bold font-serif text-ink">古诗词题库与干扰项校验工坊</h2>
+              <p className="text-xs text-slate-500">题库编辑与校对权限 (Role: {user?.name || 'Quiz Editor'})</p>
+            </div>
+            <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-mono font-bold">
+              Poem ID: #{editingPoem?.id || 1}
+            </span>
+          </div>
+
+          {editorSuccessMsg && (
+            <div className="p-3 bg-teal-50 border border-teal-200 text-teal-800 rounded-lg text-xs font-bold">
+              {editorSuccessMsg}
+            </div>
+          )}
+
+          <div className="grid md:grid-cols-3 gap-6 text-xs">
+            {/* Left Poem Selector */}
+            <div className="space-y-2 border-r border-slate-100 pr-4 max-h-96 overflow-y-auto">
+              <label className="font-bold text-slate-700 block">选择待编辑诗词 (Select Poem)</label>
+              {poems.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setEditingPoem(p);
+                    setEditorSuccessMsg('');
+                  }}
+                  className={`w-full text-left p-2.5 rounded-lg border font-serif transition flex justify-between items-center ${
+                    editingPoem?.id === p.id ? 'border-teal-500 bg-teal-50/80 font-bold text-teal-900' : 'border-slate-100 hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <span>#{p.id} 《{p.title}》</span>
+                  <span className="text-[10px] text-slate-400">[{p.dynasty}] {p.author}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Right Editor Form Panel */}
+            {editingPoem && (
+              <div className="md:col-span-2 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">诗词题目 (Title)</label>
+                    <input
+                      type="text"
+                      value={editingPoem.title}
+                      onChange={(e) => setEditingPoem({ ...editingPoem, title: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">朝代与作者 (Dynasty & Author)</label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={editingPoem.dynasty}
+                        onChange={(e) => setEditingPoem({ ...editingPoem, dynasty: e.target.value })}
+                        className="w-24 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                        placeholder="朝代"
+                      />
+                      <input
+                        type="text"
+                        value={editingPoem.author}
+                        onChange={(e) => setEditingPoem({ ...editingPoem, author: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                        placeholder="作者"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">诗句与逐句译文 (Lines & Line-by-Line Translations)</label>
+                  <div className="space-y-3 max-h-60 overflow-y-auto border border-slate-200 p-3 rounded-lg bg-slate-50">
+                    {editingPoem.lines.map((lineObj, idx) => {
+                      const text = typeof lineObj === 'string' ? lineObj : lineObj.text;
+                      const pinyin = typeof lineObj === 'string' ? '' : lineObj.pinyin;
+                      const cn = typeof lineObj === 'string' ? '' : lineObj.cn || '';
+                      const en = typeof lineObj === 'string' ? '' : lineObj.en || '';
+                      return (
+                        <div key={idx} className="bg-white p-3 rounded border border-slate-200 space-y-2">
+                          <div className="flex space-x-2">
+                            <input
+                              type="text"
+                              value={text}
+                              onChange={(e) => {
+                                const updatedLines = [...editingPoem.lines];
+                                updatedLines[idx] = { text: e.target.value, pinyin, cn, en };
+                                setEditingPoem({ ...editingPoem, lines: updatedLines });
+                              }}
+                              className="w-1/2 px-2.5 py-1 border border-slate-300 rounded font-serif text-xs font-bold"
+                              placeholder="诗句原文本"
+                            />
+                            <input
+                              type="text"
+                              value={pinyin}
+                              onChange={(e) => {
+                                const updatedLines = [...editingPoem.lines];
+                                updatedLines[idx] = { text, pinyin: e.target.value, cn, en };
+                                setEditingPoem({ ...editingPoem, lines: updatedLines });
+                              }}
+                              className="w-1/2 px-2.5 py-1 border border-slate-300 rounded font-mono text-xs"
+                              placeholder="拼音 pīnyīn"
+                            />
+                          </div>
+                          <div className="flex space-x-2">
+                            <input
+                              type="text"
+                              value={cn}
+                              onChange={(e) => {
+                                const updatedLines = [...editingPoem.lines];
+                                updatedLines[idx] = { text, pinyin, cn: e.target.value, en };
+                                setEditingPoem({ ...editingPoem, lines: updatedLines });
+                              }}
+                              className="w-1/2 px-2.5 py-1 border border-slate-300 rounded text-xs"
+                              placeholder="中文单句译文"
+                            />
+                            <input
+                              type="text"
+                              value={en}
+                              onChange={(e) => {
+                                const updatedLines = [...editingPoem.lines];
+                                updatedLines[idx] = { text, pinyin, cn, en: e.target.value };
+                                setEditingPoem({ ...editingPoem, lines: updatedLines });
+                              }}
+                              className="w-1/2 px-2.5 py-1 border border-slate-300 rounded text-xs"
+                              placeholder="English Line Translation"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end space-x-3">
+                  <button
+                    onClick={() => {
+                      setEditorSuccessMsg(`已更新《${editingPoem.title}》的题目与诗句数据！(Saved)`);
+                      // Update in memory list
+                      setPoems(poems.map(p => p.id === editingPoem.id ? editingPoem : p));
+                    }}
+                    className="px-6 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg text-xs shadow-md transition"
+                  >
+                    💾 保存题目改动
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

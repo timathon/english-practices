@@ -5,7 +5,7 @@ interface NavbarProps {
   currentPath: string;
   navigate: (path: string) => void;
   user: UserSession | null;
-  activeView: 'student' | 'parent' | 'teacher' | 'admin';
+  activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
   onOpenLogin: () => void;
   onOpenViewSwitcher: () => void;
   onLogout: () => void;
@@ -24,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     student: 'bg-jade-100 text-jade-800 border-jade-300',
     parent: 'bg-amber-100 text-amber-900 border-amber-300',
     teacher: 'bg-blue-100 text-blue-900 border-blue-300',
+    editor: 'bg-teal-100 text-teal-900 border-teal-300',
     admin: 'bg-purple-100 text-purple-900 border-purple-300',
   };
 
@@ -31,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     student: '🎓 学生视图 (Student)',
     parent: '👨‍👩‍👧 家长视图 (Parent)',
     teacher: '👩‍🏫 教师视图 (Teacher)',
+    editor: '✍️ 编辑视图 (Editor)',
     admin: '⚙️ 管理员视图 (Admin)',
   };
 
@@ -41,9 +43,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Brand & Logo */}
         <div className="flex items-center space-x-4 cursor-pointer" onClick={() => navigate('/')}>
           <div className="flex items-center space-x-2">
-            <span className="px-2 py-1 bg-crimson-700 text-white rounded text-xs font-bold font-serif">v3.0</span>
-            <h1 className="text-xl font-extrabold text-white font-serif tracking-wider">
-              <span className="text-jade-500">知新堂</span> Zhī Xīn Táng
+            <h1 className="text-xl font-extrabold font-serif tracking-wider bg-gradient-to-r from-emerald-400 via-jade-400 to-teal-300 bg-clip-text text-transparent">
+              知新堂
             </h1>
           </div>
           <span className="hidden md:inline-block text-xs text-slate-400 border-l border-slate-700 pl-3">
