@@ -194,7 +194,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     countdownTimer.pause();
 
     setContinueDisabled(true);
-    setTimeout(() => setContinueDisabled(false), 800);
+    setTimeout(() => setContinueDisabled(false), 2000);
 
     const q = currentMistake.question;
     let correct = false;
