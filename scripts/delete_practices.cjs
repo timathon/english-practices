@@ -93,7 +93,7 @@ function getJsonFiles(dir) {
 function pathToId(arg) {
     const normalized = path.normalize(arg).replace(/\\/g, '/');
     const parts = normalized.split('/');
-    const dataIdx = parts.indexOf('data');
+    const dataIdx = parts.indexOf('v2-data');
     const tbIndex = dataIdx !== -1 ? dataIdx + 1 : 0;
     
     if (tbIndex < parts.length - 1) {

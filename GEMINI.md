@@ -617,7 +617,7 @@ module.exports = {
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.** If the textbook for the generated JSONs does not exist in `v2/public/textbooks.json` or `v2/src/lib/textbooks.ts`, you must add the textbook to both files.
 
-**V2 Focus:** The project primarily runs on the V2 single-page application (served from the `v2` directory, which loads exercises dynamically from the database). Therefore, **do NOT** run `scripts/*-release-gen-3.cjs` to generate static HTML files unless the user explicitly requests HTML generation or deployment of static pages. Instead, simply generate/modify the JSON files in the `data/` directory, run the database seed/sync scripts to update the database, and test using the V2 local development server. After generating practice JSONs, you only need to run `scripts/tts-in-one.cjs` for TTS generation, excluding passage decoder.
+**V2 Focus:** The project primarily runs on the V2 single-page application (served from the `v2` directory, which loads exercises dynamically from the database). Therefore, **do NOT** run `scripts/*-release-gen-3.cjs` to generate static HTML files unless the user explicitly requests HTML generation or deployment of static pages. Instead, simply generate/modify the JSON files in the `v2-data/` directory, run the database seed/sync scripts to update the database, and test using the V2 local development server. After generating practice JSONs, you only need to run `scripts/tts-in-one.cjs` for TTS generation, excluding passage decoder.
 
 **Crucially, do NOT use any text found within `VISUAL` or `LAYOUT` markers (e.g., `*[*VISUAL: ...*]*` or `*[*LAYOUT: ...*]*`) as source material for practice items, sentences, or contexts.**
 ---
@@ -626,7 +626,7 @@ module.exports = {
 
 **File:** `v2/src/App.tsx`
 
-Whenever making a git commit that includes changes to files under the `v2/` or `api/` directories (excluding auto-generated files like `v2/public/textbooks.json`), **update the version badge** at the bottom of the `Navigation` component (`nav-menu`) before committing. The badge is a `<div>` with the format:
+Whenever making a git commit that includes changes to files under the `v2/` or `v2-api/` directories (excluding auto-generated files like `v2/public/textbooks.json`), **update the version badge** at the bottom of the `Navigation` component (`nav-menu`) before committing. The badge is a `<div>` with the format:
 
 ```
 vYYMMDD-HHMM
@@ -635,7 +635,7 @@ vYYMMDD-HHMM
 Update it to the **current local date and time** at the moment of the commit (e.g., `v260521-2310`). This allows verifying whether the Cloudflare deployment is serving the latest build.
 
 > [!NOTE]
-> If only data JSON files under the `data/` directory are modified, there is no need to update the version badge, rebuild, or redeploy the client app, as the V2 application fetches all exercise content dynamically from the seeded database.
+> If only data JSON files under the `v2-data/` directory are modified, there is no need to update the version badge, rebuild, or redeploy the client app, as the V2 application fetches all exercise content dynamically from the seeded database.
 
 
 ## V2 Deployment

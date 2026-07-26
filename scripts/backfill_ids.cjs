@@ -69,11 +69,11 @@ function processFile(filePath) {
 
     if (modified) {
         fs.writeFileSync(filePath, JSON.stringify(db, null, 2), 'utf8');
-        console.log(`Updated IDs in: ${filePath.split('data/')[1] || path.basename(filePath)}`);
+        console.log(`Updated IDs in: ${filePath.split('v2-data/')[1] || path.basename(filePath)}`);
     }
 }
 
-const dataDir = path.join(__dirname, '../data');
+const dataDir = path.join(__dirname, '../v2-data');
 if (fs.existsSync(dataDir)) {
     console.log("Beginning ID backfill scan...");
     processDirectory(dataDir);

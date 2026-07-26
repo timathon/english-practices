@@ -55,14 +55,7 @@ function myFetch(url, options = {}) {
 
 function getChangedOrAddedJsonFiles() {
     try {
-        const statusOutput = execSync('git status --porcelain "data/**/*.json"', { encoding: 'utf8' });
-        let diffOutput = "";
-        try {
-            diffOutput = execSync('git diff --name-only origin/main "data/**/*.json"', { encoding: 'utf8' });
-        } catch (e) {
-            // In case origin/main is not found or fetched
-        }
-        
+        const statusOutput = execSync('git status --porcelain -uall "v2-data/**/*.json"', { encoding: 'utf8' });
         const filesSet = new Set();
         
         if (statusOutput.trim()) {
@@ -79,15 +72,7 @@ function getChangedOrAddedJsonFiles() {
                 if (filePath.startsWith('"') && filePath.endsWith('"')) {
                     filePath = filePath.substring(1, filePath.length - 1);
                 }
-                filesSet.add(filePath);
-            }
-        }
-        
-        if (diffOutput.trim()) {
-            const lines = diffOutput.split('\n');
-            for (const line of lines) {
-                const filePath = line.trim();
-                if (filePath && fs.existsSync(filePath)) {
+                if (filePath.startsWith('v2-data/')) {
                     filesSet.add(filePath);
                 }
             }
@@ -95,7 +80,7 @@ function getChangedOrAddedJsonFiles() {
         
         return Array.from(filesSet);
     } catch (e) {
-        console.error("Failed to run git status/diff:", e.message);
+        console.error("Failed to run git status:", e.message);
         return [];
     }
 }
@@ -103,7 +88,7 @@ function getChangedOrAddedJsonFiles() {
 function getDeletedJsonFiles() {
     const deletedSet = new Set();
     try {
-        const statusOutput = execSync('git status --porcelain "data/**/*.json"', { encoding: 'utf8' });
+        const statusOutput = execSync('git status --porcelain -uall "v2-data/**/*.json"', { encoding: 'utf8' });
         if (statusOutput.trim()) {
             const lines = statusOutput.split('\n');
             for (const line of lines) {
@@ -114,33 +99,14 @@ function getDeletedJsonFiles() {
                     if (filePath.startsWith('"') && filePath.endsWith('"')) {
                         filePath = filePath.substring(1, filePath.length - 1);
                     }
-                    deletedSet.add(filePath);
+                    if (filePath.startsWith('v2-data/')) {
+                        deletedSet.add(filePath);
+                    }
                 }
             }
         }
     } catch (e) {
         console.error("Failed to check deleted files from git status:", e.message);
-    }
-    
-    try {
-        let diffOutput = "";
-        try {
-            diffOutput = execSync('git diff --name-status origin/main "data/**/*.json"', { encoding: 'utf8' });
-        } catch (e) {
-            // Safe to ignore in case of no origin/main
-        }
-        if (diffOutput.trim()) {
-            const lines = diffOutput.split('\n');
-            for (const line of lines) {
-                if (!line.trim()) continue;
-                const parts = line.split(/\s+/);
-                if (parts.length >= 2 && parts[0] === 'D') {
-                    deletedSet.add(parts[1].trim());
-                }
-            }
-        }
-    } catch (e) {
-        // Safe to ignore
     }
     return Array.from(deletedSet);
 }
@@ -148,7 +114,7 @@ function getDeletedJsonFiles() {
 function pathToId(arg) {
     const normalized = path.normalize(arg).replace(/\\/g, '/');
     const parts = normalized.split('/');
-    const dataIdx = parts.indexOf('data');
+    const dataIdx = parts.indexOf('v2-data');
     const tbIndex = dataIdx !== -1 ? dataIdx + 1 : 0;
     
     if (tbIndex < parts.length - 1) {
@@ -172,7 +138,7 @@ function checkChanges() {
 
 async function seed() {
     if (!checkChanges()) {
-        console.log("No changes detected in data/**/*.json. Skipping sync. Use --force to override.");
+        console.log("No changes detected in v2-data/**/*.json. Skipping sync. Use --force to override.");
         return;
     }
     console.log("Authenticating as Admin...");
@@ -218,7 +184,7 @@ async function seed() {
         }
     }
     
-    const dataDir = path.join(__dirname, '..', 'data');
+    const dataDir = path.join(__dirname, '..', 'v2-data');
     const args = process.argv.slice(2).filter(a => a !== '--force');
     const changedFiles = args.length > 0 ? args : (FORCE ? null : getChangedOrAddedJsonFiles());
     
