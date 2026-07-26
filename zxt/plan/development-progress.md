@@ -3,7 +3,7 @@
 > **Project Name:** 知新堂 (Zhī Xīn Táng) Multi-Subject AI Platform  
 > **Flagship Module:** 白莲阁 (Bái Lián Gé) — Classical Chinese Poetry (75 Poems)  
 > **Repository Path:** `zxt/`  
-> **Last Updated:** 2026-07-25  
+> **Last Updated:** 2026-07-26  
 
 ---
 
@@ -80,5 +80,7 @@
 
 | Date | Commit | Changes Summary |
 | :--- | :--- | :--- |
-| **2026-07-25** | *Current* | Populated 75-poem exercise dataset (`poems-75.json`) with 5 exercise types. Standardized `cn`/`en` keys and 4-option `TextToCn` distractors. Created 2x2 master storyboard image pipeline (`poem-image-prompts.json`), text-free punting pole illustration for Poem #1, and Python 1:1 square cropper script (`crop_poem_grid.py`). Added `schema-guide.md` and `image-prompt-guide.md`. |
+| **2026-07-26** | *Current* | Fine-tuned Platform Admin & Teacher account management UI. Added Teacher edit modal reuse with username/password reset workflow & custom confirmation alert. Cleaned up English translations from brand badges and header taglines. Fixed mobile viewport non-scalable meta tag (`user-scalable=no`). Fixed sticky header subpixel leak & backdrop overlay layout (`w-screen h-screen m-0 z-[100] fixed top-0 left-0 right-0 bottom-0`). |
+| **2026-07-26** | *Prior* | Elevated Admin Management (Class setup, Teacher & Student account allocation) and Question Bank Editing to Platform Level (`PlatformAdminPanel.tsx` / `PlatformQuestionEditor.tsx`). Positioned 白莲阁 (xzt-blg) as a sub-module section under the Chinese subject. Completed Student 3-part view (Assignments, History, Self-study) and Teacher classroom view (Class selection, Publishing, Stats, Progress unlock). |
+| **2026-07-25** | *Prior* | Populated 75-poem exercise dataset (`poems-75.json`) with 5 exercise types. Standardized `cn`/`en` keys and 4-option `TextToCn` distractors. Created 2x2 master storyboard image pipeline (`poem-image-prompts.json`), text-free punting pole illustration for Poem #1, and Python 1:1 square cropper script (`crop_poem_grid.py`). Added `schema-guide.md` and `image-prompt-guide.md`. |
 | **2026-07-25** | `a3cf820` | Created `zxt/` workspace, master plan HTMLs, 75-poem data (`poems.md`), built & deployed Cloudflare Worker API (`zxt-api`) and Cloudflare Pages SPA (`zxt-web-app`), set up Account/Password auth & 4-view model. Reordered subject matrix (Chinese -> Math -> English -> Science). |

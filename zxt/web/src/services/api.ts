@@ -184,6 +184,161 @@ export const apiService = {
     return null;
   },
 
+  // --- NEW ROLE-BASED MOCK SERVICES & LOCALSTORAGE STATE ---
+
+  // Get Classes Roster (Admin / Teacher)
+  getClasses() {
+    const defaultClasses = [
+      { id: 'c1', name: '三年级A班', teacherName: '张老师 (Ms. Zhang)', teacherId: 'usr_tch_001', studentCount: 28 },
+      { id: 'c2', name: '三年级B班', teacherName: '李老师 (Mr. Li)', teacherId: 'usr_tch_002', studentCount: 25 },
+      { id: 'c3', name: '四年级A班', teacherName: '王老师 (Ms. Wang)', teacherId: 'usr_tch_003', studentCount: 30 }
+    ];
+    const stored = localStorage.getItem('zxt_classes');
+    return stored ? JSON.parse(stored) : defaultClasses;
+  },
+
+  // Save Classes Roster (Admin)
+  saveClasses(classes: any[]) {
+    localStorage.setItem('zxt_classes', JSON.stringify(classes));
+  },
+
+  // Create New Class (Admin)
+  addClass(className: string, defaultTeacherId?: string, defaultTeacherName?: string) {
+    const current = this.getClasses();
+    const newClass = {
+      id: `c_${Date.now()}`,
+      name: className,
+      teacherName: defaultTeacherName || '未指定教师',
+      teacherId: defaultTeacherId || '',
+      studentCount: 0
+    };
+    const updated = [...current, newClass];
+    this.saveClasses(updated);
+    return updated;
+  },
+
+  // Get Teachers List (Admin)
+  getTeachers() {
+    const defaultTeachers = [
+      { id: 'usr_tch_001', username: 'zhang_laoshi', name: '张老师 (Ms. Zhang)', assignedClass: '三年级A班' },
+      { id: 'usr_tch_002', username: 'li_laoshi', name: '李老师 (Mr. Li)', assignedClass: '三年级B班' },
+      { id: 'usr_tch_003', username: 'wang_laoshi', name: '王老师 (Ms. Wang)', assignedClass: '四年级A班' }
+    ];
+    const stored = localStorage.getItem('zxt_teachers');
+    return stored ? JSON.parse(stored) : defaultTeachers;
+  },
+
+  // Save Teachers List (Admin)
+  saveTeachers(teachers: any[]) {
+    localStorage.setItem('zxt_teachers', JSON.stringify(teachers));
+  },
+
+  // Get Students List (Admin / Teacher)
+  getStudents(className?: string) {
+    const defaultStudents = [
+      { id: 'usr_stu_001', name: '亚明 (Yaming)', username: 'yaming', className: '三年级A班', completedQuizzes: 8, avgScore: 92 },
+      { id: 'usr_stu_002', name: '小红 (Xiaohong)', username: 'xiaohong', className: '三年级A班', completedQuizzes: 6, avgScore: 85 },
+      { id: 'usr_stu_003', name: '小明 (Xiaoming)', username: 'xiaoming', className: '三年级A班', completedQuizzes: 10, avgScore: 98 },
+      { id: 'usr_stu_004', name: '刚子 (Gangzi)', username: 'gangzi', className: '三年级B班', completedQuizzes: 4, avgScore: 78 },
+      { id: 'usr_stu_005', name: '莉莉 (Lily)', username: 'lili', className: '三年级B班', completedQuizzes: 7, avgScore: 90 }
+    ];
+    const stored = localStorage.getItem('zxt_students');
+    const all = stored ? JSON.parse(stored) : defaultStudents;
+    return className ? all.filter((s: any) => s.className === className) : all;
+  },
+
+  // Save Students List (Admin)
+  saveStudents(students: any[]) {
+    localStorage.setItem('zxt_students', JSON.stringify(students));
+  },
+
+  // Get Class Assignments (Student / Teacher)
+  getAssignments(className: string = '三年级A班') {
+    const defaultAssignments = [
+      { id: 'asgn_01', classId: 'c1', className: '三年级A班', poemId: 1, poemTitle: '池上', dueDate: '2026-07-30', status: '待完成', requirement: '背诵并完成连句与填空闯关' },
+      { id: 'asgn_02', classId: 'c1', className: '三年级A班', poemId: 4, poemTitle: '悯农 (其二)', dueDate: '2026-08-02', status: '待完成', requirement: '掌握诗句含义与读音辨析' },
+      { id: 'asgn_03', classId: 'c1', className: '三年级A班', poemId: 9, poemTitle: '画', dueDate: '2026-07-25', status: '已打卡', score: 100 }
+    ];
+    const stored = localStorage.getItem('zxt_assignments');
+    const all = stored ? JSON.parse(stored) : defaultAssignments;
+    return all.filter((a: any) => a.className === className);
+  },
+
+  // Create Assignment (Teacher)
+  createAssignment(assignment: { className: string; poemId: number; poemTitle: string; dueDate: string; requirement: string }) {
+    const current = this.getAssignments(assignment.className);
+    const newAsgn = {
+      id: `asgn_${Date.now()}`,
+      classId: 'c1',
+      className: assignment.className,
+      poemId: assignment.poemId,
+      poemTitle: assignment.poemTitle,
+      dueDate: assignment.dueDate,
+      status: '待完成',
+      requirement: assignment.requirement
+    };
+    const stored = localStorage.getItem('zxt_assignments');
+    const all = stored ? JSON.parse(stored) : [];
+    all.push(newAsgn);
+    localStorage.setItem('zxt_assignments', JSON.stringify(all));
+    return newAsgn;
+  },
+
+  // Get Student Quiz History (Student / Teacher)
+  getQuizHistory(studentId: string = 'usr_stu_001') {
+    const defaultHistory = [
+      { id: 'qh_01', poemTitle: '池上', poemId: 1, score: 100, accuracy: '100%', completedAt: '2026-07-26 14:30', quizType: '采莲连句闯关' },
+      { id: 'qh_02', poemTitle: '江南', poemId: 2, score: 90, accuracy: '90%', completedAt: '2026-07-24 16:15', quizType: '诗句填空' },
+      { id: 'qh_03', poemTitle: '画', poemId: 9, score: 100, accuracy: '100%', completedAt: '2026-07-22 10:00', quizType: '字音辨析' }
+    ];
+    const stored = localStorage.getItem(`zxt_qh_${studentId}`);
+    return stored ? JSON.parse(stored) : defaultHistory;
+  },
+
+  // Record Quiz Result (Student)
+  recordQuizResult(studentId: string, result: { poemTitle: string; poemId: number; score: number; accuracy: string; quizType: string }) {
+    const history = this.getQuizHistory(studentId);
+    const newRecord = {
+      id: `qh_${Date.now()}`,
+      ...result,
+      completedAt: new Date().toLocaleString('zh-CN', { hour12: false })
+    };
+    history.unshift(newRecord);
+    localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(history));
+  },
+
+  // Get Class Learning Progress - Learnt Poem IDs (Teacher / Student Self-Study)
+  getLearntPoemIds(className: string = '三年级A班'): number[] {
+    const defaultLearnt = [1, 2, 3, 4, 9, 17, 69]; // Default learnt poem IDs
+    const stored = localStorage.getItem(`zxt_learnt_${className}`);
+    return stored ? JSON.parse(stored) : defaultLearnt;
+  },
+
+  // Toggle Poem Learnt Status (Teacher)
+  togglePoemLearntStatus(className: string, poemId: number): number[] {
+    const current = this.getLearntPoemIds(className);
+    let updated: number[];
+    if (current.includes(poemId)) {
+      updated = current.filter(id => id !== poemId);
+    } else {
+      updated = [...current, poemId];
+    }
+    localStorage.setItem(`zxt_learnt_${className}`, JSON.stringify(updated));
+    return updated;
+  },
+
+  // Save Quiz Questions Override (Editor)
+  savePoemQuestions(poemId: number, questions: PoemQuestion[]) {
+    localStorage.setItem(`zxt_questions_poem_${poemId}`, JSON.stringify(questions));
+  },
+
+  // Get Quiz Questions Override (Editor / Quiz Engine)
+  getPoemQuestions(poemId: number): PoemQuestion[] | null {
+    const stored = localStorage.getItem(`zxt_questions_poem_${poemId}`);
+    return stored ? JSON.parse(stored) : null;
+  },
+
+  // Logout
   logout() {
     currentSession = null;
     localStorage.removeItem('zxt_user');

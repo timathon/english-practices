@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, Poem } from '../services/api';
+import { apiService, Poem, PoemQuestion } from '../services/api';
 
 interface BaiLianGeProps {
   activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
@@ -9,39 +9,106 @@ interface BaiLianGeProps {
 export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [selectedPoem, setSelectedPoem] = useState<Poem | null>(null);
-  const [activeTab, setActiveTab] = useState<'map' | 'quiz' | 'garden' | 'teacher' | 'editor'>('map');
+  
+  // Navigation tabs state
+  const [studentTab, setStudentTab] = useState<'assignments' | 'history' | 'selfstudy'>('assignments');
+  const [teacherTab, setTeacherTab] = useState<'assignments' | 'stats' | 'progress'>('assignments');
+  const [adminTab, setAdminTab] = useState<'teachers' | 'students' | 'classes'>('teachers');
   const [showPinyin, setShowPinyin] = useState(true);
 
-  // Quiz editor state
-  const [editingPoem, setEditingPoem] = useState<Poem | null>(null);
-  const [editorSuccessMsg, setEditorSuccessMsg] = useState('');
+  // Student state
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [quizHistory, setQuizHistory] = useState<any[]>([]);
+  const [learntPoemIds, setLearntPoemIds] = useState<number[]>([]);
+  const [activeQuizPoem, setActiveQuizPoem] = useState<Poem | null>(null);
   
   // Quiz runner state
-  const [quizScore, setQuizScore] = useState(0);
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [scrambledWords, setScrambledWords] = useState<string[]>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
-  const [unlockedScrolls, setUnlockedScrolls] = useState<string[]>(['🪷 白莲神韵', '📜 池上古卷']);
+  const [quizScore, setQuizScore] = useState(0);
+
+  // Teacher state
+  const [classes, setClasses] = useState<any[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>('三年级A班');
+  const [students, setStudents] = useState<any[]>([]);
+  const [newAsgnPoemId, setNewAsgnPoemId] = useState<number>(1);
+  const [newAsgnDueDate, setNewAsgnDueDate] = useState<string>('2026-08-01');
+  const [newAsgnReq, setNewAsgnReq] = useState<string>('完成诗句连线与古诗背诵打卡');
+  const [teacherMsg, setTeacherMsg] = useState<string>('');
+
+  // Admin state
+  const [teachersList, setTeachersList] = useState<any[]>([]);
+  const [allStudentsList, setAllStudentsList] = useState<any[]>([]);
+  const [adminMsg, setAdminMsg] = useState<string>('');
+  
+  // Admin Form input state
+  const [newTeacherName, setNewTeacherName] = useState('');
+  const [newTeacherClass, setNewTeacherClass] = useState('三年级A班');
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newStudentClass, setNewStudentClass] = useState('三年级A班');
+  const [newClassName, setNewClassName] = useState('');
+  const [newClassTeacher, setNewClassTeacher] = useState('');
+
+  // Handle Add Class
+  const handleAddClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClassName.trim()) return;
+    const tch = teachersList.find(t => t.name === newClassTeacher);
+    const updated = apiService.addClass(newClassName.trim(), tch?.id, tch?.name);
+    setClasses(updated);
+    setAdminMsg(`新班级【${newClassName.trim()}】开设成功！`);
+    setNewClassName('');
+  };
+
+  // Editor state
+  const [editingPoem, setEditingPoem] = useState<Poem | null>(null);
+  const [editorSuccessMsg, setEditorSuccessMsg] = useState('');
 
   useEffect(() => {
     loadPoems();
+    loadRosters();
   }, []);
+
+  useEffect(() => {
+    loadStudentData();
+    loadTeacherData();
+  }, [selectedClass]);
 
   const loadPoems = async () => {
     const data = await apiService.getPoems();
     setPoems(data);
     if (data.length > 0) {
-      setSelectedPoem(data[0]); // Default to 《池上》
-      setupQuiz(data[0]);
+      setSelectedPoem(data[0]);
+      setEditingPoem(data[0]);
     }
   };
 
-  const setupQuiz = (poem: Poem) => {
+  const loadRosters = () => {
+    setClasses(apiService.getClasses());
+    setTeachersList(apiService.getTeachers());
+    setAllStudentsList(apiService.getStudents());
+  };
+
+  const loadStudentData = () => {
+    const studentClassName = user?.className || '三年级A班';
+    setAssignments(apiService.getAssignments(studentClassName));
+    setQuizHistory(apiService.getQuizHistory(user?.id || 'usr_stu_001'));
+    setLearntPoemIds(apiService.getLearntPoemIds(studentClassName));
+  };
+
+  const loadTeacherData = () => {
+    setStudents(apiService.getStudents(selectedClass));
+    setLearntPoemIds(apiService.getLearntPoemIds(selectedClass));
+  };
+
+  // --- QUIZ ENGINE FUNCTIONS ---
+  const startQuiz = (poem: Poem) => {
+    setActiveQuizPoem(poem);
     if (!poem || !poem.lines || poem.lines.length === 0) return;
     const firstLineObj = poem.lines[0];
-    const targetLine = typeof firstLineObj === 'string' ? firstLineObj : firstLineObj.text; // e.g. "小娃撑小艇"
+    const targetLine = typeof firstLineObj === 'string' ? firstLineObj : firstLineObj.text;
     const chars = targetLine.split('');
-    // Shuffle chars
     const shuffled = [...chars].sort(() => Math.random() - 0.5);
     setScrambledWords(shuffled);
     setSelectedWords([]);
@@ -63,19 +130,80 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   };
 
   const handleVerifyQuiz = () => {
-    if (!selectedPoem) return;
+    if (!activeQuizPoem) return;
     const answer = selectedWords.join('');
-    const firstLineObj = selectedPoem.lines[0];
+    const firstLineObj = activeQuizPoem.lines[0];
     const targetLine = typeof firstLineObj === 'string' ? firstLineObj : firstLineObj.text;
     if (answer === targetLine) {
       setQuizScore(quizScore + 10);
       setQuizCompleted(true);
-      if (!unlockedScrolls.includes(`🪷 ${selectedPoem.title}印章`)) {
-        setUnlockedScrolls([...unlockedScrolls, `🪷 ${selectedPoem.title}印章`]);
-      }
+      // Record history
+      apiService.recordQuizResult(user?.id || 'usr_stu_001', {
+        poemTitle: activeQuizPoem.title,
+        poemId: activeQuizPoem.id,
+        score: 100,
+        accuracy: '100%',
+        quizType: '采莲连句闯关'
+      });
+      loadStudentData();
     } else {
       alert(`差一点点哦！正确顺序是："${targetLine}"`);
     }
+  };
+
+  // --- TEACHER ACTIONS ---
+  const handlePublishAssignment = (e: React.FormEvent) => {
+    e.preventDefault();
+    const poem = poems.find(p => p.id === Number(newAsgnPoemId));
+    if (!poem) return;
+    apiService.createAssignment({
+      className: selectedClass,
+      poemId: poem.id,
+      poemTitle: poem.title,
+      dueDate: newAsgnDueDate,
+      requirement: newAsgnReq
+    });
+    setTeacherMsg(`成功向【${selectedClass}】发布《${poem.title}》作业！`);
+    loadStudentData();
+  };
+
+  const handleToggleLearnt = (poemId: number) => {
+    const updated = apiService.togglePoemLearntStatus(selectedClass, poemId);
+    setLearntPoemIds(updated);
+    setTeacherMsg(`已更新【${selectedClass}】诗词解锁进度！`);
+  };
+
+  // --- ADMIN ACTIONS ---
+  const handleAddTeacher = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTeacherName) return;
+    const updated = [...teachersList, {
+      id: `usr_tch_${Date.now()}`,
+      username: `tch_${Date.now().toString().slice(-4)}`,
+      name: newTeacherName,
+      assignedClass: newTeacherClass
+    }];
+    apiService.saveTeachers(updated);
+    setTeachersList(updated);
+    setAdminMsg(`教师【${newTeacherName}】创建成功并分配至【${newTeacherClass}】！`);
+    setNewTeacherName('');
+  };
+
+  const handleAddStudent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStudentName) return;
+    const updated = [...allStudentsList, {
+      id: `usr_stu_${Date.now()}`,
+      username: `stu_${Date.now().toString().slice(-4)}`,
+      name: newStudentName,
+      className: newStudentClass,
+      completedQuizzes: 0,
+      avgScore: 100
+    }];
+    apiService.saveStudents(updated);
+    setAllStudentsList(updated);
+    setAdminMsg(`学生【${newStudentName}】创建成功并加入【${newStudentClass}】！`);
+    setNewStudentName('');
   };
 
   return (
@@ -83,199 +211,406 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
       
       {/* Module Header Banner */}
       <div className="bg-gradient-to-r from-emerald-900 via-jade-900 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden border border-jade-700/50">
-        
         <div className="space-y-2 z-10">
           <div className="inline-flex items-center space-x-2 bg-emerald-800/80 border border-emerald-500/40 text-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
             <span>🪷 知新堂 语文旗舰模块</span>
             <span>•</span>
-            <span>全集75首经典古诗词</span>
+            <span>当前身份视图: {activeView.toUpperCase()}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black font-serif tracking-tight bg-gradient-to-r from-emerald-300 via-jade-300 to-teal-100 bg-clip-text text-transparent">
-            白莲阁
+            白莲阁 (古诗文75首)
           </h1>
           <p className="text-emerald-100 text-sm italic font-serif">
             “小娃撑小艇，偷采白莲回。不解藏踪迹，浮萍一道开。” —— 唐·白居易《池上》
           </p>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-2 z-10">
-          <button
-            onClick={() => setActiveTab('map')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === 'map' ? 'bg-jade-500 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            🗺️ 山水地图
-          </button>
-
-          <button
-            onClick={() => setActiveTab('quiz')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === 'quiz' ? 'bg-jade-500 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            🧩 采莲闯关
-          </button>
-
-          <button
-            onClick={() => setActiveTab('garden')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === 'garden' ? 'bg-amber-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            📜 拾遗画卷 ({unlockedScrolls.length})
-          </button>
-
-          {(activeView === 'editor' || activeView === 'admin') && (
-            <button
-              onClick={() => {
-                setActiveTab('editor');
-                setEditingPoem(selectedPoem || poems[0]);
-              }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                activeTab === 'editor' ? 'bg-teal-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              ✍️ 题库/题目编辑
-            </button>
-          )}
-
-          {(activeView === 'teacher' || activeView === 'admin') && (
-            <button
-              onClick={() => setActiveTab('teacher')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                activeTab === 'teacher' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              👩‍🏫 教师/字帖工具
-            </button>
-          )}
+        {/* View Badge */}
+        <div className="z-10 bg-slate-800/80 border border-slate-700 p-3 rounded-xl text-xs space-y-1 text-slate-300">
+          <div className="font-bold text-emerald-400">👤 {user?.name || '体验用户'}</div>
+          <div>所属班级 / 角色: {user?.className || '三年级A班'} ({activeView})</div>
         </div>
-
       </div>
 
-      {/* MAIN TAB CONTENT */}
-      
-      {/* MAP & POEM EXPLORER */}
-      {activeTab === 'map' && (
-        <div className="grid md:grid-cols-3 gap-8">
+      {/* ========================================================================= */}
+      {/* 1. STUDENT VIEW (学生端: 待办作业 / 答题历史 / 自主学习) */}
+      {/* ========================================================================= */}
+      {activeView === 'student' && (
+        <div className="space-y-6">
           
-          {/* Left: 75 Poems Scroll List */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 max-h-[600px] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-ink text-sm font-serif">古诗词名录 ({poems.length}首)</h3>
-              <span className="text-[10px] text-jade-700 bg-jade-50 px-2 py-0.5 rounded font-bold">新课标统编本</span>
-            </div>
-
-            <div className="space-y-2">
-              {poems.map((poem) => (
-                <div
-                  key={poem.id}
-                  onClick={() => {
-                    setSelectedPoem(poem);
-                    setupQuiz(poem);
-                  }}
-                  className={`p-3.5 rounded-xl border text-left cursor-pointer transition flex items-center justify-between ${
-                    selectedPoem?.id === poem.id
-                      ? 'border-jade-500 bg-jade-50/80 shadow-sm'
-                      : 'border-slate-100 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="space-y-0.5">
-                    <div className="font-bold text-sm text-ink font-serif flex items-center space-x-2">
-                      <span className="text-xs text-jade-700 font-mono">#{poem.id}</span>
-                      <span>《{poem.title}》</span>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      [{poem.dynasty}] {poem.author} • <span className="text-slate-400">{poem.theme}</span>
-                    </div>
-                  </div>
-                  {selectedPoem?.id === poem.id && (
-                    <span className="text-xs text-jade-600 font-bold">🪷</span>
-                  )}
-                </div>
-              ))}
-            </div>
+          {/* Sub Navigation Bar for Student */}
+          <div className="flex border-b border-slate-200 space-x-4">
+            <button
+              onClick={() => setStudentTab('assignments')}
+              className={`pb-3 text-sm font-bold border-b-2 transition ${
+                studentTab === 'assignments' ? 'border-jade-600 text-jade-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              📝 1. 待办作业 ({assignments.filter(a => a.status === '待完成').length})
+            </button>
+            <button
+              onClick={() => setStudentTab('history')}
+              className={`pb-3 text-sm font-bold border-b-2 transition ${
+                studentTab === 'history' ? 'border-jade-600 text-jade-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              📊 2. 答题历史 ({quizHistory.length})
+            </button>
+            <button
+              onClick={() => setStudentTab('selfstudy')}
+              className={`pb-3 text-sm font-bold border-b-2 transition ${
+                studentTab === 'selfstudy' ? 'border-jade-600 text-jade-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              📚 3. 自主拓展学习 ({learntPoemIds.length} 首已解锁)
+            </button>
           </div>
 
-          {/* Right: Selected Poem Detailed Canvas */}
-          {selectedPoem && (
-            <div className="md:col-span-2 bg-amber-50/40 p-6 sm:p-8 rounded-2xl border border-amber-200/80 shadow-sm space-y-6 relative overflow-hidden">
-              
-              <div className="flex justify-between items-start border-b border-amber-200 pb-4">
-                <div>
-                  <span className="px-2.5 py-0.5 bg-amber-200/60 text-amber-900 text-xs font-bold rounded">
-                    [{selectedPoem.dynasty}] {selectedPoem.author}
-                  </span>
-                  <h2 className="text-3xl font-black font-serif text-ink mt-1">《{selectedPoem.title}》</h2>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setShowPinyin(!showPinyin)}
-                    className="px-3 py-1.5 bg-white border border-amber-300 text-amber-900 rounded-lg text-xs font-bold shadow-xs hover:bg-amber-100 transition"
-                  >
-                    {showPinyin ? '隐藏拼音' : '显示拼音'}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('quiz')}
-                    className="px-4 py-1.5 bg-jade-600 hover:bg-jade-500 text-white rounded-lg text-xs font-bold shadow-md transition"
-                  >
-                    🧩 开始采莲闯关
-                  </button>
-                </div>
-              </div>
-
-              {/* Verses Rendering with Ruby Pinyin */}
-              <div className="space-y-6 text-center py-4 bg-white/70 p-6 rounded-xl border border-amber-100">
-                {selectedPoem.lines.map((lineObj, idx) => {
-                  const text = typeof lineObj === 'string' ? lineObj : lineObj.text;
-                  const pinyin = typeof lineObj === 'string' ? '' : lineObj.pinyin;
-                  const en = typeof lineObj === 'string' ? '' : lineObj.en;
+          {/* STUDENT TAB 1: ASSIGNMENTS TO DO */}
+          {studentTab === 'assignments' && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold font-serif text-ink">我的待办作业 (Assignments To Do)</h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                {assignments.map((asgn) => {
+                  const poem = poems.find(p => p.id === asgn.poemId) || poems[0];
                   return (
-                    <div key={idx} className="space-y-1">
-                      <div className="text-2xl sm:text-3xl font-serif text-slate-800 tracking-widest font-bold leading-loose">
-                        {showPinyin && pinyin ? (
-                          <ruby className="ruby-text">
-                            {text}
-                            <rt className="text-xs font-mono font-normal text-amber-800 tracking-normal block mb-1">
-                              {pinyin}
-                            </rt>
-                          </ruby>
-                        ) : (
-                          text
-                        )}
+                    <div key={asgn.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold">
+                            截止时间: {asgn.dueDate}
+                          </span>
+                          <h3 className="text-lg font-bold font-serif text-ink mt-1">《{asgn.poemTitle}》</h3>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded text-xs font-bold ${
+                          asgn.status === '已打卡' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                        }`}>
+                          {asgn.status}
+                        </span>
                       </div>
-                      {en && (
-                        <p className="text-xs text-slate-400 font-sans tracking-normal italic">{en}</p>
-                      )}
+                      <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        📋 老师要求: {asgn.requirement}
+                      </p>
+                      <div className="pt-1 flex justify-end">
+                        <button
+                          onClick={() => startQuiz(poem)}
+                          className="px-4 py-2 bg-jade-600 hover:bg-jade-500 text-white font-bold rounded-xl text-xs shadow-md transition"
+                        >
+                          🚀 立即开始答题闯关
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
+            </div>
+          )}
 
-              {/* Translation & Pedagogy */}
-              <div className="bg-white p-5 rounded-xl border border-amber-200 text-xs space-y-2 text-slate-700">
-                <div className="font-bold text-amber-900 flex items-center">
-                  <span className="mr-1">📜</span> 赏析与译文 (Modern Translation):
+          {/* STUDENT TAB 2: QUIZ HISTORY */}
+          {studentTab === 'history' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h2 className="text-xl font-bold font-serif text-ink">答题历史与成绩单 (Quiz History)</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50 text-slate-700 uppercase font-bold border-b border-slate-200">
+                    <tr>
+                      <th className="p-3">完成时间</th>
+                      <th className="p-3">古诗题目</th>
+                      <th className="p-3">闯关类型</th>
+                      <th className="p-3">得分</th>
+                      <th className="p-3">正确率</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {quizHistory.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50">
+                        <td className="p-3 font-mono">{item.completedAt}</td>
+                        <td className="p-3 font-bold font-serif text-ink">《{item.poemTitle}》</td>
+                        <td className="p-3">{item.quizType}</td>
+                        <td className="p-3 font-bold text-emerald-600">{item.score}分</td>
+                        <td className="p-3 font-bold text-slate-700">{item.accuracy}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* STUDENT TAB 3: SELF-STUDY (Learnt Poems Extra Knowledge) */}
+          {studentTab === 'selfstudy' && (
+            <div className="grid md:grid-cols-3 gap-6">
+              
+              {/* Learnt Poems Selector */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3 max-h-[500px] overflow-y-auto">
+                <h3 className="font-bold font-serif text-ink text-sm">已学古诗库 ({learntPoemIds.length}首)</h3>
+                <div className="space-y-2">
+                  {poems.filter(p => learntPoemIds.includes(p.id)).map((poem) => (
+                    <div
+                      key={poem.id}
+                      onClick={() => setSelectedPoem(poem)}
+                      className={`p-3 rounded-xl border cursor-pointer text-xs font-serif transition ${
+                        selectedPoem?.id === poem.id ? 'border-jade-500 bg-jade-50 font-bold' : 'border-slate-100 hover:bg-slate-50'
+                      }`}
+                    >
+                      《{poem.title}》 - [{poem.dynasty}] {poem.author}
+                    </div>
+                  ))}
                 </div>
-                {(() => {
-                  const fullCn = selectedPoem.lines.map(l => typeof l === 'string' ? '' : l.cn || '').filter(Boolean).join('；');
-                  const fullEn = selectedPoem.lines.map(l => typeof l === 'string' ? '' : l.en || '').filter(Boolean).join(' ');
-                  return (
-                    <>
-                      {fullCn && <p className="leading-relaxed text-slate-600 italic">"{fullCn}"</p>}
-                      {fullEn && <p className="leading-relaxed text-slate-500 font-sans">"{fullEn}"</p>}
-                    </>
-                  );
-                })()}
-                <div className="flex items-center space-x-2 pt-2 border-t border-slate-100 text-[11px]">
-                  <span className="font-bold text-slate-500">核心词汇 (Keywords):</span>
-                  {selectedPoem.keywords.map((kw, i) => (
-                    <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold">
-                      {kw}
-                    </span>
+              </div>
+
+              {/* Extra Knowledge Canvas */}
+              {selectedPoem && (
+                <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                  <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
+                    <div>
+                      <span className="px-2 py-0.5 bg-jade-100 text-jade-800 text-xs font-bold rounded">
+                        [{selectedPoem.dynasty}] {selectedPoem.author}
+                      </span>
+                      <h2 className="text-2xl font-bold font-serif text-ink mt-1">《{selectedPoem.title}》拓展自学</h2>
+                    </div>
+                    <button
+                      onClick={() => setShowPinyin(!showPinyin)}
+                      className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-900 rounded text-xs"
+                    >
+                      {showPinyin ? '隐藏拼音' : '显示拼音'}
+                    </button>
+                  </div>
+
+                  {/* Poem Text */}
+                  <div className="bg-amber-50/50 p-5 rounded-xl border border-amber-100 space-y-3 text-center">
+                    {selectedPoem.lines.map((lineObj, idx) => {
+                      const text = typeof lineObj === 'string' ? lineObj : lineObj.text;
+                      const pinyin = typeof lineObj === 'string' ? '' : lineObj.pinyin;
+                      const cn = typeof lineObj === 'string' ? '' : lineObj.cn;
+                      return (
+                        <div key={idx} className="space-y-0.5">
+                          <div className="text-xl font-serif font-bold text-slate-800">
+                            {showPinyin && pinyin ? (
+                              <ruby>{text}<rt className="text-[10px] text-amber-800">{pinyin}</rt></ruby>
+                            ) : text}
+                          </div>
+                          {cn && <div className="text-xs text-slate-500">{cn}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Extra Knowledge Sections */}
+                  <div className="grid sm:grid-cols-2 gap-4 text-xs">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                      <strong className="text-ink block font-serif">📖 诗人背景故事</strong>
+                      <p className="text-slate-600 leading-relaxed">
+                        {selectedPoem.author}是{selectedPoem.dynasty}代著名诗人，其诗风通俗易懂，深受百姓喜爱。作品充满童真与生活气息。
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                      <strong className="text-ink block font-serif">💡 诗词赏析与意境</strong>
+                      <p className="text-slate-600 leading-relaxed">
+                        主题：{selectedPoem.theme}。关键词包括: {selectedPoem.keywords?.join(', ')}。展现了自然景象与生动的画面感。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ACTIVE QUIZ MODAL FOR STUDENT */}
+          {activeQuizPoem && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 space-y-6 relative border border-slate-100">
+                <button
+                  onClick={() => setActiveQuizPoem(null)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold"
+                >
+                  ✕
+                </button>
+                <div className="text-center space-y-1">
+                  <span className="px-2.5 py-1 bg-jade-100 text-jade-800 rounded-full text-xs font-bold">
+                    采莲连句闯关 - 《{activeQuizPoem.title}》
+                  </span>
+                  <h3 className="text-xl font-bold font-serif text-ink">组合正确的诗句顺序</h3>
+                </div>
+
+                {!quizCompleted ? (
+                  <div className="space-y-6">
+                    {/* Selected Char Target Line */}
+                    <div className="min-h-[60px] bg-amber-50 border-2 border-dashed border-amber-300 rounded-xl p-4 flex flex-wrap gap-2 justify-center items-center">
+                      {selectedWords.length === 0 ? (
+                        <span className="text-xs text-amber-700 italic">点击下方汉字连成正确诗句</span>
+                      ) : (
+                        selectedWords.map((char, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleRemoveChar(char, index)}
+                            className="w-10 h-10 bg-amber-500 text-white font-bold rounded-lg shadow-sm text-lg hover:bg-amber-600 font-serif"
+                          >
+                            {char}
+                          </button>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Scrambled Pool */}
+                    <div className="flex flex-wrap gap-3 justify-center">
+                      {scrambledWords.map((char, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSelectChar(char, index)}
+                          className="w-12 h-12 bg-slate-100 hover:bg-jade-100 border border-slate-300 hover:border-jade-400 text-slate-800 font-serif font-bold rounded-xl text-xl shadow-xs transition"
+                        >
+                          {char}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={handleVerifyQuiz}
+                        className="w-full py-3 bg-jade-600 hover:bg-jade-500 text-white font-bold rounded-xl text-sm shadow-md transition"
+                      >
+                        ✅ 提交验证答案
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 space-y-4">
+                    <span className="text-5xl">🎉</span>
+                    <h4 className="text-2xl font-bold font-serif text-jade-700">闯关成功！得分 +10</h4>
+                    <p className="text-xs text-slate-600">你已成功完成《{activeQuizPoem.title}》诗句连线打卡！</p>
+                    <button
+                      onClick={() => setActiveQuizPoem(null)}
+                      className="px-6 py-2.5 bg-jade-600 text-white font-bold rounded-xl text-xs"
+                    >
+                      完成并返回
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2. TEACHER VIEW (教师端: 班级列表 -> 作业发布 / 答题统计 / 进度解锁) */}
+      {/* ========================================================================= */}
+      {activeView === 'teacher' && (
+        <div className="space-y-6">
+          
+          {/* Class Selector Header */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <span className="text-xs text-blue-600 font-bold uppercase">教师工作台 (Teacher Portal)</span>
+              <h2 className="text-xl font-bold font-serif text-ink">班级教学与作业管理</h2>
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-xs font-bold text-slate-600">当前管理班级:</label>
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-ink outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {classes.map(c => <option key={c.id} value={c.name}>{c.name} ({c.studentCount}人)</option>)}
+              </select>
+            </div>
+          </div>
+
+          {teacherMsg && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl font-bold">
+              {teacherMsg}
+            </div>
+          )}
+
+          {/* Teacher Sub Navigation */}
+          <div className="flex border-b border-slate-200 space-x-4">
+            <button
+              onClick={() => setTeacherTab('assignments')}
+              className={`pb-3 text-sm font-bold border-b-2 transition ${
+                teacherTab === 'assignments' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              📌 1. 班级作业与发布 (Publish Assignments)
+            </button>
+            <button
+              onClick={() => setTeacherTab('stats')}
+              className={`pb-3 text-sm font-bold border-b-2 transition ${
+                teacherTab === 'stats' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              📊 2. 班级整体与学生个人答题统计 (Quiz Stats)
+            </button>
+            <button
+              onClick={() => setTeacherTab('progress')}
+              className={`pb-3 text-sm font-bold border-b-2 transition ${
+                teacherTab === 'progress' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              🧭 3. 课程进度与自学解锁 (Learning Progress)
+            </button>
+          </div>
+
+          {/* TEACHER TAB 1: ASSIGNMENTS PUBLISHING */}
+          {teacherTab === 'assignments' && (
+            <div className="grid md:grid-cols-2 gap-6">
+              
+              {/* Form to publish */}
+              <form onSubmit={handlePublishAssignment} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
+                <h3 className="text-base font-bold font-serif text-ink">发布新作业到【{selectedClass}】</h3>
+                
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">选择古诗</label>
+                  <select
+                    value={newAsgnPoemId}
+                    onChange={(e) => setNewAsgnPoemId(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg font-serif"
+                  >
+                    {poems.map(p => <option key={p.id} value={p.id}>《{p.title}》 - [{p.dynasty}] {p.author}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">截止时间</label>
+                  <input
+                    type="date"
+                    value={newAsgnDueDate}
+                    onChange={(e) => setNewAsgnDueDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">作业要求说明</label>
+                  <textarea
+                    value={newAsgnReq}
+                    onChange={(e) => setNewAsgnReq(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md transition"
+                >
+                  🚀 立即向【{selectedClass}】发布作业
+                </button>
+              </form>
+
+              {/* Published assignments list */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 className="text-base font-bold font-serif text-ink">【{selectedClass}】已发布作业列表</h3>
+                <div className="space-y-3 max-h-[350px] overflow-y-auto">
+                  {apiService.getAssignments(selectedClass).map((asgn: any) => (
+                    <div key={asgn.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-1 text-xs">
+                      <div className="flex justify-between font-bold text-ink">
+                        <span>《{asgn.poemTitle}》</span>
+                        <span className="text-blue-600">截止: {asgn.dueDate}</span>
+                      </div>
+                      <p className="text-slate-600">{asgn.requirement}</p>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -283,298 +618,94 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
             </div>
           )}
 
-        </div>
-      )}
-
-      {/* QUIZ RUNNER TAB */}
-      {activeTab === 'quiz' && selectedPoem && (
-        <div className="bg-white p-6 sm:p-10 rounded-2xl border border-slate-200 shadow-md space-y-8 max-w-3xl mx-auto">
-          
-          <div className="text-center space-y-2 border-b border-slate-100 pb-6">
-            <span className="px-3 py-1 bg-jade-100 text-jade-800 text-xs font-bold rounded-full">
-              白莲阁 • 采莲排词成句闯关
-            </span>
-            <h2 className="text-2xl font-bold font-serif text-ink">
-              请点击字符，拼接出《{selectedPoem.title}》的第一句诗
-            </h2>
-            <p className="text-xs text-slate-500">
-              当前积分: <span className="font-bold text-jade-600 text-sm">{quizScore}</span> 分
-            </p>
-          </div>
-
-          {/* Answer Drop Zone */}
-          <div className="bg-slate-50 p-6 rounded-2xl border-2 border-dashed border-jade-300 min-h-[90px] flex items-center justify-center flex-wrap gap-3">
-            {selectedWords.length === 0 ? (
-              <span className="text-slate-400 text-sm">请点击下方的字块放入此处...</span>
-            ) : (
-              selectedWords.map((char, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleRemoveChar(char, idx)}
-                  className="w-12 h-12 bg-jade-600 text-white font-serif font-bold text-xl rounded-xl shadow-md hover:bg-red-500 transition flex items-center justify-center"
-                >
-                  {char}
-                </button>
-              ))
-            )}
-          </div>
-
-          {/* Scrambled Choices Zone */}
-          <div className="flex items-center justify-center flex-wrap gap-3 py-4">
-            {scrambledWords.map((char, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSelectChar(char, idx)}
-                className="w-12 h-12 bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-serif font-bold text-xl rounded-xl shadow-sm transition flex items-center justify-center"
-              >
-                {char}
-              </button>
-            ))}
-          </div>
-
-          {/* Verify Button */}
-          <div className="text-center pt-4">
-            {quizCompleted ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-jade-50 border border-jade-200 text-jade-800 rounded-xl font-bold text-base flex items-center justify-center space-x-2">
-                  <span>🎉 恭喜回答正确！解锁【🪷 {selectedPoem.title}印章】</span>
+          {/* TEACHER TAB 2: QUIZ STATS */}
+          {teacherTab === 'stats' && (
+            <div className="space-y-6">
+              
+              {/* Overall Summary Cards */}
+              <div className="grid sm:grid-cols-3 gap-4 text-xs">
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                  <span className="text-slate-500">班级平均分</span>
+                  <div className="text-2xl font-bold text-blue-600 font-mono">91.5 分</div>
                 </div>
-                <button
-                  onClick={() => setupQuiz(selectedPoem)}
-                  className="px-6 py-2.5 bg-jade-600 hover:bg-jade-500 text-white font-bold rounded-xl text-sm shadow-md transition"
-                >
-                  再测一次 / 刷新字块
-                </button>
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                  <span className="text-slate-500">作业打卡率</span>
+                  <div className="text-2xl font-bold text-emerald-600 font-mono">96.4 %</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
+                  <span className="text-slate-500">需关注易错诗句</span>
+                  <div className="text-sm font-bold text-amber-800 font-serif">“浮萍一道开” (混淆率22%)</div>
+                </div>
               </div>
-            ) : (
-              <button
-                onClick={handleVerifyQuiz}
-                disabled={selectedWords.length === 0}
-                className="px-8 py-3 bg-jade-600 hover:bg-jade-500 text-white font-bold rounded-xl text-sm shadow-lg transition disabled:opacity-40"
-              >
-                验证答案
-              </button>
-            )}
-          </div>
 
-        </div>
-      )}
-
-      {/* MYTHICAL SCROLL GARDEN */}
-      {activeTab === 'garden' && (
-        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-          <div className="border-b border-slate-100 pb-4">
-            <h2 className="text-2xl font-bold font-serif text-ink">拾遗画卷 (Mythical Scroll Garden)</h2>
-            <p className="text-xs text-slate-500">通过古诗测试收集诗意印章与白莲汉字部首</p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {unlockedScrolls.map((scroll, i) => (
-              <div key={i} className="bg-amber-50/60 p-5 rounded-xl border border-amber-200 text-center space-y-2">
-                <div className="text-3xl">🪷</div>
-                <div className="font-bold text-sm text-amber-900 font-serif">{scroll}</div>
-                <span className="inline-block text-[10px] bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded font-bold">
-                  已解锁
-                </span>
+              {/* Student Individual Stats Table */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 className="text-base font-bold font-serif text-ink">【{selectedClass}】学生个人答题明细</h3>
+                <table className="w-full text-left text-xs text-slate-600">
+                  <thead className="bg-slate-50 font-bold text-slate-700 border-b border-slate-200">
+                    <tr>
+                      <th className="p-3">学生姓名</th>
+                      <th className="p-3">账号 ID</th>
+                      <th className="p-3">完成闯关数</th>
+                      <th className="p-3">平均得分</th>
+                      <th className="p-3">状态</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {students.map((stu) => (
+                      <tr key={stu.id} className="hover:bg-slate-50">
+                        <td className="p-3 font-bold text-ink">{stu.name}</td>
+                        <td className="p-3 font-mono">{stu.username}</td>
+                        <td className="p-3">{stu.completedQuizzes} 首</td>
+                        <td className="p-3 font-bold text-emerald-600">{stu.avgScore} 分</td>
+                        <td className="p-3"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">正常</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* QUIZ MANAGER / QUESTION EDITOR TOOLKIT */}
-      {activeTab === 'editor' && (
-        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-          <div className="border-b border-slate-100 pb-4 flex justify-between items-center">
-            <div>
-              <div className="inline-flex items-center space-x-2 bg-teal-50 text-teal-800 border border-teal-200 px-3 py-1 rounded-full text-xs font-bold mb-1">
-                <span>✍️ 题目编辑器 (Quiz Manager & Question Editor)</span>
-              </div>
-              <h2 className="text-2xl font-bold font-serif text-ink">古诗词题库与干扰项校验工坊</h2>
-              <p className="text-xs text-slate-500">题库编辑与校对权限 (Role: {user?.name || 'Quiz Editor'})</p>
-            </div>
-            <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-mono font-bold">
-              Poem ID: #{editingPoem?.id || 1}
-            </span>
-          </div>
-
-          {editorSuccessMsg && (
-            <div className="p-3 bg-teal-50 border border-teal-200 text-teal-800 rounded-lg text-xs font-bold">
-              {editorSuccessMsg}
             </div>
           )}
 
-          <div className="grid md:grid-cols-3 gap-6 text-xs">
-            {/* Left Poem Selector */}
-            <div className="space-y-2 border-r border-slate-100 pr-4 max-h-96 overflow-y-auto">
-              <label className="font-bold text-slate-700 block">选择待编辑诗词 (Select Poem)</label>
-              {poems.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    setEditingPoem(p);
-                    setEditorSuccessMsg('');
-                  }}
-                  className={`w-full text-left p-2.5 rounded-lg border font-serif transition flex justify-between items-center ${
-                    editingPoem?.id === p.id ? 'border-teal-500 bg-teal-50/80 font-bold text-teal-900' : 'border-slate-100 hover:bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  <span>#{p.id} 《{p.title}》</span>
-                  <span className="text-[10px] text-slate-400">[{p.dynasty}] {p.author}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Right Editor Form Panel */}
-            {editingPoem && (
-              <div className="md:col-span-2 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">诗词题目 (Title)</label>
-                    <input
-                      type="text"
-                      value={editingPoem.title}
-                      onChange={(e) => setEditingPoem({ ...editingPoem, title: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">朝代与作者 (Dynasty & Author)</label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={editingPoem.dynasty}
-                        onChange={(e) => setEditingPoem({ ...editingPoem, dynasty: e.target.value })}
-                        className="w-24 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
-                        placeholder="朝代"
-                      />
-                      <input
-                        type="text"
-                        value={editingPoem.author}
-                        onChange={(e) => setEditingPoem({ ...editingPoem, author: e.target.value })}
-                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
-                        placeholder="作者"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">诗句与逐句译文 (Lines & Line-by-Line Translations)</label>
-                  <div className="space-y-3 max-h-60 overflow-y-auto border border-slate-200 p-3 rounded-lg bg-slate-50">
-                    {editingPoem.lines.map((lineObj, idx) => {
-                      const text = typeof lineObj === 'string' ? lineObj : lineObj.text;
-                      const pinyin = typeof lineObj === 'string' ? '' : lineObj.pinyin;
-                      const cn = typeof lineObj === 'string' ? '' : lineObj.cn || '';
-                      const en = typeof lineObj === 'string' ? '' : lineObj.en || '';
-                      return (
-                        <div key={idx} className="bg-white p-3 rounded border border-slate-200 space-y-2">
-                          <div className="flex space-x-2">
-                            <input
-                              type="text"
-                              value={text}
-                              onChange={(e) => {
-                                const updatedLines = [...editingPoem.lines];
-                                updatedLines[idx] = { text: e.target.value, pinyin, cn, en };
-                                setEditingPoem({ ...editingPoem, lines: updatedLines });
-                              }}
-                              className="w-1/2 px-2.5 py-1 border border-slate-300 rounded font-serif text-xs font-bold"
-                              placeholder="诗句原文本"
-                            />
-                            <input
-                              type="text"
-                              value={pinyin}
-                              onChange={(e) => {
-                                const updatedLines = [...editingPoem.lines];
-                                updatedLines[idx] = { text, pinyin: e.target.value, cn, en };
-                                setEditingPoem({ ...editingPoem, lines: updatedLines });
-                              }}
-                              className="w-1/2 px-2.5 py-1 border border-slate-300 rounded font-mono text-xs"
-                              placeholder="拼音 pīnyīn"
-                            />
-                          </div>
-                          <div className="flex space-x-2">
-                            <input
-                              type="text"
-                              value={cn}
-                              onChange={(e) => {
-                                const updatedLines = [...editingPoem.lines];
-                                updatedLines[idx] = { text, pinyin, cn: e.target.value, en };
-                                setEditingPoem({ ...editingPoem, lines: updatedLines });
-                              }}
-                              className="w-1/2 px-2.5 py-1 border border-slate-300 rounded text-xs"
-                              placeholder="中文单句译文"
-                            />
-                            <input
-                              type="text"
-                              value={en}
-                              onChange={(e) => {
-                                const updatedLines = [...editingPoem.lines];
-                                updatedLines[idx] = { text, pinyin, cn, en: e.target.value };
-                                setEditingPoem({ ...editingPoem, lines: updatedLines });
-                              }}
-                              className="w-1/2 px-2.5 py-1 border border-slate-300 rounded text-xs"
-                              placeholder="English Line Translation"
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="pt-2 flex justify-end space-x-3">
-                  <button
-                    onClick={() => {
-                      setEditorSuccessMsg(`已更新《${editingPoem.title}》的题目与诗句数据！(Saved)`);
-                      // Update in memory list
-                      setPoems(poems.map(p => p.id === editingPoem.id ? editingPoem : p));
-                    }}
-                    className="px-6 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg text-xs shadow-md transition"
-                  >
-                    💾 保存题目改动
-                  </button>
-                </div>
+          {/* TEACHER TAB 3: LEARNING PROGRESS (Unlock self study) */}
+          {teacherTab === 'progress' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="border-b border-slate-100 pb-3">
+                <h3 className="text-base font-bold font-serif text-ink">【{selectedClass}】古诗教学进度与学生自学解锁控制</h3>
+                <p className="text-xs text-slate-500">点击勾选已教学古诗，勾选后学生端将在“自主拓展学习”中解锁对应古诗的背景故事与赏析。</p>
               </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* TEACHER TOOLKIT */}
-      {activeTab === 'teacher' && (
-        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-          <div className="border-b border-slate-100 pb-4">
-            <h2 className="text-2xl font-bold font-serif text-ink">教师字帖与作业发布工具 (Teacher PDF & Homework Builder)</h2>
-            <p className="text-xs text-slate-500">一键生成包含米字格、拼音留空白与诗句连线的可打印 PDF 字帖</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 text-xs">
-            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
-              <h3 className="font-bold text-ink text-sm">🖨️ PDF 可打印字帖生成器</h3>
-              <p className="text-slate-600">为《池上》《江南》《悯农》自动生成带有标准米字格和笔顺引导的 A4 打印字帖。</p>
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-sm transition"
-              >
-                导出/打印本诗 A4 字帖
-              </button>
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                {poems.map((poem) => {
+                  const isLearnt = learntPoemIds.includes(poem.id);
+                  return (
+                    <div
+                      key={poem.id}
+                      onClick={() => handleToggleLearnt(poem.id)}
+                      className={`p-3.5 rounded-xl border cursor-pointer transition flex items-center justify-between ${
+                        isLearnt ? 'border-emerald-500 bg-emerald-50/80 font-bold' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div>
+                        <div className="font-serif text-ink">《{poem.title}》</div>
+                        <div className="text-[10px] text-slate-500">[{poem.dynasty}] {poem.author}</div>
+                      </div>
+                      <span className={`px-2 py-1 rounded text-[10px] ${isLearnt ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                        {isLearnt ? '已学 (已解锁)' : '待学 (已锁定)'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+          )}
 
-            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
-              <h3 className="font-bold text-ink text-sm">📲 30秒一键布置诗词作业</h3>
-              <p className="text-slate-600">向三年级A班发送今日背诵《池上》与采莲答题打卡任务。</p>
-              <button
-                onClick={() => alert('作业已成功推送到【三年级A班】全员学生/家长端！')}
-                className="px-4 py-2 bg-jade-600 hover:bg-jade-500 text-white font-bold rounded-lg shadow-sm transition"
-              >
-                发布到班级
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
     </div>
   );
 };
+
+export default BaiLianGe;

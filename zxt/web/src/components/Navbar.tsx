@@ -21,11 +21,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
 }) => {
   const viewBadgeColor = {
-    student: 'bg-jade-100 text-jade-800 border-jade-300',
-    parent: 'bg-amber-100 text-amber-900 border-amber-300',
-    teacher: 'bg-blue-100 text-blue-900 border-blue-300',
-    editor: 'bg-teal-100 text-teal-900 border-teal-300',
-    admin: 'bg-purple-100 text-purple-900 border-purple-300',
+    student: 'bg-emerald-500 text-white border-emerald-400',
+    parent: 'bg-amber-500 text-white border-amber-400',
+    teacher: 'bg-blue-600 text-white border-blue-500',
+    editor: 'bg-teal-600 text-white border-teal-500',
+    admin: 'bg-purple-600 text-white border-purple-500',
   };
 
   const viewBadgeLabel = {
@@ -37,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="bg-ink text-white sticky top-0 z-30 shadow-md">
+    <header className="bg-ink text-white fixed top-0 left-0 right-0 z-30 shadow-md w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         
         {/* Brand & Logo */}
@@ -71,23 +71,37 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>🪷</span>
             <span>白莲阁 (古诗文)</span>
           </button>
+          {(activeView === 'admin') && (
+            <button
+              onClick={() => navigate('/admin')}
+              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
+                currentPath === '/admin' ? 'bg-purple-900/80 border border-purple-500/50 text-purple-300 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <span>⚙️</span>
+              <span>平台管理</span>
+            </button>
+          )}
+          {(activeView === 'editor' || activeView === 'admin') && (
+            <button
+              onClick={() => navigate('/editor')}
+              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
+                currentPath === '/editor' ? 'bg-teal-900/80 border border-teal-500/50 text-teal-300 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <span>✍️</span>
+              <span>平台题库编辑</span>
+            </button>
+          )}
         </nav>
 
         {/* User Controls / Auth */}
         <div className="flex items-center space-x-3">
           {user ? (
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={onOpenViewSwitcher}
-                className={`px-2.5 py-1 rounded-full border text-xs font-bold flex items-center space-x-1 hover:opacity-90 transition ${viewBadgeColor[activeView]}`}
-                title="切换账户视图"
-              >
-                <span>{viewBadgeLabel[activeView]}</span>
-                <span className="text-[10px]">▼</span>
-              </button>
-              <div className="hidden sm:block text-xs text-right">
-                <div className="font-bold text-white">{user.name}</div>
-                <div className="text-[10px] text-slate-400">{user.className}</div>
+            <div className="flex items-center space-x-3">
+              <div className="text-xs text-right">
+                <span className="font-bold text-white">{user.name}</span>
+                <span className="text-[10px] text-slate-400 ml-1 font-mono">({user.className})</span>
               </div>
               <button
                 onClick={onLogout}
@@ -97,12 +111,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
           ) : (
-            <button
-              onClick={onOpenLogin}
-              className="px-4 py-1.5 bg-jade-600 hover:bg-jade-500 text-white rounded-lg text-xs font-bold shadow-md transition"
-            >
-              登录账号 / 视图
-            </button>
+            currentPath !== '/' && (
+              <button
+                onClick={onOpenLogin}
+                className="px-4 py-1.5 bg-jade-600 hover:bg-jade-500 text-white rounded-lg text-xs font-bold shadow-md transition"
+              >
+                登录账号
+              </button>
+            )
           )}
         </div>
 

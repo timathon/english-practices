@@ -4,11 +4,13 @@ import { LoginModal } from './components/LoginModal';
 import { ViewSwitcher } from './components/ViewSwitcher';
 import { PlatformHome } from './pages/PlatformHome';
 import { BaiLianGe } from './pages/BaiLianGe';
+import { PlatformAdminPanel } from './pages/PlatformAdminPanel';
+import { PlatformQuestionEditor } from './pages/PlatformQuestionEditor';
 import { apiService, UserSession } from './services/api';
 
 export const App: React.FC = () => {
   const [currentPath, setCurrentPath] = useState<string>(
-    window.location.pathname === '/' || !window.location.pathname ? '/blg' : window.location.pathname
+    window.location.pathname || '/'
   );
   const [user, setUser] = useState<UserSession | null>(null);
   const [activeView, setActiveView] = useState<'student' | 'parent' | 'teacher' | 'editor' | 'admin'>('student');
@@ -16,12 +18,6 @@ export const App: React.FC = () => {
   const [isViewSwitcherOpen, setIsViewSwitcherOpen] = useState(false);
 
   useEffect(() => {
-    // Auto-redirect to /blg if accessing root '/'
-    if (window.location.pathname === '/' || !window.location.pathname) {
-      window.history.replaceState({}, '', '/blg');
-      setCurrentPath('/blg');
-    }
-
     // Check initial logged-in user
     const existing = apiService.getSession();
     if (existing) {
@@ -30,13 +26,8 @@ export const App: React.FC = () => {
     }
 
     const handlePopState = () => {
-      const path = window.location.pathname || '/blg';
-      if (path === '/') {
-        window.history.replaceState({}, '', '/blg');
-        setCurrentPath('/blg');
-      } else {
-        setCurrentPath(path);
-      }
+      const path = window.location.pathname || '/';
+      setCurrentPath(path);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -47,15 +38,24 @@ export const App: React.FC = () => {
     setCurrentPath(path);
   };
 
+  const getTargetDashboardRoute = (role: string) => {
+    if (role === 'admin') return '/admin';
+    if (role === 'editor') return '/editor';
+    return '/blg';
+  };
+
   const handleLoginSuccess = (loggedInUser: UserSession) => {
     setUser(loggedInUser);
     setActiveView(loggedInUser.role);
+    const targetRoute = getTargetDashboardRoute(loggedInUser.role);
+    navigate(targetRoute);
   };
 
   const handleLogout = () => {
     apiService.logout();
     setUser(null);
     setActiveView('student');
+    navigate('/');
   };
 
   return (
@@ -73,24 +73,19 @@ export const App: React.FC = () => {
       />
 
       {/* Main Page Content Routing */}
-      <main className="flex-1">
+      <main className="flex-1 pt-16">
         {currentPath === '/blg' ? (
           <BaiLianGe activeView={activeView} user={user} />
+        ) : currentPath === '/admin' ? (
+          <PlatformAdminPanel user={user} />
+        ) : currentPath === '/editor' ? (
+          <PlatformQuestionEditor user={user} />
         ) : (
-          <PlatformHome navigate={navigate} activeView={activeView} user={user} />
+          <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-ink text-slate-400 py-8 border-t border-slate-800 text-xs text-center space-y-2">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center space-x-2 font-serif text-slate-200">
-            <span className="text-jade-500 font-bold">知新堂</span>
-            <span>•</span>
-            <span>白莲阁</span>
-          </div>
-        </div>
-      </footer>
+
 
       {/* Modals */}
       <LoginModal

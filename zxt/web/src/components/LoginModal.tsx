@@ -49,7 +49,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         </button>
 
         <div className="text-center space-y-2">
-          <div className="inline-flex px-3 py-1 bg-jade-50 text-jade-700 text-xs font-bold rounded-full border border-jade-200">
+          <div className="inline-flex px-3 py-1 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-full border border-emerald-200">
             知新堂 账号密码登录
           </div>
           <h2 className="text-2xl font-bold font-serif text-ink">登录知新堂平台</h2>
@@ -70,7 +70,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="请输入账号 (如 mmd, zhang_laoshi, yaming)"
-              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-jade-500 focus:border-jade-500 outline-none"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
               required
             />
           </div>
@@ -82,7 +82,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="请输入密码"
-              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-jade-500 focus:border-jade-500 outline-none"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
               required
             />
           </div>
@@ -90,7 +90,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-jade-600 hover:bg-jade-500 text-white font-bold rounded-lg text-sm shadow-md transition disabled:opacity-50"
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-sm shadow-md transition disabled:opacity-50"
           >
             {loading ? '登录验证中...' : '立即登录'}
           </button>
@@ -125,10 +125,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             </button>
             <button
               onClick={() => handleQuickFill('yaming', 'student123')}
-              className="p-1.5 bg-jade-50 hover:bg-jade-100 border border-jade-200 rounded text-jade-900 font-medium text-center"
+              className="p-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded text-emerald-900 font-medium text-center"
             >
               <div className="font-bold text-[11px]">🎓 Student</div>
-              <div className="text-[9px] text-jade-700">yaming</div>
+              <div className="text-[9px] text-emerald-700">yaming</div>
             </button>
           </div>
         </div>
