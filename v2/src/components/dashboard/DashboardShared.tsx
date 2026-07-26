@@ -110,8 +110,9 @@ export function ActivityChart({
     <div className="db-chart-card">
       <div className="db-chart-legend-left">
         <span className="db-chart-legend-bar" />
+        <span>Practices & </span>
         <span className="db-chart-legend-bar" style={{ backgroundColor: '#e67e22', marginTop: '4px' }} />
-        <span>Practices & Time (m)</span>
+        <span> Time (m)</span>
       </div>
       <div className="db-chart-area">
         <ResponsiveContainer width="100%" height="100%">
