@@ -107,7 +107,7 @@ It is wrong that the whole family sit in front of the television while eating. 1
 
 It's better to start the conversation right before dinner. 15 Doing those things together before dinner can make family members feel interested. As a result, there are no embarrassing(令人尴尬的) moments when people are actually eating.
 
-Children aren't usually very good at sharing information. So don't ask them questions like "How was school today?" 16 Try to talk about the after-school activities that they might be taking part in. 17 If you have had a funny matter at work, share it. And it will 18 serve well if you share your childhood memories with your family. These interesting topics will make family members eat happily. 
+Children aren't usually very good at sharing information. So don't ask them questions like "How was school today?" 16 Try to talk about the after-school activities that they might be taking part in. 17 If you have had a funny matter at work, share it. And it will serve well if you share your childhood memories with your family. 18 These interesting topics will make family members eat happily. 
 
 In a word, it is always necessary to choose the right topics for the family dinner conversations.
 
@@ -132,7 +132,7 @@ In a word, it is always necessary to choose the right topics for the family dinn
 
 # 阅读下面短文,根据短文内容,完成下列各题。
 
-As we all know, doing housework is helpful for teenagers' development. Do teenagers in small villages do housework at home? How about the teenagers in big cities? We did a survey(调查) last month. We asked 4,000 teenagers in China. Half of them come from big cities. The others are from small villages. Let's look at the result.
+As we all know, doing housework is helpful for teenagers' development. Do teenagers in small villages do housework at home? How about the teenagers in big cities? We did a survey(调查) last month. We asked 4,000 teenagers in China. Half of <u>them</u> come from big cities. The others are from small villages. Let's look at the result.
 
 [*VISUAL: A grouped bar chart comparing the number of teenagers from small villages vs big cities performing different types of housework. The y-axis scales from 0 to 2000. 
 Categories on the x-axis: 

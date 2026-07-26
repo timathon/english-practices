@@ -67,6 +67,78 @@ const normalizeSentence = (str: string): string => {
     .replace(/\s+/g, ' ')
 }
 
+const renderFormattedInlineText = (text: string): React.ReactNode => {
+  if (!text) return null
+  const parts = text.split(/(\*\*.*?\*\*|<u>.*?<\/u>)/gi)
+  return (
+    <>
+      {parts.map((part, idx) => {
+        if (part.toLowerCase().startsWith('**') && part.endsWith('**')) {
+          return <strong key={idx}>{renderFormattedInlineText(part.slice(2, -2))}</strong>
+        }
+        if (part.toLowerCase().startsWith('<u>') && part.toLowerCase().endsWith('</u>')) {
+          return <u key={idx} style={{ fontWeight: 'bold' }}>{renderFormattedInlineText(part.slice(3, -4))}</u>
+        }
+        return part
+      })}
+    </>
+  )
+}
+
+const isAnswerCorrect = (userAns: any, correctAns: any, sectionType?: string, qType?: string): boolean => {
+  if (userAns === undefined || userAns === null || userAns === '' || correctAns === undefined || correctAns === null || correctAns === '') {
+    return false
+  }
+
+  if (sectionType === 'multiple-choice' || sectionType === 'cloze-passage' || (sectionType === 'reading-comprehension' && qType === 'multiple-choice')) {
+    if (!isNaN(Number(userAns)) && !isNaN(Number(correctAns))) {
+      return Number(userAns) === Number(correctAns)
+    }
+  }
+
+  if (sectionType === 'true-false') {
+    return String(userAns).trim().toLowerCase() === String(correctAns).trim().toLowerCase()
+  }
+
+  if (sectionType === 'reading-comprehension' && qType === 'short-answer') {
+    return String(userAns || '').trim().length > 0
+  }
+
+  if (sectionType === 'fill-in-the-blank-firstletter') {
+    const ans = String(correctAns).trim().toLowerCase()
+    const uAns = String(userAns).trim().toLowerCase()
+    return uAns === ans || (ans.length > 1 && uAns === ans.substring(1))
+  }
+
+  if (sectionType === 'put-words-in-order') {
+    const normUser = normalizeSentence(String(userAns))
+    const normAns = normalizeSentence(String(correctAns))
+    return normUser === normAns
+  }
+
+  // String / Wordbank / Matching / Cloze comparison
+  const uStr = String(userAns).trim().toLowerCase()
+  const cStr = String(correctAns).trim().toLowerCase()
+
+  if (uStr === cStr) return true
+
+  const extractLetter = (s: string) => {
+    const trimmed = s.trim().toLowerCase()
+    if (/^[a-z]$/.test(trimmed)) return trimmed
+    const m = trimmed.match(/^([a-z])[\.\s]/)
+    return m ? m[1] : null
+  }
+
+  const uLetter = extractLetter(uStr)
+  const cLetter = extractLetter(cStr)
+
+  if (uLetter && cLetter && uLetter === cLetter) {
+    return true
+  }
+
+  return false
+}
+
 interface Question {
   id: string
   prompt?: string
@@ -387,46 +459,8 @@ export function TestSheetShell({
       section.questions.forEach(q => {
         totalQuestions++
         const userAns = userAnswers[q.id]
-        
-        if (section.type === 'multiple-choice' || section.type === 'cloze-passage') {
-          if (userAns !== undefined && userAns !== '' && Number(userAns) === Number(q.answer)) {
-            correctCount++
-          }
-        } else if (section.type === 'true-false') {
-          if (userAns !== undefined && userAns !== '' && String(userAns) === String(q.answer)) {
-            correctCount++
-          }
-        } else if (section.type === 'reading-comprehension') {
-          if (q.type === 'multiple-choice') {
-            if (userAns !== undefined && userAns !== '' && Number(userAns) === Number(q.answer)) {
-              correctCount++
-            }
-          } else if (q.type === 'short-answer') {
-            // Give points for writing anything to support student input
-            if (String(userAns || '').trim().length > 0) {
-              correctCount++
-            }
-          } else {
-            // Default string based check
-            const normalizedUser = String(userAns || '').trim().toLowerCase()
-            const normalizedCorrect = String(q.answer).trim().toLowerCase()
-            if (normalizedUser === normalizedCorrect) {
-              correctCount++
-            }
-          }
-        } else if (section.type === 'put-words-in-order') {
-          const normUser = normalizeSentence(String(userAns || ''))
-          const normAns = normalizeSentence(String(q.answer || ''))
-          if (normUser && normUser === normAns) {
-            correctCount++
-          }
-        } else {
-          // String based fill-in-the-blank / matching
-          const normalizedUser = String(userAns || '').trim().toLowerCase()
-          const normalizedCorrect = String(q.answer).trim().toLowerCase()
-          if (normalizedUser === normalizedCorrect) {
-            correctCount++
-          }
+        if (isAnswerCorrect(userAns, q.answer, section.type, q.type)) {
+          correctCount++
         }
       })
     })
@@ -488,6 +522,11 @@ export function TestSheetShell({
     let tableRows: string[][] = []
 
     const parseLineContent = (lineText: string) => {
+      const trimmed = lineText.trim()
+      if (trimmed.startsWith('[HTML:') && trimmed.endsWith(']')) {
+        const rawHtml = trimmed.slice(6, -1)
+        return <div key="html-block" className="ts-html-passage-block" style={{ width: '100%', overflowX: 'auto' }} dangerouslySetInnerHTML={{ __html: rawHtml }} />
+      }
       const parts = lineText.split(/(\[\d+\])/g)
       return parts.map((part, index) => {
         const match = part.match(/^\[(\d+)\]$/)
@@ -497,9 +536,7 @@ export function TestSheetShell({
           if (!q) return part
 
           const isClozeIndex = section.type === 'cloze-passage'
-          const isUserCorrect = isClozeIndex
-            ? userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && Number(userAnswers[q.id]) === Number(q.answer)
-            : String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
+          const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section.type, q.type)
 
           let selectClass = "ts-inline-select"
           if (section.type === 'dialogue-completion') {
@@ -573,14 +610,8 @@ export function TestSheetShell({
           )
         }
 
-        // Parse inline formatting (**bold**) for non-blank text
-        const boldParts = part.split(/(\*\*.*?\*\*)/g)
-        return boldParts.map((bp, bidx) => {
-          if (bp.startsWith('**') && bp.endsWith('**')) {
-            return <strong key={bidx}>{bp.slice(2, -2)}</strong>
-          }
-          return bp
-        })
+        // Parse inline formatting (**bold** and <u>underline</u>) for non-blank text
+        return <span key={`text-${index}`}>{renderFormattedInlineText(part)}</span>
       })
     }
 
@@ -683,46 +714,12 @@ export function TestSheetShell({
       const rawHtml = trimmed.slice(6, -1)
       return <span dangerouslySetInnerHTML={{ __html: rawHtml }} />
     }
-    const parts = text.split(/(<u>.*?<\/u>)/g)
-    return parts.map((part, idx) => {
-      if (part.startsWith('<u>') && part.endsWith('</u>')) {
-        return <u key={idx}>{part.slice(3, -4)}</u>
-      }
-      return part
-    })
+    return renderFormattedInlineText(text)
   }
 
   // Render question types dynamically
   const renderQuestion = (q: Question, section: Section, index: number) => {
-    let isUserCorrect = false
-    if (section.type === 'multiple-choice') {
-      isUserCorrect = userAnswers[q.id] !== undefined && Number(userAnswers[q.id]) === Number(q.answer)
-    } else if (section.type === 'true-false') {
-      isUserCorrect = userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && String(userAnswers[q.id]) === String(q.answer)
-    } else if (section.type === 'reading-comprehension') {
-      if (q.type === 'multiple-choice') {
-        isUserCorrect = userAnswers[q.id] !== undefined && Number(userAnswers[q.id]) === Number(q.answer)
-      } else {
-        isUserCorrect = String(userAnswers[q.id] || '').trim().length > 0
-      }
-    } else if (section.type === 'cloze-passage') {
-      isUserCorrect = userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && Number(userAnswers[q.id]) === Number(q.answer)
-    } else if (section.type === 'short-answer') {
-      isUserCorrect = userAnswers[q.id] !== undefined && String(userAnswers[q.id]).trim() === String(q.answer).trim()
-    } else if (section.type === 'fill-in-the-blank-firstletter') {
-      const ans = String(q.answer).trim().toLowerCase()
-      const userAns = String(userAnswers[q.id] || '').trim().toLowerCase()
-      isUserCorrect = userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && (
-        userAns === ans ||
-        (ans.length > 1 && userAns === ans.substring(1))
-      )
-    } else if (section.type === 'put-words-in-order') {
-      const normUser = normalizeSentence(String(userAnswers[q.id] || ''))
-      const normAns = normalizeSentence(String(q.answer || ''))
-      isUserCorrect = userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' && normUser === normAns
-    } else {
-      isUserCorrect = String(userAnswers[q.id] || '').trim().toLowerCase() === String(q.answer).trim().toLowerCase()
-    }
+    const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section.type, q.type)
 
     switch (section.type) {
       case 'fill-in-the-blank-wordbank': {
@@ -1200,13 +1197,7 @@ export function TestSheetShell({
     let tableRows: string[][] = []
 
     const renderInlineFormatting = (text: string) => {
-      const parts = text.split(/(\*\*.*?\*\*)/g)
-      return parts.map((part, idx) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={idx}>{part.slice(2, -2)}</strong>
-        }
-        return part
-      })
+      return renderFormattedInlineText(text)
     }
 
     const renderSentences = (text: string, pIdx: string | number) => {
@@ -1292,7 +1283,7 @@ export function TestSheetShell({
         if (line.startsWith('[HTML:') && line.endsWith(']')) {
           const rawHtml = line.slice(6, -1)
           renderedBlocks.push(
-            <div key={`html-${i}`} dangerouslySetInnerHTML={{ __html: rawHtml }} style={{ margin: '15px 0' }} />
+            <div key={`html-${i}`} className="ts-html-passage-block" dangerouslySetInnerHTML={{ __html: rawHtml }} style={{ margin: '15px 0', width: '100%', overflowX: 'auto' }} />
           )
           continue
         }
