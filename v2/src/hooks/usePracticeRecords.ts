@@ -24,7 +24,7 @@ export function usePracticeRecords({ practiceId }: UsePracticeRecordsProps) {
                 setPracticeRecords(json)
             }
         } catch (e) {
-            console.error("Failed to load records in usePracticeRecords", e)
+            console.warn("Failed to load records in usePracticeRecords", e)
         }
     }, [practiceId])
 

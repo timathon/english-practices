@@ -402,7 +402,7 @@ export const petService = {
         }
       }
     } catch (e) {
-      console.error('Failed to sync pet state to server', e);
+      console.warn('Failed to sync pet state to server', e);
     }
   },
 
@@ -484,7 +484,7 @@ export const petService = {
         await this.syncSave(merged);
       }
     } catch (e) {
-      console.error('Failed to sync pet companion state with server', e);
+      console.warn('Failed to sync pet companion state with server', e);
     }
   },
 

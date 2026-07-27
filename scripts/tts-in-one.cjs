@@ -150,8 +150,11 @@ async function main() {
             process.exit(1);
         }
 
-        // Determine bookName (e.g. raz-b) from the directory path relative to the data directory
-        const relativeToData = path.relative(path.resolve(__dirname, '../data'), absoluteDir);
+        // Determine bookName (e.g. raz-b, a7a) from the directory path relative to data or v2-data directory
+        let relativeToData = path.relative(path.resolve(__dirname, '../v2-data'), absoluteDir);
+        if (relativeToData.startsWith('..')) {
+            relativeToData = path.relative(path.resolve(__dirname, '../data'), absoluteDir);
+        }
         bookName = relativeToData.split(path.sep)[0].toLowerCase();
         
         console.log(`Scanning unit directory: ${absoluteDir}`);

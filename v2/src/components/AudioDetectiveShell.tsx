@@ -199,7 +199,7 @@ export function AudioDetectiveShell({ data, practiceId, unit, textbook }: any) {
                 setPracticeRecords(json)
             }
         } catch (e) {
-            console.error("Failed to load records", e)
+            console.warn("Failed to load records", e)
         }
     }
 
