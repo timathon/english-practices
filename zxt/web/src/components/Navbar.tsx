@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserSession } from '../services/api';
+import { UserSession, canEditQuizLibrary } from '../services/api';
 
 interface NavbarProps {
   currentPath: string;
@@ -82,7 +82,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>平台管理</span>
             </button>
           )}
-          {(activeView === 'editor' || activeView === 'admin') && (
+          {(user?.role === 'teacher' || activeView === 'teacher') && (
+            <button
+              onClick={() => navigate('/teacher')}
+              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
+                currentPath === '/teacher' ? 'bg-blue-900/80 border border-blue-500/50 text-blue-300 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              <span>👩‍🏫</span>
+              <span>教师工作台</span>
+            </button>
+          )}
+          {canEditQuizLibrary(user) && (
             <button
               onClick={() => navigate('/editor')}
               className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
@@ -101,7 +112,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center space-x-3">
               <div className="text-xs text-right">
                 <span className="font-bold text-white">{user.name}</span>
-                <span className="text-[10px] text-slate-400 ml-1 font-mono">({user.className})</span>
+                {user.role !== 'teacher' && user.className && (
+                  <span className="text-[10px] text-slate-400 ml-1 font-mono">({user.className})</span>
+                )}
               </div>
               <button
                 onClick={onLogout}

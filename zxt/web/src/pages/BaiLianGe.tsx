@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService, Poem, PoemQuestion } from '../services/api';
+import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 
 interface BaiLianGeProps {
   activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
@@ -21,6 +22,8 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [quizHistory, setQuizHistory] = useState<any[]>([]);
   const [learntPoemIds, setLearntPoemIds] = useState<number[]>([]);
   const [activeQuizPoem, setActiveQuizPoem] = useState<Poem | null>(null);
+
+  useLockBodyScroll(Boolean(activeQuizPoem));
   
   // Quiz runner state
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
@@ -35,6 +38,8 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [newAsgnPoemId, setNewAsgnPoemId] = useState<number>(1);
   const [newAsgnDueDate, setNewAsgnDueDate] = useState<string>('2026-08-01');
   const [newAsgnReq, setNewAsgnReq] = useState<string>('完成诗句连线与古诗背诵打卡');
+  const [asgnSubject, setAsgnSubject] = useState<string>('语文');
+  const [asgnSection, setAsgnSection] = useState<string>('白莲阁');
   const [teacherMsg, setTeacherMsg] = useState<string>('');
 
   // Admin state
@@ -85,9 +90,25 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   };
 
   const loadRosters = () => {
-    setClasses(apiService.getClasses());
+    const allCls = apiService.getClasses();
     setTeachersList(apiService.getTeachers());
     setAllStudentsList(apiService.getStudents());
+
+    if (user && user.role === 'teacher') {
+      const myClasses = allCls.filter((c: any) =>
+        c.teacherId === user.id ||
+        c.name === user.className ||
+        (c.teacherName && c.teacherName.includes(user.name.split(' ')[0]))
+      );
+      const finalClasses = myClasses.length > 0 ? myClasses : allCls.filter((c: any) => c.name === user.className);
+      const activeClasses = finalClasses.length > 0 ? finalClasses : (allCls.length > 0 ? [allCls[0]] : []);
+      setClasses(activeClasses);
+      if (activeClasses.length > 0) {
+        setSelectedClass(activeClasses[0].name);
+      }
+    } else {
+      setClasses(allCls);
+    }
   };
 
   const loadStudentData = () => {
@@ -210,27 +231,29 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 py-8">
       
       {/* Module Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-900 via-jade-900 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden border border-jade-700/50">
-        <div className="space-y-2 z-10">
-          <div className="inline-flex items-center space-x-2 bg-emerald-800/80 border border-emerald-500/40 text-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
-            <span>🪷 知新堂 语文旗舰模块</span>
-            <span>•</span>
-            <span>当前身份视图: {activeView.toUpperCase()}</span>
+      {activeView !== 'teacher' && (
+        <div className="bg-gradient-to-r from-emerald-900 via-jade-900 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden border border-jade-700/50">
+          <div className="space-y-2 z-10">
+            <div className="inline-flex items-center space-x-2 bg-emerald-800/80 border border-emerald-500/40 text-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
+              <span>🪷 知新堂 语文旗舰模块</span>
+              <span>•</span>
+              <span>当前身份视图: {activeView.toUpperCase()}</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black font-serif tracking-tight bg-gradient-to-r from-emerald-300 via-jade-300 to-teal-100 bg-clip-text text-transparent">
+              白莲阁 (古诗文75首)
+            </h1>
+            <p className="text-emerald-100 text-sm italic font-serif">
+              “小娃撑小艇，偷采白莲回。不解藏踪迹，浮萍一道开。” —— 唐·白居易《池上》
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black font-serif tracking-tight bg-gradient-to-r from-emerald-300 via-jade-300 to-teal-100 bg-clip-text text-transparent">
-            白莲阁 (古诗文75首)
-          </h1>
-          <p className="text-emerald-100 text-sm italic font-serif">
-            “小娃撑小艇，偷采白莲回。不解藏踪迹，浮萍一道开。” —— 唐·白居易《池上》
-          </p>
-        </div>
 
-        {/* View Badge */}
-        <div className="z-10 bg-slate-800/80 border border-slate-700 p-3 rounded-xl text-xs space-y-1 text-slate-300">
-          <div className="font-bold text-emerald-400">👤 {user?.name || '体验用户'}</div>
-          <div>所属班级 / 角色: {user?.className || '三年级A班'} ({activeView})</div>
+          {/* View Badge */}
+          <div className="z-10 bg-slate-800/80 border border-slate-700 p-3 rounded-xl text-xs space-y-1 text-slate-300">
+            <div className="font-bold text-emerald-400">👤 {user?.name || '体验用户'}</div>
+            <div>所属班级 / 角色: {user?.className || '三年级A班'} ({activeView})</div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 1. STUDENT VIEW (学生端: 待办作业 / 答题历史 / 自主学习) */}
@@ -419,7 +442,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
           {/* ACTIVE QUIZ MODAL FOR STUDENT */}
           {activeQuizPoem && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 space-y-6 relative border border-slate-100">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 space-y-6 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
                 <button
                   onClick={() => setActiveQuizPoem(null)}
                   className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold"
@@ -500,20 +523,31 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
       {activeView === 'teacher' && (
         <div className="space-y-6">
           
-          {/* Class Selector Header */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <span className="text-xs text-blue-600 font-bold uppercase">教师工作台 (Teacher Portal)</span>
-              <h2 className="text-xl font-bold font-serif text-ink">班级教学与作业管理</h2>
+          {/* Teacher Banner Header Card with integrated Class Selector */}
+          <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-blue-700/40">
+            <div className="space-y-1">
+              <div className="inline-flex items-center space-x-2 bg-blue-900/60 border border-blue-500/40 text-blue-200 px-3 py-1 rounded-full text-xs font-semibold">
+                <span>👩‍🏫 教师工作台 (Teacher Portal)</span>
+              </div>
+              <h1 className="text-3xl font-black font-serif bg-gradient-to-r from-blue-200 via-sky-200 to-white bg-clip-text text-transparent">
+                班级教学与作业管理
+              </h1>
+              <p className="text-blue-200 text-xs">
+                管理班级学生学情、发布古诗关卡作业、监控学生答题进度与打卡记录。
+              </p>
             </div>
-            <div className="flex items-center space-x-2">
-              <label className="text-xs font-bold text-slate-600">当前管理班级:</label>
+
+            <div className="flex items-center gap-2.5 bg-slate-800/80 border border-blue-500/30 p-3 rounded-xl text-xs text-blue-200 flex-shrink-0">
+              <label className="font-bold text-blue-200 whitespace-nowrap">当前班级:</label>
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-ink outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 bg-slate-900 border border-blue-400/50 rounded-lg text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
               >
-                {classes.map(c => <option key={c.id} value={c.name}>{c.name} ({c.studentCount}人)</option>)}
+                {classes.map(c => {
+                  const actualCount = apiService.getStudents(c.name).length;
+                  return <option key={c.id} value={c.name}>{c.name} ({actualCount}人)</option>;
+                })}
               </select>
             </div>
           </div>
@@ -525,14 +559,14 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
           )}
 
           {/* Teacher Sub Navigation */}
-          <div className="flex border-b border-slate-200 space-x-4">
+          <div className="flex border-b border-slate-200 space-x-6">
             <button
               onClick={() => setTeacherTab('assignments')}
               className={`pb-3 text-sm font-bold border-b-2 transition ${
                 teacherTab === 'assignments' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
-              📌 1. 班级作业与发布 (Publish Assignments)
+              📌 作业发布
             </button>
             <button
               onClick={() => setTeacherTab('stats')}
@@ -540,7 +574,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 teacherTab === 'stats' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
-              📊 2. 班级整体与学生个人答题统计 (Quiz Stats)
+              📊 作业统计
             </button>
             <button
               onClick={() => setTeacherTab('progress')}
@@ -548,7 +582,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 teacherTab === 'progress' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
-              🧭 3. 课程进度与自学解锁 (Learning Progress)
+              🧭 课程进度
             </button>
           </div>
 
@@ -560,16 +594,121 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               <form onSubmit={handlePublishAssignment} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
                 <h3 className="text-base font-bold font-serif text-ink">发布新作业到【{selectedClass}】</h3>
                 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">选择古诗</label>
-                  <select
-                    value={newAsgnPoemId}
-                    onChange={(e) => setNewAsgnPoemId(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg font-serif"
-                  >
-                    {poems.map(p => <option key={p.id} value={p.id}>《{p.title}》 - [{p.dynasty}] {p.author}</option>)}
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">学科 (Subject)</label>
+                    <select
+                      value={asgnSubject}
+                      onChange={(e) => {
+                        const sub = e.target.value;
+                        setAsgnSubject(sub);
+                        let sec = '白莲阁';
+                        if (sub === '数学') sec = '数理逻辑';
+                        else if (sub === '英语') sec = '语法与阅读';
+                        else if (sub === '科学') sec = '自然科学';
+                        setAsgnSection(sec);
+                        
+                        const reqMap: Record<string, string> = {
+                          '语文-白莲阁': '完成诗句连线与古诗背诵打卡',
+                          '语文-现代文阅读': '完成篇章阅读理解与重点词句赏析',
+                          '数学-数理逻辑': '完成逻辑推理与应用题训练',
+                          '数学-几何基础': '完成图形识别与几何面积计算',
+                          '英语-语法与阅读': '完成语法选择题与短文阅读理解',
+                          '英语-听力口语': '完成听力录音理解与口语朗读打卡',
+                          '科学-自然科学': '完成自然现象观察与科学知识测试',
+                          '科学-物理与化学': '完成基础物理化学实验常识问答',
+                        };
+                        setNewAsgnReq(reqMap[`${sub}-${sec}`] || `完成【${sub} - ${sec}】相关单元练习`);
+                      }}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer"
+                    >
+                      <option value="语文">语文</option>
+                      <option value="数学">数学</option>
+                      <option value="英语">英语</option>
+                      <option value="科学">科学</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">分区 (Section)</label>
+                    <select
+                      value={asgnSection}
+                      onChange={(e) => {
+                        const sec = e.target.value;
+                        setAsgnSection(sec);
+                        const reqMap: Record<string, string> = {
+                          '语文-白莲阁': '完成诗句连线与古诗背诵打卡',
+                          '语文-现代文阅读': '完成篇章阅读理解与重点词句赏析',
+                          '数学-数理逻辑': '完成逻辑推理与应用题训练',
+                          '数学-几何基础': '完成图形识别与几何面积计算',
+                          '英语-语法与阅读': '完成语法选择题与短文阅读理解',
+                          '英语-听力口语': '完成听力录音理解与口语朗读打卡',
+                          '科学-自然科学': '完成自然现象观察与科学知识测试',
+                          '科学-物理与化学': '完成基础物理化学实验常识问答',
+                        };
+                        setNewAsgnReq(reqMap[`${asgnSubject}-${sec}`] || `完成【${asgnSubject} - ${sec}】相关单元练习`);
+                      }}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer"
+                    >
+                      {asgnSubject === '语文' && (
+                        <>
+                          <option value="白莲阁">白莲阁 (古诗文)</option>
+                          <option value="现代文阅读">现代文阅读</option>
+                        </>
+                      )}
+                      {asgnSubject === '数学' && (
+                        <>
+                          <option value="数理逻辑">数理逻辑</option>
+                          <option value="几何基础">几何基础</option>
+                        </>
+                      )}
+                      {asgnSubject === '英语' && (
+                        <>
+                          <option value="语法与阅读">语法与阅读</option>
+                          <option value="听力口语">听力口语</option>
+                        </>
+                      )}
+                      {asgnSubject === '科学' && (
+                        <>
+                          <option value="自然科学">自然科学</option>
+                          <option value="物理与化学">物理与化学</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
                 </div>
+
+                {asgnSubject === '语文' && (asgnSection === '白莲阁' || asgnSection.includes('白莲阁')) ? (
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">选择古诗 (已完成授课/已解锁)</label>
+                    <select
+                      value={newAsgnPoemId}
+                      onChange={(e) => setNewAsgnPoemId(Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer"
+                    >
+                      {poems.filter(p => learntPoemIds.includes(p.id)).length > 0 ? (
+                        poems.filter(p => learntPoemIds.includes(p.id)).map(p => {
+                          const classAsgns = apiService.getAssignments(selectedClass);
+                          const pubCount = classAsgns.filter((a: any) => a.poemId === p.id || a.poemTitle === p.title).length;
+                          return (
+                            <option key={p.id} value={p.id}>
+                              《{p.title}》 - [{p.dynasty}] {p.author}{pubCount > 0 ? ` (已发布 ${pubCount} 次)` : ''}
+                            </option>
+                          );
+                        })
+                      ) : (
+                        <option value="" disabled>⚠️ 当前班级暂无已解锁古诗 (请在【课程进度】页切换授课状态)</option>
+                      )}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">选择学习任务 (Select Task)</label>
+                    <select className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer">
+                      <option value="task_1">【{asgnSubject} - {asgnSection}】第 1 单元综合练习</option>
+                      <option value="task_2">【{asgnSubject} - {asgnSection}】第 2 单元能力拓展</option>
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">截止时间</label>

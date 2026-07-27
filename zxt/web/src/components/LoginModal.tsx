@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { apiService, UserSession } from '../services/api';
+import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -12,6 +13,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useLockBodyScroll(isOpen);
 
   if (!isOpen) return null;
 
@@ -39,7 +42,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-6 relative border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-6 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
         
         <button
           onClick={onClose}
@@ -101,31 +104,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">
             演示快捷填充账号 (Quick Demo Logins)
           </div>
-          <div className="grid grid-cols-4 gap-1.5 text-xs">
+          <div className="grid grid-cols-3 gap-2 text-xs">
             <button
               onClick={() => handleQuickFill('mmd', 'zhiyuzhishan')}
-              className="p-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded text-purple-900 font-medium text-center"
+              className="p-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-900 font-medium text-center"
             >
               <div className="font-bold text-[11px]">⚙️ Admin</div>
               <div className="text-[9px] text-purple-700">mmd</div>
             </button>
             <button
-              onClick={() => handleQuickFill('editor_li', 'editor123')}
-              className="p-1.5 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded text-teal-900 font-medium text-center"
-            >
-              <div className="font-bold text-[11px]">✍️ Editor</div>
-              <div className="text-[9px] text-teal-700">editor_li</div>
-            </button>
-            <button
               onClick={() => handleQuickFill('zhang_laoshi', 'teacher123')}
-              className="p-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded text-blue-900 font-medium text-center"
+              className="p-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-blue-900 font-medium text-center"
             >
               <div className="font-bold text-[11px]">👩‍🏫 Teacher</div>
               <div className="text-[9px] text-blue-700">zhang_laoshi</div>
             </button>
             <button
               onClick={() => handleQuickFill('yaming', 'student123')}
-              className="p-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded text-emerald-900 font-medium text-center"
+              className="p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-900 font-medium text-center"
             >
               <div className="font-bold text-[11px]">🎓 Student</div>
               <div className="text-[9px] text-emerald-700">yaming</div>

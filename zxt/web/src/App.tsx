@@ -6,7 +6,7 @@ import { PlatformHome } from './pages/PlatformHome';
 import { BaiLianGe } from './pages/BaiLianGe';
 import { PlatformAdminPanel } from './pages/PlatformAdminPanel';
 import { PlatformQuestionEditor } from './pages/PlatformQuestionEditor';
-import { apiService, UserSession } from './services/api';
+import { apiService, canEditQuizLibrary, UserSession } from './services/api';
 
 export const App: React.FC = () => {
   const [currentPath, setCurrentPath] = useState<string>(
@@ -18,6 +18,9 @@ export const App: React.FC = () => {
   const [isViewSwitcherOpen, setIsViewSwitcherOpen] = useState(false);
 
   useEffect(() => {
+    // Seed the full quiz library into localStorage on first load
+    apiService.seedQuizLibrary();
+
     // Check initial logged-in user
     const existing = apiService.getSession();
     if (existing) {
@@ -38,16 +41,20 @@ export const App: React.FC = () => {
     setCurrentPath(path);
   };
 
-  const getTargetDashboardRoute = (role: string) => {
+  const getTargetDashboardRoute = (role: string, userObj?: UserSession) => {
     if (role === 'admin') return '/admin';
     if (role === 'editor') return '/editor';
+    if (role === 'teacher') {
+      if (userObj && canEditQuizLibrary(userObj)) return '/editor';
+      return '/teacher';
+    }
     return '/blg';
   };
 
   const handleLoginSuccess = (loggedInUser: UserSession) => {
     setUser(loggedInUser);
     setActiveView(loggedInUser.role);
-    const targetRoute = getTargetDashboardRoute(loggedInUser.role);
+    const targetRoute = getTargetDashboardRoute(loggedInUser.role, loggedInUser);
     navigate(targetRoute);
   };
 
@@ -76,9 +83,11 @@ export const App: React.FC = () => {
       <main className="flex-1 pt-16">
         {currentPath === '/blg' ? (
           <BaiLianGe activeView={activeView} user={user} />
+        ) : currentPath === '/teacher' ? (
+          <BaiLianGe activeView="teacher" user={user} />
         ) : currentPath === '/admin' ? (
           <PlatformAdminPanel user={user} />
-        ) : currentPath === '/editor' ? (
+        ) : currentPath === '/editor' && user && canEditQuizLibrary(user) ? (
           <PlatformQuestionEditor user={user} />
         ) : (
           <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />

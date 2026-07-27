@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserSession } from '../services/api';
+import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 
 interface ViewSwitcherProps {
   isOpen: boolean;
@@ -20,6 +21,8 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
   const [pinPrompt, setPinPrompt] = useState<'parent' | 'teacher' | 'editor' | 'admin' | null>(null);
   const [error, setError] = useState('');
 
+  useLockBodyScroll(isOpen);
+
   if (!isOpen) return null;
 
   const handleSelectView = (targetView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin') => {
@@ -32,7 +35,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
     }
 
     // Direct permission check or PIN lock guard
-    if (user.role === 'admin' || user.capabilities.includes(`${targetView}_cms`) || user.capabilities.includes(`quiz_${targetView}`) || user.role === targetView) {
+    if (user.role === 'admin' || user.capabilities.includes(`${targetView}_cms`) || user.capabilities.includes(`quiz_${targetView}`) || user.role === targetView || (targetView === 'editor' && (user as any).isQuizEditor)) {
       onSwitchView(targetView);
       onClose();
     } else {
@@ -57,7 +60,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-6 relative border border-slate-100">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-6 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
         
         <button
           onClick={onClose}
