@@ -110,6 +110,39 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center space-x-3">
           {user ? (
             <div className="flex items-center space-x-3">
+              {/* View Selecting Dropdown (placed to the left of user name) */}
+              <div className="relative">
+                <select
+                  value={currentPath}
+                  onChange={(e) => navigate(e.target.value)}
+                  className="px-2.5 py-1 bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-lg text-xs font-bold text-slate-200 outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-xs"
+                >
+                  {user.role === 'admin' && (
+                    <>
+                      <option value="/teacher">👩‍🏫 教师工作台</option>
+                      <option value="/editor">✍️ 平台题库编辑</option>
+                      <option value="/admin">⚙️ 平台管理中心</option>
+                    </>
+                  )}
+                  {user.role === 'teacher' && canEditQuizLibrary(user) && (
+                    <>
+                      <option value="/teacher">👩‍🏫 教师工作台</option>
+                      <option value="/editor">✍️ 平台题库编辑</option>
+                    </>
+                  )}
+                  {user.role === 'teacher' && !canEditQuizLibrary(user) && (
+                    <>
+                      <option value="/teacher">👩‍🏫 教师工作台</option>
+                    </>
+                  )}
+                  {user.role !== 'teacher' && user.role !== 'admin' && (
+                    <>
+                      <option value="/blg">🎓 古诗词学习</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
               <div className="text-xs text-right">
                 <span className="font-bold text-white">{user.name}</span>
                 {user.role !== 'teacher' && user.className && (

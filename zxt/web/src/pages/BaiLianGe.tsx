@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService, Poem, PoemQuestion } from '../services/api';
+import { playAnswerSFX } from '../utils/sound';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 
 interface BaiLianGeProps {
@@ -41,6 +42,10 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [asgnSubject, setAsgnSubject] = useState<string>('语文');
   const [asgnSection, setAsgnSection] = useState<string>('白莲阁');
   const [teacherMsg, setTeacherMsg] = useState<string>('');
+
+  // Assignment Question Review Modal state
+  const [publishingPoem, setPublishingPoem] = useState<Poem | null>(null);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
 
   // Admin state
   const [teachersList, setTeachersList] = useState<any[]>([]);
@@ -156,6 +161,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     const firstLineObj = activeQuizPoem.lines[0];
     const targetLine = typeof firstLineObj === 'string' ? firstLineObj : firstLineObj.text;
     if (answer === targetLine) {
+      playAnswerSFX('correct');
       setQuizScore(quizScore + 10);
       setQuizCompleted(true);
       // Record history
@@ -168,6 +174,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
       });
       loadStudentData();
     } else {
+      playAnswerSFX('wrong');
       alert(`差一点点哦！正确顺序是："${targetLine}"`);
     }
   };
@@ -177,14 +184,27 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     e.preventDefault();
     const poem = poems.find(p => p.id === Number(newAsgnPoemId));
     if (!poem) return;
+    const allQs = poem.questions || [];
+    setPublishingPoem(poem);
+    setSelectedQuestionIds(allQs.map(q => q.id));
+  };
+
+  const confirmPublishAssignment = () => {
+    if (!publishingPoem) return;
+    if (selectedQuestionIds.length === 0) {
+      alert('请至少勾选 1 道题目后再发布作业！');
+      return;
+    }
     apiService.createAssignment({
       className: selectedClass,
-      poemId: poem.id,
-      poemTitle: poem.title,
+      poemId: publishingPoem.id,
+      poemTitle: publishingPoem.title,
       dueDate: newAsgnDueDate,
-      requirement: newAsgnReq
+      requirement: newAsgnReq,
+      questionIds: selectedQuestionIds,
     });
-    setTeacherMsg(`成功向【${selectedClass}】发布《${poem.title}》作业！`);
+    setTeacherMsg(`成功向【${selectedClass}】发布《${publishingPoem.title}》作业（已精选 ${selectedQuestionIds.length} 道题目）！`);
+    setPublishingPoem(null);
     loadStudentData();
   };
 
@@ -840,6 +860,157 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* Assignment Question Review & Selection Modal */}
+      {publishingPoem && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPublishingPoem(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 text-blue-700 text-[11px] font-bold rounded-full border border-blue-200 mb-1">
+                  <span>📌 教师发布前审题与挑题</span>
+                </div>
+                <h3 className="text-xl font-bold font-serif text-ink">
+                  《{publishingPoem.title}》作业试题勾选
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  发布班级: <strong className="text-blue-600 font-bold">{selectedClass}</strong> | 截止时间: {newAsgnDueDate}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPublishingPoem(null)}
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Selection Toolbar */}
+            <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
+              <span className="font-bold text-slate-700">
+                已勾选 <span className="text-blue-600 text-sm font-black">{selectedQuestionIds.length}</span> / {(publishingPoem.questions || []).length} 道题目
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedQuestionIds((publishingPoem.questions || []).map(q => q.id))}
+                  className="px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold transition shadow-2xs"
+                >
+                  ✓ 全选
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedQuestionIds([])}
+                  className="px-2.5 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition shadow-2xs"
+                >
+                  ✕ 全不选
+                </button>
+              </div>
+            </div>
+
+            {/* Questions List with Checkboxes */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              {(publishingPoem.questions || []).map((q, idx) => {
+                const isChecked = selectedQuestionIds.includes(q.id);
+                const typeLabels: Record<string, string> = {
+                  LineAssembly: '连句组装',
+                  VerseCloze: '诗句填空',
+                  PinyinMatch: '拼音辨析',
+                  TextToCn: '诗意理解',
+                  CulturalContext: '文化背景',
+                  ImageOrdering: '插图排序',
+                  ImageToLine: '图配句',
+                };
+                const typeColors: Record<string, string> = {
+                  LineAssembly: 'bg-violet-100 text-violet-800 border-violet-200',
+                  VerseCloze: 'bg-teal-100 text-teal-800 border-teal-200',
+                  PinyinMatch: 'bg-sky-100 text-sky-800 border-sky-200',
+                  TextToCn: 'bg-amber-100 text-amber-800 border-amber-200',
+                  CulturalContext: 'bg-rose-100 text-rose-800 border-rose-200',
+                  ImageOrdering: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                  ImageToLine: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                };
+
+                return (
+                  <div
+                    key={q.id}
+                    onClick={() => {
+                      if (isChecked) {
+                        setSelectedQuestionIds(selectedQuestionIds.filter(id => id !== q.id));
+                      } else {
+                        setSelectedQuestionIds([...selectedQuestionIds, q.id]);
+                      }
+                    }}
+                    className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-start gap-3 ${
+                      isChecked
+                        ? 'bg-blue-50/50 border-blue-300 shadow-2xs'
+                        : 'bg-slate-50/70 border-slate-200 opacity-60 hover:opacity-80'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {}}
+                      className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer flex-shrink-0"
+                    />
+
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-slate-400 font-bold">#{idx + 1}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${typeColors[q.type] || 'bg-slate-100 text-slate-700'}`}>
+                          {typeLabels[q.type] || q.type}
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-800 font-serif leading-relaxed">
+                        {q.prompt || '(全自动互动拼图/排序关联题)'}
+                      </p>
+                      {(q as any).options && Array.isArray((q as any).options) && (q as any).options.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {(q as any).options.slice(0, 4).map((opt: string, oIdx: number) => (
+                            <span
+                              key={oIdx}
+                              className={`text-[10px] px-2 py-0.5 rounded ${
+                                (q as any).answer === oIdx
+                                  ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300'
+                                  : 'bg-white text-slate-600 border border-slate-200'
+                              }`}
+                            >
+                              {opt}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Action Bar */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setPublishingPoem(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={confirmPublishAssignment}
+                disabled={selectedQuestionIds.length === 0}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition"
+              >
+                🚀 确认发布 ({selectedQuestionIds.length} 道精选题目)
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
 

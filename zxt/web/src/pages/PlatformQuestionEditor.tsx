@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService, canEditQuizLibrary, Poem, PoemQuestion, OrderingItem } from '../services/api';
+import { playAnswerSFX } from '../utils/sound';
 
 // ── shared image lightbox ──────────────────────────────────────────────────
 
@@ -23,13 +24,13 @@ const ImageLightbox: React.FC<{ src: string; onClose: () => void }> = ({ src, on
 const genId = () => Math.random().toString(36).slice(2, 10);
 
 const QUESTION_TYPE_LABELS: Record<string, string> = {
-  LineAssembly:   '连句组装 (LineAssembly)',
-  VerseCloze:    '诗句填空 (VerseCloze)',
-  PinyinMatch:   '拼音辨析 (PinyinMatch)',
-  TextToCn:      '诗意理解 (TextToCn)',
-  CulturalContext:'文化背景 (CulturalContext)',
-  ImageOrdering: '插图排序 (ImageOrdering)',
-  ImageToLine:   '图配句 (ImageToLine)',
+  LineAssembly:   '连句组装',
+  VerseCloze:    '诗句填空',
+  PinyinMatch:   '拼音辨析',
+  TextToCn:      '诗意理解',
+  CulturalContext:'文化背景',
+  ImageOrdering: '插图排序',
+  ImageToLine:   '图配句',
 };
 
 const ALL_TYPES = Object.keys(QUESTION_TYPE_LABELS);
@@ -114,7 +115,7 @@ const LineAssemblyEditor: React.FC<QEditorProps> = ({ q, onChange }) => {
         <input value={q.prompt} onChange={e => set({ prompt: e.target.value })}
           className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-serif" />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">诗句行号 (Line Index)</label>
           <input type="number" min={0} value={q.line_index} onChange={e => set({ line_index: Number(e.target.value) })}
@@ -369,8 +370,10 @@ const StudentQuizPreviewModal: React.FC<StudentQuizPreviewModalProps> = ({
     if (q.type === 'LineAssembly') {
       const studentAns = selectedChars.join('');
       if (studentAns === q.answer) {
+        playAnswerSFX('correct');
         setFeedback({ isCorrect: true, text: '🎉 回答正确！精准拼接出了正确的诗句。' });
       } else {
+        playAnswerSFX('wrong');
         setFeedback({ isCorrect: false, text: `❌ 还需要加油哦！正确诗句是：“${q.answer}”` });
       }
     } else if (q.type === 'ImageOrdering') {
@@ -380,8 +383,10 @@ const StudentQuizPreviewModal: React.FC<StudentQuizPreviewModalProps> = ({
       }
       const isMatch = (q.images || []).every((img, idx) => img === placedSlots[idx]);
       if (isMatch) {
+        playAnswerSFX('correct');
         setFeedback({ isCorrect: true, text: '🎉 排序正确！插图与诗句发展顺序完全一致。' });
       } else {
+        playAnswerSFX('wrong');
         setFeedback({ isCorrect: false, text: '❌ 图片顺序不对哦，请参照古诗故事情节重新排列。' });
       }
     } else {
@@ -390,12 +395,14 @@ const StudentQuizPreviewModal: React.FC<StudentQuizPreviewModalProps> = ({
         return;
       }
       if (mcSelection === q.answer) {
+        playAnswerSFX('correct');
         setFeedback({
           isCorrect: true,
           text: `🎉 回答正确！${q.explanation ? `
 解析：${q.explanation}` : ''}`
         });
       } else {
+        playAnswerSFX('wrong');
         setFeedback({
           isCorrect: false,
           text: `❌ 回答错误。正确答案是选项 ${q.answer + 1}${q.options ? `: ${q.options[q.answer]}` : ''}${q.explanation ? `
@@ -861,6 +868,9 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [previewStartIndex, setPreviewStartIndex] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'list' | 'editor'>('list');
+  const [selectedSubject, setSelectedSubject] = useState<string>('语文');
+  const [selectedSection, setSelectedSection] = useState<string>('白莲阁');
 
   // Load all poems from quiz library
   useEffect(() => {
@@ -877,6 +887,7 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
     setQuestions(qs);
     setActiveQId(qs.length > 0 ? qs[0].id : null);
     setDirty(false);
+    setMobileTab('list');
   }, [poems]);
 
   const selectedPoem = poems.find(p => p.id === selectedPoemId) ?? null;
@@ -922,43 +933,168 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
 
   const activeQuestion = questions.find(q => q.id === activeQId) ?? null;
 
+  const isBaiLianGe = selectedSubject === '语文' && (selectedSection === '白莲阁' || selectedSection.includes('白莲阁'));
+
   const canEdit = canEditQuizLibrary(user);
 
   return (
     <div className="min-h-screen bg-slate-50">
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white px-6 py-5 shadow-xl border-b border-teal-800/40">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div className="space-y-0.5">
-            <div className="inline-flex items-center gap-2 bg-teal-900/60 border border-teal-500/40 text-teal-200 px-3 py-1 rounded-full text-xs font-semibold mb-1">
-              <span>✍️ 知新堂 • 题库编辑中心</span>
-              <span>•</span>
-              <span>Quiz Library Editor</span>
+      {/* Editor Banner Header Card */}
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+        <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-teal-700/40">
+          <div className="space-y-1">
+            <div className="inline-flex items-center space-x-2 bg-teal-900/60 border border-teal-500/40 text-teal-200 px-3 py-1 rounded-full text-xs font-semibold">
+              <span>✍️ 题库编辑中心 (Quiz Library Editor)</span>
             </div>
-            <h1 className="text-2xl font-black font-serif bg-gradient-to-r from-teal-200 via-emerald-200 to-white bg-clip-text text-transparent">
-              白莲阁古诗题库 · 全量编辑
+            <h1 className="text-3xl font-black font-serif bg-gradient-to-r from-teal-200 via-emerald-200 to-white bg-clip-text text-transparent">
+              全学科题库管理
             </h1>
-            <p className="text-teal-300 text-xs">75 首古诗 · 7 种题型 · 全量增删改查</p>
+            <p className="text-teal-200 text-xs">
+              跨学科试题全量维护：配置试题内容、校验答案解析、实时预览学生答题体验。
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            {successMsg && (
-              <span className="text-xs font-bold text-emerald-300 bg-emerald-900/40 border border-emerald-600/40 px-3 py-1.5 rounded-lg animate-pulse">
-                ✓ {successMsg}
-              </span>
-            )}
-            <div className="bg-slate-800/80 border border-teal-500/30 p-2.5 rounded-xl text-xs text-teal-200 text-right">
-              <div className="font-bold">{user?.name}</div>
-              <div className="text-[10px] text-teal-400">{canEdit ? '✓ 有编辑权限' : '⚠ 仅查看'}</div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-800/80 border border-teal-500/30 p-3.5 rounded-xl text-xs text-teal-200 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <label className="font-bold text-teal-200 whitespace-nowrap">学科:</label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => {
+                  const sub = e.target.value;
+                  setSelectedSubject(sub);
+                  if (sub === '语文') setSelectedSection('白莲阁');
+                  else if (sub === '数学') setSelectedSection('数理逻辑');
+                  else if (sub === '英语') setSelectedSection('语法与阅读');
+                  else if (sub === '科学') setSelectedSection('自然科学');
+                }}
+                className="px-3 py-1.5 bg-slate-900 border border-teal-400/50 rounded-lg text-xs font-bold text-white outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer"
+              >
+                <option value="语文">语文</option>
+                <option value="数学">数学</option>
+                <option value="英语">英语</option>
+                <option value="科学">科学</option>
+              </select>
+            </div>
+
+            <div className="h-6 border-l border-teal-500/30 hidden sm:block"></div>
+
+            <div className="flex items-center gap-2">
+              <label className="font-bold text-teal-200 whitespace-nowrap">分区:</label>
+              <select
+                value={selectedSection}
+                onChange={(e) => setSelectedSection(e.target.value)}
+                className="px-3 py-1.5 bg-slate-900 border border-teal-400/50 rounded-lg text-xs font-bold text-white outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer"
+              >
+                {selectedSubject === '语文' && (
+                  <>
+                    <option value="白莲阁">白莲阁 (古诗文)</option>
+                    <option value="现代文阅读">现代文阅读</option>
+                  </>
+                )}
+                {selectedSubject === '数学' && (
+                  <>
+                    <option value="数理逻辑">数理逻辑</option>
+                    <option value="几何基础">几何基础</option>
+                  </>
+                )}
+                {selectedSubject === '英语' && (
+                  <>
+                    <option value="语法与阅读">语法与阅读</option>
+                    <option value="听力口语">听力口语</option>
+                  </>
+                )}
+                {selectedSubject === '科学' && (
+                  <>
+                    <option value="自然科学">自然科学</option>
+                    <option value="物理与化学">物理与化学</option>
+                  </>
+                )}
+              </select>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto flex h-[calc(100vh-130px)]">
+            {!isBaiLianGe ? (
+        <div className="max-w-4xl mx-auto my-8 p-8 sm:p-12 bg-white rounded-3xl border border-slate-200 shadow-sm text-center space-y-6">
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-slate-100 border border-slate-200 flex items-center justify-center text-4xl shadow-inner">
+            {selectedSubject === '数学' ? '📐' : selectedSubject === '英语' ? '🔤' : selectedSubject === '科学' ? '🔬' : '📖'}
+          </div>
+          <div className="space-y-2">
+            <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold border border-slate-200">
+              知新堂 • 学科题库规划中
+            </span>
+            <h2 className="text-2xl font-bold font-serif text-ink">
+              【{selectedSubject} - {selectedSection}】题库模块建设中
+            </h2>
+            <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+              该学科分区的题库编辑与AI智能出题模组正在开发推进中。如需测试编辑，请在上方导航中切换至【语文 - 白莲阁 (古诗文)】。
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                setSelectedSubject('语文');
+                setSelectedSection('白莲阁');
+              }}
+              className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold shadow-md transition inline-flex items-center gap-1.5"
+            >
+              <span>🪷 切换至【语文 - 白莲阁】题库</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Controls Header (visible only on small viewports) */}
+      <div className="lg:hidden bg-white border-b border-slate-200 p-3 space-y-2 shadow-xs">
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-slate-500 whitespace-nowrap">选择古诗:</label>
+          <select
+            value={selectedPoemId ?? ''}
+            onChange={(e) => {
+              const id = Number(e.target.value);
+              const p = poems.find(x => x.id === id);
+              if (p) {
+                if (dirty && !window.confirm('有未保存的更改，确定切换？')) return;
+                selectPoem(p);
+              }
+            }}
+            className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500"
+          >
+            {poems.map(p => (
+              <option key={p.id} value={p.id}>
+                《{p.title}》 - [{p.dynasty}] {p.author} ({p.questions?.length ?? 0}题)
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {/* LEFT: Poem Selector */}
-        <div className="w-72 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col">
+        {/* Mobile Tab Switcher */}
+        <div className="flex border border-slate-200 rounded-xl bg-slate-100 p-0.5 text-xs font-bold">
+          <button
+            onClick={() => setMobileTab('list')}
+            className={`flex-1 py-1.5 rounded-lg text-center transition ${
+              mobileTab === 'list' ? 'bg-white text-teal-700 shadow-xs' : 'text-slate-500'
+            }`}
+          >
+            📜 题目列表 ({questions.length})
+          </button>
+          <button
+            onClick={() => setMobileTab('editor')}
+            className={`flex-1 py-1.5 rounded-lg text-center transition ${
+              mobileTab === 'editor' ? 'bg-white text-teal-700 shadow-xs' : 'text-slate-500'
+            }`}
+          >
+            ✏️ 题目编辑
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-130px)]">
+
+        {/* LEFT: Poem Selector (Desktop side panel) */}
+        <div className="hidden lg:flex w-72 flex-shrink-0 border-r border-slate-200 bg-white flex-col">
           <div className="p-3 border-b border-slate-100">
             <input
               value={searchTerm}
@@ -999,7 +1135,9 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
         </div>
 
         {/* MIDDLE: Question List */}
-        <div className="w-64 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col">
+        <div className={`w-full lg:w-64 flex-shrink-0 border-r border-slate-200 bg-white flex-col ${
+          mobileTab === 'list' ? 'flex' : 'hidden lg:flex'
+        }`}>
           {selectedPoem ? (
             <>
               <div className="p-3 border-b border-slate-100 space-y-2">
@@ -1044,12 +1182,12 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
                     className={`group flex items-start gap-1.5 px-2.5 py-2 border-b border-slate-100 cursor-pointer transition ${
                       activeQId === q.id ? 'bg-teal-50 border-l-2 border-l-teal-400' : 'hover:bg-slate-50'
                     }`}
-                    onClick={() => setActiveQId(q.id)}
+                    onClick={() => { setActiveQId(q.id); setMobileTab('editor'); }}
                   >
                     <span className="text-[10px] text-slate-400 font-mono w-5 flex-shrink-0 mt-0.5">{idx + 1}</span>
                     <div className="flex-1 min-w-0">
                       <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded border font-medium mb-0.5 ${TYPE_COLORS[q.type] || 'bg-slate-100 text-slate-600'}`}>
-                        {q.type}
+                        {QUESTION_TYPE_LABELS[q.type] || q.type}
                       </span>
                       <p className="text-[11px] text-slate-600 font-serif leading-snug truncate">{q.prompt || '(无提示文字)'}</p>
                     </div>
@@ -1076,9 +1214,20 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
         </div>
 
         {/* RIGHT: Question Editor Canvas */}
-        <div className="flex-1 overflow-y-auto bg-slate-50 flex flex-col">
+        <div className={`w-full lg:flex-1 overflow-y-auto bg-slate-50 flex-col ${
+          mobileTab === 'editor' ? 'flex' : 'hidden lg:flex'
+        }`}>
           {activeQuestion ? (
-            <div className="p-5 flex-1">
+            <div className="p-4 sm:p-5 flex-1">
+              {/* Mobile Back Button */}
+              <div className="lg:hidden mb-3">
+                <button
+                  onClick={() => setMobileTab('list')}
+                  className="px-3 py-1.5 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg flex items-center gap-1 shadow-2xs"
+                >
+                  ⬅ 返回题目列表 ({questions.length})
+                </button>
+              </div>
               {/* Question header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -1141,6 +1290,8 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
           )}
         </div>
       </div>
+        </>
+      )}
 
       {/* Delete Confirm Dialog */}
       {confirmDeleteId && (

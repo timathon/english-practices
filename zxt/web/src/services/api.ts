@@ -415,7 +415,7 @@ export const apiService = {
   },
 
   // Create Assignment (Teacher)
-  createAssignment(assignment: { className: string; poemId: number; poemTitle: string; dueDate: string; requirement: string }) {
+  createAssignment(assignment: { className: string; poemId: number; poemTitle: string; dueDate: string; requirement: string; questionIds?: string[] }) {
     const current = this.getAssignments(assignment.className);
     const newAsgn = {
       id: `asgn_${Date.now()}`,
@@ -425,7 +425,8 @@ export const apiService = {
       poemTitle: assignment.poemTitle,
       dueDate: assignment.dueDate,
       status: '待完成',
-      requirement: assignment.requirement
+      requirement: assignment.requirement,
+      questionIds: assignment.questionIds || []
     };
     const stored = localStorage.getItem('zxt_assignments');
     const all = stored ? JSON.parse(stored) : [];

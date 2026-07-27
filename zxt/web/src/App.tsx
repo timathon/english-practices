@@ -41,20 +41,17 @@ export const App: React.FC = () => {
     setCurrentPath(path);
   };
 
-  const getTargetDashboardRoute = (role: string, userObj?: UserSession) => {
+  const getTargetDashboardRoute = (role: string) => {
     if (role === 'admin') return '/admin';
     if (role === 'editor') return '/editor';
-    if (role === 'teacher') {
-      if (userObj && canEditQuizLibrary(userObj)) return '/editor';
-      return '/teacher';
-    }
+    if (role === 'teacher') return '/teacher';
     return '/blg';
   };
 
   const handleLoginSuccess = (loggedInUser: UserSession) => {
     setUser(loggedInUser);
     setActiveView(loggedInUser.role);
-    const targetRoute = getTargetDashboardRoute(loggedInUser.role, loggedInUser);
+    const targetRoute = getTargetDashboardRoute(loggedInUser.role);
     navigate(targetRoute);
   };
 
