@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiService, Poem, PoemQuestion } from '../services/api';
 import { playAnswerSFX } from '../utils/sound';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
+import { StudentQuizPreviewModal } from '../components/StudentQuizPreviewModal';
 
 interface BaiLianGeProps {
   activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
@@ -12,19 +13,51 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [selectedPoem, setSelectedPoem] = useState<Poem | null>(null);
   
+  // Helper to read tab from URL query params
+  const getTabFromUrl = (): 'assignments' | 'history' | 'selfstudy' => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('tab');
+    if (t === 'selfstudy') return 'selfstudy';
+    if (t === 'history') return 'history';
+    return 'assignments';
+  };
+
   // Navigation tabs state
-  const [studentTab, setStudentTab] = useState<'assignments' | 'history' | 'selfstudy'>('assignments');
+  const [studentTab, setStudentTab] = useState<'assignments' | 'history' | 'selfstudy'>(getTabFromUrl);
   const [teacherTab, setTeacherTab] = useState<'assignments' | 'stats' | 'progress'>('assignments');
   const [adminTab, setAdminTab] = useState<'teachers' | 'students' | 'classes'>('teachers');
   const [showPinyin, setShowPinyin] = useState(true);
+
+  useEffect(() => {
+    const syncTab = () => setStudentTab(getTabFromUrl());
+    window.addEventListener('popstate', syncTab);
+    window.addEventListener('pushstate', syncTab);
+    // Initial sync
+    syncTab();
+    return () => {
+      window.removeEventListener('popstate', syncTab);
+      window.removeEventListener('pushstate', syncTab);
+    };
+  }, []);
+
+  const switchStudentTab = (tab: 'assignments' | 'history' | 'selfstudy') => {
+    setStudentTab(tab);
+    window.history.pushState({}, '', `/student?tab=${tab}`);
+    window.dispatchEvent(new Event('pushstate'));
+  };
 
   // Student state
   const [assignments, setAssignments] = useState<any[]>([]);
   const [quizHistory, setQuizHistory] = useState<any[]>([]);
   const [learntPoemIds, setLearntPoemIds] = useState<number[]>([]);
   const [activeQuizPoem, setActiveQuizPoem] = useState<Poem | null>(null);
+  const [activeStudentQuiz, setActiveStudentQuiz] = useState<{
+    poemTitle: string;
+    questions: PoemQuestion[];
+    assignmentId?: string;
+  } | null>(null);
 
-  useLockBodyScroll(Boolean(activeQuizPoem));
+  useLockBodyScroll(Boolean(activeQuizPoem) || Boolean(activeStudentQuiz));
   
   // Quiz runner state
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
@@ -46,6 +79,12 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   // Assignment Question Review Modal state
   const [publishingPoem, setPublishingPoem] = useState<Poem | null>(null);
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
+  const [previewStartIndex, setPreviewStartIndex] = useState<number | null>(null);
+
+  // Quiz History Detail Modal state
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
+
+  useLockBodyScroll(publishingPoem !== null || selectedHistoryItem !== null);
 
   // Admin state
   const [teachersList, setTeachersList] = useState<any[]>([]);
@@ -129,6 +168,20 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   };
 
   // --- QUIZ ENGINE FUNCTIONS ---
+  const handleStartStudentAssignment = (asgn: any) => {
+    const poem = poems.find(p => p.id === asgn.poemId) || poems[0];
+    const allQs = poem?.questions || [];
+    const asgnQs = (asgn.questionIds && asgn.questionIds.length > 0)
+      ? allQs.filter(q => asgn.questionIds.includes(q.id))
+      : allQs;
+
+    setActiveStudentQuiz({
+      poemTitle: poem ? poem.title : asgn.poemTitle,
+      questions: asgnQs.length > 0 ? asgnQs : allQs,
+      assignmentId: asgn.id,
+    });
+  };
+
   const startQuiz = (poem: Poem) => {
     setActiveQuizPoem(poem);
     if (!poem || !poem.lines || poem.lines.length === 0) return;
@@ -249,65 +302,65 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 py-8">
-      
-      {/* Module Header Banner */}
-      {activeView !== 'teacher' && (
-        <div className="bg-gradient-to-r from-emerald-900 via-jade-900 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden border border-jade-700/50">
-          <div className="space-y-2 z-10">
-            <div className="inline-flex items-center space-x-2 bg-emerald-800/80 border border-emerald-500/40 text-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
-              <span>🪷 知新堂 语文旗舰模块</span>
-              <span>•</span>
-              <span>当前身份视图: {activeView.toUpperCase()}</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-black font-serif tracking-tight bg-gradient-to-r from-emerald-300 via-jade-300 to-teal-100 bg-clip-text text-transparent">
-              白莲阁 (古诗文75首)
-            </h1>
-            <p className="text-emerald-100 text-sm italic font-serif">
-              “小娃撑小艇，偷采白莲回。不解藏踪迹，浮萍一道开。” —— 唐·白居易《池上》
-            </p>
-          </div>
-
-          {/* View Badge */}
-          <div className="z-10 bg-slate-800/80 border border-slate-700 p-3 rounded-xl text-xs space-y-1 text-slate-300">
-            <div className="font-bold text-emerald-400">👤 {user?.name || '体验用户'}</div>
-            <div>所属班级 / 角色: {user?.className || '三年级A班'} ({activeView})</div>
-          </div>
-        </div>
-      )}
 
       {/* ========================================================================= */}
-      {/* 1. STUDENT VIEW (学生端: 待办作业 / 答题历史 / 自主学习) */}
+      {/* 1. STUDENT VIEW (学生端: 班级作业 / 自主学习 / 答题历史) */}
       {/* ========================================================================= */}
       {activeView === 'student' && (
         <div className="space-y-6">
           
-          {/* Sub Navigation Bar for Student */}
-          <div className="flex border-b border-slate-200 space-x-4">
-            <button
-              onClick={() => setStudentTab('assignments')}
-              className={`pb-3 text-sm font-bold border-b-2 transition ${
-                studentTab === 'assignments' ? 'border-jade-600 text-jade-700' : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              📝 1. 待办作业 ({assignments.filter(a => a.status === '待完成').length})
-            </button>
-            <button
-              onClick={() => setStudentTab('history')}
-              className={`pb-3 text-sm font-bold border-b-2 transition ${
-                studentTab === 'history' ? 'border-jade-600 text-jade-700' : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              📊 2. 答题历史 ({quizHistory.length})
-            </button>
-            <button
-              onClick={() => setStudentTab('selfstudy')}
-              className={`pb-3 text-sm font-bold border-b-2 transition ${
-                studentTab === 'selfstudy' ? 'border-jade-600 text-jade-700' : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              📚 3. 自主拓展学习 ({learntPoemIds.length} 首已解锁)
-            </button>
-          </div>
+          {/* Student Banner Header Card */}
+          {studentTab === 'selfstudy' ? (
+            <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-emerald-700/40">
+              <div className="space-y-1">
+                <div className="inline-flex items-center space-x-2 bg-emerald-900/60 border border-emerald-500/40 text-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
+                  <span>📖 自主拓展学习</span>
+                </div>
+                <h1 className="text-3xl font-black font-serif bg-gradient-to-r from-emerald-200 via-teal-200 to-white bg-clip-text text-transparent">
+                  古诗图文赏析与自由探索
+                </h1>
+                <p className="text-emerald-200/90 text-xs">
+                  自主探索全量古诗词与试题资源，拼音诵读、诗人背景故事与互动答题练习。
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-teal-700/40">
+              <div className="space-y-1">
+                <div className="inline-flex items-center space-x-2 bg-teal-900/60 border border-teal-500/40 text-teal-200 px-3 py-1 rounded-full text-xs font-semibold">
+                  <span>📝 班级作业</span>
+                </div>
+                <h1 className="text-3xl font-black font-serif bg-gradient-to-r from-teal-200 via-emerald-200 to-white bg-clip-text text-transparent">
+                  班级作业与答题打卡
+                </h1>
+                <p className="text-teal-200/90 text-xs">
+                  查看并完成教师发布的跨学科互动作业，实时掌握试题测试与答题打卡学情进度。
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Sub Navigation Bar for Student Assignments View */}
+          {studentTab !== 'selfstudy' && (
+            <div className="flex border-b border-slate-200 space-x-6">
+              <button
+                onClick={() => switchStudentTab('assignments')}
+                className={`pb-3 text-sm font-bold border-b-2 transition ${
+                  studentTab === 'assignments' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                📝 待办作业 ({assignments.filter(a => a.status === '待完成').length})
+              </button>
+              <button
+                onClick={() => switchStudentTab('history')}
+                className={`pb-3 text-sm font-bold border-b-2 transition ${
+                  studentTab === 'history' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                📊 作业历史 ({quizHistory.length})
+              </button>
+            </div>
+          )}
 
           {/* STUDENT TAB 1: ASSIGNMENTS TO DO */}
           {studentTab === 'assignments' && (
@@ -336,7 +389,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                       </p>
                       <div className="pt-1 flex justify-end">
                         <button
-                          onClick={() => startQuiz(poem)}
+                          onClick={() => handleStartStudentAssignment(asgn)}
                           className="px-4 py-2 bg-jade-600 hover:bg-jade-500 text-white font-bold rounded-xl text-xs shadow-md transition"
                         >
                           🚀 立即开始答题闯关
@@ -352,7 +405,10 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
           {/* STUDENT TAB 2: QUIZ HISTORY */}
           {studentTab === 'history' && (
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              <h2 className="text-xl font-bold font-serif text-ink">答题历史与成绩单 (Quiz History)</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold font-serif text-ink">答题历史与成绩单 (Quiz History)</h2>
+                <span className="text-xs text-slate-400 font-medium">💡 点击任意历史记录可查看试题明细与标准解析</span>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs text-slate-600">
                   <thead className="bg-slate-50 text-slate-700 uppercase font-bold border-b border-slate-200">
@@ -361,17 +417,32 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                       <th className="p-3">古诗题目</th>
                       <th className="p-3">闯关类型</th>
                       <th className="p-3">得分</th>
-                      <th className="p-3">正确率</th>
+                      <th className="p-3 text-right">操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {quizHistory.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50">
+                      <tr
+                        key={item.id}
+                        onClick={() => setSelectedHistoryItem(item)}
+                        className="hover:bg-indigo-50/60 cursor-pointer transition group"
+                      >
                         <td className="p-3 font-mono">{item.completedAt}</td>
-                        <td className="p-3 font-bold font-serif text-ink">《{item.poemTitle}》</td>
+                        <td className="p-3 font-bold font-serif text-ink group-hover:text-indigo-700">《{item.poemTitle}》</td>
                         <td className="p-3">{item.quizType}</td>
                         <td className="p-3 font-bold text-emerald-600">{item.score}分</td>
-                        <td className="p-3 font-bold text-slate-700">{item.accuracy}</td>
+                        <td className="p-3 text-right">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedHistoryItem(item);
+                            }}
+                            className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 bg-indigo-50 group-hover:bg-indigo-100 border border-indigo-200 rounded-lg transition"
+                          >
+                            👁
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -865,7 +936,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
 
       {/* Assignment Question Review & Selection Modal */}
       {publishingPoem && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPublishingPoem(null)}>
+        <div className="fixed inset-0 !mt-0 !m-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPublishingPoem(null)}>
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             
             {/* Modal Header */}
@@ -896,6 +967,14 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 已勾选 <span className="text-blue-600 text-sm font-black">{selectedQuestionIds.length}</span> / {(publishingPoem.questions || []).length} 道题目
               </span>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewStartIndex(0)}
+                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1"
+                  title="全套试题学生答题体验预览"
+                >
+                  👁 预览学生答题
+                </button>
                 <button
                   type="button"
                   onClick={() => setSelectedQuestionIds((publishingPoem.questions || []).map(q => q.id))}
@@ -946,7 +1025,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                         setSelectedQuestionIds([...selectedQuestionIds, q.id]);
                       }
                     }}
-                    className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-start gap-3 ${
+                    className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-start gap-3 group ${
                       isChecked
                         ? 'bg-blue-50/50 border-blue-300 shadow-2xs'
                         : 'bg-slate-50/70 border-slate-200 opacity-60 hover:opacity-80'
@@ -960,11 +1039,24 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                     />
 
                     <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-slate-400 font-bold">#{idx + 1}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${typeColors[q.type] || 'bg-slate-100 text-slate-700'}`}>
-                          {typeLabels[q.type] || q.type}
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-slate-400 font-bold">#{idx + 1}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${typeColors[q.type] || 'bg-slate-100 text-slate-700'}`}>
+                            {typeLabels[q.type] || q.type}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewStartIndex(idx);
+                          }}
+                          className="px-2 py-0.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition opacity-80 group-hover:opacity-100 flex items-center gap-0.5"
+                          title="测试此题学生界面"
+                        >
+                          👁 试做
+                        </button>
                       </div>
                       <p className="text-xs font-bold text-slate-800 font-serif leading-relaxed">
                         {q.prompt || '(全自动互动拼图/排序关联题)'}
@@ -1007,6 +1099,251 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition"
               >
                 🚀 确认发布 ({selectedQuestionIds.length} 道精选题目)
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Student Assignment Quiz Runner Modal */}
+      {activeStudentQuiz && (
+        <StudentQuizPreviewModal
+          poemTitle={activeStudentQuiz.poemTitle}
+          questions={activeStudentQuiz.questions}
+          initialIndex={0}
+          onClose={(res) => {
+            if (res && res.completed && activeStudentQuiz.assignmentId) {
+              const finalScore = res.score !== undefined ? res.score : 100;
+              apiService.markAssignmentCompleted(activeStudentQuiz.assignmentId, finalScore);
+              apiService.recordQuizResult(user?.id || 'usr_stu_001', {
+                poemTitle: activeStudentQuiz.poemTitle,
+                poemId: poems.find(p => p.title === activeStudentQuiz.poemTitle)?.id || 1,
+                score: finalScore,
+                accuracy: `${finalScore}%`,
+                quizType: '班级作业闯关',
+                details: res.details || []
+              });
+              loadStudentData();
+            }
+            setActiveStudentQuiz(null);
+          }}
+        />
+      )}
+
+      {/* Interactive Teacher Question Preview Modal */}
+      {previewStartIndex !== null && publishingPoem && (
+        <StudentQuizPreviewModal
+          poemTitle={publishingPoem.title}
+          questions={publishingPoem.questions || []}
+          initialIndex={previewStartIndex}
+          selectedQuestionIds={selectedQuestionIds}
+          onToggleSelectQuestion={(qId) => {
+            setSelectedQuestionIds(prev =>
+              prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]
+            );
+          }}
+          onClose={() => setPreviewStartIndex(null)}
+        />
+      )}
+
+      {/* Quiz Record Answer Detail Modal */}
+      {selectedHistoryItem && (
+        <div
+          className="fixed inset-0 !mt-0 !m-0 z-[120] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setSelectedHistoryItem(null)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 text-xs font-bold rounded-full">
+                  <span>📊 答题成绩明细与解析</span>
+                </div>
+                <h3 className="text-xl font-bold font-serif text-white">
+                  《{selectedHistoryItem.poemTitle}》
+                </h3>
+                <div className="flex items-center gap-4 text-xs text-indigo-200/80 pt-0.5">
+                  <span>📅 完成时间: {selectedHistoryItem.completedAt}</span>
+                  <span>🏆 得分: <strong className="text-emerald-400 font-bold font-mono text-sm">{selectedHistoryItem.score}分</strong></span>
+                  <span>🏷 关卡: {selectedHistoryItem.quizType}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedHistoryItem(null)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-bold text-sm transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content Body: List of questions with student first attempt answers & correct answers */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4 bg-slate-50">
+              {(() => {
+                const poem = poems.find(p => p.title === selectedHistoryItem.poemTitle) || poems.find(p => p.id === selectedHistoryItem.poemId);
+                const hasRecordedDetails = Array.isArray(selectedHistoryItem.details) && selectedHistoryItem.details.length > 0;
+                const detailItems = hasRecordedDetails ? selectedHistoryItem.details : (poem?.questions || []);
+
+                if (detailItems.length === 0) {
+                  return (
+                    <div className="text-center py-10 text-slate-400 text-sm">
+                      暂无试题明细数据
+                    </div>
+                  );
+                }
+
+                const typeLabels: Record<string, string> = {
+                  LineAssembly: '连句组装',
+                  VerseCloze: '诗句填空',
+                  PinyinMatch: '拼音辨析',
+                  TextToCn: '诗意理解',
+                  CulturalContext: '文化背景',
+                  ImageOrdering: '插图排序',
+                  ImageToLine: '图配句',
+                };
+                const typeColors: Record<string, string> = {
+                  LineAssembly: 'bg-violet-100 text-violet-800 border-violet-200',
+                  VerseCloze: 'bg-teal-100 text-teal-800 border-teal-200',
+                  PinyinMatch: 'bg-sky-100 text-sky-800 border-sky-200',
+                  TextToCn: 'bg-amber-100 text-amber-800 border-amber-200',
+                  CulturalContext: 'bg-rose-100 text-rose-800 border-rose-200',
+                  ImageOrdering: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                  ImageToLine: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                };
+
+                return detailItems.map((item: any, idx: number) => {
+                  const qType = item.type || 'VerseCloze';
+                  const promptText = item.prompt || '根据古诗内容回答题目：';
+                  const isRecorded = hasRecordedDetails;
+
+                  return (
+                    <div key={item.questionId || item.id || idx} className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                      {/* Question Header */}
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-bold text-slate-400">#{idx + 1}</span>
+                          <span className={`text-[10px] px-2.5 py-0.5 rounded-full border font-bold ${typeColors[qType] || 'bg-slate-100 text-slate-700'}`}>
+                            {typeLabels[qType] || qType}
+                          </span>
+                        </div>
+                        {isRecorded && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                            item.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                          }`}>
+                            {item.isCorrect ? '✓ 首次作答正确' : '✕ 首次作答有误 (重练订正)'}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Prompt */}
+                      <p className="text-sm font-bold font-serif text-slate-800 leading-relaxed">
+                        {promptText}
+                      </p>
+
+                      {/* Recorded Student Answer & Standard Answer */}
+                      {isRecorded ? (
+                        <div className="space-y-2">
+                          <div className={`p-3 rounded-xl border text-xs font-bold space-y-1 ${
+                            item.isCorrect
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                              : 'bg-rose-50 border-rose-300 text-rose-900'
+                          }`}>
+                            <span className="text-[10px] opacity-80 uppercase tracking-wide">
+                              {item.isCorrect ? '✓ 您的首次回答 (正确)' : '✕ 您的首次回答 (错误)'}
+                            </span>
+                            <p className="text-sm font-serif">{item.userAnswerText}</p>
+                          </div>
+
+                          {!item.isCorrect && (
+                            <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-xl text-xs font-bold text-emerald-900 space-y-1">
+                              <span className="text-[10px] text-emerald-700 uppercase tracking-wide">✓ 标准正确答案</span>
+                              <p className="text-sm font-serif">{item.correctAnswerText}</p>
+                            </div>
+                          )}
+
+                          {item.explanation && (
+                            <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-xs text-amber-900 space-y-0.5">
+                              <span className="font-bold text-amber-800">💡 试题解析：</span>
+                              <p className="leading-relaxed">{item.explanation}</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Fallback layout for sample/legacy items without recorded details */
+                        <div className="space-y-2">
+                          {qType === 'LineAssembly' && (
+                            <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl space-y-1">
+                              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">✓ 正确全句</span>
+                              <p className="text-base font-serif font-bold text-emerald-900">“{item.answer}”</p>
+                            </div>
+                          )}
+
+                          {qType === 'ImageOrdering' && (
+                            <div className="space-y-2">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">✓ 正确插图发展顺序</span>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                {(item.images || []).map((img: string, iIdx: number) => (
+                                  <div key={iIdx} className="bg-slate-50 p-2 border border-slate-200 rounded-xl flex flex-col items-center gap-1 text-center">
+                                    <span className="text-[10px] font-bold text-indigo-600">第 {iIdx + 1} 幅</span>
+                                    <img src={img} alt={`img-${iIdx}`} className="w-full h-20 object-cover rounded-lg border border-slate-100" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {qType !== 'LineAssembly' && qType !== 'ImageOrdering' && item.options && (
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {item.options.map((opt: string, oIdx: number) => {
+                                  const isCorrectOpt = oIdx === item.answer;
+                                  return (
+                                    <div
+                                      key={oIdx}
+                                      className={`p-2.5 rounded-xl border text-xs flex items-center gap-2 ${
+                                        isCorrectOpt
+                                          ? 'bg-emerald-50 border-emerald-400 font-bold text-emerald-900'
+                                          : 'bg-slate-50 border-slate-200 text-slate-600'
+                                      }`}
+                                    >
+                                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                        isCorrectOpt ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'
+                                      }`}>
+                                        {String.fromCharCode(65 + oIdx)}
+                                      </span>
+                                      <span className="flex-1 font-serif">{opt}</span>
+                                      {isCorrectOpt && <span className="text-[10px] text-emerald-600 font-bold">✓ 正确答案</span>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              {item.explanation && (
+                                <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-xs text-amber-900 space-y-0.5">
+                                  <span className="font-bold text-amber-800">💡 试题解析：</span>
+                                  <p className="leading-relaxed">{item.explanation}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 bg-white border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setSelectedHistoryItem(null)}
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
+              >
+                关闭明细
               </button>
             </div>
 

@@ -244,6 +244,11 @@ export const apiService = {
         const seedQ = seedQMap.get(q.id);
 
         if (seedQ) {
+          // Sync options if JSON seed updated
+          if ((seedQ as any).options && JSON.stringify((seedQ as any).options) !== JSON.stringify((q as any).options)) {
+            (q as any).options = [...(seedQ as any).options];
+            updated = true;
+          }
           // Sync explanation if JSON seed updated
           if (seedQ.explanation && seedQ.explanation !== (q as any).explanation) {
             (q as any).explanation = seedQ.explanation;
@@ -405,18 +410,20 @@ export const apiService = {
   // Get Class Assignments (Student / Teacher)
   getAssignments(className: string = '三年级A班') {
     const defaultAssignments = [
-      { id: 'asgn_01', classId: 'c1', className: '三年级A班', poemId: 1, poemTitle: '池上', dueDate: '2026-07-30', status: '待完成', requirement: '背诵并完成连句与填空闯关' },
-      { id: 'asgn_02', classId: 'c1', className: '三年级A班', poemId: 4, poemTitle: '悯农 (其二)', dueDate: '2026-08-02', status: '待完成', requirement: '掌握诗句含义与读音辨析' },
-      { id: 'asgn_03', classId: 'c1', className: '三年级A班', poemId: 9, poemTitle: '画', dueDate: '2026-07-25', status: '已打卡', score: 100 }
+      { id: 'asgn_01', classId: 'c1', className: '三年级A班', poemId: 1, poemTitle: '池上', dueDate: '2026-07-30', status: '待完成', requirement: '背诵并完成连句与填空闯关', questionIds: [] },
+      { id: 'asgn_02', classId: 'c1', className: '三年级A班', poemId: 4, poemTitle: '悯农 (其二)', dueDate: '2026-08-02', status: '待完成', requirement: '掌握诗句含义与读音辨析', questionIds: [] },
+      { id: 'asgn_03', classId: 'c1', className: '三年级A班', poemId: 9, poemTitle: '画', dueDate: '2026-07-25', status: '已打卡', score: 100, questionIds: [] }
     ];
     const stored = localStorage.getItem('zxt_assignments');
+    if (!stored) {
+      localStorage.setItem('zxt_assignments', JSON.stringify(defaultAssignments));
+    }
     const all = stored ? JSON.parse(stored) : defaultAssignments;
     return all.filter((a: any) => a.className === className);
   },
 
   // Create Assignment (Teacher)
   createAssignment(assignment: { className: string; poemId: number; poemTitle: string; dueDate: string; requirement: string; questionIds?: string[] }) {
-    const current = this.getAssignments(assignment.className);
     const newAsgn = {
       id: `asgn_${Date.now()}`,
       classId: 'c1',
@@ -435,19 +442,27 @@ export const apiService = {
     return newAsgn;
   },
 
+  // Mark Assignment Completed (Student)
+  markAssignmentCompleted(asgnId: string, score: number = 100) {
+    const stored = localStorage.getItem('zxt_assignments');
+    if (!stored) return;
+    const all = JSON.parse(stored);
+    const updated = all.map((a: any) => a.id === asgnId ? { ...a, status: '已打卡', score } : a);
+    localStorage.setItem('zxt_assignments', JSON.stringify(updated));
+  },
+
   // Get Student Quiz History (Student / Teacher)
   getQuizHistory(studentId: string = 'usr_stu_001') {
-    const defaultHistory = [
-      { id: 'qh_01', poemTitle: '池上', poemId: 1, score: 100, accuracy: '100%', completedAt: '2026-07-26 14:30', quizType: '采莲连句闯关' },
-      { id: 'qh_02', poemTitle: '江南', poemId: 2, score: 90, accuracy: '90%', completedAt: '2026-07-24 16:15', quizType: '诗句填空' },
-      { id: 'qh_03', poemTitle: '画', poemId: 9, score: 100, accuracy: '100%', completedAt: '2026-07-22 10:00', quizType: '字音辨析' }
-    ];
     const stored = localStorage.getItem(`zxt_qh_${studentId}`);
-    return stored ? JSON.parse(stored) : defaultHistory;
+    let list: any[] = stored ? JSON.parse(stored) : [];
+    // Keep only the record at 21:14:16 for Yaming
+    list = list.filter((item: any) => item.completedAt && (item.completedAt.includes('21:14:16') || item.completedAt.includes('21:14')));
+    localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(list));
+    return list;
   },
 
   // Record Quiz Result (Student)
-  recordQuizResult(studentId: string, result: { poemTitle: string; poemId: number; score: number; accuracy: string; quizType: string }) {
+  recordQuizResult(studentId: string, result: { poemTitle: string; poemId: number; score: number; accuracy: string; quizType: string; details?: any[] }) {
     const history = this.getQuizHistory(studentId);
     const newRecord = {
       id: `qh_${Date.now()}`,

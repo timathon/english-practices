@@ -39,13 +39,14 @@ export const App: React.FC = () => {
   const navigate = (path: string) => {
     window.history.pushState({}, '', path);
     setCurrentPath(path);
+    window.dispatchEvent(new Event('pushstate'));
   };
 
   const getTargetDashboardRoute = (role: string) => {
     if (role === 'admin') return '/admin';
     if (role === 'editor') return '/editor';
     if (role === 'teacher') return '/teacher';
-    return '/blg';
+    return '/student';
   };
 
   const handleLoginSuccess = (loggedInUser: UserSession) => {
@@ -78,7 +79,7 @@ export const App: React.FC = () => {
 
       {/* Main Page Content Routing */}
       <main className="flex-1 pt-16">
-        {currentPath === '/blg' ? (
+        {currentPath === '/student' || currentPath.startsWith('/student') || currentPath === '/blg' ? (
           <BaiLianGe activeView={activeView} user={user} />
         ) : currentPath === '/teacher' ? (
           <BaiLianGe activeView="teacher" user={user} />

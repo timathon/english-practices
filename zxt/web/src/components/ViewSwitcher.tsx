@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { UserSession } from '../services/api';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
+import { UserSession } from '../services/api';
 
 interface ViewSwitcherProps {
   isOpen: boolean;
@@ -58,8 +58,10 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
     }
   };
 
+  useLockBodyScroll(isOpen);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 !mt-0 !m-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-6 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
         
         <button

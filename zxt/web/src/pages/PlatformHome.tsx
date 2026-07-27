@@ -11,17 +11,17 @@ export const PlatformHome: React.FC<PlatformHomeProps> = ({ navigate, activeView
   // Config per role for dashboard button
   const dashboardConfig = {
     student: {
-      title: '进入学生工作台 / 采莲古诗词',
-      subtitle: '查看待办作业、答题历史与已学古诗拓展',
+      title: '进入学生工作台',
+      subtitle: '查看待办作业、答题历史与古诗拓展学习',
       icon: '🎓',
-      path: '/blg',
+      path: '/student',
       bgClass: 'bg-emerald-600 hover:bg-emerald-500',
     },
     teacher: {
-      title: '进入教师工作台 / 班级管理',
+      title: '进入教师工作台',
       subtitle: '发布作业、查看班级答题统计与控制课程进度',
       icon: '👩‍🏫',
-      path: '/blg',
+      path: '/teacher',
       bgClass: 'bg-blue-600 hover:bg-blue-500',
     },
     admin: {
@@ -42,7 +42,7 @@ export const PlatformHome: React.FC<PlatformHomeProps> = ({ navigate, activeView
       title: '进入家长伴读工作台',
       subtitle: '查看每周AI学习周报、护眼时长锁与共读指引',
       icon: '👨‍👩‍👧',
-      path: '/blg',
+      path: '/student',
       bgClass: 'bg-amber-600 hover:bg-amber-500',
     },
   };

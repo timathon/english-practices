@@ -63,13 +63,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             🌐 平台首页
           </button>
           <button
-            onClick={() => navigate('/blg')}
+            onClick={() => navigate('/student')}
             className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
-              currentPath === '/blg' ? 'bg-jade-900/80 border border-jade-500/50 text-jade-300 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+              currentPath === '/student' || currentPath.startsWith('/student') ? 'bg-jade-900/80 border border-jade-500/50 text-jade-300 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
             }`}
           >
-            <span>🪷</span>
-            <span>白莲阁 (古诗文)</span>
+            <span>🎓</span>
+            <span>学生工作台</span>
           </button>
           {(activeView === 'admin') && (
             <button
@@ -79,10 +79,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <span>⚙️</span>
-              <span>平台管理</span>
+              <span>平台管理中心</span>
             </button>
           )}
-          {(user?.role === 'teacher' || activeView === 'teacher') && (
+          {(activeView === 'teacher' || activeView === 'admin') && (
             <button
               onClick={() => navigate('/teacher')}
               className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
@@ -113,7 +113,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* View Selecting Dropdown (placed to the left of user name) */}
               <div className="relative">
                 <select
-                  value={currentPath}
+                  value={(() => {
+                    if (currentPath.startsWith('/student') || currentPath.startsWith('/blg')) {
+                      return window.location.search.includes('tab=selfstudy') ? '/student?tab=selfstudy' : '/student?tab=assignments';
+                    }
+                    return currentPath;
+                  })()}
                   onChange={(e) => navigate(e.target.value)}
                   className="px-2.5 py-1 bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-lg text-xs font-bold text-slate-200 outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-xs"
                 >
@@ -137,7 +142,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
                   {user.role !== 'teacher' && user.role !== 'admin' && (
                     <>
-                      <option value="/blg">🎓 古诗词学习</option>
+                      <option value="/student?tab=assignments">📝 班级作业</option>
+                      <option value="/student?tab=selfstudy">📖 自主学习</option>
                     </>
                   )}
                 </select>
