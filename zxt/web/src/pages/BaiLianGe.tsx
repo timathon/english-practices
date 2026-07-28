@@ -1061,6 +1061,11 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                       <p className="text-xs font-bold text-slate-800 font-serif leading-relaxed">
                         {q.prompt || '(全自动互动拼图/排序关联题)'}
                       </p>
+                      {(q as any).image && (
+                        <div className="my-1.5">
+                          <img src={(q as any).image} alt="题目图片" className="max-h-24 rounded-lg border border-slate-200 object-cover" />
+                        </div>
+                      )}
                       {(q as any).options && Array.isArray((q as any).options) && (q as any).options.length > 0 && (
                         <div className="flex flex-wrap gap-1 pt-0.5">
                           {(q as any).options.slice(0, 4).map((opt: string, oIdx: number) => (
@@ -1242,6 +1247,12 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                       <p className="text-sm font-bold font-serif text-slate-800 leading-relaxed">
                         {promptText}
                       </p>
+
+                      {item.image && (
+                        <div className="my-1.5 flex justify-center">
+                          <img src={item.image} alt="题目图片" className="max-h-36 rounded-xl border border-slate-200 object-cover shadow-xs" />
+                        </div>
+                      )}
 
                       {/* Recorded Student Answer & Standard Answer */}
                       {isRecorded ? (

@@ -137,6 +137,7 @@ export const StudentQuizPreviewModal: React.FC<{
           explanation: (q as any).explanation,
           options: (q as any).options || displayedOptions,
           images: q.type === 'ImageOrdering' ? q.images : undefined,
+          image: (q as any).image,
         }
       }));
     }
@@ -448,6 +449,15 @@ export const StudentQuizPreviewModal: React.FC<{
               <h4 className="text-lg font-serif font-bold text-slate-800 leading-snug">
                 {q.prompt || '(未设置题目提示)'}
               </h4>
+              {(q as any).image && (
+                <div className="flex justify-center my-2">
+                  <img
+                    src={(q as any).image}
+                    alt="题目插图"
+                    className="max-h-56 sm:max-h-64 w-auto object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-1"
+                  />
+                </div>
+              )}
             </div>
 
             {q.type === 'LineAssembly' && (
