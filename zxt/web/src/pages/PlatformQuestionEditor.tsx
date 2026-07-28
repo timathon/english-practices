@@ -514,9 +514,9 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
             }}
             className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500"
           >
-            {poems.map(p => (
+            {filteredPoems.map(p => (
               <option key={p.id} value={p.id}>
-                《{p.title}》 - [{p.dynasty}] {p.author} ({p.questions?.length ?? 0}题)
+                #{p.id} 《{p.title}》 - [{p.dynasty}] {p.author} ({p.questions?.length ?? 0}题)
               </option>
             ))}
           </select>
@@ -573,7 +573,7 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
                 >
                   <div className="flex items-center justify-between">
                     <span className={`font-bold font-serif ${isSelected ? 'text-teal-700' : 'text-slate-800'}`}>
-                      《{p.title}》
+                      #{p.id} 《{p.title}》
                     </span>
                     <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
                       qCount > 0 ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-400'

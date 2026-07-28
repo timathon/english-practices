@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import POEMS_SEED from '../data/poems-75.json';
 
 export interface Env {
-  DB?: any;
+  zxt_poems_db: D1Database;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -31,6 +32,13 @@ interface PoemLineItem {
   pinyin: string;
   cn?: string;
   en?: string;
+  image?: string;
+}
+
+interface PoemQuestion {
+  id: string;
+  type: string;
+  [key: string]: unknown;
 }
 
 interface PoemItem {
@@ -39,10 +47,24 @@ interface PoemItem {
   dynasty: string;
   author: string;
   lines: PoemLineItem[];
-  cn: string;
+  cn?: string;
   en?: string;
   keywords: string[];
   theme: string;
+  questions?: PoemQuestion[];
+}
+
+// D1 helpers
+async function initDB(db: D1Database): Promise<void> {
+  await db.prepare(
+    'CREATE TABLE IF NOT EXISTS poems (id INTEGER PRIMARY KEY, data TEXT NOT NULL)'
+  ).run();
+  const row = await db.prepare('SELECT COUNT(*) AS cnt FROM poems').first<{ cnt: number }>();
+  if (!row || row.cnt === 0) {
+    const seed = POEMS_SEED as unknown as PoemItem[];
+    const stmt = db.prepare('INSERT INTO poems (id, data) VALUES (?1, ?2)');
+    await db.batch(seed.map(p => stmt.bind(p.id, JSON.stringify(p))));
+  }
 }
 
 // Initial Admin Credential & Default Seed Users
@@ -94,124 +116,10 @@ usersStore.set('yaming', {
   createdAt: new Date().toISOString()
 });
 
-// 75 Classic Poems Data (Parsed from zxt/data/blg/poems-75.json)
-const POEMS_DATA: PoemItem[] = [
-  {
-    id: 1,
-    title: "池上",
-    dynasty: "唐",
-    author: "白居易",
-    lines: [
-      { text: "小娃撑小艇", pinyin: "xiǎo wá chēng xiǎo tǐng", cn: "小娃撑着小船", en: "A young child rows a small boat," },
-      { text: "偷采白莲回", pinyin: "tōu cǎi bái lián huí", cn: "偷偷采了白莲蓬回来", en: "Stealthily harvesting white lotus pods on his return." },
-      { text: "不解藏踪迹", pinyin: "bù jiě cáng zōng jì", cn: "不懂得怎样隐蔽踪迹", en: "Not knowing how to conceal his tracks," },
-      { text: "浮萍一道开", pinyin: "fú píng yī dào kāi", cn: "水面的浮萍被划开了一道清澈的水路", en: "A pathway parts through the floating duckweed." }
-    ],
-    cn: "小娃撑着小船，偷偷采了白莲蓬回来。他不懂得怎样隐蔽踪迹，水面的浮萍被划开了一道清澈的水路。",
-    en: "A young child rowed a small boat, secretly picking white lotuses to bring home. Unaware of how to hide his tracks, a path was cleared through the duckweed.",
-    keywords: ["小娃", "白莲", "浮萍"],
-    theme: "童趣 (Childhood Innocence)"
-  },
-  {
-    id: 2,
-    title: "江南",
-    dynasty: "汉",
-    author: "汉乐府",
-    lines: [
-      { text: "江南可采莲", pinyin: "jiāng nán kě cǎi lián", cn: "江南正是采莲的好地方", en: "South of the River is where lotus can be gathered," },
-      { text: "莲叶何田田", pinyin: "lián yè hé tián tián", cn: "莲叶是多么茂盛相连", en: "How lush and abundant are the lotus leaves!" },
-      { text: "鱼戏莲叶间", pinyin: "yú xì lián yè jiān", cn: "鱼儿在莲叶间嬉戏", en: "Fish play among the lotus leaves." },
-      { text: "鱼戏莲叶东", pinyin: "yú xì lián yè dōng", cn: "鱼儿在莲叶东边嬉戏", en: "Fish play to the east of the lotus leaves," },
-      { text: "鱼戏莲叶西", pinyin: "yú xì lián yè xī", cn: "鱼儿在莲叶西边嬉戏", en: "Fish play to the west of the lotus leaves," },
-      { text: "鱼戏莲叶南", pinyin: "yú xì lián yè nán", cn: "鱼儿在莲叶南边嬉戏", en: "Fish play to the south of the lotus leaves," },
-      { text: "鱼戏莲叶北", pinyin: "yú xì lián yè běi", cn: "鱼儿在莲叶北边嬉戏", en: "Fish play to the north of the lotus leaves." }
-    ],
-    cn: "江南正是采莲的好地方，莲叶是多么茂盛相连！鱼儿在莲叶间嬉戏，一会在东，一会在西，一会在南，一会在北。",
-    en: "South of the Yangtze is a fine place to pick lotus; how lush and dense the lotus leaves grow! Fish play among the lotus leaves—east, west, south, and north.",
-    keywords: ["江南", "采莲", "莲叶", "鱼戏"],
-    theme: "自然美景 (Nature & Waters)"
-  },
-  {
-    id: 3,
-    title: "悯农 (其一)",
-    dynasty: "唐",
-    author: "李绅",
-    lines: [
-      { text: "春种一粒粟", pinyin: "chūn zhòng yī lì sù", cn: "春天种下一粒谷物", en: "In spring a single seed is sown," },
-      { text: "秋收万颗子", pinyin: "qiū shōu wàn kē zǐ", cn: "秋天收成万颗粮食", en: "In autumn ten thousand grains are harvested." },
-      { text: "四海无闲田", pinyin: "sì hǎi wú xián tián", cn: "四海之内没有闲置的田地", en: "Across the land no field lies fallow," },
-      { text: "农夫犹饿死", pinyin: "nóng fū yóu è sǐ", cn: "可勤劳的农民依然饿死", en: "Yet hard-working farmers still starve to death." }
-    ],
-    cn: "春天种下一粒谷物，秋天收成万颗粮食。四海之内没有闲置的田地，可勤劳的农民依然饿死。",
-    en: "In spring one grain of seed is sown, in autumn ten thousand grains are harvested. Across the four seas no land lies fallow, yet farmers still starve to death.",
-    keywords: ["春种", "秋收", "农夫"],
-    theme: "珍惜粮食 (Labor & Reflection)"
-  },
-  {
-    id: 4,
-    title: "悯农 (其二)",
-    dynasty: "唐",
-    author: "李绅",
-    lines: [
-      { text: "锄禾日当午", pinyin: "chú hé rì dāng wǔ", cn: "农民顶着中午的烈日锄禾", en: "Hoeing crops under the noon sun," },
-      { text: "汗滴禾下土", pinyin: "hàn dī hé xià tǔ", cn: "汗水一滴滴掉在禾苗下的泥土里", en: "Sweat drips into the soil beneath the corn." },
-      { text: "谁知盘中餐", pinyin: "shuí zhī pán zhōng cān", cn: "谁知道盘中的饭菜", en: "Who realizes that the food on the plate," },
-      { text: "粒粒皆辛苦", pinyin: "lì lì jiē xīn kǔ", cn: "每一粒都是辛苦换来的", en: "Every single grain comes from painful labor?" }
-    ],
-    cn: "农民顶着中午的烈日锄禾，汗水一滴滴掉在禾苗下的泥土里。谁知道盘中的饭菜，每一粒都是辛苦换来的。",
-    en: "Hoeing crops under the noon sun, sweat drips into the soil beneath the grain. Who knows that on the dining plate, every single grain comes from hard toil?",
-    keywords: ["锄禾", "汗滴", "盘中餐", "辛苦"],
-    theme: "勤劳美德 (Gratitude & Labor)"
-  },
-  {
-    id: 9,
-    title: "画",
-    dynasty: "唐",
-    author: "王维",
-    lines: [
-      { text: "远看山有色", pinyin: "yuǎn kàn shān yǒu sè", cn: "远看山峰色彩明丽", en: "Seen from afar, the mountains possess vivid color," },
-      { text: "近听水无声", pinyin: "jìn tīng shuǐ wú shēng", cn: "近听流水却悄然无声", en: "Heard up close, the water makes no sound." },
-      { text: "春去花还在", pinyin: "chūn qù huā hái zài", cn: "春天过去了花朵依然开放", en: "Spring has gone, yet the flowers still remain," },
-      { text: "人来鸟不惊", pinyin: "rén lái niǎo bù jīng", cn: "人走近了鸟儿却不惊飞", en: "A person comes near, yet the birds are not startled." }
-    ],
-    cn: "远看山峰色彩明丽，近听流水却悄然无声。春天过去了花朵依然开放，人走近了鸟儿却不惊飞。",
-    en: "From afar mountains show bright colors; close up the flowing water makes no sound. Spring has departed yet flowers remain; a person approaches but birds are not startled.",
-    keywords: ["山", "水", "花", "鸟"],
-    theme: "山水禅意 (Nature Artistry)"
-  },
-  {
-    id: 17,
-    title: "山行",
-    dynasty: "唐",
-    author: "杜牧",
-    lines: [
-      { text: "远上寒山石径斜", pinyin: "yuǎn shàng hán shān shí jìng xié", cn: "顺着蜿蜒的小路登上寒山", en: "Winding far up the cold mountain on a slanted stone path," },
-      { text: "白云生处有人家", pinyin: "bái yún shēng chù yǒu rén jiā", cn: "白云缭绕的地方隐约有人家", en: "Homes appear where the white clouds arise." },
-      { text: "停车坐爱枫林晚", pinyin: "tíng chē zuò ài fēng lín wǎn", cn: "停下车子是因为喜爱傍晚的枫林", en: "I halt my carriage to enjoy the late maple woods," },
-      { text: "霜叶红于二月花", pinyin: "shuāng yè hóng yú èr yuè huā", cn: "被霜打过的枫叶比二月的红花还要红艳", en: "Frosty leaves are redder than the flowers of February." }
-    ],
-    cn: "顺着蜿蜒的小路登上寒山，白云缭绕的地方隐约有人家。停下车子是因为喜爱傍晚的枫林，被霜打过的枫叶比二月的红花还要红艳。",
-    en: "Ascending the cold mountain along a slanting stone path, houses appear where white clouds arise. I stop my carriage out of love for the evening maple woods; frost-bitten leaves are redder than February flowers.",
-    keywords: ["寒山", "白云", "枫林", "霜叶"],
-    theme: "秋景壮丽 (Autumn Splendor)"
-  },
-  {
-    id: 69,
-    title: "饮湖上初晴后雨",
-    dynasty: "宋",
-    author: "苏轼",
-    lines: [
-      { text: "水光潋滟晴方好", pinyin: "shuǐ guāng liàn yàn qíng fāng hǎo", cn: "晴天西湖水波潋滟风景正好", en: "The sparkling water glistens on a fine sunny day," },
-      { text: "山色空蒙雨亦奇", pinyin: "shān sè kōng méng yǔ yì qí", cn: "雨天重山空蒙景色更加奇特", en: "The misty mountain views are wondrous in the rain." },
-      { text: "欲把西湖比西子", pinyin: "yù bǎ xī hú bǐ xī zǐ", cn: "如果把西湖比作美女西施", en: "If West Lake were compared to Lady Xishi," },
-      { text: "淡妆浓抹总相宜", pinyin: "dàn zhuāng nóng mǒ zǒng xiāng yí", cn: "淡妆或是浓抹都是那么适宜", en: "In light makeup or heavy adornment, she is always fair." }
-    ],
-    cn: "晴天西湖水波潋滟风景正好，雨天重山空蒙景色更加奇特。如果把西湖比作美女西施，淡妆或是浓抹都是那么适宜。",
-    en: "Sunny West Lake glistens with shimmering waters; rainy mountains look misty and marvelous. Comparing West Lake to Xishi the beauty, light or heavy makeup always suits her well.",
-    keywords: ["西湖", "水光", "山色", "西子"],
-    theme: "西湖盛景 (West Lake Beauty)"
-  }
-];
+// Seed data reference (used only for D1 initial seeding — source of truth is D1 at runtime)
+const _POEMS_SEED_REF = POEMS_SEED; // keep import alive
+void _POEMS_SEED_REF;
+
 
 // Health Check
 app.get('/api/health', (c) => {
@@ -354,14 +262,41 @@ app.get('/api/teacher/students', (c) => {
   return c.json({ students });
 });
 
-// 白莲阁 (Bái Lián Gé) Poems API
-app.get('/api/blg/poems', (c) => {
+// 白莲阁 (Bái Lián Gé) Poems API — D1-backed
+app.get('/api/blg/poems', async (c) => {
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+  const { results } = await db.prepare('SELECT data FROM poems ORDER BY id ASC').all<{ data: string }>();
+  const poems = results.map(r => JSON.parse(r.data) as PoemItem);
   return c.json({
     module: '白莲阁 (Bái Lián Gé)',
     subtitle: '小娃撑小艇，偷采白莲回 (白居易《池上》)',
-    total: POEMS_DATA.length,
-    poems: POEMS_DATA
+    total: poems.length,
+    poems
   });
+});
+
+// Editor: save updated questions for a single poem
+app.put('/api/blg/poems/:id/questions', async (c) => {
+  const id = Number(c.req.param('id'));
+  const { questions } = await c.req.json<{ questions: PoemQuestion[] }>();
+  const db = c.env.zxt_poems_db;
+  const row = await db.prepare('SELECT data FROM poems WHERE id = ?').bind(id).first<{ data: string }>();
+  if (!row) return c.json({ error: 'Poem not found' }, 404);
+  const poem = JSON.parse(row.data) as PoemItem;
+  poem.questions = questions;
+  await db.prepare('UPDATE poems SET data = ? WHERE id = ?').bind(JSON.stringify(poem), id).run();
+  return c.json({ success: true });
+});
+
+// Batch replace all poems (used by push-d1-poems script)
+app.post('/api/blg/poems/batch', async (c) => {
+  const { poems } = await c.req.json<{ poems: PoemItem[] }>();
+  const db = c.env.zxt_poems_db;
+  await db.prepare('CREATE TABLE IF NOT EXISTS poems (id INTEGER PRIMARY KEY, data TEXT NOT NULL)').run();
+  const stmt = db.prepare('INSERT OR REPLACE INTO poems (id, data) VALUES (?1, ?2)');
+  await db.batch(poems.map(p => stmt.bind(p.id, JSON.stringify(p))));
+  return c.json({ success: true, count: poems.length });
 });
 
 // AI Briefing APIs

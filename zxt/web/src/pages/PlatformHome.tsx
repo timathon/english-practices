@@ -52,7 +52,7 @@ export const PlatformHome: React.FC<PlatformHomeProps> = ({ navigate, activeView
   return (
     <div
       className="flex-1 w-full min-h-[calc(100vh-64px)] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 bg-cover bg-center bg-no-repeat relative overflow-hidden"
-      style={{ backgroundImage: "url('/zxt_home_bg.png')" }}
+      style={{ backgroundImage: "url('/zxt_home_bg.webp')" }}
     >
       {/* Soft gradient vignette overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900/20 via-slate-900/10 to-slate-900/30 backdrop-blur-[1.5px]"></div>

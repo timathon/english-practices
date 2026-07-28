@@ -1,5 +1,4 @@
 // API Client connecting to Cloudflare Worker zxtapi.vibequizzing.com
-import POEMS_SEED from '../../../data/blg/poems-75.json';
 
 export const API_BASE_URL = 'https://zxtapi.vibequizzing.com';
 
@@ -210,8 +209,22 @@ export const apiService = {
     }
   },
 
-  // Get Poems List for 白莲阁 (from quiz library)
+  // Get Poems List for 白莲阁 — fetches from remote D1 API, falls back to localStorage
   async getPoems(): Promise<Poem[]> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/blg/poems`);
+      if (res.ok) {
+        const data = await res.json() as { poems?: Poem[] };
+        if (data.poems && Array.isArray(data.poems)) {
+          const poems = [...data.poems].sort((a, b) => a.id - b.id);
+          // Cache remotely-fetched data for offline use
+          localStorage.setItem('zxt_quiz_library', JSON.stringify(poems));
+          return poems;
+        }
+      }
+    } catch (e) {
+      console.warn('Remote API unavailable, using local quiz library.', e);
+    }
     return this.getQuizLibrary();
   },
 
@@ -228,86 +241,22 @@ export const apiService = {
 
   // --- QUIZ LIBRARY (localStorage DB) ---
 
-  // Helper to ensure questions schema & contents sync with seed JSON edits
-  _ensureQuestionSchema(poems: Poem[]): { poems: Poem[]; updated: boolean } {
-    let updated = false;
-    const seedMap = new Map((POEMS_SEED as unknown as Poem[]).map(p => [p.id, p]));
-    
-    for (const poem of poems) {
-      const seedPoem = seedMap.get(poem.id);
-      if (!seedPoem) continue;
-      const seedQMap = new Map((seedPoem.questions || []).map(sq => [sq.id, sq]));
-
-      const questions = poem.questions || [];
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
-        const seedQ = seedQMap.get(q.id);
-
-        if (seedQ) {
-          // Sync options if JSON seed updated
-          if ((seedQ as any).options && JSON.stringify((seedQ as any).options) !== JSON.stringify((q as any).options)) {
-            (q as any).options = [...(seedQ as any).options];
-            updated = true;
-          }
-          // Sync explanation if JSON seed updated
-          if (seedQ.explanation && seedQ.explanation !== (q as any).explanation) {
-            (q as any).explanation = seedQ.explanation;
-            updated = true;
-          }
-          // Sync prompt if JSON seed updated
-          if (seedQ.prompt && seedQ.prompt !== q.prompt) {
-            q.prompt = seedQ.prompt;
-            updated = true;
-          }
-        }
-
-        if (q.type === 'ImageOrdering') {
-          if (!q.images || q.images.length === 0) {
-            if (seedQ && seedQ.type === 'ImageOrdering' && seedQ.images && seedQ.images.length > 0) {
-              q.images = [...seedQ.images];
-            } else {
-              const lineCount = poem.lines?.length || 4;
-              q.images = Array.from({ length: lineCount }, (_, idx) => `/assets/blg/poems/p${poem.id}_l${idx + 1}.webp`);
-            }
-            updated = true;
-          }
-        }
-      }
-    }
-    return { poems, updated };
-  },
-
-  // Seed the full 75-poem dataset into localStorage on first load
+  // Seed an empty library into localStorage (called only when offline with no cache)
   seedQuizLibrary(): Poem[] {
     const existing = localStorage.getItem('zxt_quiz_library');
-    let poems: Poem[];
     if (existing) {
-      try {
-        poems = JSON.parse(existing);
-      } catch (e) {
-        poems = POEMS_SEED as unknown as Poem[];
-      }
-    } else {
-      poems = POEMS_SEED as unknown as Poem[];
+      try { return JSON.parse(existing); } catch { /* fall through */ }
     }
-    const { poems: repaired, updated } = this._ensureQuestionSchema(poems);
-    if (!existing || updated) {
-      localStorage.setItem('zxt_quiz_library', JSON.stringify(repaired));
-    }
-    return repaired;
+    return [];
   },
 
-  // Get full quiz library (all poems with questions)
+  // Get full quiz library (offline localStorage fallback)
   getQuizLibrary(): Poem[] {
     const stored = localStorage.getItem('zxt_quiz_library');
     if (!stored) return this.seedQuizLibrary();
     try {
       const poems = JSON.parse(stored);
-      const { poems: repaired, updated } = this._ensureQuestionSchema(poems);
-      if (updated) {
-        localStorage.setItem('zxt_quiz_library', JSON.stringify(repaired));
-      }
-      return repaired;
+      return [...poems].sort((a, b) => a.id - b.id);
     } catch (e) {
       return this.seedQuizLibrary();
     }
@@ -318,13 +267,19 @@ export const apiService = {
     localStorage.setItem('zxt_quiz_library', JSON.stringify(poems));
   },
 
-  // Save questions for a single poem (patch into the library)
+  // Save questions for a single poem (patch into localStorage + persist to remote D1)
   savePoemQuestions(poemId: number, questions: PoemQuestion[]) {
     const library = this.getQuizLibrary();
     const updated = library.map(p => p.id === poemId ? { ...p, questions } : p);
     this.saveQuizLibrary(updated);
     // Legacy key kept for quiz-engine compatibility
     localStorage.setItem(`zxt_questions_poem_${poemId}`, JSON.stringify(questions));
+    // Persist to remote D1 so all users see the change
+    fetch(`${API_BASE_URL}/api/blg/poems/${poemId}/questions`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questions }),
+    }).catch(e => console.warn('Failed to save questions to remote D1:', e));
   },
 
   // Get questions for a single poem (from library)

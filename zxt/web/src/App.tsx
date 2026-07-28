@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Navbar } from './components/Navbar';
 import { LoginModal } from './components/LoginModal';
 import { ViewSwitcher } from './components/ViewSwitcher';
 import { PlatformHome } from './pages/PlatformHome';
-import { BaiLianGe } from './pages/BaiLianGe';
-import { PlatformAdminPanel } from './pages/PlatformAdminPanel';
-import { PlatformQuestionEditor } from './pages/PlatformQuestionEditor';
 import { apiService, canEditQuizLibrary, UserSession } from './services/api';
+
+const BaiLianGe = lazy(() => import('./pages/BaiLianGe').then(m => ({ default: m.BaiLianGe })));
+const PlatformAdminPanel = lazy(() => import('./pages/PlatformAdminPanel').then(m => ({ default: m.PlatformAdminPanel })));
+const PlatformQuestionEditor = lazy(() => import('./pages/PlatformQuestionEditor').then(m => ({ default: m.PlatformQuestionEditor })));
 
 export const App: React.FC = () => {
   const [currentPath, setCurrentPath] = useState<string>(
@@ -79,17 +80,23 @@ export const App: React.FC = () => {
 
       {/* Main Page Content Routing */}
       <main className="flex-1 pt-16">
-        {currentPath === '/student' || currentPath.startsWith('/student') || currentPath === '/blg' ? (
-          <BaiLianGe activeView={activeView} user={user} />
-        ) : currentPath === '/teacher' ? (
-          <BaiLianGe activeView="teacher" user={user} />
-        ) : currentPath === '/admin' ? (
-          <PlatformAdminPanel user={user} />
-        ) : currentPath === '/editor' && user && canEditQuizLibrary(user) ? (
-          <PlatformQuestionEditor user={user} />
-        ) : (
-          <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
-        )}
+        <Suspense fallback={
+          <div className="flex justify-center items-center h-64 text-slate-500 font-serif">
+            <span className="animate-spin text-2xl mr-2">☯</span> 加载中...
+          </div>
+        }>
+          {currentPath === '/student' || currentPath.startsWith('/student') || currentPath === '/blg' ? (
+            <BaiLianGe activeView={activeView} user={user} />
+          ) : currentPath === '/teacher' ? (
+            <BaiLianGe activeView="teacher" user={user} />
+          ) : currentPath === '/admin' ? (
+            <PlatformAdminPanel user={user} />
+          ) : currentPath === '/editor' && user && canEditQuizLibrary(user) ? (
+            <PlatformQuestionEditor user={user} />
+          ) : (
+            <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
+          )}
+        </Suspense>
       </main>
 
 

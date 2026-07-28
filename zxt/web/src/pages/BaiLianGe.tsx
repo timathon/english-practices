@@ -782,7 +782,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                           const pubCount = classAsgns.filter((a: any) => a.poemId === p.id || a.poemTitle === p.title).length;
                           return (
                             <option key={p.id} value={p.id}>
-                              《{p.title}》 - [{p.dynasty}] {p.author}{pubCount > 0 ? ` (已发布 ${pubCount} 次)` : ''}
+                              #{p.id} 《{p.title}》 - [{p.dynasty}] {p.author}{pubCount > 0 ? ` (已发布 ${pubCount} 次)` : ''}
                             </option>
                           );
                         })
