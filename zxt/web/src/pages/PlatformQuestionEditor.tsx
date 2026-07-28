@@ -82,11 +82,11 @@ const TagInput: React.FC<TagInputProps> = ({ label, tags, onChange }) => {
   return (
     <div className="space-y-1">
       <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{label}</label>
-      <div className="flex flex-wrap gap-1 p-2 border border-slate-200 rounded-lg bg-slate-50 min-h-[36px]">
+      <div className="flex flex-wrap gap-1.5 p-2 border border-slate-200 rounded-lg bg-slate-50 min-h-[42px] items-center">
         {tags.map((t, i) => (
-          <span key={i} className="inline-flex items-center gap-1 bg-violet-100 text-violet-800 text-xs px-2 py-0.5 rounded-full font-mono">
+          <span key={i} className="inline-flex items-center gap-1.5 bg-violet-100 text-violet-900 text-sm sm:text-base px-2.5 py-1 rounded-md font-semibold">
             {t}
-            <button onClick={() => onChange(tags.filter((_, j) => j !== i))} className="text-violet-400 hover:text-red-500 leading-none">×</button>
+            <button onClick={() => onChange(tags.filter((_, j) => j !== i))} className="text-violet-400 hover:text-red-500 text-sm leading-none font-bold">×</button>
           </span>
         ))}
         <input
@@ -94,10 +94,9 @@ const TagInput: React.FC<TagInputProps> = ({ label, tags, onChange }) => {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); } }}
           placeholder="输入后按 Enter 添加"
-          className="flex-1 min-w-[80px] bg-transparent text-xs outline-none"
+          className="flex-1 min-w-[100px] bg-transparent text-sm outline-none px-1"
         />
       </div>
-      <p className="text-[10px] text-slate-400">按 Enter 或逗号分隔添加</p>
     </div>
   );
 };
@@ -118,7 +117,7 @@ const LineAssemblyEditor: React.FC<QEditorProps> = ({ q, onChange }) => {
       <div>
         <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">题目提示 (Prompt)</label>
         <input value={q.prompt} onChange={e => set({ prompt: e.target.value })}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-serif" />
+          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
@@ -129,7 +128,7 @@ const LineAssemblyEditor: React.FC<QEditorProps> = ({ q, onChange }) => {
         <div>
           <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">正确答案 (Answer)</label>
           <input value={q.answer as string} onChange={e => set({ answer: e.target.value })}
-            className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-serif" />
+            className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" />
         </div>
       </div>
       <TagInput label="干扰字 (Distractor Chars)" tags={q.distractor_chars} onChange={v => set({ distractor_chars: v })} />
@@ -146,7 +145,7 @@ const MCEditor: React.FC<QEditorProps & { optCount: number }> = ({ q, onChange, 
       <div>
         <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">题目提示 (Prompt)</label>
         <textarea value={q.prompt} onChange={e => set({ prompt: e.target.value })} rows={2}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-serif resize-none" />
+          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm resize-none" />
       </div>
       <div>
         <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">选项 (Options) — 点击⭐选为正确答案</label>
@@ -200,7 +199,7 @@ const ImageOrderingEditor: React.FC<QEditorProps> = ({ q, onChange, onPreview })
       <div>
         <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">题目提示 (Prompt)</label>
         <input value={q.prompt} onChange={e => set({ prompt: e.target.value })}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-serif" />
+          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" />
       </div>
       <div>
         <div className="flex items-center justify-between mb-1">
@@ -249,7 +248,7 @@ const ImageToLineEditor: React.FC<QEditorProps> = ({ q, onChange, onPreview }) =
       <div>
         <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">题目提示 (Prompt)</label>
         <input value={q.prompt} onChange={e => set({ prompt: e.target.value })}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-serif" />
+          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" />
       </div>
       <div>
         <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">图片路径 (Image URL)</label>
@@ -277,7 +276,7 @@ const ImageToLineEditor: React.FC<QEditorProps> = ({ q, onChange, onPreview }) =
               <input value={opt} onChange={e => {
                 const updated = [...opts]; updated[i] = e.target.value; set({ options: updated });
               }}
-                className="flex-1 px-2.5 py-1 border border-slate-200 rounded-lg text-sm font-serif"
+                className="flex-1 px-2.5 py-1 border border-slate-200 rounded-lg text-sm"
                 placeholder={`诗句选项 ${i}`}
               />
             </div>
@@ -603,7 +602,7 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
                     👁 预览全套
                   </button>
                 </div>
-                <div className="text-[10px] text-slate-500">{questions.length} 道题目</div>
+                <div className="text-xs text-slate-500 font-medium">{questions.length} 道题目</div>
 
                 {/* Add New Question */}
                 {canEdit && (
@@ -611,15 +610,15 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
                     <select
                       value={addType}
                       onChange={e => setAddType(e.target.value)}
-                      className="flex-1 text-[10px] border border-slate-200 rounded px-1.5 py-1 bg-slate-50"
+                      className="flex-1 text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-slate-50 font-medium"
                     >
                       {ALL_TYPES.map(t => (
-                        <option key={t} value={t}>{t}</option>
+                        <option key={t} value={t}>{QUESTION_TYPE_LABELS[t] || t}</option>
                       ))}
                     </select>
                     <button
                       onClick={addQuestion}
-                      className="px-2.5 py-1 bg-teal-600 hover:bg-teal-500 text-white rounded text-[10px] font-bold transition flex-shrink-0"
+                      className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-md text-xs font-bold transition flex-shrink-0"
                     >
                       + 添加
                     </button>
@@ -631,22 +630,22 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
                 {questions.map((q, idx) => (
                   <div
                     key={q.id}
-                    className={`group flex items-start gap-1.5 px-2.5 py-2 border-b border-slate-100 cursor-pointer transition ${
-                      activeQId === q.id ? 'bg-teal-50 border-l-2 border-l-teal-400' : 'hover:bg-slate-50'
+                    className={`group flex items-start gap-2 px-3 py-2.5 border-b border-slate-100 cursor-pointer transition ${
+                      activeQId === q.id ? 'bg-teal-50 border-l-3 border-l-teal-500' : 'hover:bg-slate-50'
                     }`}
                     onClick={() => { setActiveQId(q.id); setMobileTab('editor'); }}
                   >
-                    <span className="text-[10px] text-slate-400 font-mono w-5 flex-shrink-0 mt-0.5">{idx + 1}</span>
+                    <span className="text-xs text-slate-400 font-mono w-5 flex-shrink-0 mt-0.5">{idx + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded border font-medium mb-0.5 ${TYPE_COLORS[q.type] || 'bg-slate-100 text-slate-600'}`}>
+                      <span className={`inline-block text-xs px-2 py-0.5 rounded-md border font-semibold mb-1 ${TYPE_COLORS[q.type] || 'bg-slate-100 text-slate-600'}`}>
                         {QUESTION_TYPE_LABELS[q.type] || q.type}
                       </span>
-                      <p className="text-[11px] text-slate-600 font-serif leading-snug truncate">{q.prompt || '(无提示文字)'}</p>
+                      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed truncate">{q.prompt || '(无提示文字)'}</p>
                     </div>
                     {canEdit && (
                       <button
                         onClick={e => { e.stopPropagation(); setConfirmDeleteId(q.id); }}
-                        className="text-slate-300 hover:text-red-400 text-xs opacity-0 group-hover:opacity-100 transition flex-shrink-0 mt-0.5"
+                        className="text-slate-300 hover:text-red-400 text-sm opacity-0 group-hover:opacity-100 transition flex-shrink-0 mt-0.5"
                       >✕</button>
                     )}
                   </div>

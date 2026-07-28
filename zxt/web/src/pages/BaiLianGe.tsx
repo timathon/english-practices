@@ -1225,23 +1225,31 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                   const isRecorded = hasRecordedDetails;
 
                   return (
-                    <div key={item.questionId || item.id || idx} className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-                      {/* Question Header */}
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono font-bold text-slate-400">#{idx + 1}</span>
-                          <span className={`text-[10px] px-2.5 py-0.5 rounded-full border font-bold ${typeColors[qType] || 'bg-slate-100 text-slate-700'}`}>
-                            {typeLabels[qType] || qType}
-                          </span>
+                    <React.Fragment key={item.questionId || item.id || idx}>
+                      {idx > 0 && (
+                        <div className="py-3 flex items-center justify-center gap-3">
+                          <div className="flex-1 h-[1.5px] bg-gradient-to-r from-transparent via-slate-400 to-transparent"></div>
+                          <span className="text-xs text-slate-500 font-mono font-bold">✦</span>
+                          <div className="flex-1 h-[1.5px] bg-gradient-to-r from-transparent via-slate-400 to-transparent"></div>
                         </div>
-                        {isRecorded && (
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
-                            item.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                          }`}>
-                            {item.isCorrect ? '✓ 首次作答正确' : '✕ 首次作答有误 (重练订正)'}
-                          </span>
-                        )}
-                      </div>
+                      )}
+                      <div className="bg-white p-4.5 rounded-2xl border border-slate-200/90 shadow-sm space-y-3">
+                        {/* Question Header */}
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono font-bold text-slate-400">#{idx + 1}</span>
+                            <span className={`text-[10px] px-2.5 py-0.5 rounded-full border font-bold ${typeColors[qType] || 'bg-slate-100 text-slate-700'}`}>
+                              {typeLabels[qType] || qType}
+                            </span>
+                          </div>
+                          {isRecorded && (
+                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                              item.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                            }`}>
+                              {item.isCorrect ? '✓ 首次作答正确' : '✕ 首次作答有误 (重练订正)'}
+                            </span>
+                          )}
+                        </div>
 
                       {/* Prompt */}
                       <p className="text-sm font-bold font-serif text-slate-800 leading-relaxed">
@@ -1343,7 +1351,8 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                       )}
 
                     </div>
-                  );
+                  </React.Fragment>
+                );
                 });
               })()}
             </div>
