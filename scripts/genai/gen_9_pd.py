@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 """
-gen_9_pd.py — Generate a passage-decoder JSON from a unit markdown file via Gemini API.
+gen_9_pd.py — Generate a passage-decoder JSON from a unit markdown file and text-navigator JSON via Gemini API.
 
 Usage:
-    python3 scripts/genai/gen_9_pd.py <path-to-unit.md> [--level "Grade X Semester Y Unit Z"]
+    python3 scripts/genai/gen_9_pd.py <path-to-unit.md> [--tn <path-to-text-navigator.json>] [--level "Grade X Semester Y Unit Z"]
 
 Example:
-    python3 scripts/genai/gen_9_pd.py data/B-PU1/b-pu1-u1/b-pu1-u1.md --level "Pupil's Book 1 - Unit 1"
+    python3 scripts/genai/gen_9_pd.py data/B-PU1/b-pu1-u1/b-pu1-u1.md \
+        --tn data/B-PU1/b-pu1-u1/b-pu1-u1-text-navigator.json \
+        --level "Pupil's Book 1 - Unit 1"
 
 Requires:
     pip install google-genai
     export GOOGLE_API_KEY_FREE=<your key>
+
+Input:
+    Uses <same-dir>/<basename>-text-navigator.json (or --tn path) to mirror sentence structure and leaf nodes.
 
 Output:
     Saves <same-dir>/<basename>-passage-decoder-s.json next to the source file 
@@ -45,7 +50,8 @@ PROMPT_TEMPLATE = """\
 You are an expert English curriculum designer. Generate a Passage Decoder JSON for the following primary school textbook unit.
 
 RULES:
-- Extraction Scope: Extract every sentence/dialogue line from the reading passages or listening dialogue sections. For textbooks starting with PU1, you MUST include both "The Friendly Farm" and "Literature". For grade levels A7A, A7B, A8A, A8B, and A9, if the first section of the listening scripts (e.g. "Section A, 1b and 1c" or "Section A, 1b, 1c, and 1d" etc.) is long and meaningful enough, include it as the first section in addition to the other sections.
+- Extraction Scope & Alignment with Text Navigator (TN): Extract every sentence/dialogue line from the reading passages or listening dialogue sections. CRITICAL: Every element in the "sentences" array SHOULD MIRROR what's in the corresponding leaf nodes of Text Navigator (TN). For textbooks starting with PU1, you MUST include both "The Friendly Farm" and "Literature". For grade levels A7A, A7B, A8A, A8B, and A9, if the first section of the listening scripts (e.g. "Section A, 1b and 1c" or "Section A, 1b, 1c, and 1d" etc.) is long and meaningful enough, include it as the first section in addition to the other sections.
+- "speaker": (Optional) The name of the speaker if the sentence is a dialogue (e.g., "Rocky", "Emma", "Sam"). If the text includes narrative speech verbs (e.g. 'I say', 'she says', 'says Mum'), keep the full narrative text intact and do NOT use the "speaker" field.
 - Dialogue Formatting:
   - If a line is spoken by a character (e.g., `Jack: Hi, Lucy!`), extract the name as `speaker` and set `newline: true` on the first sentence of the turn.
   - Subsequent sentences spoken in the same turn share the `speaker` property but do NOT have `newline: true`.
@@ -94,6 +100,9 @@ Output ONLY valid JSON, no markdown fences, no commentary.
 VOCABULARY LIST (For Highlighting):
 {vocab}
 
+TEXT NAVIGATOR SOURCE (Mirror sections and leaf node sentences from this structure):
+{text_navigator}
+
 UNIT MARKDOWN:
 {source}
 """
@@ -103,6 +112,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Generate passage-decoder JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to the unit markdown file (e.g. data/B-PU1/b-pu1-u1/b-pu1-u1.md)")
+    parser.add_argument("--tn", default="", help='Path to text-navigator JSON file')
     parser.add_argument("--level", default="", help='Level label, e.g. "Pupil\'s Book 1 - Unit 1"')
     args = parser.parse_args()
 
@@ -130,10 +140,24 @@ def main():
         except Exception as e:
             print(f"Warning: could not parse {vocab_file}: {e}", file=sys.stderr)
 
+    # Load text-navigator if provided or exists
+    tn_str = "None provided."
+    tn_file = Path(args.tn) if args.tn else None
+    if not tn_file or not tn_file.exists():
+        for f in md_path.parent.glob("*-text-navigator.json"):
+            tn_file = f
+            break
+
+    if tn_file and tn_file.exists():
+        try:
+            tn_str = tn_file.read_text(encoding="utf-8")
+        except Exception as e:
+            print(f"Warning: could not read {tn_file}: {e}", file=sys.stderr)
+
     api_key, model_name = get_genai_config(use_high)
 
     client = genai.Client(api_key=api_key)
-    prompt = PROMPT_TEMPLATE.format(level=level, vocab=vocab_str, source=source)
+    prompt = PROMPT_TEMPLATE.format(level=level, vocab=vocab_str, text_navigator=tn_str, source=source)
 
     print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
     import time

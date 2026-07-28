@@ -193,6 +193,8 @@ def main():
 
     for challenge in parsed.get("challenges", []):
         for q in challenge.get("questions", []):
+            if "title" in q:
+                del q["title"]
             word = q.get("word")
             if word:
                 correct_sentence = word_to_sentence.get(word.lower())
