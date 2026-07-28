@@ -9,9 +9,12 @@ This document establishes the prompt engineering standards, negative constraint 
 To maintain consistent artistic style, visual coherence, and character identity while reducing image generation costs by 75%:
 
 1. **2x2 Master Storyboard Grid:** Generate a single 4-panel image (2x2 grid) per poem illustrating all 4 lines sequentially.
-2. **Text-Free Requirement:** Images MUST NOT contain any Chinese text, titles, verse labels, or characters. They are used for image-to-text matching quizzes.
+2. **Text-Free Requirement (CRITICAL):** Images MUST NOT contain any text, Chinese characters (Hanzi), titles, verse labels, or captions under any circumstances. Since these illustrations are used in image-to-text matching quizzes, any visible text ruins the quiz.
 3. **1:1 Square Output Ratio:** Cropped panel assets must maintain a true 1:1 square aspect ratio (`400x400` px).
 4. **Aggressive Inset Border Trimming (8%):** Apply an aggressive 8% margin slice during cropping to remove all black grid frame lines and paper margins.
+5. **Perspective & Off-Canvas Subject Rule (画外音与透视解构原则):** Distinguish between subjects *inside* the scene vs external observers/viewers *outside* the frame:
+   - **Literal vs Conceptual Poetic Devices:** In riddle or meta-artistic poems (e.g. 王维 《画》 *"人来鸟不惊"*), the person (*人*) is the external viewer approaching the artwork, while the bird (*鸟*) is inside the painting.
+   - **Explicit Panel Negative Constraint:** When a poem line refers to an external observer or off-camera entity, explicitly add negative instructions to that panel description: e.g. `NO human figure in the panel, depict only the painted bird/subject inside the scene, observer is off-camera`.
 
 ---
 
@@ -22,17 +25,19 @@ When crafting prompts in `zxt/data/blg/poem-image-prompts.json`, strictly follow
 ### `[1. Art Style & Base Texture]`
 `Traditional Chinese ink wash painting (水墨国画), Song Dynasty guohua style, soft watercolor wash, delicate ink brushwork, rice paper texture (宣纸纹理), serene atmosphere.`
 
-### `[2. Negative Constraints]`
-`NO text, NO Chinese characters, NO labels, NO borders, NO black frame lines, seamless illustration artwork only.`
+### `[2. Negative Constraints (STRICT)]`
+`CRITICAL NEGATIVE CONSTRAINT: NO text, NO Chinese characters, NO Hanzi, NO poem lines written anywhere on the image, NO titles, NO labels, NO captions, NO calligraphy, NO watermarks, NO borders, NO black frame lines. Pure illustration artwork only.`
 
 ### `[3. Grid Layout Specification]`
 `A 2x2 storyboard grid layout with 4 distinct sequential square panels separated by thin clean grid dividers:`
 
-### `[4. Panel Action Descriptions (Sequential Storytelling)]`
+### `[4. Panel Action Descriptions (Sequential Storytelling & Perspective Handling)]`
 - **Panel 1 (Top-Left):** Opening action and character introduction (e.g. punting pole `撑船竹竿`, NOT oars).
 - **Panel 2 (Top-Right):** Precise physical action (e.g. plucking blooming white lotus flowers `白莲花`, NOT seed pods `莲蓬`).
 - **Panel 3 (Bottom-Left):** Close-up facial expression & mood (e.g. joyful, innocent smiling expression, unaware of hiding trail).
-- **Panel 4 (Bottom-Right):** Extreme wide landscape shot showing perspective and trail (e.g. boy facing away in far distance, continuous open water channel parting duckweed `浮萍一道开`).
+- **Panel 4 (Bottom-Right):** Perspective & subject handling:
+  - If showing landscape trail: extreme wide landscape shot showing trail (e.g. boy facing away in far distance, continuous open water channel parting duckweed `浮萍一道开`).
+  - If illustrating off-canvas observer (e.g. *"人来鸟不惊"*): focus purely on the focal subject inside the frame with explicit negative constraints: `NO human figure, NO people in the panel, pure nature branch and bird`.
 
 ### `[5. Color & Aesthetic Palette]`
 `Harmonious aesthetic Song Dynasty color palette, minimalist Chinese landscape composition.`
