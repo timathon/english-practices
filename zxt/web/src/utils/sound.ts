@@ -49,6 +49,35 @@ function playSynthSFX(type: 'correct' | 'wrong') {
   }
 }
 
+// Audio element cache for instant zero-lag playback
+const audioCache: Record<string, HTMLAudioElement> = {};
+
+/**
+ * Preload sound effect audio files into browser memory
+ */
+export function preloadAudioSFX() {
+  const sfxUrls = [
+    LOCAL_CORRECT_SFX,
+    LOCAL_WRONG_SFX,
+    REMOTE_CORRECT_SFX,
+    REMOTE_WRONG_SFX,
+  ];
+
+  sfxUrls.forEach(url => {
+    if (!audioCache[url]) {
+      try {
+        const audio = new Audio();
+        audio.preload = 'auto';
+        audio.src = url;
+        audio.load();
+        audioCache[url] = audio;
+      } catch (err) {
+        // Ignore audio preload errors
+      }
+    }
+  });
+}
+
 /**
  * Play sound effect for correct or wrong quiz answer
  */
@@ -56,13 +85,23 @@ export function playAnswerSFX(type: 'correct' | 'wrong') {
   const localUrl = type === 'correct' ? LOCAL_CORRECT_SFX : LOCAL_WRONG_SFX;
   const remoteUrl = type === 'correct' ? REMOTE_CORRECT_SFX : REMOTE_WRONG_SFX;
   
-  const audio = new Audio(localUrl);
-  audio.volume = 0.6;
-  audio.play().catch(() => {
+  // Try using preloaded cached audio or fallback to new Audio
+  const playAudio = (url: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      try {
+        const cached = audioCache[url];
+        const audio = cached ? (cached.cloneNode(true) as HTMLAudioElement) : new Audio(url);
+        audio.volume = 0.6;
+        audio.play().then(() => resolve()).catch(err => reject(err));
+      } catch (err) {
+        reject(err);
+      }
+    });
+  };
+
+  playAudio(localUrl).catch(() => {
     // Retry with remote URL or synth fallback
-    const remoteAudio = new Audio(remoteUrl);
-    remoteAudio.volume = 0.6;
-    remoteAudio.play().catch(() => {
+    playAudio(remoteUrl).catch(() => {
       playSynthSFX(type);
     });
   });

@@ -4,6 +4,7 @@ import { LoginModal } from './components/LoginModal';
 import { ViewSwitcher } from './components/ViewSwitcher';
 import { PlatformHome } from './pages/PlatformHome';
 import { apiService, canEditQuizLibrary, UserSession } from './services/api';
+import { preloadAudioSFX } from './utils/sound';
 
 const BaiLianGe = lazy(() => import('./pages/BaiLianGe').then(m => ({ default: m.BaiLianGe })));
 const PlatformAdminPanel = lazy(() => import('./pages/PlatformAdminPanel').then(m => ({ default: m.PlatformAdminPanel })));
@@ -19,6 +20,9 @@ export const App: React.FC = () => {
   const [isViewSwitcherOpen, setIsViewSwitcherOpen] = useState(false);
 
   useEffect(() => {
+    // Preload audio sound effects for instant playback
+    preloadAudioSFX();
+
     // Seed the full quiz library into localStorage on first load
     apiService.seedQuizLibrary();
 
