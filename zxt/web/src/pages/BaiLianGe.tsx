@@ -392,10 +392,15 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                     <div key={asgn.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                       <div className="flex justify-between items-start">
                         <div>
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold">
-                            截止时间: {asgn.dueDate}
-                          </span>
-                          <h3 className="text-lg font-bold font-serif text-ink mt-1">《{asgn.poemTitle}》</h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-bold">
+                              截止时间: {asgn.dueDate}
+                            </span>
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-xs font-bold">
+                              📝 {(asgn.questionIds && asgn.questionIds.length > 0) ? asgn.questionIds.length : (poem.questions || []).length} 道题目
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-bold font-serif text-ink mt-1.5">《{asgn.poemTitle}》</h3>
                         </div>
                         <span className={`px-2.5 py-1 rounded text-xs font-bold ${
                           asgn.status === '已打卡' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
