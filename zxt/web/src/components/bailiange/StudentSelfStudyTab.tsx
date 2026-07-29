@@ -1,0 +1,181 @@
+import React, { useState } from 'react';
+import { CachedImage } from '../CachedImage';
+
+interface StudentSelfStudyTabProps {
+  poems: any[];
+  learntPoemIds: any[];
+  selectedPoem: any;
+  onSelectPoem: (poem: any) => void;
+}
+
+export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
+  poems,
+  learntPoemIds,
+  selectedPoem,
+  onSelectPoem,
+}) => {
+  const [showPinyin, setShowPinyin] = useState(true);
+  const [showOriginal, setShowOriginal] = useState(true);
+  const [showTranslation, setShowTranslation] = useState(true);
+  const [showImages, setShowImages] = useState(true);
+
+  return (
+    <div className="grid md:grid-cols-3 gap-6">
+
+      {/* All Poems Selector */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3 max-h-[500px] overflow-y-auto">
+        <h3 className="font-bold font-serif text-ink text-sm">全量古诗库 ({poems.length}首)</h3>
+        <div className="space-y-2">
+          {poems.map((poem) => {
+            const isLearnt = learntPoemIds.map(Number).includes(Number(poem.id));
+            return (
+              <div
+                key={poem.id}
+                onClick={() => onSelectPoem(poem)}
+                className={`p-3 rounded-xl border cursor-pointer text-xs font-serif transition flex items-center justify-between ${
+                  selectedPoem?.id === poem.id ? 'border-jade-500 bg-jade-50 font-bold shadow-xs' : 'border-slate-100 hover:bg-slate-50'
+                }`}
+              >
+                <span>#{poem.id} 《{poem.title}》 - [{poem.dynasty}] {poem.author}</span>
+                {isLearnt && (
+                  <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-sans font-bold rounded whitespace-nowrap">
+                    已学
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Extra Knowledge Canvas */}
+      {selectedPoem && (
+        <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+          <div className="border-b border-slate-100 pb-4 space-y-3">
+            <div>
+              <span className="px-2 py-0.5 bg-jade-100 text-jade-800 text-xs font-bold rounded">
+                [{selectedPoem.dynasty}] {selectedPoem.author}
+              </span>
+              <h2 className="text-2xl font-bold font-serif text-ink mt-1">《{selectedPoem.title}》拓展自学</h2>
+            </div>
+
+            {/* 4 View Toggles: 拼音, 原文, 译文, 图片 */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowPinyin(!showPinyin)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer ${
+                  showPinyin
+                    ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                    : 'bg-slate-200 text-slate-500 border-slate-300 opacity-60 hover:opacity-100'
+                }`}
+              >
+                拼音
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowOriginal(!showOriginal)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer ${
+                  showOriginal
+                    ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+                    : 'bg-slate-200 text-slate-500 border-slate-300 opacity-60 hover:opacity-100'
+                }`}
+              >
+                原文
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowTranslation(!showTranslation)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer ${
+                  showTranslation
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                    : 'bg-slate-200 text-slate-500 border-slate-300 opacity-60 hover:opacity-100'
+                }`}
+              >
+                译文
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowImages(!showImages)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer ${
+                  showImages
+                    ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
+                    : 'bg-slate-200 text-slate-500 border-slate-300 opacity-60 hover:opacity-100'
+                }`}
+              >
+                图片
+              </button>
+            </div>
+          </div>
+
+          {/* Poem Text & Media Content */}
+          <div className="bg-amber-50/50 p-5 rounded-xl border border-amber-100 space-y-4 text-center">
+            {selectedPoem.lines.map((lineObj: any, idx: number) => {
+              const text = typeof lineObj === 'string' ? lineObj : lineObj.text;
+              const pinyin = typeof lineObj === 'string' ? '' : lineObj.pinyin;
+              const cn = typeof lineObj === 'string' ? '' : (lineObj.cn || lineObj.meaning);
+              const imgUrl = typeof lineObj === 'string' ? '' : lineObj.image;
+
+              return (
+                <div
+                  key={idx}
+                  className={`space-y-1.5 p-3.5 rounded-xl border text-center transition ${
+                    idx % 2 === 1
+                      ? 'bg-amber-50/70 border-amber-200/50'
+                      : 'bg-white/90 border-amber-100/40'
+                  }`}
+                >
+                  {/* Original Text with optional Pinyin */}
+                  {showOriginal && (
+                    <div className="text-xl font-serif font-bold text-slate-800">
+                      {showPinyin && pinyin ? (
+                        <ruby>{text}<rt className="text-[10px] text-amber-800 font-sans font-normal">{pinyin}</rt></ruby>
+                      ) : text}
+                    </div>
+                  )}
+
+                  {/* Line Translation */}
+                  {showTranslation && cn && (
+                    <div className="text-sm sm:text-base text-slate-700 font-medium font-sans leading-relaxed pt-0.5">{cn}</div>
+                  )}
+
+                  {/* Line Image */}
+                  {showImages && imgUrl && (
+                    <div className="pt-2 max-w-sm mx-auto">
+                      <CachedImage
+                        src={imgUrl}
+                        alt={`line-${idx}`}
+                        className="rounded-xl border border-amber-200 shadow-sm mx-auto object-cover max-h-48"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Extra Knowledge Sections */}
+          <div className="grid sm:grid-cols-2 gap-4 text-xs">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+              <strong className="text-ink block font-serif">📖 诗人背景故事</strong>
+              <p className="text-slate-600 leading-relaxed">
+                {selectedPoem.author}是{selectedPoem.dynasty}代著名诗人，其诗风通俗易懂，深受百姓喜爱。作品充满童真与生活气息。
+              </p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+              <strong className="text-ink block font-serif">💡 诗词赏析与意境</strong>
+              <p className="text-slate-600 leading-relaxed">
+                主题：{selectedPoem.theme}。关键词包括: {selectedPoem.keywords?.join(', ')}。展现了自然景象与生动的画面感。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default StudentSelfStudyTab;
