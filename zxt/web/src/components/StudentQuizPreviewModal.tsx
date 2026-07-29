@@ -145,8 +145,11 @@ export const StudentQuizPreviewModal: React.FC<{
       setDisplayedOptions(combined);
       setMappedAnswerIndex(combined.indexOf(correctOpt));
     } else if (q.type !== 'LineAssembly' && q.type !== 'ImageOrdering') {
-      setDisplayedOptions((q as any).options || []);
-      setMappedAnswerIndex((q as any).answer);
+      const rawOpts = (q as any).options || [];
+      const correctOpt = rawOpts[(q as any).answer] ?? rawOpts[0] ?? '';
+      const shuffled = [...rawOpts].sort(() => Math.random() - 0.5);
+      setDisplayedOptions(shuffled);
+      setMappedAnswerIndex(shuffled.indexOf(correctOpt));
     }
   }, [currentIndex, q, submittedQuestionStates]);
 
