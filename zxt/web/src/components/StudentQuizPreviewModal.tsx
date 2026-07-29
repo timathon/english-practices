@@ -579,10 +579,10 @@ export const StudentQuizPreviewModal: React.FC<{
                 </div>
 
                 {onConfirmPublish ? (
-                  <div className="flex items-center gap-3 w-full max-w-sm pt-2">
+                  <div className="flex flex-col gap-2.5 w-full max-w-sm pt-2">
                     <button
                       onClick={() => onClose()}
-                      className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-sm transition"
+                      className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition"
                     >
                       ← 返回修改挑题
                     </button>
@@ -591,9 +591,9 @@ export const StudentQuizPreviewModal: React.FC<{
                         onClose();
                         onConfirmPublish();
                       }}
-                      className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl text-sm shadow-md transition"
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-sm shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2"
                     >
-                      🚀 确认发布作业
+                      <span>🚀 确认发布作业</span>
                     </button>
                   </div>
                 ) : (
