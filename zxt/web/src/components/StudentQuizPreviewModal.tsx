@@ -150,6 +150,55 @@ export const StudentQuizPreviewModal: React.FC<{
     }
   }, [currentIndex, q, submittedQuestionStates]);
 
+  // Keyboard Navigation: Left/Right Arrow for Previous/Next, Enter for Submit / Advance
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept keyboard shortcuts if active element is an input or textarea
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+
+      if (isCompleted) return;
+
+      const isPreviewMode = !!(onToggleSelectQuestion || onConfirmPublish);
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setCurrentIndex(i => Math.max(0, i - 1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setCurrentIndex(i => {
+          if (i >= currentRoundQuestions.length - 1) return i;
+          if (!isPreviewMode && feedback === null) return i;
+          return i + 1;
+        });
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (feedback !== null) {
+          if (currentIndex === currentRoundQuestions.length - 1) {
+            handleAdvanceNext();
+          } else {
+            setCurrentIndex(i => Math.min(currentRoundQuestions.length - 1, i + 1));
+          }
+        } else {
+          // Trigger verify/submit if selection is present
+          const hasSelection = (() => {
+            if (!q) return false;
+            if (q.type === 'LineAssembly') return selectedChars.length > 0;
+            if (q.type === 'ImageOrdering') return placedSlots.some(s => s !== null);
+            return mcSelection !== null;
+          })();
+          if (hasSelection) {
+            handleVerify();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, currentRoundQuestions.length, feedback, isCompleted, onToggleSelectQuestion, onConfirmPublish, mcSelection, selectedChars, placedSlots, q]);
+
   if (!q && !isCompleted) return null;
 
   const recordAnswerResult = (isRight: boolean, userAnsText: string, correctAnsText: string) => {
