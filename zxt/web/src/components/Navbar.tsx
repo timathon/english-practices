@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Brand & Logo */}
         <div className="flex items-center space-x-4 cursor-pointer" onClick={() => navigate('/')}>
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-extrabold font-serif tracking-wider bg-gradient-to-r from-emerald-400 via-jade-400 to-teal-300 bg-clip-text text-transparent">
+            <h1 className="text-xl font-extrabold font-serif tracking-wider bg-gradient-to-r from-emerald-400 via-jade-400 to-teal-300 bg-clip-text text-transparent" title={__APP_VERSION__}>
               知新堂
             </h1>
           </div>
