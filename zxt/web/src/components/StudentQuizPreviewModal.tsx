@@ -1021,7 +1021,7 @@ export const StudentQuizPreviewModal: React.FC<{
                         ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
                         : !hasSelection
                           ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none opacity-60'
-                          : 'bg-slate-800 hover:bg-slate-700 text-white shadow-md cursor-pointer'
+                          : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-200 cursor-pointer active:scale-95'
                     }`}
                   >
                     {feedback !== null ? '✓ 已检查答案' : '✅ 检查答案'}
