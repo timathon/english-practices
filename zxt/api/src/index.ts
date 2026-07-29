@@ -59,6 +59,10 @@ async function initDB(db: D1Database): Promise<void> {
   await db.prepare(
     'CREATE TABLE IF NOT EXISTS poems (id INTEGER PRIMARY KEY, data TEXT NOT NULL)'
   ).run();
+  await db.prepare(
+    'CREATE TABLE IF NOT EXISTS quiz_history (id TEXT PRIMARY KEY, student_id TEXT NOT NULL, poem_id INTEGER, poem_title TEXT NOT NULL, score INTEGER NOT NULL, accuracy TEXT, quiz_type TEXT NOT NULL, details TEXT, completed_at TEXT NOT NULL)'
+  ).run();
+
   const row = await db.prepare('SELECT COUNT(*) AS cnt FROM poems').first<{ cnt: number }>();
   if (!row || row.cnt === 0) {
     const seed = POEMS_SEED as unknown as PoemItem[];
@@ -297,6 +301,73 @@ app.post('/api/blg/poems/batch', async (c) => {
   const stmt = db.prepare('INSERT OR REPLACE INTO poems (id, data) VALUES (?1, ?2)');
   await db.batch(poems.map(p => stmt.bind(p.id, JSON.stringify(p))));
   return c.json({ success: true, count: poems.length });
+});
+
+// Student Quiz History APIs — D1 DB Backed
+app.get('/api/student/history', async (c) => {
+  const studentId = c.req.query('studentId') || 'usr_stu_001';
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+  const { results } = await db.prepare(
+    'SELECT * FROM quiz_history WHERE student_id = ? ORDER BY completed_at DESC'
+  ).bind(studentId).all<{
+    id: string;
+    student_id: string;
+    poem_id: number;
+    poem_title: string;
+    score: number;
+    accuracy: string;
+    quiz_type: string;
+    details: string;
+    completed_at: string;
+  }>();
+
+  const history = results.map(r => ({
+    id: r.id,
+    studentId: r.student_id,
+    poemId: r.poem_id,
+    poemTitle: r.poem_title,
+    score: r.score,
+    accuracy: r.accuracy,
+    quizType: r.quiz_type,
+    details: r.details ? JSON.parse(r.details) : [],
+    completedAt: r.completed_at
+  }));
+
+  return c.json({ history });
+});
+
+app.post('/api/student/history', async (c) => {
+  try {
+    const { studentId = 'usr_stu_001', poemTitle, poemId, score, accuracy, quizType, details } = await c.req.json();
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    const recordId = `qh_${Date.now()}`;
+    const completedAt = new Date().toLocaleString('zh-CN', { hour12: false });
+    const detailsJson = details ? JSON.stringify(details) : null;
+
+    await db.prepare(
+      'INSERT INTO quiz_history (id, student_id, poem_id, poem_title, score, accuracy, quiz_type, details, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(recordId, studentId, poemId || 0, poemTitle, score, accuracy || `${score}%`, quizType, detailsJson, completedAt).run();
+
+    return c.json({
+      success: true,
+      record: {
+        id: recordId,
+        studentId,
+        poemTitle,
+        poemId,
+        score,
+        accuracy,
+        quizType,
+        details,
+        completedAt
+      }
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to save quiz history to DB' }, 500);
+  }
 });
 
 // AI Briefing APIs

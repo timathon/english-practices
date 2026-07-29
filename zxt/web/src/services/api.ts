@@ -1,6 +1,7 @@
 // API Client connecting to Cloudflare Worker zxtapi.vibequizzing.com
 
 export const API_BASE_URL = 'https://zxtapi.vibequizzing.com';
+export const USE_BACKEND = false; // Set to true when remote worker API is running
 
 export interface UserSession {
   id: string;
@@ -408,12 +409,27 @@ export const apiService = {
 
   // Get Student Quiz History (Student / Teacher)
   getQuizHistory(studentId: string = 'usr_stu_001') {
+    const defaultHistory = [
+      { id: 'qh_001', poemTitle: '池上', poemId: 1, score: 50, accuracy: '50%', quizType: '班级作业闯关', completedAt: '2026/7/27 21:14:16' }
+    ];
+
+    if (USE_BACKEND) {
+      fetch(`${API_BASE_URL}/api/student/history?studentId=${studentId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.history && Array.isArray(data.history)) {
+            localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(data.history));
+          }
+        })
+        .catch(() => {});
+    }
+
     const stored = localStorage.getItem(`zxt_qh_${studentId}`);
-    let list: any[] = stored ? JSON.parse(stored) : [];
-    // Keep only the record at 21:14:16 for Yaming
-    list = list.filter((item: any) => item.completedAt && (item.completedAt.includes('21:14:16') || item.completedAt.includes('21:14')));
-    localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(list));
-    return list;
+    if (!stored) {
+      localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(defaultHistory));
+      return defaultHistory;
+    }
+    return JSON.parse(stored);
   },
 
   // Record Quiz Result (Student)
@@ -426,6 +442,17 @@ export const apiService = {
     };
     history.unshift(newRecord);
     localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(history));
+
+    if (USE_BACKEND) {
+      fetch(`${API_BASE_URL}/api/student/history`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId,
+          ...result,
+        }),
+      }).catch(err => console.error('Failed to save quiz history to remote DB:', err));
+    }
   },
 
   // Get Class Learning Progress - Learnt Poem IDs (Teacher / Student Self-Study)

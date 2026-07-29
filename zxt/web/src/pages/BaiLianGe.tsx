@@ -243,6 +243,14 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     setSelectedQuestionIds(allQs.map(q => q.id));
   };
 
+  const [publishSuccessData, setPublishSuccessData] = useState<{
+    className: string;
+    poemTitle: string;
+    questionCount: number;
+    dueDate: string;
+    requirement: string;
+  } | null>(null);
+
   const confirmPublishAssignment = () => {
     if (!publishingPoem) return;
     if (selectedQuestionIds.length === 0) {
@@ -257,8 +265,18 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
       requirement: newAsgnReq,
       questionIds: selectedQuestionIds,
     });
+
+    const successInfo = {
+      className: selectedClass,
+      poemTitle: publishingPoem.title,
+      questionCount: selectedQuestionIds.length,
+      dueDate: newAsgnDueDate,
+      requirement: newAsgnReq,
+    };
+
     setTeacherMsg(`成功向【${selectedClass}】发布《${publishingPoem.title}》作业（已精选 ${selectedQuestionIds.length} 道题目）！`);
     setPublishingPoem(null);
+    setPublishSuccessData(successInfo);
     loadStudentData();
   };
 
@@ -835,12 +853,27 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 <h3 className="text-base font-bold font-serif text-ink">【{selectedClass}】已发布作业列表</h3>
                 <div className="space-y-3 max-h-[350px] overflow-y-auto">
                   {apiService.getAssignments(selectedClass).map((asgn: any) => (
-                    <div key={asgn.id} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-1 text-xs">
-                      <div className="flex justify-between font-bold text-ink">
-                        <span>《{asgn.poemTitle}》</span>
-                        <span className="text-blue-600">截止: {asgn.dueDate}</span>
+                    <div
+                      key={asgn.id}
+                      onClick={() => handleStartStudentAssignment(asgn)}
+                      className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-300 transition cursor-pointer space-y-1 text-xs group"
+                      title="点击预览此份已发布作业的学生答题体验"
+                    >
+                      <div className="flex justify-between items-center font-bold text-ink">
+                        <span className="flex items-center gap-1.5 font-serif text-sm">
+                          《{asgn.poemTitle}》
+                          <span className="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 font-sans font-normal border border-indigo-200 rounded opacity-0 group-hover:opacity-100 transition">
+                            👁 预览体验
+                          </span>
+                        </span>
+                        <span className="text-blue-600 font-sans">截止: {asgn.dueDate}</span>
                       </div>
-                      <p className="text-slate-600">{asgn.requirement}</p>
+                      <p className="text-slate-600 leading-relaxed">{asgn.requirement}</p>
+                      {asgn.questionIds && asgn.questionIds.length > 0 && (
+                        <div className="pt-1 text-[10px] font-bold text-slate-400">
+                          包含 {asgn.questionIds.length} 道精选题目
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -970,11 +1003,18 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setPreviewStartIndex(0)}
-                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1"
+                  onClick={() => {
+                    if (selectedQuestionIds.length === 0) {
+                      alert('请先勾选至少一道题目再进行预览！');
+                      return;
+                    }
+                    setPreviewStartIndex(0);
+                  }}
+                  disabled={selectedQuestionIds.length === 0}
+                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                   title="全套试题学生答题体验预览"
                 >
-                  👁 预览学生答题
+                  👁 预览选中题目
                 </button>
                 <button
                   type="button"
@@ -1064,7 +1104,14 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                       </p>
                       {(q as any).image && (
                         <div className="my-1.5">
-                          <img src={(q as any).image} alt="题目图片" className="max-h-24 rounded-lg border border-slate-200 object-cover" />
+                          <CachedImage src={(q as any).image} alt="题目图片" className="max-h-24 rounded-lg border border-slate-200 object-cover" />
+                        </div>
+                      )}
+                      {q.type === 'ImageOrdering' && Array.isArray((q as any).images) && (q as any).images.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 my-1.5">
+                          {(q as any).images.map((img: string, iIdx: number) => (
+                            <CachedImage key={iIdx} src={img} alt={`插图-${iIdx + 1}`} className="w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-2xs" />
+                          ))}
                         </div>
                       )}
                       {(q as any).options && Array.isArray((q as any).options) && (q as any).options.length > 0 && (
@@ -1112,6 +1159,55 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
         </div>
       )}
 
+      {/* Teacher Publish Success Modal */}
+      {publishSuccessData && (
+        <div className="fixed inset-0 !mt-0 !m-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPublishSuccessData(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 space-y-5 text-center animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner">
+              🎉
+            </div>
+            
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold font-serif text-slate-800">
+                作业发布成功！
+              </h3>
+              <p className="text-xs text-slate-500">
+                班级【<span className="font-bold text-blue-600">{publishSuccessData.className}</span>】的学生现已可在学生端进行答题打卡。
+              </p>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left text-xs space-y-2 font-medium">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                <span className="text-slate-500">发布古诗篇目</span>
+                <span className="font-bold text-slate-800 font-serif text-sm">《{publishSuccessData.poemTitle}》</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">精选试题数量</span>
+                <span className="font-bold text-emerald-600">{publishSuccessData.questionCount} 道题</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">截止打卡时间</span>
+                <span className="font-bold text-blue-600">{publishSuccessData.dueDate}</span>
+              </div>
+              {publishSuccessData.requirement && (
+                <div className="pt-1 text-slate-600 border-t border-slate-200/60">
+                  <span className="text-slate-400 block text-[10px]">作业要求:</span>
+                  <p className="font-sans leading-relaxed">{publishSuccessData.requirement}</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPublishSuccessData(null)}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-md transition"
+            >
+              完成并返回作业列表
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Student Assignment Quiz Runner Modal */}
       {activeStudentQuiz && (
         <StudentQuizPreviewModal
@@ -1141,8 +1237,8 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
       {previewStartIndex !== null && publishingPoem && (
         <StudentQuizPreviewModal
           poemTitle={publishingPoem.title}
-          questions={publishingPoem.questions || []}
-          initialIndex={previewStartIndex}
+          questions={(publishingPoem.questions || []).filter(q => selectedQuestionIds.includes(q.id))}
+          initialIndex={Math.max(0, (publishingPoem.questions || []).filter(q => selectedQuestionIds.includes(q.id)).findIndex(q => q.id === publishingPoem.questions?.[previewStartIndex]?.id))}
           selectedQuestionIds={selectedQuestionIds}
           onToggleSelectQuestion={(qId) => {
             setSelectedQuestionIds(prev =>
