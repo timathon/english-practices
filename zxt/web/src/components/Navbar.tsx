@@ -52,59 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </div>
 
-        {/* Navigation Routes */}
-        <nav className="hidden md:flex items-center space-x-1 text-sm font-medium">
-          <button
-            onClick={() => navigate('/')}
-            className={`px-3 py-1.5 rounded-lg transition ${
-              currentPath === '/' ? 'bg-slate-800 text-white font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-            }`}
-          >
-            🌐 平台首页
-          </button>
-          <button
-            onClick={() => navigate('/student')}
-            className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
-              currentPath === '/student' || currentPath.startsWith('/student') ? 'bg-jade-900/80 border border-jade-500/50 text-jade-300 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-            }`}
-          >
-            <span>🎓</span>
-            <span>学生工作台</span>
-          </button>
-          {(activeView === 'admin') && (
-            <button
-              onClick={() => navigate('/admin')}
-              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
-                currentPath === '/admin' ? 'bg-purple-900/80 border border-purple-500/50 text-purple-300 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <span>⚙️</span>
-              <span>平台管理中心</span>
-            </button>
-          )}
-          {(activeView === 'teacher' || activeView === 'admin') && (
-            <button
-              onClick={() => navigate('/teacher')}
-              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
-                currentPath === '/teacher' ? 'bg-blue-900/80 border border-blue-500/50 text-blue-300 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <span>👩‍🏫</span>
-              <span>教师工作台</span>
-            </button>
-          )}
-          {canEditQuizLibrary(user) && (
-            <button
-              onClick={() => navigate('/editor')}
-              className={`px-3 py-1.5 rounded-lg flex items-center space-x-1 transition ${
-                currentPath === '/editor' ? 'bg-teal-900/80 border border-teal-500/50 text-teal-300 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <span>✍️</span>
-              <span>平台题库编辑</span>
-            </button>
-          )}
-        </nav>
+
 
         {/* User Controls / Auth */}
         <div className="flex items-center space-x-3">
