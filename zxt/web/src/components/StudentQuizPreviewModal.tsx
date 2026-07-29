@@ -454,17 +454,6 @@ export const StudentQuizPreviewModal: React.FC<{
               )}
             </div>
             <div className="flex items-center gap-3">
-              {onConfirmPublish && (
-                <button
-                  onClick={() => {
-                    onClose();
-                    onConfirmPublish();
-                  }}
-                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-md transition flex items-center gap-1"
-                >
-                  🚀 确认发布作业
-                </button>
-              )}
               {!isCompleted && (
                 <span className="text-xs text-indigo-300 font-mono flex items-center gap-2">
                   {remediationCount > 0 && (
@@ -971,73 +960,89 @@ export const StudentQuizPreviewModal: React.FC<{
           </div>
         )}
         {!isCompleted && (
-          <div className="bg-white border-t border-slate-200 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
-                disabled={currentIndex === 0}
-                className="px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl disabled:opacity-30 transition"
-              >
-                ← 上一题
-              </button>
-
-              {currentIndex === currentRoundQuestions.length - 1 && feedback !== null ? (
+          <div className="bg-white border-t border-slate-200 flex flex-col">
+            <div className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={handleAdvanceNext}
-                  className="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-md transition flex items-center gap-1.5 animate-bounce"
+                  onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
+                  disabled={currentIndex === 0}
+                  className="px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl disabled:opacity-30 transition"
                 >
-                  {roundMistakenIds.length > 0 ? (
-                    <span>🔄 重练错题 ({roundMistakenIds.length}题) →</span>
-                  ) : (
-                    <span>🎉 完成打卡 & 查看成绩 →</span>
-                  )}
+                  ← 上一题
                 </button>
-              ) : (() => {
-                const isPreviewMode = !!(onToggleSelectQuestion || onConfirmPublish);
-                const isNextDisabled = currentIndex === currentRoundQuestions.length - 1 || (!isPreviewMode && feedback === null);
+
+                {currentIndex === currentRoundQuestions.length - 1 && feedback !== null ? (
+                  <button
+                    onClick={handleAdvanceNext}
+                    className="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-md transition flex items-center gap-1.5 animate-bounce"
+                  >
+                    {roundMistakenIds.length > 0 ? (
+                      <span>🔄 重练错题 ({roundMistakenIds.length}题) →</span>
+                    ) : (
+                      <span>🎉 完成打卡 & 查看成绩 →</span>
+                    )}
+                  </button>
+                ) : (() => {
+                  const isPreviewMode = !!(onToggleSelectQuestion || onConfirmPublish);
+                  const isNextDisabled = currentIndex === currentRoundQuestions.length - 1 || (!isPreviewMode && feedback === null);
+
+                  return (
+                    <button
+                      onClick={() => setCurrentIndex(i => Math.min(currentRoundQuestions.length - 1, i + 1))}
+                      disabled={isNextDisabled}
+                      className={`px-4 py-2 text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1 ${
+                        !isNextDisabled
+                          ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 shadow-md cursor-pointer animate-pulse'
+                          : 'bg-slate-100 text-slate-400 opacity-40 cursor-not-allowed'
+                      }`}
+                      title={isNextDisabled && !isPreviewMode ? '请先提交当前题目的答案' : ''}
+                    >
+                      下一题 →
+                    </button>
+                  );
+                })()}
+              </div>
+
+              {(() => {
+                const hasSelection = (() => {
+                  if (q.type === 'LineAssembly') return selectedChars.length > 0;
+                  if (q.type === 'ImageOrdering') return placedSlots.some(s => s !== null);
+                  return mcSelection !== null;
+                })();
+
+                const isSubmitDisabled = feedback !== null || !hasSelection;
 
                 return (
                   <button
-                    onClick={() => setCurrentIndex(i => Math.min(currentRoundQuestions.length - 1, i + 1))}
-                    disabled={isNextDisabled}
-                    className={`px-4 py-2 text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1 ${
-                      !isNextDisabled
-                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 shadow-md cursor-pointer animate-pulse'
-                        : 'bg-slate-100 text-slate-400 opacity-40 cursor-not-allowed'
+                    onClick={handleVerify}
+                    disabled={isSubmitDisabled}
+                    className={`px-6 py-2.5 font-bold text-xs rounded-xl transition ${
+                      feedback !== null
+                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                        : !hasSelection
+                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none opacity-60'
+                          : 'bg-slate-800 hover:bg-slate-700 text-white shadow-md cursor-pointer'
                     }`}
-                    title={isNextDisabled && !isPreviewMode ? '请先提交当前题目的答案' : ''}
                   >
-                    下一题 →
+                    {feedback !== null ? '✓ 已测试提交' : '✅ 测试提交'}
                   </button>
                 );
               })()}
             </div>
 
-            {(() => {
-              const hasSelection = (() => {
-                if (q.type === 'LineAssembly') return selectedChars.length > 0;
-                if (q.type === 'ImageOrdering') return placedSlots.some(s => s !== null);
-                return mcSelection !== null;
-              })();
-
-              const isSubmitDisabled = feedback !== null || !hasSelection;
-
-              return (
+            {onConfirmPublish && (
+              <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end px-4">
                 <button
-                  onClick={handleVerify}
-                  disabled={isSubmitDisabled}
-                  className={`px-6 py-2.5 font-bold text-sm rounded-xl transition ${
-                    feedback !== null
-                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-                      : !hasSelection
-                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none opacity-60'
-                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md cursor-pointer'
-                  }`}
+                  onClick={() => {
+                    onClose();
+                    onConfirmPublish();
+                  }}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
                 >
-                  {feedback !== null ? '✓ 已提交答案' : '✅ 提交答案'}
+                  <span>🚀 确认发布作业</span>
                 </button>
-              );
-            })()}
+              </div>
+            )}
           </div>
         )}
       </div>
