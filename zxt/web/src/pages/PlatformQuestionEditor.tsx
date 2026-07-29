@@ -309,6 +309,10 @@ interface PlatformQuestionEditorProps {
 }
 
 export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ user }) => {
+  if (!user || !canEditQuizLibrary(user)) {
+    return null;
+  }
+
   const [poems, setPoems] = useState<Poem[]>([]);
   const [selectedPoemId, setSelectedPoemId] = useState<number | null>(null);
   const [questions, setQuestions] = useState<PoemQuestion[]>([]);

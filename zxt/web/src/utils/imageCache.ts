@@ -1,5 +1,5 @@
 /**
- * Image Caching Utility (IndexedDB / LocalStorage) & R2 URL Resolver
+ * Image Caching Utility (IndexedDB Storage Engine) & R2 URL Resolver
  * 
  * Primary R2 Base URL: https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/zxt/blg
  */
@@ -10,6 +10,28 @@ const STORE_NAME = 'image_blobs';
 const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBDatabase | null> | null = null;
+
+/**
+ * Clean up legacy base64 image strings from localStorage to reclaim localStorage space.
+ */
+export function clearLegacyLocalStorageImageCache() {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('img_cache_')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  } catch (e) {
+    console.warn('Failed to clean up legacy localStorage image cache:', e);
+  }
+}
+
+// Auto-run cleanup on module initialization
+clearLegacyLocalStorageImageCache();
 
 function openDB(): Promise<IDBDatabase | null> {
   if (dbPromise) return dbPromise;
@@ -25,15 +47,21 @@ function openDB(): Promise<IDBDatabase | null> {
         db.createObjectStore(STORE_NAME);
       }
     };
-    request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
-    request.onerror = () => resolve(null);
+    request.onsuccess = (e) => {
+      const db = (e.target as IDBOpenDBRequest).result;
+      db.onclose = () => { dbPromise = null; };
+      resolve(db);
+    };
+    request.onerror = () => {
+      dbPromise = null;
+      resolve(null);
+    };
   });
   return dbPromise;
 }
 
 /**
  * Resolves any legacy local asset path or filename to a full R2 URL.
- * e.g. "/assets/blg/poems/p1_l1.webp" -> "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev/zxt/blg/p1_l1.webp"
  */
 export function getR2ImageUrl(pathOrUrl: string): string {
   if (!pathOrUrl) return '';
@@ -45,16 +73,20 @@ export function getR2ImageUrl(pathOrUrl: string): string {
 }
 
 /**
- * Fetches an image, caches it in IndexedDB (or base64 localStorage fallback), and returns an ObjectURL or data URL.
+ * Fetches an image, caches it as a Blob inside IndexedDB, and returns an ObjectURL.
  */
 export async function getCachedImageUrl(pathOrUrl: string): Promise<string> {
   const targetUrl = getR2ImageUrl(pathOrUrl);
   if (!targetUrl) return '';
 
+  if (targetUrl.startsWith('data:')) {
+    return targetUrl;
+  }
+
   try {
     const db = await openDB();
 
-    // 1. Try IndexedDB
+    // 1. Check IndexedDB
     if (db) {
       const cachedBlob = await new Promise<Blob | null>((resolve) => {
         try {
@@ -71,47 +103,46 @@ export async function getCachedImageUrl(pathOrUrl: string): Promise<string> {
       if (cachedBlob) {
         return URL.createObjectURL(cachedBlob);
       }
-    } else {
-      // Fallback: Check localStorage
-      const cachedDataUrl = localStorage.getItem(`img_cache_${targetUrl}`);
-      if (cachedDataUrl) {
-        return cachedDataUrl;
-      }
     }
 
-    // 2. Fetch from network
+    // 2. Fetch from network if not cached in IndexedDB
     const response = await fetch(targetUrl);
     if (!response.ok) return targetUrl;
     const blob = await response.blob();
 
-    // 3. Save to storage
+    // 3. Store Blob in IndexedDB
     if (db) {
       try {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         store.put(blob, targetUrl);
       } catch (err) {
-        console.warn('Failed to store blob in IndexedDB:', err);
+        console.warn('Failed to store image Blob in IndexedDB:', err);
       }
-      return URL.createObjectURL(blob);
-    } else {
-      // LocalStorage fallback for small images
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const dataUrl = reader.result as string;
-          try {
-            localStorage.setItem(`img_cache_${targetUrl}`, dataUrl);
-          } catch {
-            /* quota exceeded */
-          }
-          resolve(dataUrl);
-        };
-        reader.readAsDataURL(blob);
-      });
     }
+
+    return URL.createObjectURL(blob);
   } catch (err) {
-    console.warn('Failed to fetch/cache image:', err);
+    console.warn('Failed to fetch/cache image in IndexedDB:', err);
     return targetUrl;
   }
+}
+
+/**
+ * Pre-cache all images associated with a poem into IndexedDB.
+ */
+export async function preCachePoemImages(poem: { lines?: { image?: string }[]; questions?: any[] }) {
+  const urlsToCache: string[] = [];
+  if (poem.lines) {
+    poem.lines.forEach(l => {
+      if (l.image) urlsToCache.push(l.image);
+    });
+  }
+  if (poem.questions) {
+    poem.questions.forEach(q => {
+      if (q.type === 'ImageToLine' && q.image) urlsToCache.push(q.image);
+      if (q.type === 'ImageOrdering' && Array.isArray(q.images)) urlsToCache.push(...q.images);
+    });
+  }
+  await Promise.all(urlsToCache.map(url => getCachedImageUrl(url)));
 }

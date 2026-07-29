@@ -21,10 +21,15 @@ const getClassTeachers = (cls: any): string[] => {
 };
 
 export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) => {
+  if (!user || user.role !== 'admin') {
+    return null;
+  }
+
   const [adminTab, setAdminTab] = useState<'students' | 'teachers' | 'classes'>('students');
   const [classes, setClasses] = useState<any[]>([]);
   const [teachersList, setTeachersList] = useState<any[]>([]);
   const [allStudentsList, setAllStudentsList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [adminMsg, setAdminMsg] = useState<string>('');
 
   // Class form state
@@ -61,9 +66,42 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
   }, []);
 
   const loadData = async () => {
-    setClasses(apiService.getClasses());
-    setTeachersList(await apiService.getTeachers());
-    setAllStudentsList(await apiService.getStudents());
+    // 1. Read cached version from localStorage if available
+    const cachedClasses = localStorage.getItem('zxt_classes');
+    const cachedTeachers = localStorage.getItem('zxt_teachers');
+    const cachedStudents = localStorage.getItem('zxt_students');
+
+    const hasCache = Boolean(cachedTeachers || cachedStudents || cachedClasses);
+
+    if (hasCache) {
+      if (cachedClasses) {
+        try { setClasses(JSON.parse(cachedClasses)); } catch (_) {}
+      }
+      if (cachedTeachers) {
+        try { setTeachersList(JSON.parse(cachedTeachers)); } catch (_) {}
+      }
+      if (cachedStudents) {
+        try { setAllStudentsList(JSON.parse(cachedStudents)); } catch (_) {}
+      }
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
+    // 2. Background revalidation with DB
+    try {
+      const dbClasses = await apiService.getClasses();
+      const dbTeachers = await apiService.getTeachers();
+      const dbStudents = await apiService.getStudents();
+
+      setClasses(dbClasses);
+      setTeachersList(dbTeachers);
+      setAllStudentsList(dbStudents);
+    } catch (err) {
+      console.error('Failed to revalidate admin data from DB:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Auto-generate placeholder for teacher username
@@ -456,32 +494,43 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div>
-              <h3 className="text-base font-bold font-serif text-ink">全校已建班级名册 ({classes.length}个班级)</h3>
+              <h3 className="text-base font-bold font-serif text-ink">全校已建班级名册 ({isLoading ? '...' : `${classes.length}个班级`})</h3>
               <p className="text-slate-500 text-[11px] mt-0.5">点击任意班级卡片即可编辑班级名称、指定责任教师并调配学生名册</p>
             </div>
-            <div className="grid md:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto">
-              {classes.map((cls) => (
-                <div
-                  key={cls.id}
-                  onClick={() => handleEditClass(cls)}
-                  className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-purple-50/50 hover:border-purple-300 flex justify-between items-center text-xs transition cursor-pointer group"
-                >
-                  <div>
-                    <div className="font-bold text-ink text-sm flex items-center space-x-2 group-hover:text-purple-700 transition">
-                      <span>{cls.name}</span>
-                      <span className="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-mono">ID: {cls.id}</span>
-                      <span className="text-[10px] opacity-0 group-hover:opacity-100 text-purple-600 font-normal">✏️ 管理</span>
+            {isLoading ? (
+              <div className="py-16 flex flex-col items-center justify-center space-y-3">
+                <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                <span className="text-xs font-medium text-slate-500">正在加载班级数据...</span>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto">
+                {classes.length === 0 ? (
+                  <div className="col-span-2 py-12 text-center text-slate-400 text-xs">暂无班级数据</div>
+                ) : (
+                  classes.map((cls) => (
+                    <div
+                      key={cls.id}
+                      onClick={() => handleEditClass(cls)}
+                      className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-purple-50/50 hover:border-purple-300 flex justify-between items-center text-xs transition cursor-pointer group"
+                    >
+                      <div>
+                        <div className="font-bold text-ink text-sm flex items-center space-x-2 group-hover:text-purple-700 transition">
+                          <span>{cls.name}</span>
+                          <span className="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-mono">ID: {cls.id}</span>
+                          <span className="text-[10px] opacity-0 group-hover:opacity-100 text-purple-600 font-normal">✏️ 管理</span>
+                        </div>
+                        <div className="text-slate-500 mt-1">
+                          任课教师: {getClassTeachers(cls).length > 0 ? getClassTeachers(cls).join(', ') : '未指定教师'}
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 bg-purple-100 text-purple-800 font-bold rounded-lg text-xs font-mono">
+                        {allStudentsList.filter(s => s.className === cls.name).length} 人
+                      </span>
                     </div>
-                    <div className="text-slate-500 mt-1">
-                      任课教师: {getClassTeachers(cls).length > 0 ? getClassTeachers(cls).join(', ') : '未指定教师'}
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 bg-purple-100 text-purple-800 font-bold rounded-lg text-xs font-mono">
-                    {allStudentsList.filter(s => s.className === cls.name).length} 人
-                  </span>
-                </div>
-              ))}
-            </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -504,44 +553,55 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div>
-              <h3 className="text-base font-bold font-serif text-ink">全校教师列表 ({teachersList.length}人)</h3>
+              <h3 className="text-base font-bold font-serif text-ink">全校教师列表 ({isLoading ? '...' : `${teachersList.length}人`})</h3>
               <p className="text-slate-500 text-[11px] mt-0.5">点击任意教师卡片即可直接编辑账号工号、管辖班级或密码</p>
             </div>
-            <div className="grid md:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto">
-              {teachersList.map((tch) => (
-                <div
-                  key={tch.id}
-                  onClick={() => handleEditTeacher(tch)}
-                  className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-purple-50/50 hover:border-purple-300 flex justify-between items-center text-xs transition cursor-pointer group"
-                >
-                  <div>
-                    <div className="font-bold text-ink text-sm group-hover:text-purple-700 transition flex items-center space-x-1.5">
-                      <span>{tch.name}</span>
-                      <span className="text-[10px] opacity-0 group-hover:opacity-100 text-purple-600 font-normal">✏️ 编辑</span>
+            {isLoading ? (
+              <div className="py-16 flex flex-col items-center justify-center space-y-3">
+                <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                <span className="text-xs font-medium text-slate-500">正在加载教师数据...</span>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto">
+                {teachersList.length === 0 ? (
+                  <div className="col-span-2 py-12 text-center text-slate-400 text-xs">暂无教师数据</div>
+                ) : (
+                  teachersList.map((tch) => (
+                    <div
+                      key={tch.id}
+                      onClick={() => handleEditTeacher(tch)}
+                      className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-purple-50/50 hover:border-purple-300 flex justify-between items-center text-xs transition cursor-pointer group"
+                    >
+                      <div>
+                        <div className="font-bold text-ink text-sm group-hover:text-purple-700 transition flex items-center space-x-1.5">
+                          <span>{tch.name}</span>
+                          <span className="text-[10px] opacity-0 group-hover:opacity-100 text-purple-600 font-normal">✏️ 编辑</span>
+                        </div>
+                        <div className="text-slate-500 font-mono mt-1">账号: {tch.username}</div>
+                      </div>
+                      <div className="flex items-center space-x-1.5 flex-wrap justify-end gap-y-1">
+                        {tch.isQuizEditor && (
+                          <span className="px-2 py-0.5 bg-teal-100 text-teal-800 font-bold rounded text-[10px] flex items-center gap-1 border border-teal-200">
+                            ✍️ 题库编辑
+                          </span>
+                        )}
+                        {getTeacherClasses(tch).length === 0 ? (
+                          <span className="px-2.5 py-1 bg-slate-200 text-slate-600 font-bold rounded-lg text-xs">
+                            未分配
+                          </span>
+                        ) : (
+                          getTeacherClasses(tch).map(clsName => (
+                            <span key={clsName} className="px-2.5 py-1 bg-purple-100 text-purple-800 font-bold rounded-lg text-xs">
+                              {clsName}
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </div>
-                    <div className="text-slate-500 font-mono mt-1">账号: {tch.username}</div>
-                  </div>
-                  <div className="flex items-center space-x-1.5 flex-wrap justify-end gap-y-1">
-                    {tch.isQuizEditor && (
-                      <span className="px-2 py-0.5 bg-teal-100 text-teal-800 font-bold rounded text-[10px] flex items-center gap-1 border border-teal-200">
-                        ✍️ 题库编辑
-                      </span>
-                    )}
-                    {getTeacherClasses(tch).length === 0 ? (
-                      <span className="px-2.5 py-1 bg-slate-200 text-slate-600 font-bold rounded-lg text-xs">
-                        未分配
-                      </span>
-                    ) : (
-                      getTeacherClasses(tch).map(clsName => (
-                        <span key={clsName} className="px-2.5 py-1 bg-purple-100 text-purple-800 font-bold rounded-lg text-xs">
-                          {clsName}
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -564,31 +624,42 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div>
-              <h3 className="text-base font-bold font-serif text-ink">全校学生名册 ({allStudentsList.length}人)</h3>
+              <h3 className="text-base font-bold font-serif text-ink">全校学生名册 ({isLoading ? '...' : `${allStudentsList.length}人`})</h3>
               <p className="text-slate-500 text-[11px] mt-0.5">点击任意学生卡片即可直接编辑学号、所属班级或密码</p>
             </div>
-            <div className="grid md:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto">
-              {allStudentsList.map((stu) => (
-                <div
-                  key={stu.id}
-                  onClick={() => handleEditStudent(stu)}
-                  className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-purple-50/50 hover:border-purple-300 flex justify-between items-center text-xs transition cursor-pointer group"
-                >
-                  <div>
-                    <div className="font-bold text-ink text-sm group-hover:text-purple-700 transition flex items-center space-x-1.5">
-                      <span>{stu.name}</span>
-                      <span className="text-[10px] opacity-0 group-hover:opacity-100 text-purple-600 font-normal">✏️ 编辑</span>
+            {isLoading ? (
+              <div className="py-16 flex flex-col items-center justify-center space-y-3">
+                <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                <span className="text-xs font-medium text-slate-500">正在加载学生数据...</span>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-3 max-h-[500px] overflow-y-auto">
+                {allStudentsList.length === 0 ? (
+                  <div className="col-span-2 py-12 text-center text-slate-400 text-xs">暂无学生数据</div>
+                ) : (
+                  allStudentsList.map((stu) => (
+                    <div
+                      key={stu.id}
+                      onClick={() => handleEditStudent(stu)}
+                      className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-purple-50/50 hover:border-purple-300 flex justify-between items-center text-xs transition cursor-pointer group"
+                    >
+                      <div>
+                        <div className="font-bold text-ink text-sm group-hover:text-purple-700 transition flex items-center space-x-1.5">
+                          <span>{stu.name}</span>
+                          <span className="text-[10px] opacity-0 group-hover:opacity-100 text-purple-600 font-normal">✏️ 编辑</span>
+                        </div>
+                        <div className="text-slate-400 font-mono text-[11px] mt-0.5">账号: {stu.username}</div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg font-bold">
+                          {stu.className}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-slate-400 font-mono text-[11px] mt-0.5">账号: {stu.username}</div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg font-bold">
-                      {stu.className}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

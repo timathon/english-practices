@@ -47,6 +47,19 @@ export const App: React.FC = () => {
     window.dispatchEvent(new Event('pushstate'));
   };
 
+  // Redirect to main page if attempting to access unauthorized route
+  useEffect(() => {
+    if (currentPath === '/admin' && (!user || user.role !== 'admin')) {
+      navigate('/');
+    } else if (currentPath === '/editor' && (!user || !canEditQuizLibrary(user))) {
+      navigate('/');
+    } else if (currentPath === '/teacher' && (!user || (user.role !== 'teacher' && user.role !== 'admin'))) {
+      navigate('/');
+    } else if ((currentPath === '/student' || currentPath.startsWith('/student') || currentPath === '/blg') && !user) {
+      navigate('/');
+    }
+  }, [currentPath, user]);
+
   const getTargetDashboardRoute = (role: string) => {
     if (role === 'admin') return '/admin';
     if (role === 'editor') return '/editor';
@@ -90,13 +103,31 @@ export const App: React.FC = () => {
           </div>
         }>
           {currentPath === '/student' || currentPath.startsWith('/student') || currentPath === '/blg' ? (
-            <BaiLianGe activeView={activeView} user={user} />
+            user ? (
+              <BaiLianGe activeView={activeView} user={user} />
+            ) : (
+              <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
+            )
           ) : currentPath === '/teacher' ? (
-            <BaiLianGe activeView="teacher" user={user} />
+            user && (user.role !== 'teacher' && user.role !== 'admin') ? (
+              <BaiLianGe activeView="teacher" user={user} />
+            ) : user ? (
+              <BaiLianGe activeView="teacher" user={user} />
+            ) : (
+              <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
+            )
           ) : currentPath === '/admin' ? (
-            <PlatformAdminPanel user={user} />
-          ) : currentPath === '/editor' && user && canEditQuizLibrary(user) ? (
-            <PlatformQuestionEditor user={user} />
+            user && user.role === 'admin' ? (
+              <PlatformAdminPanel user={user} />
+            ) : (
+              <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
+            )
+          ) : currentPath === '/editor' ? (
+            user && canEditQuizLibrary(user) ? (
+              <PlatformQuestionEditor user={user} />
+            ) : (
+              <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
+            )
           ) : (
             <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
           )}

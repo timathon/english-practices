@@ -76,6 +76,12 @@ async function initDB(db: D1Database): Promise<void> {
   await db.prepare(
     'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL, name TEXT NOT NULL, class_name TEXT, created_by TEXT, is_quiz_editor INTEGER DEFAULT 0, created_at TEXT NOT NULL)'
   ).run();
+  await db.prepare(
+    'CREATE TABLE IF NOT EXISTS classes (id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL, teacher_name TEXT, teacher_id TEXT, created_at TEXT NOT NULL)'
+  ).run();
+  await db.prepare(
+    'CREATE TABLE IF NOT EXISTS class_progress (class_name TEXT PRIMARY KEY, learnt_ids TEXT NOT NULL, updated_at TEXT NOT NULL)'
+  ).run();
 
   const row = await db.prepare('SELECT COUNT(*) AS cnt FROM poems').first<{ cnt: number }>();
   if (!row || row.cnt === 0) {
@@ -84,20 +90,36 @@ async function initDB(db: D1Database): Promise<void> {
     await db.batch(seed.map(p => stmt.bind(p.id, JSON.stringify(p))));
   }
 
+  // Seed default classes if classes table is empty
+  const classRow = await db.prepare('SELECT COUNT(*) AS cnt FROM classes').first<{ cnt: number }>();
+  if (!classRow || classRow.cnt === 0) {
+    const defaultClasses = [
+      { id: 'c1', name: '三年级A班', teacherName: '张老师', teacherId: 'usr_tch_001' },
+      { id: 'c2', name: '三年级B班', teacherName: '李老师', teacherId: 'usr_tch_002' },
+      { id: 'c3', name: '四年级A班', teacherName: '王老师', teacherId: 'usr_tch_003' }
+    ];
+    const now = new Date().toISOString();
+    for (const c of defaultClasses) {
+      await db.prepare(
+        'INSERT OR IGNORE INTO classes (id, name, teacher_name, teacher_id, created_at) VALUES (?, ?, ?, ?, ?)'
+      ).bind(c.id, c.name, c.teacherName, c.teacherId, now).run();
+    }
+  }
+
   // Seed default users if users table is empty
   const userRow = await db.prepare('SELECT COUNT(*) AS cnt FROM users').first<{ cnt: number }>();
   if (!userRow || userRow.cnt === 0) {
     const defaultUsers = [
       { id: 'usr_admin_001', username: 'mmd', pass: 'zhiyuzhishan', role: 'admin', name: 'System Admin (mmd)', className: '平台管理', createdBy: 'system', isQuizEditor: 1 },
       { id: 'usr_edt_001', username: 'editor_li', pass: 'editor123', role: 'editor', name: '李编辑 (Quiz Editor Li)', className: '题目编辑组', createdBy: 'mmd', isQuizEditor: 1 },
-      { id: 'usr_tch_001', username: 'zhang_laoshi', pass: 'teacher123', role: 'teacher', name: '张老师 (Ms. Zhang)', className: '三年级A班', createdBy: 'mmd', isQuizEditor: 1 },
-      { id: 'usr_tch_002', username: 'li_laoshi', pass: 'teacher123', role: 'teacher', name: '李老师 (Mr. Li)', className: '三年级B班', createdBy: 'mmd', isQuizEditor: 0 },
-      { id: 'usr_tch_003', username: 'wang_laoshi', pass: 'teacher123', role: 'teacher', name: '王老师 (Ms. Wang)', className: '四年级A班', createdBy: 'mmd', isQuizEditor: 0 },
-      { id: 'usr_stu_001', username: 'yaming', pass: 'student123', role: 'student', name: '亚明 (Yaming)', className: '三年级A班', createdBy: 'zhang_laoshi', isQuizEditor: 0 },
-      { id: 'usr_stu_002', username: 'xiaohong', pass: '1234', role: 'student', name: '小红 (Xiaohong)', className: '三年级A班', createdBy: 'zhang_laoshi', isQuizEditor: 0 },
-      { id: 'usr_stu_003', username: 'xiaoming', pass: '1234', role: 'student', name: '小明 (Xiaoming)', className: '三年级A班', createdBy: 'zhang_laoshi', isQuizEditor: 0 },
-      { id: 'usr_stu_004', username: 'gangzi', pass: '1234', role: 'student', name: '刚子 (Gangzi)', className: '三年级B班', createdBy: 'li_laoshi', isQuizEditor: 0 },
-      { id: 'usr_stu_005', username: 'lili', pass: '1234', role: 'student', name: '莉莉 (Lily)', className: '三年级B班', createdBy: 'li_laoshi', isQuizEditor: 0 },
+      { id: 'usr_tch_001', username: 'zhang_laoshi', pass: 'teacher123', role: 'teacher', name: '张老师', className: '三年级A班', createdBy: 'mmd', isQuizEditor: 1 },
+      { id: 'usr_tch_002', username: 'li_laoshi', pass: 'teacher123', role: 'teacher', name: '李老师', className: '三年级B班', createdBy: 'mmd', isQuizEditor: 0 },
+      { id: 'usr_tch_003', username: 'wang_laoshi', pass: 'teacher123', role: 'teacher', name: '王老师', className: '四年级A班', createdBy: 'mmd', isQuizEditor: 0 },
+      { id: 'usr_stu_001', username: 'yaming', pass: 'student123', role: 'student', name: '亚明', className: '三年级A班', createdBy: 'zhang_laoshi', isQuizEditor: 0 },
+      { id: 'usr_stu_002', username: 'xiaohong', pass: '1234', role: 'student', name: '小红', className: '三年级A班', createdBy: 'zhang_laoshi', isQuizEditor: 0 },
+      { id: 'usr_stu_003', username: 'xiaoming', pass: '1234', role: 'student', name: '小明', className: '三年级A班', createdBy: 'zhang_laoshi', isQuizEditor: 0 },
+      { id: 'usr_stu_004', username: 'gangzi', pass: '1234', role: 'student', name: '刚子', className: '三年级B班', createdBy: 'li_laoshi', isQuizEditor: 0 },
+      { id: 'usr_stu_005', username: 'lili', pass: '1234', role: 'student', name: '莉莉', className: '三年级B班', createdBy: 'li_laoshi', isQuizEditor: 0 },
     ];
 
     const now = new Date().toISOString();
@@ -378,6 +400,95 @@ app.get('/api/teacher/students', async (c) => {
   return c.json({ students });
 });
 
+// Admin/Teacher API: Batch Sync / Update Students (D1 DB Backed)
+app.put('/api/admin/students', async (c) => {
+  try {
+    const { students } = await c.req.json();
+    if (!students || !Array.isArray(students)) {
+      return c.json({ error: 'Array of students required' }, 400);
+    }
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    for (const stu of students) {
+      if (!stu.username && !stu.id) continue;
+      const existing = await db.prepare('SELECT id FROM users WHERE id = ? OR LOWER(username) = LOWER(?)')
+        .bind(stu.id || '', (stu.username || '').toLowerCase())
+        .first();
+
+      if (existing) {
+        if (stu.password) {
+          const pHash = await hashPassword(stu.password);
+          await db.prepare(
+            'UPDATE users SET name = ?, username = ?, class_name = ?, password_hash = ? WHERE id = ?'
+          ).bind(stu.name, stu.username, stu.className || '未分配', pHash, existing.id).run();
+        } else {
+          await db.prepare(
+            'UPDATE users SET name = ?, username = ?, class_name = ? WHERE id = ?'
+          ).bind(stu.name, stu.username, stu.className || '未分配', existing.id).run();
+        }
+      } else {
+        const pHash = await hashPassword(stu.password || '1234');
+        const newId = stu.id || `usr_stu_${Date.now()}`;
+        const now = new Date().toISOString();
+        await db.prepare(
+          'INSERT INTO users (id, username, password_hash, role, name, class_name, created_by, is_quiz_editor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(newId, stu.username, pHash, 'student', stu.name, stu.className || '未分配', 'admin', 0, now).run();
+      }
+    }
+
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to sync students' }, 500);
+  }
+});
+
+// Admin API: Batch Sync / Update Teachers (D1 DB Backed)
+app.put('/api/admin/teachers', async (c) => {
+  try {
+    const { teachers } = await c.req.json();
+    if (!teachers || !Array.isArray(teachers)) {
+      return c.json({ error: 'Array of teachers required' }, 400);
+    }
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    for (const tch of teachers) {
+      if (!tch.username && !tch.id) continue;
+      const existing = await db.prepare('SELECT id FROM users WHERE id = ? OR LOWER(username) = LOWER(?)')
+        .bind(tch.id || '', (tch.username || '').toLowerCase())
+        .first();
+
+      const isQuizEditor = tch.isQuizEditor ? 1 : 0;
+      const assignedClass = Array.isArray(tch.assignedClasses) ? tch.assignedClasses.join(', ') : (tch.assignedClass || '一般班级');
+
+      if (existing) {
+        if (tch.password) {
+          const pHash = await hashPassword(tch.password);
+          await db.prepare(
+            'UPDATE users SET name = ?, username = ?, class_name = ?, is_quiz_editor = ?, password_hash = ? WHERE id = ?'
+          ).bind(tch.name, tch.username, assignedClass, isQuizEditor, pHash, existing.id).run();
+        } else {
+          await db.prepare(
+            'UPDATE users SET name = ?, username = ?, class_name = ?, is_quiz_editor = ? WHERE id = ?'
+          ).bind(tch.name, tch.username, assignedClass, isQuizEditor, existing.id).run();
+        }
+      } else {
+        const pHash = await hashPassword(tch.password || 'teacher123');
+        const newId = tch.id || `usr_tch_${Date.now()}`;
+        const now = new Date().toISOString();
+        await db.prepare(
+          'INSERT INTO users (id, username, password_hash, role, name, class_name, created_by, is_quiz_editor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(newId, tch.username, pHash, 'teacher', tch.name, assignedClass, 'admin', isQuizEditor, now).run();
+      }
+    }
+
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to sync teachers' }, 500);
+  }
+});
+
 // 白莲阁 (Bái Lián Gé) Poems API — D1-backed
 app.get('/api/blg/poems', async (c) => {
   const db = c.env.zxt_poems_db;
@@ -456,7 +567,7 @@ app.post('/api/student/history', async (c) => {
     await initDB(db);
 
     const recordId = `qh_${Date.now()}`;
-    const completedAt = new Date().toLocaleString('zh-CN', { hour12: false });
+    const completedAt = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
     const detailsJson = details ? JSON.stringify(details) : null;
 
     await db.prepare(
@@ -550,6 +661,105 @@ app.post('/api/assignments', async (c) => {
   }
 });
 
+// Update Assignment Status (e.g. Mark Completed)
+app.put('/api/assignments/:id/status', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const { status = '已打卡' } = await c.req.json();
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    await db.prepare('UPDATE assignments SET status = ? WHERE id = ?').bind(status, id).run();
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to update assignment status' }, 500);
+  }
+});
+
+// Admin API: List Classes (D1 DB Backed)
+app.get('/api/admin/classes', async (c) => {
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+
+  const { results: rawClasses } = await db.prepare('SELECT * FROM classes ORDER BY name ASC').all<{
+    id: string;
+    name: string;
+    teacher_name: string;
+    teacher_id: string;
+  }>();
+
+  const { results: studentCounts } = await db.prepare(
+    "SELECT class_name, COUNT(*) as cnt FROM users WHERE role = 'student' GROUP BY class_name"
+  ).all<{ class_name: string; cnt: number }>();
+
+  const countMap = new Map(studentCounts.map(r => [r.class_name, r.cnt]));
+
+  const classes = rawClasses.map(c => ({
+    id: c.id,
+    name: c.name,
+    teacherName: c.teacher_name || '未指定教师',
+    teacherId: c.teacher_id || '',
+    studentCount: countMap.get(c.name) || 0
+  }));
+
+  return c.json({ classes });
+});
+
+// Admin API: Add Class (D1 DB Backed)
+app.post('/api/admin/classes', async (c) => {
+  try {
+    const { name, teacherName, teacherId } = await c.req.json();
+    if (!name) return c.json({ error: 'Class name is required' }, 400);
+
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    const newId = `c_${Date.now()}`;
+    const now = new Date().toISOString();
+
+    await db.prepare(
+      'INSERT INTO classes (id, name, teacher_name, teacher_id, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind(newId, name, teacherName || '未指定教师', teacherId || '', now).run();
+
+    return c.json({
+      success: true,
+      classItem: {
+        id: newId,
+        name,
+        teacherName: teacherName || '未指定教师',
+        teacherId: teacherId || '',
+        studentCount: 0
+      }
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to add class' }, 500);
+  }
+});
+
+// Admin API: Batch Sync Classes (D1 DB Backed)
+app.put('/api/admin/classes', async (c) => {
+  try {
+    const { classes } = await c.req.json();
+    if (!classes || !Array.isArray(classes)) return c.json({ error: 'Classes array required' }, 400);
+
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    const now = new Date().toISOString();
+    for (const item of classes) {
+      if (!item.name) continue;
+      const cid = item.id || `c_${Date.now()}`;
+      await db.prepare(
+        'INSERT INTO classes (id, name, teacher_name, teacher_id, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET teacher_name = excluded.teacher_name, teacher_id = excluded.teacher_id'
+      ).bind(cid, item.name, item.teacherName || '未指定教师', item.teacherId || '', now).run();
+    }
+
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to sync classes' }, 500);
+  }
+});
+
 // Clear all remote assignment records from D1 DB
 app.delete('/api/assignments/clear', async (c) => {
   try {
@@ -559,6 +769,47 @@ app.delete('/api/assignments/clear', async (c) => {
     return c.json({ success: true, message: 'All assignment records cleared from DB' });
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to clear assignments' }, 500);
+  }
+});
+
+// Class Learning Progress APIs (D1 DB Backed)
+app.get('/api/classes/:className/progress', async (c) => {
+  const className = c.req.param('className');
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+
+  const row = await db.prepare('SELECT learnt_ids FROM class_progress WHERE class_name = ?').bind(className).first<{ learnt_ids: string }>();
+  if (row && row.learnt_ids) {
+    try {
+      const learntPoemIds = JSON.parse(row.learnt_ids);
+      return c.json({ learntPoemIds });
+    } catch (_) {}
+  }
+
+  const defaultLearnt = [1, 2, 3, 4, 9, 17, 69];
+  return c.json({ learntPoemIds: defaultLearnt });
+});
+
+app.put('/api/classes/:className/progress', async (c) => {
+  try {
+    const className = c.req.param('className');
+    const { learntPoemIds } = await c.req.json();
+    if (!learntPoemIds || !Array.isArray(learntPoemIds)) {
+      return c.json({ error: 'learntPoemIds array required' }, 400);
+    }
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    const now = new Date().toISOString();
+    const idsJson = JSON.stringify(learntPoemIds);
+
+    await db.prepare(
+      'INSERT INTO class_progress (class_name, learnt_ids, updated_at) VALUES (?, ?, ?) ON CONFLICT(class_name) DO UPDATE SET learnt_ids = excluded.learnt_ids, updated_at = excluded.updated_at'
+    ).bind(className, idsJson, now).run();
+
+    return c.json({ success: true, learntPoemIds });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to update class progress' }, 500);
   }
 });
 
