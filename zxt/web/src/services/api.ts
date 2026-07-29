@@ -365,8 +365,6 @@ export const apiService = {
 
   // Get Class Assignments (Student / Teacher)
   async getAssignments(className: string = '三年级A班') {
-    const defaultAssignments: any[] = [];
-
     if (USE_BACKEND) {
       try {
         const res = await fetch(`${API_BASE_URL}/api/assignments?className=${encodeURIComponent(className)}`);
@@ -374,7 +372,7 @@ export const apiService = {
           const data = await res.json();
           if (data && data.assignments && Array.isArray(data.assignments)) {
             const stored = localStorage.getItem('zxt_assignments');
-            const localAll = stored ? JSON.parse(stored) : [];
+            const localAll: any[] = (stored && !stored.includes('asgn_01') && !stored.includes('asgn_02')) ? JSON.parse(stored) : [];
             const otherClasses = localAll.filter((a: any) => a.className !== className);
             const combined = [...otherClasses, ...data.assignments];
             localStorage.setItem('zxt_assignments', JSON.stringify(combined));
@@ -388,15 +386,16 @@ export const apiService = {
 
     const stored = localStorage.getItem('zxt_assignments');
     if (!stored || stored.includes('asgn_01') || stored.includes('asgn_02')) {
-      localStorage.setItem('zxt_assignments', JSON.stringify(defaultAssignments));
+      localStorage.setItem('zxt_assignments', JSON.stringify([]));
+      return [];
     }
-    const all = stored && !stored.includes('asgn_01') && !stored.includes('asgn_02') ? JSON.parse(stored) : defaultAssignments;
+    const all = JSON.parse(stored);
     return all.filter((a: any) => a.className === className);
   },
 
   // Create Assignment (Teacher)
   async createAssignment(assignment: { className: string; poemId: number; poemTitle: string; dueDate: string; requirement: string; questionIds?: string[] }) {
-    const newAsgn = {
+    let createdAsgn = {
       id: `asgn_${Date.now()}`,
       classId: 'c1',
       className: assignment.className,
@@ -407,10 +406,6 @@ export const apiService = {
       requirement: assignment.requirement,
       questionIds: assignment.questionIds || []
     };
-    const stored = localStorage.getItem('zxt_assignments');
-    const all = stored ? JSON.parse(stored) : [];
-    all.push(newAsgn);
-    localStorage.setItem('zxt_assignments', JSON.stringify(all));
 
     if (USE_BACKEND) {
       try {
@@ -422,7 +417,7 @@ export const apiService = {
         if (res.ok) {
           const data = await res.json();
           if (data && data.assignment) {
-            return data.assignment;
+            createdAsgn = data.assignment;
           }
         }
       } catch (err) {
@@ -430,7 +425,18 @@ export const apiService = {
       }
     }
 
-    return newAsgn;
+    const stored = localStorage.getItem('zxt_assignments');
+    const all: any[] = (stored && !stored.includes('asgn_01') && !stored.includes('asgn_02')) ? JSON.parse(stored) : [];
+    // Replace if exists, otherwise push
+    const idx = all.findIndex((a: any) => a.id === createdAsgn.id);
+    if (idx !== -1) {
+      all[idx] = createdAsgn;
+    } else {
+      all.push(createdAsgn);
+    }
+    localStorage.setItem('zxt_assignments', JSON.stringify(all));
+
+    return createdAsgn;
   },
 
   // Mark Assignment Completed (Student)

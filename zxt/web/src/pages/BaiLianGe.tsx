@@ -157,17 +157,18 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   };
 
   const loadStudentData = async () => {
-    const studentClassName = user?.className || '三年级A班';
-    const asgns = await apiService.getAssignments(studentClassName);
+    const targetClass = (user && user.role === 'teacher') ? (selectedClass || '三年级A班') : (user?.className || '三年级A班');
+    const asgns = await apiService.getAssignments(targetClass);
     setAssignments(asgns);
     setQuizHistory(apiService.getQuizHistory(user?.id || 'usr_stu_001'));
-    setLearntPoemIds(apiService.getLearntPoemIds(studentClassName));
+    setLearntPoemIds(apiService.getLearntPoemIds(targetClass));
   };
 
   const loadTeacherData = async () => {
-    setStudents(apiService.getStudents(selectedClass));
-    setLearntPoemIds(apiService.getLearntPoemIds(selectedClass));
-    const teacherAsgns = await apiService.getAssignments(selectedClass);
+    const targetClass = selectedClass || user?.className || '三年级A班';
+    setStudents(apiService.getStudents(targetClass));
+    setLearntPoemIds(apiService.getLearntPoemIds(targetClass));
+    const teacherAsgns = await apiService.getAssignments(targetClass);
     setAssignments(teacherAsgns);
   };
 
