@@ -1,7 +1,7 @@
 // API Client connecting to Cloudflare Worker zxtapi.vibequizzing.com
 
 export const API_BASE_URL = 'https://zxtapi.vibequizzing.com';
-export const USE_BACKEND = false; // Set to true when remote worker API is running
+export const USE_BACKEND = true; // Set to true when remote worker API is running
 
 export interface UserSession {
   id: string;
@@ -364,22 +364,26 @@ export const apiService = {
   },
 
   // Get Class Assignments (Student / Teacher)
-  getAssignments(className: string = '三年级A班') {
+  async getAssignments(className: string = '三年级A班') {
     const defaultAssignments: any[] = [];
 
     if (USE_BACKEND) {
-      fetch(`${API_BASE_URL}/api/assignments?className=${encodeURIComponent(className)}`)
-        .then(res => res.json())
-        .then(data => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/assignments?className=${encodeURIComponent(className)}`);
+        if (res.ok) {
+          const data = await res.json();
           if (data && data.assignments && Array.isArray(data.assignments)) {
             const stored = localStorage.getItem('zxt_assignments');
             const localAll = stored ? JSON.parse(stored) : [];
             const otherClasses = localAll.filter((a: any) => a.className !== className);
             const combined = [...otherClasses, ...data.assignments];
             localStorage.setItem('zxt_assignments', JSON.stringify(combined));
+            return data.assignments;
           }
-        })
-        .catch(() => {});
+        }
+      } catch (err) {
+        console.warn('Backend assignments fetch failed, falling back to cache:', err);
+      }
     }
 
     const stored = localStorage.getItem('zxt_assignments');
@@ -391,7 +395,7 @@ export const apiService = {
   },
 
   // Create Assignment (Teacher)
-  createAssignment(assignment: { className: string; poemId: number; poemTitle: string; dueDate: string; requirement: string; questionIds?: string[] }) {
+  async createAssignment(assignment: { className: string; poemId: number; poemTitle: string; dueDate: string; requirement: string; questionIds?: string[] }) {
     const newAsgn = {
       id: `asgn_${Date.now()}`,
       classId: 'c1',
@@ -409,11 +413,21 @@ export const apiService = {
     localStorage.setItem('zxt_assignments', JSON.stringify(all));
 
     if (USE_BACKEND) {
-      fetch(`${API_BASE_URL}/api/assignments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(assignment),
-      }).catch(err => console.error('Failed to create assignment on remote DB:', err));
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/assignments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(assignment),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.assignment) {
+            return data.assignment;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to create assignment on remote DB:', err);
+      }
     }
 
     return newAsgn;

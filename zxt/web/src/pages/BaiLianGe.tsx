@@ -156,16 +156,19 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     }
   };
 
-  const loadStudentData = () => {
+  const loadStudentData = async () => {
     const studentClassName = user?.className || '三年级A班';
-    setAssignments(apiService.getAssignments(studentClassName));
+    const asgns = await apiService.getAssignments(studentClassName);
+    setAssignments(asgns);
     setQuizHistory(apiService.getQuizHistory(user?.id || 'usr_stu_001'));
     setLearntPoemIds(apiService.getLearntPoemIds(studentClassName));
   };
 
-  const loadTeacherData = () => {
+  const loadTeacherData = async () => {
     setStudents(apiService.getStudents(selectedClass));
     setLearntPoemIds(apiService.getLearntPoemIds(selectedClass));
+    const teacherAsgns = await apiService.getAssignments(selectedClass);
+    setAssignments(teacherAsgns);
   };
 
   // --- QUIZ ENGINE FUNCTIONS ---
@@ -251,13 +254,13 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     requirement: string;
   } | null>(null);
 
-  const confirmPublishAssignment = () => {
+  const confirmPublishAssignment = async () => {
     if (!publishingPoem) return;
     if (selectedQuestionIds.length === 0) {
       alert('请至少勾选 1 道题目后再发布作业！');
       return;
     }
-    apiService.createAssignment({
+    await apiService.createAssignment({
       className: selectedClass,
       poemId: publishingPoem.id,
       poemTitle: publishingPoem.title,
@@ -277,7 +280,8 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     setTeacherMsg(`成功向【${selectedClass}】发布《${publishingPoem.title}》作业（已精选 ${selectedQuestionIds.length} 道题目）！`);
     setPublishingPoem(null);
     setPublishSuccessData(successInfo);
-    loadStudentData();
+    await loadTeacherData();
+    await loadStudentData();
   };
 
   const handleToggleLearnt = (poemId: number) => {
@@ -802,8 +806,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                     >
                       {poems.filter(p => learntPoemIds.includes(p.id)).length > 0 ? (
                         poems.filter(p => learntPoemIds.includes(p.id)).map(p => {
-                          const classAsgns = apiService.getAssignments(selectedClass);
-                          const pubCount = classAsgns.filter((a: any) => a.poemId === p.id || a.poemTitle === p.title).length;
+                          const pubCount = assignments.filter((a: any) => a.poemId === p.id || a.poemTitle === p.title).length;
                           return (
                             <option key={p.id} value={p.id}>
                               #{p.id} 《{p.title}》 - [{p.dynasty}] {p.author}{pubCount > 0 ? ` (已发布 ${pubCount} 次)` : ''}
@@ -857,7 +860,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <h3 className="text-base font-bold font-serif text-ink">【{selectedClass}】已发布作业列表</h3>
                 <div className="space-y-3 max-h-[350px] overflow-y-auto">
-                  {apiService.getAssignments(selectedClass).map((asgn: any) => (
+                  {assignments.map((asgn: any) => (
                     <div
                       key={asgn.id}
                       onClick={() => handleStartStudentAssignment(asgn)}
