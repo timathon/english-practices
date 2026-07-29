@@ -1003,21 +1003,6 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (selectedQuestionIds.length === 0) {
-                      alert('请先勾选至少一道题目再进行预览！');
-                      return;
-                    }
-                    setPreviewStartIndex(0);
-                  }}
-                  disabled={selectedQuestionIds.length === 0}
-                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="全套试题学生答题体验预览"
-                >
-                  👁 预览选中题目
-                </button>
-                <button
-                  type="button"
                   onClick={() => setSelectedQuestionIds((publishingPoem.questions || []).map(q => q.id))}
                   className="px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold transition shadow-2xs"
                 >
@@ -1147,11 +1132,17 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               </button>
               <button
                 type="button"
-                onClick={confirmPublishAssignment}
+                onClick={() => {
+                  if (selectedQuestionIds.length === 0) {
+                    alert('请至少勾选 1 道题目后再预览！');
+                    return;
+                  }
+                  setPreviewStartIndex(0);
+                }}
                 disabled={selectedQuestionIds.length === 0}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition"
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
               >
-                🚀 确认发布 ({selectedQuestionIds.length} 道精选题目)
+                👁 预览 ({selectedQuestionIds.length} 道精选题目)
               </button>
             </div>
 
@@ -1245,6 +1236,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]
             );
           }}
+          onConfirmPublish={confirmPublishAssignment}
           onClose={() => setPreviewStartIndex(null)}
         />
       )}

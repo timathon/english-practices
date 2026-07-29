@@ -30,6 +30,7 @@ export const StudentQuizPreviewModal: React.FC<{
   initialIndex: number;
   selectedQuestionIds?: string[];
   onToggleSelectQuestion?: (qId: string) => void;
+  onConfirmPublish?: () => void;
   onClose: (result?: { score: number; completed: boolean; details?: any[] }) => void;
 }> = ({
   poemTitle,
@@ -37,6 +38,7 @@ export const StudentQuizPreviewModal: React.FC<{
   initialIndex,
   selectedQuestionIds,
   onToggleSelectQuestion,
+  onConfirmPublish,
   onClose,
 }) => {
   useLockBodyScroll(true);
@@ -403,6 +405,17 @@ export const StudentQuizPreviewModal: React.FC<{
               )}
             </div>
             <div className="flex items-center gap-3">
+              {onConfirmPublish && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onConfirmPublish();
+                  }}
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-md transition flex items-center gap-1"
+                >
+                  🚀 确认发布作业
+                </button>
+              )}
               {!isCompleted && (
                 <span className="text-xs text-indigo-300 font-mono flex items-center gap-2">
                   {remediationCount > 0 && (
@@ -416,6 +429,7 @@ export const StudentQuizPreviewModal: React.FC<{
               <button
                 onClick={() => onClose()}
                 className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-bold text-sm transition"
+                title={onConfirmPublish ? '返回修改挑题' : '关闭预览'}
               >
                 ✕
               </button>
@@ -525,12 +539,32 @@ export const StudentQuizPreviewModal: React.FC<{
                   </div>
                 </div>
 
-                <button
-                  onClick={() => onClose({ score, completed: true, details: Object.values(userAnswerDetails) })}
-                  className="w-full max-w-sm py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-base shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 mt-2"
-                >
-                  <span>✅ 完成并退出</span>
-                </button>
+                {onConfirmPublish ? (
+                  <div className="flex items-center gap-3 w-full max-w-sm pt-2">
+                    <button
+                      onClick={() => onClose()}
+                      className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-sm transition"
+                    >
+                      ← 返回修改挑题
+                    </button>
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onConfirmPublish();
+                      }}
+                      className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl text-sm shadow-md transition"
+                    >
+                      🚀 确认发布作业
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => onClose({ score, completed: true, details: Object.values(userAnswerDetails) })}
+                    className="w-full max-w-sm py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-base shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 mt-2"
+                  >
+                    <span>✅ 完成并退出</span>
+                  </button>
+                )}
               </div>
             );
           })()
