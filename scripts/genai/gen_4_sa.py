@@ -175,6 +175,39 @@ def main():
 
     parsed = extract_json(response.text)
 
+    # Post-processing noise word validation & deduplication
+    import re, random, string
+    all_fallback_noise = ["are", "is", "were", "was", "be", "been", "have", "has", "had", "do", "does", "did", "can", "could", "will", "would", "shall", "should", "may", "might", "must", "with", "from", "for", "about", "under", "over", "into", "onto", "behind", "near", "next"]
+    existing_ids = set()
+
+    for c in parsed.get("challenges", []):
+        for item in c.get("data", []):
+            sid = str(item.get("id", ""))
+            if len(sid) != 8 or not sid.isalnum() or sid in existing_ids:
+                new_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
+                while new_id in existing_ids:
+                    new_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
+                item["id"] = new_id
+                existing_ids.add(new_id)
+            else:
+                existing_ids.add(sid)
+
+            en_words = set(w.lower() for w in re.findall(r"\b\w+['’]?\w*\b", item.get("en", "")))
+            clean_noise = []
+            for nw in item.get("noise", []):
+                if nw.lower() not in en_words and nw.lower() not in [cn.lower() for cn in clean_noise]:
+                    clean_noise.append(nw)
+            
+            # Replenish if noise list shrank
+            needed = max(2, len(item.get("noise", [])))
+            for fb in all_fallback_noise:
+                if len(clean_noise) >= needed:
+                    break
+                if fb.lower() not in en_words and fb.lower() not in [cn.lower() for cn in clean_noise]:
+                    clean_noise.append(fb)
+            
+            item["noise"] = clean_noise
+
     stem = md_path.stem
     out_path = md_path.parent / f"{stem}-sentence-architect.json"
     parsed["generated_by"] = model_name

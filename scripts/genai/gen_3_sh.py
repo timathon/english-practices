@@ -76,7 +76,7 @@ For each chunk, provide exactly 2 distractors (3 options total: correct + 2 dist
 - Do NOT repeat a distractor from another chunk of the same word.
 
 === PER-WORD FIELDS ===
-- "id": unique 8-character alphanumeric string
+- "id": unique random 8-character alphanumeric string (e.g. "a1b2c3d4", NEVER sequential or word-based like "dog0003")
 - "word": English word
 - "meaning": Chinese meaning from vocab-guide (strip PoS prefix like "n. ", "v. ", "adj. ")
 - "type": "single-syllable" or "multi-syllable"
@@ -178,6 +178,20 @@ def main():
             time.sleep(2 ** attempt)
 
     parsed = extract_json(response.text)
+
+    # Post-processing ID validation & sanitization
+    import random, string
+    existing_ids = set()
+    for w in parsed.get("spelling_words", []):
+        wid = str(w.get("id", ""))
+        if len(wid) != 8 or not wid.isalnum() or wid in existing_ids:
+            new_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
+            while new_id in existing_ids:
+                new_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
+            w["id"] = new_id
+            existing_ids.add(new_id)
+        else:
+            existing_ids.add(wid)
 
     stem = vg_path.stem.replace("-vocab-guide", "")
     out_path = vg_path.parent / f"{stem}-spelling-hero.json"
