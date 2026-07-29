@@ -997,25 +997,34 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
 
             {/* Selection Toolbar */}
             <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
-              <span className="font-bold text-slate-700">
-                已勾选 <span className="text-blue-600 text-sm font-black">{selectedQuestionIds.length}</span> / {(publishingPoem.questions || []).length} 道题目
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedQuestionIds((publishingPoem.questions || []).map(q => q.id))}
-                  className="px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold transition shadow-2xs"
-                >
-                  ✓ 全选
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedQuestionIds([])}
-                  className="px-2.5 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition shadow-2xs"
-                >
-                  ✕ 全不选
-                </button>
-              </div>
+              {(() => {
+                const totalCount = (publishingPoem.questions || []).length;
+                const isAllSelected = totalCount > 0 && selectedQuestionIds.length === totalCount;
+                const isIndeterminate = selectedQuestionIds.length > 0 && selectedQuestionIds.length < totalCount;
+
+                return (
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      ref={el => {
+                        if (el) el.indeterminate = isIndeterminate;
+                      }}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedQuestionIds((publishingPoem.questions || []).map(q => q.id));
+                        } else {
+                          setSelectedQuestionIds([]);
+                        }
+                      }}
+                      className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span>
+                      已勾选 <span className="text-blue-600 text-sm font-black">{selectedQuestionIds.length}</span> / {totalCount} 道题目
+                    </span>
+                  </label>
+                );
+              })()}
             </div>
 
             {/* Questions List with Checkboxes */}
