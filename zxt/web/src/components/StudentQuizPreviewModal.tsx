@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { apiService, PoemQuestion } from '../services/api';
 import { playAnswerSFX } from '../utils/sound';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
+import { CachedImage } from './CachedImage';
 
 const QUESTION_TYPE_LABELS: Record<string, string> = {
   LineAssembly:   '连句组装',
@@ -451,7 +452,7 @@ export const StudentQuizPreviewModal: React.FC<{
               </h4>
               {(q as any).image && (
                 <div className="flex justify-center my-2">
-                  <img
+                  <CachedImage
                     src={(q as any).image}
                     alt="题目插图"
                     className="max-h-56 sm:max-h-64 w-auto object-contain rounded-2xl border-2 border-slate-200 shadow-md bg-white p-1"
@@ -611,7 +612,7 @@ export const StudentQuizPreviewModal: React.FC<{
                                 : 'border-white hover:border-indigo-300 shadow-xs cursor-pointer active:scale-95'
                           }`}
                         >
-                          <img src={img} alt={`bank-${bIdx}`} className="w-24 h-24 object-cover" />
+                          <CachedImage src={img} alt={`bank-${bIdx}`} className="w-24 h-24 object-cover" />
                           {isSelected && (
                             <div className="absolute inset-0 bg-indigo-600/20 flex items-center justify-center">
                               <span className="bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -687,7 +688,11 @@ export const StudentQuizPreviewModal: React.FC<{
                           </div>
 
                           {slotImg ? (
-                            <img src={slotImg} alt={`slot-${sIdx}`} className="w-full h-28 object-cover rounded-xl border border-slate-100" />
+                            <CachedImage 
+                                src={slotImg} 
+                                alt={`slot-${sIdx}`} 
+                                className="w-full h-28 object-cover rounded-xl border border-slate-100" 
+                            />
                           ) : (
                             <div className="w-full h-28 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 gap-1">
                               <span className="text-xl">📥</span>

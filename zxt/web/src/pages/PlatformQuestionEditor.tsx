@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService, canEditQuizLibrary, Poem, PoemQuestion, OrderingItem } from '../services/api';
+import { CachedImage } from '../components/CachedImage';
 import { playAnswerSFX } from '../utils/sound';
 import { StudentQuizPreviewModal } from '../components/StudentQuizPreviewModal';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
@@ -214,7 +215,7 @@ const ImageOrderingEditor: React.FC<QEditorProps> = ({ q, onChange, onPreview })
             <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
               <span className="text-[10px] text-slate-400 font-mono w-4 flex-shrink-0 text-center">{i + 1}</span>
               {img ? (
-                <img src={img} alt={`img-${i}`} onClick={() => onPreview(img)}
+                <CachedImage src={img} alt={`img-${i}`} onClick={() => onPreview(img)}
                   className="w-12 h-12 object-cover rounded border border-slate-200 flex-shrink-0 cursor-zoom-in hover:opacity-80 transition" />
               ) : (
                 <div className="w-12 h-12 rounded border border-dashed border-slate-300 bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-300 text-xs">🖼</div>
@@ -255,7 +256,7 @@ const ImageToLineEditor: React.FC<QEditorProps> = ({ q, onChange, onPreview }) =
         <input value={q.image} onChange={e => set({ image: e.target.value })}
           className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-mono" />
         {q.image ? (
-          <img src={q.image} alt="preview"
+          <CachedImage src={q.image} alt="preview"
             onClick={() => onPreview(q.image)}
             className="mt-2 h-28 rounded-lg border border-slate-200 object-cover cursor-zoom-in hover:opacity-80 transition" />
         ) : (

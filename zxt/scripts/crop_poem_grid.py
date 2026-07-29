@@ -26,7 +26,7 @@ except ImportError:
     from PIL import Image
 
 
-def crop_2x2_master_grid(master_path: str, poem_id: int, output_dir: str = "zxt/web/public/assets/blg/poems"):
+def crop_2x2_master_grid(master_path: str, poem_id: int, output_dir: str = "zxt/data/blg/images/cropped"):
     if not os.path.exists(master_path):
         print(f"Error: Master grid image not found at '{master_path}'")
         sys.exit(1)

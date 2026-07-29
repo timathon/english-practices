@@ -3,6 +3,7 @@ import { apiService, Poem, PoemQuestion } from '../services/api';
 import { playAnswerSFX } from '../utils/sound';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 import { StudentQuizPreviewModal } from '../components/StudentQuizPreviewModal';
+import { CachedImage } from '../components/CachedImage';
 
 interface BaiLianGeProps {
   activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
@@ -1258,7 +1259,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
 
                       {item.image && (
                         <div className="my-1.5 flex justify-center">
-                          <img src={item.image} alt="题目图片" className="max-h-36 rounded-xl border border-slate-200 object-cover shadow-xs" />
+                          <CachedImage src={item.image} alt="题目图片" className="max-h-36 rounded-xl border border-slate-200 object-cover shadow-xs" />
                         </div>
                       )}
 
@@ -1307,7 +1308,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                                 {(item.images || []).map((img: string, iIdx: number) => (
                                   <div key={iIdx} className="bg-slate-50 p-2 border border-slate-200 rounded-xl flex flex-col items-center gap-1 text-center">
                                     <span className="text-[10px] font-bold text-indigo-600">第 {iIdx + 1} 幅</span>
-                                    <img src={img} alt={`img-${iIdx}`} className="w-full h-20 object-cover rounded-lg border border-slate-100" />
+                                    <CachedImage src={img} alt={`img-${iIdx}`} className="w-full h-20 object-cover rounded-lg border border-slate-100" />
                                   </div>
                                 ))}
                               </div>
