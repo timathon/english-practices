@@ -465,7 +465,8 @@ export const StudentQuizPreviewModal: React.FC<{
                   }
                 }
 
-                const isNavigable = idx <= currentIndex || feedback !== null || submittedState !== undefined;
+                const isPreviewMode = !!(onToggleSelectQuestion || onConfirmPublish);
+                const isNavigable = isPreviewMode || idx <= currentIndex || feedback !== null || submittedState !== undefined;
 
                 return (
                   <div
@@ -942,20 +943,25 @@ export const StudentQuizPreviewModal: React.FC<{
                     <span>🎉 完成打卡 & 查看成绩 →</span>
                   )}
                 </button>
-              ) : (
-                <button
-                  onClick={() => setCurrentIndex(i => Math.min(currentRoundQuestions.length - 1, i + 1))}
-                  disabled={currentIndex === currentRoundQuestions.length - 1 || feedback === null}
-                  className={`px-4 py-2 text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1 ${
-                    feedback !== null && currentIndex < currentRoundQuestions.length - 1
-                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 shadow-md cursor-pointer animate-pulse'
-                      : 'bg-slate-100 text-slate-400 opacity-40 cursor-not-allowed'
-                  }`}
-                  title={feedback === null ? '请先提交当前题目的答案' : ''}
-                >
-                  下一题 →
-                </button>
-              )}
+              ) : (() => {
+                const isPreviewMode = !!(onToggleSelectQuestion || onConfirmPublish);
+                const isNextDisabled = currentIndex === currentRoundQuestions.length - 1 || (!isPreviewMode && feedback === null);
+
+                return (
+                  <button
+                    onClick={() => setCurrentIndex(i => Math.min(currentRoundQuestions.length - 1, i + 1))}
+                    disabled={isNextDisabled}
+                    className={`px-4 py-2 text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1 ${
+                      !isNextDisabled
+                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-200 shadow-md cursor-pointer animate-pulse'
+                        : 'bg-slate-100 text-slate-400 opacity-40 cursor-not-allowed'
+                    }`}
+                    title={isNextDisabled && !isPreviewMode ? '请先提交当前题目的答案' : ''}
+                  >
+                    下一题 →
+                  </button>
+                );
+              })()}
             </div>
 
             {(() => {
