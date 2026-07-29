@@ -1024,7 +1024,7 @@ export const StudentQuizPreviewModal: React.FC<{
                           : 'bg-slate-800 hover:bg-slate-700 text-white shadow-md cursor-pointer'
                     }`}
                   >
-                    {feedback !== null ? '✓ 已测试提交' : '✅ 测试提交'}
+                    {feedback !== null ? '✓ 已检查答案' : '✅ 检查答案'}
                   </button>
                 );
               })()}
