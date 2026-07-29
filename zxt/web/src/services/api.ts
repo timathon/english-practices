@@ -135,7 +135,12 @@ export const apiService = {
     }
 
     // Dynamic Teacher authentication check against stored roster
-    const teachers = this.getTeachers();
+    const teachersStored = localStorage.getItem('zxt_teachers');
+    const teachers: any[] = teachersStored ? JSON.parse(teachersStored) : [
+      { id: 'usr_tch_001', username: 'zhang_laoshi', password: 'teacher123', name: '张老师 (Ms. Zhang)', assignedClass: '三年级A班', isQuizEditor: true },
+      { id: 'usr_tch_002', username: 'li_laoshi', password: 'teacher123', name: '李老师 (Mr. Li)', assignedClass: '三年级B班', isQuizEditor: false },
+      { id: 'usr_tch_003', username: 'wang_laoshi', password: 'teacher123', name: '王老师 (Ms. Wang)', assignedClass: '四年级A班', isQuizEditor: false }
+    ];
     const foundTeacher = teachers.find((t: any) => t.username.toLowerCase() === username.toLowerCase());
     if (foundTeacher) {
       const expectedPassword = foundTeacher.password || 'teacher123';
@@ -158,7 +163,14 @@ export const apiService = {
     }
 
     // Dynamic Student authentication check against stored roster
-    const students = this.getStudents();
+    const studentsStored = localStorage.getItem('zxt_students');
+    const students: any[] = studentsStored ? JSON.parse(studentsStored) : [
+      { id: 'usr_stu_001', name: '亚明 (Yaming)', username: 'yaming', password: 'student123', className: '三年级A班' },
+      { id: 'usr_stu_002', name: '小红 (Xiaohong)', username: 'xiaohong', password: '1234', className: '三年级A班' },
+      { id: 'usr_stu_003', name: '小明 (Xiaoming)', username: 'xiaoming', password: '1234', className: '三年级A班' },
+      { id: 'usr_stu_004', name: '刚子 (Gangzi)', username: 'gangzi', password: '1234', className: '三年级B班' },
+      { id: 'usr_stu_005', name: '莉莉 (Lily)', username: 'lili', password: '1234', className: '三年级B班' }
+    ];
     const foundStudent = students.find((s: any) => s.username.toLowerCase() === username.toLowerCase());
     if (foundStudent) {
       const expectedPassword = foundStudent.password || (foundStudent.username === 'yaming' ? 'student123' : '1234');
@@ -301,7 +313,8 @@ export const apiService = {
     ];
     const stored = localStorage.getItem('zxt_classes');
     const classes = stored ? JSON.parse(stored) : defaultClasses;
-    const students = this.getStudents();
+    const studentsStored = localStorage.getItem('zxt_students');
+    const students: any[] = studentsStored ? JSON.parse(studentsStored) : [];
     return classes.map((c: any) => ({
       ...c,
       studentCount: students.filter((s: any) => s.className === c.name).length
@@ -328,8 +341,23 @@ export const apiService = {
     return updated;
   },
 
-  // Get Teachers List (Admin)
-  getTeachers() {
+  // Get Teachers List (Admin) — D1 DB Backed
+  async getTeachers() {
+    if (USE_BACKEND) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/teachers`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.teachers && Array.isArray(data.teachers)) {
+            localStorage.setItem('zxt_teachers', JSON.stringify(data.teachers));
+            return data.teachers;
+          }
+        }
+      } catch (err) {
+        console.warn('Backend teachers fetch failed, falling back to cache:', err);
+      }
+    }
+
     const defaultTeachers = [
       { id: 'usr_tch_001', username: 'zhang_laoshi', password: 'teacher123', name: '张老师 (Ms. Zhang)', assignedClass: '三年级A班', isQuizEditor: true },
       { id: 'usr_tch_002', username: 'li_laoshi', password: 'teacher123', name: '李老师 (Mr. Li)', assignedClass: '三年级B班', isQuizEditor: false },
@@ -344,8 +372,32 @@ export const apiService = {
     localStorage.setItem('zxt_teachers', JSON.stringify(teachers));
   },
 
-  // Get Students List (Admin / Teacher)
-  getStudents(className?: string) {
+  // Get Students List (Admin / Teacher) — D1 DB Backed
+  async getStudents(className?: string) {
+    if (USE_BACKEND) {
+      try {
+        const url = className
+          ? `${API_BASE_URL}/api/teacher/students?className=${encodeURIComponent(className)}`
+          : `${API_BASE_URL}/api/teacher/students`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.students && Array.isArray(data.students)) {
+            const stored = localStorage.getItem('zxt_students');
+            const localAll: any[] = stored ? JSON.parse(stored) : [];
+            const otherStudents = className
+              ? localAll.filter((s: any) => s.className !== className)
+              : [];
+            const combined = [...otherStudents, ...data.students];
+            localStorage.setItem('zxt_students', JSON.stringify(combined));
+            return data.students;
+          }
+        }
+      } catch (err) {
+        console.warn('Backend students fetch failed, falling back to cache:', err);
+      }
+    }
+
     const defaultStudents = [
       { id: 'usr_stu_001', name: '亚明 (Yaming)', username: 'yaming', password: 'student123', className: '三年级A班', completedQuizzes: 8, avgScore: 92 },
       { id: 'usr_stu_002', name: '小红 (Xiaohong)', username: 'xiaohong', password: '1234', className: '三年级A班', completedQuizzes: 6, avgScore: 85 },

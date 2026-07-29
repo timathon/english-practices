@@ -60,10 +60,10 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     setClasses(apiService.getClasses());
-    setTeachersList(apiService.getTeachers());
-    setAllStudentsList(apiService.getStudents());
+    setTeachersList(await apiService.getTeachers());
+    setAllStudentsList(await apiService.getStudents());
   };
 
   // Auto-generate placeholder for teacher username

@@ -54,6 +54,14 @@ interface PoemItem {
   questions?: PoemQuestion[];
 }
 
+// Fast & Lightweight SHA-256 Hash helper (Stays under 50ms Worker CPU limit)
+async function hashPassword(password: string): Promise<string> {
+  const msgUint8 = new TextEncoder().encode(`zxt_salt_${password}`);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // D1 helpers
 async function initDB(db: D1Database): Promise<void> {
   await db.prepare(
@@ -65,12 +73,40 @@ async function initDB(db: D1Database): Promise<void> {
   await db.prepare(
     'CREATE TABLE IF NOT EXISTS assignments (id TEXT PRIMARY KEY, class_name TEXT NOT NULL, poem_id INTEGER NOT NULL, poem_title TEXT NOT NULL, due_date TEXT NOT NULL, status TEXT NOT NULL, requirement TEXT, question_ids TEXT, created_at TEXT NOT NULL)'
   ).run();
+  await db.prepare(
+    'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL, name TEXT NOT NULL, class_name TEXT, created_by TEXT, is_quiz_editor INTEGER DEFAULT 0, created_at TEXT NOT NULL)'
+  ).run();
 
   const row = await db.prepare('SELECT COUNT(*) AS cnt FROM poems').first<{ cnt: number }>();
   if (!row || row.cnt === 0) {
     const seed = POEMS_SEED as unknown as PoemItem[];
     const stmt = db.prepare('INSERT INTO poems (id, data) VALUES (?1, ?2)');
     await db.batch(seed.map(p => stmt.bind(p.id, JSON.stringify(p))));
+  }
+
+  // Seed default users if users table is empty
+  const userRow = await db.prepare('SELECT COUNT(*) AS cnt FROM users').first<{ cnt: number }>();
+  if (!userRow || userRow.cnt === 0) {
+    const defaultUsers = [
+      { id: 'usr_admin_001', username: 'mmd', pass: 'zhiyuzhishan', role: 'admin', name: 'System Admin (mmd)', className: '平台管理', createdBy: 'system', isQuizEditor: 1 },
+      { id: 'usr_edt_001', username: 'editor_li', pass: 'editor123', role: 'editor', name: '李编辑 (Quiz Editor Li)', className: '题目编辑组', createdBy: 'mmd', isQuizEditor: 1 },
+      { id: 'usr_tch_001', username: 'zhang_laoshi', pass: 'teacher123', role: 'teacher', name: '张老师 (Ms. Zhang)', className: '三年级A班', createdBy: 'mmd', isQuizEditor: 1 },
+      { id: 'usr_tch_002', username: 'li_laoshi', pass: 'teacher123', role: 'teacher', name: '李老师 (Mr. Li)', className: '三年级B班', createdBy: 'mmd', isQuizEditor: 0 },
+      { id: 'usr_tch_003', username: 'wang_laoshi', pass: 'teacher123', role: 'teacher', name: '王老师 (Ms. Wang)', className: '四年级A班', createdBy: 'mmd', isQuizEditor: 0 },
+      { id: 'usr_stu_001', username: 'yaming', pass: 'student123', role: 'student', name: '亚明 (Yaming)', className: '三年级A班', createdBy: 'zhang_laoshi', isQuizEditor: 0 },
+      { id: 'usr_stu_002', username: 'xiaohong', pass: '1234', role: 'student', name: '小红 (Xiaohong)', className: '三年级A班', createdBy: 'zhang_laoshi', isQuizEditor: 0 },
+      { id: 'usr_stu_003', username: 'xiaoming', pass: '1234', role: 'student', name: '小明 (Xiaoming)', className: '三年级A班', createdBy: 'zhang_laoshi', isQuizEditor: 0 },
+      { id: 'usr_stu_004', username: 'gangzi', pass: '1234', role: 'student', name: '刚子 (Gangzi)', className: '三年级B班', createdBy: 'li_laoshi', isQuizEditor: 0 },
+      { id: 'usr_stu_005', username: 'lili', pass: '1234', role: 'student', name: '莉莉 (Lily)', className: '三年级B班', createdBy: 'li_laoshi', isQuizEditor: 0 },
+    ];
+
+    const now = new Date().toISOString();
+    for (const u of defaultUsers) {
+      const pHash = await hashPassword(u.pass);
+      await db.prepare(
+        'INSERT OR IGNORE INTO users (id, username, password_hash, role, name, class_name, created_by, is_quiz_editor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(u.id, u.username, pHash, u.role, u.name, u.className, u.createdBy, u.isQuizEditor, now).run();
+    }
   }
 }
 
@@ -140,7 +176,7 @@ app.get('/api/health', (c) => {
   });
 });
 
-// Hierarchical Auth Login Endpoint
+// Hierarchical Auth Login Endpoint (D1 DB Backed)
 app.post('/api/auth/login', async (c) => {
   try {
     const { username, password } = await c.req.json();
@@ -148,9 +184,25 @@ app.post('/api/auth/login', async (c) => {
       return c.json({ error: 'Username and password are required' }, 400);
     }
 
-    const user = usersStore.get(username);
-    if (!user || user.passwordHash !== password) {
-      return c.json({ error: 'Invalid username or password' }, 401);
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    const inputHash = await hashPassword(password);
+    const user = await db.prepare(
+      'SELECT * FROM users WHERE LOWER(username) = LOWER(?)'
+    ).bind(username).first<{
+      id: string;
+      username: string;
+      password_hash: string;
+      role: 'admin' | 'editor' | 'teacher' | 'student' | 'parent';
+      name: string;
+      class_name: string;
+      created_by: string;
+      is_quiz_editor: number;
+    }>();
+
+    if (!user || user.password_hash !== inputHash) {
+      return c.json({ error: '用户名或密码错误。' }, 401);
     }
 
     // Role-based view capabilities
@@ -170,9 +222,10 @@ app.post('/api/auth/login', async (c) => {
         username: user.username,
         role: user.role,
         name: user.name,
-        className: user.className || 'General',
-        createdBy: user.createdBy,
-        capabilities: viewCapabilities[user.role]
+        className: user.class_name || 'General',
+        createdBy: user.created_by,
+        capabilities: viewCapabilities[user.role],
+        isQuizEditor: Boolean(user.is_quiz_editor)
       }
     });
   } catch (err: any) {
@@ -180,7 +233,7 @@ app.post('/api/auth/login', async (c) => {
   }
 });
 
-// Admin API: Provision New Teacher Account
+// Admin API: Provision New Teacher Account (D1 DB Backed)
 app.post('/api/admin/teachers', async (c) => {
   try {
     const { username, password, name, className } = await c.req.json();
@@ -188,35 +241,65 @@ app.post('/api/admin/teachers', async (c) => {
       return c.json({ error: 'Missing required fields (username, password, name)' }, 400);
     }
 
-    if (usersStore.has(username)) {
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    const existing = await db.prepare('SELECT id FROM users WHERE LOWER(username) = LOWER(?)').bind(username).first();
+    if (existing) {
       return c.json({ error: 'Teacher username already exists' }, 409);
     }
 
-    const newTeacher: UserAccount = {
-      id: `usr_tch_${Date.now()}`,
-      username,
-      passwordHash: password,
-      role: 'teacher',
-      name,
-      className: className || '一般班级',
-      createdBy: 'mmd',
-      createdAt: new Date().toISOString()
-    };
+    const pHash = await hashPassword(password);
+    const newId = `usr_tch_${Date.now()}`;
+    const now = new Date().toISOString();
 
-    usersStore.set(username, newTeacher);
-    return c.json({ success: true, teacher: newTeacher });
+    await db.prepare(
+      'INSERT INTO users (id, username, password_hash, role, name, class_name, created_by, is_quiz_editor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(newId, username, pHash, 'teacher', name, className || '一般班级', 'mmd', 0, now).run();
+
+    return c.json({
+      success: true,
+      teacher: {
+        id: newId,
+        username,
+        password,
+        role: 'teacher',
+        name,
+        assignedClass: className || '一般班级'
+      }
+    });
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to provision teacher' }, 500);
   }
 });
 
-// Admin API: List All Teachers
-app.get('/api/admin/teachers', (c) => {
-  const teachers = Array.from(usersStore.values()).filter(u => u.role === 'teacher');
+// Admin API: List All Teachers (D1 DB Backed)
+app.get('/api/admin/teachers', async (c) => {
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+
+  const { results } = await db.prepare(
+    'SELECT * FROM users WHERE role = ? ORDER BY created_at DESC'
+  ).bind('teacher').all<{
+    id: string;
+    username: string;
+    name: string;
+    class_name: string;
+    is_quiz_editor: number;
+  }>();
+
+  const teachers = results.map(r => ({
+    id: r.id,
+    username: r.username,
+    name: r.name,
+    assignedClass: r.class_name,
+    isQuizEditor: Boolean(r.is_quiz_editor)
+  }));
+
   return c.json({ teachers });
 });
 
-// Teacher API: Provision Batch Student & Parent Accounts
+// Teacher API: Provision Batch Student Account (D1 DB Backed)
 app.post('/api/teacher/students', async (c) => {
   try {
     const { teacherUsername, studentName, username, password } = await c.req.json();
@@ -224,48 +307,74 @@ app.post('/api/teacher/students', async (c) => {
       return c.json({ error: 'Student username, password, and studentName required' }, 400);
     }
 
-    if (usersStore.has(username)) {
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    const existing = await db.prepare('SELECT id FROM users WHERE LOWER(username) = LOWER(?)').bind(username).first();
+    if (existing) {
       return c.json({ error: 'Student username already exists' }, 409);
     }
 
-    const teacher = usersStore.get(teacherUsername || 'zhang_laoshi');
+    const teacher = await db.prepare('SELECT class_name FROM users WHERE LOWER(username) = LOWER(?)').bind(teacherUsername || 'zhang_laoshi').first<{ class_name: string }>();
 
-    const newStudent: UserAccount = {
-      id: `usr_stu_${Date.now()}`,
-      username,
-      passwordHash: password,
-      role: 'student',
-      name: studentName,
-      className: teacher?.className || '三年级A班',
-      createdBy: teacherUsername || 'zhang_laoshi',
-      createdAt: new Date().toISOString()
-    };
+    const pHash = await hashPassword(password);
+    const newId = `usr_stu_${Date.now()}`;
+    const now = new Date().toISOString();
+    const studentClass = teacher?.class_name || '三年级A班';
 
-    usersStore.set(username, newStudent);
+    await db.prepare(
+      'INSERT INTO users (id, username, password_hash, role, name, class_name, created_by, is_quiz_editor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(newId, username, pHash, 'student', studentName, studentClass, teacherUsername || 'zhang_laoshi', 0, now).run();
 
-    // Also seed matching Parent View account
-    const parentUsername = `p_${username}`;
-    const newParent: UserAccount = {
-      id: `usr_prt_${Date.now()}`,
-      username: parentUsername,
-      passwordHash: password,
-      role: 'parent',
-      name: `${studentName}家长`,
-      className: teacher?.className || '三年级A班',
-      createdBy: teacherUsername || 'zhang_laoshi',
-      createdAt: new Date().toISOString()
-    };
-    usersStore.set(parentUsername, newParent);
-
-    return c.json({ success: true, student: newStudent, parent: newParent });
+    return c.json({
+      success: true,
+      student: {
+        id: newId,
+        username,
+        name: studentName,
+        password,
+        className: studentClass,
+        completedQuizzes: 0,
+        avgScore: 0
+      }
+    });
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to provision student' }, 500);
   }
 });
 
-// Teacher API: List Students Roster
-app.get('/api/teacher/students', (c) => {
-  const students = Array.from(usersStore.values()).filter(u => u.role === 'student');
+// Teacher API: List Students Roster (D1 DB Backed)
+app.get('/api/teacher/students', async (c) => {
+  const className = c.req.query('className');
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+
+  let query = 'SELECT * FROM users WHERE role = ?';
+  const params: any[] = ['student'];
+
+  if (className) {
+    query += ' AND class_name = ?';
+    params.push(className);
+  }
+  query += ' ORDER BY created_at DESC';
+
+  const stmt = db.prepare(query);
+  const { results } = await (params.length > 1 ? stmt.bind(...params) : stmt.bind(params[0])).all<{
+    id: string;
+    username: string;
+    name: string;
+    class_name: string;
+  }>();
+
+  const students = results.map(r => ({
+    id: r.id,
+    username: r.username,
+    name: r.name,
+    className: r.class_name,
+    completedQuizzes: 0,
+    avgScore: 0
+  }));
+
   return c.json({ students });
 });
 

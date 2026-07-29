@@ -134,10 +134,10 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     }
   };
 
-  const loadRosters = () => {
+  const loadRosters = async () => {
     const allCls = apiService.getClasses();
-    setTeachersList(apiService.getTeachers());
-    setAllStudentsList(apiService.getStudents());
+    setTeachersList(await apiService.getTeachers());
+    setAllStudentsList(await apiService.getStudents());
 
     if (user && user.role === 'teacher') {
       const myClasses = allCls.filter((c: any) =>
@@ -166,7 +166,8 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
 
   const loadTeacherData = async () => {
     const targetClass = selectedClass || user?.className || '三年级A班';
-    setStudents(apiService.getStudents(targetClass));
+    const classStudents = await apiService.getStudents(targetClass);
+    setStudents(classStudents);
     setLearntPoemIds(apiService.getLearntPoemIds(targetClass));
     const teacherAsgns = await apiService.getAssignments(targetClass);
     setAssignments(teacherAsgns);
@@ -665,7 +666,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 className="px-3 py-1.5 bg-slate-900 border border-blue-400/50 rounded-lg text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
               >
                 {classes.map(c => {
-                  const actualCount = apiService.getStudents(c.name).length;
+                  const actualCount = allStudentsList.filter((s: any) => s.className === c.name).length;
                   return <option key={c.id} value={c.name}>{c.name} ({actualCount}人)</option>;
                 })}
               </select>
