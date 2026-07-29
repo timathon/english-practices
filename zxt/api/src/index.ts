@@ -62,6 +62,9 @@ async function initDB(db: D1Database): Promise<void> {
   await db.prepare(
     'CREATE TABLE IF NOT EXISTS quiz_history (id TEXT PRIMARY KEY, student_id TEXT NOT NULL, poem_id INTEGER, poem_title TEXT NOT NULL, score INTEGER NOT NULL, accuracy TEXT, quiz_type TEXT NOT NULL, details TEXT, completed_at TEXT NOT NULL)'
   ).run();
+  await db.prepare(
+    'CREATE TABLE IF NOT EXISTS assignments (id TEXT PRIMARY KEY, class_name TEXT NOT NULL, poem_id INTEGER NOT NULL, poem_title TEXT NOT NULL, due_date TEXT NOT NULL, status TEXT NOT NULL, requirement TEXT, question_ids TEXT, created_at TEXT NOT NULL)'
+  ).run();
 
   const row = await db.prepare('SELECT COUNT(*) AS cnt FROM poems').first<{ cnt: number }>();
   if (!row || row.cnt === 0) {
@@ -367,6 +370,86 @@ app.post('/api/student/history', async (c) => {
     });
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to save quiz history to DB' }, 500);
+  }
+});
+
+// Assignments APIs — D1 DB Backed
+app.get('/api/assignments', async (c) => {
+  const className = c.req.query('className') || '三年级A班';
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+
+  const { results } = await db.prepare(
+    'SELECT * FROM assignments WHERE class_name = ? ORDER BY created_at DESC'
+  ).bind(className).all<{
+    id: string;
+    class_name: string;
+    poem_id: number;
+    poem_title: string;
+    due_date: string;
+    status: string;
+    requirement: string;
+    question_ids: string;
+    created_at: string;
+  }>();
+
+  const assignments = results.map(r => ({
+    id: r.id,
+    className: r.class_name,
+    poemId: r.poem_id,
+    poemTitle: r.poem_title,
+    dueDate: r.due_date,
+    status: r.status,
+    requirement: r.requirement,
+    questionIds: r.question_ids ? JSON.parse(r.question_ids) : [],
+    createdAt: r.created_at
+  }));
+
+  return c.json({ assignments });
+});
+
+app.post('/api/assignments', async (c) => {
+  try {
+    const { className = '三年级A班', poemId, poemTitle, dueDate, requirement, questionIds } = await c.req.json();
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+
+    const asgnId = `asgn_${Date.now()}`;
+    const createdAt = new Date().toISOString();
+    const questionIdsJson = JSON.stringify(questionIds || []);
+
+    await db.prepare(
+      'INSERT INTO assignments (id, class_name, poem_id, poem_title, due_date, status, requirement, question_ids, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(asgnId, className, poemId, poemTitle, dueDate, '待完成', requirement, questionIdsJson, createdAt).run();
+
+    return c.json({
+      success: true,
+      assignment: {
+        id: asgnId,
+        className,
+        poemId,
+        poemTitle,
+        dueDate,
+        status: '待完成',
+        requirement,
+        questionIds: questionIds || [],
+        createdAt
+      }
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to create assignment in DB' }, 500);
+  }
+});
+
+// Clear all remote assignment records from D1 DB
+app.delete('/api/assignments/clear', async (c) => {
+  try {
+    const db = c.env.zxt_poems_db;
+    await initDB(db);
+    await db.prepare('DELETE FROM assignments').run();
+    return c.json({ success: true, message: 'All assignment records cleared from DB' });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to clear assignments' }, 500);
   }
 });
 

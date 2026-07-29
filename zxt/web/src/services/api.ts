@@ -365,11 +365,23 @@ export const apiService = {
 
   // Get Class Assignments (Student / Teacher)
   getAssignments(className: string = '三年级A班') {
-    const defaultAssignments = [
-      { id: 'asgn_01', classId: 'c1', className: '三年级A班', poemId: 1, poemTitle: '池上', dueDate: '2026-07-30', status: '待完成', requirement: '背诵并完成连句与填空闯关', questionIds: [] },
-      { id: 'asgn_02', classId: 'c1', className: '三年级A班', poemId: 4, poemTitle: '悯农 (其二)', dueDate: '2026-08-02', status: '待完成', requirement: '掌握诗句含义与读音辨析', questionIds: [] },
-      { id: 'asgn_03', classId: 'c1', className: '三年级A班', poemId: 9, poemTitle: '画', dueDate: '2026-07-25', status: '已打卡', score: 100, questionIds: [] }
-    ];
+    const defaultAssignments: any[] = [];
+
+    if (USE_BACKEND) {
+      fetch(`${API_BASE_URL}/api/assignments?className=${encodeURIComponent(className)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.assignments && Array.isArray(data.assignments)) {
+            const stored = localStorage.getItem('zxt_assignments');
+            const localAll = stored ? JSON.parse(stored) : [];
+            const otherClasses = localAll.filter((a: any) => a.className !== className);
+            const combined = [...otherClasses, ...data.assignments];
+            localStorage.setItem('zxt_assignments', JSON.stringify(combined));
+          }
+        })
+        .catch(() => {});
+    }
+
     const stored = localStorage.getItem('zxt_assignments');
     if (!stored) {
       localStorage.setItem('zxt_assignments', JSON.stringify(defaultAssignments));
@@ -395,6 +407,15 @@ export const apiService = {
     const all = stored ? JSON.parse(stored) : [];
     all.push(newAsgn);
     localStorage.setItem('zxt_assignments', JSON.stringify(all));
+
+    if (USE_BACKEND) {
+      fetch(`${API_BASE_URL}/api/assignments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(assignment),
+      }).catch(err => console.error('Failed to create assignment on remote DB:', err));
+    }
+
     return newAsgn;
   },
 
