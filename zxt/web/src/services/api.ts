@@ -383,10 +383,10 @@ export const apiService = {
     }
 
     const stored = localStorage.getItem('zxt_assignments');
-    if (!stored) {
+    if (!stored || stored.includes('asgn_01') || stored.includes('asgn_02')) {
       localStorage.setItem('zxt_assignments', JSON.stringify(defaultAssignments));
     }
-    const all = stored ? JSON.parse(stored) : defaultAssignments;
+    const all = stored && !stored.includes('asgn_01') && !stored.includes('asgn_02') ? JSON.parse(stored) : defaultAssignments;
     return all.filter((a: any) => a.className === className);
   },
 
