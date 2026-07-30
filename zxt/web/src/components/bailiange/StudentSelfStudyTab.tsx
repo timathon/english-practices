@@ -23,8 +23,33 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
     <div className="grid md:grid-cols-3 gap-6">
 
       {/* All Poems Selector */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3 max-h-[500px] overflow-y-auto">
-        <h3 className="font-bold font-serif text-ink text-sm">全量古诗库 ({poems.length}首)</h3>
+      {/* Mobile view: Dropdown select */}
+      <div className="md:hidden bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+        <label className="block font-bold font-serif text-ink text-base">
+          全量古诗库 ({poems.length}首)
+        </label>
+        <select
+          value={selectedPoem?.id ?? ''}
+          onChange={(e) => {
+            const found = poems.find((p) => String(p.id) === e.target.value);
+            if (found) onSelectPoem(found);
+          }}
+          className="w-full p-3 rounded-xl border border-slate-300 bg-white text-sm md:text-base font-serif text-slate-800 focus:outline-none focus:ring-2 focus:ring-jade-500"
+        >
+          {poems.map((poem) => {
+            const isLearnt = learntPoemIds.map(Number).includes(Number(poem.id));
+            return (
+              <option key={poem.id} value={poem.id}>
+                #{poem.id} 《{poem.title}》 - [{poem.dynasty}] {poem.author} {isLearnt ? '(已学)' : ''}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      {/* Desktop view: Scrollable List */}
+      <div className="hidden md:block bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3 max-h-[500px] overflow-y-auto">
+        <h3 className="font-bold font-serif text-ink text-base">全量古诗库 ({poems.length}首)</h3>
         <div className="space-y-2">
           {poems.map((poem) => {
             const isLearnt = learntPoemIds.map(Number).includes(Number(poem.id));
@@ -32,13 +57,13 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
               <div
                 key={poem.id}
                 onClick={() => onSelectPoem(poem)}
-                className={`p-3 rounded-xl border cursor-pointer text-xs font-serif transition flex items-center justify-between ${
+                className={`p-3 rounded-xl border cursor-pointer text-sm font-serif transition flex items-center justify-between ${
                   selectedPoem?.id === poem.id ? 'border-jade-500 bg-jade-50 font-bold shadow-xs' : 'border-slate-100 hover:bg-slate-50'
                 }`}
               >
                 <span>#{poem.id} 《{poem.title}》 - [{poem.dynasty}] {poem.author}</span>
                 {isLearnt && (
-                  <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-sans font-bold rounded whitespace-nowrap">
+                  <span className="text-xs px-2 py-0.5 bg-emerald-100 text-emerald-800 font-sans font-bold rounded whitespace-nowrap">
                     已学
                   </span>
                 )}

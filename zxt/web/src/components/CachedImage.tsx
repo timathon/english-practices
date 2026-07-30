@@ -12,8 +12,8 @@ export const CachedImage: React.FC<CachedImageProps> = ({ src, alt = '', classNa
 
   useEffect(() => {
     let isMounted = true;
+    setDisplaySrc('');
     if (!src) {
-      setDisplaySrc('');
       return;
     }
 
@@ -29,7 +29,11 @@ export const CachedImage: React.FC<CachedImageProps> = ({ src, alt = '', classNa
   }, [src]);
 
   if (!displaySrc) {
-    return <div className={`animate-pulse bg-slate-200 rounded-lg ${className || 'w-full h-full'}`} />;
+    return (
+      <div className={`animate-pulse bg-slate-100 border border-slate-200 flex items-center justify-center text-xs text-slate-400 font-sans rounded-lg py-6 ${className || 'w-full h-full'}`}>
+        加载中...
+      </div>
+    );
   }
 
   return (
