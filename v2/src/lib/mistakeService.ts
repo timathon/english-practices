@@ -220,22 +220,30 @@ export const mistakeService = {
     }
   },
 
+  _syncTimer: null as any,
+
   async syncToServer(userId: string): Promise<void> {
     if (!userId) return;
-    try {
-      const mistakes = this.getMistakes(userId);
-      const res = await fetch(`${API_URL}/api/mistakes`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(mistakes),
-      });
-      const data = await res.json();
-      if (data && Array.isArray(data.mistakeState)) {
-        localStorage.setItem(getStorageKey(userId), JSON.stringify(data.mistakeState));
-      }
-    } catch (e) {
-      console.error('Failed to sync mistakes to server:', e);
+    if (this._syncTimer) {
+      clearTimeout(this._syncTimer);
     }
+    this._syncTimer = setTimeout(async () => {
+      this._syncTimer = null;
+      try {
+        const mistakes = this.getMistakes(userId);
+        const res = await fetch(`${API_URL}/api/mistakes`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(mistakes),
+        });
+        const data = await res.json();
+        if (data && Array.isArray(data.mistakeState)) {
+          localStorage.setItem(getStorageKey(userId), JSON.stringify(data.mistakeState));
+        }
+      } catch (e) {
+        console.error('Failed to sync mistakes to server:', e);
+      }
+    }, 400);
   }
 };

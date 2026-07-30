@@ -4,6 +4,7 @@ import { getAuth } from './auth'
 
 type Bindings = {
   DB: D1Database
+  V2_CACHE_KV?: KVNamespace
   BETTER_AUTH_SECRET?: string
   BETTER_AUTH_URL?: string
 }
@@ -532,16 +533,20 @@ app.post('/api/records', async (c) => {
   const id = crypto.randomUUID();
   const parsedScore = typeof body.score === 'string' ? parseInt(body.score, 10) : Number(body.score);
 
-  await db.insert(practiceRecords).values({
-    id,
-    userId: session.user.id,
-    unit: body.unit,
-    score: isNaN(parsedScore) ? 0 : parsedScore,
-    unfinished: body.unfinished !== undefined ? body.unfinished : false,
-    answers: body.answers !== undefined ? body.answers : null,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  });
+  c.executionCtx.waitUntil(
+    db.insert(practiceRecords).values({
+      id,
+      userId: session.user.id,
+      unit: body.unit,
+      score: isNaN(parsedScore) ? 0 : parsedScore,
+      unfinished: body.unfinished !== undefined ? body.unfinished : false,
+      answers: body.answers !== undefined ? body.answers : null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).catch(err => {
+      console.error("Async practiceRecord write failed:", err);
+    })
+  );
 
   return c.json({ success: true, id });
 })
@@ -594,48 +599,69 @@ app.get('/api/practices', async (c) => {
   
   const db = drizzle(c.env.DB)
   if (!cachedMappedPractices) {
-      const practices = await db.select({
-          id: practice.id,
-          textbook: practice.textbook,
-          unit: practice.unit,
-          type: practice.type,
-          title: practice.title,
-          content: practice.content
-      }).from(practice)
-      
-      cachedMappedPractices = practices.map(p => {
-          let lightContent: any = {};
-          const type = (p.type || '').toLowerCase();
-          const content = p.content as any;
-          
-          if (content) {
-              if (type.includes('vocab-master') || type.includes('sentence-architect') || type.includes('grammar-wizard')) {
-                  const challenges = content.challenges || [];
-                  lightContent = {
-                      challenges: challenges.map((c: any) => ({ title: c.title || '' }))
-                  };
-              } else if (type.includes('passage-decoder')) {
-                  const sections = content.sections || [];
-                  lightContent = {
-                      sections: sections.map((s: any) => ({ title: s.title || '' }))
-                  };
-              } else if (type.includes('spelling-hero')) {
-                  const wordCount = content.spelling_words?.length || 0;
-                  lightContent = {
-                      spelling_words: new Array(wordCount).fill({})
-                  };
+      if (c.env.V2_CACHE_KV) {
+          try {
+              const cached = await c.env.V2_CACHE_KV.get<any[]>('practices_catalog', 'json');
+              if (cached) {
+                  cachedMappedPractices = cached;
               }
+          } catch (e) {
+              console.error("KV read failed:", e);
           }
+      }
+
+      if (!cachedMappedPractices) {
+          const practices = await db.select({
+              id: practice.id,
+              textbook: practice.textbook,
+              unit: practice.unit,
+              type: practice.type,
+              title: practice.title,
+              content: practice.content
+          }).from(practice)
           
-          return {
-              id: p.id,
-              textbook: p.textbook,
-              unit: p.unit,
-              type: p.type,
-              title: p.title,
-              content: lightContent
-          };
-      });
+          cachedMappedPractices = practices.map(p => {
+              let lightContent: any = {};
+              const type = (p.type || '').toLowerCase();
+              const content = p.content as any;
+              
+              if (content) {
+                  if (type.includes('vocab-master') || type.includes('sentence-architect') || type.includes('grammar-wizard')) {
+                      const challenges = content.challenges || [];
+                      lightContent = {
+                          challenges: challenges.map((c: any) => ({ title: c.title || '' }))
+                      };
+                  } else if (type.includes('passage-decoder')) {
+                      const sections = content.sections || [];
+                      lightContent = {
+                          sections: sections.map((s: any) => ({ title: s.title || '' }))
+                      };
+                  } else if (type.includes('spelling-hero')) {
+                      const wordCount = content.spelling_words?.length || 0;
+                      lightContent = {
+                          spelling_words: new Array(wordCount).fill({})
+                      };
+                  }
+              }
+              
+              return {
+                  id: p.id,
+                  textbook: p.textbook,
+                  unit: p.unit,
+                  type: p.type,
+                  title: p.title,
+                  content: lightContent
+              };
+          });
+
+          if (c.env.V2_CACHE_KV && cachedMappedPractices) {
+              c.executionCtx.waitUntil(
+                  c.env.V2_CACHE_KV.put('practices_catalog', JSON.stringify(cachedMappedPractices), { expirationTtl: 600 }).catch(e => {
+                      console.error("KV write failed:", e);
+                  })
+              );
+          }
+      }
   }
   
   const userRole = (session.user as any).role?.toLowerCase();
@@ -855,10 +881,14 @@ app.put('/api/mistakes', async (c) => {
     });
   }
 
-  await db.update(user).set({
-    mistakeState: merged,
-    updatedAt: new Date()
-  }).where(eq(user.id, session.user.id));
+  c.executionCtx.waitUntil(
+    db.update(user).set({
+      mistakeState: merged,
+      updatedAt: new Date()
+    }).where(eq(user.id, session.user.id)).catch(err => {
+      console.error("Async mistakeState write failed:", err);
+    })
+  );
 
   return c.json({ success: true, mistakeState: merged });
 })

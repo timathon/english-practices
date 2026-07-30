@@ -329,9 +329,6 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
   const handleDeleteMistake = (id: string) => {
     if (userId && window.confirm("Are you sure you want to delete this mistake?")) {
       mistakeService.removeMistake(userId, id);
-      if ((session?.user as any)?.role !== 'testdrive') {
-        mistakeService.syncToServer(userId);
-      }
       setMistakes(mistakeService.getMistakes(userId));
     }
   };
@@ -340,9 +337,6 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
     if (userId && window.confirm(`Are you sure you want to delete ALL mistakes in ${textbook} - ${unit}?`)) {
       const unitMistakes = mistakes.filter(m => (m.textbook || 'Other') === textbook && (m.unit || 'General') === unit);
       unitMistakes.forEach(m => mistakeService.removeMistake(userId, m.id));
-      if ((session?.user as any)?.role !== 'testdrive') {
-        mistakeService.syncToServer(userId);
-      }
       setMistakes(mistakeService.getMistakes(userId));
     }
   };
