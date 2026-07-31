@@ -360,7 +360,7 @@ export const petService = {
       history,
 
       userId: newerState.userId,
-      lastUpdated: Math.max(local.lastUpdated || 0, server.lastUpdated || 0)
+      lastUpdated: Math.max(Date.now(), (local.lastUpdated || 0) + 1, (server.lastUpdated || 0) + 1)
     };
 
     // Re-calculate level just in case XP merged higher
