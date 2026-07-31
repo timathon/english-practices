@@ -27,6 +27,22 @@ document.addEventListener('wheel', (e) => {
 
 
 
+// Handle stale chunk script errors after new deployments
+window.addEventListener('error', (e) => {
+  const isModuleError = e.message && (
+    e.message.includes('Failed to fetch dynamically imported module') ||
+    e.message.includes('Expected a JavaScript-or-Wasm module script') ||
+    e.message.includes('Importing a module script failed')
+  );
+  if (isModuleError) {
+    const key = 'ep_chunk_reload_' + (e.filename || 'unknown');
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, 'true');
+      window.location.reload();
+    }
+  }
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

@@ -1,13 +1,17 @@
 import { API_URL, authClient } from './auth';
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
+let isSyncing = false;
+let needsSync = false;
 
 if (typeof window !== 'undefined') {
   window.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && syncTimer) {
-      clearTimeout(syncTimer);
-      syncTimer = null;
-      petService.syncSave(petService.getPetState());
+    if (document.visibilityState === 'hidden' && (syncTimer || needsSync)) {
+      if (syncTimer) {
+        clearTimeout(syncTimer);
+        syncTimer = null;
+      }
+      petService.flushSync();
     }
   });
 }
@@ -309,14 +313,72 @@ export const petService = {
   },
 
   debouncedSyncSave(_state?: PetState, delayMs: number = 800) {
+    needsSync = true;
     if (syncTimer) {
       clearTimeout(syncTimer);
     }
     syncTimer = setTimeout(() => {
       syncTimer = null;
-      const latestState = this.getPetState();
-      this.syncSave(latestState);
+      this.flushSync();
     }, delayMs);
+  },
+
+  async syncSave(_state?: PetState) {
+    needsSync = true;
+    return this.flushSync();
+  },
+
+  async flushSync() {
+    if (isSyncing) {
+      needsSync = true;
+      return;
+    }
+
+    if (!needsSync) return;
+    needsSync = false;
+    isSyncing = true;
+
+    try {
+      const state = this.getPetState();
+      // Ensure we have a userId on the state. If not, fetch it from session.
+      if (!state.userId) {
+        const sessionRes = await authClient.getSession();
+        const user = sessionRes?.data?.user;
+        if (user) {
+          state.userId = user.id;
+          localStorage.setItem(getLSKey(), JSON.stringify(state));
+        } else {
+          isSyncing = false;
+          return; // Skip sync if not logged in
+        }
+      }
+
+      const res = await fetch(`${API_URL}/api/pet`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(state)
+      });
+
+      if (res.status === 409) {
+        const data = await res.json();
+        if (data.serverState) {
+          // Conflict detected! Merge server state with our current local state.
+          const merged = this.mergePetState(state, data.serverState);
+          localStorage.setItem(getLSKey(), JSON.stringify(merged));
+          window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: merged }));
+          // Schedule follow-up sync with merged state
+          needsSync = true;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to sync pet state to server', e);
+    } finally {
+      isSyncing = false;
+      if (needsSync) {
+        this.debouncedSyncSave(undefined, 300);
+      }
+    }
   },
 
   mergePetState(local: PetState, server: PetState): PetState {
@@ -390,43 +452,6 @@ export const petService = {
     mergedState.level = this.getLevel(mergedState.xp);
 
     return mergedState;
-  },
-
-  async syncSave(state: PetState) {
-    try {
-      // Ensure we have a userId on the state. If not, fetch it from session.
-      if (!state.userId) {
-        const sessionRes = await authClient.getSession();
-        const user = sessionRes?.data?.user;
-        if (user) {
-          state.userId = user.id;
-          localStorage.setItem(getLSKey(), JSON.stringify(state));
-        } else {
-          return; // Skip sync if not logged in
-        }
-      }
-
-      const res = await fetch(`${API_URL}/api/pet`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(state)
-      });
-
-      if (res.status === 409) {
-        const data = await res.json();
-        if (data.serverState) {
-          // Conflict detected! Merge server state with our current local state.
-          const merged = this.mergePetState(state, data.serverState);
-          localStorage.setItem(getLSKey(), JSON.stringify(merged));
-          window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: merged }));
-          // Retry sync with the merged state
-          await this.syncSave(merged);
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to sync pet state to server', e);
-    }
   },
 
   async syncWithServer() {
