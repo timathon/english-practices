@@ -138,26 +138,33 @@ async function main() {
             process.exit(1);
         }
     } else {
-        const inputDir = process.argv[2];
-        if (!inputDir) {
-            console.error("Usage: node scripts/tts-in-one.cjs [unit_directory_path] [--regenerate] [--xs] [--resume] [--3.1] [--flash-tts]");
+        const inputPath = process.argv[2];
+        if (!inputPath) {
+            console.error("Usage: node scripts/tts-in-one.cjs [unit_directory_or_file_path] [--regenerate] [--xs] [--resume] [--3.1] [--flash-tts]");
             process.exit(1);
         }
 
-        const absoluteDir = path.resolve(inputDir);
-        if (!fs.existsSync(absoluteDir) || !fs.statSync(absoluteDir).isDirectory()) {
-            console.error(`❌ Directory not found: ${absoluteDir}`);
+        const absoluteTarget = path.resolve(inputPath);
+        if (!fs.existsSync(absoluteTarget)) {
+            console.error(`❌ Target not found: ${absoluteTarget}`);
             process.exit(1);
         }
 
-        // Determine bookName (e.g. raz-b, a7a) from the directory path relative to data or v2-data directory
-        let relativeToData = path.relative(path.resolve(__dirname, '../v2-data'), absoluteDir);
+        const isDir = fs.statSync(absoluteTarget).isDirectory();
+        const baseDir = isDir ? absoluteTarget : path.dirname(absoluteTarget);
+
+        // Determine bookName (e.g. raz-b, a7a, sa1) from the directory/file path relative to data or v2-data directory
+        let relativeToData = path.relative(path.resolve(__dirname, '../v2-data'), absoluteTarget);
         if (relativeToData.startsWith('..')) {
-            relativeToData = path.relative(path.resolve(__dirname, '../data'), absoluteDir);
+            relativeToData = path.relative(path.resolve(__dirname, '../data'), absoluteTarget);
         }
         bookName = relativeToData.split(path.sep)[0].toLowerCase();
         
-        console.log(`Scanning unit directory: ${absoluteDir}`);
+        if (isDir) {
+            console.log(`Scanning unit directory: ${absoluteTarget}`);
+        } else {
+            console.log(`Scanning single file: ${absoluteTarget}`);
+        }
         console.log(`Resolved category/book name: ${bookName}`);
 
         const textsSet = new Set();
@@ -177,10 +184,12 @@ async function main() {
             return results;
         }
 
-        const files = getFilesRecursively(absoluteDir);
+        const files = isDir ? getFilesRecursively(absoluteTarget) : [absoluteTarget];
         
         // Load tongjia mapping if it exists in any directory
-        const tongjiaFiles = files.filter(f => f.endsWith('tongjia.cjs'));
+        const tongjiaFiles = isDir
+            ? files.filter(f => f.endsWith('tongjia.cjs'))
+            : [path.join(baseDir, 'tongjia.cjs')].filter(f => fs.existsSync(f));
         for (const tongjiaPath of tongjiaFiles) {
             try {
                 const subMap = require(tongjiaPath);
