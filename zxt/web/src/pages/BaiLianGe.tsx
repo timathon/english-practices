@@ -1077,21 +1077,28 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
           poemTitle={activeStudentQuiz.poemTitle}
           questions={activeStudentQuiz.questions}
           initialIndex={0}
-          onClose={async (res) => {
-            if (res && res.completed && activeStudentQuiz.assignmentId) {
-              const finalScore = res.score !== undefined ? res.score : 100;
-              await apiService.markAssignmentCompleted(activeStudentQuiz.assignmentId, finalScore);
-              await apiService.recordQuizResult(user?.id || 'usr_stu_001', {
-                poemTitle: activeStudentQuiz.poemTitle,
-                poemId: poems.find(p => p.title === activeStudentQuiz.poemTitle)?.id || 1,
-                score: finalScore,
-                accuracy: `${finalScore}%`,
-                quizType: '班级作业闯关',
-                details: res.details || []
-              });
-              await loadStudentData();
-            }
+          onClose={(res) => {
+            const quizInfo = activeStudentQuiz;
             setActiveStudentQuiz(null);
+            if (res && res.completed && quizInfo.assignmentId) {
+              const finalScore = res.score !== undefined ? res.score : 100;
+              (async () => {
+                try {
+                  await apiService.markAssignmentCompleted(quizInfo.assignmentId!, finalScore);
+                  await apiService.recordQuizResult(user?.id || 'usr_stu_001', {
+                    poemTitle: quizInfo.poemTitle,
+                    poemId: poems.find(p => p.title === quizInfo.poemTitle)?.id || 1,
+                    score: finalScore,
+                    accuracy: `${finalScore}%`,
+                    quizType: '班级作业闯关',
+                    details: res.details || []
+                  });
+                  await loadStudentData();
+                } catch (err) {
+                  console.error('Failed to submit assignment completion:', err);
+                }
+              })();
+            }
           }}
         />
       )}

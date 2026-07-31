@@ -3,23 +3,29 @@
 export const API_BASE_URL = 'https://zxtapi.vibequizzing.com';
 export const USE_BACKEND = true; // Set to true when remote worker API is running
 
+export function parseDate(timeStr?: string): Date | null {
+  if (!timeStr) return null;
+  let dateStr = timeStr.trim();
+  if (dateStr.includes('/')) {
+    dateStr = dateStr.replace(/\//g, '-');
+  }
+  if (!dateStr.includes('Z') && !dateStr.includes('+')) {
+    const parts = dateStr.split(' ');
+    if (parts.length === 2) {
+      const [dPart, tPart] = parts;
+      const dSub = dPart.split('-').map(p => p.padStart(2, '0')).join('-');
+      dateStr = `${dSub}T${tPart}`;
+    }
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export function formatLocalTime(timeStr?: string): string {
   if (!timeStr) return '';
   try {
-    let dateStr = timeStr.trim();
-    if (dateStr.includes('/')) {
-      dateStr = dateStr.replace(/\//g, '-');
-    }
-    if (!dateStr.includes('Z') && !dateStr.includes('+')) {
-      const parts = dateStr.split(' ');
-      if (parts.length === 2) {
-        const [dPart, tPart] = parts;
-        const dSub = dPart.split('-').map(p => p.padStart(2, '0')).join('-');
-        dateStr = `${dSub}T${tPart}Z`;
-      }
-    }
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) {
+    const d = parseDate(timeStr);
+    if (d) {
       return d.toLocaleString('zh-CN', { hour12: false });
     }
   } catch (_) {}

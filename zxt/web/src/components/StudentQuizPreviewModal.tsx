@@ -65,6 +65,7 @@ export const StudentQuizPreviewModal: React.FC<{
   const [roundMistakenIds, setRoundMistakenIds] = useState<string[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
   const [remediationCount, setRemediationCount] = useState(0);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const [feedback, setFeedback] = useState<{ isCorrect: boolean; text: string } | null>(null);
 
@@ -601,10 +602,15 @@ export const StudentQuizPreviewModal: React.FC<{
                   </div>
                 ) : (
                   <button
-                    onClick={() => onClose({ score, completed: true, details: Object.values(userAnswerDetails) })}
-                    className="w-full max-w-sm py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-base shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 mt-2"
+                    disabled={isSubmitted}
+                    onClick={() => {
+                      if (isSubmitted) return;
+                      setIsSubmitted(true);
+                      onClose({ score, completed: true, details: Object.values(userAnswerDetails) });
+                    }}
+                    className="w-full max-w-sm py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl text-base shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 mt-2"
                   >
-                    <span>✅ 完成并退出</span>
+                    <span>{isSubmitted ? '⏳ 正在退出...' : '✅ 完成并退出'}</span>
                   </button>
                 )}
               </div>

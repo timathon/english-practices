@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { parseDate } from '../../services/api';
 
 interface StudentQuizHistoryTabProps {
   quizHistory: any[];
@@ -74,8 +75,8 @@ export const StudentQuizHistoryTab: React.FC<StudentQuizHistoryTabProps> = ({
                 } else {
                   const existingItem = quizHistory.find(h => h.id === existing);
                   if (existingItem) {
-                    const tExisting = new Date(existingItem.completedAt).getTime() || 0;
-                    const tCurr = new Date(item.completedAt).getTime() || 0;
+                    const tExisting = parseDate(existingItem.completedAt)?.getTime() || 0;
+                    const tCurr = parseDate(item.completedAt)?.getTime() || 0;
                     if (tCurr < tExisting) {
                       firstAttemptMap.set(key, item.id);
                     }
