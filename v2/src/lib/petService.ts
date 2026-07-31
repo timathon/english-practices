@@ -1,5 +1,17 @@
 import { API_URL, authClient } from './auth';
 
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && syncTimer) {
+      clearTimeout(syncTimer);
+      syncTimer = null;
+      petService.syncSave(petService.getPetState());
+    }
+  });
+}
+
 export type DailyGoalPreset = 'easy' | 'normal' | 'hard';
 
 export const DAILY_GOAL_VALUES: Record<DailyGoalPreset, number> = {
@@ -289,11 +301,22 @@ export const petService = {
       localStorage.setItem(getLSKey(), JSON.stringify(state));
       // Notify components about state change
       window.dispatchEvent(new CustomEvent('ep-pet-update', { detail: state }));
-      // Sync to remote database
-      this.syncSave(state);
+      // Debounce sync to remote database to coalesce rapid updates
+      this.debouncedSyncSave(state);
     } catch (e) {
       console.error('Failed to save pet state', e);
     }
+  },
+
+  debouncedSyncSave(_state?: PetState, delayMs: number = 800) {
+    if (syncTimer) {
+      clearTimeout(syncTimer);
+    }
+    syncTimer = setTimeout(() => {
+      syncTimer = null;
+      const latestState = this.getPetState();
+      this.syncSave(latestState);
+    }, delayMs);
   },
 
   mergePetState(local: PetState, server: PetState): PetState {
