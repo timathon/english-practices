@@ -160,18 +160,7 @@ def audit_vocab_master(vm, vg, filename):
                     "description": f"Question {qid} ({word}): option [{idx_o}] contains forbidden distractor 'sex'."
                 })
 
-            if qtype == "En2Cn":
-                cleaned_opt = re.sub(r'\b(n|adj|adv|v|vt|vi|phr|abbr|prep|num|conj|pron)\.\s*', '', opt_str, flags=re.IGNORECASE)
-                cleaned_opt = re.sub(r'&\s*', '', cleaned_opt)
-                if re.search(r'[a-zA-Z]', cleaned_opt) or opt_str in ['vi.', 'vt.', 'n.', 'adj.', 'adv.', 'phr.', 'prep.']:
-                    issues.append({
-                        "json_file": filename,
-                        "rule_section": "2. Vocab Master (VM)",
-                        "item_id": qid,
-                        "issue_type": "En2Cn Distractor Language",
-                        "description": f"En2Cn option [{idx_o}] contains raw English text: '{opt}'"
-                    })
-            elif qtype in ["Cn2En", "Cloze"]:
+            if qtype in ["Cn2En", "Cloze"]:
                 opt_pos = word_pos_map.get(opt_str, "unknown")
                 if target_pos != "unknown" and opt_pos != "unknown" and target_pos != opt_pos:
                     issues.append({
@@ -256,23 +245,24 @@ def audit_vocab_master_llm(vm, filename, use_high=False):
             })
 
         prompt = f"""\
-You are an expert English language assessment auditor.
+You are an expert English assessment auditor.
 Audit the following multiple-choice questions from a primary/middle school English practice unit.
 
 Check each question specifically for:
-1. Distractor Quality: Are any options absurdly obvious, irrelevant non-sequiturs, or obvious giveaways?
-2. Trap Quality: Do distractors offer plausible visual, phonetic, or semantic traps?
+1. En2Cn Option Language Rule (CRITICAL): For type "En2Cn", all options MUST be Chinese translations. If any option in an "En2Cn" question contains English words/letters, flag it!
+2. Distractor Quality: Are any options absurdly obvious, irrelevant non-sequiturs, or obvious giveaways?
+3. Trap Quality: Do distractors offer plausible visual, phonetic, or semantic traps?
 
 Questions:
 {json.dumps(sample, ensure_ascii=False, indent=2)}
 
-Return ONLY a JSON array of issue objects for any question that fails distractor quality.
+Return ONLY a JSON array of issue objects for any question that fails the audit rules.
 Each object must have:
 - "id": question ID
 - "word": target word
-- "issue": short issue type (e.g., "Low Quality Distractor" or "Absurd Option")
-- "description": concise explanation of why the option is poor
-- "suggested_options": array of 6 ideal options (matching correct PoS/language) where the correct answer is preserved and distractors are replaced with high-quality traps.
+- "issue": short issue type (e.g., "En2Cn Distractor Language" or "Low Quality Distractor")
+- "description": concise explanation of why the option fails (e.g., "En2Cn options must be in Chinese, but contain English words")
+- "suggested_options": array of 6 ideal options (for En2Cn, ALL 6 options MUST be in Chinese, with correct Chinese meaning preserved at index specified by answer or original correct position, and distractors replaced with high-quality Chinese translation traps).
 
 Output ONLY raw JSON array, no markdown wrappers. If all questions are good, return [].
 """
@@ -428,18 +418,6 @@ def audit_sentence_architect(sa, filename):
                     "description": f"Duplicate sentence ID '{sid}' found."
                 })
             seen_ids.add(sid)
-
-            en_words = [w.lower() for w in re.findall(r"\b\w+['’]?\w*\b", en)]
-            overlaps = [nw for nw in noise if nw.lower() in en_words]
-            if overlaps:
-                overlaps_str = ", ".join(f"'{w}'" for w in overlaps)
-                issues.append({
-                    "json_file": filename,
-                    "rule_section": "4. Sentence Architect (SA)",
-                    "item_id": sid,
-                    "issue_type": "Noise Word Overlap",
-                    "description": f"Noise word(s) {overlaps_str} present in primary English sentence '{en}'."
-                })
 
             for acc in accept:
                 acc_lower = acc.lower()
