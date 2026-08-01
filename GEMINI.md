@@ -43,6 +43,13 @@ When editing existing codebases:
   2. [Step Action] → Verify: [Specific Check Command/Outcome]
   ```
 
+## 5. Unit Audit Command Shortcut
+* **"audit ${folder}" Directive:** Whenever the user inputs `"audit <folder_path>"` or `"audit ${folder}"` (e.g. `audit v2-data/SA1/sa1-u0` or `audit sa1-u0`), you MUST immediately run the unit audit script:
+  ```bash
+  python3 scripts/genai/audit-scripts/audit_unit.py <folder_path>
+  ```
+  If `--llm` or `--high` is specified in the prompt, append the `--llm` or `--high` flag accordingly.
+
 ---
 
 # English Practices Data Transformation Rules
@@ -193,7 +200,9 @@ This document defines the rules for extracting and converting textbook data into
   - `en`: Primary English sentence.
   - `cn`: Chinese translation.
   - `hint`: Concise bilingual grammar clue.
-  - `noise`: 2-5 relevant distractor words not in the sentence. The number of noise words should scale with the sentence length (e.g., 2 for short, 5 for long). **MUST NOT** include any words already present in the primary English sentence (`en`). Distractors should be valid distractors where students may make mistakes (e.g., related in theme or part-of-speech) but must be distinct from the target words to avoid confusion or multiple correct answers with the provided blocks.
+  - `noise`: 2-5 relevant distractor words not in the sentence. The number of noise words should scale with the sentence length (e.g., 2 for short, 5 for long). **MUST NOT** include any words already present in the primary English sentence (`en`). Distractors should be high-quality traps where students may make mistakes, focusing on:
+    - **Grammatical / Morphological Traps:** Inflections, tenses, or singular/plural forms of target words in `en` (e.g. if `en` has "failures", use singular "failure"; if `en` has "have" / "burger", use "had" / "burgers"; pronoun variations like "he" for "you").
+    - **Semantic Traps:** Relevant thematic or part-of-speech alternatives that test precise grammatical and lexical understanding.
   - `accept`: Array of valid grammatical variations.
     - **Natural Variations:** Include common word-order variations that use the *exact same words* (e.g., "Together the two of us played" -> "The two of us played together").
     - **No Expanded Contractions:** Do NOT include expanded forms of contractions in `accept` (e.g., if `en` is "it's...", do not add "it is..." to `accept`) because the user constructs sentences from discrete word blocks and won't have the individual words to form the expansion.

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-audit_tn_nodes.py — Audit and fill missing/incorrect fields in a text-navigator JSON via Gemini API.
+complete_tn_nodes.py — Complete and fill missing/incorrect fields in a text-navigator JSON via Gemini API.
 
 Usage:
-    python3 scripts/genai/audit_tn_nodes.py <path-to-text-navigator.json>
+    python3 scripts/genai/complete_tn_nodes.py <path-to-text-navigator.json>
 
 Requires:
     pip install google-genai
@@ -125,7 +125,7 @@ def extract_json(text: str) -> list:
 def main():
     use_high = parse_high_flag()
     if len(sys.argv) < 2:
-        print("Usage: python3 scripts/genai/audit_tn_nodes.py <path-to-json-file>", file=sys.stderr)
+        print("Usage: python3 scripts/genai/complete_tn_nodes.py <path-to-json-file>", file=sys.stderr)
         sys.exit(1)
         
     json_path = Path(sys.argv[1])

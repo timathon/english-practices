@@ -1,5 +1,27 @@
 #!/usr/bin/env node
 
+/**
+ * tn-editor.cjs — Text Navigator & Mind Map Editor Web Tool
+ * 
+ * Overview:
+ *   A standalone local web application and HTTP server for visually editing,
+ *   auditing, and managing hierarchical mind map structures in Text Navigator
+ *   (*-text-navigator.json) and Recall Map (*-recall-map.json) practice files.
+ * 
+ * Usage:
+ *   node scripts/tn-editor.cjs <path-to-json-file>
+ * 
+ * Example:
+ *   node scripts/tn-editor.cjs v2-data/SA1/sa1-u0/sa1-u0-text-navigator.json
+ * 
+ * Features & Endpoints:
+ *   - http://localhost:3000/ : Interactive web GUI for node tree manipulation
+ *   - GET  /api/data         : Load target JSON data into editor
+ *   - POST /api/data         : Save modified JSON tree back to disk
+ *   - POST /api/audit        : Trigger scripts/genai/complete_tn_nodes.py to auto-fill
+ *                              missing translations, emojis, T/F quizzes, and keywords via Gemini API
+ */
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -9,7 +31,7 @@ const { exec } = require('child_process');
 const fileArg = process.argv[2];
 if (!fileArg) {
     console.error('\x1b[31m%s\x1b[0m', 'Error: Please provide a JSON file path.');
-    console.log('Usage: node scripts/tn.cjs <path-to-json-file>');
+    console.log('Usage: node scripts/tn-editor.cjs <path-to-json-file>');
     process.exit(1);
 }
 
@@ -55,7 +77,7 @@ const server = http.createServer((req, res) => {
     } 
     // API: Run Gemini audit on JSON data
     else if (req.method === 'POST' && req.url === '/api/audit') {
-        const auditScript = path.join(__dirname, 'genai', 'audit_tn_nodes.py');
+        const auditScript = path.join(__dirname, 'genai', 'complete_tn_nodes.py');
         console.log(`Running audit script on ${filePath}...`);
         exec(`python3 "${auditScript}" "${filePath}"`, (err, stdout, stderr) => {
             if (err) {

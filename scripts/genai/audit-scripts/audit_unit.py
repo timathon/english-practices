@@ -23,7 +23,8 @@ def audit_vocab_guide(vg, filename):
         page = item.get("page_number", "")
         ctx = item.get("context_sentence", "")
 
-        if not (ipa.startswith("/") and ipa.endswith("/")):
+        is_phrase = " " in word.strip()
+        if not is_phrase and not (ipa.startswith("/") and ipa.endswith("/")):
             issues.append({
                 "json_file": filename,
                 "rule_section": "1. Vocab Guide Extraction (VGE)",
@@ -86,9 +87,23 @@ def audit_vocab_master(vm, vg, filename):
             })
         all_questions.extend(c_qs)
 
+    def get_pos(meaning, word):
+        if ' ' in word or '...' in word or 'phr.' in meaning:
+            return 'phrase'
+        if 'adj.' in meaning or 'adv.' in meaning or 'abbr.' in meaning:
+            return 'adj'
+        if 'vi.' in meaning or 'vt.' in meaning or 'v.' in meaning:
+            return 'verb'
+        if 'n.' in meaning:
+            return 'noun'
+        return 'other'
+
+    word_pos_map = {item.get('word', ''): get_pos(item.get('meaning', ''), item.get('word', '')) for item in vg_vocab}
+
     for q in all_questions:
         qid = q.get("id", "")
         word = q.get("word", "")
+        meaning = q.get("meaning", "")
         tested_words.add(word)
 
         if len(qid) != 8 or not qid.isalnum():
@@ -132,15 +147,39 @@ def audit_vocab_master(vm, vg, filename):
                 "description": f"Question {qid} contains duplicate options: {opts}"
             })
 
-        if qtype == "En2Cn":
-            for idx_o, opt in enumerate(opts):
-                if re.search(r'[a-zA-Z]', str(opt)):
+        target_pos = word_pos_map.get(word, get_pos(meaning, word))
+
+        for idx_o, opt in enumerate(opts):
+            opt_str = str(opt)
+            if opt_str.lower() == 'sex' and word.lower() != 'sex':
+                issues.append({
+                    "json_file": filename,
+                    "rule_section": "2. Vocab Master (VM)",
+                    "item_id": qid,
+                    "issue_type": "Forbidden Distractor",
+                    "description": f"Question {qid} ({word}): option [{idx_o}] contains forbidden distractor 'sex'."
+                })
+
+            if qtype == "En2Cn":
+                cleaned_opt = re.sub(r'\b(n|adj|adv|v|vt|vi|phr|abbr|prep|num|conj|pron)\.\s*', '', opt_str, flags=re.IGNORECASE)
+                cleaned_opt = re.sub(r'&\s*', '', cleaned_opt)
+                if re.search(r'[a-zA-Z]', cleaned_opt) or opt_str in ['vi.', 'vt.', 'n.', 'adj.', 'adv.', 'phr.', 'prep.']:
                     issues.append({
                         "json_file": filename,
                         "rule_section": "2. Vocab Master (VM)",
                         "item_id": qid,
                         "issue_type": "En2Cn Distractor Language",
                         "description": f"En2Cn option [{idx_o}] contains raw English text: '{opt}'"
+                    })
+            elif qtype in ["Cn2En", "Cloze"]:
+                opt_pos = word_pos_map.get(opt_str, "unknown")
+                if target_pos != "unknown" and opt_pos != "unknown" and target_pos != opt_pos:
+                    issues.append({
+                        "json_file": filename,
+                        "rule_section": "2. Vocab Master (VM)",
+                        "item_id": qid,
+                        "issue_type": "Distractor PoS Mismatch",
+                        "description": f"Question {qid} ({word} [{target_pos}]): distractor '{opt}' has mismatching PoS [{opt_pos}]."
                     })
 
         if qtype == "Cloze":
@@ -159,11 +198,119 @@ def audit_vocab_master(vm, vg, filename):
         issues.append({
             "json_file": filename,
             "rule_section": "2. Vocab Master (VM)",
-            "item_id": "Coverage",
-            "issue_type": "Missing Vocab Coverage",
-            "description": f"Vocabulary items not tested in VM: {missing_coverage}"
+            "item_id": "Vocabulary Coverage",
+            "issue_type": "Missing Item Coverage",
+            "description": f"The following {len(missing_coverage)} non-proper vocabulary items were not tested in VM: {list(missing_coverage)}"
         })
 
+    return issues
+
+def audit_vocab_master_llm(vm, filename, use_high=False):
+    issues = []
+    genai_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if genai_dir not in sys.path:
+        sys.path.insert(0, genai_dir)
+
+    try:
+        from config import get_genai_config
+        from google import genai
+    except Exception as e:
+        print(f"⚠️ Could not import genai config: {e}")
+        return issues
+
+    try:
+        api_key, model_name = get_genai_config(use_high)
+        client = genai.Client(api_key=api_key)
+    except Exception as e:
+        print(f"⚠️ Could not initialize Gemini Client: {e}")
+        return issues
+
+    challenges = vm.get("challenges", [])
+    all_questions = []
+    for c in challenges:
+        all_questions.extend(c.get("questions", []))
+
+    if not all_questions:
+        return issues
+
+    print(f"🤖 [LLM AUDIT] Starting Gemini Distractor Quality Evaluation on {len(all_questions)} VM questions...")
+    print(f"   Model: {model_name} | API Key Env: {'GOOGLE_API_KEY' if use_high else 'GOOGLE_API_KEY_FREE'}")
+
+    batch_size = 60
+    total_batches = math.ceil(len(all_questions) / batch_size)
+
+    for i in range(0, len(all_questions), batch_size):
+        batch_idx = (i // batch_size) + 1
+        batch = all_questions[i:i+batch_size]
+        print(f"   [Batch {batch_idx}/{total_batches}] Auditing questions {i+1}..{min(i+batch_size, len(all_questions))} via {model_name}...", end="", flush=True)
+
+        sample = []
+        for q in batch:
+            sample.append({
+                "id": q.get("id"),
+                "word": q.get("word"),
+                "type": q.get("type"),
+                "prompt": q.get("prompt"),
+                "options": q.get("options"),
+                "answer_text": q.get("options", [])[q.get("answer")] if (q.get("answer") is not None and q.get("answer") < len(q.get("options", []))) else None
+            })
+
+        prompt = f"""\
+You are an expert English language assessment auditor.
+Audit the following multiple-choice questions from a primary/middle school English practice unit.
+
+Check each question specifically for:
+1. Distractor Quality: Are any options absurdly obvious, irrelevant non-sequiturs, or obvious giveaways?
+2. Trap Quality: Do distractors offer plausible visual, phonetic, or semantic traps?
+
+Questions:
+{json.dumps(sample, ensure_ascii=False, indent=2)}
+
+Return ONLY a JSON array of issue objects for any question that fails distractor quality.
+Each object must have:
+- "id": question ID
+- "word": target word
+- "issue": short issue type (e.g., "Low Quality Distractor" or "Absurd Option")
+- "description": concise explanation of why the option is poor
+- "suggested_options": array of 6 ideal options (matching correct PoS/language) where the correct answer is preserved and distractors are replaced with high-quality traps.
+
+Output ONLY raw JSON array, no markdown wrappers. If all questions are good, return [].
+"""
+
+        try:
+            res = client.models.generate_content(model=model_name, contents=prompt)
+            raw_text = res.text.strip()
+            if raw_text.startswith("```json"):
+                raw_text = raw_text[7:]
+            if raw_text.startswith("```"):
+                raw_text = raw_text[3:]
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3]
+            raw_text = raw_text.strip()
+
+            parsed_issues = json.loads(raw_text)
+            if isinstance(parsed_issues, list) and len(parsed_issues) > 0:
+                print(f" ⚠️ {len(parsed_issues)} issue(s) found")
+                for item in parsed_issues:
+                    desc = item.get("description", "Low quality distractor identified by LLM")
+                    sug = item.get("suggested_options")
+                    if sug and isinstance(sug, list):
+                        sug_str = ", ".join(f"'{opt}'" for opt in sug)
+                        desc += f"<br>**Suggested Options:** [{sug_str}]"
+
+                    issues.append({
+                        "json_file": filename,
+                        "rule_section": "2. Vocab Master (VM)",
+                        "item_id": item.get("id", "q"),
+                        "issue_type": f"LLM: {item.get('issue', 'Distractor Quality')}",
+                        "description": desc
+                    })
+            else:
+                print(" ✅ Passed")
+        except Exception as e:
+            print(f" ⚠️ API Error: {e}")
+
+    print(f"🤖 [LLM AUDIT] Finished. Total LLM distractor issues identified: {len(issues)}")
     return issues
 
 def audit_spelling_hero(sh, vg, filename):
@@ -283,15 +430,16 @@ def audit_sentence_architect(sa, filename):
             seen_ids.add(sid)
 
             en_words = [w.lower() for w in re.findall(r"\b\w+['’]?\w*\b", en)]
-            for nw in noise:
-                if nw.lower() in en_words:
-                    issues.append({
-                        "json_file": filename,
-                        "rule_section": "4. Sentence Architect (SA)",
-                        "item_id": sid,
-                        "issue_type": "Noise Word Overlap",
-                        "description": f"Noise word '{nw}' is already present in primary English sentence '{en}'."
-                    })
+            overlaps = [nw for nw in noise if nw.lower() in en_words]
+            if overlaps:
+                overlaps_str = ", ".join(f"'{w}'" for w in overlaps)
+                issues.append({
+                    "json_file": filename,
+                    "rule_section": "4. Sentence Architect (SA)",
+                    "item_id": sid,
+                    "issue_type": "Noise Word Overlap",
+                    "description": f"Noise word(s) {overlaps_str} present in primary English sentence '{en}'."
+                })
 
             for acc in accept:
                 acc_lower = acc.lower()
@@ -305,6 +453,115 @@ def audit_sentence_architect(sa, filename):
                             "description": f"Accept variation '{acc}' expands contraction '{contr}' from en '{en}'."
                         })
 
+    return issues
+
+def audit_sentence_architect_llm(sa, filename, use_high=False):
+    issues = []
+    genai_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if genai_dir not in sys.path:
+        sys.path.insert(0, genai_dir)
+
+    try:
+        from config import get_genai_config
+        from google import genai
+    except Exception as e:
+        print(f"⚠️ Could not import genai config: {e}")
+        return issues
+
+    try:
+        api_key, model_name = get_genai_config(use_high)
+        client = genai.Client(api_key=api_key)
+        api_key_env = "GOOGLE_API_KEY" if use_high else "GOOGLE_API_KEY_FREE"
+    except Exception as e:
+        print(f"⚠️ Could not initialize Gemini Client: {e}")
+        return issues
+
+    all_items = []
+    for c in sa.get("challenges", []):
+        for item in c.get("data", []):
+            all_items.append({
+                "id": item.get("id"),
+                "en": item.get("en"),
+                "cn": item.get("cn"),
+                "noise": item.get("noise", [])
+            })
+
+    if not all_items:
+        return []
+
+    print(f"\n🤖 [LLM AUDIT] Starting Gemini SA Noise Quality Evaluation on {len(all_items)} sentences...")
+    print(f"   Model: {model_name} | API Key Env: {api_key_env}")
+
+    issues = []
+    batch_size = 60
+    for i in range(0, len(all_items), batch_size):
+        batch_num = (i // batch_size) + 1
+        total_batches = (len(all_items) + batch_size - 1) // batch_size
+        print(f"   [Batch {batch_num}/{total_batches}] Auditing sentences {i+1}..{min(i+batch_size, len(all_items))} via {model_name}...", end="", flush=True)
+
+        sample = all_items[i:i+batch_size]
+        prompt = f"""\
+You are an expert English language assessment auditor.
+Audit the following Sentence Architect items (sentence building exercise).
+
+Check each sentence specifically for:
+1. Exact Noise Word Overlap: A distractor in "noise" MUST NOT appear VERBATIM (case-insensitive exact word match) in the primary English sentence "en".
+   - IMPORTANT NOTE: Inflections, singular/plural variations, or tense variations (e.g. singular "failure" when "en" contains plural "failures"; past tense "had" when "en" contains "have"; plural "burgers" when "en" contains "burger") are HIGHLY DESIRABLE GRAMMAR TRAPS. They are NOT overlaps and MUST NOT be flagged as errors!
+2. Noise Quality & High-Quality Traps: Distractors in "noise" should be realistic grammatical or semantic traps.
+   - Grammatical / Morphological Traps (PREFERRED): Singular/plural variations (e.g. "failure" for "failures"), tense/inflection variations ("had" for "have"), or pronoun variations ("he" for "you").
+   - Semantic Traps: Plausible thematic or part-of-speech alternatives.
+
+Sentences:
+{json.dumps(sample, ensure_ascii=False, indent=2)}
+
+Return ONLY a JSON array of issue objects for any sentence that has EXACT verbatim noise word overlaps or genuinely poor distractors.
+Each object must have:
+- "id": sentence ID
+- "issue": "Noise Word Overlap" or "Low Quality Noise"
+- "description": concise explanation of the noise word issue
+- "suggested_noise": array of replacement distractor noise words (matching original count, consisting of high-quality grammatical/semantic traps, strictly NOT present verbatim in "en").
+
+Output ONLY raw JSON array, no markdown wrappers. If all sentences are good, return [].
+"""
+
+        try:
+            res = client.models.generate_content(model=model_name, contents=prompt)
+            raw_text = res.text.strip()
+            if raw_text.startswith("```json"):
+                raw_text = raw_text[7:]
+            if raw_text.startswith("```"):
+                raw_text = raw_text[3:]
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3]
+            raw_text = raw_text.strip()
+
+            try:
+                parsed_issues = json.loads(raw_text, strict=False)
+            except Exception:
+                cleaned = re.sub(r'\\(?![/"\\bfnrtu])', r'\\\\', raw_text)
+                parsed_issues = json.loads(cleaned, strict=False)
+            if isinstance(parsed_issues, list) and len(parsed_issues) > 0:
+                print(f" ⚠️ {len(parsed_issues)} issue(s) found")
+                for item in parsed_issues:
+                    desc = item.get("description", "Noise word issue identified by LLM")
+                    sug = item.get("suggested_noise")
+                    if sug and isinstance(sug, list):
+                        sug_str = ", ".join(f"'{nw}'" for nw in sug)
+                        desc += f"<br>**Suggested Noise:** [{sug_str}]"
+
+                    issues.append({
+                        "json_file": filename,
+                        "rule_section": "4. Sentence Architect (SA)",
+                        "item_id": item.get("id", "s"),
+                        "issue_type": f"LLM: {item.get('issue', 'Noise Word Overlap')}",
+                        "description": desc
+                    })
+            else:
+                print(" ✅ Passed")
+        except Exception as e:
+            print(f" ⚠️ API Error: {e}")
+
+    print(f"🤖 [LLM AUDIT] Finished. Total LLM SA noise issues identified: {len(issues)}")
     return issues
 
 def audit_recall_map(rm, unit_path, filename):
@@ -431,8 +688,15 @@ def audit_text_navigator(tn, unit_path, filename):
     return issues
 
 def main():
+    skip_llm = "--no-llm" in sys.argv or "--skip-llm" in sys.argv
+    use_llm = not skip_llm
+    use_high = "high" in sys.argv or "--high" in sys.argv
+    for flag in ["--llm", "--no-llm", "--skip-llm", "high", "--high"]:
+        if flag in sys.argv:
+            sys.argv.remove(flag)
+
     if len(sys.argv) < 2:
-        print("Usage: python3 scripts/genai/audit-scripts/audit_unit.py <unit_folder_path>")
+        print("Usage: python3 scripts/genai/audit-scripts/audit_unit.py <unit_folder_path> [--no-llm] [--high]")
         sys.exit(1)
 
     unit_dir = sys.argv[1].rstrip("/")
@@ -441,7 +705,7 @@ def main():
         sys.exit(1)
 
     unit_name = os.path.basename(unit_dir)
-    print(f"Auditing practice JSONs in: {unit_dir}")
+    print(f"Auditing practice JSONs in: {unit_dir} (LLM Audit: {use_llm})")
 
     files = {
         "vg": f"{unit_name}-vocab-guide.json",
@@ -469,14 +733,37 @@ def main():
         all_issues.extend(audit_vocab_guide(data["vg"], files["vg"]))
     if data["vm"]:
         all_issues.extend(audit_vocab_master(data["vm"], data["vg"], files["vm"]))
+        if use_llm:
+            all_issues.extend(audit_vocab_master_llm(data["vm"], files["vm"], use_high))
     if data["sh"]:
         all_issues.extend(audit_spelling_hero(data["sh"], data["vg"], files["sh"]))
     if data["sa"]:
         all_issues.extend(audit_sentence_architect(data["sa"], files["sa"]))
+        if use_llm:
+            all_issues.extend(audit_sentence_architect_llm(data["sa"], files["sa"], use_high))
     if data["rm"]:
         all_issues.extend(audit_recall_map(data["rm"], unit_dir, files["rm"]))
     if data["tn"]:
         all_issues.extend(audit_text_navigator(data["tn"], unit_dir, files["tn"]))
+
+    # Deduplicate issues per (json_file, item_id, issue_type) so each issue type gets its own line
+    merged_issues = []
+    issue_map = {}
+    for issue in all_issues:
+        norm_type = issue["issue_type"].replace("LLM: ", "")
+        key = (issue["json_file"], issue["item_id"], norm_type)
+        if key not in issue_map:
+            issue_map[key] = issue
+            merged_issues.append(issue)
+        else:
+            existing = issue_map[key]
+            if "<br>**Suggested" in issue["description"] and "<br>**Suggested" not in existing["description"]:
+                sug_part = issue["description"].split("<br>**Suggested")[1]
+                existing["description"] += f"<br>**Suggested{sug_part}"
+            elif issue["description"] not in existing["description"]:
+                existing["description"] += f" | {issue['description']}"
+
+    all_issues = merged_issues
 
     # Generate Markdown Report
     output_dir = "scripts/genai/audit-reports"
@@ -509,10 +796,11 @@ def main():
     if not all_issues:
         report_lines.append("🎉 No issues found! All practice JSONs strictly adhere to `GEMINI.md` rules.\n")
     else:
-        report_lines.append("| JSON File | Rule Section | Item ID / Target | Issue Type | Description |")
-        report_lines.append("| :--- | :--- | :--- | :--- | :--- |")
+        report_lines.append("| JSON File | Rule Section | Item ID / Target | Issue Type | Description | Status |")
+        report_lines.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
         for issue in all_issues:
-            report_lines.append(f"| `{issue['json_file']}` | {issue['rule_section']} | `{issue['item_id']}` | {issue['issue_type']} | {issue['description']} |")
+            status_val = issue.get("status", "Pending")
+            report_lines.append(f"| `{issue['json_file']}` | {issue['rule_section']} | `{issue['item_id']}` | {issue['issue_type']} | {issue['description']} | {status_val} |")
 
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(report_lines) + "\n")
