@@ -118,11 +118,19 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
 
   // Sync Error Modal state
   const [syncErrorModal, setSyncErrorModal] = useState<{ title: string; message: string } | null>(null);
+  const [pointAwardModal, setPointAwardModal] = useState<{
+    basePoints: number;
+    timelyBonus: number;
+    accuracyBonus: number;
+    totalEarnedPoints: number;
+    newTotalPoints: number;
+    isLockedToday: boolean;
+  } | null>(null);
 
   // Animating Poem ID state for unlock toggle transition
   const [animatingPoemId, setAnimatingPoemId] = useState<number | null>(null);
 
-  useLockBodyScroll(publishingPoem !== null || selectedHistoryItem !== null || syncErrorModal !== null);
+  useLockBodyScroll(publishingPoem !== null || selectedHistoryItem !== null || syncErrorModal !== null || pointAwardModal !== null);
 
   // Admin state
   const [teachersList, setTeachersList] = useState<any[]>([]);
@@ -1085,14 +1093,18 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               (async () => {
                 try {
                   await apiService.markAssignmentCompleted(quizInfo.assignmentId!, finalScore);
-                  await apiService.recordQuizResult(user?.id || 'usr_stu_001', {
+                  const pb = await apiService.recordQuizResult(user?.id || 'usr_stu_001', {
                     poemTitle: quizInfo.poemTitle,
                     poemId: poems.find(p => p.title === quizInfo.poemTitle)?.id || 1,
                     score: finalScore,
                     accuracy: `${finalScore}%`,
                     quizType: '班级作业闯关',
-                    details: res.details || []
+                    details: res.details || [],
+                    assignmentId: quizInfo.assignmentId
                   });
+                  if (pb) {
+                    setPointAwardModal(pb);
+                  }
                   await loadStudentData();
                 } catch (err) {
                   console.error('Failed to submit assignment completion:', err);
@@ -1128,6 +1140,54 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
           formatLocalTime={formatLocalTime}
           onClose={() => setSelectedHistoryItem(null)}
         />
+      )}
+
+      {/* Point Reward Breakdown Modal */}
+      {pointAwardModal && (
+        <div className="fixed inset-0 !mt-0 !m-0 z-[130] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPointAwardModal(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl border border-amber-200 max-w-sm w-full p-6 text-center space-y-5 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-300 text-amber-900 rounded-full flex items-center justify-center text-4xl mx-auto shadow-lg ring-4 ring-amber-100">
+              🪙
+            </div>
+            
+            <div className="space-y-1">
+              <h3 className="text-2xl font-black font-serif text-slate-800">
+                获得 +{pointAwardModal.totalEarnedPoints} 智慧点！
+              </h3>
+              <p className="text-xs text-slate-500">
+                知新堂智慧点总计: <span className="font-bold text-amber-600 font-mono text-sm">{pointAwardModal.newTotalPoints} 智慧点</span>
+              </p>
+            </div>
+
+            <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-4 text-xs space-y-2 text-left">
+              <div className="flex justify-between items-center text-slate-700">
+                <span>📅 每日打卡基础分</span>
+                <span className="font-bold text-slate-900 font-mono">+{pointAwardModal.basePoints} pts</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-700">
+                <span>⏱️ 按时提交奖励</span>
+                <span className="font-bold text-slate-900 font-mono">+{pointAwardModal.timelyBonus} pts</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-700">
+                <span>🎯 正确率突破奖励</span>
+                <span className="font-bold text-amber-600 font-mono font-bold">+{pointAwardModal.accuracyBonus} pts</span>
+              </div>
+            </div>
+
+            {pointAwardModal.isLockedToday && (
+              <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-xs text-emerald-800 font-bold flex items-center justify-center gap-1">
+                <span>🔒 100% 满分成就！今日已锁定，明天可再练习</span>
+              </div>
+            )}
+
+            <button
+              onClick={() => setPointAwardModal(null)}
+              className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-sm rounded-xl shadow-md transition"
+            >
+              太棒了 (Awesome!)
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Sync Error Modal */}

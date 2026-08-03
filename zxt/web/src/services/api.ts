@@ -41,6 +41,8 @@ export interface UserSession {
   createdBy: string;
   capabilities: string[];
   isQuizEditor?: boolean;
+  points?: number;
+  streakDays?: number;
 }
 
 export interface PoemLine {
@@ -699,7 +701,7 @@ export const apiService = {
   },
 
   // Record Quiz Result (Student)
-  async recordQuizResult(studentId: string, result: { poemTitle: string; poemId: number; score: number; accuracy: string; quizType: string; details?: any[] }) {
+  async recordQuizResult(studentId: string, result: { poemTitle: string; poemId: number; score: number; accuracy: string; quizType: string; details?: any[]; assignmentId?: string }) {
     const history = await this.getQuizHistory(studentId);
     const newRecord = {
       id: `qh_${Date.now()}`,
@@ -709,16 +711,73 @@ export const apiService = {
     history.unshift(newRecord);
     localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(history));
 
+    let pointBreakdown: any = null;
+
     if (USE_BACKEND) {
-      fetch(`${API_BASE_URL}/api/student/history`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId,
-          ...result,
-        }),
-      }).catch(err => console.error('Failed to save quiz history to remote DB:', err));
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/student/history`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId,
+            ...result,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.pointBreakdown) {
+            pointBreakdown = data.pointBreakdown;
+
+            // Update local user session points
+            if (currentSession && data.pointBreakdown.newTotalPoints !== undefined) {
+              currentSession.points = data.pointBreakdown.newTotalPoints;
+              localStorage.setItem('zxt_user', JSON.stringify(currentSession));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to save quiz history to remote DB:', err);
+      }
     }
+
+    // Fallback local point calculation if backend was unreachable or disabled
+    if (!pointBreakdown) {
+      const numScore = Number(result.score) || 0;
+      const targetPoemId = result.poemId;
+      // Check previous attempts for this specific poem
+      const poemHistory = history.filter((h: any) => h.poemId === targetPoemId || h.poemTitle === result.poemTitle);
+      const isFirstAttempt = poemHistory.length <= 1; // including newRecord pushed at head
+
+      let accBonus = 0;
+      if (numScore >= 100) accBonus = 25;
+      else if (numScore >= 90) accBonus = 20;
+      else if (numScore >= 80) accBonus = 15;
+      else if (numScore >= 70) accBonus = 5;
+
+      const basePts = isFirstAttempt ? 20 : 0;
+      const timelyPts = isFirstAttempt ? 10 : 0;
+      const total = basePts + timelyPts + accBonus;
+
+      const currPts = currentSession?.points || 120;
+      const newTotal = currPts + total;
+      if (currentSession) {
+        currentSession.points = newTotal;
+        localStorage.setItem('zxt_user', JSON.stringify(currentSession));
+      }
+
+      pointBreakdown = {
+        basePoints: basePts,
+        timelyBonus: timelyPts,
+        accuracyBonus: accBonus,
+        totalEarnedPoints: total,
+        newTotalPoints: newTotal,
+        isLockedToday: numScore >= 100,
+        isFirstAttempt,
+        historicalHighestScore: numScore
+      };
+    }
+
+    return pointBreakdown;
   },
 
   // Get Class Learning Progress - Learnt Poem IDs (Sync local storage reader)

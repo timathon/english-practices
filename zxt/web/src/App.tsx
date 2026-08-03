@@ -2,6 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Navbar } from './components/Navbar';
 import { LoginModal } from './components/LoginModal';
 import { ViewSwitcher } from './components/ViewSwitcher';
+import { PointsHistoryModal } from './components/PointsHistoryModal';
 import { PlatformHome } from './pages/PlatformHome';
 import { apiService, canEditQuizLibrary, UserSession } from './services/api';
 import { preloadAudioSFX } from './utils/sound';
@@ -18,6 +19,7 @@ export const App: React.FC = () => {
   const [activeView, setActiveView] = useState<'student' | 'parent' | 'teacher' | 'editor' | 'admin'>('student');
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isViewSwitcherOpen, setIsViewSwitcherOpen] = useState(false);
+  const [isPointsHistoryOpen, setIsPointsHistoryOpen] = useState(false);
 
   useEffect(() => {
     // Preload audio sound effects for instant playback
@@ -92,6 +94,7 @@ export const App: React.FC = () => {
         activeView={activeView}
         onOpenLogin={() => setIsLoginOpen(true)}
         onOpenViewSwitcher={() => setIsViewSwitcherOpen(true)}
+        onOpenPointsHistory={() => setIsPointsHistoryOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -150,6 +153,14 @@ export const App: React.FC = () => {
           user={user}
           activeView={activeView}
           onSwitchView={(v) => setActiveView(v)}
+        />
+      )}
+
+      {user && (
+        <PointsHistoryModal
+          isOpen={isPointsHistoryOpen}
+          onClose={() => setIsPointsHistoryOpen(false)}
+          user={user}
         />
       )}
 

@@ -25,6 +25,8 @@ interface UserAccount {
   className?: string;
   createdBy: string;
   createdAt: string;
+  points?: number;
+  streakDays?: number;
 }
 
 interface PoemLineItem {
@@ -74,7 +76,7 @@ async function initDB(db: D1Database): Promise<void> {
     'CREATE TABLE IF NOT EXISTS assignments (id TEXT PRIMARY KEY, class_name TEXT NOT NULL, poem_id INTEGER NOT NULL, poem_title TEXT NOT NULL, due_date TEXT NOT NULL, status TEXT NOT NULL, requirement TEXT, question_ids TEXT, created_at TEXT NOT NULL)'
   ).run();
   await db.prepare(
-    'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL, name TEXT NOT NULL, class_name TEXT, created_by TEXT, is_quiz_editor INTEGER DEFAULT 0, created_at TEXT NOT NULL)'
+    'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL, name TEXT NOT NULL, class_name TEXT, created_by TEXT, is_quiz_editor INTEGER DEFAULT 0, points INTEGER DEFAULT 0, streak_days INTEGER DEFAULT 0, created_at TEXT NOT NULL)'
   ).run();
   await db.prepare(
     'CREATE TABLE IF NOT EXISTS classes (id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL, teacher_name TEXT, teacher_id TEXT, created_at TEXT NOT NULL)'
@@ -562,17 +564,115 @@ app.get('/api/student/history', async (c) => {
 
 app.post('/api/student/history', async (c) => {
   try {
-    const { studentId = 'usr_stu_001', poemTitle, poemId, score, accuracy, quizType, details } = await c.req.json();
+    const { studentId = 'usr_stu_001', poemTitle, poemId, score, accuracy, quizType, details, assignmentId } = await c.req.json();
     const db = c.env.zxt_poems_db;
     await initDB(db);
 
     const recordId = `qh_${Date.now()}`;
     const completedAt = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
+    const todayStr = completedAt.split(' ')[0]; // YYYY/M/D or YYYY-MM-DD
     const detailsJson = details ? JSON.stringify(details) : null;
+
+    // Parse numeric accuracy percentage
+    const numScore = Number(score) || 0;
+    const getAccuracyBonusTier = (acc: number): number => {
+      if (acc >= 100) return 25;
+      if (acc >= 90) return 20;
+      if (acc >= 80) return 15;
+      if (acc >= 70) return 5;
+      return 0;
+    };
+
+    // Query user history for this poem/assignment to determine point rules
+    const targetPoemId = Number(poemId) || 0;
+    const { results: existingHistory } = await db.prepare(
+      'SELECT score, completed_at FROM quiz_history WHERE student_id = ? AND poem_id = ? ORDER BY completed_at ASC'
+    ).bind(studentId, targetPoemId).all<{ score: number; completed_at: string }>();
+
+    let historicalHighestScore = 0;
+    let hasAttemptToday = false;
+
+    for (const h of existingHistory) {
+      if (h.score > historicalHighestScore) {
+        historicalHighestScore = h.score;
+      }
+      if (h.completed_at && h.completed_at.startsWith(todayStr)) {
+        hasAttemptToday = true;
+      }
+    }
+
+    // 1. Timely Submission Bonus (+10 pts)
+    // Awarded on very first attempt ever of an assignment/poem if submitted on or before due date (default due date is present)
+    let timelyBonus = 0;
+    if (existingHistory.length === 0) {
+      let isTimely = true;
+      if (assignmentId) {
+        const asgnRow = await db.prepare('SELECT due_date FROM assignments WHERE id = ?').bind(assignmentId).first<{ due_date: string }>();
+        if (asgnRow && asgnRow.due_date) {
+          const completedDateOnly = completedAt.split(' ')[0].replace(/\//g, '-');
+          const dueDateOnly = asgnRow.due_date.trim().replace(/\//g, '-');
+          if (completedDateOnly > dueDateOnly) {
+            isTimely = false;
+          }
+        }
+      }
+      if (isTimely) {
+        timelyBonus = 10;
+      }
+    }
+
+    // 2. Base Completion Points (20 pts for 1st attempt ever; 10 pts for subsequent days)
+    // First attempt ever: unconditionally +20.
+    // Later days: max once per day, ONLY IF score >= historical highest score prior to this attempt, +10 pts.
+    let basePoints = 0;
+    if (existingHistory.length === 0) {
+      basePoints = 20;
+    } else if (!hasAttemptToday) {
+      if (numScore >= historicalHighestScore) {
+        basePoints = 10;
+      }
+    }
+
+    // 3. Accuracy Bonus Scale (0 - 25 pts)
+    // Differential between current score tier and historical highest tier
+    const currentTierBonus = getAccuracyBonusTier(numScore);
+    const historicalTierBonus = getAccuracyBonusTier(historicalHighestScore);
+    const accuracyBonus = Math.max(0, currentTierBonus - historicalTierBonus);
+
+    const totalEarnedPoints = basePoints + timelyBonus + accuracyBonus;
+    const isLockedToday = numScore >= 100;
+    const isFirstAttempt = existingHistory.length === 0;
+
+    const pointBreakdown = {
+      basePoints,
+      timelyBonus,
+      accuracyBonus,
+      totalEarnedPoints,
+      newTotalPoints: 0,
+      isLockedToday,
+      isFirstAttempt,
+      historicalHighestScore: Math.max(historicalHighestScore, numScore)
+    };
+
+    // Save history record with point breakdown embedded in details
+    const finalDetails = {
+      questions: details || [],
+      pointBreakdown
+    };
+    const detailsPayload = JSON.stringify(finalDetails);
 
     await db.prepare(
       'INSERT INTO quiz_history (id, student_id, poem_id, poem_title, score, accuracy, quiz_type, details, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(recordId, studentId, poemId || 0, poemTitle, score, accuracy || `${score}%`, quizType, detailsJson, completedAt).run();
+    ).bind(recordId, studentId, targetPoemId, poemTitle, numScore, accuracy || `${numScore}%`, quizType, detailsPayload, completedAt).run();
+
+    // Update user points in D1
+    let newTotalPoints = totalEarnedPoints;
+    const userRow = await db.prepare('SELECT points FROM users WHERE id = ?').bind(studentId).first<{ points: number }>();
+    if (userRow) {
+      newTotalPoints = (userRow.points || 0) + totalEarnedPoints;
+      await db.prepare('UPDATE users SET points = ? WHERE id = ?').bind(newTotalPoints, studentId).run();
+    }
+    pointBreakdown.newTotalPoints = newTotalPoints;
 
     return c.json({
       success: true,
@@ -580,12 +680,21 @@ app.post('/api/student/history', async (c) => {
         id: recordId,
         studentId,
         poemTitle,
-        poemId,
-        score,
+        poemId: targetPoemId,
+        score: numScore,
         accuracy,
         quizType,
         details,
         completedAt
+      },
+      pointBreakdown: {
+        basePoints,
+        timelyBonus,
+        accuracyBonus,
+        totalEarnedPoints,
+        newTotalPoints,
+        isLockedToday,
+        historicalHighestScore: Math.max(historicalHighestScore, numScore)
       }
     });
   } catch (err: any) {

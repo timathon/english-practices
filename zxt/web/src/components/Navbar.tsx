@@ -8,6 +8,7 @@ interface NavbarProps {
   activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
   onOpenLogin: () => void;
   onOpenViewSwitcher: () => void;
+  onOpenPointsHistory?: () => void;
   onLogout: () => void;
 }
 
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeView,
   onOpenLogin,
   onOpenViewSwitcher,
+  onOpenPointsHistory,
   onLogout,
 }) => {
   const viewBadgeColor = {
@@ -97,10 +99,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </select>
               </div>
 
-              <div className="text-xs text-right">
+              <div className="text-xs text-right flex items-center space-x-2">
                 <span className="font-bold text-white">{user.name}</span>
                 {user.role !== 'teacher' && user.className && (
-                  <span className="text-[10px] text-slate-400 ml-1 font-mono">({user.className})</span>
+                  <span className="text-[10px] text-slate-400 font-mono">({user.className})</span>
+                )}
+                {user.role === 'student' && (
+                  <button
+                    onClick={onOpenPointsHistory}
+                    title="点击查看智慧点明细与例表 (Click to view points log & rules)"
+                    className="px-2.5 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 hover:border-amber-400 text-amber-300 rounded-full font-bold text-[11px] flex items-center space-x-1 shadow-xs transition cursor-pointer"
+                  >
+                    <span>🪙</span>
+                    <span>{user.points !== undefined ? user.points : 120} 智慧点</span>
+                  </button>
                 )}
               </div>
               <button
