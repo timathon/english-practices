@@ -330,7 +330,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v260724-2000
+            v260805-2000
           </div>
         </div>
       )}
@@ -365,8 +365,17 @@ function RootLayout() {
 }
 
 function IndexRoute() {
-  const { data: session } = useSession();
-  return session ? <Navigate to="/dashboard" replace /> : <Navigate to="/signin" replace />;
+  const { data: session, isPending } = useSession();
+  const hasActiveToken = typeof localStorage !== 'undefined' && !!localStorage.getItem('active_session_token');
+
+  if (session) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  if (isPending || hasActiveToken) {
+    // If session check is pending or active session token exists in local storage, wait or fall back to dashboard
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <Navigate to="/signin" replace />;
 }
 
 function DashboardRoute() {

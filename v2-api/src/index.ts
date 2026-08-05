@@ -125,112 +125,148 @@ app.use('/api/*', async (c, next) => {
   const token = getSessionToken(c);
   
   if (token) {
-    const sessRows = await db.select().from(sessionTable).where(eq(sessionTable.token, token));
-    if (sessRows.length > 0) {
-      const dbSess = sessRows[0];
+    const kvKey = `sess:${token}`;
+    let dbSess: any = null;
+    let currentUser: any = null;
+    
+    // 1. Check KV cache first (Fast Path)
+    if (c.env.V2_CACHE_KV) {
+      try {
+        const cachedStr = await c.env.V2_CACHE_KV.get(kvKey);
+        if (cachedStr) {
+          const cached = JSON.parse(cachedStr);
+          dbSess = cached.dbSess;
+          currentUser = cached.currentUser;
+        }
+      } catch (e) {
+        console.warn("KV get error for session:", e);
+      }
+    }
+
+    // 2. Database Fallback (Cache Miss)
+    if (!dbSess || !currentUser) {
+      const sessRows = await db.select().from(sessionTable).where(eq(sessionTable.token, token));
+      if (sessRows.length > 0) {
+        dbSess = sessRows[0];
+        const userRows = await db.select().from(user).where(eq(user.id, dbSess.userId));
+        if (userRows.length > 0) {
+          currentUser = userRows[0];
+          // Cache session + user in KV for 5 minutes (300 seconds)
+          if (c.env.V2_CACHE_KV) {
+            try {
+              await c.env.V2_CACHE_KV.put(kvKey, JSON.stringify({ dbSess, currentUser }), { expirationTtl: 300 });
+            } catch (e) {
+              console.warn("KV put error for session:", e);
+            }
+          }
+        }
+      }
+    }
+
+    if (dbSess && currentUser) {
       const expiresTime = new Date(dbSess.expiresAt).getTime();
       if (expiresTime === 0) {
         // Delete revoked session
+        if (c.env.V2_CACHE_KV) await c.env.V2_CACHE_KV.delete(kvKey);
         await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
         return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
       }
 
-      // Check user role and testdrive window
-      const userRows = await db.select().from(user).where(eq(user.id, dbSess.userId));
-      if (userRows.length > 0) {
-        const currentUser = userRows[0];
-        
-        if (currentUser.role === 'testdrive') {
-          // 1. Concurrency limit for testdrive (30 devices)
-          const activeSessions = await db.select()
-            .from(sessionTable)
-            .where(eq(sessionTable.userId, currentUser.id))
-            .orderBy(desc(sessionTable.createdAt));
-            
-          if (activeSessions.length > 30) {
-            const sessionsToRevoke = activeSessions.slice(30);
-            for (const s of sessionsToRevoke) {
-              await db.update(sessionTable)
-                .set({ expiresAt: new Date(0) })
-                .where(eq(sessionTable.id, s.id));
-            }
-            if (sessionsToRevoke.some(s => s.id === dbSess.id)) {
-              await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
-              return c.json({ error: "Testdrive limit reached. Please wait 15 minutes or try again later.", reason: "testdrive_limit" }, 403);
-            }
+      if (currentUser.role === 'testdrive') {
+        // 1. Concurrency limit for testdrive (30 devices)
+        const activeSessions = await db.select()
+          .from(sessionTable)
+          .where(eq(sessionTable.userId, currentUser.id))
+          .orderBy(desc(sessionTable.createdAt));
+          
+        if (activeSessions.length > 30) {
+          const sessionsToRevoke = activeSessions.slice(30);
+          for (const s of sessionsToRevoke) {
+            await db.update(sessionTable)
+              .set({ expiresAt: new Date(0) })
+              .where(eq(sessionTable.id, s.id));
           }
+          if (sessionsToRevoke.some(s => s.id === dbSess.id)) {
+            if (c.env.V2_CACHE_KV) await c.env.V2_CACHE_KV.delete(kvKey);
+            await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
+            return c.json({ error: "Testdrive limit reached. Please wait 15 minutes or try again later.", reason: "testdrive_limit" }, 403);
+          }
+        }
 
-          // 2. Usage window limit (20m/1h) - Skip for 'test0'
-          if (currentUser.username === 'test0') {
-            // 'test0' has no limits
-          } else {
-            const now = Date.now();
-            const oneHourMs = 1 * 60 * 60 * 1000;
-            const twentyMinsMs = 20 * 60 * 1000;
-            const todayStr = new Date(now).toISOString().split('T')[0];
+        // 2. Usage window limit (20m/1h) - Skip for 'test0'
+        if (currentUser.username === 'test0') {
+          // 'test0' has no limits
+        } else {
+          const now = Date.now();
+          const oneHourMs = 1 * 60 * 60 * 1000;
+          const twentyMinsMs = 20 * 60 * 1000;
+          const todayStr = new Date(now).toISOString().split('T')[0];
+          
+          let windowStart = currentUser.testdriveWindowStart ? new Date(currentUser.testdriveWindowStart).getTime() : 0;
+          
+          if (windowStart === 0 || (now - windowStart) >= oneHourMs) {
+            // Check if we need to start a new window
+            let currentCount = typeof currentUser.testdriveCount === 'number' ? currentUser.testdriveCount : parseInt(currentUser.testdriveCount as any);
+            if (isNaN(currentCount)) currentCount = 30;
+
+            if (currentCount <= 0) {
+              return c.json({ error: "No testdrives left. Please contact the administrator.", reason: "testdrive_quota_exhausted" }, 403);
+            }
+
+            // Check daily limit (5 per day)
+            let dailyLimit = typeof currentUser.testdriveDailyLimit === 'number' ? currentUser.testdriveDailyLimit : 5;
+            const lastDate = currentUser.testdriveLastDate;
             
-            let windowStart = currentUser.testdriveWindowStart ? new Date(currentUser.testdriveWindowStart).getTime() : 0;
-            
-            if (windowStart === 0 || (now - windowStart) >= oneHourMs) {
-              // Check if we need to start a new window
-              let currentCount = typeof currentUser.testdriveCount === 'number' ? currentUser.testdriveCount : parseInt(currentUser.testdriveCount as any);
-              if (isNaN(currentCount)) currentCount = 30;
+            if (lastDate !== todayStr) {
+              // New day, reset daily limit
+              dailyLimit = 5;
+            }
 
-              if (currentCount <= 0) {
-                return c.json({ error: "No testdrives left. Please contact the administrator.", reason: "testdrive_quota_exhausted" }, 403);
-              }
-
-              // Check daily limit (5 per day)
-              let dailyLimit = typeof currentUser.testdriveDailyLimit === 'number' ? currentUser.testdriveDailyLimit : 5;
-              const lastDate = currentUser.testdriveLastDate;
-              
-              if (lastDate !== todayStr) {
-                // New day, reset daily limit
-                dailyLimit = 5;
-              }
-
-              if (dailyLimit <= 0) {
-                return c.json({ 
-                  error: "Daily testdrive limit reached (5/day). Please come back tomorrow.", 
-                  reason: "testdrive_daily_limit_reached" 
-                }, 403);
-              }
-
-              // Start a new window
-              await db.update(user).set({ 
-                testdriveWindowStart: new Date(now),
-                testdriveCount: currentCount - 1,
-                testdriveDailyLimit: dailyLimit - 1,
-                testdriveLastDate: todayStr
-              }).where(eq(user.id, currentUser.id));
-            } else if ((now - windowStart) >= twentyMinsMs) {
-              // Still in the 1-hour cooldown but passed the 20-minute usage window
-              const nextAvailable = new Date(windowStart + oneHourMs);
+            if (dailyLimit <= 0) {
               return c.json({ 
-                error: "Your 20-minute testdrive session has expired. Please come back in 1 hour.", 
-                reason: "testdrive_expired",
-                nextAvailableAt: nextAvailable.toISOString()
+                error: "Daily testdrive limit reached (5/day). Please come back tomorrow.", 
+                reason: "testdrive_daily_limit_reached" 
               }, 403);
             }
+
+            // Start a new window
+            await db.update(user).set({ 
+              testdriveWindowStart: new Date(now),
+              testdriveCount: currentCount - 1,
+              testdriveDailyLimit: dailyLimit - 1,
+              testdriveLastDate: todayStr
+            }).where(eq(user.id, currentUser.id));
+
+            // Invalidate KV cache so updated window values are loaded next request
+            if (c.env.V2_CACHE_KV) await c.env.V2_CACHE_KV.delete(kvKey);
+          } else if ((now - windowStart) >= twentyMinsMs) {
+            // Still in the 1-hour cooldown but passed the 20-minute usage window
+            const nextAvailable = new Date(windowStart + oneHourMs);
+            return c.json({ 
+              error: "Your 20-minute testdrive session has expired. Please come back in 1 hour.", 
+              reason: "testdrive_expired",
+              nextAvailableAt: nextAvailable.toISOString()
+            }, 403);
           }
-        } else if (currentUser.username !== 'adminx') {
-          // Standard user concurrency limit (2 devices)
-          const activeSessions = await db.select()
-            .from(sessionTable)
-            .where(eq(sessionTable.userId, currentUser.id))
-            .orderBy(desc(sessionTable.createdAt));
-            
-          if (activeSessions.length > 2) {
-            const sessionsToRevoke = activeSessions.slice(2);
-            for (const s of sessionsToRevoke) {
-              await db.update(sessionTable)
-                .set({ expiresAt: new Date(0) })
-                .where(eq(sessionTable.id, s.id));
-            }
-            if (sessionsToRevoke.some(s => s.id === dbSess.id)) {
-              await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
-              return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
-            }
+        }
+      } else if (currentUser.username !== 'adminx') {
+        // Standard user concurrency limit (2 devices)
+        const activeSessions = await db.select()
+          .from(sessionTable)
+          .where(eq(sessionTable.userId, currentUser.id))
+          .orderBy(desc(sessionTable.createdAt));
+          
+        if (activeSessions.length > 2) {
+          const sessionsToRevoke = activeSessions.slice(2);
+          for (const s of sessionsToRevoke) {
+            await db.update(sessionTable)
+              .set({ expiresAt: new Date(0) })
+              .where(eq(sessionTable.id, s.id));
+          }
+          if (sessionsToRevoke.some(s => s.id === dbSess.id)) {
+            if (c.env.V2_CACHE_KV) await c.env.V2_CACHE_KV.delete(kvKey);
+            await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
+            return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
           }
         }
       }
