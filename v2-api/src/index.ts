@@ -794,6 +794,13 @@ app.post('/api/admin/practices', async (c) => {
   }
   
   cachedMappedPractices = null;
+  if (c.env.V2_CACHE_KV) {
+      c.executionCtx.waitUntil(
+          c.env.V2_CACHE_KV.delete('practices_catalog').catch(e => {
+              console.error("KV delete failed:", e);
+          })
+      );
+  }
   return c.json({ success: true, count: items.length })
 })
 
@@ -805,6 +812,13 @@ app.delete('/api/admin/practices', async (c) => {
   const db = drizzle(c.env.DB)
   await db.delete(practice)
   cachedMappedPractices = null;
+  if (c.env.V2_CACHE_KV) {
+      c.executionCtx.waitUntil(
+          c.env.V2_CACHE_KV.delete('practices_catalog').catch(e => {
+              console.error("KV delete failed:", e);
+          })
+      );
+  }
   return c.json({ success: true })
 })
 
@@ -817,6 +831,13 @@ app.delete('/api/admin/practices/:id', async (c) => {
   const db = drizzle(c.env.DB)
   await db.delete(practice).where(eq(practice.id, id))
   cachedMappedPractices = null;
+  if (c.env.V2_CACHE_KV) {
+      c.executionCtx.waitUntil(
+          c.env.V2_CACHE_KV.delete('practices_catalog').catch(e => {
+              console.error("KV delete failed:", e);
+          })
+      );
+  }
   return c.json({ success: true })
 })
 
