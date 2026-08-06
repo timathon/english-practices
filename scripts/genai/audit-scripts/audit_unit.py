@@ -138,14 +138,6 @@ def audit_vocab_master(vm, vg, filename):
                 "description": f"Question {qid} has {len(opts)} options, expected 6."
             })
 
-        if len(set(opts)) != len(opts):
-            issues.append({
-                "json_file": filename,
-                "rule_section": "2. Vocab Master (VM)",
-                "item_id": qid,
-                "issue_type": "Duplicate Options",
-                "description": f"Question {qid} contains duplicate options: {opts}"
-            })
 
         target_pos = word_pos_map.get(word, get_pos(meaning, word))
 
@@ -249,9 +241,15 @@ You are an expert English assessment auditor.
 Audit the following multiple-choice questions from a primary/middle school English practice unit.
 
 Check each question specifically for:
-1. En2Cn Option Language Rule (CRITICAL): For type "En2Cn", all options MUST be Chinese translations. If any option in an "En2Cn" question contains English words/letters, flag it!
-2. Distractor Quality: Are any options absurdly obvious, irrelevant non-sequiturs, or obvious giveaways?
-3. Trap Quality: Do distractors offer plausible visual, phonetic, or semantic traps?
+1. Duplicate Options (CRITICAL): Check if `options` contains any duplicate choices. If duplicates exist, flag it with issue "Duplicate Options" and provide `suggested_options` (6 unique options with proper distractors).
+2. En2Cn Option Language Rule (CRITICAL): For type "En2Cn", all options MUST be Chinese translations. If any option in an "En2Cn" question contains English words/letters, flag it!
+3. Missing Chinese Hint in Ambiguous Cloze Questions (CRITICAL):
+   - Evaluate whether the context sentence ALONE allows a student to uniquely pick the correct target word among the options.
+   - Example of AMBIGUOUS context: Prompt "Is Julie ____ than you ?" with options ["slimmer", "taller", "shorter", "thinner", "heavier", "smaller"]. Without a hint like (提示: 苗条的), ANY of these options is logically valid. MUST flag as issue "Missing Hint in Ambiguous Cloze" and provide `suggested_prompt` appending `(提示: [Chinese meaning])` (e.g., "Is Julie ____ than you ? (提示: 苗条的)")!
+   - Example of UNAMBIGUOUS context: Prompt "The average annual rainfall here is about 800 ____." with options ["mm", "kg", "g", "km", "L", "m"]. The specific context ("annual rainfall") uniquely determines "mm". Do NOT flag questions like this!
+   - Rule: If prompt lacks `(提示: ...)` AND the context alone could logically support 2+ options as valid answers, flag it with issue "Missing Hint in Ambiguous Cloze"!
+4. Distractor Quality: Are any options absurdly obvious, irrelevant non-sequiturs, or obvious giveaways?
+5. Trap Quality: Do distractors offer plausible visual, phonetic, or semantic traps?
 
 Questions:
 {json.dumps(sample, ensure_ascii=False, indent=2)}
@@ -260,9 +258,10 @@ Return ONLY a JSON array of issue objects for any question that fails the audit 
 Each object must have:
 - "id": question ID
 - "word": target word
-- "issue": short issue type (e.g., "En2Cn Distractor Language" or "Low Quality Distractor")
-- "description": concise explanation of why the option fails (e.g., "En2Cn options must be in Chinese, but contain English words")
-- "suggested_options": array of 6 ideal options (for En2Cn, ALL 6 options MUST be in Chinese, with correct Chinese meaning preserved at index specified by answer or original correct position, and distractors replaced with high-quality Chinese translation traps).
+- "issue": short issue type (e.g., "Duplicate Options", "En2Cn Distractor Language", "Missing Hint in Ambiguous Cloze", or "Low Quality Distractor")
+- "description": concise explanation of why the option or question fails (e.g., "Cloze question prompt is ambiguous because multiple options fit grammatically and semantically, but lacks Chinese hint (提示: ...)")
+- "suggested_prompt": string containing the updated prompt with hint included (REQUIRED for "Missing Hint in Ambiguous Cloze" issues).
+- "suggested_options": array of 6 ideal options (REQUIRED for "Duplicate Options", "En2Cn Distractor Language", or "Low Quality Distractor" issues).
 
 Output ONLY raw JSON array, no markdown wrappers. If all questions are good, return [].
 """
@@ -282,10 +281,13 @@ Output ONLY raw JSON array, no markdown wrappers. If all questions are good, ret
             if isinstance(parsed_issues, list) and len(parsed_issues) > 0:
                 print(f" ⚠️ {len(parsed_issues)} issue(s) found")
                 for item in parsed_issues:
-                    desc = item.get("description", "Low quality distractor identified by LLM")
-                    sug = item.get("suggested_options")
-                    if sug and isinstance(sug, list):
-                        sug_str = ", ".join(f"'{opt}'" for opt in sug)
+                    desc = item.get("description", "Issue identified by LLM")
+                    sug_p = item.get("suggested_prompt")
+                    sug_o = item.get("suggested_options")
+                    if sug_p:
+                        desc += f"<br>**Suggested Prompt:** `{sug_p}`"
+                    if sug_o and isinstance(sug_o, list):
+                        sug_str = ", ".join(f"'{opt}'" for opt in sug_o)
                         desc += f"<br>**Suggested Options:** [{sug_str}]"
 
                     issues.append({

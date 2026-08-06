@@ -154,37 +154,48 @@ def main():
                     print(f"  ⚠️ Error parsing suggested noise for {item_id}: {e}")
 
         # -------------------------------------------------------------
-        # 2. Vocab Master (VM) - Suggested Options
+        # 2. Vocab Master (VM) - Suggested Prompt & Suggested Options
         # -------------------------------------------------------------
         if "vocab-master" in json_file and data["vm"]:
-            sug_match = re.search(r'\*\*Suggested Options:\*\*\s*(\[.*?\])', description)
-            if sug_match:
-                try:
-                    raw_arr = sug_match.group(1)
-                    sug_opts = [w.strip(" '\"`") for w in raw_arr.strip("[]").split(",") if w.strip(" '\"`")]
-                    if len(sug_opts) == 6:
-                        for c in data["vm"].get("challenges", []):
-                            for q in c.get("questions", []):
-                                if q.get("id") == item_id:
-                                    word = q.get("word", "")
-                                    meaning = q.get("meaning", "")
-                                    qtype = q.get("type", "")
+            sug_p_match = re.search(r'\*\*Suggested Prompt:\*\*\s*`([^`]+)`', description)
+            sug_o_match = re.search(r'\*\*Suggested Options:\*\*\s*(\[.*?\])', description)
+            
+            if sug_p_match or sug_o_match:
+                for c in data["vm"].get("challenges", []):
+                    for q in c.get("questions", []):
+                        if q.get("id") == item_id or item_id in q.get("id", ""):
+                            word = q.get("word", "")
+                            meaning = q.get("meaning", "")
+                            
+                            # Apply Suggested Prompt
+                            if sug_p_match:
+                                sug_prompt = sug_p_match.group(1).strip()
+                                q["prompt"] = sug_prompt
+                                modified_files.add("vm")
+                                row_fixed = True
+                                print(f"  ✅ [VM Prompt Fix] Question {item_id} ({word}): Updated prompt to '{sug_prompt}'")
+                            
+                            # Apply Suggested Options
+                            if sug_o_match:
+                                try:
+                                    raw_arr = sug_o_match.group(1)
+                                    sug_opts = [w.strip(" '\"`") for w in raw_arr.strip("[]").split(",") if w.strip(" '\"`")]
+                                    if len(sug_opts) == 6:
+                                        ans_idx = -1
+                                        for idx, opt in enumerate(sug_opts):
+                                            if opt == word or opt == meaning or opt in meaning or meaning.endswith(opt):
+                                                ans_idx = idx
+                                                break
+                                        if ans_idx == -1:
+                                            ans_idx = 0
 
-                                    ans_idx = -1
-                                    for idx, opt in enumerate(sug_opts):
-                                        if opt == word or opt == meaning or opt in meaning or meaning.endswith(opt):
-                                            ans_idx = idx
-                                            break
-                                    if ans_idx == -1:
-                                        ans_idx = 0
-
-                                    q["options"] = sug_opts
-                                    q["answer"] = ans_idx
-                                    modified_files.add("vm")
-                                    row_fixed = True
-                                    print(f"  ✅ [VM Options Fix] Question {item_id} ({word}): Updated options verbatim")
-                except Exception as e:
-                    print(f"  ⚠️ Error parsing suggested options for {item_id}: {e}")
+                                        q["options"] = sug_opts
+                                        q["answer"] = ans_idx
+                                        modified_files.add("vm")
+                                        row_fixed = True
+                                        print(f"  ✅ [VM Options Fix] Question {item_id} ({word}): Updated options verbatim")
+                                except Exception as e:
+                                    print(f"  ⚠️ Error parsing suggested options for {item_id}: {e}")
 
         # -------------------------------------------------------------
         # 3. ID Format & Chunk Fixes
