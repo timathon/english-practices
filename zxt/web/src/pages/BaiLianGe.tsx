@@ -11,6 +11,11 @@ import { StudentSelfStudyTab } from '../components/bailiange/StudentSelfStudyTab
 import { TeacherAssignmentsPublishTab } from '../components/bailiange/TeacherAssignmentsPublishTab';
 import { TeacherStatsTab } from '../components/bailiange/TeacherStatsTab';
 import { TeacherCourseProgressTab } from '../components/bailiange/TeacherCourseProgressTab';
+import { AvatarDisplay, DEFAULT_AVATAR_CONFIG, AvatarConfig } from '../components/AvatarDisplay';
+import { ZhengTang } from '../components/chambers/ZhengTang';
+import { WenGuShi } from '../components/chambers/WenGuShi';
+import { ZhiXinFang } from '../components/chambers/ZhiXinFang';
+import { GuanXingTai } from '../components/chambers/GuanXingTai';
 
 interface BaiLianGeProps {
   activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
@@ -18,11 +23,14 @@ interface BaiLianGeProps {
 }
 
 export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
+  const [activeChamber, setActiveChamber] = useState<'zheng_tang' | 'wen_gu_shi' | 'zhi_xin_fang' | 'guan_xing_tai'>('zheng_tang');
+  const [userAvatarConfig, setUserAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR_CONFIG);
   const [poems, setPoems] = useState<Poem[]>(() => apiService.getQuizLibrary());
   const [selectedPoem, setSelectedPoem] = useState<Poem | null>(() => {
     const lib = apiService.getQuizLibrary();
     return lib.length > 0 ? lib[0] : null;
   });
+
 
   // Helper to read tab from URL query params
   const getTabFromUrl = (): 'assignments' | 'history' | 'selfstudy' => {
@@ -541,116 +549,108 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
         </div>
       )}
 
+      {/* Main Container Wrapper */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 py-8">
 
       {/* ========================================================================= */}
-      {/* 1. STUDENT VIEW (学生端: 班级作业 / 自主学习 / 答题历史) */}
+      {/* 1. STUDENT VIEW (学生端: 4重天 / 四堂 - 正堂, 温故室, 知新坊, 观星台) */}
       {/* ========================================================================= */}
+
       {activeView === 'student' && (
         <div className="space-y-6">
-
-          {/* Student Banner Header Card */}
-          {studentTab === 'selfstudy' ? (
-            <div className="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-emerald-700/40">
-              <div className="space-y-1">
-                <div className="inline-flex items-center space-x-2 bg-emerald-900/60 border border-emerald-500/40 text-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
-                  <span>📖 自主拓展学习</span>
-                </div>
-                <h1 className="text-3xl font-black font-serif bg-gradient-to-r from-emerald-200 via-teal-200 to-white bg-clip-text text-transparent">
-                  古诗图文赏析与自由探索
-                </h1>
-                <p className="text-emerald-200/90 text-xs">
-                  自主探索全量古诗词与试题资源，拼音诵读、诗人背景故事与互动答题练习。
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-teal-700/40">
-              <div className="space-y-1">
-                <div className="inline-flex items-center space-x-2 bg-teal-900/60 border border-teal-500/40 text-teal-200 px-3 py-1 rounded-full text-xs font-semibold">
-                  <span>📝 班级作业</span>
-                </div>
-                <h1 className="text-3xl font-black font-serif bg-gradient-to-r from-teal-200 via-emerald-200 to-white bg-clip-text text-transparent">
-                  班级作业与答题打卡
-                </h1>
-                <p className="text-teal-200/90 text-xs">
-                  查看并完成教师发布的跨学科互动作业，实时掌握试题测试与答题打卡学情进度。
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Sub Navigation Bar for Student Assignments View */}
-          {studentTab !== 'selfstudy' && (
-            <div className="flex border-b border-slate-200 space-x-6">
-              <div
-                onClick={() => switchStudentTab('assignments')}
-                className={`pb-3 text-sm font-bold border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
-                  studentTab === 'assignments' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <span>📝 待办作业 ({assignments.filter(a => a.status === '待完成').length})</span>
-                <span
-                  role="button"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (isRefreshingAssignments) return;
-                    setIsRefreshingAssignments(true);
-                    setTeacherMsg('⏳ 正在同步获取最新作业...');
-                    try {
-                      await loadStudentData();
-                      setTeacherMsg('✅ 待办作业已成功刷新！');
-                    } catch (err) {
-                      setTeacherMsg('✕ 获取最新作业失败，请稍后重试');
-                    } finally {
-                      setIsRefreshingAssignments(false);
-                    }
-                  }}
-                  title="刷新待办作业 (Fetch new assignment)"
-                  className="p-1 text-xs hover:bg-teal-100/60 rounded-md text-slate-400 hover:text-teal-700 transition cursor-pointer flex items-center justify-center"
-                >
-                  <span className={`inline-block transition-transform duration-700 ${isRefreshingAssignments ? 'animate-spin' : ''}`}>
-                    🔄
-                  </span>
-                </span>
-              </div>
+          {/* 4 Chambers Navigation Tabs */}
+          <div className="bg-white rounded-2xl p-2 shadow-md border border-slate-200/80 flex flex-wrap gap-2 justify-between items-center">
+            <div className="flex gap-2 overflow-x-auto">
               <button
-                onClick={() => switchStudentTab('history')}
-                className={`pb-3 text-sm font-bold border-b-2 transition ${
-                  studentTab === 'history' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+                onClick={() => setActiveChamber('zheng_tang')}
+                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
+                  activeChamber === 'zheng_tang'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                📊 作业历史 ({quizHistory.length})
+                <span>📜 正堂</span>
+                <span className="text-xs font-normal opacity-90">(Homework)</span>
+              </button>
+              <button
+                onClick={() => setActiveChamber('wen_gu_shi')}
+                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
+                  activeChamber === 'wen_gu_shi'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span>📖 温故室</span>
+                <span className="text-xs font-normal opacity-90">(Review)</span>
+              </button>
+              <button
+                onClick={() => setActiveChamber('zhi_xin_fang')}
+                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
+                  activeChamber === 'zhi_xin_fang'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span>🎨 知新坊</span>
+                <span className="text-xs font-normal opacity-90">(Avatar & Shop)</span>
+              </button>
+              <button
+                onClick={() => setActiveChamber('guan_xing_tai')}
+                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
+                  activeChamber === 'guan_xing_tai'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span>🔭 观星台</span>
+                <span className="text-xs font-normal opacity-90">(Observatory)</span>
               </button>
             </div>
-          )}
 
-          {/* STUDENT TAB 1: ASSIGNMENTS TO DO */}
-          {studentTab === 'assignments' && (
-            <StudentAssignmentsTab
+            {/* Avatar Badge preview in header bar */}
+            <div
+              onClick={() => setActiveChamber('zhi_xin_fang')}
+              className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl cursor-pointer transition"
+              title="点击进入知新坊进行使者形象设计"
+            >
+              <AvatarDisplay config={userAvatarConfig} size="sm" />
+              <div className="text-left hidden sm:block">
+                <div className="text-xs font-bold text-purple-950">{user?.name || '知新使者'}</div>
+                <div className="text-[10px] text-purple-700">使者形象设计</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Chamber Content Views */}
+          {activeChamber === 'zheng_tang' && (
+            <ZhengTang
+              user={user}
               assignments={assignments}
-              poems={poems}
-              onStartAssignment={handleStartStudentAssignment}
+              onStartQuiz={(title: string, questions: PoemQuestion[], asgnId?: string) => {
+                setActiveStudentQuiz({ poemTitle: title, questions, assignmentId: asgnId });
+              }}
+              avatarConfig={userAvatarConfig}
             />
           )}
 
-          {/* STUDENT TAB 2: QUIZ HISTORY */}
-          {studentTab === 'history' && (
-            <StudentQuizHistoryTab
+          {activeChamber === 'wen_gu_shi' && (
+            <WenGuShi
+              user={user}
               quizHistory={quizHistory}
-              formatLocalTime={formatLocalTime}
-              onSelectHistoryItem={setSelectedHistoryItem}
             />
           )}
 
-          {/* STUDENT TAB 3: SELF-STUDY (Learnt Poems Extra Knowledge) */}
-          {studentTab === 'selfstudy' && (
-            <StudentSelfStudyTab
-              poems={poems}
-              learntPoemIds={learntPoemIds}
-              selectedPoem={selectedPoem}
-              onSelectPoem={setSelectedPoem}
+          {activeChamber === 'zhi_xin_fang' && (
+            <ZhiXinFang
+              user={user}
+              onUpdateAvatar={(cfg: AvatarConfig) => {
+                setUserAvatarConfig(cfg);
+              }}
             />
+          )}
+
+          {activeChamber === 'guan_xing_tai' && (
+            <GuanXingTai user={user} />
           )}
 
           {/* ACTIVE QUIZ MODAL FOR STUDENT */}
