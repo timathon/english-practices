@@ -652,47 +652,21 @@ app.get('/api/practices', async (c) => {
               textbook: practice.textbook,
               unit: practice.unit,
               type: practice.type,
-              title: practice.title,
-              content: practice.content
+              title: practice.title
           }).from(practice)
           
-          cachedMappedPractices = practices.map(p => {
-              let lightContent: any = {};
-              const type = (p.type || '').toLowerCase();
-              const content = p.content as any;
-              
-              if (content) {
-                  if (type.includes('vocab-master') || type.includes('sentence-architect') || type.includes('grammar-wizard')) {
-                      const challenges = content.challenges || [];
-                      lightContent = {
-                          challenges: challenges.map((c: any) => ({ title: c.title || '' }))
-                      };
-                  } else if (type.includes('passage-decoder')) {
-                      const sections = content.sections || [];
-                      lightContent = {
-                          sections: sections.map((s: any) => ({ title: s.title || '' }))
-                      };
-                  } else if (type.includes('spelling-hero')) {
-                      const wordCount = content.spelling_words?.length || 0;
-                      lightContent = {
-                          spelling_words: new Array(wordCount).fill({})
-                      };
-                  }
-              }
-              
-              return {
-                  id: p.id,
-                  textbook: p.textbook,
-                  unit: p.unit,
-                  type: p.type,
-                  title: p.title,
-                  content: lightContent
-              };
-          });
+          cachedMappedPractices = practices.map(p => ({
+              id: p.id,
+              textbook: p.textbook,
+              unit: p.unit,
+              type: p.type,
+              title: p.title,
+              content: {}
+          }));
 
           if (c.env.V2_CACHE_KV && cachedMappedPractices) {
               c.executionCtx.waitUntil(
-                  c.env.V2_CACHE_KV.put('practices_catalog', JSON.stringify(cachedMappedPractices), { expirationTtl: 600 }).catch(e => {
+                  c.env.V2_CACHE_KV.put('practices_catalog', JSON.stringify(cachedMappedPractices), { expirationTtl: 3600 }).catch(e => {
                       console.error("KV write failed:", e);
                   })
               );
