@@ -224,55 +224,53 @@ export const ZhengTang: React.FC<ZhengTangProps> = ({
       )}
 
       {/* ── Quest Modules ── */}
-      {(selectedSubject === 'all' || selectedSubject !== 'all') && (
-        <div>
-          <div className="flex items-center gap-2 mb-3 px-1">
-            <span className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-sm">🎯</span>
-            <h2 className="text-base font-bold text-slate-800">三学科基础锦囊</h2>
-            <span className="text-slate-400 font-normal text-sm">Multi-Subject Core Quests</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {questModules
-              .filter(m => {
-                if (selectedSubject === 'all') return true;
-                if (selectedSubject === 'chinese') return m.key.startsWith('chinese');
-                if (selectedSubject === 'math') return m.key === 'math';
-                if (selectedSubject === 'english') return m.key === 'english';
-                return true;
-              })
-              .map(m => (
-                <div
-                  key={m.key}
-                  className="relative rounded-2xl overflow-hidden flex flex-col shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200"
-                  style={{ background: `linear-gradient(145deg, ${m.from}, ${m.to})` }}
-                >
-                  {/* Glow blob */}
-                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-xl" style={{ background: m.from }} />
-
-                  <div className="relative z-10 p-5 flex flex-col gap-3 flex-1">
-                    <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center text-2xl backdrop-blur-sm">
-                      {m.emoji}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-white text-sm leading-snug">{m.label}</h3>
-                      <p className={`text-xs mt-1 leading-relaxed ${m.text}`}>{m.sub}</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const quiz = getSubjectSampleQuestions(m.key);
-                        onStartQuiz(quiz.title, quiz.questions);
-                      }}
-                      className="w-full py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-xs font-bold border border-white/20 transition-all"
-                    >
-                      开始练习 →
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
+      <div>
+        <div className="flex items-center gap-2 mb-3 px-1">
+          <span className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center text-sm">🎯</span>
+          <h2 className="text-base font-bold text-slate-800">三学科基础锦囊</h2>
+          <span className="text-slate-400 font-normal text-sm">Multi-Subject Core Quests</span>
         </div>
-      )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {questModules
+            .filter(m => {
+              if (selectedSubject === 'all') return true;
+              if (selectedSubject === 'chinese') return m.key.startsWith('chinese');
+              if (selectedSubject === 'math') return m.key === 'math';
+              if (selectedSubject === 'english') return m.key === 'english';
+              return true;
+            })
+            .map(m => (
+              <div
+                key={m.key}
+                className="relative rounded-2xl overflow-hidden flex flex-col shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200"
+                style={{ background: `linear-gradient(145deg, ${m.from}, ${m.to})` }}
+              >
+                {/* Glow blob */}
+                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-xl" style={{ background: m.from }} />
+
+                <div className="relative z-10 p-5 flex flex-col gap-3 flex-1">
+                  <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center text-2xl backdrop-blur-sm">
+                    {m.emoji}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-white text-sm leading-snug">{m.label}</h3>
+                    <p className={`text-xs mt-1 leading-relaxed ${m.text}`}>{m.sub}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const quiz = getSubjectSampleQuestions(m.key);
+                      onStartQuiz(quiz.title, quiz.questions);
+                    }}
+                    className="w-full py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-xs font-bold border border-white/20 transition-all"
+                  >
+                    开始练习 →
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
 
     </div>
   );
