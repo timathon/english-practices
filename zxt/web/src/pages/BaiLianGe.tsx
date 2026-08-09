@@ -25,12 +25,24 @@ interface BaiLianGeProps {
 export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [activeChamber, setActiveChamber] = useState<'zheng_tang' | 'wen_gu_shi' | 'zhi_xin_fang' | 'guan_xing_tai'>('zheng_tang');
   const [userAvatarConfig, setUserAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR_CONFIG);
+  const [pendingChamber, setPendingChamber] = useState<string | null>(null);
+  const [zxfLatestConfig, setZxfLatestConfig] = useState<AvatarConfig>(DEFAULT_AVATAR_CONFIG);
+  const [zxfIsDirty, setZxfIsDirty] = useState(false);
   const [poems, setPoems] = useState<Poem[]>(() => apiService.getQuizLibrary());
   const [selectedPoem, setSelectedPoem] = useState<Poem | null>(() => {
     const lib = apiService.getQuizLibrary();
     return lib.length > 0 ? lib[0] : null;
   });
 
+
+  // Guard: intercept tab switch when ZhiXinFang has unsaved changes
+  const handleChamberSwitch = (chamber: string) => {
+    if (activeChamber === 'zhi_xin_fang' && zxfIsDirty && chamber !== 'zhi_xin_fang') {
+      setPendingChamber(chamber);
+      return;
+    }
+    setActiveChamber(chamber as any);
+  };
 
   // Helper to read tab from URL query params
   const getTabFromUrl = (): 'assignments' | 'history' | 'selfstudy' => {
@@ -562,7 +574,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
           <div className="bg-white rounded-2xl p-2 shadow-md border border-slate-200/80 flex flex-wrap gap-2 justify-between items-center">
             <div className="flex gap-2 overflow-x-auto">
               <button
-                onClick={() => setActiveChamber('zheng_tang')}
+                onClick={() => handleChamberSwitch('zheng_tang')}
                 className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
                   activeChamber === 'zheng_tang'
                     ? 'bg-blue-600 text-white shadow-md'
@@ -573,7 +585,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 <span className="text-xs font-normal opacity-90">(Homework)</span>
               </button>
               <button
-                onClick={() => setActiveChamber('wen_gu_shi')}
+                onClick={() => handleChamberSwitch('wen_gu_shi')}
                 className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
                   activeChamber === 'wen_gu_shi'
                     ? 'bg-emerald-600 text-white shadow-md'
@@ -595,7 +607,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 <span className="text-xs font-normal opacity-90">(Avatar & Shop)</span>
               </button>
               <button
-                onClick={() => setActiveChamber('guan_xing_tai')}
+                onClick={() => handleChamberSwitch('guan_xing_tai')}
                 className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
                   activeChamber === 'guan_xing_tai'
                     ? 'bg-indigo-600 text-white shadow-md'
@@ -641,12 +653,60 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
           )}
 
           {activeChamber === 'zhi_xin_fang' && (
-            <ZhiXinFang
+          <ZhiXinFang
               user={user}
+              initialConfig={userAvatarConfig}
               onUpdateAvatar={(cfg: AvatarConfig) => {
                 setUserAvatarConfig(cfg);
+                setZxfIsDirty(false);
+              }}
+              onDirtyChange={(dirty, cfg) => {
+                setZxfIsDirty(dirty);
+                setZxfLatestConfig(cfg);
               }}
             />
+          )}
+
+          {/* Unsaved Avatar Changes Modal */}
+          {pendingChamber && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+                <div className="text-center mb-2">
+                  <div className="text-4xl mb-2">⚠️</div>
+                  <h3 className="text-lg font-bold text-slate-800">形象设置未保存</h3>
+                  <p className="text-sm text-slate-500 mt-1">您的使者形象有未保存的修改，离开前是否保存？</p>
+                </div>
+                <div className="flex flex-col gap-2 mt-5">
+                  <button
+                    onClick={() => {
+                      setUserAvatarConfig(zxfLatestConfig);
+                      setZxfIsDirty(false);
+                      setActiveChamber(pendingChamber as any);
+                      setPendingChamber(null);
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold hover:from-purple-700 hover:to-indigo-700 transition"
+                  >
+                    💾 保存并离开
+                  </button>
+                  <button
+                    onClick={() => {
+                      setZxfIsDirty(false);
+                      setActiveChamber(pendingChamber as any);
+                      setPendingChamber(null);
+                    }}
+                    className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition"
+                  >
+                    不保存，直接离开
+                  </button>
+                  <button
+                    onClick={() => setPendingChamber(null)}
+                    className="w-full py-2.5 rounded-xl text-purple-600 font-medium hover:bg-purple-50 transition"
+                  >
+                    继续编辑
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {activeChamber === 'guan_xing_tai' && (

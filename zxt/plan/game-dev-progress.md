@@ -38,6 +38,65 @@ Implemented the core 4-Chamber student navigation and interaction model:
 
 ---
 
+### 4. Accessories Overhaul & Translate Refactor (Session: 2026-08-09)
+
+#### Accessory Alignment
+- All 6 accessories (goggles, glasses, headband, badge, scroll, magic staff) repositioned to align with actual avatar body parts in the 500×500 SVG overlay coordinate space.
+
+#### Goggles Redesign
+- Removed arcing head strap and split two-lens design.
+- Replaced with a **single-piece panoramic visor**: one wide amber lens, subtle center ridge, no band, no temple arms.
+
+#### Glasses Redesign
+- Replaced large circle frames with **horizontal rounded-rect lenses** (more realistic academic look).
+- Added subtle blue tint fill, slim nose bridge, and glare highlights.
+- Removed temple arms. Refined inter-lens gap and bridge width iteratively.
+
+#### Translate-Based Position System
+- Refactored all accessories in `AvatarDisplay.tsx` to use a single `transform="translate(X, Y)"` per `<g>`.
+- All internal shape coordinates are relative to a local `(0, 0)` origin — changing only the 2 numbers in `translate()` moves the whole accessory.
+
+#### Star Crystal Staff Repositioning
+- Moved crystal gem into the face-only visible zone (`translate(335, 230)`), so the crystal and sparkles appear in the `sm` face-close-up view.
+- Rod extends downward and gets naturally clipped by the circle border.
+
+---
+
+### 5. Face-Only Small Avatar View (Session: 2026-08-09)
+
+- **`size="sm"` face zoom**: Added `transform: scale(2.2)` with `transformOrigin: '50% 30%'` to the avatar `<img>` for `sm` size, zooming into the face area inside the 40px nav-bar circle.
+- Applied the **same transform to the accessory SVG overlay** so accessories stay correctly positioned in the zoomed view.
+- All other sizes (`md`, `lg`, `xl`) unaffected.
+
+---
+
+### 6. Public Asset Cleanup (Session: 2026-08-09)
+
+- Audited all files in `zxt/web/public/` against source references.
+- **Deleted 16 unused PNG files** (old intermediate renders: `px_base_*`, `px_face_*`, `px_*_clean`, etc.).
+- Retained only the 4 active SVG presets and `zxt_home_bg.webp`.
+
+---
+
+### 7. Male Avatar SVG Regeneration (Session: 2026-08-09)
+
+- Processed `zxt/temp/images/selected/male.png`:
+  - Step 1: Removed checkerboard background by targeting neutral grey pixels (R≈G≈B, range 195–225) → made transparent.
+  - Step 2: Flattened onto white background.
+  - Step 3: Widened replacement range (≥180) to eliminate residual anti-aliased grid lines.
+- Regenerated `pixel_scholar_male.svg` via `png_to_svg.py` — white background auto-stripped to transparent, matching the format of all other preset SVGs.
+
+---
+
+### 8. Avatar Studio Save Flow (Session: 2026-08-09)
+
+- **Correct initial state**: Studio now opens with the user's current saved avatar config, not `DEFAULT_AVATAR_CONFIG`. `BaiLianGe` passes `initialConfig={userAvatarConfig}` to `ZhiXinFang`.
+- **Deferred sync**: Option changes stay local to the studio preview; they are **not propagated to the nav bar** until explicitly saved.
+- **Save button behaviour**: Clicking 💾 保存形象设置 immediately saves and shows a **🎉 success modal** (no confirmation step). An amber pulse dot on the button indicates unsaved changes.
+- **Navigation guard**: Clicking another chamber tab while the studio has unsaved changes triggers an **unsaved-changes modal** offering: Save & Leave / Discard & Leave / Continue Editing.
+
+---
+
 ## File Directory & Assets Saved
 
 ### Art Ops & Prompts:
@@ -50,13 +109,15 @@ Implemented the core 4-Chamber student navigation and interaction model:
 - **Transparent SVG Vectors**: `pixel_scholar_male.svg`, `pixel_scholar_female.svg`, `pixel_scholar_alchemist.svg`, `pixel_scholar_cyber.svg`
 
 ### Core Source Components (`zxt/web/src/`):
-- `components/AvatarDisplay.tsx`: Modular avatar renderer supporting presets, SVG vector grids, overlay accessories, and energy aura glows.
+- `components/AvatarDisplay.tsx`: Modular avatar renderer — presets, SVG vector grids, translate-based overlay accessories, face-zoom for `sm`, energy aura glows.
 - `components/chambers/ZhengTang.tsx`: Main Hall multi-subject scroll center.
 - `components/chambers/WenGuShi.tsx`: Review chamber & Chinese sub-sections.
-- `components/chambers/ZhiXinFang.tsx`: Innovation Lab & Avatar Studio.
+- `components/chambers/ZhiXinFang.tsx`: Innovation Lab & Avatar Studio — deferred save, dirty tracking, success modal, unsaved-changes guard.
 - `components/chambers/GuanXingTai.tsx`: Sanctuary Observatory.
+- `pages/BaiLianGe.tsx`: Top-level student view — chamber navigation guard, avatar config state management.
 
 ---
 
 ## Verification & Build Status
 - **TypeScript Compilation & Vite Production Build**: Tested with `npm run build` in `zxt/web` (**Clean compile, 0 errors, build time 1.24s**).
+

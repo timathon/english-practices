@@ -6,22 +6,32 @@ import { AvatarDisplay, PIXEL_PRESET_BASES, PIXEL_ACCESSORY_OPTIONS, PIXEL_HALO_
 
 interface ZhiXinFangProps {
   user: any;
+  initialConfig?: AvatarConfig;
   onUpdateAvatar?: (config: AvatarConfig) => void;
+  onDirtyChange?: (isDirty: boolean, currentConfig: AvatarConfig) => void;
 }
 
-export const ZhiXinFang: React.FC<ZhiXinFangProps> = ({ user, onUpdateAvatar }) => {
+export const ZhiXinFang: React.FC<ZhiXinFangProps> = ({ user, initialConfig, onUpdateAvatar, onDirtyChange }) => {
   const [activeTab, setActiveTab] = useState<'avatar' | 'shop'>('avatar');
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(() => {
-    return user?.avatarConfig || DEFAULT_AVATAR_CONFIG;
+    return initialConfig || user?.avatarConfig || DEFAULT_AVATAR_CONFIG;
   });
   const [userGems, setUserGems] = useState<number>(user?.points || 120);
+  const [isDirty, setIsDirty] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleSelectOption = (key: keyof AvatarConfig, value: string) => {
     const updated = { ...avatarConfig, [key]: value };
     setAvatarConfig(updated);
-    if (onUpdateAvatar) {
-      onUpdateAvatar(updated);
-    }
+    setIsDirty(true);
+    if (onDirtyChange) onDirtyChange(true, updated);
+  };
+
+  const handleSave = () => {
+    if (onUpdateAvatar) onUpdateAvatar(avatarConfig);
+    if (onDirtyChange) onDirtyChange(false, avatarConfig);
+    setIsDirty(false);
+    setShowSuccessModal(true);
   };
 
   return (
@@ -97,11 +107,29 @@ export const ZhiXinFang: React.FC<ZhiXinFangProps> = ({ user, onUpdateAvatar }) 
             </div>
 
             <button
-              onClick={() => alert('使者形象已成功保存并同步到导航栏！')}
-              className="mt-6 w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-md transition"
+              onClick={handleSave}
+              className="mt-6 w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-md transition flex items-center justify-center gap-2"
             >
               💾 保存形象设置
+              {isDirty && <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />}
             </button>
+
+          {/* Save Success Modal */}
+          {showSuccessModal && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowSuccessModal(false)}>
+              <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center" onClick={e => e.stopPropagation()}>
+                <div className="text-5xl mb-3">🎉</div>
+                <h3 className="text-xl font-bold text-slate-800 mb-1">形象已保存！</h3>
+                <p className="text-sm text-slate-500">使者造型已成功同步到导航栏与整个学堂。</p>
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="mt-6 w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold hover:from-purple-700 hover:to-indigo-700 transition"
+                >
+                  太棒了！✨
+                </button>
+              </div>
+            </div>
+          )}
           </div>
 
           {/* Controls Panel */}
