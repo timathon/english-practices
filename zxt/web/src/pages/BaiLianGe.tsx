@@ -639,7 +639,20 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               user={user}
               assignments={assignments}
               onStartQuiz={(title: string, questions: PoemQuestion[], asgnId?: string) => {
-                setActiveStudentQuiz({ poemTitle: title, questions, assignmentId: asgnId });
+                let finalQuestions = questions;
+                if (finalQuestions.length === 0) {
+                  // Assignment stores questionIds, not inline question objects — look them up
+                  const asgn = assignments.find((a: any) => a.id === asgnId);
+                  const poem = poems.find(p => p.title === title);
+                  if (poem && poem.questions) {
+                    if (asgn?.questionIds && asgn.questionIds.length > 0) {
+                      finalQuestions = poem.questions.filter((q: PoemQuestion) => asgn.questionIds.includes(q.id));
+                    } else {
+                      finalQuestions = poem.questions;
+                    }
+                  }
+                }
+                setActiveStudentQuiz({ poemTitle: title, questions: finalQuestions, assignmentId: asgnId });
               }}
               avatarConfig={userAvatarConfig}
             />

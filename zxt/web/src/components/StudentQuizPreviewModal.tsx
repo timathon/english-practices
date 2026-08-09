@@ -219,9 +219,11 @@ export const StudentQuizPreviewModal: React.FC<{
           isCorrect: isRight,
           correctAnswerText: correctAnsText,
           explanation: (q as any).explanation,
-          options: (q as any).options || displayedOptions,
+          options: displayedOptions.length > 0 ? displayedOptions : (q as any).options,
           images: q.type === 'ImageOrdering' ? q.images : undefined,
           image: (q as any).image,
+          userAnswerIndex: mcSelection,
+          correctAnswerIndex: mappedAnswerIndex,
         }
       }));
     }
