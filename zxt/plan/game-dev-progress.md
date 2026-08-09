@@ -110,6 +110,10 @@ Implemented the core 4-Chamber student navigation and interaction model:
   - Supports filtering questions by `📋 全部题目` or `❌ 只看错题`.
   - Question options dynamically highlight correct choices (`✓` in green) and wrong student picks (`✗` in red).
   - Integrated `CachedImage` component to ensure pictures render properly for `ImageToLine` and `ImageOrdering` review items.
+  - Resolved `details` wrapper object parsing in worker (`GET /api/student/history`) & `StudentQuizPreviewModal` to guarantee all 4 questions & options save & render cleanly.
+
+- **DB Operations Script**:
+  - `zxt/scripts/db-ops/delete_quiz_record.py`: CLI tool connecting to local/remote D1 DBs to list student history records and delete selected entries (with automatic assignment status resetting).
 
 ---
 
