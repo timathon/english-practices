@@ -209,17 +209,18 @@ export const StudentQuizPreviewModal: React.FC<{
     if (!q) return;
     if (firstAttemptResults[q.id] === undefined) {
       setFirstAttemptResults(prev => ({ ...prev, [q.id]: isRight }));
+      const opts = displayedOptions.length > 0 ? displayedOptions : ((q as any).options || []);
       setUserAnswerDetails(prev => ({
         ...prev,
         [q.id]: {
           questionId: q.id,
-          prompt: q.prompt,
+          prompt: q.prompt || (q as any).questionText || (q as any).title || '',
           type: q.type,
           userAnswerText: userAnsText || '(未作答)',
           isCorrect: isRight,
           correctAnswerText: correctAnsText,
-          explanation: (q as any).explanation,
-          options: displayedOptions.length > 0 ? displayedOptions : (q as any).options,
+          explanation: (q as any).explanation || '',
+          options: opts,
           images: q.type === 'ImageOrdering' ? q.images : undefined,
           image: (q as any).image,
           userAnswerIndex: mcSelection,
@@ -229,8 +230,6 @@ export const StudentQuizPreviewModal: React.FC<{
     }
     if (!isRight) {
       setRoundMistakenIds(prev => Array.from(new Set([...prev, q.id])));
-    } else {
-      setRoundMistakenIds(prev => prev.filter(id => id !== q.id));
     }
   };
 

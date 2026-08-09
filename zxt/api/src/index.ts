@@ -547,19 +547,55 @@ app.get('/api/student/history', async (c) => {
     completed_at: string;
   }>();
 
-  const history = results.map(r => ({
-    id: r.id,
-    studentId: r.student_id,
-    poemId: r.poem_id,
-    poemTitle: r.poem_title,
-    score: r.score,
-    accuracy: r.accuracy,
-    quizType: r.quiz_type,
-    details: r.details ? JSON.parse(r.details) : [],
-    completedAt: r.completed_at
-  }));
+  const history = results.map(r => {
+    let parsedDetails: any = [];
+    if (r.details) {
+      try {
+        const obj = JSON.parse(r.details);
+        parsedDetails = Array.isArray(obj) ? obj : (obj.questions || []);
+      } catch (_) {}
+    }
+    return {
+      id: r.id,
+      studentId: r.student_id,
+      poemId: r.poem_id,
+      poemTitle: r.poem_title,
+      score: r.score,
+      accuracy: r.accuracy,
+      quizType: r.quiz_type,
+      details: parsedDetails,
+      completedAt: r.completed_at
+    };
+  });
 
   return c.json({ history });
+});
+
+app.delete('/api/student/history/:id', async (c) => {
+  const recordId = c.req.param('id');
+  const studentId = c.req.query('studentId');
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+
+  // Check if history record was tied to an assignment before deleting
+  const record = await db.prepare('SELECT * FROM quiz_history WHERE id = ?').bind(recordId).first<{ details: string }>();
+  if (record && record.details) {
+    try {
+      const detailsParsed = JSON.parse(record.details);
+      const asgnId = detailsParsed.assignmentId || (detailsParsed.questions && detailsParsed.questions.assignmentId);
+      if (asgnId) {
+        await db.prepare("UPDATE assignments SET status = '待完成' WHERE id = ?").bind(asgnId).run();
+      }
+    } catch (_) {}
+  }
+
+  if (studentId) {
+    await db.prepare('DELETE FROM quiz_history WHERE id = ? AND student_id = ?').bind(recordId, studentId).run();
+  } else {
+    await db.prepare('DELETE FROM quiz_history WHERE id = ?').bind(recordId).run();
+  }
+
+  return c.json({ success: true });
 });
 
 app.post('/api/student/history', async (c) => {

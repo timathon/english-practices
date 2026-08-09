@@ -9,8 +9,13 @@ interface WenGuShiProps {
 // ── Quiz Record Detail Modal ─────────────────────────────────────────────────
 const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ record, onClose }) => {
   const [mistakesOnly, setMistakesOnly] = useState(false);
-  const details: any[] = record.details || [];
-  const mistakes = details.filter((d: any) => !d.isCorrect);
+  const rawDetails = record?.details;
+  const details: any[] = Array.isArray(rawDetails)
+    ? rawDetails
+    : (rawDetails && typeof rawDetails === 'object' && Array.isArray(rawDetails.questions)
+        ? rawDetails.questions
+        : (rawDetails && typeof rawDetails === 'object' ? Object.values(rawDetails).filter(v => v && typeof v === 'object' && 'isCorrect' in v) : []));
+  const mistakes = details.filter((d: any) => d && !d.isCorrect);
   const displayed = mistakesOnly ? mistakes : details;
 
   const TYPE_LABELS: Record<string, string> = {
@@ -100,7 +105,9 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
                   </div>
 
                   {/* Prompt */}
-                  <p className="text-sm font-medium text-slate-800 leading-relaxed mb-2">{d.prompt}</p>
+                  <p className="text-sm font-medium text-slate-800 leading-relaxed mb-2">
+                    {d.prompt || d.questionText || d.title || '试题'}
+                  </p>
 
                   {/* Image for ImageToLine */}
                   {hasImage && (
@@ -122,7 +129,7 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
                   )}
 
                   {/* Options — always show correct highlighted; show wrong pick when 答错 */}
-                  {hasOptions && (
+                  {hasOptions ? (
                     <div className="grid grid-cols-2 gap-1.5 mb-2">
                       {d.options.map((opt: string, oi: number) => {
                         const optClean = cleanText(opt);
@@ -154,18 +161,16 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
                         );
                       })}
                     </div>
-                  )}
-
-                  {/* Text answer fallback — no options array (e.g. LineAssembly) */}
-                  {!hasOptions && (
-                    <div className="flex flex-wrap gap-2 text-xs mb-2">
-                      <span className={`px-2 py-1 rounded font-semibold ${d.isCorrect ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                        你的答案: {d.userAnswerText}
-                      </span>
-                      {!d.isCorrect && (
-                        <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-semibold">
-                          正确答案: {d.correctAnswerText}
-                        </span>
+                  ) : (
+                    /* Text answer fallback — no options array */
+                    <div className="flex flex-col gap-1 text-xs mb-2">
+                      <div className={`p-2.5 rounded-lg border font-semibold ${d.isCorrect ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-red-100 border-red-300 text-red-800'}`}>
+                        你的答案: {d.userAnswerText || '(未记录)'}
+                      </div>
+                      {(!d.isCorrect || d.correctAnswerText) && (
+                        <div className="p-2.5 rounded-lg border bg-emerald-100 border-emerald-300 text-emerald-800 font-semibold">
+                          正确答案: {d.correctAnswerText || '(无)'}
+                        </div>
                       )}
                     </div>
                   )}
@@ -194,7 +199,15 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory }) => {
   const [chineseSubCategory, setChineseSubCategory] = useState<'shizi' | 'pinyin' | 'gushi' | 'chengyu'>('shizi');
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
 
-  const totalMistakes = quizHistory.reduce((acc, h) => acc + (h.details || []).filter((d: any) => !d.isCorrect).length, 0);
+  const totalMistakes = (quizHistory || []).reduce((acc, h) => {
+    const rawDet = h?.details;
+    const detailsArr: any[] = Array.isArray(rawDet)
+      ? rawDet
+      : (rawDet && typeof rawDet === 'object' && Array.isArray(rawDet.questions)
+          ? rawDet.questions
+          : (rawDet && typeof rawDet === 'object' ? Object.values(rawDet).filter(v => v && typeof v === 'object' && 'isCorrect' in v) : []));
+    return acc + detailsArr.filter((d: any) => d && !d.isCorrect).length;
+  }, 0);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-4">
@@ -316,8 +329,13 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory }) => {
         ) : (
           <div className="space-y-2.5">
             {quizHistory.map((item, idx) => {
-              const details: any[] = item.details || [];
-              const mistakeCount = details.filter((d: any) => !d.isCorrect).length;
+              const rawDet = item?.details;
+              const detailsArray: any[] = Array.isArray(rawDet)
+                ? rawDet
+                : (rawDet && typeof rawDet === 'object' && Array.isArray(rawDet.questions)
+                    ? rawDet.questions
+                    : (rawDet && typeof rawDet === 'object' ? Object.values(rawDet).filter(v => v && typeof v === 'object' && 'isCorrect' in v) : []));
+              const mistakeCount = detailsArray.filter((d: any) => d && !d.isCorrect).length;
               const score = item.score ?? 100;
               const scoreColor = score >= 90 ? 'text-emerald-600' : score >= 70 ? 'text-amber-600' : 'text-red-500';
               const scoreBg   = score >= 90 ? 'bg-emerald-50 border-emerald-200' : score >= 70 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
@@ -344,7 +362,7 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory }) => {
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-[11px] text-slate-400">{item.completedAt || '今日'}</span>
                       {item.quizType && <span className="text-[11px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{item.quizType}</span>}
-                      {details.length > 0 && <span className="text-[11px] text-slate-400">{details.length} 题</span>}
+                      {detailsArray.length > 0 && <span className="text-[11px] text-slate-400">{detailsArray.length} 题</span>}
                     </div>
                   </div>
 
