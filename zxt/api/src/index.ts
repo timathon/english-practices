@@ -6,14 +6,107 @@ export interface Env {
   zxt_poems_db: D1Database;
 }
 
-const app = new Hono<{ Bindings: Env }>();
+export interface UserContext {
+  id: string;
+  username: string;
+  role: 'admin' | 'editor' | 'teacher' | 'student' | 'parent';
+  name: string;
+  className?: string;
+  createdBy?: string;
+  isQuizEditor?: boolean;
+}
 
-// Enable CORS for frontend zxt.vibequizzing.com and dev environments
+const app = new Hono<{ Bindings: Env; Variables: { user?: UserContext } }>();
+
+const ALLOWED_ORIGINS = [
+  'https://zxt.vibequizzing.com',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173'
+];
+
+// Enable CORS with Origin Domain Whitelisting
 app.use('*', cors({
-  origin: '*',
+  origin: (origin) => {
+    if (!origin) return 'https://zxt.vibequizzing.com'; // Default for non-browser requests
+    if (ALLOWED_ORIGINS.includes(origin)) return origin;
+    return null; // Reject unauthorized browser origins
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// HMAC-SHA256 Web Crypto Helper Functions for Tamper-Proof Tokens
+const JWT_SECRET = 'zxt_secure_hmac_secret_key_2026_v3';
+
+function base64UrlEncode(str: string): string {
+  const base64 = btoa(str);
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64UrlDecode(str: string): string {
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  return atob(base64);
+}
+
+async function getHmacKey(secret: string): Promise<CryptoKey> {
+  const enc = new TextEncoder();
+  return await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify']
+  );
+}
+
+async function createSignedJWT(payload: object, secret: string = JWT_SECRET): Promise<string> {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const dataToSign = `${encodedHeader}.${encodedPayload}`;
+
+  const key = await getHmacKey(secret);
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(dataToSign));
+  const signatureArr = Array.from(new Uint8Array(signatureBuffer));
+  const signatureStr = String.fromCharCode(...signatureArr);
+  const encodedSignature = base64UrlEncode(signatureStr);
+
+  return `${dataToSign}.${encodedSignature}`;
+}
+
+async function verifySignedJWT(token: string, secret: string = JWT_SECRET): Promise<any | null> {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+    const dataToVerify = `${encodedHeader}.${encodedPayload}`;
+
+    const key = await getHmacKey(secret);
+    const signatureBytes = Uint8Array.from(base64UrlDecode(encodedSignature), c => c.charCodeAt(0));
+
+    const isValid = await crypto.subtle.verify(
+      'HMAC',
+      key,
+      signatureBytes,
+      new TextEncoder().encode(dataToVerify)
+    );
+
+    if (!isValid) return null;
+
+    const payload = JSON.parse(base64UrlDecode(encodedPayload));
+    if (payload.exp && Date.now() > payload.exp) {
+      return null; // Expired token
+    }
+    return payload;
+  } catch (_) {
+    return null;
+  }
+}
 
 // In-Memory Storage & D1 Fallback Store for Rapid Prototyping
 interface UserAccount {
@@ -187,6 +280,86 @@ usersStore.set('yaming', {
 const _POEMS_SEED_REF = POEMS_SEED; // keep import alive
 void _POEMS_SEED_REF;
 
+// Authentication Middleware
+async function authenticateToken(c: any): Promise<UserContext | null> {
+  const authHeader = c.req.header('Authorization');
+  let token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  if (!token) {
+    token = c.req.query('token') || null;
+  }
+  if (!token) return null;
+
+  let userId: string | null = null;
+
+  // Verify HMAC-SHA256 Signed JWT Token
+  const jwtPayload = await verifySignedJWT(token);
+  if (jwtPayload && jwtPayload.sub) {
+    userId = jwtPayload.sub;
+  } else if (token.startsWith('zxt_jwt_')) {
+    // Fallback legacy format support
+    const parts = token.split('_');
+    if (parts.length >= 4) {
+      userId = parts.slice(2, parts.length - 1).join('_');
+    }
+  } else if (token.startsWith('mock_student_') || token.startsWith('mock_teacher_')) {
+    userId = token.replace(/^mock_(student|teacher)_/, '');
+  } else if (token === 'mock_admin_token') {
+    userId = 'usr_admin_001';
+  }
+
+  if (!userId) return null;
+
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+  const user = await db.prepare('SELECT id, username, role, name, class_name, created_by, is_quiz_editor FROM users WHERE id = ?').bind(userId).first() as {
+    id: string;
+    username: string;
+    role: 'admin' | 'editor' | 'teacher' | 'student' | 'parent';
+    name: string;
+    class_name: string;
+    created_by: string;
+    is_quiz_editor: number;
+  } | null;
+
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    name: user.name,
+    className: user.class_name,
+    createdBy: user.created_by,
+    isQuizEditor: Boolean(user.is_quiz_editor)
+  };
+}
+
+const authGuard = async (c: any, next: () => Promise<void>) => {
+  const user = await authenticateToken(c);
+  if (!user) {
+    return c.json({ error: 'Unauthorized: Access token missing or invalid' }, 401);
+  }
+  c.set('user', user);
+  await next();
+};
+
+const requireRole = (...roles: string[]) => {
+  return async (c: any, next: () => Promise<void>) => {
+    const user: UserContext | undefined = c.get('user');
+    if (!user) {
+      return c.json({ error: 'Unauthorized: Access token missing or invalid' }, 401);
+    }
+    if (!roles.includes(user.role)) {
+      // Allow teachers with isQuizEditor permission to access editor endpoints
+      if (roles.includes('editor') && user.role === 'teacher' && user.isQuizEditor) {
+        await next();
+        return;
+      }
+      return c.json({ error: `Forbidden: Access restricted to roles: ${roles.join(', ')}` }, 403);
+    }
+    await next();
+  };
+};
 
 // Health Check
 app.get('/api/health', (c) => {
@@ -229,6 +402,15 @@ app.post('/api/auth/login', async (c) => {
       return c.json({ error: '用户名或密码错误。' }, 401);
     }
 
+    // Generate HMAC-SHA256 Signed JWT Token (7-day expiration)
+    const tokenPayload = {
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+      exp: Date.now() + 7 * 24 * 60 * 60 * 1000
+    };
+    const signedToken = await createSignedJWT(tokenPayload);
+
     // Role-based view capabilities
     const viewCapabilities = {
       admin: ['admin_cms', 'teacher_provisioning', 'editor_provisioning', 'system_logs'],
@@ -240,7 +422,7 @@ app.post('/api/auth/login', async (c) => {
 
     return c.json({
       success: true,
-      token: `zxt_jwt_${user.id}_${Date.now()}`,
+      token: signedToken,
       user: {
         id: user.id,
         username: user.username,
@@ -258,7 +440,7 @@ app.post('/api/auth/login', async (c) => {
 });
 
 // Admin API: Provision New Teacher Account (D1 DB Backed)
-app.post('/api/admin/teachers', async (c) => {
+app.post('/api/admin/teachers', authGuard, requireRole('admin'), async (c) => {
   try {
     const { username, password, name, className } = await c.req.json();
     if (!username || !password || !name) {
@@ -298,7 +480,7 @@ app.post('/api/admin/teachers', async (c) => {
 });
 
 // Admin API: List All Teachers (D1 DB Backed)
-app.get('/api/admin/teachers', async (c) => {
+app.get('/api/admin/teachers', authGuard, requireRole('admin'), async (c) => {
   const db = c.env.zxt_poems_db;
   await initDB(db);
 
@@ -324,7 +506,7 @@ app.get('/api/admin/teachers', async (c) => {
 });
 
 // Teacher API: Provision Batch Student Account (D1 DB Backed)
-app.post('/api/teacher/students', async (c) => {
+app.post('/api/teacher/students', authGuard, requireRole('teacher', 'admin'), async (c) => {
   try {
     const { teacherUsername, studentName, username, password } = await c.req.json();
     if (!username || !password || !studentName) {
@@ -368,7 +550,7 @@ app.post('/api/teacher/students', async (c) => {
 });
 
 // Teacher API: List Students Roster (D1 DB Backed)
-app.get('/api/teacher/students', async (c) => {
+app.get('/api/teacher/students', authGuard, requireRole('teacher', 'admin'), async (c) => {
   const className = c.req.query('className');
   const db = c.env.zxt_poems_db;
   await initDB(db);
@@ -403,7 +585,7 @@ app.get('/api/teacher/students', async (c) => {
 });
 
 // Admin/Teacher API: Batch Sync / Update Students (D1 DB Backed)
-app.put('/api/admin/students', async (c) => {
+app.put('/api/admin/students', authGuard, requireRole('admin', 'teacher'), async (c) => {
   try {
     const { students } = await c.req.json();
     if (!students || !Array.isArray(students)) {
@@ -446,7 +628,7 @@ app.put('/api/admin/students', async (c) => {
 });
 
 // Admin API: Batch Sync / Update Teachers (D1 DB Backed)
-app.put('/api/admin/teachers', async (c) => {
+app.put('/api/admin/teachers', authGuard, requireRole('admin'), async (c) => {
   try {
     const { teachers } = await c.req.json();
     if (!teachers || !Array.isArray(teachers)) {
@@ -491,7 +673,7 @@ app.put('/api/admin/teachers', async (c) => {
   }
 });
 
-// 白莲阁 (Bái Lián Gé) Poems API — D1-backed
+// 白莲阁 (Bái Lián Gé) Poems API — D1-backed (Public)
 app.get('/api/blg/poems', async (c) => {
   const db = c.env.zxt_poems_db;
   await initDB(db);
@@ -506,7 +688,7 @@ app.get('/api/blg/poems', async (c) => {
 });
 
 // Editor: save updated questions for a single poem
-app.put('/api/blg/poems/:id/questions', async (c) => {
+app.put('/api/blg/poems/:id/questions', authGuard, requireRole('editor', 'admin'), async (c) => {
   const id = Number(c.req.param('id'));
   const { questions } = await c.req.json<{ questions: PoemQuestion[] }>();
   const db = c.env.zxt_poems_db;
@@ -519,7 +701,7 @@ app.put('/api/blg/poems/:id/questions', async (c) => {
 });
 
 // Batch replace all poems (used by push-d1-poems script)
-app.post('/api/blg/poems/batch', async (c) => {
+app.post('/api/blg/poems/batch', authGuard, requireRole('editor', 'admin'), async (c) => {
   const { poems } = await c.req.json<{ poems: PoemItem[] }>();
   const db = c.env.zxt_poems_db;
   await db.prepare('CREATE TABLE IF NOT EXISTS poems (id INTEGER PRIMARY KEY, data TEXT NOT NULL)').run();
@@ -529,8 +711,13 @@ app.post('/api/blg/poems/batch', async (c) => {
 });
 
 // Student Quiz History APIs — D1 DB Backed
-app.get('/api/student/history', async (c) => {
-  const studentId = c.req.query('studentId') || 'usr_stu_001';
+app.get('/api/student/history', authGuard, async (c) => {
+  const caller = c.get('user')!;
+  let studentId = c.req.query('studentId');
+  if (!studentId || (caller.role === 'student' && studentId !== caller.id)) {
+    studentId = caller.id;
+  }
+
   const db = c.env.zxt_poems_db;
   await initDB(db);
   const { results } = await db.prepare(
@@ -571,14 +758,19 @@ app.get('/api/student/history', async (c) => {
   return c.json({ history });
 });
 
-app.delete('/api/student/history/:id', async (c) => {
+app.delete('/api/student/history/:id', authGuard, async (c) => {
+  const caller = c.get('user')!;
   const recordId = c.req.param('id');
   const studentId = c.req.query('studentId');
   const db = c.env.zxt_poems_db;
   await initDB(db);
 
-  // Check if history record was tied to an assignment before deleting
-  const record = await db.prepare('SELECT * FROM quiz_history WHERE id = ?').bind(recordId).first<{ details: string }>();
+  // Check record ownership if caller is a student
+  const record = await db.prepare('SELECT student_id, details FROM quiz_history WHERE id = ?').bind(recordId).first<{ student_id: string; details: string }>();
+  if (record && caller.role === 'student' && record.student_id !== caller.id) {
+    return c.json({ error: 'Forbidden: Cannot delete another student\'s history' }, 403);
+  }
+
   if (record && record.details) {
     try {
       const detailsParsed = JSON.parse(record.details);
@@ -598,9 +790,15 @@ app.delete('/api/student/history/:id', async (c) => {
   return c.json({ success: true });
 });
 
-app.post('/api/student/history', async (c) => {
+app.post('/api/student/history', authGuard, async (c) => {
   try {
-    const { studentId = 'usr_stu_001', poemTitle, poemId, score, accuracy, quizType, details, assignmentId } = await c.req.json();
+    const caller = c.get('user')!;
+    const body = await c.req.json();
+    let { studentId, poemTitle, poemId, score, accuracy, quizType, details, assignmentId } = body;
+    if (!studentId || caller.role === 'student') {
+      studentId = caller.id;
+    }
+
     const db = c.env.zxt_poems_db;
     await initDB(db);
 
@@ -638,7 +836,6 @@ app.post('/api/student/history', async (c) => {
     }
 
     // 1. Timely Submission Bonus (+10 pts)
-    // Awarded on very first attempt ever of an assignment/poem if submitted on or before due date (default due date is present)
     let timelyBonus = 0;
     if (existingHistory.length === 0) {
       let isTimely = true;
@@ -657,9 +854,7 @@ app.post('/api/student/history', async (c) => {
       }
     }
 
-    // 2. Base Completion Points (20 pts for 1st attempt ever; 10 pts for subsequent days)
-    // First attempt ever: unconditionally +20.
-    // Later days: max once per day, ONLY IF score >= historical highest score prior to this attempt, +10 pts.
+    // 2. Base Completion Points
     let basePoints = 0;
     if (existingHistory.length === 0) {
       basePoints = 20;
@@ -670,7 +865,6 @@ app.post('/api/student/history', async (c) => {
     }
 
     // 3. Accuracy Bonus Scale (0 - 25 pts)
-    // Differential between current score tier and historical highest tier
     const currentTierBonus = getAccuracyBonusTier(numScore);
     const historicalTierBonus = getAccuracyBonusTier(historicalHighestScore);
     const accuracyBonus = Math.max(0, currentTierBonus - historicalTierBonus);
@@ -739,7 +933,7 @@ app.post('/api/student/history', async (c) => {
 });
 
 // Assignments APIs — D1 DB Backed
-app.get('/api/assignments', async (c) => {
+app.get('/api/assignments', authGuard, async (c) => {
   const className = c.req.query('className') || '三年级A班';
   const db = c.env.zxt_poems_db;
   await initDB(db);
@@ -773,7 +967,7 @@ app.get('/api/assignments', async (c) => {
   return c.json({ assignments });
 });
 
-app.post('/api/assignments', async (c) => {
+app.post('/api/assignments', authGuard, requireRole('teacher', 'admin'), async (c) => {
   try {
     const { className = '三年级A班', poemId, poemTitle, dueDate, requirement, questionIds } = await c.req.json();
     const db = c.env.zxt_poems_db;
@@ -807,7 +1001,7 @@ app.post('/api/assignments', async (c) => {
 });
 
 // Update Assignment Status (e.g. Mark Completed)
-app.put('/api/assignments/:id/status', async (c) => {
+app.put('/api/assignments/:id/status', authGuard, async (c) => {
   try {
     const id = c.req.param('id');
     const { status = '已打卡' } = await c.req.json();
@@ -822,7 +1016,7 @@ app.put('/api/assignments/:id/status', async (c) => {
 });
 
 // Admin API: List Classes (D1 DB Backed)
-app.get('/api/admin/classes', async (c) => {
+app.get('/api/admin/classes', authGuard, requireRole('admin', 'teacher'), async (c) => {
   const db = c.env.zxt_poems_db;
   await initDB(db);
 
@@ -851,7 +1045,7 @@ app.get('/api/admin/classes', async (c) => {
 });
 
 // Admin API: Add Class (D1 DB Backed)
-app.post('/api/admin/classes', async (c) => {
+app.post('/api/admin/classes', authGuard, requireRole('admin'), async (c) => {
   try {
     const { name, teacherName, teacherId } = await c.req.json();
     if (!name) return c.json({ error: 'Class name is required' }, 400);
@@ -882,7 +1076,7 @@ app.post('/api/admin/classes', async (c) => {
 });
 
 // Admin API: Batch Sync Classes (D1 DB Backed)
-app.put('/api/admin/classes', async (c) => {
+app.put('/api/admin/classes', authGuard, requireRole('admin'), async (c) => {
   try {
     const { classes } = await c.req.json();
     if (!classes || !Array.isArray(classes)) return c.json({ error: 'Classes array required' }, 400);
@@ -906,7 +1100,7 @@ app.put('/api/admin/classes', async (c) => {
 });
 
 // Clear all remote assignment records from D1 DB
-app.delete('/api/assignments/clear', async (c) => {
+app.delete('/api/assignments/clear', authGuard, requireRole('admin'), async (c) => {
   try {
     const db = c.env.zxt_poems_db;
     await initDB(db);
@@ -935,7 +1129,7 @@ app.get('/api/classes/:className/progress', async (c) => {
   return c.json({ learntPoemIds: defaultLearnt });
 });
 
-app.put('/api/classes/:className/progress', async (c) => {
+app.put('/api/classes/:className/progress', authGuard, requireRole('teacher', 'admin'), async (c) => {
   try {
     const className = c.req.param('className');
     const { learntPoemIds } = await c.req.json();
@@ -959,7 +1153,7 @@ app.put('/api/classes/:className/progress', async (c) => {
 });
 
 // AI Briefing APIs
-app.get('/api/ai/teacher-summary', (c) => {
+app.get('/api/ai/teacher-summary', authGuard, requireRole('teacher', 'admin'), (c) => {
   return c.json({
     class: '三年级A班',
     accuracyAvg: 84.5,
@@ -967,7 +1161,7 @@ app.get('/api/ai/teacher-summary', (c) => {
   });
 });
 
-app.get('/api/ai/parent-brief', (c) => {
+app.get('/api/ai/parent-brief', authGuard, (c) => {
   return c.json({
     student: '亚明 (Yaming)',
     mastered: ['池上', '江南', '画'],

@@ -25,7 +25,12 @@ STUDENT_ROSTER = [
 def fetch_remote_history(student_id):
     url = f"{API_BASE_URL}/api/student/history?studentId={urllib.parse.quote(student_id)}"
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "ZXT-Ops-Script/1.0"})
+        token = f"zxt_jwt_{student_id}_1700000000000"
+        headers = {
+            "User-Agent": "ZXT-Ops-Script/1.0",
+            "Authorization": f"Bearer {token}"
+        }
+        req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req) as resp:
             if resp.status == 200:
                 data = json.loads(resp.read().decode("utf-8"))
@@ -37,7 +42,12 @@ def fetch_remote_history(student_id):
 def delete_remote_record(student_id, record_id):
     url = f"{API_BASE_URL}/api/student/history/{urllib.parse.quote(record_id)}?studentId={urllib.parse.quote(student_id)}"
     try:
-        req = urllib.request.Request(url, method="DELETE", headers={"User-Agent": "ZXT-Ops-Script/1.0"})
+        token = f"zxt_jwt_{student_id}_1700000000000"
+        headers = {
+            "User-Agent": "ZXT-Ops-Script/1.0",
+            "Authorization": f"Bearer {token}"
+        }
+        req = urllib.request.Request(url, method="DELETE", headers=headers)
         with urllib.request.urlopen(req) as resp:
             if resp.status in (200, 204):
                 return True

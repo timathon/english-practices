@@ -46,7 +46,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold"
+          disabled={loading}
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed"
         >
           ✕
         </button>
@@ -71,9 +72,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             <input
               type="text"
               value={username}
+              disabled={loading}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="请输入账号 (如 mmd, zhang_laoshi, yaming)"
-              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               required
             />
           </div>
@@ -83,9 +85,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             <input
               type="password"
               value={password}
+              disabled={loading}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="请输入密码"
-              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
               required
             />
           </div>
@@ -93,8 +96,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-sm shadow-md transition disabled:opacity-50"
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-sm shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
+            {loading && (
+              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
             {loading ? '登录验证中...' : '立即登录'}
           </button>
         </form>
@@ -107,21 +116,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           <div className="grid grid-cols-3 gap-2 text-xs">
             <button
               onClick={() => handleQuickFill('mmd', 'zhiyuzhishan')}
-              className="p-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-900 font-medium text-center"
+              disabled={loading}
+              className="p-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-900 font-medium text-center disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <div className="font-bold text-[11px]">⚙️ Admin</div>
               <div className="text-[9px] text-purple-700">mmd</div>
             </button>
             <button
               onClick={() => handleQuickFill('zhang_laoshi', 'teacher123')}
-              className="p-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-blue-900 font-medium text-center"
+              disabled={loading}
+              className="p-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-blue-900 font-medium text-center disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <div className="font-bold text-[11px]">👩‍🏫 Teacher</div>
               <div className="text-[9px] text-blue-700">zhang_laoshi</div>
             </button>
             <button
               onClick={() => handleQuickFill('yaming', 'student123')}
-              className="p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-900 font-medium text-center"
+              disabled={loading}
+              className="p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-emerald-900 font-medium text-center disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <div className="font-bold text-[11px]">🎓 Student</div>
               <div className="text-[9px] text-emerald-700">yaming</div>

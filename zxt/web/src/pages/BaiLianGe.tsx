@@ -187,8 +187,11 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
 
   useEffect(() => {
     loadStudentData();
-    loadTeacherData();
-  }, [selectedClass]);
+    const isTeacherOrAdmin = activeView === 'admin' || activeView === 'teacher' || (user && (user.role === 'teacher' || user.role === 'admin'));
+    if (isTeacherOrAdmin) {
+      loadTeacherData();
+    }
+  }, [selectedClass, activeView, user]);
 
   // Keep selected poem ID valid based on cached/DB unlocked poems
   useEffect(() => {
@@ -227,6 +230,12 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   };
 
   const loadRosters = async () => {
+    // Roster management calls (classes, teachers list) are for admin/teacher management views
+    const isTeacherOrAdmin = activeView === 'admin' || activeView === 'teacher' || (user && (user.role === 'admin' || user.role === 'teacher'));
+    if (!isTeacherOrAdmin) {
+      return;
+    }
+
     // 1. Instant load from localStorage cache
     const cachedClasses = apiService.getClassesSync();
     if (cachedClasses && cachedClasses.length > 0) {

@@ -108,6 +108,20 @@ export interface Poem {
 
 // Default Fallback Session when offline
 let currentSession: UserSession | null = null;
+let currentToken: string | null = localStorage.getItem('zxt_token');
+
+export function getAuthToken(): string | null {
+  return currentToken || localStorage.getItem('zxt_token');
+}
+
+export function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getAuthToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 export const canEditQuizLibrary = (user: UserSession | null): boolean => {
   if (!user) return false;
@@ -129,7 +143,11 @@ export const apiService = {
         const data = await res.json();
         if (res.ok && data.success) {
           currentSession = data.user;
+          currentToken = data.token || null;
           localStorage.setItem('zxt_user', JSON.stringify(data.user));
+          if (data.token) {
+            localStorage.setItem('zxt_token', data.token);
+          }
           return data;
         }
         if (data && data.error && data.error.includes('密码错误')) {
@@ -142,6 +160,10 @@ export const apiService = {
 
     // Check local roster fallback
     const localResult = this.localLoginFallback(username, password);
+    if (localResult.success && localResult.token) {
+      currentToken = localResult.token;
+      localStorage.setItem('zxt_token', localResult.token);
+    }
     return localResult;
   },
 
@@ -345,7 +367,7 @@ export const apiService = {
     // Persist to remote D1 so all users see the change
     fetch(`${API_BASE_URL}/api/blg/poems/${poemId}/questions`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ questions }),
     }).catch(e => console.warn('Failed to save questions to remote D1:', e));
   },
@@ -363,7 +385,9 @@ export const apiService = {
   async getClasses() {
     if (USE_BACKEND) {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/classes`);
+        const res = await fetch(`${API_BASE_URL}/api/admin/classes`, {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
           if (data && data.classes && Array.isArray(data.classes)) {
@@ -401,7 +425,7 @@ export const apiService = {
       try {
         await fetch(`${API_BASE_URL}/api/admin/classes`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ classes })
         });
       } catch (err) {
@@ -416,7 +440,7 @@ export const apiService = {
       try {
         const res = await fetch(`${API_BASE_URL}/api/admin/classes`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ name: className, teacherName: defaultTeacherName, teacherId: defaultTeacherId })
         });
         if (res.ok) {
@@ -443,7 +467,9 @@ export const apiService = {
   async getTeachers() {
     if (USE_BACKEND) {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/teachers`);
+        const res = await fetch(`${API_BASE_URL}/api/admin/teachers`, {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
           if (data && data.teachers && Array.isArray(data.teachers)) {
@@ -472,7 +498,7 @@ export const apiService = {
       try {
         const res = await fetch(`${API_BASE_URL}/api/admin/teachers`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ teachers })
         });
         if (!res.ok) {
@@ -491,7 +517,9 @@ export const apiService = {
         const url = className
           ? `${API_BASE_URL}/api/teacher/students?className=${encodeURIComponent(className)}`
           : `${API_BASE_URL}/api/teacher/students`;
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
           if (data && data.students && Array.isArray(data.students)) {
@@ -539,7 +567,7 @@ export const apiService = {
       try {
         const res = await fetch(`${API_BASE_URL}/api/admin/students`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ students })
         });
         if (!res.ok) {
@@ -563,7 +591,9 @@ export const apiService = {
 
     if (USE_BACKEND) {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/assignments?className=${encodeURIComponent(className)}`);
+        const res = await fetch(`${API_BASE_URL}/api/assignments?className=${encodeURIComponent(className)}`, {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
           if (data && data.assignments && Array.isArray(data.assignments)) {
@@ -610,7 +640,7 @@ export const apiService = {
       try {
         const res = await fetch(`${API_BASE_URL}/api/assignments`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify(createdAsgn)
         });
         if (res.ok) {
@@ -663,7 +693,7 @@ export const apiService = {
       try {
         await fetch(`${API_BASE_URL}/api/assignments/${asgnId}/status`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ status: '已打卡', score })
         });
       } catch (err) {
@@ -676,7 +706,9 @@ export const apiService = {
   async getQuizHistory(studentId: string = 'usr_stu_001') {
     if (USE_BACKEND) {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/student/history?studentId=${encodeURIComponent(studentId)}`);
+        const res = await fetch(`${API_BASE_URL}/api/student/history?studentId=${encodeURIComponent(studentId)}`, {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
           if (data && data.history && Array.isArray(data.history)) {
@@ -717,7 +749,7 @@ export const apiService = {
       try {
         const res = await fetch(`${API_BASE_URL}/api/student/history`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             studentId,
             ...result,
@@ -799,7 +831,9 @@ export const apiService = {
   async getLearntPoemIds(className: string = '三年级A班'): Promise<number[]> {
     if (USE_BACKEND) {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/classes/${encodeURIComponent(className)}/progress`);
+        const res = await fetch(`${API_BASE_URL}/api/classes/${encodeURIComponent(className)}/progress`, {
+          headers: getAuthHeaders()
+        });
         if (res.ok) {
           const data = await res.json();
           if (data && data.learntPoemIds && Array.isArray(data.learntPoemIds) && data.learntPoemIds.length > 0) {
@@ -825,7 +859,7 @@ export const apiService = {
     try {
       const res = await fetch(`${API_BASE_URL}/api/classes/${encodeURIComponent(className)}/progress`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ learntPoemIds }),
         signal: controller.signal
       });
@@ -860,6 +894,8 @@ export const apiService = {
   // Logout
   logout() {
     currentSession = null;
+    currentToken = null;
     localStorage.removeItem('zxt_user');
+    localStorage.removeItem('zxt_token');
   }
 };
