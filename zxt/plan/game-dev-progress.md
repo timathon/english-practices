@@ -97,6 +97,22 @@ Implemented the core 4-Chamber student navigation and interaction model:
 
 ---
 
+### 9. ZhengTang & WenGuShi UI Overhaul & Review Modal (Session: 2026-08-09)
+
+- **正堂 (ZhengTang - Main Hall)**:
+  - Redesigned header with dark navy/indigo gradient, glow blobs, star grid pattern, and dynamic pending/completed assignment count pills.
+  - Interactive filter tab bar (`全部锦囊`, `语文`, `数学`, `英语`).
+  - Improved assignment cards with clear completion state styling (`✅ 修业完毕`) and gradient CTA buttons.
+  - Multi-subject quest cards styled with distinct gradient themes and glassmorphism action buttons.
+
+- **温故室 (WenGuShi - Review Chamber & Error Logs)**:
+  - Added interactive `QuizRecordModal` when clicking any history item.
+  - Supports filtering questions by `📋 全部题目` or `❌ 只看错题`.
+  - Question options dynamically highlight correct choices (`✓` in green) and wrong student picks (`✗` in red).
+  - Integrated `CachedImage` component to ensure pictures render properly for `ImageToLine` and `ImageOrdering` review items.
+
+---
+
 ## File Directory & Assets Saved
 
 ### Art Ops & Prompts:
