@@ -204,6 +204,7 @@ export const mistakeService = {
     if (!userId) return [];
     try {
       const res = await fetch(`${API_URL}/api/mistakes`, { credentials: 'include' });
+      if (!res.ok) return this.getMistakes(userId);
       const serverData = await res.json();
       const localData = this.getMistakes(userId);
       if (Array.isArray(serverData)) {
@@ -215,7 +216,7 @@ export const mistakeService = {
       }
       return localData;
     } catch (e) {
-      console.error('Failed to sync mistakes from server:', e);
+      console.warn('Network sync for mistakes unavailable, using local cache');
       return this.getMistakes(userId);
     }
   },
@@ -231,18 +232,29 @@ export const mistakeService = {
       this._syncTimer = null;
       try {
         const mistakes = this.getMistakes(userId);
+        
+        // Optimize payload: keep all unresolved mistakes + max 50 recent resolved mistakes
+        // to prevent exceeding HTTP/2 body size limits on Cloudflare
+        const unresolved = mistakes.filter(m => !m.resolved);
+        const resolved = mistakes.filter(m => m.resolved).slice(-50);
+        const syncPayload = [...unresolved, ...resolved];
+
         const res = await fetch(`${API_URL}/api/mistakes`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(mistakes),
+          body: JSON.stringify(syncPayload),
         });
+        if (!res.ok) return;
         const data = await res.json();
         if (data && Array.isArray(data.mistakeState)) {
-          localStorage.setItem(getStorageKey(userId), JSON.stringify(data.mistakeState));
+          // Merge remote response back with full local list so historical resolved mistakes are preserved
+          const fullLocal = this.getMistakes(userId);
+          const updated = this.mergeMistakes(fullLocal, data.mistakeState);
+          localStorage.setItem(getStorageKey(userId), JSON.stringify(updated));
         }
       } catch (e) {
-        console.error('Failed to sync mistakes to server:', e);
+        console.warn('Background sync to server deferred (offline or network error)');
       }
     }, 400);
   }
