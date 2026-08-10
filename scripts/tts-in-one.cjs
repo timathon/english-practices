@@ -7,7 +7,7 @@
  * Flags:
  *   --regenerate   Force regeneration of all audios even if they exist on R2.
  *   --xs           Use GOOGLE_API_KEY with small batches (chunks of 10).
- *   --xl           (Default) Increase word count limit to 250 words per batch using GOOGLE_API_KEY_FREE.
+ *   --xl           (Default) Increase word count limit to 300 words per batch using GOOGLE_API_KEY_FREE.
  *   --resume       Resume from the last saved tts-job-*.json job state file.
  *   --3.1, --flash-tts
  *                  Force priority of gemini-3.1-flash-tts-preview model over gemini-2.5.
@@ -328,8 +328,8 @@ async function main() {
 
         let chunks = [];
         if (useXl) {
-            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 250);
-            console.log(`Generating audio in batches of max 250 words (xl mode, using GOOGLE_API_KEY_FREE)...`);
+            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 300);
+            console.log(`Generating audio in batches of max 300 words (xl mode, using GOOGLE_API_KEY_FREE)...`);
         } else {
             const tasksArray = remainingItems.map(item => ({ context_sentence: item.text }));
             for (let i = 0; i < tasksArray.length; i += 10) {

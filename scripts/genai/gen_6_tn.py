@@ -35,9 +35,11 @@ You are an expert English curriculum designer. Generate a text-navigator JSON fo
 
 === TREE RULES ===
 - Each "tree" is a hierarchical mindmap (root node ID "root").
-- Hierarchy should reflect the logical flow. Do not put all sentences in a flat list. Group sentences logically by creating thematic sub-heading nodes (Level 1 and Level 2) first, then placing sentences as child nodes. Max nesting depth is 4 levels.
-- "id": Unique, logical string IDs (e.g., "root", "p1", "p1_1"). Must be unique within each tree.
-- "text": Exact verbatim text from the passage. Leaf nodes should generally contain ONLY ONE sentence. Occasionally, short closely related fragments/sentences may be combined, but NEVER allow the combined text to be too long. If a speaker is specified (e.g., "Emma:"), omit the speaker name/prefix from the "text" field and put it in "speaker".
+- CRITICAL HIERARCHY REQUIREMENT: You MUST build a structured 3-level tree hierarchy (root -> Level 1 Major Parts/Topics -> Level 2 Sub-headings/Focus -> Level 3 Verbatim Sentences).
+- DO NOT put all sentences in a flat list directly under the root or under a single parent node. Never allow any non-root parent node to have more than 5 direct leaf children without creating thematic sub-heading nodes (Level 1 and Level 2) first.
+- Max nesting depth is 4 levels.
+- "id": Unique, logical string IDs (e.g., "root", "sec_1", "part1_sub1", "p1_1"). Must be unique within each tree.
+- "text": Exact verbatim text from the passage. Leaf nodes should contain ONLY ONE sentence. If a speaker is specified (e.g., "Emma:"), omit the speaker name/prefix from the "text" field and put it in "speaker".
 - "speaker": (Optional) The name of the speaker if the sentence is a dialogue (e.g., "Rocky", "Emma", "Sam"). If the text includes narrative speech verbs (e.g. 'I say', 'she says', 'says Mum'), keep the full narrative text intact and do NOT use the "speaker" field.
 - "cn": Chinese translation of the sentence (do not include the speaker name prefix here either).
 - "notes": Brief explanations of difficult vocabulary, expressions, or grammar points.
@@ -158,8 +160,9 @@ def main():
         )
     elif any(x in path_upper or x in level_upper for x in ["A7A", "A7B", "A8A", "A8B", "A9"]):
         section_instructions = (
-            '- Sections to include: "Section A, 1b and 1c" (or "Section A, 1b, 1c, and 1d" etc., only if the first section of the listening scripts in the appendix is long and meaningful enough to include; otherwise skip this section), '
-            '"Section A Activity 2a", "Section B Activity 1b", "Section B Activity 2a".'
+            '- Sections to include: Only major listening script conversations and reading passages from the unit (e.g., "Section A, 1b and 1c", '
+            '"Section A Activity 2a", "Section B Activity 1b").\n'
+            '- DO NOT include vocabulary lists, word matching exercises, or single-word drill exercises (e.g. "Section B Activity 2a" or vocabulary list matching tables).'
         )
     elif "SA" in path_upper or "SB" in path_upper or md_path.name.upper().startswith("S"):
         section_instructions = (

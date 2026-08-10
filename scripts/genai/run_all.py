@@ -98,5 +98,22 @@ def main():
             print("\nAborting sequence.")
             sys.exit(1)
 
+    print("\n--- Running Audit & Fixes ---")
+    audit_script = genai_dir / "audit-scripts" / "audit_unit.py"
+    apply_fixes_script = genai_dir / "audit-scripts" / "apply_audit_fixes.py"
+
+    if audit_script.exists():
+        print(f"\nRunning {audit_script.name} on {folder_path}...")
+        audit_cmd = [sys.executable, str(audit_script), str(folder_path)]
+        if use_high:
+            audit_cmd.append("high")
+        subprocess.run(audit_cmd)
+
+        report_path = genai_dir / "audit-reports" / f"{folder_path.name}-audit-report.md"
+        if report_path.exists() and apply_fixes_script.exists():
+            print(f"\nRunning {apply_fixes_script.name} on {report_path}...")
+            subprocess.run([sys.executable, str(apply_fixes_script), str(report_path)])
+
 if __name__ == "__main__":
     main()
+

@@ -309,7 +309,7 @@ def audit_spelling_hero(sh, vg, filename):
     issues = []
     sp_words = sh.get("spelling_words", [])
     vg_vocab = vg.get("unit_vocabulary", []) if vg else []
-    single_words_vg = [v["word"] for v in vg_vocab if " " not in v["word"].strip()]
+    single_words_vg = [v["word"] for v in vg_vocab if " " not in v["word"].strip() and "-" not in v["word"].strip()]
 
     sh_words_set = set([w.get("word") for w in sp_words])
     missing_sh = set(single_words_vg) - sh_words_set
@@ -660,7 +660,18 @@ def audit_text_navigator(tn, unit_path, filename):
                     "description": f"Text '{text}' contains redundant speaker prefix '{speaker}:'."
                 })
 
-            for child in node.get("children", []):
+            children = node.get("children", [])
+            # Check for flat structure (direct children > 5 where children are all leaf nodes)
+            if children and len(children) > 5 and all(len(c.get("children", [])) == 0 for c in children):
+                issues.append({
+                    "json_file": filename,
+                    "rule_section": "6. Text Navigator (TN)",
+                    "item_id": f"{sec_name}:{nid}",
+                    "issue_type": "Flat Tree Structure",
+                    "description": f"Node '{nid}' has {len(children)} direct leaf children without logical thematic sub-headings or grouping nodes (Level 1/2)."
+                })
+
+            for child in children:
                 check_tn_node(child, depth + 1)
 
         check_tn_node(sec_tree, 0)
