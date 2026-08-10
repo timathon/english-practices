@@ -770,6 +770,118 @@ app.get('/api/practices/:id', async (c) => {
   })
 })
 
+app.get('/api/benchmark-db', async (c) => {
+  const id = c.req.query('id') || 'test_b-think1-u10_vocab_master';
+  
+  // 1. Measure D1 Latency
+  const startD1 = performance.now();
+  const db = drizzle(c.env.DB);
+  const d1Res = await db.select().from(practice).where(eq(practice.id, id));
+  const endD1 = performance.now();
+  const d1Latency = endD1 - startD1;
+
+  // 2. Measure TiDB Tokyo Latency
+  let tidbLatency: number | null = null;
+  let tidbFound = false;
+  let tidbError: string | null = null;
+
+  try {
+    const { connect } = await import('@tidbcloud/serverless');
+    const tidbConn = connect({
+      host: (c.env as any).TIDB_HOST || 'gateway01.ap-northeast-1.prod.aws.tidbcloud.com',
+      username: (c.env as any).TIDB_USER || '2CC8Ufd3t88uAwh.admin',
+      password: (c.env as any).TIDB_PASSWORD || 'Aiqiyouyouyuan0811!',
+    });
+
+    const startTiDB = performance.now();
+    const tidbRes: any = await tidbConn.execute(
+      `SELECT id, textbook, unit, type, title FROM practice WHERE id = ?`,
+      [id]
+    );
+    const endTiDB = performance.now();
+    tidbLatency = endTiDB - startTiDB;
+    const rows = Array.isArray(tidbRes) ? tidbRes : (tidbRes.rows || []);
+    tidbFound = rows.length > 0;
+  } catch (err: any) {
+    tidbError = err.message;
+  }
+
+  // 3. Measure TiDB Singapore Latency
+  let tidbSgLatency: number | null = null;
+  let tidbSgFound = false;
+  let tidbSgError: string | null = null;
+
+  try {
+    const { connect } = await import('@tidbcloud/serverless');
+    const tidbSgConn = connect({
+      host: 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
+      username: '4BqFNiemQKG2kYa.admin',
+      password: 'Aiqiyouyouyuan0811!',
+    });
+
+    const startTiDBSg = performance.now();
+    const tidbSgRes: any = await tidbSgConn.execute(
+      `SELECT id, textbook, unit, type, title FROM practice WHERE id = ?`,
+      [id]
+    );
+    const endTiDBSg = performance.now();
+    tidbSgLatency = endTiDBSg - startTiDBSg;
+    const rowsSg = Array.isArray(tidbSgRes) ? tidbSgRes : (tidbSgRes.rows || []);
+    tidbSgFound = rowsSg.length > 0;
+  } catch (err: any) {
+    tidbSgError = err.message;
+  }
+
+  // 4. Measure TiDB AliCloud Singapore Latency
+  let tidbAliSgLatency: number | null = null;
+  let tidbAliSgFound = false;
+  let tidbAliSgError: string | null = null;
+
+  try {
+    const { connect } = await import('@tidbcloud/serverless');
+    const tidbAliSgConn = connect({
+      host: 'gateway01.ap-southeast-1.prod.alicloud.tidbcloud.com',
+      username: '4D6Ag5PcH2djUtR.admin',
+      password: 'Aiqiyouyouyuan0811!',
+    });
+
+    const startTiDBAliSg = performance.now();
+    const tidbAliSgRes: any = await tidbAliSgConn.execute(
+      `SELECT id, textbook, unit, type, title FROM practice WHERE id = ?`,
+      [id]
+    );
+    const endTiDBAliSg = performance.now();
+    tidbAliSgLatency = endTiDBAliSg - startTiDBAliSg;
+    const rowsAliSg = Array.isArray(tidbAliSgRes) ? tidbAliSgRes : (tidbAliSgRes.rows || []);
+    tidbAliSgFound = rowsAliSg.length > 0;
+  } catch (err: any) {
+    tidbAliSgError = err.message;
+  }
+
+  return c.json({
+    practiceId: id,
+    cloudflareD1: {
+      latencyMs: Number(d1Latency.toFixed(2)),
+      found: d1Res.length > 0
+    },
+    tidbServerlessTokyo: {
+      latencyMs: tidbLatency !== null ? Number(tidbLatency.toFixed(2)) : null,
+      found: tidbFound,
+      error: tidbError
+    },
+    tidbServerlessSingapore: {
+      latencyMs: tidbSgLatency !== null ? Number(tidbSgLatency.toFixed(2)) : null,
+      found: tidbSgFound,
+      error: tidbSgError
+    },
+    tidbServerlessAliSingapore: {
+      latencyMs: tidbAliSgLatency !== null ? Number(tidbAliSgLatency.toFixed(2)) : null,
+      found: tidbAliSgFound,
+      error: tidbAliSgError
+    }
+  });
+})
+
 app.post('/api/admin/practices', async (c) => {
   const auth = getCachedAuth(c.env)
   const session = await auth.api.getSession({ headers: c.req.raw.headers })

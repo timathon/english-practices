@@ -15,6 +15,7 @@ if (typeof window !== 'undefined') {
 const SignIn = lazy(() => import('./SignIn').then(m => ({ default: m.SignIn })))
 const Dashboard = lazy(() => import('./Dashboard').then(m => ({ default: m.Dashboard })))
 const ManageUsers = lazy(() => import('./ManageUsers').then(m => ({ default: m.ManageUsers })))
+const DbBenchmarkPage = lazy(() => import('./DbBenchmarkPage').then(m => ({ default: m.DbBenchmarkPage })))
 const UsageGuide = lazy(() => import('./UsageGuide').then(m => ({ default: m.UsageGuide })))
 import { PracticeShell } from './components/PracticeShell'
 import { PetFloatingCompanion } from './components/PetFloatingCompanion'
@@ -265,7 +266,10 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
                 🔄 Refresh Page (刷新)
               </button>
               {(session.user as any).role === 'admin' && (
-                <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
+                <>
+                  <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
+                  <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/admin/db-benchmark" style={{ color: '#8b5cf6', fontWeight: 600 }}>⚡ DB Benchmark</Link>
+                </>
               )}
               <div className="nav-divider"></div>
               <div className="nav-section-title" style={{ padding: '4px 14px', fontSize: '0.75rem', fontWeight: 'bold', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reference (参考)</div>
@@ -534,6 +538,10 @@ const router = createBrowserRouter([
       {
         path: "/admin/manage-users",
         element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>
+      },
+      {
+        path: "/admin/db-benchmark",
+        element: <DbBenchmarkPage />
       }
     ]
   }
