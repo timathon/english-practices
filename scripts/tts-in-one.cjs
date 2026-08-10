@@ -7,7 +7,7 @@
  * Flags:
  *   --regenerate   Force regeneration of all audios even if they exist on R2.
  *   --xs           Use GOOGLE_API_KEY with small batches (chunks of 10).
- *   --xl           (Default) Increase word count limit to 200 words per batch using GOOGLE_API_KEY_FREE.
+ *   --xl           (Default) Increase word count limit to 250 words per batch using GOOGLE_API_KEY_FREE.
  *   --resume       Resume from the last saved tts-job-*.json job state file.
  *   --3.1, --flash-tts
  *                  Force priority of gemini-3.1-flash-tts-preview model over gemini-2.5.
@@ -40,7 +40,7 @@ function chunkTasksByWordCount(tasks, maxWords) {
     const chunks = [];
     let currentChunk = [];
     let currentWords = 0;
-    
+
     for (const task of tasks) {
         const text = task.context_sentence || task.text || task.word || task.en || "";
         const wordCount = text.split(/\s+/).filter(Boolean).length;
@@ -159,7 +159,7 @@ async function main() {
             relativeToData = path.relative(path.resolve(__dirname, '../data'), absoluteTarget);
         }
         bookName = relativeToData.split(path.sep)[0].toLowerCase();
-        
+
         if (isDir) {
             console.log(`Scanning unit directory: ${absoluteTarget}`);
         } else {
@@ -185,7 +185,7 @@ async function main() {
         }
 
         const files = isDir ? getFilesRecursively(absoluteTarget) : [absoluteTarget];
-        
+
         // Load tongjia mapping if it exists in any directory
         const tongjiaFiles = isDir
             ? files.filter(f => f.endsWith('tongjia.cjs'))
@@ -199,12 +199,12 @@ async function main() {
                 console.error(`⚠️ Failed to load tongjia mapping from ${tongjiaPath}: ${e.message}`);
             }
         }
-        
+
         for (const filePath of files) {
             const file = path.basename(filePath);
             if (!file.endsWith('.json') || file.includes('-recall-map') || file.includes('-writing-map') || file.includes('-grammar-wizard')) continue;
             console.log(`Reading file: ${filePath}`);
-            
+
             try {
                 const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
                 if (file.includes('-vocab-guide')) {
@@ -328,8 +328,8 @@ async function main() {
 
         let chunks = [];
         if (useXl) {
-            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 200);
-            console.log(`Generating audio in batches of max 200 words (xl mode, using GOOGLE_API_KEY_FREE)...`);
+            chunks = chunkTasksByWordCount(remainingItems.map(item => ({ context_sentence: item.text })), 250);
+            console.log(`Generating audio in batches of max 250 words (xl mode, using GOOGLE_API_KEY_FREE)...`);
         } else {
             const tasksArray = remainingItems.map(item => ({ context_sentence: item.text }));
             for (let i = 0; i < tasksArray.length; i += 10) {
@@ -346,7 +346,7 @@ async function main() {
         for (let i = 0; i < chunks.length; i++) {
             const batch = chunks[i];
             console.log(`\nProcessing batch ${i + 1}/${chunks.length} (${batch.length} items)...`);
-            
+
             const now = Date.now();
             const timeSinceLast = now - lastRequestTime;
             if (i > 0 && timeSinceLast < MIN_INTERVAL) {
@@ -357,7 +357,7 @@ async function main() {
 
             // Generate batchId beforehand
             const batchId = crypto.randomBytes(4).toString('hex');
-            
+
             // Update batchId in JSON state for the items in this batch
             const batchTexts = new Set(batch.map(item => item.context_sentence));
             for (const item of jobState.items) {
@@ -386,12 +386,12 @@ async function main() {
                 batchId: batchId,
                 use31: use31
             });
-            
+
             if (!result.success) {
                 console.error(`❌ Batch ${i + 1} failed: ${result.reason}`);
                 process.exit(1);
             }
-            
+
             if (result.quotaExhausted) {
                 console.warn(`⚠️ Quota warning or limit hit in batch ${i + 1}.`);
             }
@@ -416,7 +416,7 @@ async function main() {
                 }
             }
         }
-        
+
         console.log(`\n✅ Successfully generated${jobState.noUpload ? ' (local only, no R2 upload)' : ' and uploaded'} all missing audios!`);
     } finally {
         if (jobFilePath) {

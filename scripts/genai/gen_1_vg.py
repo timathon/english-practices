@@ -65,6 +65,39 @@ SOURCE MARKDOWN:
 """
 
 
+def extract_json(text: str) -> dict:
+    """Extract JSON object from response string."""
+    text = text.strip()
+
+    # Strip markdown code fences if present
+    import re
+    fence_match = re.search(r'```(?:json)?\s*(\{[\s\S]*\})\s*```', text)
+    if fence_match:
+        text = fence_match.group(1).strip()
+
+    # Try direct json.loads
+    try:
+        return json.loads(text)
+    except Exception:
+        pass
+
+    # Find outermost '{' and '}'
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        sub = text[start:end + 1]
+        try:
+            return json.loads(sub)
+        except json.JSONDecodeError:
+            cleaned = re.sub(r',\s*([\}\]])', r'\1', sub)
+            try:
+                return json.loads(cleaned)
+            except json.JSONDecodeError:
+                pass
+
+    raise ValueError("Unbalanced JSON in response")
+
+
 def main():
     use_high = parse_high_flag()
 
@@ -90,6 +123,7 @@ def main():
     print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
     import time
     response = None
+    parsed = None
     for attempt in range(5):
         try:
             response = client.models.generate_content(
@@ -101,14 +135,13 @@ def main():
                     response_mime_type="application/json"
                 )
             )
+            parsed = extract_json(response.text)
             break
         except Exception as e:
             print(f"Error calling Gemini API (attempt {attempt + 1}/5): {e}", file=sys.stderr)
             if attempt == 4:
                 raise e
             time.sleep(2 ** attempt)
-
-    parsed = json.loads(response.text)
 
     # Ensure all IPA values have slashes
     for item in parsed.get("unit_vocabulary", []):

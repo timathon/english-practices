@@ -123,6 +123,7 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
   // Calculate audio URL for a node
   const ttsBy = data?.tts?.by
   const getAudioUrl = useCallback((text: string) => {
+    if (!text || typeof text !== 'string') return ''
     const hash = md5(text)
     const isCf = ttsBy === 'melotts'
     return `${PUBLIC_URL_BASE}/ep/${textbook.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`
@@ -616,8 +617,9 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
     if (enableAudio && showAllMode === 3) {
       const visible = collectVisibleNodes(treeData)
       visible.forEach(n => {
+        if (!n || !n.text) return
         const url = getAudioUrl(n.text)
-        audioCache.preloadAndSync(url)
+        if (url) audioCache.preloadAndSync(url)
       })
     }
   }, [enableAudio, showAllMode, treeData, collectVisibleNodes, getAudioUrl])
