@@ -151,10 +151,11 @@ app.use('/api/*', async (c, next) => {
         const userRows = await db.select().from(user).where(eq(user.id, dbSess.userId));
         if (userRows.length > 0) {
           currentUser = userRows[0];
-          // Cache session + user in KV for 5 minutes (300 seconds)
+          // Cache session + user in KV for 5 minutes (300 seconds) excluding huge arrays
           if (c.env.V2_CACHE_KV) {
             try {
-              await c.env.V2_CACHE_KV.put(kvKey, JSON.stringify({ dbSess, currentUser }), { expirationTtl: 300 });
+              const { mistakeState, petState, ...safeUser } = currentUser;
+              await c.env.V2_CACHE_KV.put(kvKey, JSON.stringify({ dbSess, currentUser: safeUser }), { expirationTtl: 300 });
             } catch (e) {
               console.warn("KV put error for session:", e);
             }
@@ -652,17 +653,50 @@ app.get('/api/practices', async (c) => {
               textbook: practice.textbook,
               unit: practice.unit,
               type: practice.type,
-              title: practice.title
+              title: practice.title,
+              content: practice.content
           }).from(practice)
           
-          cachedMappedPractices = practices.map(p => ({
-              id: p.id,
-              textbook: p.textbook,
-              unit: p.unit,
-              type: p.type,
-              title: p.title,
-              content: {}
-          }));
+          cachedMappedPractices = practices.map(p => {
+              let lightContent: any = {};
+              const type = (p.type || '').toLowerCase();
+              const content = p.content as any;
+              
+              if (content) {
+                  if (type.includes('vocab-master') || type.includes('sentence-architect') || type.includes('grammar-wizard')) {
+                      const challenges = content.challenges || [];
+                      lightContent = {
+                          challenges: challenges.map((c: any) => ({ title: c.title || '' }))
+                      };
+                  } else if (type.includes('passage-decoder') || type.includes('audio-detective')) {
+                      const sections = content.sections || [];
+                      lightContent = {
+                          sections: sections.map((s: any) => ({ title: s.title || '' }))
+                      };
+                  } else if (type.includes('text-navigator')) {
+                      const sections = content.sections;
+                      if (sections) {
+                          lightContent = { sections: sections.map((s: any) => ({ section: s.section || '' })) };
+                      } else if (content.tree) {
+                          lightContent = { tree: true, section: content.section || '' };
+                      }
+                  } else if (type.includes('spelling-hero')) {
+                      const wordCount = content.spelling_words?.length || 0;
+                      lightContent = {
+                          spelling_words: new Array(wordCount).fill({})
+                      };
+                  }
+              }
+              
+              return {
+                  id: p.id,
+                  textbook: p.textbook,
+                  unit: p.unit,
+                  type: p.type,
+                  title: p.title,
+                  content: lightContent
+              };
+          });
 
           if (c.env.V2_CACHE_KV && cachedMappedPractices) {
               c.executionCtx.waitUntil(

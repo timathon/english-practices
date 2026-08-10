@@ -679,8 +679,9 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                       } else if ((isPD || isAD) && p.content?.sections) {
                         total = p.content.sections.length;
                         let sumMax = 0;
+                        const baseId = isAD ? p.id.replace(/-ad$/, '') : p.id;
                         for (const sec of p.content.sections) {
-                          const secRecords = records.filter((r: any) => r.unit === `${p.id} (${sec.title})` && !r.unfinished);
+                          const secRecords = records.filter((r: any) => (r.unit === `${baseId} (${sec.title})` || r.unit === `${p.id} (${sec.title})`) && !r.unfinished);
                           if (secRecords.length > 0) {
                             doneCount++;
                             sumMax += Math.max(...secRecords.map((r: any) => r.score));
@@ -799,7 +800,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                 showChinese={showChinese} 
                               />
                             </span>
-                            {(isVM || isSH || isSA || isGW || isPD || isAD) && total > 0 && (
+                            {(isVM || isSH || isSA || isGW || isPD || isAD || isTN) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
                                 title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}
