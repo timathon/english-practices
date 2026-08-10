@@ -52,10 +52,29 @@ async function main() {
     // Accumulate generation log for report
     const generationLog = [];
 
-    // Processing in chunks of 8 as per tts-in-one.cjs convention
-    const CHUNK_SIZE = 8;
+    // Processing in chunks (default 8, or 1 if --single is specified)
+    const isSingleMode = process.argv.includes('--single');
+    const CHUNK_SIZE = isSingleMode ? 1 : 8;
     const MIN_INTERVAL = 21000; // 21 seconds for < 3 RPM
     let lastRequestTime = 0;
+
+    // Load any tongjia mappings if present
+    let tongjiaMap = {};
+    const possibleTongjiaPaths = [
+        path.join(process.cwd(), 'v2-data/B-PU1/b-pu1-u4/tongjia.cjs'),
+        path.join(process.cwd(), 'tongjia.cjs')
+    ];
+    for (const p of possibleTongjiaPaths) {
+        if (fs.existsSync(p)) {
+            try {
+                const subMap = require(p);
+                tongjiaMap = { ...tongjiaMap, ...subMap };
+                console.log(`Loaded tongjia mapping from ${p}`);
+            } catch (e) {
+                console.error(`⚠️ Failed to load tongjia mapping from ${p}: ${e.message}`);
+            }
+        }
+    }
 
     for (let i = 0; i < tasks.length; i += CHUNK_SIZE) {
         const chunk = tasks.slice(i, i + CHUNK_SIZE);
@@ -70,7 +89,7 @@ async function main() {
         }
 
         lastRequestTime = Date.now();
-        const result = await getAudioBatch(chunk, bookName, { skipUpload: noUpload });
+        const result = await getAudioBatch(chunk, bookName, { skipUpload: noUpload, tongjiaMap });
 
         if (!result.success) {
             console.error(`❌ Batch failed: ${result.reason}`);
