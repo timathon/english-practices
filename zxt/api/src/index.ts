@@ -717,6 +717,7 @@ app.post('/api/blg/poems/batch', authGuard, requireRole('editor', 'admin'), asyn
 });
 
 // Student Quiz History APIs — D1 DB Backed
+// Concise list endpoint: omit heavy details column from list response
 app.get('/api/student/history', authGuard, async (c) => {
   const caller = c.get('user')!;
   let studentId = c.req.query('studentId');
@@ -727,8 +728,42 @@ app.get('/api/student/history', authGuard, async (c) => {
   const db = c.env.zxt_poems_db;
   await initDB(db);
   const { results } = await db.prepare(
-    'SELECT * FROM quiz_history WHERE student_id = ? ORDER BY completed_at DESC'
+    'SELECT id, student_id, poem_id, poem_title, score, accuracy, quiz_type, completed_at FROM quiz_history WHERE student_id = ? ORDER BY completed_at DESC'
   ).bind(studentId).all<{
+    id: string;
+    student_id: string;
+    poem_id: number;
+    poem_title: string;
+    score: number;
+    accuracy: string;
+    quiz_type: string;
+    completed_at: string;
+  }>();
+
+  const history = results.map(r => ({
+    id: r.id,
+    studentId: r.student_id,
+    poemId: r.poem_id,
+    poemTitle: r.poem_title,
+    score: r.score,
+    accuracy: r.accuracy,
+    quizType: r.quiz_type,
+    completedAt: r.completed_at
+  }));
+
+  return c.json({ history });
+});
+
+// Single Quiz Record Detail API — fetched on demand when user clicks an item
+app.get('/api/student/history/:id', authGuard, async (c) => {
+  const caller = c.get('user')!;
+  const recordId = c.req.param('id');
+  const db = c.env.zxt_poems_db;
+  await initDB(db);
+
+  const record = await db.prepare(
+    'SELECT * FROM quiz_history WHERE id = ?'
+  ).bind(recordId).first<{
     id: string;
     student_id: string;
     poem_id: number;
@@ -740,28 +775,33 @@ app.get('/api/student/history', authGuard, async (c) => {
     completed_at: string;
   }>();
 
-  const history = results.map(r => {
-    let parsedDetails: any = [];
-    if (r.details) {
-      try {
-        const obj = JSON.parse(r.details);
-        parsedDetails = Array.isArray(obj) ? obj : (obj.questions || []);
-      } catch (_) {}
-    }
-    return {
-      id: r.id,
-      studentId: r.student_id,
-      poemId: r.poem_id,
-      poemTitle: r.poem_title,
-      score: r.score,
-      accuracy: r.accuracy,
-      quizType: r.quiz_type,
-      details: parsedDetails,
-      completedAt: r.completed_at
-    };
-  });
+  if (!record) {
+    return c.json({ error: 'Record not found' }, 404);
+  }
 
-  return c.json({ history });
+  if (caller.role === 'student' && record.student_id !== caller.id) {
+    return c.json({ error: 'Forbidden: Cannot access another student\'s history' }, 403);
+  }
+
+  let parsedDetails: any = [];
+  if (record.details) {
+    try {
+      const obj = JSON.parse(record.details);
+      parsedDetails = Array.isArray(obj) ? obj : (obj.questions || []);
+    } catch (_) {}
+  }
+
+  return c.json({
+    id: record.id,
+    studentId: record.student_id,
+    poemId: record.poem_id,
+    poemTitle: record.poem_title,
+    score: record.score,
+    accuracy: record.accuracy,
+    quizType: record.quiz_type,
+    details: parsedDetails,
+    completedAt: record.completed_at
+  });
 });
 
 app.delete('/api/student/history/:id', authGuard, async (c) => {

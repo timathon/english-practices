@@ -1,29 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserSession, canEditQuizLibrary, apiService } from '../services/api';
 import { getSyncQueue, subscribeSyncQueue } from '../services/syncQueue';
+import { AvatarDisplay, AvatarConfig, DEFAULT_AVATAR_CONFIG } from './AvatarDisplay';
 
 interface NavbarProps {
   currentPath: string;
   navigate: (path: string) => void;
   user: UserSession | null;
+  avatarConfig?: AvatarConfig;
   activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
   onOpenLogin: () => void;
   onOpenViewSwitcher: () => void;
   onOpenPointsHistory?: () => void;
   onOpenSyncQueue?: () => void;
   onLogout: () => void;
+  onOpenAvatarShop?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentPath,
   navigate,
   user,
+  avatarConfig,
   activeView,
   onOpenLogin,
   onOpenViewSwitcher,
   onOpenPointsHistory,
   onOpenSyncQueue,
   onLogout,
+  onOpenAvatarShop,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [syncQueueCount, setSyncQueueCount] = useState(getSyncQueue().length);
@@ -68,6 +73,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           {user ? (
             <div className="flex items-center space-x-3">
 
+              {/* Circle Avatar Badge in Navbar */}
+              <div
+                onClick={onOpenAvatarShop}
+                className="flex-shrink-0 cursor-pointer transition-transform hover:scale-105"
+                title="知新使者形象 (点击进入形象设置)"
+              >
+                <AvatarDisplay config={avatarConfig || user.avatarConfig || DEFAULT_AVATAR_CONFIG} size="sm" />
+              </div>
 
               <div className="text-xs text-right flex items-center space-x-2">
                 <span className="font-bold text-white">{user.name}</span>

@@ -115,6 +115,17 @@ Implemented the core 4-Chamber student navigation and interaction model:
 - **DB Operations Script**:
   - `zxt/scripts/db-ops/delete_quiz_record.py`: CLI tool connecting to local/remote D1 DBs to list student history records and delete selected entries (with automatic assignment status resetting).
 
+### 10. IndexedDB & Remote DB Hybrid Architecture (Session: 2026-08-11)
+- **Concise History List API**: `GET /api/student/history` excludes heavy `details` text blob to avoid payload bloat.
+- **On-Demand Detail API**: Added `GET /api/student/history/:id` returning full quiz details when requested.
+- **IndexedDB Caching Layer (`zxt/web/src/services/db.ts`)**:
+  - `quiz_history_list`: Stores concise summaries for instant loading of 修业历史 list & 我的修业打卡记录.
+  - `quiz_history_details`: Stores full question details, student choices, and point breakdowns.
+- **Stale-While-Revalidate Flow**:
+  - History lists & check-in records render from IndexedDB instantly (0ms delay), fire background fetch to remote D1 DB, and update UI seamlessly on response.
+  - Finished quiz completions write through to both IndexedDB (`quiz_history_details` & `quiz_history_list`) and remote DB.
+- **Documentation**: Detailed specification saved in `zxt/plan/indexeddb-remotedb-architecture.md`.
+
 ---
 
 ## File Directory & Assets Saved
@@ -129,6 +140,7 @@ Implemented the core 4-Chamber student navigation and interaction model:
 - **Transparent SVG Vectors**: `pixel_scholar_male.svg`, `pixel_scholar_female.svg`, `pixel_scholar_alchemist.svg`, `pixel_scholar_cyber.svg`
 
 ### Core Source Components (`zxt/web/src/`):
+- `services/db.ts`: IndexedDB database service (`ZXT_IndexedDB`) for local history list & detail caching.
 - `components/AvatarDisplay.tsx`: Modular avatar renderer — presets, SVG vector grids, translate-based overlay accessories, face-zoom for `sm`, energy aura glows.
 - `components/chambers/ZhengTang.tsx`: Main Hall multi-subject scroll center.
 - `components/chambers/WenGuShi.tsx`: Review chamber & Chinese sub-sections.

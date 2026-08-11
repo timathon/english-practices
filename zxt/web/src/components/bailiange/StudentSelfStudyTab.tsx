@@ -104,14 +104,24 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
         <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
           <div className="border-b border-slate-100 pb-4 space-y-3">
             <div>
-              <span className="px-2 py-0.5 bg-jade-100 text-jade-800 text-xs font-bold rounded">
-                [{selectedPoem.dynasty}] {selectedPoem.author}
+              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg inline-block">
+                拓展自学
               </span>
-              <h2 className="text-2xl font-bold font-serif text-ink mt-1">《{selectedPoem.title}》拓展自学</h2>
+            </div>
+
+            <div className="flex justify-center py-1">
+              <div className="relative">
+                <h2 className="text-2xl md:text-3xl font-bold font-serif text-ink tracking-wide text-center leading-normal">
+                  {selectedPoem.title}
+                </h2>
+                <span className="absolute left-full bottom-1 ml-3 px-2.5 py-0.5 bg-jade-100 text-jade-800 text-xs font-bold rounded-md whitespace-nowrap">
+                  [{selectedPoem.dynasty}] {selectedPoem.author}
+                </span>
+              </div>
             </div>
 
             {/* 4 View Toggles: 拼音, 原文, 译文, 图片 */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setShowPinyin(!showPinyin)}
@@ -163,7 +173,7 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
           </div>
 
           {/* Poem Text & Media Content */}
-          <div className="bg-amber-50/50 p-5 rounded-xl border border-amber-100 space-y-4 text-center">
+          <div className="bg-amber-50/50 p-5 rounded-xl border border-amber-100 grid grid-cols-1 lg:grid-cols-2 gap-4 text-center">
             {selectedPoem.lines.map((lineObj: any, idx: number) => {
               const text = typeof lineObj === 'string' ? lineObj : lineObj.text;
               const pinyin = typeof lineObj === 'string' ? '' : lineObj.pinyin;
@@ -173,7 +183,7 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
               return (
                 <div
                   key={idx}
-                  className={`space-y-1.5 p-3.5 rounded-xl border text-center transition ${
+                  className={`space-y-1.5 p-3.5 rounded-xl border text-center transition flex flex-col justify-between ${
                     idx % 2 === 1
                       ? 'bg-amber-50/70 border-amber-200/50'
                       : 'bg-white/90 border-amber-100/40'
@@ -209,16 +219,16 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
           </div>
 
           {/* Extra Knowledge Sections */}
-          <div className="grid sm:grid-cols-2 gap-4 text-xs">
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-              <strong className="text-ink block font-serif">📖 诗人背景故事</strong>
-              <p className="text-slate-600 leading-relaxed">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1.5">
+              <strong className="text-ink text-base font-bold block font-serif">📖 诗人背景故事</strong>
+              <p className="text-slate-700 text-sm leading-relaxed">
                 {selectedPoem.author}是{selectedPoem.dynasty}代著名诗人，其诗风通俗易懂，深受百姓喜爱。作品充满童真与生活气息。
               </p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-              <strong className="text-ink block font-serif">💡 诗词赏析与意境</strong>
-              <p className="text-slate-600 leading-relaxed">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1.5">
+              <strong className="text-ink text-base font-bold block font-serif">💡 诗词赏析与意境</strong>
+              <p className="text-slate-700 text-sm leading-relaxed">
                 主题：{selectedPoem.theme}。关键词包括: {selectedPoem.keywords?.join(', ')}。展现了自然景象与生动的画面感。
               </p>
             </div>

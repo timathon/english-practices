@@ -17,14 +17,25 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && user?.id) {
-      setLoading(true);
-      apiService.getQuizHistory(user.id)
-        .then((res) => {
-          setHistory(res || []);
+    const fetchHistory = () => {
+      if (isOpen && user?.id) {
+        setLoading(true);
+        apiService.getQuizHistory(user.id, (updated) => {
+          if (updated) setHistory(updated);
         })
-        .finally(() => setLoading(false));
-    }
+          .then((res) => {
+            setHistory(res || []);
+          })
+          .finally(() => setLoading(false));
+      }
+    };
+
+    fetchHistory();
+
+    window.addEventListener('zxt_user_updated', fetchHistory);
+    return () => {
+      window.removeEventListener('zxt_user_updated', fetchHistory);
+    };
   }, [isOpen, user?.id]);
 
   if (!isOpen) return null;
@@ -206,8 +217,15 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
               </div>
             ) : (
               <div className="space-y-2">
-                {history.map((item, idx) => {
-                  const numScore = Number(item.score) || 0;
+                {(() => {
+                  const sortedHistory = [...history].sort((a, b) => {
+                    const timeA = new Date(a.completedAt?.replace(/\//g, '-') || 0).getTime();
+                    const timeB = new Date(b.completedAt?.replace(/\//g, '-') || 0).getTime();
+                    return timeB - timeA;
+                  });
+
+                  return sortedHistory.map((item, idx) => {
+                    const numScore = Number(item.score) || 0;
                   
                   // Extract embedded or fallback point breakdown
                   const pb = item.details?.pointBreakdown;
@@ -311,7 +329,8 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                       </div>
                     </div>
                   );
-                })}
+                });
+              })()}
               </div>
             )}
           </div>

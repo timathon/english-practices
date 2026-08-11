@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CachedImage } from '../CachedImage';
 import { StudentSelfStudyTab } from '../bailiange/StudentSelfStudyTab';
+import { apiService } from '../../services/api';
 
 interface WenGuShiProps {
   user: any;
@@ -14,7 +15,21 @@ interface WenGuShiProps {
 // ── Quiz Record Detail Modal ─────────────────────────────────────────────────
 const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ record, onClose }) => {
   const [mistakesOnly, setMistakesOnly] = useState(false);
-  const rawDetails = record?.details;
+  const [fullRecord, setFullRecord] = useState<any>(record);
+
+  useEffect(() => {
+    setFullRecord(record);
+    if (record?.id) {
+      apiService.getQuizHistoryDetail(record.id).then((res) => {
+        if (res && res.details) {
+          setFullRecord(res);
+        }
+      });
+    }
+  }, [record]);
+
+  const activeRecord = fullRecord || record;
+  const rawDetails = activeRecord?.details;
   const details: any[] = Array.isArray(rawDetails)
     ? rawDetails
     : (rawDetails && typeof rawDetails === 'object' && Array.isArray(rawDetails.questions)
@@ -49,11 +64,11 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
         <div className="bg-gradient-to-r from-emerald-900 to-teal-900 text-white p-5 flex-shrink-0">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-xs text-emerald-300 mb-1">{record.completedAt || '今日'} · {record.quizType || '班级作业闯关'}</div>
-              <h2 className="text-lg font-bold font-serif leading-tight">{record.poemTitle || record.title || '练习题目'}</h2>
+              <div className="text-xs text-emerald-300 mb-1">{activeRecord.completedAt || '今日'} · {activeRecord.quizType || '班级作业闯关'}</div>
+              <h2 className="text-lg font-bold font-serif leading-tight">{activeRecord.poemTitle || activeRecord.title || '练习题目'}</h2>
               <div className="flex items-center gap-3 mt-2">
-                <span className="text-2xl font-bold" style={{ color: (record.score ?? 100) >= 90 ? '#6ee7b7' : (record.score ?? 100) >= 70 ? '#fcd34d' : '#fca5a5' }}>
-                  {record.score ?? 100} 分
+                <span className="text-2xl font-bold" style={{ color: (activeRecord.score ?? 100) >= 90 ? '#6ee7b7' : (activeRecord.score ?? 100) >= 70 ? '#fcd34d' : '#fca5a5' }}>
+                  {activeRecord.score ?? 100} 分
                 </span>
                 <span className="text-xs text-emerald-200">共 {details.length} 题 · 错 {mistakes.length} 题</span>
               </div>
@@ -246,12 +261,44 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
       }));
   });
 
-  // Filter history by subject & first-attempt-only toggle
+  const formatToYYYYMMDD = (dateStrOrObj: any): string => {
+    if (!dateStrOrObj) return '';
+    if (typeof dateStrOrObj === 'string') {
+      const cleaned = dateStrOrObj.replace(/\//g, '-').trim();
+      const firstPart = cleaned.split(' ')[0].split('T')[0];
+      const parts = firstPart.split('-');
+      if (parts.length === 3) {
+        const y = parts[0];
+        const m = parts[1].padStart(2, '0');
+        const d = parts[2].padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+    }
+    const d = new Date(dateStrOrObj);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const getTodayDateStr = () => formatToYYYYMMDD(new Date());
+
+  const [historyDateFilter, setHistoryDateFilter] = useState<string>(getTodayDateStr);
+
+  // Filter history by subject, date & first-attempt-only toggle
   const filteredHistory = (quizHistory || []).filter((item) => {
     const title = item.poemTitle || item.title || '';
     const subject = item.subject || (title.includes('数学') ? 'math' : title.includes('英语') ? 'english' : 'chinese');
     if (subject !== activeSubjectTab) return false;
     if (showFirstAttemptOnly && !getIsFirstEverAttempt(item)) return false;
+    if (historyDateFilter) {
+      const rawDate = item.completedAt || item.timestamp || item.createdAt || '';
+      if (rawDate) {
+        const itemDateStr = formatToYYYYMMDD(rawDate);
+        if (itemDateStr && itemDateStr !== historyDateFilter) return false;
+      }
+    }
     return true;
   });
 
@@ -387,10 +434,33 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
       {activeMainTab === 'history' && (
         <div>
           <div className="flex items-center justify-between mb-3 px-1 flex-wrap gap-2">
-            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <span className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-sm">📓</span>
-              {activeSubjectTab === 'chinese' ? '语文' : activeSubjectTab === 'math' ? '数学' : '英语'} · 修业历史
-            </h2>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-sm">📓</span>
+                {activeSubjectTab === 'chinese' ? '语文' : activeSubjectTab === 'math' ? '数学' : '英语'} · 修业历史
+              </h2>
+
+              {/* Date picker on the right of h2 修业历史 */}
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="date"
+                  value={historyDateFilter}
+                  onChange={(e) => setHistoryDateFilter(e.target.value)}
+                  className="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-xl text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-2xs cursor-pointer"
+                  title="按日期筛选修业历史"
+                />
+                {historyDateFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setHistoryDateFilter('')}
+                    className="text-xs text-slate-400 hover:text-slate-600 px-1.5 py-0.5 rounded hover:bg-slate-100 transition"
+                    title="显示所有日期"
+                  >
+                    显示全部
+                  </button>
+                )}
+              </div>
+            </div>
 
             <div className="flex items-center gap-2">
               <button

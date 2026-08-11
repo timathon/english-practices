@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CachedImage } from '../CachedImage';
+import { apiService } from '../../services/api';
 
 interface HistoryDetailModalProps {
   selectedHistoryItem: any;
@@ -14,7 +15,21 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
   formatLocalTime,
   onClose,
 }) => {
+  const [fullItem, setFullItem] = useState<any>(selectedHistoryItem);
+
+  useEffect(() => {
+    setFullItem(selectedHistoryItem);
+    if (selectedHistoryItem?.id) {
+      apiService.getQuizHistoryDetail(selectedHistoryItem.id).then((res) => {
+        if (res && res.details) {
+          setFullItem(res);
+        }
+      });
+    }
+  }, [selectedHistoryItem]);
+
   if (!selectedHistoryItem) return null;
+  const currentRecord = fullItem || selectedHistoryItem;
 
   return (
     <div
@@ -32,12 +47,12 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
               <span>📊 答题成绩明细与解析</span>
             </div>
             <h3 className="text-xl font-bold font-serif text-white">
-              《{selectedHistoryItem.poemTitle}》
+              《{currentRecord.poemTitle}》
             </h3>
             <div className="flex items-center gap-4 text-xs text-indigo-200/80 pt-0.5">
-              <span>📅 完成时间: {formatLocalTime(selectedHistoryItem.completedAt)}</span>
-              <span>🏆 得分: <strong className="text-emerald-400 font-bold font-mono text-sm">{selectedHistoryItem.score}分</strong></span>
-              <span>🏷 关卡: {selectedHistoryItem.quizType}</span>
+              <span>📅 完成时间: {formatLocalTime(currentRecord.completedAt)}</span>
+              <span>🏆 得分: <strong className="text-emerald-400 font-bold font-mono text-sm">{currentRecord.score}分</strong></span>
+              <span>🏷 关卡: {currentRecord.quizType}</span>
             </div>
           </div>
           <button
@@ -51,9 +66,9 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
         {/* Content Body: List of questions with student first attempt answers & correct answers */}
         <div className="p-6 overflow-y-auto flex-1 space-y-4 bg-slate-50">
           {(() => {
-            const poem = poems.find(p => p.title === selectedHistoryItem.poemTitle) || poems.find(p => p.id === selectedHistoryItem.poemId);
-            const hasRecordedDetails = Array.isArray(selectedHistoryItem.details) && selectedHistoryItem.details.length > 0;
-            const detailItems = hasRecordedDetails ? selectedHistoryItem.details : (poem?.questions || []);
+            const poem = poems.find(p => p.title === currentRecord.poemTitle) || poems.find(p => p.id === currentRecord.poemId);
+            const hasRecordedDetails = Array.isArray(currentRecord.details) && currentRecord.details.length > 0;
+            const detailItems = hasRecordedDetails ? currentRecord.details : (poem?.questions || []);
 
             if (detailItems.length === 0) {
               return (

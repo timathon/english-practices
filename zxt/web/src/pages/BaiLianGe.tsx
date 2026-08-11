@@ -23,7 +23,16 @@ interface BaiLianGeProps {
 }
 
 export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
-  const [activeChamber, setActiveChamber] = useState<'zheng_tang' | 'wen_gu_shi' | 'zhi_xin_fang' | 'guan_xing_tai'>('zheng_tang');
+  const getChamberFromUrl = (): 'zheng_tang' | 'wen_gu_shi' | 'zhi_xin_fang' | 'guan_xing_tai' => {
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get('chamber');
+    if (c === 'zhi_xin_fang' || c === 'wen_gu_shi' || c === 'guan_xing_tai' || c === 'zheng_tang') {
+      return c;
+    }
+    return 'zheng_tang';
+  };
+
+  const [activeChamber, setActiveChamber] = useState<'zheng_tang' | 'wen_gu_shi' | 'zhi_xin_fang' | 'guan_xing_tai'>(getChamberFromUrl);
   const [userAvatarConfig, setUserAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR_CONFIG);
   const [pendingChamber, setPendingChamber] = useState<string | null>(null);
   const [zxfLatestConfig, setZxfLatestConfig] = useState<AvatarConfig>(DEFAULT_AVATAR_CONFIG);
@@ -33,7 +42,6 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     const lib = apiService.getQuizLibrary();
     return lib.length > 0 ? lib[0] : null;
   });
-
 
   // Guard: intercept tab switch when ZhiXinFang has unsaved changes
   const handleChamberSwitch = (chamber: string) => {
@@ -65,14 +73,17 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [isRefreshingAssignments, setIsRefreshingAssignments] = useState(false);
 
   useEffect(() => {
-    const syncTab = () => setStudentTab(getTabFromUrl());
-    window.addEventListener('popstate', syncTab);
-    window.addEventListener('pushstate', syncTab);
+    const syncFromUrl = () => {
+      setStudentTab(getTabFromUrl());
+      setActiveChamber(getChamberFromUrl());
+    };
+    window.addEventListener('popstate', syncFromUrl);
+    window.addEventListener('pushstate', syncFromUrl);
     // Initial sync
-    syncTab();
+    syncFromUrl();
     return () => {
-      window.removeEventListener('popstate', syncTab);
-      window.removeEventListener('pushstate', syncTab);
+      window.removeEventListener('popstate', syncFromUrl);
+      window.removeEventListener('pushstate', syncFromUrl);
     };
   }, []);
 
@@ -622,19 +633,6 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               >
                 <span>🔭 观星台</span>
               </button>
-            </div>
-
-            {/* Avatar Badge preview in header bar */}
-            <div
-              onClick={() => setActiveChamber('zhi_xin_fang')}
-              className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl cursor-pointer transition"
-              title="点击进入知新坊进行使者形象设计"
-            >
-              <AvatarDisplay config={userAvatarConfig} size="sm" />
-              <div className="text-left hidden sm:block">
-                <div className="text-xs font-bold text-purple-950">{user?.name || '知新使者'}</div>
-                <div className="text-[10px] text-purple-700">使者形象设计</div>
-              </div>
             </div>
           </div>
 

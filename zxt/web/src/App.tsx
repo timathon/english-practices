@@ -107,6 +107,7 @@ export const App: React.FC = () => {
         onOpenPointsHistory={() => setIsPointsHistoryOpen(true)}
         onOpenSyncQueue={() => setIsSyncQueueOpen(true)}
         onLogout={handleLogout}
+        onOpenAvatarShop={() => navigate('/student?chamber=zhi_xin_fang')}
       />
 
       {/* Main Page Content Routing */}

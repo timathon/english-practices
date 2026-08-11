@@ -1,4 +1,5 @@
 import { enqueueSyncTask } from './syncQueue';
+import { idbService } from './db';
 
 export const API_BASE_URL = 'https://zxtapi.vibequizzing.com';
 export const USE_BACKEND = true; // Set to true when remote worker API is running
@@ -32,6 +33,8 @@ export function formatLocalTime(timeStr?: string): string {
   return timeStr;
 }
 
+import { AvatarConfig } from '../components/AvatarDisplay';
+
 export interface UserSession {
   id: string;
   username: string;
@@ -43,6 +46,7 @@ export interface UserSession {
   isQuizEditor?: boolean;
   points?: number;
   streakDays?: number;
+  avatarConfig?: AvatarConfig;
 }
 
 export interface PoemLine {
@@ -738,34 +742,97 @@ export const apiService = {
     return data;
   },
 
-  // Get Student Quiz History (Student / Teacher) — D1 DB Backed
-  async getQuizHistory(studentId: string = 'usr_stu_001') {
-    if (USE_BACKEND) {
+  // Get Student Quiz History — Stale-While-Revalidate with IndexedDB
+  async getQuizHistory(
+    studentId: string = 'usr_stu_001',
+    onRemoteUpdate?: (updatedHistory: any[]) => void
+  ): Promise<any[]> {
+    // 1. Check both IndexedDB and synchronous localStorage cache for immediate response
+    let cachedList = await idbService.getHistoryList(studentId);
+    const stored = localStorage.getItem(`zxt_qh_${studentId}`);
+    if (stored) {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/student/history?studentId=${encodeURIComponent(studentId)}`, {
-          headers: getAuthHeaders()
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.history && Array.isArray(data.history)) {
-            localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(data.history));
-            return data.history;
-          }
+        const localList = JSON.parse(stored);
+        if (Array.isArray(localList) && (!cachedList || localList.length >= cachedList.length)) {
+          cachedList = localList;
         }
-      } catch (err) {
-        console.warn('Backend quiz history fetch failed, using cache:', err);
-      }
+      } catch (_) {}
     }
 
     const defaultHistory = [
       { id: 'qh_001', poemTitle: '池上', poemId: 1, score: 50, accuracy: '50%', quizType: '班级作业闯关', completedAt: '2026/7/27 21:14:16' }
     ];
-    const stored = localStorage.getItem(`zxt_qh_${studentId}`);
-    if (!stored) {
-      localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(defaultHistory));
-      return defaultHistory;
+
+    const initialList = (cachedList && cachedList.length > 0) ? cachedList : defaultHistory;
+
+    // 2. Fire remote DB query in background and update
+    if (USE_BACKEND) {
+      (async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/student/history?studentId=${encodeURIComponent(studentId)}`, {
+            headers: getAuthHeaders()
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.history && Array.isArray(data.history)) {
+              await idbService.saveHistoryList(studentId, data.history);
+              localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(data.history));
+              if (onRemoteUpdate) {
+                onRemoteUpdate(data.history);
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Backend quiz history fetch failed:', err);
+        }
+      })();
     }
-    return JSON.parse(stored);
+
+    return initialList;
+  },
+
+  // Get Single Quiz History Record Detail (with questions & answers) — Stale-While-Revalidate with IndexedDB
+  async getQuizHistoryDetail(id: string): Promise<any | null> {
+    if (!id) return null;
+
+    // 1. Check IndexedDB first
+    const cached = await idbService.getHistoryDetail(id);
+    if (cached && cached.details && Array.isArray(cached.details) && cached.details.length > 0) {
+      // Revalidate in background if online
+      if (USE_BACKEND) {
+        fetch(`${API_BASE_URL}/api/student/history/${encodeURIComponent(id)}`, {
+          headers: getAuthHeaders()
+        })
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data && data.details) {
+              idbService.saveHistoryDetail(data);
+            }
+          })
+          .catch(() => {});
+      }
+      return cached;
+    }
+
+    // 2. Fetch from backend if details missing or not in IDB
+    if (USE_BACKEND) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/student/history/${encodeURIComponent(id)}`, {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.id) {
+            await idbService.saveHistoryDetail(data);
+            return data;
+          }
+        }
+      } catch (err) {
+        console.warn('Backend history detail fetch failed:', err);
+      }
+    }
+
+    return cached || null;
   },
 
   // Centralized Single Source of Truth for calculating points from history records
@@ -843,6 +910,12 @@ export const apiService = {
     } else {
       history.unshift(newRecord);
     }
+    // Always sort history newest-first by completedAt timestamp
+    history.sort((a: any, b: any) => {
+      const timeA = new Date(a.completedAt?.replace(/\//g, '-') || 0).getTime();
+      const timeB = new Date(b.completedAt?.replace(/\//g, '-') || 0).getTime();
+      return timeB - timeA;
+    });
     localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(history));
 
     // 2. Calculate point breakdown for this practice attempt
@@ -892,11 +965,20 @@ export const apiService = {
     (newRecord as any).pointBreakdown = pointBreakdown;
     localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(history));
 
+    // Save finished quiz into IndexedDB immediately (both details and list store)
+    idbService.saveHistoryDetail(newRecord);
+    const conciseHistory = history.map(({ details, ...rest }: any) => rest);
+    idbService.saveHistoryList(studentId, conciseHistory);
+
     if (USE_BACKEND) {
       const payloadWithId = { ...result, recordId, pointBreakdown };
-      // Background sync call
+      // Background sync call to remote DB
       this.recordQuizResultBackend(studentId, payloadWithId, recordId)
         .then((data) => {
+          if (data) {
+            const mergedRecord = { ...newRecord, ...data };
+            idbService.saveHistoryDetail(mergedRecord);
+          }
           if (data && data.pointBreakdown && data.pointBreakdown.newTotalPoints !== undefined) {
             const user = this.getSession();
             if (user) {
