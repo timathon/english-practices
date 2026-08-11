@@ -1,4 +1,4 @@
-// API Client connecting to Cloudflare Worker zxtapi.vibequizzing.com
+import { enqueueSyncTask } from './syncQueue';
 
 export const API_BASE_URL = 'https://zxtapi.vibequizzing.com';
 export const USE_BACKEND = true; // Set to true when remote worker API is running
@@ -668,7 +668,21 @@ export const apiService = {
     return createdAsgn;
   },
 
-  // Mark Assignment Completed (Student)
+  // Direct Backend API call for assignment completion
+  async markAssignmentCompletedBackend(asgnId: string, score: number = 100) {
+    if (!USE_BACKEND) return true;
+    const res = await fetch(`${API_BASE_URL}/api/assignments/${asgnId}/status`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status: '已打卡', score })
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    return true;
+  },
+
+  // Mark Assignment Completed (Student) — Instant local update + background queue
   async markAssignmentCompleted(asgnId: string, score: number = 100) {
     const studentUser = this.getSession();
     const studentId = studentUser?.id || 'usr_stu_001';
@@ -690,16 +704,38 @@ export const apiService = {
     }
 
     if (USE_BACKEND) {
-      try {
-        await fetch(`${API_BASE_URL}/api/assignments/${asgnId}/status`, {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ status: '已打卡', score })
-        });
-      } catch (err) {
-        console.warn('Failed to update assignment status on backend:', err);
-      }
+      // Fire-and-forget sync to backend with local queue retry support
+      this.markAssignmentCompletedBackend(asgnId, score).catch((err) => {
+        console.warn('Backend assignment update failed, queuing for background retry:', err);
+        enqueueSyncTask('MARK_ASSIGNMENT_COMPLETED', { asgnId, score });
+      });
     }
+  },
+
+  // Direct Backend API call for quiz history with unique recordId idempotency
+  async recordQuizResultBackend(studentId: string, result: any, recordId?: string) {
+    if (!USE_BACKEND) return null;
+    const res = await fetch(`${API_BASE_URL}/api/student/history`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        studentId,
+        recordId: recordId || result.recordId || `qh_${Date.now()}`,
+        ...result,
+      }),
+    });
+    if (!res.ok) {
+      let errDetail = res.statusText;
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.error) {
+          errDetail = errJson.error;
+        }
+      } catch (_) {}
+      throw new Error(`HTTP ${res.status}: ${errDetail}`);
+    }
+    const data = await res.json();
+    return data;
   },
 
   // Get Student Quiz History (Student / Teacher) — D1 DB Backed
@@ -732,81 +768,148 @@ export const apiService = {
     return JSON.parse(stored);
   },
 
-  // Record Quiz Result (Student)
-  async recordQuizResult(studentId: string, result: { poemTitle: string; poemId: number; score: number; accuracy: string; quizType: string; details?: any[]; assignmentId?: string }) {
-    const history = await this.getQuizHistory(studentId);
+  // Centralized Single Source of Truth for calculating points from history records
+  calculateTotalPoints(history: any[] = []): number {
+    return (history || []).reduce((sum: number, item: any, idx: number) => {
+      const numS = Number(item.score) || 0;
+      const pb = item.details?.pointBreakdown;
+      if (pb && pb.totalEarnedPoints !== undefined) {
+        return sum + Number(pb.totalEarnedPoints);
+      }
+
+      const priorAttempts = history.slice(idx + 1).filter((h: any) => h.poemId === item.poemId || h.poemTitle === item.poemTitle);
+      const isFirst = pb?.isFirstAttempt !== undefined
+        ? pb.isFirstAttempt
+        : idx === history.length - 1 || priorAttempts.length === 0;
+
+      let base = pb?.basePoints;
+      let timely = pb?.timelyBonus;
+      let acc = pb?.accuracyBonus;
+
+      let priorHighestScore = 0;
+      for (const p of priorAttempts) {
+        const pScore = Number(p.score) || 0;
+        if (pScore > priorHighestScore) priorHighestScore = pScore;
+      }
+      const itemDateStr = item.completedAt ? item.completedAt.split(' ')[0] : '';
+      const hasSameDayPriorAttempt = priorAttempts.some((p: any) => p.completedAt && p.completedAt.split(' ')[0] === itemDateStr);
+
+      if (base === undefined) {
+        base = !hasSameDayPriorAttempt ? 5 : 0;
+      }
+      if (timely === undefined) {
+        timely = isFirst ? 10 : 0;
+      }
+      if (acc === undefined) {
+        const getAccTier = (a: number) => (a >= 100 ? 25 : a >= 90 ? 20 : a >= 80 ? 15 : a >= 70 ? 5 : 0);
+        acc = Math.max(0, getAccTier(numS) - (priorAttempts.length > 0 ? getAccTier(priorHighestScore) : 0));
+      }
+
+      return sum + base + timely + acc;
+    }, 0);
+  },
+
+  // Get Student Quiz History synchronously from local cache
+  getQuizHistorySync(studentId: string = 'usr_stu_001') {
+    const defaultHistory = [
+      { id: 'qh_001', poemTitle: '池上', poemId: 1, score: 50, accuracy: '50%', quizType: '班级作业闯关', completedAt: '2026/7/27 21:14:16' }
+    ];
+    const stored = localStorage.getItem(`zxt_qh_${studentId}`);
+    if (!stored) {
+      return defaultHistory;
+    }
+    try {
+      return JSON.parse(stored);
+    } catch (_) {
+      return defaultHistory;
+    }
+  },
+
+  // Record Quiz Result (Student) — Instant local update + non-blocking background queue
+  recordQuizResult(studentId: string, result: { poemTitle: string; poemId: number; score: number; accuracy: string; quizType: string; details?: any[]; assignmentId?: string }) {
+    // 1. Save history record locally
+    const history = this.getQuizHistorySync(studentId);
+    const recordId = (result as any).id || `qh_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const newRecord = {
-      id: `qh_${Date.now()}`,
+      id: recordId,
       ...result,
       completedAt: new Date().toLocaleString('zh-CN', { hour12: false })
     };
-    history.unshift(newRecord);
+
+    // Deduplicate in local history array
+    const existingIndex = history.findIndex((h: any) => h.id === recordId);
+    if (existingIndex !== -1) {
+      history[existingIndex] = newRecord;
+    } else {
+      history.unshift(newRecord);
+    }
     localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(history));
 
-    let pointBreakdown: any = null;
+    // 2. Calculate point breakdown for this practice attempt
+    const numScore = Number(result.score) || 0;
+    const targetPoemId = result.poemId;
+    const priorAttempts = history.slice(1).filter((h: any) => h.poemId === targetPoemId || h.poemTitle === result.poemTitle);
+    const isFirstAttempt = priorAttempts.length === 0;
 
-    if (USE_BACKEND) {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/student/history`, {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({
-            studentId,
-            ...result,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.pointBreakdown) {
-            pointBreakdown = data.pointBreakdown;
-
-            // Update local user session points
-            if (currentSession && data.pointBreakdown.newTotalPoints !== undefined) {
-              currentSession.points = data.pointBreakdown.newTotalPoints;
-              localStorage.setItem('zxt_user', JSON.stringify(currentSession));
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Failed to save quiz history to remote DB:', err);
-      }
+    let priorHighestScore = 0;
+    for (const p of priorAttempts) {
+      const pScore = Number(p.score) || 0;
+      if (pScore > priorHighestScore) priorHighestScore = pScore;
     }
 
-    // Fallback local point calculation if backend was unreachable or disabled
-    if (!pointBreakdown) {
-      const numScore = Number(result.score) || 0;
-      const targetPoemId = result.poemId;
-      // Check previous attempts for this specific poem
-      const poemHistory = history.filter((h: any) => h.poemId === targetPoemId || h.poemTitle === result.poemTitle);
-      const isFirstAttempt = poemHistory.length <= 1; // including newRecord pushed at head
+    const getAccTier = (a: number) => (a >= 100 ? 25 : a >= 90 ? 20 : a >= 80 ? 15 : a >= 70 ? 5 : 0);
+    const accuracyBonus = Math.max(0, getAccTier(numScore) - getAccTier(priorHighestScore));
+    const itemDateStr = newRecord.completedAt.split(' ')[0];
+    const hasSameDayPriorAttempt = priorAttempts.some((p: any) => p.completedAt && p.completedAt.split(' ')[0] === itemDateStr);
+    const basePts = !hasSameDayPriorAttempt ? 5 : 0;
+    const timelyPts = isFirstAttempt ? 10 : 0;
+    const total = basePts + timelyPts + accuracyBonus;
 
-      let accBonus = 0;
-      if (numScore >= 100) accBonus = 25;
-      else if (numScore >= 90) accBonus = 20;
-      else if (numScore >= 80) accBonus = 15;
-      else if (numScore >= 70) accBonus = 5;
+    // 3. Compute accurate total cumulative points from full practice history log (Single Source of Truth)
+    const totalCumulativePoints = this.calculateTotalPoints(history);
 
-      const basePts = isFirstAttempt ? 20 : 0;
-      const timelyPts = isFirstAttempt ? 10 : 0;
-      const total = basePts + timelyPts + accBonus;
+    const activeUser = this.getSession();
+    if (activeUser) {
+      activeUser.points = totalCumulativePoints;
+      currentSession = activeUser;
+      localStorage.setItem('zxt_user', JSON.stringify(activeUser));
+      // Dispatch event to update Navbar / UI header balance immediately
+      window.dispatchEvent(new Event('zxt_user_updated'));
+    }
 
-      const currPts = currentSession?.points || 120;
-      const newTotal = currPts + total;
-      if (currentSession) {
-        currentSession.points = newTotal;
-        localStorage.setItem('zxt_user', JSON.stringify(currentSession));
-      }
+    const pointBreakdown = {
+      basePoints: basePts,
+      timelyBonus: timelyPts,
+      accuracyBonus,
+      totalEarnedPoints: total,
+      newTotalPoints: totalCumulativePoints,
+      isLockedToday: numScore >= 100,
+      isFirstAttempt,
+      historicalHighestScore: Math.max(priorHighestScore, numScore)
+    };
 
-      pointBreakdown = {
-        basePoints: basePts,
-        timelyBonus: timelyPts,
-        accuracyBonus: accBonus,
-        totalEarnedPoints: total,
-        newTotalPoints: newTotal,
-        isLockedToday: numScore >= 100,
-        isFirstAttempt,
-        historicalHighestScore: numScore
-      };
+    // Embed point breakdown into record object for history recall
+    (newRecord as any).pointBreakdown = pointBreakdown;
+    localStorage.setItem(`zxt_qh_${studentId}`, JSON.stringify(history));
+
+    if (USE_BACKEND) {
+      const payloadWithId = { ...result, recordId, pointBreakdown };
+      // Background sync call
+      this.recordQuizResultBackend(studentId, payloadWithId, recordId)
+        .then((data) => {
+          if (data && data.pointBreakdown && data.pointBreakdown.newTotalPoints !== undefined) {
+            const user = this.getSession();
+            if (user) {
+              user.points = data.pointBreakdown.newTotalPoints;
+              currentSession = user;
+              localStorage.setItem('zxt_user', JSON.stringify(user));
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn('Backend quiz history sync failed, queuing task:', err);
+          enqueueSyncTask('RECORD_QUIZ_RESULT', { studentId, result: payloadWithId });
+        });
     }
 
     return pointBreakdown;

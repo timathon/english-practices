@@ -6,6 +6,7 @@ import { PointsHistoryModal } from './components/PointsHistoryModal';
 import { PlatformHome } from './pages/PlatformHome';
 import { apiService, canEditQuizLibrary, UserSession } from './services/api';
 import { preloadAudioSFX } from './utils/sound';
+import { SyncQueueModal } from './components/SyncQueueModal';
 
 const BaiLianGe = lazy(() => import('./pages/BaiLianGe').then(m => ({ default: m.BaiLianGe })));
 const PlatformAdminPanel = lazy(() => import('./pages/PlatformAdminPanel').then(m => ({ default: m.PlatformAdminPanel })));
@@ -20,6 +21,7 @@ export const App: React.FC = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isViewSwitcherOpen, setIsViewSwitcherOpen] = useState(false);
   const [isPointsHistoryOpen, setIsPointsHistoryOpen] = useState(false);
+  const [isSyncQueueOpen, setIsSyncQueueOpen] = useState(false);
 
   useEffect(() => {
     // Preload audio sound effects for instant playback
@@ -39,8 +41,16 @@ export const App: React.FC = () => {
       const path = window.location.pathname || '/';
       setCurrentPath(path);
     };
+    const handleUserUpdate = () => {
+      const updated = apiService.getSession();
+      if (updated) setUser({ ...updated });
+    };
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('zxt_user_updated', handleUserUpdate);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('zxt_user_updated', handleUserUpdate);
+    };
   }, []);
 
   const navigate = (path: string) => {
@@ -95,6 +105,7 @@ export const App: React.FC = () => {
         onOpenLogin={() => setIsLoginOpen(true)}
         onOpenViewSwitcher={() => setIsViewSwitcherOpen(true)}
         onOpenPointsHistory={() => setIsPointsHistoryOpen(true)}
+        onOpenSyncQueue={() => setIsSyncQueueOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -163,6 +174,11 @@ export const App: React.FC = () => {
           user={user}
         />
       )}
+
+      <SyncQueueModal
+        isOpen={isSyncQueueOpen}
+        onClose={() => setIsSyncQueueOpen(false)}
+      />
 
     </div>
   );

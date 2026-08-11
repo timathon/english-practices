@@ -1,5 +1,6 @@
-import React from 'react';
-import { UserSession, canEditQuizLibrary } from '../services/api';
+import React, { useState, useEffect, useRef } from 'react';
+import { UserSession, canEditQuizLibrary, apiService } from '../services/api';
+import { getSyncQueue, subscribeSyncQueue } from '../services/syncQueue';
 
 interface NavbarProps {
   currentPath: string;
@@ -9,6 +10,7 @@ interface NavbarProps {
   onOpenLogin: () => void;
   onOpenViewSwitcher: () => void;
   onOpenPointsHistory?: () => void;
+  onOpenSyncQueue?: () => void;
   onLogout: () => void;
 }
 
@@ -20,23 +22,30 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
   onOpenViewSwitcher,
   onOpenPointsHistory,
+  onOpenSyncQueue,
   onLogout,
 }) => {
-  const viewBadgeColor = {
-    student: 'bg-emerald-500 text-white border-emerald-400',
-    parent: 'bg-amber-500 text-white border-amber-400',
-    teacher: 'bg-blue-600 text-white border-blue-500',
-    editor: 'bg-teal-600 text-white border-teal-500',
-    admin: 'bg-purple-600 text-white border-purple-500',
-  };
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [syncQueueCount, setSyncQueueCount] = useState(getSyncQueue().length);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const viewBadgeLabel = {
-    student: '🎓 学生视图 (Student)',
-    parent: '👨‍👩‍👧 家长视图 (Parent)',
-    teacher: '👩‍🏫 教师视图 (Teacher)',
-    editor: '✍️ 编辑视图 (Editor)',
-    admin: '⚙️ 管理员视图 (Admin)',
-  };
+  useEffect(() => {
+    setSyncQueueCount(getSyncQueue().length);
+    const unsubscribe = subscribeSyncQueue(() => {
+      setSyncQueueCount(getSyncQueue().length);
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header className="bg-ink text-white fixed top-0 left-0 right-0 z-30 shadow-md w-full">
@@ -54,50 +63,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </div>
 
-
-
         {/* User Controls / Auth */}
         <div className="flex items-center space-x-3">
           {user ? (
             <div className="flex items-center space-x-3">
-              {/* View Selecting Dropdown (placed to the left of user name) */}
-              <div className="relative">
-                <select
-                  value={(() => {
-                    if (currentPath.startsWith('/student') || currentPath.startsWith('/blg')) {
-                      return window.location.search.includes('tab=selfstudy') ? '/student?tab=selfstudy' : '/student?tab=assignments';
-                    }
-                    return currentPath;
-                  })()}
-                  onChange={(e) => navigate(e.target.value)}
-                  className="px-2.5 py-1 bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-lg text-xs font-bold text-slate-200 outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-xs"
-                >
-                  {user.role === 'admin' && (
-                    <>
-                      <option value="/teacher">👩‍🏫 教师工作台</option>
-                      <option value="/editor">✍️ 平台题库编辑</option>
-                      <option value="/admin">⚙️ 平台管理中心</option>
-                    </>
-                  )}
-                  {user.role === 'teacher' && canEditQuizLibrary(user) && (
-                    <>
-                      <option value="/teacher">👩‍🏫 教师工作台</option>
-                      <option value="/editor">✍️ 平台题库编辑</option>
-                    </>
-                  )}
-                  {user.role === 'teacher' && !canEditQuizLibrary(user) && (
-                    <>
-                      <option value="/teacher">👩‍🏫 教师工作台</option>
-                    </>
-                  )}
-                  {user.role !== 'teacher' && user.role !== 'admin' && (
-                    <>
-                      <option value="/student?tab=assignments">📝 班级作业</option>
-                      <option value="/student?tab=selfstudy">📖 自主学习</option>
-                    </>
-                  )}
-                </select>
-              </div>
+
 
               <div className="text-xs text-right flex items-center space-x-2">
                 <span className="font-bold text-white">{user.name}</span>
@@ -111,16 +81,73 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="px-2.5 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 hover:border-amber-400 text-amber-300 rounded-full font-bold text-[11px] flex items-center space-x-1 shadow-xs transition cursor-pointer"
                   >
                     <span>🪙</span>
-                    <span>{user.points !== undefined ? user.points : 120} 智慧点</span>
+                    <span>
+                      {(() => {
+                        const studentId = user?.id || 'usr_stu_001';
+                        const history = apiService.getQuizHistorySync(studentId);
+                        return apiService.calculateTotalPoints(history);
+                      })()} 智慧点
+                    </span>
                   </button>
                 )}
               </div>
-              <button
-                onClick={onLogout}
-                className="text-xs text-slate-400 hover:text-red-400 px-2 py-1 transition"
-              >
-                退出
-              </button>
+
+              {/* Nav Hamburger Menu Button */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center justify-center relative"
+                  title="菜单选项"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  {syncQueueCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center animate-pulse">
+                      {syncQueueCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Dropdown Menu */}
+                {isMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-fade-in">
+                    {onOpenSyncQueue && (
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          onOpenSyncQueue();
+                        }}
+                        className="w-full text-left px-3.5 py-2 text-xs text-slate-200 hover:bg-slate-800 flex items-center justify-between transition"
+                      >
+                        <span className="flex items-center space-x-2">
+                          <span>🔄</span>
+                          <span>后台同步队列</span>
+                        </span>
+                        {syncQueueCount > 0 ? (
+                          <span className="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full text-[10px] font-bold border border-amber-500/40">
+                            {syncQueueCount} 待同步
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-500">已同步</span>
+                        )}
+                      </button>
+                    )}
+                    <div className="border-t border-slate-800 my-1" />
+                    <div className="px-3.5 py-1">
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          onLogout();
+                        }}
+                        className="text-xs text-slate-400 hover:text-red-400 px-2 py-1 transition"
+                      >
+                        退出
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             currentPath !== '/' && (
@@ -138,3 +165,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+

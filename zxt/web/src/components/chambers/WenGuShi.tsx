@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { CachedImage } from '../CachedImage';
+import { StudentSelfStudyTab } from '../bailiange/StudentSelfStudyTab';
 
 interface WenGuShiProps {
   user: any;
   quizHistory: any[];
+  poems?: any[];
+  learntPoemIds?: any[];
+  selectedPoem?: any;
+  onSelectPoem?: (poem: any) => void;
 }
 
 // ── Quiz Record Detail Modal ─────────────────────────────────────────────────
@@ -194,20 +199,68 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
 
 
 // ── Main WenGuShi Component ──────────────────────────────────────────────────
-export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory }) => {
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'chinese' | 'math' | 'english'>('all');
-  const [chineseSubCategory, setChineseSubCategory] = useState<'shizi' | 'pinyin' | 'gushi' | 'chengyu'>('shizi');
+export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [], learntPoemIds = [], selectedPoem, onSelectPoem }) => {
+  const [activeMainTab, setActiveMainTab] = useState<'history' | 'mistakes' | 'selfstudy'>('history');
+  const [activeSubjectTab, setActiveSubjectTab] = useState<'chinese' | 'math' | 'english'>('chinese');
+  const [showFirstAttemptOnly, setShowFirstAttemptOnly] = useState<boolean>(false);
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
 
-  const totalMistakes = (quizHistory || []).reduce((acc, h) => {
+  // Helper to identify first ever attempt for each poem/assignment
+  const getIsFirstEverAttempt = (item: any): boolean => {
+    if (!item) return false;
+    const itemTime = new Date(item.completedAt?.replace(/\//g, '-') || 0).getTime();
+    const targetTitle = item.poemTitle || item.title || '';
+    
+    // Find all records for the same poem/assignment
+    const allMatches = (quizHistory || []).filter((h: any) => {
+      const hTitle = h.poemTitle || h.title || '';
+      return hTitle === targetTitle;
+    });
+
+    if (allMatches.length === 0) return true;
+
+    // The oldest attempt has the smallest timestamp
+    const oldestTime = Math.min(...allMatches.map((h: any) => new Date(h.completedAt?.replace(/\//g, '-') || 0).getTime()));
+    return itemTime === oldestTime;
+  };
+
+  // Extract all mistakes across quiz history
+  const allMistakeItems = (quizHistory || []).flatMap((h) => {
     const rawDet = h?.details;
     const detailsArr: any[] = Array.isArray(rawDet)
       ? rawDet
       : (rawDet && typeof rawDet === 'object' && Array.isArray(rawDet.questions)
           ? rawDet.questions
-          : (rawDet && typeof rawDet === 'object' ? Object.values(rawDet).filter(v => v && typeof v === 'object' && 'isCorrect' in v) : []));
-    return acc + detailsArr.filter((d: any) => d && !d.isCorrect).length;
-  }, 0);
+          : (rawDet && typeof rawDet === 'object' ? Object.values(rawDet).filter((v: any) => v && typeof v === 'object' && 'isCorrect' in v) : []));
+    
+    return detailsArr
+      .filter((d: any) => d && !d.isCorrect)
+      .map((d: any, index: number) => ({
+        id: `${h.id}_m_${index}`,
+        poemTitle: h.poemTitle || h.title || '修业练习',
+        quizType: h.quizType || '练习',
+        completedAt: h.completedAt,
+        subject: h.subject || (h.poemTitle?.includes('数学') ? 'math' : h.poemTitle?.includes('英语') ? 'english' : 'chinese'),
+        question: d,
+        parentRecord: h,
+      }));
+  });
+
+  // Filter history by subject & first-attempt-only toggle
+  const filteredHistory = (quizHistory || []).filter((item) => {
+    const title = item.poemTitle || item.title || '';
+    const subject = item.subject || (title.includes('数学') ? 'math' : title.includes('英语') ? 'english' : 'chinese');
+    if (subject !== activeSubjectTab) return false;
+    if (showFirstAttemptOnly && !getIsFirstEverAttempt(item)) return false;
+    return true;
+  });
+
+  // Filter mistakes by subject
+  const filteredMistakes = allMistakeItems.filter((item) => {
+    const title = item.poemTitle || '';
+    const subject = item.subject || (title.includes('数学') ? 'math' : title.includes('英语') ? 'english' : 'chinese');
+    return subject === activeSubjectTab;
+  });
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-4">
@@ -224,160 +277,288 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory }) => {
               <span className="bg-emerald-500/20 border border-emerald-400/30 px-2 py-0.5 rounded-full">温故室 Review Chamber</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-white font-serif tracking-tight">温故而知新，修业复盘室</h1>
-            <p className="text-emerald-200/70 text-sm mt-2">复习错题，查漏补缺，每次复盘都是进步的阶梯。</p>
+            <p className="text-emerald-200/70 text-sm mt-2">复习错题，查漏补缺，自主学习，每次复盘都是进步的阶梯。</p>
           </div>
           <div className="flex gap-3 flex-shrink-0">
             <div className="bg-white/8 border border-white/10 backdrop-blur-md rounded-2xl px-4 py-3 text-center">
               <div className="text-2xl font-bold text-amber-300">{quizHistory.length}</div>
-              <div className="text-xs text-emerald-200/70 mt-0.5">次修业记录</div>
+              <div className="text-xs text-emerald-200/70 mt-0.5 font-medium">次修业记录</div>
             </div>
             <div className="bg-white/8 border border-white/10 backdrop-blur-md rounded-2xl px-4 py-3 text-center">
-              <div className="text-2xl font-bold text-red-300">{totalMistakes}</div>
-              <div className="text-xs text-emerald-200/70 mt-0.5">待复习错题</div>
+              <div className="text-2xl font-bold text-red-300">{allMistakeItems.length}</div>
+              <div className="text-xs text-emerald-200/70 mt-0.5 font-medium">待复习错题</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Filter Tabs ── */}
-      <div className="flex gap-2 bg-white rounded-2xl p-1.5 shadow-sm border border-slate-100 overflow-x-auto">
-        {([
-          { id: 'all',     emoji: '📂', label: '错题汇总' },
-          { id: 'chinese', emoji: '📖', label: '语文 4大板块' },
-          { id: 'math',    emoji: '📐', label: '数学强化' },
-          { id: 'english', emoji: '🔤', label: '英语复习' },
-        ] as const).map(t => (
+      {/* ── Main Layout Tabs: Practice History vs. Mistake List ── */}
+      <div className="bg-white rounded-2xl p-2 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Main Tabs */}
+        <div className="flex bg-slate-100 p-1 rounded-xl gap-1 overflow-x-auto">
           <button
-            key={t.id}
-            onClick={() => setSelectedCategory(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
-              selectedCategory === t.id
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+            onClick={() => setActiveMainTab('history')}
+            className={`flex-1 sm:flex-initial px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeMainTab === 'history'
+                ? 'bg-white text-emerald-700 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <span>{t.emoji}</span> <span>{t.label}</span>
+            📜 修业历史 <span className="text-xs ml-1 opacity-70">({quizHistory.length})</span>
           </button>
-        ))}
+          <button
+            onClick={() => setActiveMainTab('mistakes')}
+            className={`flex-1 sm:flex-initial px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeMainTab === 'mistakes'
+                ? 'bg-white text-red-600 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            ❌ 错题归纳 <span className="text-xs ml-1 opacity-70">({allMistakeItems.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveMainTab('selfstudy')}
+            className={`flex-1 sm:flex-initial px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeMainTab === 'selfstudy'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            📚 自主学习 <span className="text-xs ml-1 opacity-70">({poems.length})</span>
+          </button>
+        </div>
+
+        {/* Subtabs: 3 Subjects with dynamic count */}
+        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100 gap-1">
+          {[
+            { id: 'chinese', emoji: '📖', label: '语文' },
+            { id: 'math',    emoji: '📐', label: '数学' },
+            { id: 'english', emoji: '🔤', label: '英语' },
+          ].map((sub) => {
+            const count = activeMainTab === 'history'
+              ? (quizHistory || []).filter((item) => {
+                  const title = item.poemTitle || item.title || '';
+                  const subject = item.subject || (title.includes('数学') ? 'math' : title.includes('英语') ? 'english' : 'chinese');
+                  return subject === sub.id;
+                }).length
+              : activeMainTab === 'mistakes'
+              ? allMistakeItems.filter((item) => {
+                  const title = item.poemTitle || '';
+                  const subject = item.subject || (title.includes('数学') ? 'math' : title.includes('英语') ? 'english' : 'chinese');
+                  return subject === sub.id;
+                }).length
+              : sub.id === 'chinese' ? (poems || []).length : 0;
+
+            return (
+              <button
+                key={sub.id}
+                onClick={() => setActiveSubjectTab(sub.id as any)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                  activeSubjectTab === sub.id
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                }`}
+              >
+                <span>{sub.emoji}</span>
+                <span>{sub.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
+                  activeSubjectTab === sub.id ? 'bg-white/20 text-white' : 'bg-slate-200/70 text-slate-600'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* ── Chinese Sub-sections ── */}
-      {selectedCategory === 'chinese' && (
-        <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-200/80 space-y-4">
-          <div className="flex gap-2 border-b border-slate-100 pb-3 flex-wrap">
-            {([
-              { id: 'shizi',   emoji: '✍️', label: '识字', color: 'bg-red-100 text-red-700' },
-              { id: 'pinyin',  emoji: '🔤', label: '拼音', color: 'bg-amber-100 text-amber-700' },
-              { id: 'gushi',   emoji: '📜', label: '古诗', color: 'bg-emerald-100 text-emerald-700' },
-              { id: 'chengyu', emoji: '💡', label: '成语', color: 'bg-blue-100 text-blue-700' },
-            ] as const).map(s => (
+      {/* ── Main Tab 3: Self Study (自主学习) ── */}
+      {activeMainTab === 'selfstudy' && (
+        <StudentSelfStudyTab
+          poems={poems}
+          learntPoemIds={learntPoemIds}
+          selectedPoem={selectedPoem}
+          onSelectPoem={onSelectPoem || (() => {})}
+          subject={activeSubjectTab}
+        />
+      )}
+
+      {/* ── Main Tab 1: Practice History ── */}
+      {activeMainTab === 'history' && (
+        <div>
+          <div className="flex items-center justify-between mb-3 px-1 flex-wrap gap-2">
+            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-sm">📓</span>
+              {activeSubjectTab === 'chinese' ? '语文' : activeSubjectTab === 'math' ? '数学' : '英语'} · 修业历史
+            </h2>
+
+            <div className="flex items-center gap-2">
               <button
-                key={s.id}
-                onClick={() => setChineseSubCategory(s.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${chineseSubCategory === s.id ? s.color : 'text-slate-500 hover:bg-slate-50'}`}
+                onClick={() => setShowFirstAttemptOnly(!showFirstAttemptOnly)}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1 border ${
+                  showFirstAttemptOnly
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
               >
-                {s.emoji} {s.label}
+                <span>⭐</span>
+                <span>{showFirstAttemptOnly ? '已开启：仅看首次答题' : '仅看首次答题'}</span>
               </button>
-            ))}
+
+              <span className="text-xs text-slate-400 font-normal">
+                显示 {filteredHistory.length} 条记录
+              </span>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {chineseSubCategory === 'shizi' && (
-              <div className="p-4 border rounded-xl bg-slate-50">
-                <h3 className="font-bold text-slate-800 text-sm mb-1">汉字笔顺与形近字对比</h3>
-                <p className="text-xs text-slate-500 mb-3">掌握基础汉字的偏旁、笔画顺序与常见形近字区分。</p>
-                <span className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded font-semibold">已巩固 12 字</span>
+
+          {filteredHistory.length === 0 ? (
+            <div className="text-center py-12 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60">
+              <div className="text-3xl mb-2">📖</div>
+              <div className="text-slate-500 text-sm font-medium">
+                暂无{showFirstAttemptOnly ? '首次答题' : ''}{activeSubjectTab === 'chinese' ? '语文' : activeSubjectTab === 'math' ? '数学' : '英语'}修业历史记录
               </div>
-            )}
-            {chineseSubCategory === 'pinyin' && (
-              <div className="p-4 border rounded-xl bg-slate-50">
-                <h3 className="font-bold text-slate-800 text-sm mb-1">声母、韵母与整体认读音节</h3>
-                <p className="text-xs text-slate-500 mb-3">轻声、变调与拼音书写规范练习。</p>
-                <span className="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded font-semibold">已巩固 8 组</span>
-              </div>
-            )}
-            {chineseSubCategory === 'gushi' && (
-              <div className="p-4 border rounded-xl bg-slate-50">
-                <h3 className="font-bold text-slate-800 text-sm mb-1">小学生必备古诗词背诵</h3>
-                <p className="text-xs text-slate-500 mb-3">古诗名句填空、诗人背景与诗意理解。</p>
-                <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded font-semibold">已背诵 15 首</span>
-              </div>
-            )}
-            {chineseSubCategory === 'chengyu' && (
-              <div className="p-4 border rounded-xl bg-slate-50">
-                <h3 className="font-bold text-slate-800 text-sm mb-1">常用成语典故与造句</h3>
-                <p className="text-xs text-slate-500 mb-3">成语接龙、寓言故事与语境运用。</p>
-                <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded font-semibold">已掌握 20 个</span>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {(() => {
+                const seenIds = new Set<string>();
+                const uniqueHistory = filteredHistory.filter(item => {
+                  if (!item || !item.id) return true;
+                  if (seenIds.has(item.id)) return false;
+                  seenIds.add(item.id);
+                  return true;
+                });
+
+                const sortedHistory = [...uniqueHistory].sort((a, b) => {
+                  const timeA = new Date(a.completedAt?.replace(/\//g, '-') || 0).getTime();
+                  const timeB = new Date(b.completedAt?.replace(/\//g, '-') || 0).getTime();
+                  return timeB - timeA;
+                });
+
+                return sortedHistory.map((item, idx) => {
+                  const rawDet = item?.details;
+                  const detailsArray: any[] = Array.isArray(rawDet)
+                    ? rawDet
+                    : (rawDet && typeof rawDet === 'object' && Array.isArray(rawDet.questions)
+                        ? rawDet.questions
+                        : (rawDet && typeof rawDet === 'object' ? Object.values(rawDet).filter((v: any) => v && typeof v === 'object' && 'isCorrect' in v) : []));
+                  const mistakeCount = detailsArray.filter((d: any) => d && !d.isCorrect).length;
+                  const score = item.score ?? 100;
+                  const scoreBg = score >= 90 ? 'bg-emerald-50 border-emerald-200' : score >= 70 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
+                  const isFirstEver = getIsFirstEverAttempt(item);
+
+                  return (
+                    <button
+                      key={item.id || idx}
+                      onClick={() => setSelectedRecord(item)}
+                      className={`w-full text-left flex items-center gap-4 p-4 rounded-xl border ${scoreBg} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group`}
+                    >
+                      {/* Score circle */}
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm border-2 ${
+                        score >= 90 ? 'border-emerald-300 bg-emerald-100 text-emerald-700'
+                        : score >= 70 ? 'border-amber-300 bg-amber-100 text-amber-700'
+                        : 'border-red-300 bg-red-100 text-red-700'
+                      }`}>
+                        {score}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-800 text-sm truncate group-hover:text-emerald-700 transition-colors flex items-center gap-2">
+                          <span>{item.poemTitle || item.title || '练习题目'}</span>
+                          {isFirstEver && (
+                            <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300/80 px-1.5 py-0.2 rounded font-sans font-bold flex items-center gap-0.5 flex-shrink-0">
+                              <span>⭐</span>
+                              <span>首次答题</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <span className="text-[11px] text-slate-400">{item.completedAt || '今日'}</span>
+                          {item.quizType && <span className="text-[11px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{item.quizType}</span>}
+                          {detailsArray.length > 0 && <span className="text-[11px] text-slate-400">{detailsArray.length} 题</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {mistakeCount > 0 && (
+                          <span className="text-[11px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">{mistakeCount} 错</span>
+                        )}
+                        <span className="text-slate-300 group-hover:text-emerald-400 transition-colors text-lg">›</span>
+                      </div>
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Quiz History List ── */}
-      <div>
-        <div className="flex items-center gap-2 mb-3 px-1">
-          <span className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-sm">📓</span>
-          <h2 className="text-base font-bold text-slate-800">温故修业历史</h2>
-          <span className="text-slate-400 font-normal text-sm">Practice History & Error Logs</span>
+      {/* ── Main Tab 2: Mistake List ── */}
+      {activeMainTab === 'mistakes' && (
+        <div>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+              <span className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center text-sm">❌</span>
+              {activeSubjectTab === 'chinese' ? '语文' : activeSubjectTab === 'math' ? '数学' : '英语'} · 错题宝典
+            </h2>
+            <span className="text-xs text-slate-400 font-normal">
+              共 {filteredMistakes.length} 道待复盘错题
+            </span>
+          </div>
+
+          {filteredMistakes.length === 0 ? (
+            <div className="text-center py-12 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60">
+              <div className="text-3xl mb-2">🎉</div>
+              <div className="text-slate-500 text-sm font-medium">
+                太棒了！{activeSubjectTab === 'chinese' ? '语文' : activeSubjectTab === 'math' ? '数学' : '英语'}学科暂无需要复习的错题
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredMistakes.map((m) => {
+                const q = m.question;
+                return (
+                  <div
+                    key={m.id}
+                    onClick={() => setSelectedRecord(m.parentRecord)}
+                    className="bg-white border border-red-100 hover:border-red-300 rounded-2xl p-4 shadow-xs hover:shadow-md transition cursor-pointer flex flex-col justify-between gap-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600">
+                          {m.poemTitle}
+                        </span>
+                        <span className="text-[10px] text-slate-400">{m.completedAt}</span>
+                      </div>
+
+                      <div className="text-sm font-bold text-slate-800 mb-2">
+                        {q.prompt || q.questionText || '错题题目'}
+                      </div>
+
+                      {q.userAnswer !== undefined && (
+                        <div className="text-xs bg-red-50 text-red-700 p-2 rounded-lg mb-1">
+                          ❌ 我的回答: <span className="font-semibold">{String(q.userAnswer)}</span>
+                        </div>
+                      )}
+
+                      {q.explanation && (
+                        <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded-lg leading-relaxed">
+                          💡 解析: {q.explanation}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-right border-t border-slate-100 pt-2 text-xs font-bold text-emerald-600 hover:underline">
+                      查看完整试卷复盘 ›
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-
-        {quizHistory.length === 0 ? (
-          <div className="text-center py-12 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60">
-            <div className="text-3xl mb-2">📖</div>
-            <div className="text-slate-500 text-sm font-medium">尚无修业历史记录，去正堂完成第一份作业吧！</div>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {quizHistory.map((item, idx) => {
-              const rawDet = item?.details;
-              const detailsArray: any[] = Array.isArray(rawDet)
-                ? rawDet
-                : (rawDet && typeof rawDet === 'object' && Array.isArray(rawDet.questions)
-                    ? rawDet.questions
-                    : (rawDet && typeof rawDet === 'object' ? Object.values(rawDet).filter(v => v && typeof v === 'object' && 'isCorrect' in v) : []));
-              const mistakeCount = detailsArray.filter((d: any) => d && !d.isCorrect).length;
-              const score = item.score ?? 100;
-              const scoreColor = score >= 90 ? 'text-emerald-600' : score >= 70 ? 'text-amber-600' : 'text-red-500';
-              const scoreBg   = score >= 90 ? 'bg-emerald-50 border-emerald-200' : score >= 70 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
-
-              return (
-                <button
-                  key={item.id || idx}
-                  onClick={() => setSelectedRecord(item)}
-                  className={`w-full text-left flex items-center gap-4 p-4 rounded-xl border ${scoreBg} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group`}
-                >
-                  {/* Score circle */}
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm border-2 ${
-                    score >= 90 ? 'border-emerald-300 bg-emerald-100 text-emerald-700'
-                    : score >= 70 ? 'border-amber-300 bg-amber-100 text-amber-700'
-                    : 'border-red-300 bg-red-100 text-red-700'
-                  }`}>
-                    {score}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-slate-800 text-sm truncate group-hover:text-emerald-700 transition-colors">
-                      {item.poemTitle || item.title || '练习题目'}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-[11px] text-slate-400">{item.completedAt || '今日'}</span>
-                      {item.quizType && <span className="text-[11px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{item.quizType}</span>}
-                      {detailsArray.length > 0 && <span className="text-[11px] text-slate-400">{detailsArray.length} 题</span>}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {mistakeCount > 0 && (
-                      <span className="text-[11px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">{mistakeCount} 错</span>
-                    )}
-                    <span className="text-slate-300 group-hover:text-emerald-400 transition-colors text-lg">›</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* ── Detail Modal ── */}
       {selectedRecord && (

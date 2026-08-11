@@ -5,6 +5,7 @@ import { AvatarDisplay, AvatarConfig } from '../AvatarDisplay';
 interface ZhengTangProps {
   user: any;
   assignments: any[];
+  quizHistory?: any[];
   onStartQuiz: (title: string, questions: PoemQuestion[], assignmentId?: string) => void;
   avatarConfig?: AvatarConfig;
 }
@@ -12,10 +13,27 @@ interface ZhengTangProps {
 export const ZhengTang: React.FC<ZhengTangProps> = ({
   user,
   assignments,
+  quizHistory = [],
   onStartQuiz,
   avatarConfig
 }) => {
   const [selectedSubject, setSelectedSubject] = useState<'all' | 'chinese' | 'math' | 'english'>('all');
+
+  const todayStr = new Date().toLocaleDateString('zh-CN');
+
+  // Helper to compute today's attempts used for a specific assignment
+  const getTodayAttemptsUsed = (asgn: any): number => {
+    return (quizHistory || []).filter((h: any) => {
+      if (!h || !h.completedAt) return false;
+      const hDateStr = new Date(h.completedAt.replace(/\//g, '-')).toLocaleDateString('zh-CN');
+      if (hDateStr !== todayStr) return false;
+
+      if (asgn.id && h.assignmentId) {
+        return h.assignmentId === asgn.id;
+      }
+      return h.poemTitle === asgn.poemTitle;
+    }).length;
+  };
 
   const getSubjectSampleQuestions = (subject: string): { title: string; questions: PoemQuestion[] } => {
     if (subject === 'chinese_pinyin') {
@@ -63,7 +81,7 @@ export const ZhengTang: React.FC<ZhengTangProps> = ({
   const doneAssignments = assignments.filter(a => a.status === '已打卡');
 
   const tabs = [
-    { id: 'all',     label: '全部锦囊',     emoji: '📚', count: assignments.length + 4 },
+    { id: 'all',     label: '全部锦囊',     emoji: '📚', count: pendingAssignments.length },
     { id: 'chinese', label: '语文',         emoji: '📖' },
     { id: 'math',    label: '数学',         emoji: '📐' },
     { id: 'english', label: '英语',         emoji: '🔤' },
@@ -175,6 +193,9 @@ export const ZhengTang: React.FC<ZhengTangProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {assignments.map((asgn) => {
                 const done = asgn.status === '已打卡';
+                const attemptsUsed = getTodayAttemptsUsed(asgn);
+                const isMaxAttempts = attemptsUsed >= 3;
+
                 return (
                   <div
                     key={asgn.id}
@@ -189,11 +210,20 @@ export const ZhengTang: React.FC<ZhengTangProps> = ({
 
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="flex items-center gap-2 mb-1.5">
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                           <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${done ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
                             {asgn.subject || '语文'}
                           </span>
                           {done && <span className="text-[11px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold">✓ 已完成</span>}
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                            isMaxAttempts
+                              ? 'bg-amber-100 text-amber-800 border-amber-300'
+                              : attemptsUsed > 0
+                              ? 'bg-blue-100 text-blue-800 border-blue-200'
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                          }`}>
+                            🎯 今日次数: {attemptsUsed} / 3
+                          </span>
                         </div>
                         <h3 className="font-bold text-slate-800 text-base leading-tight">{asgn.poemTitle || '堂课作业'}</h3>
                         {asgn.requirements && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{asgn.requirements}</p>}
@@ -205,15 +235,17 @@ export const ZhengTang: React.FC<ZhengTangProps> = ({
                     </div>
 
                     <button
+                      disabled={isMaxAttempts}
                       onClick={() => onStartQuiz(asgn.poemTitle, asgn.questions || [], asgn.id)}
-                      disabled={done}
                       className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                        done
-                          ? 'bg-emerald-100 text-emerald-600 cursor-default'
-                          : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5'
+                        isMaxAttempts
+                          ? 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed opacity-80'
+                          : done
+                          ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border border-emerald-300/60 shadow-sm hover:shadow hover:-translate-y-0.5 cursor-pointer'
+                          : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-200 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer'
                       }`}
                     >
-                      {done ? '✅ 修业完毕' : '🚀 立即开启修业锦囊'}
+                      {isMaxAttempts ? '🚫 今日打卡已达上限' : done ? '🔄 再练一次' : '🚀 立即开启修业锦囊'}
                     </button>
                   </div>
                 );

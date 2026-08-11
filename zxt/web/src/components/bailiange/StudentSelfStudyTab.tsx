@@ -6,6 +6,7 @@ interface StudentSelfStudyTabProps {
   learntPoemIds: any[];
   selectedPoem: any;
   onSelectPoem: (poem: any) => void;
+  subject?: 'chinese' | 'math' | 'english';
 }
 
 export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
@@ -13,11 +14,36 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
   learntPoemIds,
   selectedPoem,
   onSelectPoem,
+  subject = 'chinese',
 }) => {
   const [showPinyin, setShowPinyin] = useState(true);
   const [showOriginal, setShowOriginal] = useState(true);
   const [showTranslation, setShowTranslation] = useState(true);
   const [showImages, setShowImages] = useState(true);
+
+  if (subject === 'math') {
+    return (
+      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3">
+        <div className="text-4xl">📐</div>
+        <h3 className="text-lg font-bold text-slate-800">数学 · 自主拓展学习</h3>
+        <p className="text-sm text-slate-500 max-w-md mx-auto">
+          提供算术巧算、几何图形与数理逻辑自主研习资源，包含重难点动画演练与自测习题。
+        </p>
+      </div>
+    );
+  }
+
+  if (subject === 'english') {
+    return (
+      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3">
+        <div className="text-4xl">🔤</div>
+        <h3 className="text-lg font-bold text-slate-800">英语 · 自主拓展学习</h3>
+        <p className="text-sm text-slate-500 max-w-md mx-auto">
+          包含自然拼读、常用词汇卡片、听力对话朗读与分级阅读自主研习。
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid md:grid-cols-3 gap-6">

@@ -177,6 +177,12 @@ async function initDB(db: D1Database): Promise<void> {
   await db.prepare(
     'CREATE TABLE IF NOT EXISTS class_progress (class_name TEXT PRIMARY KEY, learnt_ids TEXT NOT NULL, updated_at TEXT NOT NULL)'
   ).run();
+  // Ensure points column exists in users table (Auto migration)
+  try {
+    await db.prepare('ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0').run();
+  } catch (_) {
+    // Column already exists
+  }
 
   const row = await db.prepare('SELECT COUNT(*) AS cnt FROM poems').first<{ cnt: number }>();
   if (!row || row.cnt === 0) {
@@ -819,16 +825,18 @@ app.post('/api/student/history', authGuard, async (c) => {
 
     // Query user history for this poem/assignment to determine point rules
     const targetPoemId = Number(poemId) || 0;
-    const { results: existingHistory } = await db.prepare(
-      'SELECT score, completed_at FROM quiz_history WHERE student_id = ? AND poem_id = ? ORDER BY completed_at ASC'
-    ).bind(studentId, targetPoemId).all<{ score: number; completed_at: string }>();
+    const historyRes = targetPoemId > 0
+      ? await db.prepare('SELECT score, completed_at FROM quiz_history WHERE student_id = ? AND poem_id = ? ORDER BY completed_at ASC').bind(studentId, targetPoemId).all<{ score: number; completed_at: string }>()
+      : await db.prepare('SELECT score, completed_at FROM quiz_history WHERE student_id = ? AND poem_title = ? ORDER BY completed_at ASC').bind(studentId, poemTitle || '').all<{ score: number; completed_at: string }>();
+
+    const existingHistory = historyRes?.results || [];
 
     let historicalHighestScore = 0;
     let hasAttemptToday = false;
 
     for (const h of existingHistory) {
-      if (h.score > historicalHighestScore) {
-        historicalHighestScore = h.score;
+      if ((h.score || 0) > historicalHighestScore) {
+        historicalHighestScore = h.score || 0;
       }
       if (h.completed_at && h.completed_at.startsWith(todayStr)) {
         hasAttemptToday = true;
@@ -897,10 +905,14 @@ app.post('/api/student/history', authGuard, async (c) => {
 
     // Update user points in D1
     let newTotalPoints = totalEarnedPoints;
-    const userRow = await db.prepare('SELECT points FROM users WHERE id = ?').bind(studentId).first<{ points: number }>();
-    if (userRow) {
-      newTotalPoints = (userRow.points || 0) + totalEarnedPoints;
-      await db.prepare('UPDATE users SET points = ? WHERE id = ?').bind(newTotalPoints, studentId).run();
+    try {
+      const userRow = await db.prepare('SELECT points FROM users WHERE id = ?').bind(studentId).first<{ points: number }>();
+      if (userRow) {
+        newTotalPoints = (userRow.points || 0) + totalEarnedPoints;
+        await db.prepare('UPDATE users SET points = ? WHERE id = ?').bind(newTotalPoints, studentId).run();
+      }
+    } catch (e) {
+      console.warn('Failed to update D1 user points column:', e);
     }
     pointBreakdown.newTotalPoints = newTotalPoints;
 

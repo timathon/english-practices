@@ -591,7 +591,6 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 }`}
               >
                 <span>📜 正堂</span>
-                <span className="text-xs font-normal opacity-90">(Homework)</span>
               </button>
               <button
                 onClick={() => handleChamberSwitch('wen_gu_shi')}
@@ -602,7 +601,6 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 }`}
               >
                 <span>📖 温故室</span>
-                <span className="text-xs font-normal opacity-90">(Review)</span>
               </button>
               <button
                 onClick={() => setActiveChamber('zhi_xin_fang')}
@@ -613,7 +611,6 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 }`}
               >
                 <span>🎨 知新坊</span>
-                <span className="text-xs font-normal opacity-90">(Avatar & Shop)</span>
               </button>
               <button
                 onClick={() => handleChamberSwitch('guan_xing_tai')}
@@ -624,7 +621,6 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                 }`}
               >
                 <span>🔭 观星台</span>
-                <span className="text-xs font-normal opacity-90">(Observatory)</span>
               </button>
             </div>
 
@@ -647,6 +643,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
             <ZhengTang
               user={user}
               assignments={assignments}
+              quizHistory={quizHistory}
               onStartQuiz={(title: string, questions: PoemQuestion[], asgnId?: string) => {
                 let finalQuestions = questions;
                 if (finalQuestions.length === 0) {
@@ -671,6 +668,10 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
             <WenGuShi
               user={user}
               quizHistory={quizHistory}
+              poems={poems}
+              learntPoemIds={learntPoemIds}
+              selectedPoem={selectedPoem}
+              onSelectPoem={setSelectedPoem}
             />
           )}
 
@@ -1170,28 +1171,36 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
           onClose={(res) => {
             const quizInfo = activeStudentQuiz;
             setActiveStudentQuiz(null);
-            if (res && res.completed && quizInfo.assignmentId) {
+            if (res && res.completed) {
               const finalScore = res.score !== undefined ? res.score : 100;
-              (async () => {
-                try {
-                  await apiService.markAssignmentCompleted(quizInfo.assignmentId!, finalScore);
-                  const pb = await apiService.recordQuizResult(user?.id || 'usr_stu_001', {
-                    poemTitle: quizInfo.poemTitle,
-                    poemId: poems.find(p => p.title === quizInfo.poemTitle)?.id || 1,
-                    score: finalScore,
-                    accuracy: `${finalScore}%`,
-                    quizType: '班级作业闯关',
-                    details: res.details || [],
-                    assignmentId: quizInfo.assignmentId
-                  });
-                  if (pb) {
-                    setPointAwardModal(pb);
-                  }
-                  await loadStudentData();
-                } catch (err) {
-                  console.error('Failed to submit assignment completion:', err);
-                }
-              })();
+              const studentId = user?.id || 'usr_stu_001';
+
+              // 1. Record quiz result synchronously for ZERO-delay points calculation & local storage
+              const pb = apiService.recordQuizResult(studentId, {
+                poemTitle: quizInfo.poemTitle,
+                poemId: poems.find(p => p.title === quizInfo.poemTitle)?.id || 1,
+                score: finalScore,
+                accuracy: `${finalScore}%`,
+                quizType: quizInfo.assignmentId ? '班级作业闯关' : '自主修业练习',
+                details: res.details || [],
+                assignmentId: quizInfo.assignmentId
+              });
+
+              // 2. Open points award modal INSTANTLY (0ms delay)
+              if (pb) {
+                setPointAwardModal(pb);
+              }
+
+              // 3. Update history list INSTANTLY (0ms delay)
+              const syncHistory = apiService.getQuizHistorySync(studentId);
+              setQuizHistory([...syncHistory]);
+
+              // 4. Fire-and-forget background sync & data refresh
+              if (quizInfo.assignmentId) {
+                apiService.markAssignmentCompleted(quizInfo.assignmentId, finalScore).catch(console.error);
+              }
+
+              loadStudentData();
             }
           }}
         />

@@ -29,44 +29,8 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Calculate actual total points sum from practice history if user points not set
-  const calculatedSum = history.reduce((sum, item, idx) => {
-    const numScore = Number(item.score) || 0;
-    const pb = item.details?.pointBreakdown;
-    if (pb && pb.totalEarnedPoints !== undefined) {
-      return sum + pb.totalEarnedPoints;
-    }
-    const priorAttempts = history.slice(idx + 1).filter(h => h.poemId === item.poemId || h.poemTitle === item.poemTitle);
-    const isFirst = pb?.isFirstAttempt !== undefined
-      ? pb.isFirstAttempt
-      : idx === history.length - 1 || priorAttempts.length === 0;
-
-    let base = pb?.basePoints;
-    let timely = pb?.timelyBonus;
-    let acc = pb?.accuracyBonus;
-
-    let priorHighestScore = 0;
-    for (const p of priorAttempts) {
-      const pScore = Number(p.score) || 0;
-      if (pScore > priorHighestScore) priorHighestScore = pScore;
-    }
-    const itemDateStr = item.completedAt ? item.completedAt.split(' ')[0] : '';
-    const hasSameDayPriorAttempt = priorAttempts.some(p => p.completedAt && p.completedAt.split(' ')[0] === itemDateStr);
-
-    if (base === undefined) {
-      base = isFirst ? 20 : (!hasSameDayPriorAttempt && numScore >= priorHighestScore ? 10 : 0);
-    }
-    if (timely === undefined) {
-      timely = isFirst ? 10 : 0;
-    }
-    if (acc === undefined) {
-      const getAccTier = (a: number) => (a >= 100 ? 25 : a >= 90 ? 20 : a >= 80 ? 15 : a >= 70 ? 5 : 0);
-      acc = Math.max(0, getAccTier(numScore) - (priorAttempts.length > 0 ? getAccTier(priorHighestScore) : 0));
-    }
-    return sum + base + timely + acc;
-  }, 0);
-
-  const totalPoints = user?.points !== undefined ? user.points : calculatedSum;
+  // Calculate actual total points sum from practice history (Single Source of Truth)
+  const totalPoints = apiService.calculateTotalPoints(history);
 
   return (
     <div
@@ -74,39 +38,50 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 space-y-5 relative max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200"
+        className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4 flex-shrink-0">
+        <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 px-6 py-4 flex items-center justify-between text-white flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl shadow-inner font-bold">
+            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shadow-xs">
               🪙
             </div>
             <div>
-              <h3 className="text-xl font-bold font-serif text-slate-800 flex items-center gap-2">
-                <span>智慧点明细与规则</span>
-                <span className="text-xs px-2.5 py-0.5 bg-amber-500/10 text-amber-700 rounded-full font-sans border border-amber-300 font-bold">
-                  {totalPoints} 智慧点
-                </span>
-              </h3>
-              <p className="text-xs text-slate-400">
-                学生打卡做题获得智慧点，智慧点可提升文采等级
-              </p>
+              <h2 className="font-bold text-lg font-serif">智慧点明细与规则</h2>
+              <p className="text-amber-100 text-xs">学生打卡做题获得智慧点，智慧点可提升文采等级</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 font-bold text-lg p-1 transition"
+            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition flex items-center justify-center text-white text-lg font-bold"
           >
-            ✕
+            ×
           </button>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+        {/* Content Body */}
+        <div className="p-6 overflow-y-auto space-y-5 flex-1 custom-scrollbar">
 
-          {/* Points Rules Summary Box */}
+          {/* Current Total Banner */}
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <span className="text-3xl">🏆</span>
+              <div>
+                <div className="text-xs text-amber-800 font-medium">当前累计智慧点 (Total Points)</div>
+                <div className="text-2xl font-bold font-mono text-amber-600">
+                  {totalPoints} 智慧点
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-full font-bold">
+                学海无涯 · 积少成多
+              </div>
+            </div>
+          </div>
+
+          {/* Rules Summary Box */}
           <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 p-4 rounded-2xl space-y-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="font-bold text-amber-900 text-sm flex items-center gap-1.5">
@@ -121,12 +96,12 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
             </div>
             <div className="grid md:grid-cols-3 gap-2 pt-1 text-slate-700">
               <div className="bg-white/80 p-2.5 rounded-xl border border-amber-200/60">
-                <span className="font-bold text-amber-800 block mb-0.5">1. 按时提交奖励 (+10 pts)</span>
-                <span>首刷且在截止日前提交独享</span>
+                <span className="font-bold text-amber-800 block mb-0.5">1. 每日打卡基础分 (+5 pts)</span>
+                <span>每日首次练习该题目即可获得</span>
               </div>
               <div className="bg-white/80 p-2.5 rounded-xl border border-amber-200/60">
-                <span className="font-bold text-amber-800 block mb-0.5">2. 每日打卡基础分 (首刷20 / 次日10)</span>
-                <span>首刷+20；后续日期再练且成绩&ge;最高分+10</span>
+                <span className="font-bold text-amber-800 block mb-0.5">2. 按时提交奖励 (+10 pts)</span>
+                <span>首刷且在截止日前提交独享</span>
               </div>
               <div className="bg-white/80 p-2.5 rounded-xl border border-amber-200/60">
                 <span className="font-bold text-amber-800 block mb-0.5">3. 历史正确率突破 (最高25)</span>
@@ -142,15 +117,15 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                 <span className="font-bold text-amber-400 font-serif flex items-center gap-1.5 text-sm">
                   💡 智慧点计算实操示例表 (Points Scoring Examples)
                 </span>
-                <span className="text-[10px] text-slate-400">100%满分当日锁定，次日解锁</span>
+                <span className="text-[10px] text-slate-400">每日首次练习均得基础分+5</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-[11px] border-collapse">
                   <thead>
                     <tr className="border-b border-slate-800 text-slate-400">
                       <th className="p-2">练习场景 (Scenario)</th>
-                      <th className="p-2 text-center">按时奖</th>
                       <th className="p-2 text-center">基础分</th>
+                      <th className="p-2 text-center">按时奖</th>
                       <th className="p-2 text-center">正确率突破奖</th>
                       <th className="p-2 text-right font-bold text-amber-400">本次得分</th>
                     </tr>
@@ -161,15 +136,15 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                         <span className="font-bold text-white block">8月1日 (首次打卡, 按时, 得分75%)</span>
                         <span className="text-[10px] text-slate-500">首刷按时，正确率75%在70-79%档</span>
                       </td>
+                      <td className="p-2 text-center text-blue-400 font-mono">+5</td>
                       <td className="p-2 text-center text-emerald-400 font-mono">+10</td>
-                      <td className="p-2 text-center text-blue-400 font-mono">+20</td>
                       <td className="p-2 text-center text-amber-400 font-mono">+5</td>
-                      <td className="p-2 text-right font-bold text-amber-300 font-mono text-sm">35 pts</td>
+                      <td className="p-2 text-right font-bold text-amber-300 font-mono text-sm">20 pts</td>
                     </tr>
                     <tr className="hover:bg-slate-800/40">
                       <td className="p-2">
                         <span className="font-bold text-white block">8月1日 (同日二刷, 得分提升至90%)</span>
-                        <span className="text-[10px] text-slate-500">同日二刷无按时分与基础分，补正确率差额 (20 - 5)</span>
+                        <span className="text-[10px] text-slate-500">同日二刷无每日基础分，补正确率差额 (20 - 5)</span>
                       </td>
                       <td className="p-2 text-center text-slate-600 font-mono">+0</td>
                       <td className="p-2 text-center text-slate-600 font-mono">+0</td>
@@ -179,7 +154,7 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                     <tr className="hover:bg-slate-800/40">
                       <td className="p-2">
                         <span className="font-bold text-white block">8月1日 (同日三刷, 得分达到100%)</span>
-                        <span className="text-[10px] text-slate-500">补正确率差额 (25 - 20)，触发100%满分当日锁定</span>
+                        <span className="text-[10px] text-slate-500">同日三刷无每日基础分，补正确率差额 (25 - 20)</span>
                       </td>
                       <td className="p-2 text-center text-slate-600 font-mono">+0</td>
                       <td className="p-2 text-center text-slate-600 font-mono">+0</td>
@@ -189,22 +164,22 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                     <tr className="hover:bg-slate-800/40">
                       <td className="p-2">
                         <span className="font-bold text-white block">8月2日 (次日再练, 保持100%满分)</span>
-                        <span className="text-[10px] text-slate-500">分数&ge;历史最高100%，获得次日基础分+10</span>
+                        <span className="text-[10px] text-slate-500">次日首刷，获得每日基础分+5</span>
                       </td>
+                      <td className="p-2 text-center text-blue-400 font-mono">+5</td>
                       <td className="p-2 text-center text-slate-600 font-mono">+0</td>
-                      <td className="p-2 text-center text-blue-400 font-mono">+10</td>
                       <td className="p-2 text-center text-slate-600 font-mono">+0</td>
-                      <td className="p-2 text-right font-bold text-amber-300 font-mono text-sm">10 pts</td>
+                      <td className="p-2 text-right font-bold text-amber-300 font-mono text-sm">5 pts</td>
                     </tr>
                     <tr className="hover:bg-slate-800/40">
                       <td className="p-2">
                         <span className="font-bold text-white block">8月3日 (次日再练, 得分60%)</span>
-                        <span className="text-[10px] text-slate-500">得分低于历史最高100%，不发基础分与突破分</span>
+                        <span className="text-[10px] text-slate-500">次日首刷，获得每日基础分+5</span>
                       </td>
+                      <td className="p-2 text-center text-blue-400 font-mono">+5</td>
                       <td className="p-2 text-center text-slate-600 font-mono">+0</td>
                       <td className="p-2 text-center text-slate-600 font-mono">+0</td>
-                      <td className="p-2 text-center text-slate-600 font-mono">+0</td>
-                      <td className="p-2 text-right font-bold text-slate-400 font-mono text-sm">0 pts</td>
+                      <td className="p-2 text-right font-bold text-amber-300 font-mono text-sm">5 pts</td>
                     </tr>
                   </tbody>
                 </table>
@@ -213,10 +188,13 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
           )}
 
           {/* Student History Logs List */}
-          <div className="space-y-2 pt-2">
-            <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-              <span>📊</span> 打卡练习记录 (Practice Records)
-            </h4>
+          <div className="space-y-3">
+            <div className="font-bold text-slate-800 text-sm flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <span>📝</span> 我的修业打卡记录
+              </span>
+              <span className="text-[10px] font-normal text-slate-400">显示最近练习记录</span>
+            </div>
 
             {loading ? (
               <div className="text-center py-8 text-slate-400 text-xs">
@@ -265,13 +243,7 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
 
                   // Infer/fallback for legacy items
                   if (basePts === undefined) {
-                    if (isFirstAttempt) {
-                      basePts = 20;
-                    } else if (!hasSameDayPriorAttempt && numScore >= priorHighestScore) {
-                      basePts = 10;
-                    } else {
-                      basePts = 0;
-                    }
+                    basePts = !hasSameDayPriorAttempt ? 5 : 0;
                   }
                   if (timelyPts === undefined) {
                     timelyPts = isFirstAttempt ? 10 : 0;
@@ -323,14 +295,14 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Itemized Points Breakdown Badges */}
+                      {/* Itemized Points Breakdown Badges: 1. 基础分, 2. 按时, 3. 正确率突破 */}
                       <div className="pt-2 border-t border-slate-200/50 flex flex-wrap items-center justify-between gap-1.5 text-[11px] font-mono">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className={`px-2 py-0.5 rounded-md border text-[10px] font-sans ${timelyPts > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
-                            ⏱️ 按时: +{timelyPts}
-                          </span>
                           <span className={`px-2 py-0.5 rounded-md border text-[10px] font-sans ${basePts > 0 ? 'bg-blue-50 text-blue-700 border-blue-200 font-bold' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
                             📅 基础分: +{basePts}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md border text-[10px] font-sans ${timelyPts > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                            ⏱️ 按时: +{timelyPts}
                           </span>
                           <span className={`px-2 py-0.5 rounded-md border text-[10px] font-sans ${accBonus > 0 ? 'bg-amber-50 text-amber-700 border-amber-200 font-bold' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
                             🎯 正确率突破: +{accBonus}
@@ -344,16 +316,6 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
             )}
           </div>
 
-        </div>
-
-        {/* Footer */}
-        <div className="pt-3 border-t border-slate-100 flex justify-end flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shadow-xs"
-          >
-            关闭 (Close)
-          </button>
         </div>
       </div>
     </div>
