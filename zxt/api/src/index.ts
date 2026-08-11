@@ -717,7 +717,7 @@ app.post('/api/blg/poems/batch', authGuard, requireRole('editor', 'admin'), asyn
 });
 
 // Student Quiz History APIs — D1 DB Backed
-// Concise list endpoint: omit heavy details column from list response
+// Concise list endpoint: omit heavy details column from list response, but include totalQuestions and mistakeCount
 app.get('/api/student/history', authGuard, async (c) => {
   const caller = c.get('user')!;
   let studentId = c.req.query('studentId');
@@ -728,7 +728,7 @@ app.get('/api/student/history', authGuard, async (c) => {
   const db = c.env.zxt_poems_db;
   await initDB(db);
   const { results } = await db.prepare(
-    'SELECT id, student_id, poem_id, poem_title, score, accuracy, quiz_type, completed_at FROM quiz_history WHERE student_id = ? ORDER BY completed_at DESC'
+    'SELECT id, student_id, poem_id, poem_title, score, accuracy, quiz_type, details, completed_at FROM quiz_history WHERE student_id = ? ORDER BY completed_at DESC'
   ).bind(studentId).all<{
     id: string;
     student_id: string;
@@ -737,20 +737,41 @@ app.get('/api/student/history', authGuard, async (c) => {
     score: number;
     accuracy: string;
     quiz_type: string;
+    details: string;
     completed_at: string;
   }>();
 
-  const history = results.map(r => ({
-    id: r.id,
-    studentId: r.student_id,
-    poemId: r.poem_id,
-    poemTitle: r.poem_title,
-    score: r.score,
-    accuracy: r.accuracy,
-    quizType: r.quiz_type,
-    completedAt: r.completed_at
-  }));
+  const history = results.map(r => {
+    let totalQuestions = 0;
+    let mistakeCount = 0;
+    if (r.details) {
+      try {
+        const parsed = JSON.parse(r.details);
+        const qList = Array.isArray(parsed)
+          ? parsed
+          : (parsed && typeof parsed === 'object' && Array.isArray(parsed.questions)
+              ? parsed.questions
+              : (parsed && typeof parsed === 'object' ? Object.values(parsed).filter((v: any) => v && typeof v === 'object' && ('isCorrect' in v || 'questionId' in v)) : []));
+        totalQuestions = qList.length;
+        mistakeCount = qList.filter((q: any) => q && q.isCorrect === false).length;
+      } catch (_) {}
+    }
 
+    return {
+      id: r.id,
+      studentId: r.student_id,
+      poemId: r.poem_id,
+      poemTitle: r.poem_title,
+      score: r.score,
+      accuracy: r.accuracy,
+      quizType: r.quiz_type,
+      completedAt: r.completed_at,
+      totalQuestions,
+      mistakeCount
+    };
+  });
+
+  c.header('Cache-Control', 'private, max-age=60');
   return c.json({ history });
 });
 

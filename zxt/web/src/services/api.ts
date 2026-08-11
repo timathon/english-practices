@@ -4,6 +4,8 @@ import { idbService } from './db';
 export const API_BASE_URL = 'https://zxtapi.vibequizzing.com';
 export const USE_BACKEND = true; // Set to true when remote worker API is running
 
+const historyFetchThrottleMap: Record<string, number> = {};
+
 export function parseDate(timeStr?: string): Date | null {
   if (!timeStr) return null;
   let dateStr = timeStr.trim();
@@ -742,10 +744,20 @@ export const apiService = {
     return data;
   },
 
-  // Get Student Quiz History — Stale-While-Revalidate with IndexedDB
+  // Clear history throttle cache (e.g. after a new quiz completes)
+  clearHistoryFetchThrottle(studentId?: string) {
+    if (studentId) {
+      delete historyFetchThrottleMap[studentId];
+    } else {
+      Object.keys(historyFetchThrottleMap).forEach(k => delete historyFetchThrottleMap[k]);
+    }
+  },
+
+  // Get Student Quiz History — Stale-While-Revalidate with 1-minute time throttle
   async getQuizHistory(
     studentId: string = 'usr_stu_001',
-    onRemoteUpdate?: (updatedHistory: any[]) => void
+    onRemoteUpdate?: (updatedHistory: any[]) => void,
+    forceRefresh: boolean = false
   ): Promise<any[]> {
     // 1. Check both IndexedDB and synchronous localStorage cache for immediate response
     let cachedList = await idbService.getHistoryList(studentId);
@@ -760,13 +772,18 @@ export const apiService = {
     }
 
     const defaultHistory = [
-      { id: 'qh_001', poemTitle: '池上', poemId: 1, score: 50, accuracy: '50%', quizType: '班级作业闯关', completedAt: '2026/7/27 21:14:16' }
+      { id: 'qh_001', poemTitle: '池上', poemId: 1, score: 50, accuracy: '50%', quizType: '班级作业闯关', completedAt: '2026/7/27 21:14:16', totalQuestions: 4, mistakeCount: 2 }
     ];
 
     const initialList = (cachedList && cachedList.length > 0) ? cachedList : defaultHistory;
 
-    // 2. Fire remote DB query in background and update
-    if (USE_BACKEND) {
+    // 2. Throttle remote DB query: no duplicate request for same studentId within 60 seconds (1 min)
+    const now = Date.now();
+    const lastFetch = historyFetchThrottleMap[studentId] || 0;
+    const isThrottled = !forceRefresh && (now - lastFetch < 60000);
+
+    if (USE_BACKEND && !isThrottled) {
+      historyFetchThrottleMap[studentId] = now;
       (async () => {
         try {
           const res = await fetch(`${API_BASE_URL}/api/student/history?studentId=${encodeURIComponent(studentId)}`, {
@@ -791,26 +808,13 @@ export const apiService = {
     return initialList;
   },
 
-  // Get Single Quiz History Record Detail (with questions & answers) — Stale-While-Revalidate with IndexedDB
+  // Get Single Quiz History Record Detail (with questions & answers)
   async getQuizHistoryDetail(id: string): Promise<any | null> {
     if (!id) return null;
 
-    // 1. Check IndexedDB first
+    // 1. Check IndexedDB first; if detail exists in IndexedDB, return immediately without calling remote DB
     const cached = await idbService.getHistoryDetail(id);
     if (cached && cached.details && Array.isArray(cached.details) && cached.details.length > 0) {
-      // Revalidate in background if online
-      if (USE_BACKEND) {
-        fetch(`${API_BASE_URL}/api/student/history/${encodeURIComponent(id)}`, {
-          headers: getAuthHeaders()
-        })
-          .then(res => res.ok ? res.json() : null)
-          .then(data => {
-            if (data && data.details) {
-              idbService.saveHistoryDetail(data);
-            }
-          })
-          .catch(() => {});
-      }
       return cached;
     }
 
@@ -897,11 +901,26 @@ export const apiService = {
     // 1. Save history record locally
     const history = this.getQuizHistorySync(studentId);
     const recordId = (result as any).id || `qh_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const rawDetails = result.details || [];
+    const questionsList: any[] = Array.isArray(rawDetails)
+      ? rawDetails
+      : (rawDetails && typeof rawDetails === 'object' && Array.isArray((rawDetails as any).questions)
+          ? (rawDetails as any).questions
+          : (rawDetails && typeof rawDetails === 'object' ? Object.values(rawDetails).filter(v => v && typeof v === 'object' && ('isCorrect' in (v as any) || 'questionId' in (v as any))) : []));
+
+    const totalQs = (result as any).totalQuestions !== undefined ? (result as any).totalQuestions : questionsList.length;
+    const mistakeCnt = (result as any).mistakeCount !== undefined ? (result as any).mistakeCount : questionsList.filter((q: any) => q && q.isCorrect === false).length;
+
     const newRecord = {
       id: recordId,
       ...result,
+      totalQuestions: totalQs,
+      mistakeCount: mistakeCnt,
       completedAt: new Date().toLocaleString('zh-CN', { hour12: false })
     };
+
+    // Clear throttle so next history refresh can revalidate if needed
+    this.clearHistoryFetchThrottle(studentId);
 
     // Deduplicate in local history array
     const existingIndex = history.findIndex((h: any) => h.id === recordId);

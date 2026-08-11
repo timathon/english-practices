@@ -239,8 +239,23 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
     return itemTime === oldestTime;
   };
 
+  const [enrichedHistory, setEnrichedHistory] = useState<any[]>(quizHistory || []);
+
+  useEffect(() => {
+    setEnrichedHistory(quizHistory || []);
+    (quizHistory || []).forEach((h) => {
+      if ((h.mistakeCount > 0 || (h.score !== undefined && h.score < 100)) && (!h.details || h.details.length === 0) && h.id) {
+        apiService.getQuizHistoryDetail(h.id).then((det) => {
+          if (det && det.details) {
+            setEnrichedHistory(prev => prev.map(item => item.id === h.id ? { ...item, details: det.details } : item));
+          }
+        });
+      }
+    });
+  }, [quizHistory]);
+
   // Extract all mistakes across quiz history
-  const allMistakeItems = (quizHistory || []).flatMap((h) => {
+  const allMistakeItems = (enrichedHistory || []).flatMap((h) => {
     const rawDet = h?.details;
     const detailsArr: any[] = Array.isArray(rawDet)
       ? rawDet
