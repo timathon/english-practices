@@ -52,12 +52,17 @@ def main():
     
     genai_dir = Path(__file__).parent
     
+    is_c_giu = "v2-data/C-GIU" in folder_path.as_posix() or "v2-data/c-giu" in folder_path.as_posix().lower()
+    
     for script_name, out_suffix, in_type in SCRIPTS:
+        if is_c_giu and script_name not in ("gen_1_vg.py", "gen_2_vm.py", "gen_4_sa.py", "gen_5_rm.py", "gen_8_gw.py"):
+            continue
+
         script_path = genai_dir / script_name
         if not script_path.exists():
             print(f"Warning: Script {script_name} not found in {genai_dir}. Skipping.")
             continue
-            
+
         out_file = md_file.with_name(f"{md_file.stem}{out_suffix}")
         
         if out_file.exists():

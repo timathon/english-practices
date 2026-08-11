@@ -3,10 +3,11 @@
 gen_8_gw.py — Generate a grammar-wizard JSON from a unit markdown file (and optional contents JSON) via Gemini API.
 
 Usage:
-    python3 scripts/genai/gen_8_gw.py <path-to-unit.md> [--level "Grade X Semester Y Unit Z"]
+    python3 scripts/genai/gen_8_gw.py <path-to-unit.md> [--level "Grade X Semester Y Unit Z"] [--challenges N]
 
 Example:
     python3 scripts/genai/gen_8_gw.py data/B-PU1/b-pu1-u1/b-pu1-u1.md --level "Pupil's Book 1 - Unit 1"
+    python3 scripts/genai/gen_8_gw.py v2-data/C-GIU/c-giu-1-10/c-giu-1/c-giu-1.md --challenges 3
 
 Requires:
     pip install google-genai
@@ -29,7 +30,7 @@ PROMPT_TEMPLATE = """\
 You are an expert English curriculum analyst. Generate a Grammar Wizard JSON for the following primary school textbook unit.
 
 RULES:
-- Target Question Count: Exactly 2 Challenges of 10 questions each (20 questions total).
+- Target Question Count: Exactly {num_challenges} Challenges of 10 questions each ({total_questions} questions total).
 - Content Focus: Focus on the grammar points specified for the unit in the contents JSON (if provided) and the usage patterns in the unit's Markdown.
 - Questions should test:
   - Purpose: communicative function or goal.
@@ -64,19 +65,11 @@ JSON structure must exactly match this format:
           "hint": "<A brief hint in Chinese>"
         }}
       ]
-    }},
-    {{
-      "id": "c2",
-      "title": "<Short English Title for Challenge 2>",
-      "icon": "⚡",
-      "questions": [
-        // 10 more questions here...
-      ]
     }}
   ]
 }}
 
-Output ONLY valid JSON, no markdown fences, no commentary. Ensure exactly 20 questions total.
+Output ONLY valid JSON, no markdown fences, no commentary. Ensure exactly {num_challenges} challenges with 10 questions each ({total_questions} questions total, with IDs c1 to c{num_challenges}).
 
 UNIT TEXTBOOK CONTENTS JSON (Context):
 {contents}
@@ -91,6 +84,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate grammar-wizard JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to the unit markdown file (e.g. data/B-PU1/b-pu1-u1/b-pu1-u1.md)")
     parser.add_argument("--level", default="", help='Level label, e.g. "Pupil\'s Book 1 - Unit 1"')
+    parser.add_argument("--challenges", type=int, default=0, help="Number of challenges/sets of 10 questions to generate (default 3 for C-GIU, 2 otherwise)")
     args = parser.parse_args()
 
     md_path = Path(args.md_file)
@@ -98,11 +92,15 @@ def main():
         print(f"Error: file not found: {md_path}", file=sys.stderr)
         sys.exit(1)
 
+    is_c_giu = "v2-data/C-GIU" in md_path.as_posix() or "v2-data/c-giu" in md_path.as_posix().lower()
+    num_challenges = args.challenges if args.challenges > 0 else (3 if is_c_giu else 2)
+    total_questions = num_challenges * 10
+
     source = md_path.read_text(encoding="utf-8")
     source_file = md_path.name
     level = args.level or source_file.replace("-", " ").replace(".md", "").title()
 
-    # Try to find contents json in parent's parent directory (e.g. data/B-PU1/b-pu1-contents.json)
+    # Try to find contents json in parent's parent directory
     contents_str = "None provided."
     parent_dir = md_path.parent.parent
     contents_file = None
@@ -116,9 +114,15 @@ def main():
     api_key, model_name = get_genai_config(use_high)
 
     client = genai.Client(api_key=api_key)
-    prompt = PROMPT_TEMPLATE.format(level=level, contents=contents_str, source=source)
+    prompt = PROMPT_TEMPLATE.format(
+        level=level, 
+        contents=contents_str, 
+        source=source,
+        num_challenges=num_challenges,
+        total_questions=total_questions
+    )
 
-    print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
+    print(f"Calling {model_name} for: {md_path} ({num_challenges} challenges)", file=sys.stderr)
     import time
     response = None
     for attempt in range(5):
@@ -154,7 +158,7 @@ def main():
         json.dump(parsed, f, ensure_ascii=False, indent=2)
 
     total_qs = sum(len(c.get("questions", [])) for c in parsed.get("challenges", []))
-    print(f"Done! {total_qs} questions -> {out_path}", file=sys.stderr)
+    print(f"Done! {total_qs} questions ({len(parsed.get('challenges', []))} challenges) -> {out_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":
