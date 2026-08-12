@@ -9,6 +9,8 @@
  */
 
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 
 function getAccessToken() {
@@ -83,17 +85,46 @@ function fetchTimeSeries(token, filter, startTime, endTime) {
 }
 
 async function main() {
-    console.log("🔍 Fetching Google Cloud Chirp/TTS usage report for project [pitter-patter-469708]...\n");
+    console.log("🔍 Fetching Google Cloud Chirp 3 / TTS usage report for project [pitter-patter-469708]...\n");
 
     const token = getAccessToken();
 
+    // GCP Free tier resets at 00:00:00 UTC on the 1st of every calendar month
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
 
-    const startTime = thirtyDaysAgo.toISOString();
+    const startTime = startOfMonth.toISOString();
     const endTime = now.toISOString();
 
     const requestFilter = 'metric.type="serviceruntime.googleapis.com/api/request_count" AND resource.label.service="texttospeech.googleapis.com"';
+
+    // Sum exact character counts from local state JSON files generated this month
+    const audioDir = path.resolve(__dirname, '../../temp/audio');
+    let exactLocalChars = 0;
+    let localItemsCount = 0;
+
+    if (fs.existsSync(audioDir)) {
+        const files = fs.readdirSync(audioDir);
+        files.forEach(f => {
+            if (f.startsWith('chirp-') && f.endsWith('.json')) {
+                const filePath = path.join(audioDir, f);
+                try {
+                    const stat = fs.statSync(filePath);
+                    if (stat.mtime >= startOfMonth) {
+                        const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                        if (content.items && Array.isArray(content.items)) {
+                            content.items.forEach(item => {
+                                if (item["tts-done"] === 1 && item.text) {
+                                    exactLocalChars += item.text.trim().length;
+                                    localItemsCount++;
+                                }
+                            });
+                        }
+                    }
+                } catch (e) {}
+            }
+        });
+    }
 
     try {
         const requestData = await fetchTimeSeries(token, requestFilter, startTime, endTime);
@@ -110,22 +141,30 @@ async function main() {
             }
         }
 
-        // Average length estimate based on generated items (~47 chars per request)
-        const estimatedChars = totalRequests * 47;
         const freeMonthlyLimit = 1000000;
-        const percentUsed = ((estimatedChars / freeMonthlyLimit) * 100).toFixed(2);
-        const remainingChars = Math.max(0, freeMonthlyLimit - estimatedChars);
+        const usedChars = exactLocalChars > 0 ? exactLocalChars : totalRequests * 47;
+        const isExact = exactLocalChars > 0;
+        const percentUsed = ((usedChars / freeMonthlyLimit) * 100).toFixed(2);
+        const remainingChars = Math.max(0, freeMonthlyLimit - usedChars);
+        
+        // Pricing after 1M free chars: $30 per 1,000,000 characters
+        const billableChars = Math.max(0, usedChars - freeMonthlyLimit);
+        const estimatedCostUSD = ((billableChars / 1000000) * 30).toFixed(2);
+
+        const monthName = startOfMonth.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
         console.log("=================================================");
         console.log("📊 GOOGLE CLOUD CHIRP 3 / TTS USAGE REPORT");
         console.log("=================================================");
         console.log(`🔹 Project ID               : pitter-patter-469708`);
-        console.log(`🔹 Time Interval            : Past 30 Days`);
+        console.log(`🔹 Billing Cycle            : ${monthName} (1st - Now, UTC)`);
         console.log(`🔹 Total API Requests       : ${totalRequests.toLocaleString()}`);
-        console.log(`🔹 Estimated Chars Used     : ~${estimatedChars.toLocaleString()} chars`);
+        console.log(`🔹 ${isExact ? 'Exact' : 'Estimated'} Chars Synthesized : ${usedChars.toLocaleString()} chars ${isExact ? '(from local logs)' : ''}`);
         console.log(`🔹 Free Monthly Quota       : 1,000,000 chars`);
         console.log(`🔹 Quota Used               : ${percentUsed}%`);
-        console.log(`🔹 Remaining Free Quota     : ~${remainingChars.toLocaleString()} chars`);
+        console.log(`🔹 Remaining Free Quota     : ${remainingChars.toLocaleString()} chars`);
+        console.log(`🔹 Pricing Rate             : $30.00 / 1,000,000 chars (after 1M free limit)`);
+        console.log(`🔹 Est. Billable Cost       : $${estimatedCostUSD} USD`);
         console.log("=================================================\n");
 
     } catch (err) {
