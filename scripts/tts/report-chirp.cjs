@@ -84,6 +84,18 @@ function fetchTimeSeries(token, filter, startTime, endTime) {
     });
 }
 
+function expandAbbrForTTS(text) {
+    if (!text) return "";
+    let processed = text
+        .trim()
+        .replace(/\bsth\b/gi, 'something')
+        .replace(/\bsb\b/gi, 'somebody');
+    if (processed && !/[.!?]$/.test(processed)) {
+        processed += '.';
+    }
+    return processed;
+}
+
 async function main() {
     console.log("🔍 Fetching Google Cloud Chirp 3 / TTS usage report for project [pitter-patter-469708]...\n");
 
@@ -98,7 +110,7 @@ async function main() {
 
     const requestFilter = 'metric.type="serviceruntime.googleapis.com/api/request_count" AND resource.label.service="texttospeech.googleapis.com"';
 
-    // Sum exact character counts from local state JSON files generated this month
+    // Sum exact payload character counts from local state JSON files generated this month
     const audioDir = path.resolve(__dirname, '../../temp/audio');
     let exactLocalChars = 0;
     let localItemsCount = 0;
@@ -115,7 +127,8 @@ async function main() {
                         if (content.items && Array.isArray(content.items)) {
                             content.items.forEach(item => {
                                 if (item["tts-done"] === 1 && item.text) {
-                                    exactLocalChars += item.text.trim().length;
+                                    const speechPayload = expandAbbrForTTS(item.text);
+                                    exactLocalChars += speechPayload.length;
                                     localItemsCount++;
                                 }
                             });
