@@ -678,6 +678,91 @@ def audit_text_navigator(tn, unit_path, filename):
 
     return issues
 
+def audit_writing_map(data, filename):
+    issues = []
+    if not isinstance(data, dict):
+        issues.append({
+            "json_file": filename,
+            "rule_section": "7. Model Writing Map (MWM)",
+            "item_id": "root",
+            "issue_type": "Invalid Data Structure",
+            "description": "Root JSON must be an object containing 'sections'."
+        })
+        return issues
+
+    sections = data.get("sections", [])
+    if not isinstance(sections, list) or len(sections) == 0:
+        issues.append({
+            "json_file": filename,
+            "rule_section": "7. Model Writing Map (MWM)",
+            "item_id": "sections",
+            "issue_type": "Missing Sections",
+            "description": "Top-level object must contain a non-empty 'sections' array."
+        })
+        return issues
+
+    sec_names = [s.get("section", "") for s in sections]
+    if "Model Essay Basic" not in sec_names:
+        issues.append({
+            "json_file": filename,
+            "rule_section": "7. Model Writing Map (MWM)",
+            "item_id": "sections",
+            "issue_type": "Missing Section",
+            "description": "Missing required section 'Model Essay Basic'."
+        })
+    if "Model Essay Advanced" not in sec_names:
+        issues.append({
+            "json_file": filename,
+            "rule_section": "7. Model Writing Map (MWM)",
+            "item_id": "sections",
+            "issue_type": "Missing Section",
+            "description": "Missing required section 'Model Essay Advanced'."
+        })
+
+    for sec in sections:
+        sec_name = sec.get("section", "")
+        sec_tree = sec.get("tree", {})
+        
+        def check_wm_node(node, depth):
+            nid = node.get("id", "")
+            if depth > 4:
+                issues.append({
+                    "json_file": filename,
+                    "rule_section": "7. Model Writing Map (MWM)",
+                    "item_id": f"{sec_name}:{nid}",
+                    "issue_type": "Nesting Depth Exceeded",
+                    "description": f"Node '{nid}' at depth {depth} exceeds max allowed nesting depth of 4 levels."
+                })
+            
+            text = node.get("text", "")
+            speaker = node.get("speaker")
+            if speaker and text.startswith(speaker + ":"):
+                issues.append({
+                    "json_file": filename,
+                    "rule_section": "7. Model Writing Map (MWM)",
+                    "item_id": f"{sec_name}:{nid}",
+                    "issue_type": "Speaker Prefix in Text",
+                    "description": f"Text '{text}' contains redundant speaker prefix '{speaker}:'."
+                })
+
+            children = node.get("children", [])
+            # Check for flat structure (direct children > 5 where children are all leaf nodes)
+            if children and len(children) > 5 and all(len(c.get("children", [])) == 0 for c in children):
+                issues.append({
+                    "json_file": filename,
+                    "rule_section": "7. Model Writing Map (MWM)",
+                    "item_id": f"{sec_name}:{nid}",
+                    "issue_type": "Flat Tree Structure",
+                    "description": f"Node '{nid}' has {len(children)} direct leaf children without logical thematic sub-headings or grouping nodes (Level 1/2)."
+                })
+
+            for child in children:
+                check_wm_node(child, depth + 1)
+
+        check_wm_node(sec_tree, 0)
+
+    return issues
+
 def main():
     skip_llm = "--no-llm" in sys.argv or "--skip-llm" in sys.argv
     use_llm = not skip_llm
@@ -705,6 +790,7 @@ def main():
         "sa": f"{unit_name}-sentence-architect.json",
         "rm": f"{unit_name}-recall-map.json",
         "tn": f"{unit_name}-text-navigator.json",
+        "wm": f"{unit_name}-writing-map.json",
         "gw": f"{unit_name}-grammar-wizard.json",
         "pd": f"{unit_name}-passage-decoder-s.json"
     }
@@ -736,6 +822,8 @@ def main():
         all_issues.extend(audit_recall_map(data["rm"], unit_dir, files["rm"]))
     if data["tn"]:
         all_issues.extend(audit_text_navigator(data["tn"], unit_dir, files["tn"]))
+    if data["wm"]:
+        all_issues.extend(audit_writing_map(data["wm"], files["wm"]))
 
     # Deduplicate issues per (json_file, item_id, issue_type) so each issue type gets its own line
     merged_issues = []

@@ -10,10 +10,17 @@ export default defineConfig({
     strictPort: true
   },
   build: {
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('@huggingface/transformers')) {
+              return 'transformers';
+            }
+            if (id.includes('better-auth')) {
+              return 'better-auth';
+            }
             if (id.includes('recharts')) {
               return 'recharts';
             }

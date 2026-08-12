@@ -48,7 +48,7 @@ You are an expert English curriculum designer. Generate a text-navigator JSON fo
 - "explanation": Concise Chinese explanation for the true/false statement.
 - "emoji": One highly relevant emoji mnemonic per node.
 - "keywords": Comma-separated string of 2-5 trigger words acting as hints (e.g., "huge, storm"). Not needed for root.
-- "highlight": (Optional) Comma-separated string of glue words or transition phrases to highlight.
+- "highlight": MANDATORY for sentences containing glue words, conjunctions, discourse markers, or transition phrases (e.g., "if, when, because, however, for example, first, also, but, so, and, or, if...then"). Provide a comma-separated string of exact target glue words present in the sentence. Use "..." for split patterns (e.g., "if...then"). If no glue word/transition exists, set to "".
 - "children": Recursive array of child nodes (empty array [] for leaf nodes).
 
 Output ONLY valid JSON, no markdown fences, no commentary.

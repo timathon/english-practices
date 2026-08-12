@@ -24,6 +24,7 @@ SCRIPTS = [
     ("gen_4_sa.py", "-sentence-architect.json", "md"),
     ("gen_5_rm.py", "-recall-map.json", "md"),
     ("gen_6_tn.py", "-text-navigator.json", "md"),
+    ("gen_7_wm.py", "-writing-map.json", "wt_md"),
     ("gen_8_gw.py", "-grammar-wizard.json", "md"),
     ("gen_9_pd.py", "-passage-decoder-s.json", "md"),
     ("gen_10_test.py", "-test.json", "test_md"),
@@ -78,6 +79,11 @@ def main():
                 continue
         elif in_type == "test_md":
             input_file = md_file.with_name(f"{md_file.stem}-test.md")
+            if not input_file.exists():
+                print(f"Skipping {script_name} because {input_file.name} does not exist.")
+                continue
+        elif in_type == "wt_md":
+            input_file = md_file.with_name(f"{md_file.stem}-writing-task.md")
             if not input_file.exists():
                 print(f"Skipping {script_name} because {input_file.name} does not exist.")
                 continue
