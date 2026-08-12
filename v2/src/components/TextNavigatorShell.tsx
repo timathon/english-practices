@@ -26,9 +26,10 @@ interface TextNavigatorShellProps {
   data: TextNavigatorData
   textbook: string
   unit: string
+  practiceId?: string
 }
 
-export function TextNavigatorShell({ data, textbook, unit }: TextNavigatorShellProps) {
+export function TextNavigatorShell({ data, textbook, unit, practiceId }: TextNavigatorShellProps) {
   // Normalize both formats into a unified sections array
   const sections = useMemo((): { section: string; tree: any }[] => {
     return isSingleSection(data)
@@ -79,7 +80,7 @@ export function TextNavigatorShell({ data, textbook, unit }: TextNavigatorShellP
 
   // Dropdown select — only rendered when there are multiple sections, passed into MindMapShell header
   const dropdown = sections.length > 1 ? (
-    <div style={{ position: 'relative', display: 'inline-block', width: '200px', height: '32px', margin: '4px 0' }}>
+    <div style={{ position: 'relative', display: 'inline-block', width: 'clamp(180px, 50vw, 280px)', maxWidth: '100%', height: '32px', margin: '4px 0' }}>
       <select
         value={activeIdx}
         size={dropdownSize}
@@ -102,11 +103,14 @@ export function TextNavigatorShell({ data, textbook, unit }: TextNavigatorShellP
           left: '0',
           zIndex: 100,
           height: dropdownSize > 1 ? 'auto' : '32px',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
         }}
       >
         {sections.map((sec, idx) => (
           <option key={sec.section} value={idx} style={{ background: '#1e293b', color: '#fff', padding: '4px 8px' }}>
-            {sec.section}
+            [{idx + 1}/{sections.length}] {sec.section}
           </option>
         ))}
       </select>
@@ -119,6 +123,7 @@ export function TextNavigatorShell({ data, textbook, unit }: TextNavigatorShellP
       data={mindMapData}
       textbook={textbook}
       unit={unit}
+      practiceId={practiceId}
       isWritingMap={false}
       headerSlot={dropdown}
     />

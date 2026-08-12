@@ -4,6 +4,7 @@ import md5 from 'md5'
 import { Link } from 'react-router-dom'
 import { audioCache } from '../lib/audioCache'
 import { petService } from '../lib/petService'
+import { PronunciationModal } from './PronunciationModal'
 import './MindMapShell.css'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev"
@@ -37,11 +38,12 @@ interface MindMapShellProps {
   }
   textbook: string
   unit: string
+  practiceId?: string
   isWritingMap: boolean
   headerSlot?: ReactNode
 }
 
-export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }: MindMapShellProps) {
+export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, headerSlot }: MindMapShellProps) {
   const enableAudio = !isWritingMap || !!data.tts
   const [treeData, setTreeData] = useState<Node>(() => JSON.parse(JSON.stringify(data.tree)))
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
@@ -55,6 +57,7 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
   })
   const [isMobile, setIsMobile] = useState(false)
   const [isCnMode, setIsCnMode] = useState(false)
+  const [isEvalModalOpen, setIsEvalModalOpen] = useState(false)
   const [tempEnNodeId, setTempEnNodeId] = useState<string | null>(null)
   const tempEnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -965,6 +968,18 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
           >
             {isCnMode ? "EN" : "CN"}
           </button>
+          <button
+            className="mm-ctrl-btn eval-toggle"
+            onClick={() => setIsEvalModalOpen(true)}
+            title="Reading Pronunciation Evaluation (朗读发音评测)"
+            style={{
+              color: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              borderColor: '#38bdf8'
+            }}
+          >
+            🎙️
+          </button>
         </div>
 
         <div className="mm-progress-container">
@@ -1072,6 +1087,14 @@ export function MindMapShell({ data, textbook, unit, isWritingMap, headerSlot }:
           </div>
         </div>
       )}
+
+      <PronunciationModal
+        isOpen={isEvalModalOpen}
+        onClose={() => setIsEvalModalOpen(false)}
+        tree={data.tree}
+        sectionName={data.section}
+        practiceId={practiceId || `${textbook}-${unit}`}
+      />
     </div>
   )
 }

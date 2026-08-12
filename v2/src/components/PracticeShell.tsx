@@ -238,7 +238,7 @@ export function PracticeShell() {
 
 
     if (cleanType.startsWith('text-navigator')) {
-        return <TextNavigatorShell data={practice.content} textbook={practice.textbook} unit={practice.unit} />
+        return <TextNavigatorShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} unit={practice.unit} />
     }
 
     if (cleanType.startsWith('writing-map')) {
