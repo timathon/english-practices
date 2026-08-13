@@ -252,6 +252,8 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
         console.log(`☁️ Checking R2 bucket [${BUCKET_NAME}] for existing MP3 files in batches of 5...`);
         const r2ExistingIndices = new Set();
         const R2_BATCH = 5;
+        let checkedCount = 0;
+        const totalToCheck = indicesToSynthesize.length;
 
         for (let i = 0; i < indicesToSynthesize.length; i += R2_BATCH) {
             const chunk = indicesToSynthesize.slice(i, i + R2_BATCH);
@@ -270,9 +272,13 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
                     item["r2Url"] = `https://r2.smartedu.com/ep/${bookName}/${item.hash}.mp3`;
                 } catch (e) {
                     // Object does not exist in R2
+                } finally {
+                    checkedCount++;
+                    process.stdout.write(`\r🔍 Checking R2 cache [${checkedCount}/${totalToCheck}] (Found existing: ${r2ExistingIndices.size})`);
                 }
             }));
         }
+        process.stdout.write('\n');
 
         if (r2ExistingIndices.size > 0) {
             console.log(`⏭️ Found ${r2ExistingIndices.size} item(s) already in R2. Skipping synthesis for those.`);
@@ -325,7 +331,7 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
                 item["tts-done"] = 1;
                 item.voice = currentVoiceShort;
                 item.mp3 = localMp3Path;
-                process.stdout.write(`\r✅ Generated [${completedCount}/${jobState.items.length}] (${currentVoiceShort}): "${item.text.slice(0, 35)}${item.text.length > 35 ? '...' : ''}"`);
+                process.stdout.write(`\r✅ Generated [${completedCount}/${indicesToSynthesize.length}] (${currentVoiceShort}): "${item.text.slice(0, 35)}${item.text.length > 35 ? '...' : ''}"`);
             } catch (err) {
                 console.error(`\n❌ Error synthesizing speech for "${item.text}": ${err.message}`);
             }

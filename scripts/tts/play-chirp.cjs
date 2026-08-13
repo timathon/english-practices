@@ -200,8 +200,10 @@ function main() {
                         jobData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
                     } catch (e) {}
 
+                    console.log(`\n🎉 Upload completed! Successfully uploaded ${uploadedCount} file(s) to R2 bucket [${BUCKET_NAME}].\n`);
+
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true, count: uploadedCount }));
+                    res.end(JSON.stringify({ success: true, count: uploadedCount, message: `Successfully uploaded ${uploadedCount} file(s) to R2.` }));
                 } catch (e) {
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: e.message }));
@@ -733,6 +735,17 @@ function generateHtmlPage(jobData, jsonFileName) {
         </div>
     </div>
 
+    <!-- Upload Result Modal -->
+    <div class="upload-modal-overlay" id="uploadResultModal">
+        <div class="upload-modal-content" style="text-align: center;">
+            <h3 style="color: #22c55e;">🎉 Upload Complete!</h3>
+            <p id="uploadResultMsg" style="font-size: 15px; margin: 16px 0; color: #e2e8f0;"></p>
+            <div class="upload-modal-buttons" style="justify-content: center;">
+                <button class="upload-modal-btn btn-upload-all" style="padding: 10px 28px;" onclick="closeUploadResultModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const allItems = ${JSON.stringify(processedItems)};
         const selectedVoices = new Set(${JSON.stringify(sortedVoices)});
@@ -826,18 +839,37 @@ function generateHtmlPage(jobData, jsonFileName) {
                 });
                 const data = await res.json();
                 if (data.success) {
+                    const completionMsg = "🎉 Upload completed! Successfully uploaded " + data.count + " MP3 file(s) to Cloudflare R2.";
+                    console.log(completionMsg);
                     btn.textContent = "✅ Uploaded " + data.count + " items!";
-                    setTimeout(() => window.location.reload(), 1000);
+                    showUploadResultModal(completionMsg);
                 } else {
-                    alert('❌ Upload failed: ' + (data.error || 'Unknown error'));
+                    const errorMsg = '❌ Upload failed: ' + (data.error || 'Unknown error');
+                    console.error(errorMsg);
+                    alert(errorMsg);
                     btn.disabled = false;
                     btn.textContent = '☁️ Upload to R2';
                 }
             } catch (err) {
-                alert('❌ Error sending upload request: ' + err.message);
+                const errorMsg = '❌ Error sending upload request: ' + err.message;
+                console.error(errorMsg);
+                alert(errorMsg);
                 btn.disabled = false;
                 btn.textContent = '☁️ Upload to R2';
             }
+        };
+
+        window.showUploadResultModal = function(msg) {
+            const resultMsg = document.getElementById('uploadResultMsg');
+            const resultModal = document.getElementById('uploadResultModal');
+            if (resultMsg) resultMsg.textContent = msg;
+            if (resultModal) resultModal.style.display = 'flex';
+        };
+
+        window.closeUploadResultModal = function() {
+            const resultModal = document.getElementById('uploadResultModal');
+            if (resultModal) resultModal.style.display = 'none';
+            window.location.reload();
         };
 
         window.triggerRegenerate = async function() {

@@ -76,10 +76,8 @@ async function checkAudioExists(text, bookName) {
     const r2Key = `ep/${bookName}/${hash}.mp3`;
     try {
         await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
-        console.log(`Checking key: ${r2Key} for text: ${JSON.stringify(text)} -> EXISTS`);
         return { text, exists: true, hash, r2Key };
     } catch (e) {
-        console.log(`Checking key: ${r2Key} for text: ${JSON.stringify(text)} -> MISSING (${e.name})`);
         return { text, exists: false, hash, r2Key };
     }
 }
@@ -276,15 +274,25 @@ async function main() {
             tasksToProcess = Array.from(textsSet).map(text => ({ context_sentence: text }));
             console.log(`--regenerate flag active. Processing all ${tasksToProcess.length} items...`);
         } else {
-            console.log("Checking existing audios on R2...");
+            console.log("Checking existing audios on R2 in batches of 5...");
             const checkResults = [];
-            const checkBatchSize = 10;
+            const checkBatchSize = 5;
             const textsArray = Array.from(textsSet);
+            let checkedCount = 0;
+            let existingCount = 0;
+
             for (let i = 0; i < textsArray.length; i += checkBatchSize) {
                 const batch = textsArray.slice(i, i + checkBatchSize);
-                const batchResults = await Promise.all(batch.map(text => checkAudioExists(text, bookName)));
+                const batchResults = await Promise.all(batch.map(async (text) => {
+                    const res = await checkAudioExists(text, bookName);
+                    checkedCount++;
+                    if (res.exists) existingCount++;
+                    process.stdout.write(`\r🔍 Checking R2 cache [${checkedCount}/${textsArray.length}] (Found existing: ${existingCount})`);
+                    return res;
+                }));
                 checkResults.push(...batchResults);
             }
+            process.stdout.write('\n');
             const missing = checkResults.filter(r => !r.exists);
             console.log(`Check complete: ${checkResults.length - missing.length} exist, ${missing.length} missing.`);
             tasksToProcess = missing.map(m => ({ context_sentence: m.text }));
