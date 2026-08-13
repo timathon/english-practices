@@ -10,8 +10,19 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const textToSpeech = require('@google-cloud/text-to-speech');
+const { S3Client, HeadObjectCommand } = require("@aws-sdk/client-s3");
 
 const ttsClient = new textToSpeech.TextToSpeechClient();
+
+const s3Client = new S3Client({
+    region: "auto",
+    endpoint: "https://11927bf8264141e4f5b12471ea4d95d8.r2.cloudflarestorage.com",
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+});
+const BUCKET_NAME = "embroid-001";
 
 const CHIRP3_VOICES = [
     /*'Achernar', */ 'Achird', 'Algenib', /* 'Algieba', */ 'Alnilam', /* 'Aoede', */ 'Autonoe',
@@ -235,6 +246,39 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
             .filter(idx => idx !== -1);
     } else {
         indicesToSynthesize = jobState.items.map((_, idx) => idx);
+    }
+
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && !forceRegenerate) {
+        console.log(`☁️ Checking R2 bucket [${BUCKET_NAME}] for existing MP3 files in batches of 5...`);
+        const r2ExistingIndices = new Set();
+        const R2_BATCH = 5;
+
+        for (let i = 0; i < indicesToSynthesize.length; i += R2_BATCH) {
+            const chunk = indicesToSynthesize.slice(i, i + R2_BATCH);
+            await Promise.all(chunk.map(async (idx) => {
+                const item = jobState.items[idx];
+                const r2Key = `ep/${bookName}/${item.hash}.mp3`;
+                try {
+                    await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: r2Key }));
+                    r2ExistingIndices.add(idx);
+                    item["tts-done"] = 1;
+                    item["upload-done"] = 1;
+                    item["regenbatch"] = "batch-r2-existing";
+                    if (!item["voice"]) {
+                        item["voice"] = "R2-Existing";
+                    }
+                    item["r2Url"] = `https://r2.smartedu.com/ep/${bookName}/${item.hash}.mp3`;
+                } catch (e) {
+                    // Object does not exist in R2
+                }
+            }));
+        }
+
+        if (r2ExistingIndices.size > 0) {
+            console.log(`⏭️ Found ${r2ExistingIndices.size} item(s) already in R2. Skipping synthesis for those.`);
+            indicesToSynthesize = indicesToSynthesize.filter(idx => !r2ExistingIndices.has(idx));
+            saveJobState();
+        }
     }
 
     console.log(`📁 Saving generated MP3s locally to: ${batchOutputDir}`);

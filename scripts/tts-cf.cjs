@@ -240,40 +240,41 @@ async function main() {
         return { text, r2Key };
     });
 
-    console.log(`Processing all ${tasks.length} texts sequentially...`);
+    console.log(`Processing all ${tasks.length} texts in batches of 5...`);
+    const BATCH_SIZE = 5;
 
-    for (let idx = 0; idx < tasks.length; idx++) {
-        const item = tasks[idx];
-        const itemIndex = idx + 1;
-        try {
-            let exists = false;
+    for (let idx = 0; idx < tasks.length; idx += BATCH_SIZE) {
+        const chunk = tasks.slice(idx, idx + BATCH_SIZE);
+
+        await Promise.all(chunk.map(async (item, chunkIdx) => {
+            const itemIndex = idx + chunkIdx + 1;
             try {
-                await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: item.r2Key }));
-                exists = true;
-            } catch (e) {
-                // Keep exists = false
+                let exists = false;
+                try {
+                    await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: item.r2Key }));
+                    exists = true;
+                } catch (e) {
+                    // Keep exists = false
+                }
+
+                if (exists) {
+                    console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ⏭️ Already exists in R2`);
+                    return;
+                }
+
+                const audioBuffer = await getMeloTTSAudio(item.text);
+                const uploadParams = {
+                    Bucket: BUCKET_NAME,
+                    Key: item.r2Key,
+                    Body: audioBuffer,
+                    ContentType: "audio/wav",
+                };
+                await s3Client.send(new PutObjectCommand(uploadParams));
+                console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ✅ Uploaded to R2: ${item.r2Key} (${(audioBuffer.length / 1024).toFixed(1)} KB)`);
+            } catch (err) {
+                console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ❌ Failed: ${err.message}`);
             }
-
-            if (exists) {
-                console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ⏭️ Already exists in R2`);
-                continue;
-            }
-
-            const audioBuffer = await getMeloTTSAudio(item.text);
-            const uploadParams = {
-                Bucket: BUCKET_NAME,
-                Key: item.r2Key,
-                Body: audioBuffer,
-                ContentType: "audio/wav",
-            };
-            await s3Client.send(new PutObjectCommand(uploadParams));
-            console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ✅ Uploaded to R2: ${item.r2Key} (${(audioBuffer.length / 1024).toFixed(1)} KB)`);
-        } catch (err) {
-            console.log(`   [${itemIndex}/${tasks.length}] 🎙️ "${item.text}" … ❌ Failed: ${err.message}`);
-        }
-
-        // Small delay between requests to avoid rate-limiting
-        await new Promise(r => setTimeout(r, 200));
+        }));
     }
 
     try {

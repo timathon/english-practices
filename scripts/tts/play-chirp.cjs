@@ -171,24 +171,28 @@ function main() {
                         return res.end(JSON.stringify({ success: true, message: 'No MP3 files to upload', count: 0 }));
                     }
 
-                    console.log(`\n☁️ Uploading ${itemsToUpload.length} file(s) to R2 bucket [${BUCKET_NAME}]...`);
+                    console.log(`\n☁️ Uploading ${itemsToUpload.length} file(s) to R2 bucket [${BUCKET_NAME}] in batches of 5...`);
                     let uploadedCount = 0;
+                    const BATCH_SIZE = 5;
 
-                    for (const item of itemsToUpload) {
-                        const r2Key = `ep/${bookName}/${item.hash}.mp3`;
-                        try {
-                            await s3Client.send(new PutObjectCommand({
-                                Bucket: BUCKET_NAME,
-                                Key: r2Key,
-                                Body: fs.readFileSync(item.mp3),
-                                ContentType: 'audio/mpeg'
-                            }));
-                            uploadedCount++;
-                            item["upload-done"] = 1;
-                            console.log(`✅ Uploaded [${uploadedCount}/${itemsToUpload.length}]: ${r2Key}`);
-                        } catch (uploadErr) {
-                            console.error(`❌ Failed to upload ${r2Key}: ${uploadErr.message}`);
-                        }
+                    for (let i = 0; i < itemsToUpload.length; i += BATCH_SIZE) {
+                        const batch = itemsToUpload.slice(i, i + BATCH_SIZE);
+                        await Promise.all(batch.map(async (item) => {
+                            const r2Key = `ep/${bookName}/${item.hash}.mp3`;
+                            try {
+                                await s3Client.send(new PutObjectCommand({
+                                    Bucket: BUCKET_NAME,
+                                    Key: r2Key,
+                                    Body: fs.readFileSync(item.mp3),
+                                    ContentType: 'audio/mpeg'
+                                }));
+                                uploadedCount++;
+                                item["upload-done"] = 1;
+                                console.log(`✅ Uploaded [${uploadedCount}/${itemsToUpload.length}]: ${r2Key}`);
+                            } catch (uploadErr) {
+                                console.error(`❌ Failed to upload ${r2Key}: ${uploadErr.message}`);
+                            }
+                        }));
                     }
 
                     fs.writeFileSync(jsonPath, JSON.stringify(currentJob, null, 2), 'utf8');
@@ -245,6 +249,12 @@ function generateHtmlPage(jobData, jsonFileName) {
                 border: 'rgba(56, 189, 248, 0.35)',
                 text: '#38bdf8'
             };
+        } else if (batch === 'batch-r2-existing') {
+            batchColorMap[batch] = {
+                bg: 'rgba(168, 85, 247, 0.15)',
+                border: 'rgba(168, 85, 247, 0.35)',
+                text: '#c084fc'
+            };
         } else {
             // Distribute hues across HSL wheel for distinct colors
             const hue = (idx * 137.5 + 45) % 360; // Golden ratio angle distribution
@@ -266,6 +276,8 @@ function generateHtmlPage(jobData, jsonFileName) {
             } else {
                 relativeMp3 = '/audio/' + path.basename(path.dirname(i.mp3)) + '/' + path.basename(i.mp3);
             }
+        } else if (i.r2Url) {
+            relativeMp3 = i.r2Url;
         }
         return {
             text: i.text,
