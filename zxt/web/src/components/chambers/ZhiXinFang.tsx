@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AvatarDisplay, PIXEL_PRESET_BASES, PIXEL_ACCESSORY_OPTIONS, PIXEL_HALO_COLORS, AvatarConfig, DEFAULT_AVATAR_CONFIG } from '../AvatarDisplay';
-
-
-
+import { GemExchangeModal } from '../GemExchangeModal';
+import { apiService } from '../../services/api';
 
 interface ZhiXinFangProps {
   user: any;
@@ -12,13 +11,25 @@ interface ZhiXinFangProps {
 }
 
 export const ZhiXinFang: React.FC<ZhiXinFangProps> = ({ user, initialConfig, onUpdateAvatar, onDirtyChange }) => {
+  const studentId = user?.id || 'usr_stu_001';
   const [activeTab, setActiveTab] = useState<'avatar' | 'shop'>('avatar');
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(() => {
     return initialConfig || user?.avatarConfig || DEFAULT_AVATAR_CONFIG;
   });
-  const [userGems, setUserGems] = useState<number>(user?.points || 120);
+  const [userGems, setUserGems] = useState<number>(() => apiService.getGemsSync(studentId));
   const [isDirty, setIsDirty] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showExchangeModal, setShowExchangeModal] = useState(false);
+
+  const refreshGems = () => {
+    setUserGems(apiService.getGemsSync(studentId));
+  };
+
+  useEffect(() => {
+    refreshGems();
+    window.addEventListener('zxt_user_updated', refreshGems);
+    return () => window.removeEventListener('zxt_user_updated', refreshGems);
+  }, [studentId]);
 
   const handleSelectOption = (key: keyof AvatarConfig, value: string) => {
     const updated = { ...avatarConfig, [key]: value };
@@ -48,14 +59,21 @@ export const ZhiXinFang: React.FC<ZhiXinFangProps> = ({ user, initialConfig, onU
             </div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-serif">知新使者造型工坊 & 星石阁</h1>
             <p className="text-purple-200/80 text-sm mt-1">
-              用做作业积累的【知新星石】打造你的独一无二“知新使者”形象与个人修炼室。
+              用做作业积累的【智慧点】兑换【知新星石】（兑换比例 100 智慧点 = 1 星石），打造你的独一无二“知新使者”形象与个人修炼室。
             </p>
           </div>
-          <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/20">
-            <span className="text-2xl">💎</span>
+          <div
+            onClick={() => setShowExchangeModal(true)}
+            className="flex items-center gap-4 bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/20 hover:border-amber-400/60 cursor-pointer transition shadow-md hover:scale-105 group"
+            title="点击兑换星石与查看账单明细"
+          >
+            <span className="text-2xl group-hover:animate-bounce">💎</span>
             <div>
-              <div className="text-xs text-purple-200">知新星石 (Star Gems)</div>
-              <div className="text-xl font-bold text-amber-300">{userGems}</div>
+              <div className="text-xs text-purple-200 group-hover:text-amber-300 transition">知新星石 (Star Gems)</div>
+              <div className="text-xl font-bold text-amber-300 flex items-center gap-1">
+                {userGems}
+                <span className="text-[10px] bg-amber-400/20 border border-amber-400/40 text-amber-300 px-1.5 py-0.2 rounded font-normal">兑换 ⚡</span>
+              </div>
             </div>
           </div>
         </div>
@@ -230,15 +248,33 @@ export const ZhiXinFang: React.FC<ZhiXinFangProps> = ({ user, initialConfig, onU
                   <button
                     onClick={() => {
                       if (userGems >= item.cost) {
-                        setUserGems(userGems - item.cost);
+                        const newBal = userGems - item.cost;
+                        setUserGems(newBal);
+                        const gemsHistory = apiService.getGemsHistorySync(studentId);
+                        gemsHistory.unshift({
+                          id: `gh_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+                          type: 'spend',
+                          gemsChanged: -item.cost,
+                          gemsBalance: newBal,
+                          pointsBalance: apiService.calculateTotalPoints(apiService.getQuizHistorySync(studentId)),
+                          description: `解锁装扮【${item.title}】`,
+                          timestamp: new Date().toLocaleString('zh-CN', { hour12: false })
+                        });
+                        localStorage.setItem(`zxt_gems_history_${studentId}`, JSON.stringify(gemsHistory));
+                        const activeUser = apiService.getSession();
+                        if (activeUser) {
+                          activeUser.gems = newBal;
+                          localStorage.setItem('zxt_user', JSON.stringify(activeUser));
+                          window.dispatchEvent(new Event('zxt_user_updated'));
+                        }
                         alert(`成功兑换 ${item.title}！`);
                       } else {
-                        alert('知新星石不足，快去正堂完成作业赚取吧！');
+                        setShowExchangeModal(true);
                       }
                     }}
                     className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-semibold hover:bg-purple-700 transition"
                   >
-                    兑换
+                    {userGems >= item.cost ? '兑换' : '去兑换星石 ⚡'}
                   </button>
                 </div>
               </div>
@@ -246,6 +282,16 @@ export const ZhiXinFang: React.FC<ZhiXinFangProps> = ({ user, initialConfig, onU
           </div>
         </div>
       )}
+
+      {/* Gem Exchange Modal */}
+      <GemExchangeModal
+        isOpen={showExchangeModal}
+        onClose={() => setShowExchangeModal(false)}
+        user={user}
+        onExchangeSuccess={() => {
+          refreshGems();
+        }}
+      />
     </div>
   );
 };

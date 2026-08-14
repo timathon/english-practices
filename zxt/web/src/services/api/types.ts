@@ -10,6 +10,17 @@ export interface UserSession {
   capabilities: string[];
   isQuizEditor?: boolean;
   points?: number;
+  gems?: number;
+  gemsHistory?: Array<{
+    id: string;
+    type: 'exchange' | 'spend';
+    pointsDeducted?: number;
+    gemsChanged: number;
+    gemsBalance: number;
+    pointsBalance: number;
+    description: string;
+    timestamp: string;
+  }>;
   streakDays?: number;
   avatarConfig?: AvatarConfig;
 }

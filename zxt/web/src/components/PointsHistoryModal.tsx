@@ -13,6 +13,7 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
   user,
 }) => {
   const [showExamples, setShowExamples] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -85,10 +86,17 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                 </div>
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-right flex flex-col items-end gap-1.5">
               <div className="text-[10px] text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-full font-bold">
                 学海无涯 · 积少成多
               </div>
+              <button
+                onClick={() => setShowExpenseModal(true)}
+                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-[11px] font-bold shadow-xs transition flex items-center gap-1"
+                title="查看智慧点兑换与支出明细"
+              >
+                <span>💸</span> 智慧点支出记录
+              </button>
             </div>
           </div>
 
@@ -337,6 +345,98 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
 
         </div>
       </div>
+
+      {/* Points Expenditure Modal */}
+      {showExpenseModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowExpenseModal(false)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 px-6 py-4 flex items-center justify-between text-white flex-shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shadow-xs">
+                  💸
+                </div>
+                <div>
+                  <h2 className="font-bold text-lg font-serif">智慧点支出与兑换记录</h2>
+                  <p className="text-amber-100 text-xs">显示兑换知新星石消耗的智慧点明细账单</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowExpenseModal(false)}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition flex items-center justify-center text-white text-lg font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-6 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+              {(() => {
+                const studentId = user?.id || 'usr_stu_001';
+                const gemsHistory = apiService.getGemsHistorySync(studentId);
+                const expenseRecords = gemsHistory.filter((item: any) => item.pointsDeducted && item.pointsDeducted > 0);
+
+                if (expenseRecords.length === 0) {
+                  return (
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 text-center text-xs text-slate-400 space-y-2">
+                      <div className="text-3xl">🪙</div>
+                      <div>暂无智慧点支出记录！</div>
+                      <div className="text-[11px] text-slate-400">可在【知新坊】中将 100 智慧点兑换为 1 知新星石。</div>
+                    </div>
+                  );
+                }
+
+                const totalSpent = expenseRecords.reduce((sum: number, item: any) => sum + (item.pointsDeducted || 0), 0);
+
+                return (
+                  <>
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-center justify-between">
+                      <span className="text-xs text-amber-900 font-semibold flex items-center gap-1.5">
+                        <span>📊</span> 累计支出智慧点
+                      </span>
+                      <span className="text-base font-bold font-mono text-amber-700">
+                        -{totalSpent} pts
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 pt-1">
+                      {expenseRecords.map((item: any) => (
+                        <div
+                          key={item.id}
+                          className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex items-center justify-between hover:border-amber-300 transition"
+                        >
+                          <div className="space-y-0.5">
+                            <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                              <span>🔄</span> {item.description}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-mono">
+                              {item.timestamp}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold font-mono text-sm text-red-600 block">
+                              -{item.pointsDeducted} 🪙
+                            </span>
+                            <span className="text-[10px] text-emerald-600 font-mono font-semibold">
+                              +{item.gemsChanged} 💎
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

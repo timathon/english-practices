@@ -2,12 +2,12 @@ import { authService, canEditQuizLibrary } from './auth';
 import { poemsService } from './poems';
 import { rosterService } from './roster';
 import { assignmentsService } from './assignments';
-import { historyService, clearHistoryFetchThrottle, calculateTotalPoints } from './history';
+import { historyService, clearHistoryFetchThrottle, calculateTotalPoints, getGemsHistorySync, getGemsSync, exchangePointsForGems } from './history';
 import { progressService } from './progress';
 
 export * from './types';
 export * from './config';
-export { canEditQuizLibrary, clearHistoryFetchThrottle, calculateTotalPoints };
+export { canEditQuizLibrary, clearHistoryFetchThrottle, calculateTotalPoints, getGemsHistorySync, getGemsSync, exchangePointsForGems };
 
 export const apiService = {
   // Auth
@@ -48,6 +48,9 @@ export const apiService = {
   getQuizHistory: historyService.getQuizHistory.bind(historyService),
   getQuizHistoryDetail: historyService.getQuizHistoryDetail.bind(historyService),
   calculateTotalPoints,
+  getGemsHistorySync,
+  getGemsSync,
+  exchangePointsForGems,
   getQuizHistorySync: historyService.getQuizHistorySync.bind(historyService),
   recordQuizResult: historyService.recordQuizResult.bind(historyService),
 

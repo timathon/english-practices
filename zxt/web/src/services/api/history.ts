@@ -14,7 +14,7 @@ export function clearHistoryFetchThrottle(studentId?: string) {
 }
 
 export function calculateTotalPoints(history: any[] = []): number {
-  return (history || []).reduce((sum: number, item: any, idx: number) => {
+  const practicePoints = (history || []).reduce((sum: number, item: any, idx: number) => {
     const numS = Number(item.score) || 0;
     const pb = item.details?.pointBreakdown;
     if (pb && pb.totalEarnedPoints !== undefined) {
@@ -51,6 +51,70 @@ export function calculateTotalPoints(history: any[] = []): number {
 
     return sum + base + timely + acc;
   }, 0);
+
+  // Subtract points spent on gem exchanges
+  const gemsHistory = getGemsHistorySync();
+  const totalExchangedPoints = gemsHistory.reduce((sum, h) => sum + (h.pointsDeducted || 0), 0);
+
+  return Math.max(0, practicePoints - totalExchangedPoints);
+}
+
+export function getGemsHistorySync(studentId: string = 'usr_stu_001'): any[] {
+  const stored = localStorage.getItem(`zxt_gems_history_${studentId}`);
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored);
+  } catch (_) {
+    return [];
+  }
+}
+
+export function getGemsSync(studentId: string = 'usr_stu_001'): number {
+  const gemsHistory = getGemsHistorySync(studentId);
+  return gemsHistory.reduce((sum, h) => sum + (h.gemsChanged || 0), 0);
+}
+
+export function exchangePointsForGems(studentId: string, pointsToExchange: number): { success: boolean; gemsEarned: number; newPoints: number; newGems: number; error?: string } {
+  if (pointsToExchange <= 0 || pointsToExchange % 100 !== 0) {
+    return { success: false, gemsEarned: 0, newPoints: 0, newGems: 0, error: '兑换智慧点必须为 100 的整数倍！' };
+  }
+
+  const history = historyService.getQuizHistorySync(studentId);
+  const currentPoints = calculateTotalPoints(history);
+
+  if (currentPoints < pointsToExchange) {
+    return { success: false, gemsEarned: 0, newPoints: currentPoints, newGems: getGemsSync(studentId), error: `智慧点不足！当前仅有 ${currentPoints} 智慧点。` };
+  }
+
+  const gemsEarned = pointsToExchange / 100;
+  const currentGems = getGemsSync(studentId);
+  const newGems = currentGems + gemsEarned;
+  const newPoints = currentPoints - pointsToExchange;
+
+  const gemsHistory = getGemsHistorySync(studentId);
+  const record = {
+    id: `gh_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    type: 'exchange',
+    pointsDeducted: pointsToExchange,
+    gemsChanged: gemsEarned,
+    gemsBalance: newGems,
+    pointsBalance: newPoints,
+    description: `消耗 ${pointsToExchange} 智慧点 兑换 +${gemsEarned} 知新星石`,
+    timestamp: new Date().toLocaleString('zh-CN', { hour12: false })
+  };
+
+  gemsHistory.unshift(record);
+  localStorage.setItem(`zxt_gems_history_${studentId}`, JSON.stringify(gemsHistory));
+
+  const activeUser = authService.getSession();
+  if (activeUser) {
+    activeUser.points = newPoints;
+    activeUser.gems = newGems;
+    setCurrentSession(activeUser);
+    window.dispatchEvent(new Event('zxt_user_updated'));
+  }
+
+  return { success: true, gemsEarned, newPoints, newGems };
 }
 
 export const historyService = {

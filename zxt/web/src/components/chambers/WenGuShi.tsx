@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { ActivityWeeklyChart } from '../ActivityWeeklyChart';
 import { CachedImage } from '../CachedImage';
 import { StudentSelfStudyTab } from '../bailiange/StudentSelfStudyTab';
 import { apiService } from '../../services/api';
+import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
 
 interface WenGuShiProps {
   user: any;
@@ -14,6 +16,7 @@ interface WenGuShiProps {
 
 // ── Quiz Record Detail Modal ─────────────────────────────────────────────────
 const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ record, onClose }) => {
+  useLockBodyScroll(true);
   const [mistakesOnly, setMistakesOnly] = useState(false);
   const [fullRecord, setFullRecord] = useState<any>(record);
 
@@ -55,9 +58,9 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
   const cleanText = (s: string) => (s ?? '').toString().replace(/^[A-Z]\.\s*/, '').trim();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-3 sm:p-4" onClick={onClose}>
       <div
-        className="bg-white w-full sm:max-w-2xl max-h-[92vh] rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        className="bg-white w-full max-w-2xl max-h-[88vh] rounded-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -447,34 +450,41 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
 
       {/* ── Main Tab 1: Practice History ── */}
       {activeMainTab === 'history' && (
-        <div>
-          <div className="flex items-center justify-between mb-3 px-1 flex-wrap gap-2">
+        <div className="space-y-4">
+          {/* Weekly Activity Diagram (Practices Count & Avg Score) */}
+          <ActivityWeeklyChart
+            quizHistory={quizHistory}
+            activeSubjectTab={activeSubjectTab}
+            selectedDate={historyDateFilter}
+            onSelectDate={(dateStr) => {
+              // Toggle date filter on click
+              if (historyDateFilter === dateStr) {
+                setHistoryDateFilter('');
+              } else {
+                setHistoryDateFilter(dateStr);
+              }
+            }}
+          />
+
+          <div className="flex items-center justify-between mb-3 px-1 flex-wrap gap-2 pt-2">
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <span className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-sm">📓</span>
-                {activeSubjectTab === 'chinese' ? '语文' : activeSubjectTab === 'math' ? '数学' : '英语'} · 修业历史
+                {activeSubjectTab === 'chinese' ? '语文' : activeSubjectTab === 'math' ? '数学' : '英语'} · 修业记录明细
               </h2>
 
-              {/* Date picker on the right of h2 修业历史 */}
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="date"
-                  value={historyDateFilter}
-                  onChange={(e) => setHistoryDateFilter(e.target.value)}
-                  className="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-xl text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-2xs cursor-pointer"
-                  title="按日期筛选修业历史"
-                />
-                {historyDateFilter && (
-                  <button
-                    type="button"
-                    onClick={() => setHistoryDateFilter('')}
-                    className="text-xs text-slate-400 hover:text-slate-600 px-1.5 py-0.5 rounded hover:bg-slate-100 transition"
-                    title="显示所有日期"
-                  >
-                    显示全部
-                  </button>
-                )}
-              </div>
+              {historyDateFilter && (
+                <button
+                  type="button"
+                  onClick={() => setHistoryDateFilter('')}
+                  className="text-xs text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full font-bold hover:bg-blue-100 transition flex items-center gap-1"
+                  title="清除日期筛选"
+                >
+                  <span>📅</span>
+                  <span>已筛选: {historyDateFilter}</span>
+                  <span className="ml-1 text-blue-400">✕</span>
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-2">

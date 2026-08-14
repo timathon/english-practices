@@ -122,7 +122,7 @@ Standard educational and gaming terms are unified into a cohesive, culturally ri
 | **Chinese (识字, 拼音, 古诗, 成语)** | Literacy & Classics | **国韵修业 (Chinese Culture Practices)** |
 | **Math & English** | Core Science & Language | **数理与通译 (Math & English Practices)** |
 | **Players / Students** | Hero / Avatar | **知新使者 (Zhī Xīn Emissaries)** |
-| **Currency** | Gold / Coins | **知新星石 (Star Gems)** |
+| **Currency** | Gold / Coins | **智慧点 (Wisdom Points) & 知新星石 (Star Gems)**<br>*(Exchange rate: 100 智慧点 = 1 知新星石)* |
 | **Tools / Gadgets** | Weapons / Guns | **知新宝器 (Artifacts of Innovation)** |
 | **Companions** | Battle Pets | **堂中灵兽 (Hall Spirit Beasts)** |
 
