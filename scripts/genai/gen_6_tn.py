@@ -35,13 +35,13 @@ You are an expert English curriculum designer. Generate a text-navigator JSON fo
 
 === TREE RULES ===
 - Each "tree" is a hierarchical mindmap (root node ID "root").
-- CRITICAL HIERARCHY REQUIREMENT: You MUST build a structured 3-level tree hierarchy (root -> Level 1 Major Parts/Topics -> Level 2 Sub-headings/Focus -> Level 3 Verbatim Sentences).
-- DO NOT put all sentences in a flat list directly under the root or under a single parent node. Never allow any non-root parent node to have more than 5 direct leaf children without creating thematic sub-heading nodes (Level 1 and Level 2) first.
+- CRITICAL HIERARCHY REQUIREMENT: You MUST build a structured 3-level tree hierarchy (root -> Level 1 Major Sections/Conversations/Passages -> Level 2 Thematic Sub-headings/Sub-topics -> Level 3 Verbatim Sentence Leaf Nodes).
+- STRICT PROHIBITION AGAINST FLAT TREES: DO NOT place verbatim sentence leaf nodes directly under Level 1 nodes or directly under root. Every Level 1 node MUST be subdivided into 2 or more Level 2 thematic sub-heading nodes (e.g., "Greetings & Introduction", "Shopping for Cake", "Father's Birthday Wishes"). Never allow any non-root node to have more than 4 direct leaf children without creating Level 2 sub-heading nodes first.
 - Max nesting depth is 4 levels.
 - "id": Unique, logical string IDs (e.g., "root", "sec_1", "part1_sub1", "p1_1"). Must be unique within each tree.
-- "text": Exact verbatim text from the passage. Leaf nodes should contain ONLY ONE sentence. If a speaker is specified (e.g., "Emma:"), omit the speaker name/prefix from the "text" field and put it in "speaker".
+- "text": Exact verbatim text from the passage for leaf nodes. Intermediate nodes (Level 1 and Level 2) must have descriptive titles summarizing the thematic focus. If a speaker is specified in a sentence (e.g., "Emma:"), omit the speaker name/prefix from the "text" field and put it in "speaker".
 - "speaker": (Optional) The name of the speaker if the sentence is a dialogue (e.g., "Rocky", "Emma", "Sam"). If the text includes narrative speech verbs (e.g. 'I say', 'she says', 'says Mum'), keep the full narrative text intact and do NOT use the "speaker" field.
-- "cn": Chinese translation of the sentence (do not include the speaker name prefix here either).
+- "cn": Chinese translation of the sentence (or thematic section title for intermediate nodes).
 - "notes": Brief explanations of difficult vocabulary, expressions, or grammar points.
 - "statement": A simple true/false statement in Chinese about the sentence's grammar or vocabulary.
 - "answer": Boolean true or false for the statement.
@@ -72,31 +72,39 @@ Output ONLY valid JSON, no markdown fences, no commentary.
             "emoji": "🎒",
             "children": [
               {{
-                "id": "p1_1",
-                "text": "Look at the bag!",
-                "speaker": "Rocky",
-                "cn": "看那个包！",
-                "notes": "Look at... = 看……",
-                "statement": "这句话是一个祈使句。",
-                "answer": true,
-                "explanation": "Look at 动词原形开头，是祈使句。",
-                "emoji": "👀",
-                "keywords": "look, bag",
-                "highlight": "Look at",
-                "children": []
-              }},
-              {{
-                "id": "p1_2",
-                "text": "Yes, I'm the teacher!",
-                "speaker": "Mary",
-                "cn": "是的，我是老师！",
-                "notes": "I'm = I am 的缩写",
-                "statement": "句中的 I'm 指的是别人。",
-                "answer": false,
-                "explanation": "I'm 是 I am 的缩写，意思是“我是”。",
-                "emoji": "👩‍🏫",
-                "keywords": "yes, teacher",
-                "children": []
+                "id": "panel1_sub1",
+                "text": "Arriving at School",
+                "cn": "到达学校",
+                "emoji": "🏫",
+                "children": [
+                  {{
+                    "id": "p1_1",
+                    "text": "Look at the bag!",
+                    "speaker": "Rocky",
+                    "cn": "看那个包！",
+                    "notes": "Look at... = 看……",
+                    "statement": "这句话是一个祈使句。",
+                    "answer": true,
+                    "explanation": "Look at 动词原形开头，是祈使句。",
+                    "emoji": "👀",
+                    "keywords": "look, bag",
+                    "highlight": "Look at",
+                    "children": []
+                  }},
+                  {{
+                    "id": "p1_2",
+                    "text": "Yes, I'm the teacher!",
+                    "speaker": "Mary",
+                    "cn": "是的，我是老师！",
+                    "notes": "I'm = I am 的缩写",
+                    "statement": "句中的 I'm 指的是别人。",
+                    "answer": false,
+                    "explanation": "I'm 是 I am 的缩写，意思是“我是”。",
+                    "emoji": "👩‍🏫",
+                    "keywords": "yes, teacher",
+                    "children": []
+                  }}
+                ]
               }}
             ]
           }}
@@ -143,7 +151,8 @@ def main():
 
     source = md_path.read_text(encoding="utf-8")
     
-    api_key, model_name = get_genai_config(use_high)
+    # Default to high mode ("gemini-3.6-flash") for text-navigator generation
+    api_key, model_name = get_genai_config(use_high=True)
 
     path_upper = str(md_path).upper()
     level_upper = args.level.upper() if args.level else ""
@@ -161,7 +170,10 @@ def main():
     elif any(x in path_upper or x in level_upper for x in ["A7A", "A7B", "A8A", "A8B", "A9"]):
         section_instructions = (
             '- Sections to include: Only major listening script conversations and reading passages from the unit (e.g., "Section A, 1b and 1c", '
-            '"Section A Activity 2a", "Section B Activity 1b").\n'
+            '"Section A Activity 2a", "Section B Activity 1b"). '
+            'CRITICAL: If "Reading Plus" (or "Unit X - Reading Plus") is present in the unit markdown file, you MUST also include "Reading Plus" as a section.\n'
+            '- HIERARCHY REQUIREMENT FOR A7A-A9: For conversations with multiple dialogues (e.g. Conversation 1, Conversation 2) or long shopping/passage texts, '
+            'you MUST create Level 2 thematic sub-heading nodes (e.g. "Greeting & Age Exchange", "Buying Cake & Candles", "Height Marks on Door") under each conversation or post/passage node before placing sentence leaf nodes. NEVER output a flat array of direct leaf children.\n'
             '- DO NOT include vocabulary lists, word matching exercises, or single-word drill exercises (e.g. "Section B Activity 2a" or vocabulary list matching tables).'
         )
     elif "SA" in path_upper or "SB" in path_upper or md_path.name.upper().startswith("S"):
