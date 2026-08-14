@@ -72,22 +72,13 @@ def main():
     unit_name = os.path.basename(target_dir.rstrip("/"))
     print(f"🔧 Applying fixes to unit: {target_dir} ({unit_name})")
 
-    # Load practice JSONs
-    files = {
-        "vg": f"{unit_name}-vocab-guide.json",
-        "vm": f"{unit_name}-vocab-master.json",
-        "sh": f"{unit_name}-spelling-hero.json",
-        "sa": f"{unit_name}-sentence-architect.json"
-    }
-
-    data = {}
-    for k, fname in files.items():
-        fpath = os.path.join(target_dir, fname)
-        if os.path.exists(fpath):
-            with open(fpath, "r", encoding="utf-8") as f:
-                data[k] = json.load(f)
-        else:
-            data[k] = None
+    # Load practice JSONs dynamically from target_dir or json_file names
+    data_by_fname = {}
+    for f in os.listdir(target_dir):
+        if f.endswith(".json"):
+            fpath = os.path.join(target_dir, f)
+            with open(fpath, "r", encoding="utf-8") as f_obj:
+                data_by_fname[f] = json.load(f_obj)
 
     modified_files = set()
 
@@ -137,36 +128,37 @@ def main():
         # -------------------------------------------------------------
         # 0. Vocab Guide (VG) - IPA Format
         # -------------------------------------------------------------
-        if "vocab-guide" in json_file and data["vg"]:
+        if "vocab-guide" in json_file and json_file in data_by_fname:
+            vg_obj = data_by_fname[json_file]
             if "IPA Format" in issue_type:
-                for item in data["vg"].get("unit_vocabulary", []):
+                for item in vg_obj.get("unit_vocabulary", []):
                     word = item.get("word", "")
                     if word == item_id or item_id in word:
                         ipa = item.get("ipa", "")
                         if ipa and ipa != "NA":
-                            # Strip outer brackets or slashes and re-wrap in /.../
                             clean_ipa = ipa.strip("[]/ ")
                             new_ipa = f"/{clean_ipa}/"
                             item["ipa"] = new_ipa
-                            modified_files.add("vg")
+                            modified_files.add(json_file)
                             row_fixed = True
                             print(f"  ✅ [VG IPA Fix] Word '{word}': Updated IPA from '{ipa}' to '{new_ipa}'")
 
         # -------------------------------------------------------------
         # 1. Sentence Architect (SA) - Noise Word Overlap
         # -------------------------------------------------------------
-        if "sentence-architect" in json_file and data["sa"]:
+        if "sentence-architect" in json_file and json_file in data_by_fname:
+            sa_obj = data_by_fname[json_file]
             sug_match = re.search(r'\*\*Suggested Noise:\*\*\s*(\[.*?\])', description)
             if sug_match:
                 try:
                     raw_arr = sug_match.group(1)
                     sug_noise = [w.strip(" '\"`") for w in raw_arr.strip("[]").split(",") if w.strip(" '\"`")]
                     if len(sug_noise) > 0:
-                        for c in data["sa"].get("challenges", []):
+                        for c in sa_obj.get("challenges", []):
                             for item in c.get("data", []):
                                 if item.get("id") == item_id or item_id in item.get("id", ""):
                                     item["noise"] = sug_noise
-                                    modified_files.add("sa")
+                                    modified_files.add(json_file)
                                     row_fixed = True
                                     print(f"  ✅ [SA Noise Fix] Item {item_id}: Updated noise to {sug_noise}")
                 except Exception as e:
@@ -175,12 +167,13 @@ def main():
         # -------------------------------------------------------------
         # 2. Vocab Master (VM) - Suggested Prompt & Suggested Options
         # -------------------------------------------------------------
-        if "vocab-master" in json_file and data["vm"]:
+        if "vocab-master" in json_file and json_file in data_by_fname:
+            vm_obj = data_by_fname[json_file]
             sug_p_match = re.search(r'\*\*Suggested Prompt:\*\*\s*`([^`]+)`', description)
             sug_o_match = re.search(r'\*\*Suggested Options:\*\*\s*(\[.*?\])', description)
             
             if sug_p_match or sug_o_match:
-                for c in data["vm"].get("challenges", []):
+                for c in vm_obj.get("challenges", []):
                     for q in c.get("questions", []):
                         if q.get("id") == item_id or item_id in q.get("id", ""):
                             word = q.get("word", "")
@@ -190,7 +183,7 @@ def main():
                             if sug_p_match:
                                 sug_prompt = sug_p_match.group(1).strip()
                                 q["prompt"] = sug_prompt
-                                modified_files.add("vm")
+                                modified_files.add(json_file)
                                 row_fixed = True
                                 print(f"  ✅ [VM Prompt Fix] Question {item_id} ({word}): Updated prompt to '{sug_prompt}'")
                             
@@ -210,7 +203,7 @@ def main():
 
                                         q["options"] = sug_opts
                                         q["answer"] = ans_idx
-                                        modified_files.add("vm")
+                                        modified_files.add(json_file)
                                         row_fixed = True
                                         print(f"  ✅ [VM Options Fix] Question {item_id} ({word}): Updated options verbatim")
                                 except Exception as e:
@@ -228,87 +221,68 @@ def main():
     # -------------------------------------------------------------
     # 4. Global fixes across VG, VM, SH, and SA JSON data
     # -------------------------------------------------------------
-    if data["vg"]:
-        for item in data["vg"].get("unit_vocabulary", []):
-            ipa = item.get("ipa", "")
-            if ipa and ipa != "NA" and not (ipa.startswith("/") and ipa.endswith("/")):
-                clean_ipa = ipa.strip("[]/ ")
-                new_ipa = f"/{clean_ipa}/"
-                item["ipa"] = new_ipa
-                modified_files.add("vg")
-                print(f"  ✅ [VG Global IPA Fix] Word '{item.get('word')}': '{ipa}' -> '{new_ipa}'")
-
-    if data["vm"]:
-        used_ids = set()
-        q_count = 1
-        for c in data["vm"].get("challenges", []):
-            for q in c.get("questions", []):
-                qid = q.get("id", "")
-                if len(qid) != 8 or not qid.isalnum() or qid in used_ids:
-                    new_id = f"v{unit_name.replace('-', '')[-2:]}{q_count:05d}"
+    for fname, json_obj in data_by_fname.items():
+        if "vocab-guide" in fname and json_obj:
+            for item in json_obj.get("unit_vocabulary", []):
+                ipa = item.get("ipa", "")
+                if ipa and ipa != "NA" and not (ipa.startswith("/") and ipa.endswith("/")):
+                    clean_ipa = ipa.strip("[]/ ")
+                    new_ipa = f"/{clean_ipa}/"
+                    item["ipa"] = new_ipa
+                    modified_files.add(fname)
+                    print(f"  ✅ [VG Global IPA Fix] Word '{item.get('word')}': '{ipa}' -> '{new_ipa}'")
+        if "spelling-hero" in fname and json_obj:
+            used_ids = set()
+            w_count = 1
+            for w in json_obj.get("spelling_words", []):
+                wid = w.get("id", "")
+                wstr = w.get("word", "")
+                if len(wid) != 8 or not wid.isalnum() or wid in used_ids:
+                    new_id = f"s{unit_name.replace('-', '')[-2:]}{w_count:05d}"
                     if len(new_id) > 8:
                         new_id = new_id[:8]
                     while new_id in used_ids or len(new_id) != 8:
-                        new_id = gen_8char_id("vm")
-                    q["id"] = new_id
-                    modified_files.add("vm")
-                    print(f"  ✅ [VM ID Fix] Fixed invalid ID '{qid}' -> '{new_id}'")
-                    qid = new_id
-                used_ids.add(qid)
-                q_count += 1
+                        new_id = gen_8char_id("sh")
+                    w["id"] = new_id
+                    modified_files.add(fname)
+                    print(f"  ✅ [SH ID Fix] Fixed invalid ID '{wid}' for '{wstr}' -> '{new_id}'")
+                    wid = new_id
+                used_ids.add(wid)
+                w_count += 1
 
-    if data["sh"]:
-        used_ids = set()
-        w_count = 1
-        for w in data["sh"].get("spelling_words", []):
-            wid = w.get("id", "")
-            wstr = w.get("word", "")
-            if len(wid) != 8 or not wid.isalnum() or wid in used_ids:
-                new_id = f"s{unit_name.replace('-', '')[-2:]}{w_count:05d}"
-                if len(new_id) > 8:
-                    new_id = new_id[:8]
-                while new_id in used_ids or len(new_id) != 8:
-                    new_id = gen_8char_id("sh")
-                w["id"] = new_id
-                modified_files.add("sh")
-                print(f"  ✅ [SH ID Fix] Fixed invalid ID '{wid}' for '{wstr}' -> '{new_id}'")
-                wid = new_id
-            used_ids.add(wid)
-            w_count += 1
+                for chunk in w.get("chunks", []):
+                    opts = chunk.get("options", [])
+                    if len(opts) != len(set(opts)):
+                        seen = set()
+                        clean_opts = []
+                        for opt in opts:
+                            if opt in seen:
+                                clean_opts.append(opt + "x")
+                            else:
+                                seen.add(opt)
+                                clean_opts.append(opt)
+                        chunk["options"] = clean_opts
+                        modified_files.add(fname)
+                        print(f"  ✅ [SH Chunk Fix] Cleaned duplicate options for '{wstr}' -> {clean_opts}")
 
-            for chunk in w.get("chunks", []):
-                opts = chunk.get("options", [])
-                if len(opts) != len(set(opts)):
-                    seen = set()
-                    clean_opts = []
-                    for opt in opts:
-                        if opt in seen:
-                            clean_opts.append(opt + "x")
-                        else:
-                            seen.add(opt)
-                            clean_opts.append(opt)
-                    chunk["options"] = clean_opts
-                    modified_files.add("sh")
-                    print(f"  ✅ [SH Chunk Fix] Cleaned duplicate options for '{wstr}' -> {clean_opts}")
-
-    if data["sa"]:
-        used_ids = set()
-        s_count = 1
-        for c in data["sa"].get("challenges", []):
-            for item in c.get("data", []):
-                sid = item.get("id", "")
-                if len(sid) != 8 or not sid.isalnum() or sid in used_ids:
-                    new_id = f"s{unit_name.replace('-', '')[-2:]}{s_count:05d}"
-                    if len(new_id) > 8:
-                        new_id = new_id[:8]
-                    while new_id in used_ids or len(new_id) != 8:
-                        new_id = gen_8char_id("sa")
-                    item["id"] = new_id
-                    modified_files.add("sa")
-                    print(f"  ✅ [SA ID Fix] Fixed invalid ID '{sid}' -> '{new_id}'")
-                    sid = new_id
-                used_ids.add(sid)
-                s_count += 1
+        if "sentence-architect" in fname and json_obj:
+            used_ids = set()
+            s_count = 1
+            for c in json_obj.get("challenges", []):
+                for item in c.get("data", []):
+                    sid = item.get("id", "")
+                    if len(sid) != 8 or not sid.isalnum() or sid in used_ids:
+                        new_id = f"s{unit_name.replace('-', '')[-2:]}{s_count:05d}"
+                        if len(new_id) > 8:
+                            new_id = new_id[:8]
+                        while new_id in used_ids or len(new_id) != 8:
+                            new_id = gen_8char_id("sa")
+                        item["id"] = new_id
+                        modified_files.add(fname)
+                        print(f"  ✅ [SA ID Fix] Fixed invalid ID '{sid}' -> '{new_id}'")
+                        sid = new_id
+                    used_ids.add(sid)
+                    s_count += 1
 
     # Re-calculate Summary by File section with fixed/pending counts
     file_fixed_counts = {}
@@ -356,11 +330,10 @@ def main():
         final_lines.append(line)
 
     # Write modified JSON files back to disk
-    for k in modified_files:
-        fname = files[k]
+    for fname in modified_files:
         fpath = os.path.join(target_dir, fname)
         with open(fpath, "w", encoding="utf-8") as f:
-            json.dump(data[k], f, ensure_ascii=False, indent=2)
+            json.dump(data_by_fname[fname], f, ensure_ascii=False, indent=2)
         print(f"💾 Saved updated JSON file: {fpath}")
 
     # Write updated report with Status column & summary counts back to disk

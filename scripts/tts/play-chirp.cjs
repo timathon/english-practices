@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const { runTtsSynthesis } = require('./tts-chirp.cjs');
+const { runTtsSynthesis, syncAudioRecords } = require('./tts-chirp.cjs');
 
 // R2 Configuration
 const s3Client = new S3Client({
@@ -199,6 +199,12 @@ function main() {
                     try {
                         jobData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
                     } catch (e) {}
+
+                    // Update audio_records JSON index now that upload is complete
+                    if (currentJob.targetPath || currentJob.items) {
+                        const targetAbsPath = currentJob.targetPath ? path.resolve(currentJob.targetPath) : jsonPath;
+                        syncAudioRecords(targetAbsPath, currentJob.items, bookName);
+                    }
 
                     console.log(`\n🎉 Upload completed! Successfully uploaded ${uploadedCount} file(s) to R2 bucket [${BUCKET_NAME}].\n`);
 

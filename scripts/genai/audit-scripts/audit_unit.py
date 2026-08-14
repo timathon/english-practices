@@ -783,47 +783,105 @@ def main():
     unit_name = os.path.basename(unit_dir)
     print(f"Auditing practice JSONs in: {unit_dir} (LLM Audit: {use_llm})")
 
-    files = {
-        "vg": f"{unit_name}-vocab-guide.json",
-        "vm": f"{unit_name}-vocab-master.json",
-        "sh": f"{unit_name}-spelling-hero.json",
-        "sa": f"{unit_name}-sentence-architect.json",
-        "rm": f"{unit_name}-recall-map.json",
-        "tn": f"{unit_name}-text-navigator.json",
-        "wm": f"{unit_name}-writing-map.json",
-        "gw": f"{unit_name}-grammar-wizard.json",
-        "pd": f"{unit_name}-passage-decoder-s.json"
-    }
+    # Dynamically find JSON files matching unit prefix or test split patterns
+    def find_json_files(kind_pattern):
+        matched = []
+        for f in os.listdir(unit_dir):
+            if f.endswith(".json"):
+                if kind_pattern == "vg" and "-vocab-guide" in f:
+                    matched.append(f)
+                elif kind_pattern == "vm" and "-vocab-master" in f:
+                    matched.append(f)
+                elif kind_pattern == "sh" and "-spelling-hero" in f:
+                    matched.append(f)
+                elif kind_pattern == "sa" and "-sentence-architect" in f:
+                    matched.append(f)
+                elif kind_pattern == "rm" and "-recall-map" in f:
+                    matched.append(f)
+                elif kind_pattern == "tn" and "-text-navigator" in f:
+                    matched.append(f)
+                elif kind_pattern == "wm" and "-writing-map" in f:
+                    matched.append(f)
+                elif kind_pattern == "gw" and "-grammar-wizard" in f:
+                    matched.append(f)
+                elif kind_pattern == "pd" and ("-passage-decoder" in f):
+                    matched.append(f)
+        return matched
 
-    data = {}
-    for k, fname in files.items():
-        fpath = os.path.join(unit_dir, fname)
-        if os.path.exists(fpath):
-            with open(fpath, "r", encoding="utf-8") as f:
-                data[k] = json.load(f)
-        else:
-            data[k] = None
+    file_groups = {
+        "vg": find_json_files("vg"),
+        "vm": find_json_files("vm"),
+        "sh": find_json_files("sh"),
+        "sa": find_json_files("sa"),
+        "rm": find_json_files("rm"),
+        "tn": find_json_files("tn"),
+        "wm": find_json_files("wm"),
+        "gw": find_json_files("gw"),
+        "pd": find_json_files("pd")
+    }
 
     all_issues = []
 
-    if data["vg"]:
-        all_issues.extend(audit_vocab_guide(data["vg"], files["vg"]))
-    if data["vm"]:
-        all_issues.extend(audit_vocab_master(data["vm"], data["vg"], files["vm"]))
-        if use_llm:
-            all_issues.extend(audit_vocab_master_llm(data["vm"], files["vm"], use_high))
-    if data["sh"]:
-        all_issues.extend(audit_spelling_hero(data["sh"], data["vg"], files["sh"]))
-    if data["sa"]:
-        all_issues.extend(audit_sentence_architect(data["sa"], files["sa"]))
-        if use_llm:
-            all_issues.extend(audit_sentence_architect_llm(data["sa"], files["sa"], use_high))
-    if data["rm"]:
-        all_issues.extend(audit_recall_map(data["rm"], unit_dir, files["rm"]))
-    if data["tn"]:
-        all_issues.extend(audit_text_navigator(data["tn"], unit_dir, files["tn"]))
-    if data["wm"]:
-        all_issues.extend(audit_writing_map(data["wm"], files["wm"]))
+    all_issues = []
+
+    for fname in file_groups["vg"]:
+        fpath = os.path.join(unit_dir, fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            vg_data = json.load(f)
+            all_issues.extend(audit_vocab_guide(vg_data, fname))
+
+    for fname in file_groups["vm"]:
+        fpath = os.path.join(unit_dir, fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            vm_data = json.load(f)
+            # Find matching VG if present
+            vg_fname = fname.replace("-vocab-master", "-vocab-guide")
+            vg_fpath = os.path.join(unit_dir, vg_fname)
+            vg_data = None
+            if os.path.exists(vg_fpath):
+                with open(vg_fpath, "r", encoding="utf-8") as vgf:
+                    vg_data = json.load(vgf)
+            all_issues.extend(audit_vocab_master(vm_data, vg_data, fname))
+            if use_llm:
+                all_issues.extend(audit_vocab_master_llm(vm_data, fname, use_high))
+
+    for fname in file_groups["sh"]:
+        fpath = os.path.join(unit_dir, fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            sh_data = json.load(f)
+            vg_fname = fname.replace("-spelling-hero", "-vocab-guide")
+            vg_fpath = os.path.join(unit_dir, vg_fname)
+            vg_data = None
+            if os.path.exists(vg_fpath):
+                with open(vg_fpath, "r", encoding="utf-8") as vgf:
+                    vg_data = json.load(vgf)
+            all_issues.extend(audit_spelling_hero(sh_data, vg_data, fname))
+
+    for fname in file_groups["sa"]:
+        fpath = os.path.join(unit_dir, fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            sa_data = json.load(f)
+            all_issues.extend(audit_sentence_architect(sa_data, fname))
+            if use_llm:
+                all_issues.extend(audit_sentence_architect_llm(sa_data, fname, use_high))
+
+    for fname in file_groups["rm"]:
+        fpath = os.path.join(unit_dir, fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            rm_data = json.load(f)
+            all_issues.extend(audit_recall_map(rm_data, unit_dir, fname))
+
+    for fname in file_groups["tn"]:
+        fpath = os.path.join(unit_dir, fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            tn_data = json.load(f)
+            all_issues.extend(audit_text_navigator(tn_data, unit_dir, fname))
+
+    for fname in file_groups["wm"]:
+        fpath = os.path.join(unit_dir, fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            wm_data = json.load(f)
+            all_issues.extend(audit_writing_map(wm_data, fname))
 
     # Deduplicate issues per (json_file, item_id, issue_type) so each issue type gets its own line
     merged_issues = []
@@ -859,12 +917,13 @@ def main():
     ]
 
     file_status = {}
-    for k, fname in files.items():
-        if data[k] is None:
-            file_status[fname] = "N/A (Not Found)"
-        else:
-            f_issues = [i for i in all_issues if i["json_file"] == fname]
-            file_status[fname] = f"⚠️ {len(f_issues)} issue(s)" if f_issues else "✅ PASS (0 issues)"
+    all_matched_files = []
+    for g_files in file_groups.values():
+        all_matched_files.extend(g_files)
+
+    for fname in all_matched_files:
+        f_issues = [i for i in all_issues if i["json_file"] == fname]
+        file_status[fname] = f"⚠️ {len(f_issues)} issue(s)" if f_issues else "✅ PASS (0 issues)"
 
     for fname, status in file_status.items():
         report_lines.append(f"- **`{fname}`**: {status}")

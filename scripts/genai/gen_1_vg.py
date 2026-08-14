@@ -34,7 +34,7 @@ RULES:
   - "word": English word or phrase exactly as it appears
   - "meaning": Chinese translation with part-of-speech label (e.g. "n. 教室", "v. 分享", "phrase 一起合作")
   - "page_number": printed page number where word FIRST appears (from "--- PRINTED PAGE X ---" markers)
-  - "context_sentence": one exact verbatim sentence from the text containing the word (for phrases, write a short natural English sentence)
+  - "context_sentence": one exact verbatim sentence from the text containing the word (for phrases, write a short natural English sentence). IMPORTANT: If the sentence contains inline parenthetical Chinese notes for student reading assistance (e.g. "Make a hole (洞) at the top of the plate."), strip out the Chinese characters and parentheses so it becomes pure English (e.g. "Make a hole at the top of the plate.").
   - "ipa": standard British IPA enclosed in forward slashes (e.g. "/ˈpensl/", "/desk/") for single words only; omit for multi-word phrases
   - "comparison": "word vs distractor" string for visually/phonetically similar words
   - "syllable_type": for single-syllable words use one of: 闭音节, 开音节, 相对开音节, 元音字母组合音节, r控制音节, 辅音+le音节. For multi-syllable words use syllable breakdown (e.g. "pen-cil"). For phrases use "phrase".
@@ -143,8 +143,11 @@ def main():
                 raise e
             time.sleep(2 ** attempt)
 
-    # Ensure all IPA values have slashes
+    import re
+    # Clean inline Chinese parenthetical notes from context_sentence and ensure IPA format
     for item in parsed.get("unit_vocabulary", []):
+        if "context_sentence" in item and isinstance(item["context_sentence"], str):
+            item["context_sentence"] = re.sub(r'\s*\([\u4e00-\u9fa5\uff0c\uff1b\uff1a\s]+\)', '', item["context_sentence"]).strip()
         if "ipa" in item and isinstance(item["ipa"], str) and item["ipa"].strip():
             ipa = item["ipa"].strip()
             if not ipa.startswith("/"):

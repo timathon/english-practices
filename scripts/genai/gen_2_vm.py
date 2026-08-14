@@ -191,6 +191,12 @@ def main():
         if w and s:
             word_to_sentence[w.lower()] = s
 
+    import re
+    def clean_cn_parens(text):
+        if not isinstance(text, str):
+            return text
+        return re.sub(r'\s*\([\u4e00-\u9fa5\uff0c\uff1b\uff1a\s]+\)', '', text).strip()
+
     for challenge in parsed.get("challenges", []):
         for q in challenge.get("questions", []):
             if "title" in q:
@@ -200,6 +206,17 @@ def main():
                 correct_sentence = word_to_sentence.get(word.lower())
                 if correct_sentence:
                     q["context_sentence"] = correct_sentence
+
+            if "context_sentence" in q and q["context_sentence"]:
+                q["context_sentence"] = clean_cn_parens(q["context_sentence"])
+
+            if "prompt" in q and q["prompt"] and q.get("type") == "Cloze":
+                # Clean parenthetical Chinese within the sentence context of Cloze prompt while keeping (提示: ...) hint at the end
+                if "(提示:" in q["prompt"]:
+                    parts = q["prompt"].rsplit("(提示:", 1)
+                    q["prompt"] = clean_cn_parens(parts[0]) + " (提示:" + parts[1]
+                else:
+                    q["prompt"] = clean_cn_parens(q["prompt"])
 
     stem = vg_path.stem.replace("-vocab-guide", "")
     out_path = vg_path.parent / f"{stem}-vocab-master.json"

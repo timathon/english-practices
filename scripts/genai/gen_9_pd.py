@@ -185,6 +185,8 @@ def main():
     # Validate and fix some fields if needed
     for section in parsed.get("sections", []):
         for s in section.get("sentences", []):
+            if "en" in s and s["en"]:
+                s["en"] = re.sub(r'\s*\([\u4e00-\u9fa5\uff0c\uff1b\uff1a\s]+\)', '', s["en"]).strip()
             if "id" not in s or not s["id"].startswith("pd_") or len(s["id"]) != 11:
                 s["id"] = "pd_" + generate_id(8)
             if "answer" not in s:

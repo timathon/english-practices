@@ -714,7 +714,7 @@ export function TestSheetShell({
       const rawHtml = trimmed.slice(6, -1)
       return <span dangerouslySetInnerHTML={{ __html: rawHtml }} />
     }
-    return renderFormattedInlineText(text)
+    return <span style={{ whiteSpace: 'pre-wrap' }}>{renderFormattedInlineText(text)}</span>
   }
 
   // Render question types dynamically

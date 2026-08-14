@@ -27,8 +27,8 @@ const BUCKET_NAME = "embroid-001";
 const CHIRP3_VOICES = [
     /*'Achernar', */ 'Achird', 'Algenib', /* 'Algieba', */ 'Alnilam', /* 'Aoede', */ 'Autonoe',
     'Callirrhoe', 'Charon', 'Despina', 'Enceladus', 'Erinome', 'Fenrir', /* 'Gacrux', */
-    'Iapetus', /* 'Kore', */ 'Laomedeia', 'Leda', 'Orus', 'Puck', /* 'Pulcherrima', */
-    'Rasalgethi', /* 'Sadachbia', */ 'Sadaltager', 'Schedar', 'Sulafat', 'Umbriel',
+    'Iapetus', /* 'Kore', */ 'Laomedeia', 'Leda', 'Orus', /* 'Puck', */ /* 'Pulcherrima', */
+    'Rasalgethi', /* 'Sadachbia', */ 'Sadaltager',  /* 'Schedar', */ 'Sulafat', 'Umbriel',
     'Vindemiatrix', 'Zephyr', 'Zubenelgenubi'
 ];
 
@@ -60,6 +60,72 @@ function expandAbbrForTTS(text) {
         processed += '.';
     }
     return processed;
+}
+
+// Helper to resolve target audio record JSON path in temp/audio_records
+function getAudioRecordInfo(absPath) {
+    const repoRoot = path.resolve(__dirname, '../../');
+
+    let relativeToData = path.relative(path.resolve(repoRoot, 'v2-data'), absPath);
+    if (relativeToData.startsWith('..')) {
+        relativeToData = path.relative(path.resolve(repoRoot, 'data'), absPath);
+    }
+
+    const isDir = fs.statSync(absPath).isDirectory();
+    const unitDirRel = isDir ? relativeToData : path.dirname(relativeToData);
+    const folderName = path.basename(unitDirRel);
+    const targetJsonPath = path.join(repoRoot, 'temp/audio_records', unitDirRel, `${folderName}-records.json`);
+
+    return { targetJsonPath, relativeToData };
+}
+
+// Helper to sync audio records JSON (only items with upload-done === 1)
+function syncAudioRecords(targetAbsPath, items, bName) {
+    try {
+        const recordInfo = getAudioRecordInfo(targetAbsPath);
+        const targetJsonPath = recordInfo.targetJsonPath;
+        const targetDir = path.dirname(targetJsonPath);
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+        }
+
+        let existingRecords = { bookName: bName, items: [] };
+        if (fs.existsSync(targetJsonPath)) {
+            try {
+                existingRecords = JSON.parse(fs.readFileSync(targetJsonPath, 'utf8'));
+                if (!Array.isArray(existingRecords.items)) existingRecords.items = [];
+            } catch (e) { }
+        }
+
+        const recordMap = new Map();
+        existingRecords.items.forEach(item => {
+            if (item.hash) recordMap.set(item.hash, item);
+        });
+
+        items.forEach(item => {
+            if (item["upload-done"] === 1 || item["upload-done"] === "1") {
+                const rec = recordMap.get(item.hash) || {};
+                recordMap.set(item.hash, {
+                    ...rec,
+                    text: item.text,
+                    hash: item.hash,
+                    voice: item.voice || rec.voice || "",
+                    "tts-done": 1,
+                    "upload-done": 1,
+                    r2Url: item.r2Url || rec.r2Url || `https://r2.smartedu.com/ep/${bName}/${item.hash}.mp3`,
+                    updatedAt: new Date().toISOString()
+                });
+            }
+        });
+
+        existingRecords.bookName = bName;
+        existingRecords.items = Array.from(recordMap.values());
+
+        fs.writeFileSync(targetJsonPath, JSON.stringify(existingRecords, null, 2), 'utf8');
+        console.log(`📝 Updated audio record index: ${targetJsonPath}`);
+    } catch (e) {
+        console.error(`⚠️ Failed to update audio_records: ${e.message}`);
+    }
 }
 
 /**
@@ -174,7 +240,7 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
                         const treeData = content.tree || content;
                         extractTreeText(treeData, textsSet);
                     }
-                } else if (file.includes('-passage-decoder-s')) {
+                } else if (file.includes('-passage-decoder')) {
                     if (content.sections && Array.isArray(content.sections)) {
                         content.sections.forEach(section => {
                             if (section.sentences && Array.isArray(section.sentences)) {
@@ -206,6 +272,7 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
         if (!fs.existsSync(batchOutputDir)) fs.mkdirSync(batchOutputDir, { recursive: true });
 
         jobState = {
+            targetPath: absoluteTarget,
             bookName,
             batchId,
             items: Array.from(textsSet).map(text => ({
@@ -248,7 +315,53 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
         indicesToSynthesize = jobState.items.map((_, idx) => idx);
     }
 
-    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && !forceRegenerate) {
+    // Load existing audio_records map if not forcing regenerate
+    const audioRecordsMap = new Map(); // hash -> record object
+
+    let recordInfo = null;
+    if (!isChirpJson) {
+        try {
+            recordInfo = getAudioRecordInfo(absoluteTarget);
+            if (fs.existsSync(recordInfo.targetJsonPath)) {
+                const existingData = JSON.parse(fs.readFileSync(recordInfo.targetJsonPath, 'utf8'));
+                if (existingData && existingData.items && Array.isArray(existingData.items)) {
+                    existingData.items.forEach(item => {
+                        if (item.hash) audioRecordsMap.set(item.hash, item);
+                    });
+                }
+            }
+        } catch (e) {
+            console.error(`⚠️ Notice parsing audio_records: ${e.message}`);
+        }
+    }
+
+    // 1. Check audio_records first
+    if (!forceRegenerate && audioRecordsMap.size > 0) {
+        const foundIndices = [];
+        indicesToSynthesize.forEach(idx => {
+            const item = jobState.items[idx];
+            if (audioRecordsMap.has(item.hash)) {
+                const rec = audioRecordsMap.get(item.hash);
+                item["tts-done"] = 1;
+                item["upload-done"] = rec["upload-done"] !== undefined ? rec["upload-done"] : 1;
+                item["regenbatch"] = "batch-audio-record-existing";
+                if (!item["voice"] && rec.voice) {
+                    item["voice"] = rec.voice;
+                }
+                item["r2Url"] = rec.r2Url || `https://r2.smartedu.com/ep/${bookName}/${item.hash}.mp3`;
+                foundIndices.push(idx);
+            }
+        });
+
+        if (foundIndices.length > 0) {
+            console.log(`⚡ Found ${foundIndices.length} item(s) in local audio_records cache. Skipping R2 check & TTS for those.`);
+            indicesToSynthesize = indicesToSynthesize.filter(idx => !foundIndices.includes(idx));
+            saveJobState();
+        }
+    }
+
+    // 2. Check R2 if still not found
+    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && !forceRegenerate && indicesToSynthesize.length > 0) {
         console.log(`☁️ Checking R2 bucket [${BUCKET_NAME}] for existing MP3 files in batches of 5...`);
         const r2ExistingIndices = new Set();
         const R2_BATCH = 5;
@@ -340,6 +453,10 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
         saveJobState();
     }
 
+    if (!isChirpJson && recordInfo) {
+        syncAudioRecords(absoluteTarget, jobState.items, bookName);
+    }
+
     const ttsCompletedItems = jobState.items.filter(i => i["tts-done"] === 1);
     console.log(`\n\n🎉 Finished generating ${ttsCompletedItems.length} MP3 files in ${batchOutputDir}`);
 
@@ -352,5 +469,7 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
 
 module.exports = {
     runTtsSynthesis,
-    CHIRP3_VOICES
+    CHIRP3_VOICES,
+    getAudioRecordInfo,
+    syncAudioRecords
 };

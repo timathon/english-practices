@@ -299,7 +299,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     useEffect(() => {
         if (!autoPlay) return;
         const isS = !!(practiceId && isStudentBook(practiceId));
-        const isWWithTts = !!(practiceId && isWorkbook(practiceId) && data && data.tts);
+        const isWWithTts = !!(practiceId && isWorkbook(practiceId));
         if (q && q.en && (isS || isWWithTts) && textbook) {
             playActiveSentenceAudio(q.en);
         }
@@ -829,7 +829,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                     className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
                                                 >
                                                     {renderSentenceText(sentence)}{' '}
-                                                    {isCurrent && (isStudentBook(practiceId) || (isWorkbook(practiceId) && data && data.tts)) && (
+                                                    {isCurrent && (isStudentBook(practiceId) || isWorkbook(practiceId)) && (
                                                         <button
                                                             className="pd-sentence-play-btn"
                                                             title="Replay Audio"

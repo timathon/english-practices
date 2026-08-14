@@ -19,6 +19,7 @@ This document records the exact steps, quality standards, and design decisions t
 ---
 
 ### Step 3: Generating Vocab Guide (VG)
+- **Script**: `python3 scripts/genai/gen_1_vg.py <path-to-markdown> --level "Grade 7 Semester 1"`
 - **Target Filename**: `t7a-reading-yb-part-1-vocab-guide-test-N.json`
 - **Fields Structured**:
   - `word`, `ipa`, `meaning`, `syllable_type`, `comparison`, `page_number`, `context_sentence`, and `memorization_hook`.
@@ -26,6 +27,7 @@ This document records the exact steps, quality standards, and design decisions t
 ---
 
 ### Step 4: Generating Vocab Master (VM)
+- **Script**: `python3 scripts/genai/gen_2_vm.py <path-to-vocab-guide-test-N.json>`
 - **Target Filename**: `t7a-reading-yb-part-1-vocab-master-test-N.json`
 - **Volume Rules**: Total items × 2 (rounded to nearest multiple of 10, typically 30–50 questions divided into 10-question challenges).
 - **Generation Details**:
@@ -36,6 +38,7 @@ This document records the exact steps, quality standards, and design decisions t
 ---
 
 ### Step 5: Generating Passage Decoder (PD-W)
+- **Script**: `python3 scripts/genai/gen_9_pd.py <path-to-markdown> --level "Grade 7 Semester 1"`
 - **Target Filename**: `t7a-reading-yb-part-1-passage-decoder-w-test-N.json`
 - **Sentence Breakdown**: Every sentence across all passages extracted verbatim.
 - **Translation & Traps**: 1 accurate Chinese translation (index 0) + 2 high-quality distractors.
@@ -44,6 +47,7 @@ This document records the exact steps, quality standards, and design decisions t
 ---
 
 ### Step 6: Generating Test Sheet
+- **Script**: `python3 scripts/genai/gen_10_test.py <path-to-test-markdown> --level "Grade 7 Semester 1"`
 - **Target Filename**: `t7a-reading-yb-part-1-test-N.json`
 - **Metadata**: Level (e.g. `"Grade 7 Semester 1"`), Title (e.g. `"第一部分 基础训练 TEST 2"`).
 - **Section Types**:
