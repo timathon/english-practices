@@ -581,31 +581,34 @@ function getHtml(jobState, dateStr) {
 
             let successCount = 0;
             let failCount = 0;
+            const batchSize = 5;
 
-            for (let i = 0; i < readyRows.length; i++) {
-                const row = readyRows[i];
-                btn.textContent = 'Uploading ' + (i + 1) + ' / ' + readyRows.length + '...';
-                
-                const item = JSON.parse(row.getAttribute('data-item'));
+            for (let i = 0; i < readyRows.length; i += batchSize) {
+                const batchRows = readyRows.slice(i, i + batchSize);
+                const currentEnd = Math.min(i + batchSize, readyRows.length);
+                btn.textContent = 'Uploading ' + currentEnd + ' / ' + readyRows.length + '...';
 
-                try {
-                    const res = await fetch('/api/upload', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(item)
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        row.classList.remove('ready-to-upload');
-                        successCount++;
-                    } else {
-                        console.error('Error for ' + item.hash + ':', data.error);
+                await Promise.all(batchRows.map(async (row) => {
+                    const item = JSON.parse(row.getAttribute('data-item'));
+                    try {
+                        const res = await fetch('/api/upload', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(item)
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            row.classList.remove('ready-to-upload');
+                            successCount++;
+                        } else {
+                            console.error('Error for ' + item.hash + ':', data.error);
+                            failCount++;
+                        }
+                    } catch (err) {
+                        console.error('Request failed for ' + item.hash + ':', err.message);
                         failCount++;
                     }
-                } catch (err) {
-                    console.error('Request failed for ' + item.hash + ':', err.message);
-                    failCount++;
-                }
+                }));
             }
 
             btn.textContent = 'Uploaded ' + successCount + ' OK' + (failCount > 0 ? ', ' + failCount + ' failed' : '');

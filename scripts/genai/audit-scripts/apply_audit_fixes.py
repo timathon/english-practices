@@ -74,6 +74,7 @@ def main():
 
     # Load practice JSONs
     files = {
+        "vg": f"{unit_name}-vocab-guide.json",
         "vm": f"{unit_name}-vocab-master.json",
         "sh": f"{unit_name}-spelling-hero.json",
         "sa": f"{unit_name}-sentence-architect.json"
@@ -132,6 +133,24 @@ def main():
         description = parts[5].strip()
         current_status = parts[6].strip() if len(parts) >= 7 and parts[6].strip() else "Pending"
         row_fixed = False
+
+        # -------------------------------------------------------------
+        # 0. Vocab Guide (VG) - IPA Format
+        # -------------------------------------------------------------
+        if "vocab-guide" in json_file and data["vg"]:
+            if "IPA Format" in issue_type:
+                for item in data["vg"].get("unit_vocabulary", []):
+                    word = item.get("word", "")
+                    if word == item_id or item_id in word:
+                        ipa = item.get("ipa", "")
+                        if ipa and ipa != "NA":
+                            # Strip outer brackets or slashes and re-wrap in /.../
+                            clean_ipa = ipa.strip("[]/ ")
+                            new_ipa = f"/{clean_ipa}/"
+                            item["ipa"] = new_ipa
+                            modified_files.add("vg")
+                            row_fixed = True
+                            print(f"  ✅ [VG IPA Fix] Word '{word}': Updated IPA from '{ipa}' to '{new_ipa}'")
 
         # -------------------------------------------------------------
         # 1. Sentence Architect (SA) - Noise Word Overlap
@@ -207,8 +226,18 @@ def main():
         new_lines.append(f"| `{json_file}` | {rule_sec} | `{item_id}` | {issue_type} | {description} | {status_str} |")
 
     # -------------------------------------------------------------
-    # 4. ID Format & Chunk Fixes across VM, SH, and SA JSON data
+    # 4. Global fixes across VG, VM, SH, and SA JSON data
     # -------------------------------------------------------------
+    if data["vg"]:
+        for item in data["vg"].get("unit_vocabulary", []):
+            ipa = item.get("ipa", "")
+            if ipa and ipa != "NA" and not (ipa.startswith("/") and ipa.endswith("/")):
+                clean_ipa = ipa.strip("[]/ ")
+                new_ipa = f"/{clean_ipa}/"
+                item["ipa"] = new_ipa
+                modified_files.add("vg")
+                print(f"  ✅ [VG Global IPA Fix] Word '{item.get('word')}': '{ipa}' -> '{new_ipa}'")
+
     if data["vm"]:
         used_ids = set()
         q_count = 1
