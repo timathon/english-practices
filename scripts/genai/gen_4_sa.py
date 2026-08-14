@@ -50,13 +50,21 @@ Generate a sentence-architect JSON from the following textbook unit markdown.
 === PER-SENTENCE FIELDS ===
 - "id": unique 8-character alphanumeric string (random, not sequential)
 - "en": the full English sentence verbatim from the text
-- "cn": Chinese translation of the sentence
+- "cn": Chinese translation of the sentence. IMPORTANT: For simple past-tense statements (e.g. using didn't, couldn't, was, were, had) that lack an explicit time clause (like "yesterday" or "when..."), prefix with parenthetical past context like "（当时）" (e.g. "（当时）她没有钥匙。") to clearly distinguish past tense from present tense.
 - "hint": concise bilingual grammar clue (e.g. "Where's = Where is | 疑问句结构")
 - "noise": 2–5 distractor words NOT present in the sentence. Scale with sentence length:
     - Short sentences (≤5 words): 2 noise words
     - Medium sentences (6–9 words): 3–4 noise words
     - Long sentences (10+ words): 4–5 noise words
-  Noise must be thematically relevant (same PoS or topic) but must NOT appear in "en".
+  CRITICAL NOISE RULES (STRICT DIVERSITY REQUIRED):
+  1. AT MOST 1 auxiliary verb distractor (e.g. is/are/was/were/do/does/did/has/have/had/can/could) per sentence! NEVER use multiple auxiliary verbs in the noise array.
+  2. The remaining noise words MUST target non-auxiliary elements across the sentence:
+     - Preposition traps (e.g., for "into" use "onto", "out", "at", "to", "on")
+     - Noun traps (e.g., for "house" use "room", "home", "building", "flat")
+     - Main verb traps (e.g., for "get" use "got", "reach", "enter")
+     - Adjective / Adverb / Pronoun / Conjunction traps (e.g., "fast", "slow", "my", "your", "before", "after")
+  3. The noise array MUST contain distractors targeting at least 2 or 3 DIFFERENT parts of speech across the sentence.
+  4. Noise words MUST NOT appear in "en".
 - "accept": array of alternative valid orderings using the exact same words. 
     - Include natural adverb-position variants (e.g. "Together we work" vs "We work together").
     - Do NOT include expansions of contractions.

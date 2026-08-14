@@ -151,7 +151,7 @@ def main():
 
     source = md_path.read_text(encoding="utf-8")
     
-    # Default to high mode ("gemini-3.6-flash") for text-navigator generation
+    # Default to high mode ("gemini-3.7-flash") for text-navigator generation
     api_key, model_name = get_genai_config(use_high=True)
 
     path_upper = str(md_path).upper()

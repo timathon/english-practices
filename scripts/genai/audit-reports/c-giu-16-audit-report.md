@@ -2,7 +2,7 @@
 
 **Target Directory:** `v2-data/C-GIU/c-giu-11-20/c-giu-16`  
 **Audit Standard:** Rules specified in `GEMINI.md`  
-**Total Issues Identified:** 11
+**Total Issues Identified:** 10
 
 ---
 
@@ -11,9 +11,10 @@
 - **`c-giu-16-vocab-guide.json`**: ✅ PASS (0 issues)
 - **`c-giu-16-vocab-master.json`**: ⚠️ 10 issue(s), 10 fixed, 0 pending
 - **`c-giu-16-spelling-hero.json`**: ✅ PASS (0 issues)
-- **`c-giu-16-sentence-architect.json`**: ⚠️ 1 issue(s), 1 fixed, 0 pending
+- **`c-giu-16-sentence-architect.json`**: ✅ PASS (0 issues)
 - **`c-giu-16-recall-map.json`**: ✅ PASS (0 issues)
 - **`c-giu-16-text-navigator.json`**: ✅ PASS (0 issues)
+- **`c-giu-16-writing-map.json`**: ✅ PASS (0 issues)
 - **`c-giu-16-grammar-wizard.json`**: ✅ PASS (0 issues)
 - **`c-giu-16-passage-decoder-s.json`**: ✅ PASS (0 issues)
 
@@ -33,4 +34,3 @@
 | `c-giu-16-vocab-master.json` | 2. Vocab Master (VM) | `v16c1q08` | LLM: Missing Hint in Ambiguous Cloze | Cloze question prompt is ambiguous because multiple options fit grammatically and semantically, but lacks Chinese hint (提示: ...)<br>**Suggested Prompt:** `Soon after the ______ began playing, something strange happened. (提示: 管弦乐队)` | Done |
 | `c-giu-16-vocab-master.json` | 2. Vocab Master (VM) | `v16c1q09` | LLM: Missing Hint in Ambiguous Cloze | Cloze question prompt is ambiguous because multiple options fit grammatically and semantically, but lacks Chinese hint (提示: ...)<br>**Suggested Prompt:** `The orchestra had been playing for about ten minutes when a man in the ______ suddenly started shouting. (提示: 观众)` | Done |
 | `c-giu-16-vocab-master.json` | 2. Vocab Master (VM) | `v16c1q10` | LLM: Missing Hint in Ambiguous Cloze | Cloze question prompt is ambiguous because multiple options fit grammatically and semantically, but lacks Chinese hint (提示: ...)<br>**Suggested Prompt:** `He was walking very fast and I had ______ keeping up with him. (提示: 困难)` | Done |
-| `c-giu-16-sentence-architect.json` | 4. Sentence Architect (SA) | `s16c4s03` | LLM: Noise Word Overlap | The distractor 'just' appears verbatim in the primary English sentence 'en' ('He had just turned it off.').<br>**Suggested Noise:** ['has', 'already', 'turning'] | Done |
