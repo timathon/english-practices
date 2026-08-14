@@ -69,7 +69,7 @@ const normalizeSentence = (str: string): string => {
 
 const renderFormattedInlineText = (text: string): React.ReactNode => {
   if (!text) return null
-  const parts = text.split(/(\*\*.*?\*\*|<u>.*?<\/u>)/gi)
+  const parts = text.split(/(\*\*.*?\*\*|<u>.*?<\/u>|\[\*VISUAL:?\s*.*?\*\])/gi)
   return (
     <>
       {parts.map((part, idx) => {
@@ -78,6 +78,19 @@ const renderFormattedInlineText = (text: string): React.ReactNode => {
         }
         if (part.toLowerCase().startsWith('<u>') && part.toLowerCase().endsWith('</u>')) {
           return <u key={idx} style={{ fontWeight: 'bold' }}>{renderFormattedInlineText(part.slice(3, -4))}</u>
+        }
+        if (part.startsWith('[*VISUAL') && part.endsWith('*]')) {
+          let innerText = part.slice(2, -2).trim()
+          if (innerText.startsWith('VISUAL:')) {
+            innerText = innerText.slice(7).trim()
+          } else if (innerText.startsWith('VISUAL')) {
+            innerText = innerText.slice(6).trim()
+          }
+          return (
+            <span key={idx} className="ts-visual-tag" style={{ color: '#4b5563', backgroundColor: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', fontStyle: 'normal' }}>
+              🖼️ [图片提示: {innerText}]
+            </span>
+          )
         }
         return part
       })}

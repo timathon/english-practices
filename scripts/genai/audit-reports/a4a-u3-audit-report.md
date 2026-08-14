@@ -2,7 +2,7 @@
 
 **Target Directory:** `v2-data/A4A/a4a-u3`  
 **Audit Standard:** Rules specified in `GEMINI.md`  
-**Total Issues Identified:** 16
+**Total Issues Identified:** 13
 
 ---
 
@@ -11,9 +11,9 @@
 - **`a4a-u3-vocab-guide.json`**: ✅ PASS (0 issues)
 - **`a4a-u3-vocab-master.json`**: ⚠️ 12 issue(s)
 - **`a4a-u3-spelling-hero.json`**: ✅ PASS (0 issues)
-- **`a4a-u3-sentence-architect.json`**: ✅ PASS (0 issues)
+- **`a4a-u3-sentence-architect.json`**: ⚠️ 1 issue(s)
 - **`a4a-u3-recall-map.json`**: ✅ PASS (0 issues)
-- **`a4a-u3-text-navigator.json`**: ⚠️ 4 issue(s)
+- **`a4a-u3-text-navigator.json`**: ✅ PASS (0 issues)
 - **`a4a-u3-grammar-wizard.json`**: ✅ PASS (0 issues)
 - **`a4a-u3-passage-decoder-s.json`**: ✅ PASS (0 issues)
 
@@ -35,7 +35,4 @@
 | `a4a-u3-vocab-master.json` | 2. Vocab Master (VM) | `77x1dolr` | Distractor PoS Mismatch | Question 77x1dolr (rain [verb]): distractor 'wind' has mismatching PoS [noun]. | Pending |
 | `a4a-u3-vocab-master.json` | 2. Vocab Master (VM) | `b64aosfh` | Distractor PoS Mismatch | Question b64aosfh (rainy [adj]): distractor 'rain' has mismatching PoS [verb]. | Pending |
 | `a4a-u3-vocab-master.json` | 2. Vocab Master (VM) | `eu8oa45y` | Distractor PoS Mismatch | Question eu8oa45y (snow [verb]): distractor 'wind' has mismatching PoS [noun]. | Pending |
-| `a4a-u3-text-navigator.json` | 6. Text Navigator (TN) | `Start Up:su_s2_2` | Nesting Depth Exceeded | Node 'su_s2_2' at depth 5 exceeds max allowed nesting depth of 4 levels. | Pending |
-| `a4a-u3-text-navigator.json` | 6. Text Navigator (TN) | `Speed Up:sp_s2_4` | Nesting Depth Exceeded | Node 'sp_s2_4' at depth 5 exceeds max allowed nesting depth of 4 levels. | Pending |
-| `a4a-u3-text-navigator.json` | 6. Text Navigator (TN) | `Speed Up:sp_s4_4` | Nesting Depth Exceeded | Node 'sp_s4_4' at depth 5 exceeds max allowed nesting depth of 4 levels. | Pending |
-| `a4a-u3-text-navigator.json` | 6. Text Navigator (TN) | `Speed Up:sp_s4_5` | Nesting Depth Exceeded | Node 'sp_s4_5' at depth 6 exceeds max allowed nesting depth of 4 levels. | Pending |
+| `a4a-u3-sentence-architect.json` | 4. Sentence Architect (SA) | `nkiol4ei` | LLM: Noise Word Overlap | The noise word 'tastes' has an exact verbatim overlap with the word 'taste' in the sentence (note: instructions state inflections/tense variations are acceptable, but 'tastes' contains the exact substring or is a direct variant, wait, let's check exact match. 'tastes' is NOT an exact match for 'taste', BUT let's review rule 1: exact word match (case-insensitive). 'tastes' vs 'taste' are different words. However, looking at another item or let's check if there are actual exact overlaps). Let's check item nkiol4ei: en='Does it taste like ice cream?', noise=['is', 'tastes', 'cake']. 'tastes' is not an exact match. Wait, are there any actual exact overlaps in the list?<br>**Suggested Noise:** ['smells', 'look', 'cake'] | Pending |
