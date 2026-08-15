@@ -119,7 +119,20 @@ const isAnswerCorrect = (userAns: any, correctAns: any, sectionType?: string, qT
 
   if (sectionType === 'fill-in-the-blank-firstletter') {
     const ans = String(correctAns).trim().toLowerCase()
-    const uAns = String(userAns).trim().toLowerCase()
+    const uAnsRaw = String(userAns).trim().toLowerCase()
+    
+    // Normalize multi-blank delimiters ('|||' or spaces) into clean space-separated tokens
+    const uTokens = uAnsRaw.split(/\|\|\||\s+/).filter(Boolean)
+    const cTokens = ans.split(/\s+/).filter(Boolean)
+
+    if (uTokens.length === cTokens.length && uTokens.length > 1) {
+      return uTokens.every((uTok, idx) => {
+        const cTok = cTokens[idx]
+        return uTok === cTok || (cTok.length > 1 && uTok === cTok.substring(1))
+      })
+    }
+
+    const uAns = uTokens.join(' ')
     return uAns === ans || (ans.length > 1 && uAns === ans.substring(1))
   }
 
@@ -736,32 +749,38 @@ export function TestSheetShell({
 
     switch (section.type) {
       case 'fill-in-the-blank-wordbank': {
-        const parts = (q.prompt || '').split(/______/)
+        const promptText = q.prompt || ''
+        const parts = promptText.split(/_{2,}/)
         return (
           <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
             <div className="ts-question-header">
               <span className="ts-question-num">{index + 1}.</span>
               <span className="ts-question-prompt">
-                {renderPromptText(parts[0])}
-                <select
-                  className="ts-wordbank-select"
-                  value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
-                  disabled={submitted}
-                  onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
-                >
-                  <option value="">-- Choose --</option>
-                  {section.wordbank?.map(word => {
-                    const usingQIdx = section.questions.findIndex(otherQ => userAnswers[otherQ.id] === word)
-                    const showSuffix = usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id
-                    const suffix = showSuffix ? ` (${usingQIdx + 1})` : ''
-                    return (
-                      <option key={word} value={word}>
-                        {word}{suffix}
-                      </option>
-                    )
-                  })}
-                </select>
-                {renderPromptText(parts[1])}
+                {parts.map((part, pIdx) => (
+                  <span key={pIdx}>
+                    {renderPromptText(part)}
+                    {pIdx < parts.length - 1 && (
+                      <select
+                        className="ts-wordbank-select"
+                        value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
+                        disabled={submitted}
+                        onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
+                      >
+                        <option value="">-- Choose --</option>
+                        {section.wordbank?.map(word => {
+                          const usingQIdx = section.questions.findIndex(otherQ => userAnswers[otherQ.id] === word)
+                          const showSuffix = usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id
+                          const suffix = showSuffix ? ` (${usingQIdx + 1})` : ''
+                          return (
+                            <option key={word} value={word}>
+                              {word}{suffix}
+                            </option>
+                          )
+                        })}
+                      </select>
+                    )}
+                  </span>
+                ))}
               </span>
             </div>
 
@@ -954,22 +973,48 @@ export function TestSheetShell({
       }
 
       case 'fill-in-the-blank-firstletter': {
-        const parts = (q.prompt || '').split(/______/)
+        const promptText = q.prompt || ''
+        const parts = promptText.split(/_{2,}/)
+        const currentAnsRaw = String(userAnswers[q.id] || '')
+        const currentAnswersList = currentAnsRaw.includes('|||')
+          ? currentAnsRaw.split('|||')
+          : (parts.length - 1 > 1 ? currentAnsRaw.split(' ') : [currentAnsRaw])
+
+        const handleBlankChange = (blankIdx: number, val: string) => {
+          if (parts.length - 1 === 1) {
+            handleAnswerChange(q.id, val)
+          } else {
+            const nextList = []
+            for (let b = 0; b < parts.length - 1; b++) {
+              nextList.push(b === blankIdx ? val : (currentAnswersList[b] || ''))
+            }
+            handleAnswerChange(q.id, nextList.join('|||'))
+          }
+        }
+
         return (
           <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
             <div className="ts-question-header">
               <span className="ts-question-num">{index + 1}.</span>
               <span className="ts-question-prompt">
-                {parts[0]}
-                <input
-                  type="text"
-                  className="ts-blank-input"
-                  value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
-                  disabled={submitted}
-                  onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                  placeholder="type here..."
-                />
-                {parts[1]}
+                {parts.map((part, pIdx) => {
+                  const val = currentAnswersList[pIdx] || ''
+                  return (
+                    <span key={pIdx}>
+                      {renderPromptText(part)}
+                      {pIdx < parts.length - 1 && (
+                        <input
+                          type="text"
+                          className="ts-blank-input"
+                          value={val}
+                          disabled={submitted}
+                          onChange={(e) => handleBlankChange(pIdx, e.target.value)}
+                          placeholder="type here..."
+                        />
+                      )}
+                    </span>
+                  )
+                })}
               </span>
             </div>
 
