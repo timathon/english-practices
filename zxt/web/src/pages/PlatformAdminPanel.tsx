@@ -449,7 +449,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
       <div className="flex border-b border-slate-200 space-x-6 mb-8">
         <button
           onClick={() => setAdminTab('students')}
-          className={`pb-3 text-base font-bold border-b-2 transition flex items-center space-x-1.5 ${
+          className={`pb-3 text-base font-bold border-b-2 transition flex items-center space-x-1.5 cursor-pointer ${
             adminTab === 'students' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -458,8 +458,8 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
         </button>
         <button
           onClick={() => setAdminTab('teachers')}
-          className={`pb-3 text-base font-bold border-b-2 transition flex items-center space-x-1.5 ${
-            adminTab === 'teachers' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+          className={`pb-3 text-base font-bold border-b-2 transition flex items-center space-x-1.5 cursor-pointer ${
+            adminTab === 'teachers' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
           <span>👩‍🏫</span>
@@ -467,8 +467,8 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
         </button>
         <button
           onClick={() => setAdminTab('classes')}
-          className={`pb-3 text-base font-bold border-b-2 transition flex items-center space-x-1.5 ${
-            adminTab === 'classes' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+          className={`pb-3 text-base font-bold border-b-2 transition flex items-center space-x-1.5 cursor-pointer ${
+            adminTab === 'classes' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
           <span>🏫</span>
@@ -476,7 +476,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
         </button>
       </div>
 
-      {/* TAB 1: CLASS SETUP */}
+      {/* TAB 1: CLASS SETUP (EMERALD THEME) */}
       {adminTab === 'classes' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -486,7 +486,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
             </div>
             <button
               onClick={handleOpenAddClass}
-              className="px-6 py-2.5 min-w-[110px] bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm rounded-xl shadow-md transition text-center tracking-wider"
+              className="px-6 py-2.5 min-w-[110px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-md transition text-center tracking-wider cursor-pointer"
             >
               创建班级
             </button>
@@ -499,7 +499,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
             </div>
             {isLoading ? (
               <div className="py-16 flex flex-col items-center justify-center space-y-3">
-                <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
                 <span className="text-xs font-medium text-slate-500">正在加载班级数据...</span>
               </div>
             ) : (
@@ -511,19 +511,19 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                     <div
                       key={cls.id}
                       onClick={() => handleEditClass(cls)}
-                      className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-purple-50/50 hover:border-purple-300 flex justify-between items-center text-xs transition cursor-pointer group"
+                      className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50/50 hover:border-emerald-300 flex justify-between items-center text-xs transition cursor-pointer group"
                     >
                       <div>
-                        <div className="font-bold text-ink text-sm flex items-center space-x-2 group-hover:text-purple-700 transition">
+                        <div className="font-bold text-ink text-sm flex items-center space-x-2 group-hover:text-emerald-700 transition">
                           <span>{cls.name}</span>
-                          <span className="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-mono">ID: {cls.id}</span>
-                          <span className="text-[10px] opacity-0 group-hover:opacity-100 text-purple-600 font-normal">✏️ 管理</span>
+                          <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-mono">ID: {cls.id}</span>
+                          <span className="text-[10px] opacity-0 group-hover:opacity-100 text-emerald-600 font-normal">✏️ 管理</span>
                         </div>
                         <div className="text-slate-500 mt-1">
                           任课教师: {getClassTeachers(cls).length > 0 ? getClassTeachers(cls).join(', ') : '未指定教师'}
                         </div>
                       </div>
-                      <span className="px-3 py-1 bg-purple-100 text-purple-800 font-bold rounded-lg text-xs font-mono">
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold rounded-lg text-xs font-mono">
                         {allStudentsList.filter(s => s.className === cls.name).length} 人
                       </span>
                     </div>
@@ -535,7 +535,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
         </div>
       )}
 
-      {/* TAB 2: TEACHERS ALLOCATION */}
+      {/* TAB 2: TEACHERS ALLOCATION (BLUE THEME) */}
       {adminTab === 'teachers' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -545,9 +545,9 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
             </div>
             <button
               onClick={handleOpenAddTeacher}
-              className="px-6 py-2.5 min-w-[110px] bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm rounded-xl shadow-md transition text-center tracking-wider"
+              className="px-6 py-2.5 min-w-[110px] bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-md transition text-center tracking-wider cursor-pointer"
             >
-              创建账号
+              创建教师账号
             </button>
           </div>
 
@@ -558,7 +558,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
             </div>
             {isLoading ? (
               <div className="py-16 flex flex-col items-center justify-center space-y-3">
-                <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
                 <span className="text-xs font-medium text-slate-500">正在加载教师数据...</span>
               </div>
             ) : (
@@ -570,12 +570,12 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                     <div
                       key={tch.id}
                       onClick={() => handleEditTeacher(tch)}
-                      className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-purple-50/50 hover:border-purple-300 flex justify-between items-center text-xs transition cursor-pointer group"
+                      className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50/50 hover:border-blue-300 flex justify-between items-center text-xs transition cursor-pointer group"
                     >
                       <div>
-                        <div className="font-bold text-ink text-sm group-hover:text-purple-700 transition flex items-center space-x-1.5">
+                        <div className="font-bold text-ink text-sm group-hover:text-blue-700 transition flex items-center space-x-1.5">
                           <span>{tch.name}</span>
-                          <span className="text-[10px] opacity-0 group-hover:opacity-100 text-purple-600 font-normal">✏️ 编辑</span>
+                          <span className="text-[10px] opacity-0 group-hover:opacity-100 text-blue-600 font-normal">✏️ 编辑</span>
                         </div>
                         <div className="text-slate-500 font-mono mt-1">账号: {tch.username}</div>
                       </div>
@@ -591,7 +591,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                           </span>
                         ) : (
                           getTeacherClasses(tch).map(clsName => (
-                            <span key={clsName} className="px-2.5 py-1 bg-purple-100 text-purple-800 font-bold rounded-lg text-xs">
+                            <span key={clsName} className="px-2.5 py-1 bg-blue-100 text-blue-800 font-bold rounded-lg text-xs">
                               {clsName}
                             </span>
                           ))
@@ -606,7 +606,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
         </div>
       )}
 
-      {/* TAB 3: STUDENTS MEMBERSHIP */}
+      {/* TAB 3: STUDENTS MEMBERSHIP (PURPLE THEME) */}
       {adminTab === 'students' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -616,9 +616,9 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
             </div>
             <button
               onClick={handleOpenAddStudent}
-              className="px-6 py-2.5 min-w-[110px] bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm rounded-xl shadow-md transition text-center tracking-wider"
+              className="px-6 py-2.5 min-w-[110px] bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm rounded-xl shadow-md transition text-center tracking-wider cursor-pointer"
             >
-              创建账号
+              创建学生账号
             </button>
           </div>
 
@@ -664,13 +664,13 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
         </div>
       )}
 
-      {/* CREATE / EDIT TEACHER MODAL */}
+      {/* CREATE / EDIT TEACHER MODAL (BLUE THEME) */}
       {isTeacherModalOpen && (
         <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen m-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-6 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsTeacherModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer"
             >
               ✕
             </button>
@@ -692,7 +692,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                   value={newTeacherName}
                   onChange={(e) => handleTeacherNameChange(e.target.value)}
                   placeholder="如: 陈老师"
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   required
                 />
               </div>
@@ -704,7 +704,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                   value={newTeacherUsername}
                   onChange={(e) => setNewTeacherUsername(e.target.value)}
                   placeholder="如: tch_8848 (默认自动生成)"
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none font-mono text-purple-900 focus:ring-2 focus:ring-purple-500 text-sm"
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none font-mono text-blue-900 focus:ring-2 focus:ring-blue-500 text-sm"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">自动生成唯一工号，亦可按学校要求手动输入修改</p>
               </div>
@@ -718,13 +718,13 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                   value={newTeacherPassword}
                   onChange={(e) => setNewTeacherPassword(e.target.value)}
                   placeholder={editingTeacherId ? '留空表示不重置原密码' : '默认: abcd'}
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none font-mono focus:ring-2 focus:ring-purple-500 text-sm"
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none font-mono focus:ring-2 focus:ring-blue-500 text-sm"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">
                   {editingTeacherId ? (
                     '若不修改密码请留空；输入新密码保存后将重置'
                   ) : (
-                    <>默认统一初始密码: <span className="font-bold text-purple-700">abcd</span></>
+                    <>默认统一初始密码: <span className="font-bold text-blue-700">abcd</span></>
                   )}
                 </p>
               </div>
@@ -739,12 +739,12 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                     <span className="text-[11px] text-slate-400 italic px-1">暂未分配任何班级</span>
                   ) : (
                     newTeacherClasses.map(clsName => (
-                      <span key={clsName} className="inline-flex items-center space-x-1 px-2.5 py-1 bg-purple-100 text-purple-900 font-bold rounded-lg text-xs">
+                      <span key={clsName} className="inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-100 text-blue-900 font-bold rounded-lg text-xs">
                         <span>{clsName}</span>
                         <button
                           type="button"
                           onClick={() => setNewTeacherClasses(newTeacherClasses.filter(c => c !== clsName))}
-                          className="text-purple-600 hover:text-red-600 font-bold text-xs ml-1"
+                          className="text-blue-600 hover:text-red-600 font-bold text-xs ml-1 cursor-pointer"
                         >
                           ✕
                         </button>
@@ -774,7 +774,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                         setSelectedClassToAdd('');
                       }
                     }}
-                    className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition"
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition cursor-pointer"
                   >
                     + 添加班级
                   </button>
@@ -782,7 +782,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
               </div>
 
               {/* Quiz Editor Role Toggle */}
-              <div className="p-3.5 bg-purple-50/60 border border-purple-200/80 rounded-xl space-y-1.5">
+              <div className="p-3.5 bg-blue-50/60 border border-blue-200/80 rounded-xl space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-slate-800 flex items-center space-x-1.5 cursor-pointer select-none">
                     <span>✍️ 兼任题库编辑</span>
@@ -794,7 +794,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                       onChange={(e) => setNewTeacherIsQuizEditor(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                    <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
                 <p className="text-[10px] text-slate-500 leading-tight">
@@ -806,13 +806,13 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                 <button
                   type="button"
                   onClick={() => setIsTeacherModalOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition"
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition cursor-pointer"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-md text-sm transition"
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md text-sm transition cursor-pointer"
                 >
                   {editingTeacherId ? '保存' : '确认创建'}
                 </button>
@@ -822,13 +822,13 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
         </div>
       )}
 
-      {/* CREATE / EDIT STUDENT MODAL */}
+      {/* CREATE / EDIT STUDENT MODAL (PURPLE THEME) */}
       {isStudentModalOpen && (
         <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen m-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-6 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsStudentModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer"
             >
               ✕
             </button>
@@ -903,13 +903,13 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                 <button
                   type="button"
                   onClick={() => setIsStudentModalOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition"
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition cursor-pointer"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-md text-sm transition"
+                  className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-md text-sm transition cursor-pointer"
                 >
                   {editingStudentId ? '保存' : '确认创建'}
                 </button>
@@ -919,13 +919,13 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
         </div>
       )}
 
-      {/* CREATE / EDIT CLASS MODAL */}
+      {/* CREATE / EDIT CLASS MODAL (EMERALD THEME) */}
       {isClassModalOpen && (
         <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen m-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsClassModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer"
             >
               ✕
             </button>
@@ -947,7 +947,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                   value={newClassName}
                   onChange={(e) => setNewClassName(e.target.value)}
                   placeholder="如: 四年级B班 / 六年级创新班"
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 text-sm font-bold"
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-bold"
                   required
                 />
               </div>
@@ -962,12 +962,12 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                     <span className="text-[11px] text-slate-400 italic px-1">暂未指定任课教师</span>
                   ) : (
                     newClassTeachers.map(tchName => (
-                      <span key={tchName} className="inline-flex items-center space-x-1 px-2.5 py-1 bg-purple-100 text-purple-900 font-bold rounded-lg text-xs">
+                      <span key={tchName} className="inline-flex items-center space-x-1 px-2.5 py-1 bg-emerald-100 text-emerald-900 font-bold rounded-lg text-xs">
                         <span>👩‍🏫 {tchName}</span>
                         <button
                           type="button"
                           onClick={() => setNewClassTeachers(newClassTeachers.filter(t => t !== tchName))}
-                          className="text-purple-600 hover:text-red-600 font-bold text-xs ml-1"
+                          className="text-emerald-600 hover:text-red-600 font-bold text-xs ml-1 cursor-pointer"
                         >
                           ✕
                         </button>
@@ -997,7 +997,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                         setSelectedTeacherToAdd('');
                       }
                     }}
-                    className="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition"
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition cursor-pointer"
                   >
                     + 添加教师
                   </button>
@@ -1029,7 +1029,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                           <button
                             type="button"
                             onClick={() => handleRemoveStudentFromClass(stu.id)}
-                            className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[10px] rounded-md border border-red-200 transition"
+                            className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[10px] rounded-md border border-red-200 transition cursor-pointer"
                           >
                             移除入班
                           </button>
@@ -1062,7 +1062,7 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                         type="button"
                         disabled={!selectedStudentToAdd}
                         onClick={() => handleAddStudentToClass(selectedStudentToAdd)}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition"
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition cursor-pointer"
                       >
                         确认加入
                       </button>
@@ -1075,13 +1075,13 @@ export const PlatformAdminPanel: React.FC<PlatformAdminPanelProps> = ({ user }) 
                 <button
                   type="button"
                   onClick={() => setIsClassModalOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition"
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition cursor-pointer"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-md text-sm transition"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-md text-sm transition cursor-pointer"
                 >
                   {editingClassId ? '保存更改' : '确认创建'}
                 </button>

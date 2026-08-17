@@ -126,38 +126,207 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {/* Dropdown Menu */}
                 {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-fade-in">
-                    {onOpenSyncQueue && (
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          onOpenSyncQueue();
-                        }}
-                        className="w-full text-left px-3.5 py-2 text-xs text-slate-200 hover:bg-slate-800 flex items-center justify-between transition"
-                      >
-                        <span className="flex items-center space-x-2">
-                          <span>🔄</span>
-                          <span>后台同步队列</span>
-                        </span>
-                        {syncQueueCount > 0 ? (
-                          <span className="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full text-[10px] font-bold border border-amber-500/40">
-                            {syncQueueCount} 待同步
+                  <div className="absolute right-0 mt-2 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-fade-in divide-y divide-slate-800">
+                    {/* Navigation Workspaces for Role */}
+                    <div className="py-1">
+                      {user.role === 'teacher' && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              navigate('/teacher');
+                            }}
+                            className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
+                              currentPath === '/teacher'
+                                ? 'bg-blue-600/30 text-blue-300 font-bold border-l-2 border-blue-400'
+                                : 'text-slate-200 hover:bg-slate-800'
+                            }`}
+                          >
+                            <span className="flex items-center space-x-2">
+                              <span>👩‍🏫</span>
+                              <span>教师工作台</span>
+                            </span>
+                            {currentPath === '/teacher' && (
+                              <span className="text-[10px] text-blue-400">当前</span>
+                            )}
+                          </button>
+
+                          {canEditQuizLibrary(user) && (
+                            <button
+                              onClick={() => {
+                                setIsMenuOpen(false);
+                                navigate('/editor');
+                              }}
+                              className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
+                                currentPath === '/editor'
+                                  ? 'bg-teal-600/30 text-teal-300 font-bold border-l-2 border-teal-400'
+                                  : 'text-slate-200 hover:bg-slate-800'
+                              }`}
+                            >
+                              <span className="flex items-center space-x-2">
+                                <span>✍️</span>
+                                <span>试题管理</span>
+                              </span>
+                              {currentPath === '/editor' && (
+                                <span className="text-[10px] text-teal-400">当前</span>
+                              )}
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      {user.role === 'editor' && (
+                        <button
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            navigate('/editor');
+                          }}
+                          className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
+                            currentPath === '/editor'
+                              ? 'bg-teal-600/30 text-teal-300 font-bold border-l-2 border-teal-400'
+                              : 'text-slate-200 hover:bg-slate-800'
+                          }`}
+                        >
+                          <span className="flex items-center space-x-2">
+                            <span>✍️</span>
+                            <span>试题管理</span>
                           </span>
-                        ) : (
-                          <span className="text-[10px] text-slate-500">已同步</span>
-                        )}
-                      </button>
+                          {currentPath === '/editor' && (
+                            <span className="text-[10px] text-teal-400">当前</span>
+                          )}
+                        </button>
+                      )}
+
+                      {user.role === 'admin' && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              navigate('/admin');
+                            }}
+                            className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
+                              currentPath === '/admin'
+                                ? 'bg-purple-600/30 text-purple-300 font-bold border-l-2 border-purple-400'
+                                : 'text-slate-200 hover:bg-slate-800'
+                            }`}
+                          >
+                            <span className="flex items-center space-x-2">
+                              <span>⚙️</span>
+                              <span>平台管理中心</span>
+                            </span>
+                            {currentPath === '/admin' && (
+                              <span className="text-[10px] text-purple-400">当前</span>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              navigate('/teacher');
+                            }}
+                            className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
+                              currentPath === '/teacher'
+                                ? 'bg-blue-600/30 text-blue-300 font-bold border-l-2 border-blue-400'
+                                : 'text-slate-200 hover:bg-slate-800'
+                            }`}
+                          >
+                            <span className="flex items-center space-x-2">
+                              <span>👩‍🏫</span>
+                              <span>教师工作台</span>
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              navigate('/editor');
+                            }}
+                            className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
+                              currentPath === '/editor'
+                                ? 'bg-teal-600/30 text-teal-300 font-bold border-l-2 border-teal-400'
+                                : 'text-slate-200 hover:bg-slate-800'
+                            }`}
+                          >
+                            <span className="flex items-center space-x-2">
+                              <span>✍️</span>
+                              <span>试题管理</span>
+                            </span>
+                          </button>
+                        </>
+                      )}
+
+                      {(user.role === 'student' || user.role === 'parent') && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              navigate('/student');
+                            }}
+                            className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
+                              currentPath === '/student' || currentPath.startsWith('/student')
+                                ? 'bg-emerald-600/30 text-emerald-300 font-bold border-l-2 border-emerald-400'
+                                : 'text-slate-200 hover:bg-slate-800'
+                            }`}
+                          >
+                            <span className="flex items-center space-x-2">
+                              <span>🎓</span>
+                              <span>学生工作台</span>
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              navigate('/bailiange');
+                            }}
+                            className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
+                              currentPath === '/bailiange' || currentPath === '/blg'
+                                ? 'bg-teal-600/30 text-teal-300 font-bold border-l-2 border-teal-400'
+                                : 'text-slate-200 hover:bg-slate-800'
+                            }`}
+                          >
+                            <span className="flex items-center space-x-2">
+                              <span>🪷</span>
+                              <span>白莲阁 (古诗)</span>
+                            </span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Sync Queue */}
+                    {onOpenSyncQueue && (
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            onOpenSyncQueue();
+                          }}
+                          className="w-full text-left px-3.5 py-2 text-xs text-slate-200 hover:bg-slate-800 flex items-center justify-between transition cursor-pointer"
+                        >
+                          <span className="flex items-center space-x-2">
+                            <span>🔄</span>
+                            <span>后台同步队列</span>
+                          </span>
+                          {syncQueueCount > 0 ? (
+                            <span className="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full text-[10px] font-bold border border-amber-500/40">
+                              {syncQueueCount} 待同步
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-500">已同步</span>
+                          )}
+                        </button>
+                      </div>
                     )}
-                    <div className="border-t border-slate-800 my-1" />
-                    <div className="px-3.5 py-1">
+
+                    {/* Logout */}
+                    <div className="px-3.5 py-1.5">
                       <button
                         onClick={() => {
                           setIsMenuOpen(false);
                           onLogout();
                         }}
-                        className="text-xs text-slate-400 hover:text-red-400 px-2 py-1 transition"
+                        className="w-full text-left text-xs text-slate-400 hover:text-red-400 py-1 transition cursor-pointer flex items-center space-x-2"
                       >
-                        退出
+                        <span>🚪</span>
+                        <span>退出登录</span>
                       </button>
                     </div>
                   </div>

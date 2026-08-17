@@ -8,6 +8,8 @@ import { apiService, canEditQuizLibrary, UserSession } from './services/api';
 import { preloadAudioSFX } from './utils/sound';
 import { SyncQueueModal } from './components/SyncQueueModal';
 
+const StudentDashboard = lazy(() => import('./pages/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
+const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
 const BaiLianGe = lazy(() => import('./pages/BaiLianGe').then(m => ({ default: m.BaiLianGe })));
 const PlatformAdminPanel = lazy(() => import('./pages/PlatformAdminPanel').then(m => ({ default: m.PlatformAdminPanel })));
 const PlatformQuestionEditor = lazy(() => import('./pages/PlatformQuestionEditor').then(m => ({ default: m.PlatformQuestionEditor })));
@@ -67,7 +69,7 @@ export const App: React.FC = () => {
       navigate('/');
     } else if (currentPath === '/teacher' && (!user || (user.role !== 'teacher' && user.role !== 'admin'))) {
       navigate('/');
-    } else if ((currentPath === '/student' || currentPath.startsWith('/student') || currentPath === '/blg') && !user) {
+    } else if ((currentPath === '/student' || currentPath.startsWith('/student')) && !user) {
       navigate('/');
     }
   }, [currentPath, user]);
@@ -117,20 +119,20 @@ export const App: React.FC = () => {
             <span className="animate-spin text-2xl mr-2">☯</span> 加载中...
           </div>
         }>
-          {currentPath === '/student' || currentPath.startsWith('/student') || currentPath === '/blg' ? (
+          {currentPath === '/student' || currentPath.startsWith('/student') ? (
             user ? (
-              <BaiLianGe activeView={activeView} user={user} />
+              <StudentDashboard activeView={activeView === 'parent' ? 'parent' : 'student'} user={user} />
             ) : (
               <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
             )
           ) : currentPath === '/teacher' ? (
-            user && (user.role !== 'teacher' && user.role !== 'admin') ? (
-              <BaiLianGe activeView="teacher" user={user} />
-            ) : user ? (
-              <BaiLianGe activeView="teacher" user={user} />
+            user ? (
+              <TeacherDashboard user={user} />
             ) : (
               <PlatformHome navigate={navigate} activeView={activeView} user={user} onOpenLogin={() => setIsLoginOpen(true)} />
             )
+          ) : currentPath === '/bailiange' || currentPath === '/blg' ? (
+            <BaiLianGe user={user} />
           ) : currentPath === '/admin' ? (
             user && user.role === 'admin' ? (
               <PlatformAdminPanel user={user} />

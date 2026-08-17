@@ -1,1428 +1,463 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, Poem, PoemQuestion, formatLocalTime } from '../services/api';
+import { apiService, Poem, PoemQuestion } from '../services/api';
 import { playAnswerSFX } from '../utils/sound';
-import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 import { StudentQuizPreviewModal } from '../components/StudentQuizPreviewModal';
-import { CachedImage } from '../components/CachedImage';
-import { HistoryDetailModal } from '../components/bailiange/HistoryDetailModal';
-import { StudentAssignmentsTab } from '../components/bailiange/StudentAssignmentsTab';
-import { StudentQuizHistoryTab } from '../components/bailiange/StudentQuizHistoryTab';
-import { StudentSelfStudyTab } from '../components/bailiange/StudentSelfStudyTab';
-import { TeacherAssignmentsPublishTab } from '../components/bailiange/TeacherAssignmentsPublishTab';
-import { TeacherStatsTab } from '../components/bailiange/TeacherStatsTab';
-import { TeacherCourseProgressTab } from '../components/bailiange/TeacherCourseProgressTab';
-import { AvatarDisplay, DEFAULT_AVATAR_CONFIG, AvatarConfig } from '../components/AvatarDisplay';
-import { ZhengTang } from '../components/chambers/ZhengTang';
-import { WenGuShi } from '../components/chambers/WenGuShi';
-import { ZhiXinFang } from '../components/chambers/ZhiXinFang';
-import { GuanXingTai } from '../components/chambers/GuanXingTai';
 
 interface BaiLianGeProps {
-  activeView: 'student' | 'parent' | 'teacher' | 'editor' | 'admin';
-  user: any;
+  user?: any;
 }
 
-export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
-  const getChamberFromUrl = (): 'zheng_tang' | 'wen_gu_shi' | 'zhi_xin_fang' | 'guan_xing_tai' => {
-    const params = new URLSearchParams(window.location.search);
-    const c = params.get('chamber');
-    if (c === 'zhi_xin_fang' || c === 'wen_gu_shi' || c === 'guan_xing_tai' || c === 'zheng_tang') {
-      return c;
-    }
-    return 'zheng_tang';
-  };
-
-  const [activeChamber, setActiveChamber] = useState<'zheng_tang' | 'wen_gu_shi' | 'zhi_xin_fang' | 'guan_xing_tai'>(getChamberFromUrl);
-  const [userAvatarConfig, setUserAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR_CONFIG);
-  const [pendingChamber, setPendingChamber] = useState<string | null>(null);
-  const [zxfLatestConfig, setZxfLatestConfig] = useState<AvatarConfig>(DEFAULT_AVATAR_CONFIG);
-  const [zxfIsDirty, setZxfIsDirty] = useState(false);
+export const BaiLianGe: React.FC<BaiLianGeProps> = ({ user }) => {
   const [poems, setPoems] = useState<Poem[]>(() => apiService.getQuizLibrary());
   const [selectedPoem, setSelectedPoem] = useState<Poem | null>(() => {
     const lib = apiService.getQuizLibrary();
     return lib.length > 0 ? lib[0] : null;
   });
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [selectedDynasty, setSelectedDynasty] = useState<string>('all');
 
-  // Guard: intercept tab switch when ZhiXinFang has unsaved changes
-  const handleChamberSwitch = (chamber: string) => {
-    if (activeChamber === 'zhi_xin_fang' && zxfIsDirty && chamber !== 'zhi_xin_fang') {
-      setPendingChamber(chamber);
-      return;
-    }
-    setActiveChamber(chamber as any);
-  };
-
-  // Helper to read tab from URL query params
-  const getTabFromUrl = (): 'assignments' | 'history' | 'selfstudy' => {
-    const params = new URLSearchParams(window.location.search);
-    const t = params.get('tab');
-    if (t === 'selfstudy') return 'selfstudy';
-    if (t === 'history') return 'history';
-    return 'assignments';
-  };
-
-  // Navigation tabs state
-  const [studentTab, setStudentTab] = useState<'assignments' | 'history' | 'selfstudy'>(getTabFromUrl);
-  const [teacherTab, setTeacherTab] = useState<'assignments' | 'stats' | 'progress'>('assignments');
-  const [adminTab, setAdminTab] = useState<'teachers' | 'students' | 'classes'>('teachers');
+  // Display toggles
   const [showPinyin, setShowPinyin] = useState(true);
-  const [showOriginal, setShowOriginal] = useState(true);
   const [showTranslation, setShowTranslation] = useState(true);
-  const [showImages, setShowImages] = useState(true);
-  const [showFirstAttemptOnly, setShowFirstAttemptOnly] = useState(false);
-  const [isRefreshingAssignments, setIsRefreshingAssignments] = useState(false);
+  const [activeTab, setActiveTab] = useState<'appreciation' | 'scramble' | 'quiz'>('appreciation');
 
-  useEffect(() => {
-    const syncFromUrl = () => {
-      setStudentTab(getTabFromUrl());
-      setActiveChamber(getChamberFromUrl());
-    };
-    window.addEventListener('popstate', syncFromUrl);
-    window.addEventListener('pushstate', syncFromUrl);
-    // Initial sync
-    syncFromUrl();
-    return () => {
-      window.removeEventListener('popstate', syncFromUrl);
-      window.removeEventListener('pushstate', syncFromUrl);
-    };
-  }, []);
+  // Scramble Game state (采莲连句)
+  const [activeLineIdx, setActiveLineIdx] = useState(0);
+  const [scrambledChars, setScrambledChars] = useState<string[]>([]);
+  const [selectedChars, setSelectedChars] = useState<string[]>([]);
+  const [completedLinesCount, setCompletedLinesCount] = useState(0);
+  const [scrambleFinished, setScrambleFinished] = useState(false);
 
-  const switchStudentTab = (tab: 'assignments' | 'history' | 'selfstudy') => {
-    setStudentTab(tab);
-    window.history.pushState({}, '', `/student?tab=${tab}`);
-    window.dispatchEvent(new Event('pushstate'));
-  };
-
-  // Student state
-  const [assignments, setAssignments] = useState<any[]>([]);
-  const [quizHistory, setQuizHistory] = useState<any[]>([]);
-  const [learntPoemIds, setLearntPoemIds] = useState<number[]>([]);
-  const [activeQuizPoem, setActiveQuizPoem] = useState<Poem | null>(null);
+  // Full Quiz Runner state
   const [activeStudentQuiz, setActiveStudentQuiz] = useState<{
     poemTitle: string;
     questions: PoemQuestion[];
-    assignmentId?: string;
   } | null>(null);
-
-  useLockBodyScroll(Boolean(activeQuizPoem) || Boolean(activeStudentQuiz));
-
-  // Quiz runner state
-  const [selectedWords, setSelectedWords] = useState<string[]>([]);
-  const [scrambledWords, setScrambledWords] = useState<string[]>([]);
-  const [quizCompleted, setQuizCompleted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-
-  // Helper to initialize cached selected class and classes roster
-  const getInitialSelectedClass = () => {
-    const userStored = localStorage.getItem('zxt_user');
-    let userId = 'default';
-    let userClass = '三年级A班';
-    if (userStored) {
-      try {
-        const u = JSON.parse(userStored);
-        userId = u.id || 'default';
-        userClass = u.className || '三年级A班';
-      } catch (_) { }
-    }
-    const cached = localStorage.getItem(`zxt_selected_class_${userId}`);
-    return cached || userClass;
-  };
-
-  // Teacher state
-  const [classes, setClasses] = useState<any[]>(() => apiService.getClassesSync());
-  const [selectedClass, setSelectedClass] = useState<string>(getInitialSelectedClass);
-  const [students, setStudents] = useState<any[]>([]);
-  const [newAsgnPoemId, setNewAsgnPoemId] = useState<number>(1);
-  const [newAsgnDueDate, setNewAsgnDueDate] = useState<string>('2026-08-01');
-  const [newAsgnReq, setNewAsgnReq] = useState<string>('完成诗句连线与古诗背诵打卡');
-  const [asgnSubject, setAsgnSubject] = useState<string>('语文');
-  const [asgnSection, setAsgnSection] = useState<string>('古诗');
-  const [teacherMsg, setTeacherMsg] = useState<string>('');
-
-  // Assignment Question Review Modal state
-  const [publishingPoem, setPublishingPoem] = useState<Poem | null>(null);
-  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
-  const [previewStartIndex, setPreviewStartIndex] = useState<number | null>(null);
-  const [modalQuestionFilter, setModalQuestionFilter] = useState<string>('all');
-
-  // Quiz History Detail Modal state
-  const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
-
-  // Sync Error Modal state
-  const [syncErrorModal, setSyncErrorModal] = useState<{ title: string; message: string } | null>(null);
-  const [pointAwardModal, setPointAwardModal] = useState<{
-    basePoints: number;
-    timelyBonus: number;
-    accuracyBonus: number;
-    totalEarnedPoints: number;
-    newTotalPoints: number;
-    isLockedToday: boolean;
-  } | null>(null);
-
-  // Animating Poem ID state for unlock toggle transition
-  const [animatingPoemId, setAnimatingPoemId] = useState<number | null>(null);
-
-  useLockBodyScroll(publishingPoem !== null || selectedHistoryItem !== null || syncErrorModal !== null || pointAwardModal !== null);
-
-  // Admin state
-  const [teachersList, setTeachersList] = useState<any[]>([]);
-  const [allStudentsList, setAllStudentsList] = useState<any[]>([]);
-  const [adminMsg, setAdminMsg] = useState<string>('');
-
-  // Admin Form input state
-  const [newTeacherName, setNewTeacherName] = useState('');
-  const [newTeacherClass, setNewTeacherClass] = useState('三年级A班');
-  const [newStudentName, setNewStudentName] = useState('');
-  const [newStudentClass, setNewStudentClass] = useState('三年级A班');
-  const [newClassName, setNewClassName] = useState('');
-  const [newClassTeacher, setNewClassTeacher] = useState('');
-
-  // Handle Add Class
-  const handleAddClass = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newClassName.trim()) return;
-    const tch = teachersList.find(t => t.name === newClassTeacher);
-    const updated = await apiService.addClass(newClassName.trim(), tch?.id, tch?.name);
-    setClasses(updated);
-    setAdminMsg(`新班级【${newClassName.trim()}】开设成功！`);
-    setNewClassName('');
-  };
-
-  // Editor state
-  const [editingPoem, setEditingPoem] = useState<Poem | null>(null);
-  const [editorSuccessMsg, setEditorSuccessMsg] = useState('');
 
   useEffect(() => {
     loadPoems();
-    loadRosters();
   }, []);
-
-  useEffect(() => {
-    loadStudentData();
-    const isTeacherOrAdmin = activeView === 'admin' || activeView === 'teacher' || (user && (user.role === 'teacher' || user.role === 'admin'));
-    if (isTeacherOrAdmin) {
-      loadTeacherData();
-    }
-  }, [selectedClass, activeView, user]);
-
-  // Set default selected poem to the latest unlocked poem whenever unlocked list changes
-  useEffect(() => {
-    const unlocked = poems.filter(p => learntPoemIds.map(Number).includes(Number(p.id)));
-    if (unlocked.length > 0) {
-      setNewAsgnPoemId(Number(unlocked[unlocked.length - 1].id));
-    }
-  }, [learntPoemIds, poems]);
-
-  // Auto-hide teacher message banner after 6 seconds
-  useEffect(() => {
-    if (!teacherMsg) return;
-    const timer = setTimeout(() => {
-      setTeacherMsg('');
-    }, 6000);
-    return () => clearTimeout(timer);
-  }, [teacherMsg]);
-
-  // Auto fetch new assignments every 60 seconds when on student assignments tab
-  useEffect(() => {
-    if (activeView === 'student' && studentTab === 'assignments') {
-      const interval = setInterval(() => {
-        loadStudentData();
-      }, 60000);
-      return () => clearInterval(interval);
-    }
-  }, [activeView, studentTab, selectedClass]);
 
   const loadPoems = async () => {
     const data = await apiService.getPoems();
     setPoems(data);
-    if (data.length > 0) {
+    if (data.length > 0 && !selectedPoem) {
       setSelectedPoem(data[0]);
-      setEditingPoem(data[0]);
     }
   };
 
-  const loadRosters = async () => {
-    // Roster management calls (classes, teachers list) are for admin/teacher management views
-    const isTeacherOrAdmin = activeView === 'admin' || activeView === 'teacher' || (user && (user.role === 'admin' || user.role === 'teacher'));
-    if (!isTeacherOrAdmin) {
-      return;
-    }
+  const filteredPoems = poems.filter(p => {
+    const matchDynasty = selectedDynasty === 'all' || p.dynasty === selectedDynasty;
+    const linesText = p.lines ? p.lines.map(l => (typeof l === 'string' ? l : l.text)).join('') : '';
+    const matchKeyword = !searchKeyword.trim() ||
+      p.title.includes(searchKeyword.trim()) ||
+      p.author.includes(searchKeyword.trim()) ||
+      linesText.includes(searchKeyword.trim());
+    return matchDynasty && matchKeyword;
+  });
 
-    // 1. Instant load from localStorage cache
-    const cachedClasses = apiService.getClassesSync();
-    if (cachedClasses && cachedClasses.length > 0) {
-      if (user && user.role === 'teacher') {
-        const myClasses = cachedClasses.filter((c: any) =>
-          c.teacherId === user.id ||
-          c.name === user.className ||
-          (c.teacherName && c.teacherName.includes(user.name.split(' ')[0]))
-        );
-        const finalClasses = myClasses.length > 0 ? myClasses : cachedClasses.filter((c: any) => c.name === user.className);
-        const activeClasses = finalClasses.length > 0 ? finalClasses : [cachedClasses[0]];
-        setClasses(activeClasses);
-        const cachedSelected = localStorage.getItem(`zxt_selected_class_${user.id}`);
-        if (cachedSelected && activeClasses.some((c: any) => c.name === cachedSelected)) {
-          setSelectedClass(cachedSelected);
-        } else if (activeClasses.length > 0) {
-          setSelectedClass(activeClasses[0].name);
-        }
-      } else {
-        setClasses(cachedClasses);
-      }
-    }
-
-    // 2. Fetch fresh roster data from DB in background
-    try {
-      const allCls = await apiService.getClasses();
-      const isAdmin = activeView === 'admin' || (user && user.role === 'admin');
-      const allTchs = isAdmin ? await apiService.getTeachers() : [];
-      const allStus = await apiService.getStudents();
-
-      if (isAdmin) {
-        setTeachersList(allTchs);
-      }
-      setAllStudentsList(allStus);
-
-      if (user && user.role === 'teacher') {
-        const myClasses = allCls.filter((c: any) =>
-          c.teacherId === user.id ||
-          c.name === user.className ||
-          (c.teacherName && c.teacherName.includes(user.name.split(' ')[0]))
-        );
-        const finalClasses = myClasses.length > 0 ? myClasses : allCls.filter((c: any) => c.name === user.className);
-        const activeClasses = finalClasses.length > 0 ? finalClasses : (allCls.length > 0 ? [allCls[0]] : []);
-        setClasses(activeClasses);
-
-        const cachedSelected = localStorage.getItem(`zxt_selected_class_${user.id}`);
-        if (cachedSelected && activeClasses.some((c: any) => c.name === cachedSelected)) {
-          setSelectedClass(cachedSelected);
-        } else if (activeClasses.length > 0 && !activeClasses.some((c: any) => c.name === selectedClass)) {
-          setSelectedClass(activeClasses[0].name);
-        }
-      } else {
-        setClasses(allCls);
-      }
-    } catch (err) {
-      console.warn('Failed to load rosters from DB:', err);
-    }
-  };
-
-  const [isAssignmentsLoading, setIsAssignmentsLoading] = useState(false);
-
-  const loadStudentData = async () => {
-    const targetClass = (user && user.role === 'teacher') ? (selectedClass || '三年级A班') : (user?.className || '三年级A班');
-    setLearntPoemIds(apiService.getLearntPoemIdsSync(targetClass));
-
-    const cachedStr = localStorage.getItem('zxt_assignments');
-    let hasCache = false;
-    if (cachedStr) {
-      try {
-        const cachedAll: any[] = JSON.parse(cachedStr);
-        const filtered = cachedAll.filter((a: any) => a.className === targetClass);
-        if (filtered.length > 0) {
-          setAssignments(filtered);
-          hasCache = true;
-        }
-      } catch (_) { }
-    }
-
-    if (!hasCache) {
-      setIsAssignmentsLoading(true);
-    }
-
-    try {
-      const asgns = await apiService.getAssignments(targetClass);
-      setAssignments(asgns);
-      const history = await apiService.getQuizHistory(user?.id || 'usr_stu_001');
-      setQuizHistory(history);
-      const dbLearnt = await apiService.getLearntPoemIds(targetClass);
-      setLearntPoemIds(dbLearnt);
-    } catch (err) {
-      console.warn('Failed to load student data:', err);
-    } finally {
-      setIsAssignmentsLoading(false);
-    }
-  };
-
-  const loadTeacherData = async () => {
-    const targetClass = selectedClass || user?.className || '三年级A班';
-    setLearntPoemIds(apiService.getLearntPoemIdsSync(targetClass));
-
-    const cachedStr = localStorage.getItem('zxt_assignments');
-    let hasCache = false;
-    if (cachedStr) {
-      try {
-        const cachedAll: any[] = JSON.parse(cachedStr);
-        const filtered = cachedAll.filter((a: any) => a.className === targetClass);
-        if (filtered.length > 0) {
-          setAssignments(filtered);
-          hasCache = true;
-        }
-      } catch (_) { }
-    }
-
-    if (!hasCache) {
-      setIsAssignmentsLoading(true);
-    }
-
-    try {
-      const classStudents = await apiService.getStudents(targetClass);
-      setStudents(classStudents);
-      const dbLearnt = await apiService.getLearntPoemIds(targetClass);
-      setLearntPoemIds(dbLearnt);
-      const teacherAsgns = await apiService.getAssignments(targetClass);
-      setAssignments(teacherAsgns);
-    } catch (err) {
-      console.warn('Failed to load teacher data:', err);
-    } finally {
-      setIsAssignmentsLoading(false);
-    }
-  };
-
-  // --- QUIZ ENGINE FUNCTIONS ---
-  const handleStartStudentAssignment = (asgn: any) => {
-    const poem = poems.find(p => p.id === asgn.poemId) || poems[0];
-    const allQs = poem?.questions || [];
-    const asgnQs = (asgn.questionIds && asgn.questionIds.length > 0)
-      ? allQs.filter(q => asgn.questionIds.includes(q.id))
-      : allQs;
-
-    setActiveStudentQuiz({
-      poemTitle: poem ? poem.title : asgn.poemTitle,
-      questions: asgnQs.length > 0 ? asgnQs : allQs,
-      assignmentId: asgn.id,
-    });
-  };
-
-  const startQuiz = (poem: Poem) => {
-    setActiveQuizPoem(poem);
+  // Initialize scramble game for a poem
+  const initScrambleGame = (poem: Poem, lineIdx: number = 0) => {
     if (!poem || !poem.lines || poem.lines.length === 0) return;
-    const firstLineObj = poem.lines[0];
-    const targetLine = typeof firstLineObj === 'string' ? firstLineObj : firstLineObj.text;
-    const chars = targetLine.split('');
+    const currentLine = poem.lines[lineIdx];
+    const targetText = typeof currentLine === 'string' ? currentLine : currentLine.text;
+    const chars = targetText.split('');
     const shuffled = [...chars].sort(() => Math.random() - 0.5);
-    setScrambledWords(shuffled);
-    setSelectedWords([]);
-    setQuizCompleted(false);
+    setScrambledChars(shuffled);
+    setSelectedChars([]);
+    setActiveLineIdx(lineIdx);
+    if (lineIdx === 0) {
+      setCompletedLinesCount(0);
+      setScrambleFinished(false);
+    }
   };
 
   const handleSelectChar = (char: string, index: number) => {
-    setSelectedWords([...selectedWords, char]);
-    const updated = [...scrambledWords];
+    setSelectedChars([...selectedChars, char]);
+    const updated = [...scrambledChars];
     updated.splice(index, 1);
-    setScrambledWords(updated);
+    setScrambledChars(updated);
   };
 
   const handleRemoveChar = (char: string, index: number) => {
-    const updated = [...selectedWords];
+    const updated = [...selectedChars];
     updated.splice(index, 1);
-    setSelectedWords(updated);
-    setScrambledWords([...scrambledWords, char]);
+    setSelectedChars(updated);
+    setScrambledChars([...scrambledChars, char]);
   };
 
-  const handleVerifyQuiz = () => {
-    if (!activeQuizPoem) return;
-    const answer = selectedWords.join('');
-    const firstLineObj = activeQuizPoem.lines[0];
-    const targetLine = typeof firstLineObj === 'string' ? firstLineObj : firstLineObj.text;
-    if (answer === targetLine) {
+  const handleVerifyLine = () => {
+    if (!selectedPoem || !selectedPoem.lines) return;
+    const targetLine = selectedPoem.lines[activeLineIdx];
+    const targetText = typeof targetLine === 'string' ? targetLine : targetLine.text;
+    const userText = selectedChars.join('');
+
+    if (userText === targetText) {
       playAnswerSFX('correct');
-      setQuizScore(quizScore + 10);
-      setQuizCompleted(true);
-      // Record history
-      apiService.recordQuizResult(user?.id || 'usr_stu_001', {
-        poemTitle: activeQuizPoem.title,
-        poemId: activeQuizPoem.id,
-        score: 100,
-        accuracy: '100%',
-        quizType: '采莲连句闯关'
-      });
-      loadStudentData();
+      const nextCount = completedLinesCount + 1;
+      setCompletedLinesCount(nextCount);
+
+      if (activeLineIdx + 1 < selectedPoem.lines.length) {
+        setTimeout(() => {
+          initScrambleGame(selectedPoem, activeLineIdx + 1);
+        }, 800);
+      } else {
+        setScrambleFinished(true);
+        if (user) {
+          apiService.recordQuizResult(user.id || 'usr_stu_001', {
+            poemTitle: selectedPoem.title,
+            poemId: selectedPoem.id,
+            score: 100,
+            accuracy: '100%',
+            quizType: '白莲阁 · 采莲连句闯关'
+          });
+        }
+      }
     } else {
       playAnswerSFX('wrong');
-      alert(`差一点点哦！正确顺序是："${targetLine}"`);
+      alert(`差一点点哦！正确顺序是："${targetText}"`);
     }
-  };
-
-  // --- TEACHER ACTIONS ---
-  const handlePublishAssignment = (e: React.FormEvent) => {
-    e.preventDefault();
-    const poem = poems.find(p => p.id === Number(newAsgnPoemId));
-    if (!poem) return;
-    const allQs = poem.questions || [];
-    setPublishingPoem(poem);
-    setSelectedQuestionIds(allQs.map(q => q.id));
-    setModalQuestionFilter('all');
-  };
-
-  const [publishSuccessData, setPublishSuccessData] = useState<{
-    className: string;
-    poemTitle: string;
-    questionCount: number;
-    dueDate: string;
-    requirement: string;
-  } | null>(null);
-
-  const confirmPublishAssignment = async () => {
-    if (!publishingPoem) return;
-    if (selectedQuestionIds.length === 0) {
-      alert('请至少勾选 1 道题目后再发布作业！');
-      return;
-    }
-    await apiService.createAssignment({
-      className: selectedClass,
-      poemId: publishingPoem.id,
-      poemTitle: publishingPoem.title,
-      dueDate: newAsgnDueDate,
-      requirement: newAsgnReq,
-      questionIds: selectedQuestionIds,
-    });
-
-    const successInfo = {
-      className: selectedClass,
-      poemTitle: publishingPoem.title,
-      questionCount: selectedQuestionIds.length,
-      dueDate: newAsgnDueDate,
-      requirement: newAsgnReq,
-    };
-
-    setTeacherMsg(`成功向【${selectedClass}】发布《${publishingPoem.title}》作业（已精选 ${selectedQuestionIds.length} 道题目）！`);
-    setPublishingPoem(null);
-    setPublishSuccessData(successInfo);
-    await loadTeacherData();
-    await loadStudentData();
-  };
-
-  const handleToggleLearnt = async (poemId: number) => {
-    const numId = Number(poemId);
-    setAnimatingPoemId(numId);
-    setTimeout(() => setAnimatingPoemId(null), 600);
-
-    const prevLearnt = [...learntPoemIds];
-    const isCurrentlyLearnt = prevLearnt.map(Number).includes(numId);
-
-    // 1. Instant optimistic UI update (0ms delay)
-    const updated = isCurrentlyLearnt
-      ? prevLearnt.filter(id => Number(id) !== numId)
-      : [...prevLearnt, numId];
-
-    setLearntPoemIds(updated);
-    localStorage.setItem(`zxt_learnt_${selectedClass}`, JSON.stringify(updated));
-    setTeacherMsg(`已更新【${selectedClass}】古诗解锁状态...`);
-
-    // 2. Background DB update with 30s timeout
-    try {
-      await apiService.saveLearntPoemIdsToDB(selectedClass, updated, 30000);
-      setTeacherMsg(`已成功同步【${selectedClass}】古诗解锁状态至数据库！`);
-    } catch (err: any) {
-      console.error('Failed to sync learnt status to DB:', err);
-      // Revert optimistic change on failure
-      setLearntPoemIds(prevLearnt);
-      localStorage.setItem(`zxt_learnt_${selectedClass}`, JSON.stringify(prevLearnt));
-      setTeacherMsg(`⚠️ 解锁状态同步失败，已还原修改。`);
-
-      const poemObj = poems.find(p => Number(p.id) === numId);
-      const poemName = poemObj ? `《${poemObj.title}》` : `古诗 #${poemId}`;
-      setSyncErrorModal({
-        title: '云端同步失败 (Sync Failed)',
-        message: `未能将 ${poemName} 的解锁状态保存至云端数据库。原因：${err.message || '网络连接超时 (30秒)'}。本地更改已自动恢复。`
-      });
-    }
-  };
-
-  // --- ADMIN ACTIONS ---
-  const handleAddTeacher = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTeacherName) return;
-    const updated = [...teachersList, {
-      id: `usr_tch_${Date.now()}`,
-      username: `tch_${Date.now().toString().slice(-4)}`,
-      name: newTeacherName,
-      assignedClass: newTeacherClass
-    }];
-    apiService.saveTeachers(updated);
-    setTeachersList(updated);
-    setAdminMsg(`教师【${newTeacherName}】创建成功并分配至【${newTeacherClass}】！`);
-    setNewTeacherName('');
-  };
-
-  const handleAddStudent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newStudentName) return;
-    const updated = [...allStudentsList, {
-      id: `usr_stu_${Date.now()}`,
-      username: `stu_${Date.now().toString().slice(-4)}`,
-      name: newStudentName,
-      className: newStudentClass,
-      completedQuizzes: 0,
-      avgScore: 100
-    }];
-    apiService.saveStudents(updated);
-    setAllStudentsList(updated);
-    setAdminMsg(`学生【${newStudentName}】创建成功并加入【${newStudentClass}】！`);
-    setNewStudentName('');
   };
 
   return (
-    <>
-      {/* Floating HUD Toast Overlay - Zero impact on page layout flow */}
-      {teacherMsg && (
-        <div className="fixed top-16 left-0 right-0 z-50 pointer-events-none">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2">
-            <div className="pointer-events-auto p-3 bg-emerald-50/95 backdrop-blur-md border border-emerald-200 text-emerald-800 text-xs rounded-xl font-bold shadow-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="flex items-center gap-2">
-                <span className="text-base">✅</span>
-                <span>{teacherMsg}</span>
-              </div>
-              <button
-                onClick={() => setTeacherMsg('')}
-                className="text-emerald-600 hover:text-emerald-800 hover:bg-emerald-100/50 p-1 rounded-lg transition text-xs font-bold"
-                title="关闭提示"
-              >
-                ✕
-              </button>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Top Banner */}
+      <div className="bg-gradient-to-r from-teal-900 via-emerald-900 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-emerald-700/40 relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 space-y-2">
+          <div className="inline-flex items-center space-x-2 bg-emerald-800/60 border border-emerald-500/40 text-emerald-200 px-3.5 py-1 rounded-full text-xs font-semibold">
+            <span>🪷 白莲阁 (BaiLianGe) · 诗韵流芳</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black font-serif tracking-wider bg-gradient-to-r from-emerald-200 via-teal-100 to-white bg-clip-text text-transparent">
+            白莲阁 · 中华古诗学习与闯关
+          </h1>
+          <p className="text-emerald-100/90 text-xs sm:text-sm font-serif max-w-2xl">
+            品味经典诗词之美，体验“采莲连句”字句拼图与多维精选诗意闯关，于诗情画意中积淀国学素养。
+          </p>
+        </div>
+      </div>
+
+      {/* Main Grid: Left Poem Library & Right Study / Practice Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* Left Column: Poem Directory / Selector */}
+        <div className="lg:col-span-4 space-y-4">
+          <div className="bg-white rounded-2xl p-4 shadow-md border border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold font-serif text-slate-800 flex items-center gap-2">
+                <span>📚 诗库目录</span>
+                <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-sans font-bold">
+                  {filteredPoems.length} 篇
+                </span>
+              </h2>
+            </div>
+
+            {/* Filter Search */}
+            <input
+              type="text"
+              placeholder="搜索诗名、作者或诗句..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50"
+            />
+
+            {/* Poems List */}
+            <div className="max-h-[600px] overflow-y-auto space-y-2 pr-1">
+              {filteredPoems.map((p) => {
+                const isSelected = selectedPoem?.id === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setSelectedPoem(p);
+                      initScrambleGame(p, 0);
+                    }}
+                    className={`w-full text-left p-3 rounded-xl border transition flex items-start justify-between cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-50 border-emerald-400 text-emerald-950 shadow-xs'
+                        : 'bg-white border-slate-200/80 hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <div>
+                      <div className="font-serif font-bold text-sm">《{p.title}》</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        [{p.dynasty || '唐'}] {p.author}
+                      </div>
+                    </div>
+                    {p.theme && (
+                      <span className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md font-bold">
+                        {p.theme}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
-      )}
 
-      {/* Main Container Wrapper */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 py-8">
-
-      {/* ========================================================================= */}
-      {/* 1. STUDENT VIEW (学生端: 4重天 / 四堂 - 正堂, 温故室, 知新坊, 观星台) */}
-      {/* ========================================================================= */}
-
-      {activeView === 'student' && (
-        <div className="space-y-6">
-          {/* 4 Chambers Navigation Tabs */}
-          <div className="bg-white rounded-2xl p-2 shadow-md border border-slate-200/80 flex flex-wrap gap-2 justify-between items-center">
-            <div className="flex gap-2 overflow-x-auto">
-              <button
-                onClick={() => handleChamberSwitch('zheng_tang')}
-                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
-                  activeChamber === 'zheng_tang'
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <span>📜 正堂</span>
-              </button>
-              <button
-                onClick={() => handleChamberSwitch('wen_gu_shi')}
-                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
-                  activeChamber === 'wen_gu_shi'
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <span>📖 温故室</span>
-              </button>
-              <button
-                onClick={() => setActiveChamber('zhi_xin_fang')}
-                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
-                  activeChamber === 'zhi_xin_fang'
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <span>🎨 知新坊</span>
-              </button>
-              <button
-                onClick={() => handleChamberSwitch('guan_xing_tai')}
-                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition flex items-center gap-2 ${
-                  activeChamber === 'guan_xing_tai'
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <span>🔭 观星台</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Chamber Content Views */}
-          {activeChamber === 'zheng_tang' && (
-            <ZhengTang
-              user={user}
-              assignments={assignments}
-              quizHistory={quizHistory}
-              onStartQuiz={(title: string, questions: PoemQuestion[], asgnId?: string) => {
-                let finalQuestions = questions;
-                if (finalQuestions.length === 0) {
-                  // Assignment stores questionIds, not inline question objects — look them up
-                  const asgn = assignments.find((a: any) => a.id === asgnId);
-                  const poem = poems.find(p => p.title === title);
-                  if (poem && poem.questions) {
-                    if (asgn?.questionIds && asgn.questionIds.length > 0) {
-                      finalQuestions = poem.questions.filter((q: PoemQuestion) => asgn.questionIds.includes(q.id));
-                    } else {
-                      finalQuestions = poem.questions;
-                    }
-                  }
-                }
-                setActiveStudentQuiz({ poemTitle: title, questions: finalQuestions, assignmentId: asgnId });
-              }}
-              avatarConfig={userAvatarConfig}
-            />
-          )}
-
-          {activeChamber === 'wen_gu_shi' && (
-            <WenGuShi
-              user={user}
-              quizHistory={quizHistory}
-              poems={poems}
-              learntPoemIds={learntPoemIds}
-              selectedPoem={selectedPoem}
-              onSelectPoem={setSelectedPoem}
-            />
-          )}
-
-          {activeChamber === 'zhi_xin_fang' && (
-          <ZhiXinFang
-              user={user}
-              initialConfig={userAvatarConfig}
-              onUpdateAvatar={(cfg: AvatarConfig) => {
-                setUserAvatarConfig(cfg);
-                setZxfIsDirty(false);
-              }}
-              onDirtyChange={(dirty, cfg) => {
-                setZxfIsDirty(dirty);
-                setZxfLatestConfig(cfg);
-              }}
-            />
-          )}
-
-          {/* Unsaved Avatar Changes Modal */}
-          {pendingChamber && (
-            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
-                <div className="text-center mb-2">
-                  <div className="text-4xl mb-2">⚠️</div>
-                  <h3 className="text-lg font-bold text-slate-800">形象设置未保存</h3>
-                  <p className="text-sm text-slate-500 mt-1">您的使者形象有未保存的修改，离开前是否保存？</p>
+        {/* Right Column: Selected Poem Viewer & Interactive Practice */}
+        <div className="lg:col-span-8 space-y-6">
+          {selectedPoem ? (
+            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-slate-200/80 space-y-6">
+              
+              {/* Poem Header & Mode Tabs */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-black font-serif text-slate-900 tracking-wide">
+                    《{selectedPoem.title}》
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500 font-serif mt-1">
+                    〔{selectedPoem.dynasty || '唐'}〕{selectedPoem.author}
+                  </p>
                 </div>
-                <div className="flex flex-col gap-2 mt-5">
+
+                {/* Sub Mode Switcher */}
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
                   <button
-                    onClick={() => {
-                      setUserAvatarConfig(zxfLatestConfig);
-                      setZxfIsDirty(false);
-                      setActiveChamber(pendingChamber as any);
-                      setPendingChamber(null);
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold hover:from-purple-700 hover:to-indigo-700 transition"
+                    onClick={() => setActiveTab('appreciation')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      activeTab === 'appreciation'
+                        ? 'bg-white text-emerald-800 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
                   >
-                    💾 保存并离开
+                    📖 赏析诵读
                   </button>
                   <button
                     onClick={() => {
-                      setZxfIsDirty(false);
-                      setActiveChamber(pendingChamber as any);
-                      setPendingChamber(null);
+                      setActiveTab('scramble');
+                      initScrambleGame(selectedPoem, 0);
                     }}
-                    className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      activeTab === 'scramble'
+                        ? 'bg-white text-emerald-800 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
                   >
-                    不保存，直接离开
+                    🪷 采莲连句
                   </button>
-                  <button
-                    onClick={() => setPendingChamber(null)}
-                    className="w-full py-2.5 rounded-xl text-purple-600 font-medium hover:bg-purple-50 transition"
-                  >
-                    继续编辑
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeChamber === 'guan_xing_tai' && (
-            <GuanXingTai user={user} />
-          )}
-
-          {/* ACTIVE QUIZ MODAL FOR STUDENT */}
-          {activeQuizPoem && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 space-y-6 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
-                <button
-                  onClick={() => setActiveQuizPoem(null)}
-                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold"
-                >
-                  ✕
-                </button>
-                <div className="text-center space-y-1">
-                  <span className="px-2.5 py-1 bg-jade-100 text-jade-800 rounded-full text-xs font-bold">
-                    采莲连句闯关 - 《{activeQuizPoem.title}》
-                  </span>
-                  <h3 className="text-xl font-bold font-serif text-ink">组合正确的诗句顺序</h3>
-                </div>
-
-                {!quizCompleted ? (
-                  <div className="space-y-6">
-                    {/* Selected Char Target Line */}
-                    <div className="min-h-[60px] bg-amber-50 border-2 border-dashed border-amber-300 rounded-xl p-4 flex flex-wrap gap-2 justify-center items-center">
-                      {selectedWords.length === 0 ? (
-                        <span className="text-xs text-amber-700 italic">点击下方汉字连成正确诗句</span>
-                      ) : (
-                        selectedWords.map((char, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleRemoveChar(char, index)}
-                            className="w-10 h-10 bg-amber-500 text-white font-bold rounded-lg shadow-sm text-lg hover:bg-amber-600 font-serif"
-                          >
-                            {char}
-                          </button>
-                        ))
-                      )}
-                    </div>
-
-                    {/* Scrambled Pool */}
-                    <div className="flex flex-wrap gap-3 justify-center">
-                      {scrambledWords.map((char, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleSelectChar(char, index)}
-                          className="w-12 h-12 bg-slate-100 hover:bg-jade-100 border border-slate-300 hover:border-jade-400 text-slate-800 font-serif font-bold rounded-xl text-xl shadow-xs transition"
-                        >
-                          {char}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-end space-x-2">
-                      <button
-                        onClick={handleVerifyQuiz}
-                        className="w-full py-3 bg-jade-600 hover:bg-jade-500 text-white font-bold rounded-xl text-sm shadow-md transition"
-                      >
-                        ✅ 提交验证答案
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 space-y-4">
-                    <span className="text-5xl">🎉</span>
-                    <h4 className="text-2xl font-bold font-serif text-jade-700">闯关成功！得分 +10</h4>
-                    <p className="text-xs text-slate-600">你已成功完成《{activeQuizPoem.title}》诗句连线打卡！</p>
+                  {selectedPoem.questions && selectedPoem.questions.length > 0 && (
                     <button
-                      onClick={() => setActiveQuizPoem(null)}
-                      className="px-6 py-2.5 bg-jade-600 text-white font-bold rounded-xl text-xs"
+                      onClick={() => {
+                        setActiveTab('quiz');
+                        setActiveStudentQuiz({
+                          poemTitle: selectedPoem.title,
+                          questions: selectedPoem.questions || [],
+                        });
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        activeTab === 'quiz'
+                          ? 'bg-white text-emerald-800 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
                     >
-                      完成并返回
+                      🎯 试题闯关 ({selectedPoem.questions.length}题)
                     </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 2. TEACHER VIEW (教师端: 班级列表 -> 作业发布 / 答题统计 / 进度解锁) */}
-      {/* ========================================================================= */}
-      {activeView === 'teacher' && (
-        <div className="space-y-6">
-
-          {/* Teacher Banner Header Card with integrated Class Selector */}
-          <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-blue-700/40">
-            <div className="space-y-1">
-              <div className="inline-flex items-center space-x-2 bg-blue-900/60 border border-blue-500/40 text-blue-200 px-3 py-1 rounded-full text-xs font-semibold">
-                <span>👩‍🏫 教师工作台 (Teacher Portal)</span>
-              </div>
-              <h1 className="text-3xl font-black font-serif bg-gradient-to-r from-blue-200 via-sky-200 to-white bg-clip-text text-transparent">
-                班级教学与作业管理
-              </h1>
-              <p className="text-blue-200 text-xs">
-                管理班级学生学情、发布古诗关卡作业、监控学生答题进度与打卡记录。
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2.5 bg-slate-800/80 border border-blue-500/30 p-3 rounded-xl text-xs text-blue-200 flex-shrink-0">
-              <label className="font-bold text-blue-200 whitespace-nowrap">当前班级:</label>
-              <select
-                value={selectedClass}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedClass(val);
-                  const userId = user?.id || 'default';
-                  localStorage.setItem(`zxt_selected_class_${userId}`, val);
-                }}
-                className="px-3 py-1.5 bg-slate-900 border border-blue-400/50 rounded-lg text-xs font-bold text-white outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
-              >
-                {classes.map(c => {
-                  const actualCount = allStudentsList.filter((s: any) => s.className === c.name).length;
-                  return <option key={c.id} value={c.name}>{c.name} ({actualCount}人)</option>;
-                })}
-              </select>
-            </div>
-          </div>
-
-          {/* Teacher Sub Navigation */}
-          <div className="flex border-b border-slate-200 space-x-6">
-            <button
-              onClick={() => setTeacherTab('assignments')}
-              className={`pb-3 text-sm font-bold border-b-2 transition ${teacherTab === 'assignments' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
-            >
-              📌 作业发布
-            </button>
-            <button
-              onClick={() => setTeacherTab('stats')}
-              className={`pb-3 text-sm font-bold border-b-2 transition ${teacherTab === 'stats' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
-            >
-              📊 作业统计
-            </button>
-            <button
-              onClick={() => setTeacherTab('progress')}
-              className={`pb-3 text-sm font-bold border-b-2 transition ${teacherTab === 'progress' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
-            >
-              🧭 课程进度
-            </button>
-          </div>
-
-          {/* TEACHER TAB 1: ASSIGNMENTS PUBLISHING */}
-          {teacherTab === 'assignments' && (
-            <TeacherAssignmentsPublishTab
-              selectedClass={selectedClass}
-              asgnSubject={asgnSubject}
-              setAsgnSubject={setAsgnSubject}
-              asgnSection={asgnSection}
-              setAsgnSection={setAsgnSection}
-              newAsgnReq={newAsgnReq}
-              setNewAsgnReq={setNewAsgnReq}
-              newAsgnPoemId={newAsgnPoemId}
-              setNewAsgnPoemId={setNewAsgnPoemId}
-              newAsgnDueDate={newAsgnDueDate}
-              setNewAsgnDueDate={setNewAsgnDueDate}
-              poems={poems}
-              learntPoemIds={learntPoemIds}
-              assignments={assignments}
-              isAssignmentsLoading={isAssignmentsLoading}
-              onPublishAssignment={handlePublishAssignment}
-              onPreviewAssignment={handleStartStudentAssignment}
-            />
-          )}
-
-          {/* TEACHER TAB 2: QUIZ STATS */}
-          {teacherTab === 'stats' && (
-            <TeacherStatsTab
-              selectedClass={selectedClass}
-              students={students}
-            />
-          )}
-
-          {/* TEACHER TAB 3: LEARNING PROGRESS (Unlock self study) */}
-          {teacherTab === 'progress' && (
-            <TeacherCourseProgressTab
-              selectedClass={selectedClass}
-              poems={poems}
-              learntPoemIds={learntPoemIds}
-              animatingPoemId={animatingPoemId}
-              onToggleLearnt={handleToggleLearnt}
-            />
-          )}
-
-        </div>
-      )}
-
-      {/* Assignment Question Review & Selection Modal */}
-      {publishingPoem && (
-        <div className="fixed inset-0 !mt-0 !m-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPublishingPoem(null)}>
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 space-y-4 h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 text-blue-700 text-[11px] font-bold rounded-full border border-blue-200 mb-1">
-                  <span>📌 教师发布前审题与挑题</span>
+                  )}
                 </div>
-                <h3 className="text-xl font-bold font-serif text-ink">
-                  《{publishingPoem.title}》作业试题勾选
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  发布班级: <strong className="text-blue-600 font-bold">{selectedClass}</strong> | 截止时间: {newAsgnDueDate}
-                </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setPublishingPoem(null)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 leading-none"
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* Selection Toolbar & Filter Tabs */}
-            {(() => {
-              const allQuestions = publishingPoem.questions || [];
-              const totalCount = allQuestions.length;
-              const typeLabels: Record<string, string> = {
-                LineAssembly: '连句组装',
-                VerseCloze: '诗句填空',
-                PinyinMatch: '拼音辨析',
-                TextToCn: '诗意理解',
-                CulturalContext: '文化背景',
-                ImageOrdering: '插图排序',
-                ImageToLine: '图配句',
-              };
-
-              const typeColors: Record<string, { active: string; inactive: string; countActive: string; countInactive: string }> = {
-                LineAssembly: {
-                  active: 'bg-violet-600 text-white shadow-xs border border-violet-700',
-                  inactive: 'bg-violet-50 text-violet-800 border border-violet-200 hover:bg-violet-100',
-                  countActive: 'bg-white/20 text-white',
-                  countInactive: 'bg-violet-200/70 text-violet-900',
-                },
-                VerseCloze: {
-                  active: 'bg-teal-600 text-white shadow-xs border border-teal-700',
-                  inactive: 'bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100',
-                  countActive: 'bg-white/20 text-white',
-                  countInactive: 'bg-teal-200/70 text-teal-900',
-                },
-                PinyinMatch: {
-                  active: 'bg-sky-600 text-white shadow-xs border border-sky-700',
-                  inactive: 'bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100',
-                  countActive: 'bg-white/20 text-white',
-                  countInactive: 'bg-sky-200/70 text-sky-900',
-                },
-                TextToCn: {
-                  active: 'bg-amber-600 text-white shadow-xs border border-amber-700',
-                  inactive: 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100',
-                  countActive: 'bg-white/20 text-white',
-                  countInactive: 'bg-amber-200/70 text-amber-900',
-                },
-                CulturalContext: {
-                  active: 'bg-rose-600 text-white shadow-xs border border-rose-700',
-                  inactive: 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100',
-                  countActive: 'bg-white/20 text-white',
-                  countInactive: 'bg-rose-200/70 text-rose-900',
-                },
-                ImageOrdering: {
-                  active: 'bg-indigo-600 text-white shadow-xs border border-indigo-700',
-                  inactive: 'bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100',
-                  countActive: 'bg-white/20 text-white',
-                  countInactive: 'bg-indigo-200/70 text-indigo-900',
-                },
-                ImageToLine: {
-                  active: 'bg-emerald-600 text-white shadow-xs border border-emerald-700',
-                  inactive: 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100',
-                  countActive: 'bg-white/20 text-white',
-                  countInactive: 'bg-emerald-200/70 text-emerald-900',
-                },
-              };
-
-              // Collect unique question types present in this poem
-              const presentTypes = Array.from(new Set(allQuestions.map(q => q.type)));
-
-              const isAllSelected = totalCount > 0 && selectedQuestionIds.length === totalCount;
-              const isIndeterminate = selectedQuestionIds.length > 0 && selectedQuestionIds.length < totalCount;
-
-              return (
-                <>
-                  {/* Select All Checkbox & Summary */}
-                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none">
+              {/* TAB 1: APPRECIATION & READING */}
+              {activeTab === 'appreciation' && (
+                <div className="space-y-6">
+                  {/* Controls */}
+                  <div className="flex items-center gap-4 text-xs font-medium text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        checked={isAllSelected}
-                        ref={el => {
-                          if (el) el.indeterminate = isIndeterminate;
-                        }}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedQuestionIds(allQuestions.map(q => q.id));
-                          } else {
-                            setSelectedQuestionIds([]);
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        checked={showPinyin}
+                        onChange={(e) => setShowPinyin(e.target.checked)}
+                        className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                       />
-                      <span>
-                        已勾选 <span className="text-blue-600 text-sm font-black">{selectedQuestionIds.length}</span> / {totalCount} 道题目
-                      </span>
+                      <span>显示拼音</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={showTranslation}
+                        onChange={(e) => setShowTranslation(e.target.checked)}
+                        className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      />
+                      <span>显示诗句释义</span>
                     </label>
                   </div>
 
-                  {/* Type Filter Tab Buttons with '全部' at first place */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setModalQuestionFilter('all')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border ${
-                        modalQuestionFilter === 'all'
-                          ? 'bg-slate-900 text-white border-slate-950 shadow-xs'
-                          : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-                      }`}
-                    >
-                      <span>全部</span>
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${modalQuestionFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                        {totalCount}
-                      </span>
-                    </button>
-
-                    {presentTypes.map(t => {
-                      const count = allQuestions.filter(q => q.type === t).length;
-                      const isSelected = modalQuestionFilter === t;
-                      const style = typeColors[t] || {
-                        active: 'bg-blue-600 text-white border-blue-700 shadow-xs',
-                        inactive: 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200',
-                        countActive: 'bg-white/20 text-white',
-                        countInactive: 'bg-slate-200 text-slate-600'
-                      };
-
+                  {/* Poem Verses Display */}
+                  <div className="text-center py-6 bg-gradient-to-b from-amber-50/40 via-emerald-50/20 to-amber-50/40 rounded-2xl border border-amber-200/60 space-y-4">
+                    {selectedPoem.lines && selectedPoem.lines.map((line, idx) => {
+                      const textStr = typeof line === 'string' ? line : line.text;
+                      const pyStr = typeof line === 'object' ? line.pinyin : '';
+                      const cnStr = typeof line === 'object' ? line.cn : '';
                       return (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => setModalQuestionFilter(t)}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                            isSelected ? style.active : style.inactive
-                          }`}
-                        >
-                          <span>{typeLabels[t] || t}</span>
-                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isSelected ? style.countActive : style.countInactive}`}>
-                            {count}
-                          </span>
-                        </button>
+                        <div key={idx} className="space-y-1">
+                          {showPinyin && pyStr && (
+                            <div className="text-xs text-amber-800/80 font-mono tracking-widest">
+                              {pyStr}
+                            </div>
+                          )}
+                          <div className="text-xl sm:text-2xl font-bold font-serif text-slate-900 tracking-widest">
+                            {textStr}
+                          </div>
+                          {showTranslation && cnStr && (
+                            <div className="text-xs text-slate-500 font-serif pt-0.5">
+                              {cnStr}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
-                </>
-              );
-            })()}
 
-            {/* Questions List with Checkboxes */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {(() => {
-                const allQuestions = publishingPoem.questions || [];
-                const filteredQuestions = modalQuestionFilter === 'all'
-                  ? allQuestions
-                  : allQuestions.filter(q => q.type === modalQuestionFilter);
-
-                const typeLabels: Record<string, string> = {
-                  LineAssembly: '连句组装',
-                  VerseCloze: '诗句填空',
-                  PinyinMatch: '拼音辨析',
-                  TextToCn: '诗意理解',
-                  CulturalContext: '文化背景',
-                  ImageOrdering: '插图排序',
-                  ImageToLine: '图配句',
-                };
-                const typeColors: Record<string, string> = {
-                  LineAssembly: 'bg-violet-100 text-violet-800 border-violet-200',
-                  VerseCloze: 'bg-teal-100 text-teal-800 border-teal-200',
-                  PinyinMatch: 'bg-sky-100 text-sky-800 border-sky-200',
-                  TextToCn: 'bg-amber-100 text-amber-800 border-amber-200',
-                  CulturalContext: 'bg-rose-100 text-rose-800 border-rose-200',
-                  ImageOrdering: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                  ImageToLine: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                };
-
-                return filteredQuestions.map((q) => {
-                  const globalIdx = allQuestions.findIndex(item => item.id === q.id);
-                  const isChecked = selectedQuestionIds.includes(q.id);
-
-                  return (
-                    <div
-                      key={q.id}
-                      onClick={() => {
-                        if (isChecked) {
-                          setSelectedQuestionIds(selectedQuestionIds.filter(id => id !== q.id));
-                        } else {
-                          setSelectedQuestionIds([...selectedQuestionIds, q.id]);
-                        }
-                      }}
-                      className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-start gap-3 group ${isChecked
-                        ? 'bg-blue-50/50 border-blue-300 shadow-2xs'
-                        : 'bg-slate-50/70 border-slate-200 opacity-60 hover:opacity-80'
-                        }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => { }}
-                        className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer flex-shrink-0"
-                      />
-
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono text-slate-400 font-bold">#{globalIdx + 1}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${typeColors[q.type] || 'bg-slate-100 text-slate-700'}`}>
-                              {typeLabels[q.type] || q.type}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewStartIndex(globalIdx);
-                            }}
-                            className="px-2 py-0.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition opacity-80 group-hover:opacity-100 flex items-center gap-0.5"
-                            title="测试此题学生界面"
-                          >
-                            👁 试做
-                          </button>
-                        </div>
-                        <p className="text-xs font-bold text-slate-800 font-serif leading-relaxed">
-                          {q.prompt || '(全自动互动拼图/排序关联题)'}
-                        </p>
-                        {(q as any).image && (
-                          <div className="my-1.5">
-                            <CachedImage src={(q as any).image} alt="题目图片" className="max-h-24 rounded-lg border border-slate-200 object-cover" />
-                          </div>
-                        )}
-                        {q.type === 'ImageOrdering' && Array.isArray((q as any).images) && (q as any).images.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 my-1.5">
-                            {(q as any).images.map((img: string, iIdx: number) => (
-                              <CachedImage key={iIdx} src={img} alt={`插图-${iIdx + 1}`} className="w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-2xs" />
-                            ))}
-                          </div>
-                        )}
-                        {(q as any).options && Array.isArray((q as any).options) && (q as any).options.length > 0 && (
-                          <div className="flex flex-wrap gap-1 pt-0.5">
-                            {(q as any).options.slice(0, 4).map((opt: string, oIdx: number) => (
-                              <span
-                                key={oIdx}
-                                className={`text-[10px] px-2 py-0.5 rounded ${(q as any).answer === oIdx
-                                  ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300'
-                                  : 'bg-white text-slate-600 border border-slate-200'
-                                  }`}
-                              >
-                                {opt}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                  {/* Keywords / Themes */}
+                  {selectedPoem.keywords && selectedPoem.keywords.length > 0 && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-bold text-slate-600">关键词:</span>
+                      {selectedPoem.keywords.map((kw, kwIdx) => (
+                        <span key={kwIdx} className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-full font-bold border border-emerald-200">
+                          {kw}
+                        </span>
+                      ))}
                     </div>
-                  );
-                });
-              })()}
-            </div>
+                  )}
 
-            {/* Modal Action Bar */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setPublishingPoem(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (selectedQuestionIds.length === 0) {
-                    alert('请至少勾选 1 道题目后再预览！');
-                    return;
-                  }
-                  setPreviewStartIndex(0);
-                }}
-                disabled={selectedQuestionIds.length === 0}
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
-              >
-                👁 预览 ({selectedQuestionIds.length} 道精选题目)
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* Teacher Publish Success Modal */}
-      {publishSuccessData && (
-        <div className="fixed inset-0 !mt-0 !m-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPublishSuccessData(null)}>
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 space-y-5 text-center animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner">
-              🎉
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-xl font-bold font-serif text-slate-800">
-                作业发布成功！
-              </h3>
-              <p className="text-xs text-slate-500">
-                班级【<span className="font-bold text-blue-600">{publishSuccessData.className}</span>】的学生现已可在学生端进行答题打卡。
-              </p>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left text-xs space-y-2 font-medium">
-              <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
-                <span className="text-slate-500">发布古诗篇目</span>
-                <span className="font-bold text-slate-800 font-serif text-sm">《{publishSuccessData.poemTitle}》</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">精选试题数量</span>
-                <span className="font-bold text-emerald-600">{publishSuccessData.questionCount} 道题</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">截止打卡时间</span>
-                <span className="font-bold text-blue-600">{publishSuccessData.dueDate}</span>
-              </div>
-              {publishSuccessData.requirement && (
-                <div className="pt-1 text-slate-600 border-t border-slate-200/60">
-                  <span className="text-slate-400 block text-[10px]">作业要求:</span>
-                  <p className="font-sans leading-relaxed">{publishSuccessData.requirement}</p>
+                  {/* Action to Start Practice */}
+                  <div className="flex justify-center pt-2">
+                    <button
+                      onClick={() => {
+                        setActiveTab('scramble');
+                        initScrambleGame(selectedPoem, 0);
+                      }}
+                      className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-2xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
+                    >
+                      <span>🪷 开始“采莲连句”挑战</span>
+                    </button>
+                  </div>
                 </div>
               )}
+
+              {/* TAB 2: LOTUS SCRAMBLE GAME (采莲连句) */}
+              {activeTab === 'scramble' && (
+                <div className="space-y-6">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between text-xs">
+                    <span className="font-bold text-emerald-800">
+                      🪷 采莲连句进度: 第 {activeLineIdx + 1} / {selectedPoem.lines?.length || 0} 句
+                    </span>
+                    <span className="text-slate-500">
+                      已拼成 {completedLinesCount} 句
+                    </span>
+                  </div>
+
+                  {!scrambleFinished ? (
+                    <div className="space-y-6">
+                      {/* Target Assembly Line */}
+                      <div className="min-h-[72px] bg-amber-50/80 border-2 border-dashed border-amber-300 rounded-2xl p-4 flex flex-wrap gap-2 justify-center items-center">
+                        {selectedChars.length === 0 ? (
+                          <span className="text-xs text-amber-700 italic">点击下方汉字连成正确诗句</span>
+                        ) : (
+                          selectedChars.map((char, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleRemoveChar(char, idx)}
+                              className="w-11 h-11 bg-amber-500 text-white font-bold rounded-xl shadow-sm text-xl hover:bg-amber-600 font-serif cursor-pointer transition transform hover:scale-105"
+                            >
+                              {char}
+                            </button>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Scrambled Pool */}
+                      <div className="flex flex-wrap gap-3 justify-center py-2">
+                        {scrambledChars.map((char, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleSelectChar(char, idx)}
+                            className="w-12 h-12 bg-slate-100 hover:bg-emerald-100 border border-slate-300 hover:border-emerald-400 text-slate-800 font-serif font-bold rounded-2xl text-xl shadow-xs transition cursor-pointer transform hover:scale-105"
+                          >
+                            {char}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Submit / Reset Actions */}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => initScrambleGame(selectedPoem, activeLineIdx)}
+                          className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                        >
+                          重置本句
+                        </button>
+                        <button
+                          onClick={handleVerifyLine}
+                          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm shadow-md transition cursor-pointer"
+                        >
+                          ✅ 验证本句答案
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 space-y-4 bg-emerald-50/50 rounded-2xl border border-emerald-200">
+                      <span className="text-5xl">🎉</span>
+                      <h4 className="text-2xl font-bold font-serif text-emerald-800">
+                        恭喜！完成《{selectedPoem.title}》全篇采莲连句！
+                      </h4>
+                      <p className="text-xs text-slate-600 font-serif">
+                        诗情意境尽在心中，获得打卡记录与智慧成就！
+                      </p>
+                      <button
+                        onClick={() => initScrambleGame(selectedPoem, 0)}
+                        className="px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl text-xs shadow-md transition hover:bg-emerald-500 cursor-pointer"
+                      >
+                        再次练习
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: QUIZ RUNNER (MODAL) */}
+              {activeTab === 'quiz' && (
+                <div className="text-center py-12 space-y-4">
+                  <div className="text-4xl">🎯</div>
+                  <h3 className="text-lg font-bold font-serif text-slate-800">
+                    《{selectedPoem.title}》全量互动题库
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    包含连句、填空、字音、诗意辨析与插图关联题目共 {selectedPoem.questions?.length || 0} 道
+                  </p>
+                  <button
+                    onClick={() => setActiveStudentQuiz({
+                      poemTitle: selectedPoem.title,
+                      questions: selectedPoem.questions || [],
+                    })}
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl text-xs shadow-md transition cursor-pointer"
+                  >
+                    🚀 打开闯关界面
+                  </button>
+                </div>
+              )}
+
             </div>
-
-            <button
-              type="button"
-              onClick={() => setPublishSuccessData(null)}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-md transition"
-            >
-              完成并返回作业列表
-            </button>
-          </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-12 text-center text-slate-400 font-serif">
+              请从左侧选择一篇古诗开始学习
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Student Assignment Quiz Runner Modal */}
+      </div>
+
+      {/* Student Quiz Preview Modal */}
       {activeStudentQuiz && (
         <StudentQuizPreviewModal
           poemTitle={activeStudentQuiz.poemTitle}
           questions={activeStudentQuiz.questions}
           initialIndex={0}
-          onClose={(res) => {
-            const quizInfo = activeStudentQuiz;
-            setActiveStudentQuiz(null);
-            if (res && res.completed) {
-              const finalScore = res.score !== undefined ? res.score : 100;
-              const studentId = user?.id || 'usr_stu_001';
-
-              // 1. Record quiz result synchronously for ZERO-delay points calculation & local storage
-              const pb = apiService.recordQuizResult(studentId, {
-                poemTitle: quizInfo.poemTitle,
-                poemId: poems.find(p => p.title === quizInfo.poemTitle)?.id || 1,
-                score: finalScore,
-                accuracy: `${finalScore}%`,
-                quizType: quizInfo.assignmentId ? '班级作业闯关' : '自主修业练习',
-                details: res.details || [],
-                assignmentId: quizInfo.assignmentId
-              });
-
-              // 2. Open points award modal INSTANTLY (0ms delay)
-              if (pb) {
-                setPointAwardModal(pb);
-              }
-
-              // 3. Update history list INSTANTLY (0ms delay)
-              const syncHistory = apiService.getQuizHistorySync(studentId);
-              setQuizHistory([...syncHistory]);
-
-              // 4. Fire-and-forget background sync & data refresh
-              if (quizInfo.assignmentId) {
-                apiService.markAssignmentCompleted(quizInfo.assignmentId, finalScore).catch(console.error);
-              }
-
-              loadStudentData();
-            }
-          }}
+          onClose={() => setActiveStudentQuiz(null)}
         />
       )}
-
-      {/* Interactive Teacher Question Preview Modal */}
-      {previewStartIndex !== null && publishingPoem && (
-        <StudentQuizPreviewModal
-          poemTitle={publishingPoem.title}
-          questions={(publishingPoem.questions || []).filter(q => selectedQuestionIds.includes(q.id))}
-          initialIndex={Math.max(0, (publishingPoem.questions || []).filter(q => selectedQuestionIds.includes(q.id)).findIndex(q => q.id === publishingPoem.questions?.[previewStartIndex]?.id))}
-          selectedQuestionIds={selectedQuestionIds}
-          onToggleSelectQuestion={(qId) => {
-            setSelectedQuestionIds(prev =>
-              prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]
-            );
-          }}
-          onConfirmPublish={confirmPublishAssignment}
-          onClose={() => setPreviewStartIndex(null)}
-        />
-      )}
-
-      {/* Quiz Record Answer Detail Modal */}
-      {selectedHistoryItem && (
-        <HistoryDetailModal
-          selectedHistoryItem={selectedHistoryItem}
-          poems={poems}
-          formatLocalTime={formatLocalTime}
-          onClose={() => setSelectedHistoryItem(null)}
-        />
-      )}
-
-      {/* Point Reward Breakdown Modal */}
-      {pointAwardModal && (
-        <div className="fixed inset-0 !mt-0 !m-0 z-[130] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPointAwardModal(null)}>
-          <div className="bg-white rounded-3xl shadow-2xl border border-amber-200 max-w-sm w-full p-6 text-center space-y-5 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-300 text-amber-900 rounded-full flex items-center justify-center text-4xl mx-auto shadow-lg ring-4 ring-amber-100">
-              🪙
-            </div>
-            
-            <div className="space-y-1">
-              <h3 className="text-2xl font-black font-serif text-slate-800">
-                获得 +{pointAwardModal.totalEarnedPoints} 智慧点！
-              </h3>
-              <p className="text-xs text-slate-500">
-                知新堂智慧点总计: <span className="font-bold text-amber-600 font-mono text-sm">{pointAwardModal.newTotalPoints} 智慧点</span>
-              </p>
-            </div>
-
-            <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-4 text-xs space-y-2 text-left">
-              <div className="flex justify-between items-center text-slate-700">
-                <span>📅 每日打卡基础分</span>
-                <span className="font-bold text-slate-900 font-mono">+{pointAwardModal.basePoints} pts</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-700">
-                <span>⏱️ 按时提交奖励</span>
-                <span className="font-bold text-slate-900 font-mono">+{pointAwardModal.timelyBonus} pts</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-700">
-                <span>🎯 正确率突破奖励</span>
-                <span className="font-bold text-amber-600 font-mono font-bold">+{pointAwardModal.accuracyBonus} pts</span>
-              </div>
-            </div>
-
-            {pointAwardModal.isLockedToday && (
-              <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-xs text-emerald-800 font-bold flex items-center justify-center gap-1">
-                <span>🔒 100% 满分成就！今日已锁定，明天可再练习</span>
-              </div>
-            )}
-
-            <button
-              onClick={() => setPointAwardModal(null)}
-              className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-sm rounded-xl shadow-md transition"
-            >
-              太棒了 (Awesome!)
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Sync Error Modal */}
-      {syncErrorModal && (
-        <div className="fixed inset-0 !mt-0 !m-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSyncErrorModal(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl border border-red-200 max-w-md w-full p-6 space-y-4 text-xs" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-2.5 text-red-600 font-bold text-base border-b border-slate-100 pb-3">
-              <span className="text-xl">⚠️</span>
-              <h3>{syncErrorModal.title}</h3>
-            </div>
-            <p className="text-slate-700 leading-relaxed font-sans">{syncErrorModal.message}</p>
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setSyncErrorModal(null)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition"
-              >
-                我知道了 (Close)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
-    </>
   );
 };
 
