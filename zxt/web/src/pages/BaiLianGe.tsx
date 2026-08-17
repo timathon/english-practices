@@ -143,6 +143,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [publishingPoem, setPublishingPoem] = useState<Poem | null>(null);
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
   const [previewStartIndex, setPreviewStartIndex] = useState<number | null>(null);
+  const [modalQuestionFilter, setModalQuestionFilter] = useState<string>('all');
 
   // Quiz History Detail Modal state
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
@@ -451,6 +452,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     const allQs = poem.questions || [];
     setPublishingPoem(poem);
     setSelectedQuestionIds(allQs.map(q => q.id));
+    setModalQuestionFilter('all');
   };
 
   const [publishSuccessData, setPublishSuccessData] = useState<{
@@ -928,7 +930,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
       {/* Assignment Question Review & Selection Modal */}
       {publishingPoem && (
         <div className="fixed inset-0 !mt-0 !m-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPublishingPoem(null)}>
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 space-y-4 h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
 
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
@@ -952,42 +954,153 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
               </button>
             </div>
 
-            {/* Selection Toolbar */}
-            <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
-              {(() => {
-                const totalCount = (publishingPoem.questions || []).length;
-                const isAllSelected = totalCount > 0 && selectedQuestionIds.length === totalCount;
-                const isIndeterminate = selectedQuestionIds.length > 0 && selectedQuestionIds.length < totalCount;
+            {/* Selection Toolbar & Filter Tabs */}
+            {(() => {
+              const allQuestions = publishingPoem.questions || [];
+              const totalCount = allQuestions.length;
+              const typeLabels: Record<string, string> = {
+                LineAssembly: '连句组装',
+                VerseCloze: '诗句填空',
+                PinyinMatch: '拼音辨析',
+                TextToCn: '诗意理解',
+                CulturalContext: '文化背景',
+                ImageOrdering: '插图排序',
+                ImageToLine: '图配句',
+              };
 
-                return (
-                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none">
-                    <input
-                      type="checkbox"
-                      checked={isAllSelected}
-                      ref={el => {
-                        if (el) el.indeterminate = isIndeterminate;
-                      }}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedQuestionIds((publishingPoem.questions || []).map(q => q.id));
-                        } else {
-                          setSelectedQuestionIds([]);
-                        }
-                      }}
-                      className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-                    />
-                    <span>
-                      已勾选 <span className="text-blue-600 text-sm font-black">{selectedQuestionIds.length}</span> / {totalCount} 道题目
-                    </span>
-                  </label>
-                );
-              })()}
-            </div>
+              const typeColors: Record<string, { active: string; inactive: string; countActive: string; countInactive: string }> = {
+                LineAssembly: {
+                  active: 'bg-violet-600 text-white shadow-xs border border-violet-700',
+                  inactive: 'bg-violet-50 text-violet-800 border border-violet-200 hover:bg-violet-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-violet-200/70 text-violet-900',
+                },
+                VerseCloze: {
+                  active: 'bg-teal-600 text-white shadow-xs border border-teal-700',
+                  inactive: 'bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-teal-200/70 text-teal-900',
+                },
+                PinyinMatch: {
+                  active: 'bg-sky-600 text-white shadow-xs border border-sky-700',
+                  inactive: 'bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-sky-200/70 text-sky-900',
+                },
+                TextToCn: {
+                  active: 'bg-amber-600 text-white shadow-xs border border-amber-700',
+                  inactive: 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-amber-200/70 text-amber-900',
+                },
+                CulturalContext: {
+                  active: 'bg-rose-600 text-white shadow-xs border border-rose-700',
+                  inactive: 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-rose-200/70 text-rose-900',
+                },
+                ImageOrdering: {
+                  active: 'bg-indigo-600 text-white shadow-xs border border-indigo-700',
+                  inactive: 'bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-indigo-200/70 text-indigo-900',
+                },
+                ImageToLine: {
+                  active: 'bg-emerald-600 text-white shadow-xs border border-emerald-700',
+                  inactive: 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-emerald-200/70 text-emerald-900',
+                },
+              };
+
+              // Collect unique question types present in this poem
+              const presentTypes = Array.from(new Set(allQuestions.map(q => q.type)));
+
+              const isAllSelected = totalCount > 0 && selectedQuestionIds.length === totalCount;
+              const isIndeterminate = selectedQuestionIds.length > 0 && selectedQuestionIds.length < totalCount;
+
+              return (
+                <>
+                  {/* Select All Checkbox & Summary */}
+                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
+                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        ref={el => {
+                          if (el) el.indeterminate = isIndeterminate;
+                        }}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedQuestionIds(allQuestions.map(q => q.id));
+                          } else {
+                            setSelectedQuestionIds([]);
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span>
+                        已勾选 <span className="text-blue-600 text-sm font-black">{selectedQuestionIds.length}</span> / {totalCount} 道题目
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Type Filter Tab Buttons with '全部' at first place */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setModalQuestionFilter('all')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border ${
+                        modalQuestionFilter === 'all'
+                          ? 'bg-slate-900 text-white border-slate-950 shadow-xs'
+                          : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                      }`}
+                    >
+                      <span>全部</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${modalQuestionFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                        {totalCount}
+                      </span>
+                    </button>
+
+                    {presentTypes.map(t => {
+                      const count = allQuestions.filter(q => q.type === t).length;
+                      const isSelected = modalQuestionFilter === t;
+                      const style = typeColors[t] || {
+                        active: 'bg-blue-600 text-white border-blue-700 shadow-xs',
+                        inactive: 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200',
+                        countActive: 'bg-white/20 text-white',
+                        countInactive: 'bg-slate-200 text-slate-600'
+                      };
+
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setModalQuestionFilter(t)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                            isSelected ? style.active : style.inactive
+                          }`}
+                        >
+                          <span>{typeLabels[t] || t}</span>
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isSelected ? style.countActive : style.countInactive}`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Questions List with Checkboxes */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {(publishingPoem.questions || []).map((q, idx) => {
-                const isChecked = selectedQuestionIds.includes(q.id);
+              {(() => {
+                const allQuestions = publishingPoem.questions || [];
+                const filteredQuestions = modalQuestionFilter === 'all'
+                  ? allQuestions
+                  : allQuestions.filter(q => q.type === modalQuestionFilter);
+
                 const typeLabels: Record<string, string> = {
                   LineAssembly: '连句组装',
                   VerseCloze: '诗句填空',
@@ -1007,82 +1120,87 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
                   ImageToLine: 'bg-emerald-100 text-emerald-800 border-emerald-200',
                 };
 
-                return (
-                  <div
-                    key={q.id}
-                    onClick={() => {
-                      if (isChecked) {
-                        setSelectedQuestionIds(selectedQuestionIds.filter(id => id !== q.id));
-                      } else {
-                        setSelectedQuestionIds([...selectedQuestionIds, q.id]);
-                      }
-                    }}
-                    className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-start gap-3 group ${isChecked
-                      ? 'bg-blue-50/50 border-blue-300 shadow-2xs'
-                      : 'bg-slate-50/70 border-slate-200 opacity-60 hover:opacity-80'
-                      }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => { }}
-                      className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer flex-shrink-0"
-                    />
+                return filteredQuestions.map((q) => {
+                  const globalIdx = allQuestions.findIndex(item => item.id === q.id);
+                  const isChecked = selectedQuestionIds.includes(q.id);
 
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono text-slate-400 font-bold">#{idx + 1}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${typeColors[q.type] || 'bg-slate-100 text-slate-700'}`}>
-                            {typeLabels[q.type] || q.type}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPreviewStartIndex(idx);
-                          }}
-                          className="px-2 py-0.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition opacity-80 group-hover:opacity-100 flex items-center gap-0.5"
-                          title="测试此题学生界面"
-                        >
-                          👁 试做
-                        </button>
-                      </div>
-                      <p className="text-xs font-bold text-slate-800 font-serif leading-relaxed">
-                        {q.prompt || '(全自动互动拼图/排序关联题)'}
-                      </p>
-                      {(q as any).image && (
-                        <div className="my-1.5">
-                          <CachedImage src={(q as any).image} alt="题目图片" className="max-h-24 rounded-lg border border-slate-200 object-cover" />
-                        </div>
-                      )}
-                      {q.type === 'ImageOrdering' && Array.isArray((q as any).images) && (q as any).images.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 my-1.5">
-                          {(q as any).images.map((img: string, iIdx: number) => (
-                            <CachedImage key={iIdx} src={img} alt={`插图-${iIdx + 1}`} className="w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-2xs" />
-                          ))}
-                        </div>
-                      )}
-                      {(q as any).options && Array.isArray((q as any).options) && (q as any).options.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-0.5">
-                          {(q as any).options.slice(0, 4).map((opt: string, oIdx: number) => (
-                            <span
-                              key={oIdx}
-                              className={`text-[10px] px-2 py-0.5 rounded ${(q as any).answer === oIdx
-                                ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300'
-                                : 'bg-white text-slate-600 border border-slate-200'
-                                }`}
-                            >
-                              {opt}
+                  return (
+                    <div
+                      key={q.id}
+                      onClick={() => {
+                        if (isChecked) {
+                          setSelectedQuestionIds(selectedQuestionIds.filter(id => id !== q.id));
+                        } else {
+                          setSelectedQuestionIds([...selectedQuestionIds, q.id]);
+                        }
+                      }}
+                      className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-start gap-3 group ${isChecked
+                        ? 'bg-blue-50/50 border-blue-300 shadow-2xs'
+                        : 'bg-slate-50/70 border-slate-200 opacity-60 hover:opacity-80'
+                        }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => { }}
+                        className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer flex-shrink-0"
+                      />
+
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono text-slate-400 font-bold">#{globalIdx + 1}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${typeColors[q.type] || 'bg-slate-100 text-slate-700'}`}>
+                              {typeLabels[q.type] || q.type}
                             </span>
-                          ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewStartIndex(globalIdx);
+                            }}
+                            className="px-2 py-0.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition opacity-80 group-hover:opacity-100 flex items-center gap-0.5"
+                            title="测试此题学生界面"
+                          >
+                            👁 试做
+                          </button>
                         </div>
-                      )}
+                        <p className="text-xs font-bold text-slate-800 font-serif leading-relaxed">
+                          {q.prompt || '(全自动互动拼图/排序关联题)'}
+                        </p>
+                        {(q as any).image && (
+                          <div className="my-1.5">
+                            <CachedImage src={(q as any).image} alt="题目图片" className="max-h-24 rounded-lg border border-slate-200 object-cover" />
+                          </div>
+                        )}
+                        {q.type === 'ImageOrdering' && Array.isArray((q as any).images) && (q as any).images.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 my-1.5">
+                            {(q as any).images.map((img: string, iIdx: number) => (
+                              <CachedImage key={iIdx} src={img} alt={`插图-${iIdx + 1}`} className="w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-2xs" />
+                            ))}
+                          </div>
+                        )}
+                        {(q as any).options && Array.isArray((q as any).options) && (q as any).options.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {(q as any).options.slice(0, 4).map((opt: string, oIdx: number) => (
+                              <span
+                                key={oIdx}
+                                className={`text-[10px] px-2 py-0.5 rounded ${(q as any).answer === oIdx
+                                  ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300'
+                                  : 'bg-white text-slate-600 border border-slate-200'
+                                  }`}
+                              >
+                                {opt}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
 
             {/* Modal Action Bar */}
