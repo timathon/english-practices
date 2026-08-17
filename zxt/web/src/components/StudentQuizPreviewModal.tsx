@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { apiService, PoemQuestion } from '../services/api';
+import { apiService, PoemQuestion, IdiomQuestion, IdiomItem } from '../services/api';
 import { playAnswerSFX } from '../utils/sound';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 import { CachedImage } from './CachedImage';
@@ -12,6 +12,14 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
   CulturalContext:'文化背景',
   ImageOrdering: '插图排序',
   ImageToLine:   '图配句',
+  IdiomAssembly:  '成语还原',
+  IdiomSolitaire: '首尾接龙',
+  IdiomCloze:     '成语填空',
+  HomophoneMatch: '字音字形',
+  IdiomMeaning:   '成语释义',
+  StoryComprehension: '故事问答',
+  ImageToIdiom:   '看图识成语',
+  EmotionMatch:   '情感归类',
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -22,11 +30,19 @@ const TYPE_COLORS: Record<string, string> = {
   CulturalContext:'bg-rose-100 text-rose-800 border-rose-200',
   ImageOrdering: 'bg-indigo-100 text-indigo-800 border-indigo-200',
   ImageToLine:   'bg-emerald-100 text-emerald-800 border-emerald-200',
+  IdiomAssembly:  'bg-emerald-100 text-emerald-800 border-emerald-200',
+  IdiomSolitaire: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+  IdiomCloze:     'bg-teal-100 text-teal-800 border-teal-200',
+  HomophoneMatch: 'bg-sky-100 text-sky-800 border-sky-200',
+  IdiomMeaning:   'bg-amber-100 text-amber-800 border-amber-200',
+  StoryComprehension: 'bg-purple-100 text-purple-800 border-purple-200',
+  ImageToIdiom:   'bg-teal-100 text-teal-800 border-teal-200',
+  EmotionMatch:   'bg-rose-100 text-rose-800 border-rose-200',
 };
 
 export const StudentQuizPreviewModal: React.FC<{
   poemTitle: string;
-  questions: PoemQuestion[];
+  questions: (PoemQuestion | IdiomQuestion)[];
   initialIndex: number;
   selectedQuestionIds?: string[];
   onToggleSelectQuestion?: (qId: string) => void;
@@ -59,7 +75,7 @@ export const StudentQuizPreviewModal: React.FC<{
   const [selectedSource, setSelectedSource] = useState<{ type: 'bank' | 'slot'; index: number } | null>(null);
 
   // Remediation & Quiz Loop States
-  const [currentRoundQuestions, setCurrentRoundQuestions] = useState<PoemQuestion[]>(questions);
+  const [currentRoundQuestions, setCurrentRoundQuestions] = useState<(PoemQuestion | IdiomQuestion)[]>(questions);
   const [firstAttemptResults, setFirstAttemptResults] = useState<Record<string, boolean>>({});
   const [userAnswerDetails, setUserAnswerDetails] = useState<Record<string, any>>({});
   const [roundMistakenIds, setRoundMistakenIds] = useState<string[]>([]);
@@ -98,8 +114,20 @@ export const StudentQuizPreviewModal: React.FC<{
     return p.lines.map(l => typeof l === 'string' ? l : l.text);
   }, [poemTitle]);
 
+  const idiomMap = useMemo(() => {
+    const groups = apiService.getLocalIdiomGroups();
+    const map: Record<string, IdiomItem> = {};
+    groups.forEach(g => {
+      (g.idioms || []).forEach(i => {
+        map[i.word] = i;
+      });
+    });
+    return map;
+  }, []);
+
   const q = currentRoundQuestions[currentIndex];
   const isQuestionSelected = selectedQuestionIds ? selectedQuestionIds.includes(q?.id || '') : true;
+  const currentIdiomInfo = q && q.type === 'IdiomAssembly' ? idiomMap[q.answer] : null;
 
   useEffect(() => {
     if (!q) return;
@@ -121,7 +149,7 @@ export const StudentQuizPreviewModal: React.FC<{
     setFeedback(null);
     setMcSelection(null);
 
-    if (q.type === 'LineAssembly') {
+    if (q.type === 'LineAssembly' || q.type === 'IdiomAssembly') {
       const ansChars = (q.answer || '').split('');
       const distChars = q.distractor_chars || [];
       const all = [...ansChars, ...distChars];
@@ -145,7 +173,7 @@ export const StudentQuizPreviewModal: React.FC<{
       const combined = [correctOpt, ...sampledDistractors].sort(() => Math.random() - 0.5);
       setDisplayedOptions(combined);
       setMappedAnswerIndex(combined.indexOf(correctOpt));
-    } else if (q.type !== 'LineAssembly' && q.type !== 'ImageOrdering') {
+    } else if (q.type !== 'LineAssembly' && q.type !== 'IdiomAssembly' && q.type !== 'ImageOrdering') {
       const rawOpts = (q as any).options || [];
       const correctOpt = rawOpts[(q as any).answer] ?? rawOpts[0] ?? '';
       const shuffled = [...rawOpts].sort(() => Math.random() - 0.5);
@@ -188,7 +216,7 @@ export const StudentQuizPreviewModal: React.FC<{
           // Trigger verify/submit if selection is present
           const hasSelection = (() => {
             if (!q) return false;
-            if (q.type === 'LineAssembly') return selectedChars.length > 0;
+            if (q.type === 'LineAssembly' || q.type === 'IdiomAssembly') return selectedChars.length > 0;
             if (q.type === 'ImageOrdering') return placedSlots.some(s => s !== null);
             return mcSelection !== null;
           })();
@@ -243,15 +271,25 @@ export const StudentQuizPreviewModal: React.FC<{
     let currentDisplayedOptions = displayedOptions;
     let currentMappedAnswerIndex = mappedAnswerIndex;
 
-    if (q.type === 'LineAssembly') {
+    if (q.type === 'LineAssembly' || q.type === 'IdiomAssembly') {
       const studentAns = selectedChars.map(c => c.char).join('');
       const isRight = studentAns === q.answer;
       if (isRight) {
         playAnswerSFX('correct');
-        currentFeedback = { isCorrect: true, text: '🎉 回答正确！精准拼接出了正确的诗句。' };
+        currentFeedback = {
+          isCorrect: true,
+          text: q.type === 'IdiomAssembly'
+            ? `🎉 回答正确！成语是：“${q.answer}”${currentIdiomInfo?.pinyin ? ` (${currentIdiomInfo.pinyin})` : ''}！`
+            : '🎉 回答正确！精准拼接出了正确的诗句。'
+        };
       } else {
         playAnswerSFX('wrong');
-        currentFeedback = { isCorrect: false, text: `❌ 还需要加油哦！正确诗句是：“${q.answer}”` };
+        currentFeedback = {
+          isCorrect: false,
+          text: q.type === 'IdiomAssembly'
+            ? `❌ 还需要加油哦！正确成语是：“${q.answer}”${currentIdiomInfo?.pinyin ? ` (${currentIdiomInfo.pinyin})` : ''}`
+            : `❌ 还需要加油哦！正确诗句是：“${q.answer}”`
+        };
       }
       setFeedback(currentFeedback);
       recordAnswerResult(isRight, `“${studentAns}”`, `“${q.answer}”`);
@@ -414,6 +452,24 @@ export const StudentQuizPreviewModal: React.FC<{
       setSelectedSource(null);
     }
   };
+
+  if (!questions || questions.length === 0 || !q) {
+    return (
+      <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-slate-900 text-white p-6 rounded-2xl max-w-sm w-full text-center space-y-4 border border-slate-700 shadow-2xl">
+          <div className="text-4xl">📭</div>
+          <div className="font-bold text-base">暂无可练习的题目</div>
+          <p className="text-xs text-slate-400">该作业尚未配置题目或题库数据未加载完成。</p>
+          <button
+            onClick={() => onClose()}
+            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-sm transition cursor-pointer"
+          >
+            返回
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 !mt-0 !m-0 bg-black/75 z-[110] flex items-center justify-center p-4" onClick={() => onClose()}>
@@ -646,9 +702,22 @@ export const StudentQuizPreviewModal: React.FC<{
                 </span>
                 <span className="text-xs text-slate-400 font-mono">ID: {q.id}</span>
               </div>
-              <h4 className="text-lg font-serif font-bold text-slate-800 leading-snug">
-                {q.prompt || '(未设置题目提示)'}
-              </h4>
+              <div className="space-y-2.5">
+                <h4 className="text-lg font-serif font-bold text-slate-800 leading-snug">
+                  {q.prompt || (q.type === 'IdiomAssembly' ? '请根据成语释义，点击字块拼接出对应的四字成语：' : '(未设置题目提示)')}
+                </h4>
+                {q.type === 'IdiomAssembly' && (currentIdiomInfo?.full_meaning || currentIdiomInfo?.meaning) && (
+                  <div className="bg-emerald-50/90 border border-emerald-200/90 rounded-2xl p-3.5 text-sm text-emerald-950 leading-relaxed shadow-2xs">
+                    <span className="font-bold text-emerald-800 mr-2 inline-flex items-center gap-1">
+                      <span>💡</span>
+                      <span>释义提示:</span>
+                    </span>
+                    <span className="font-medium">
+                      {currentIdiomInfo.full_meaning || currentIdiomInfo.meaning?.replace(/^[^。；！？]+?：[^。；！？]+?[。；]\s*/, '')}
+                    </span>
+                  </div>
+                )}
+              </div>
               {(q as any).image && (
                 <div className="flex justify-center my-2">
                   <CachedImage
@@ -660,7 +729,7 @@ export const StudentQuizPreviewModal: React.FC<{
               )}
             </div>
 
-            {q.type === 'LineAssembly' && (
+            {(q.type === 'LineAssembly' || q.type === 'IdiomAssembly') && (
               <div className="space-y-5">
                 <div className={`min-h-[64px] rounded-2xl p-3 flex flex-wrap gap-2 justify-center items-center border-2 transition ${
                   feedback
@@ -670,7 +739,9 @@ export const StudentQuizPreviewModal: React.FC<{
                     : 'bg-amber-50/80 border-dashed border-amber-300'
                 }`}>
                   {selectedChars.length === 0 ? (
-                    <span className="text-xs text-amber-700/70 font-medium">点击下方汉字块组成诗句</span>
+                    <span className="text-xs text-amber-700/70 font-medium">
+                      {q.type === 'IdiomAssembly' ? '点击下方汉字块组成四字成语' : '点击下方汉字块组成诗句'}
+                    </span>
                   ) : (
                     selectedChars.map((item, idx) => {
                       const isSubmitted = feedback !== null;
@@ -691,7 +762,7 @@ export const StudentQuizPreviewModal: React.FC<{
                             nextPool[item.poolIndex] = item.char;
                             setScrambledPool(nextPool);
                           }}
-                          className={`w-10 h-10 font-bold rounded-xl text-lg font-serif transition transform ${
+                          className={`w-11 h-11 font-bold rounded-2xl text-xl font-serif transition transform ${
                             isSubmitted
                               ? isCharRight
                                 ? 'bg-emerald-500 text-white shadow-sm cursor-default'
@@ -714,7 +785,7 @@ export const StudentQuizPreviewModal: React.FC<{
                       return (
                         <div
                           key={poolIdx}
-                          className="w-12 h-12 border-2 border-dashed border-slate-200 bg-slate-100/50 rounded-2xl flex items-center justify-center text-slate-300 text-xs font-mono font-bold"
+                          className="w-13 h-13 border-2 border-dashed border-slate-200 bg-slate-100/50 rounded-2xl flex items-center justify-center text-slate-300 text-xs font-mono font-bold"
                         >
                           ·
                         </div>
@@ -732,7 +803,7 @@ export const StudentQuizPreviewModal: React.FC<{
                           nextPool[poolIdx] = null;
                           setScrambledPool(nextPool);
                         }}
-                        className={`w-12 h-12 border font-serif font-bold rounded-2xl text-xl shadow-xs transition transform ${
+                        className={`w-13 h-13 border font-serif font-bold rounded-2xl text-2xl shadow-xs transition transform ${
                           isSubmitted
                             ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
                             : 'bg-white hover:bg-teal-50 border-slate-200 hover:border-teal-400 text-slate-800 hover:-translate-y-0.5 active:scale-95 cursor-pointer'
@@ -914,7 +985,7 @@ export const StudentQuizPreviewModal: React.FC<{
               </div>
             )}
 
-            {q.type !== 'LineAssembly' && q.type !== 'ImageOrdering' && (
+            {q.type !== 'LineAssembly' && q.type !== 'IdiomAssembly' && q.type !== 'ImageOrdering' && (
               <div className="space-y-3">
                 {displayedOptions.map((opt, idx) => {
                   const isSelected = mcSelection === idx;
@@ -1015,7 +1086,7 @@ export const StudentQuizPreviewModal: React.FC<{
 
               {(() => {
                 const hasSelection = (() => {
-                  if (q.type === 'LineAssembly') return selectedChars.length > 0;
+                  if (q.type === 'LineAssembly' || q.type === 'IdiomAssembly') return selectedChars.length > 0;
                   if (q.type === 'ImageOrdering') return placedSlots.some(s => s !== null);
                   return mcSelection !== null;
                 })();

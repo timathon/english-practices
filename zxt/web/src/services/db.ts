@@ -1,9 +1,10 @@
 // IndexedDB Service for ZXT App Local Caching
 
 const DB_NAME = 'ZXT_IndexedDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_LIST = 'quiz_history_list';
 const STORE_DETAILS = 'quiz_history_details';
+const STORE_IDIOM_GROUPS = 'idiom_groups';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -25,6 +26,9 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_DETAILS)) {
         db.createObjectStore(STORE_DETAILS, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_IDIOM_GROUPS)) {
+        db.createObjectStore(STORE_IDIOM_GROUPS, { keyPath: 'id' });
       }
     };
 
@@ -103,5 +107,54 @@ export const idbService = {
         updatedAt: Date.now()
       });
     } catch (_) {}
+  },
+
+  /**
+   * Get all cached idiom groups from IndexedDB
+   */
+  async getIdiomGroups(): Promise<any[] | null> {
+    try {
+      const db = await openDB();
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_IDIOM_GROUPS, 'readonly');
+        const store = tx.objectStore(STORE_IDIOM_GROUPS);
+        const req = store.getAll();
+        req.onsuccess = () => {
+          resolve(req.result && req.result.length > 0 ? req.result : null);
+        };
+        req.onerror = () => resolve(null);
+      });
+    } catch (_) {
+      return null;
+    }
+  },
+
+  /**
+   * Save all idiom groups to IndexedDB
+   */
+  async saveIdiomGroups(groups: any[]): Promise<void> {
+    if (!groups || groups.length === 0) return;
+    try {
+      const db = await openDB();
+      const tx = db.transaction(STORE_IDIOM_GROUPS, 'readwrite');
+      const store = tx.objectStore(STORE_IDIOM_GROUPS);
+      for (const g of groups) {
+        store.put(g);
+      }
+    } catch (_) {}
+  },
+
+  /**
+   * Save a single idiom group to IndexedDB
+   */
+  async saveIdiomGroup(group: any): Promise<void> {
+    if (!group || !group.id) return;
+    try {
+      const db = await openDB();
+      const tx = db.transaction(STORE_IDIOM_GROUPS, 'readwrite');
+      const store = tx.objectStore(STORE_IDIOM_GROUPS);
+      store.put(group);
+    } catch (_) {}
   }
 };
+

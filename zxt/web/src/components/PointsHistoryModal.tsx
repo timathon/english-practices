@@ -235,16 +235,9 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                   return sortedHistory.map((item, idx) => {
                     const numScore = Number(item.score) || 0;
                   
-                  // Extract embedded or fallback point breakdown
-                  const pb = item.details?.pointBreakdown;
-                  let basePts = pb?.basePoints;
-                  let timelyPts = pb?.timelyBonus;
-                  let accBonus = pb?.accuracyBonus;
-
-                  // Determine if this item was the first attempt ever for this poem
-                  const isFirstAttempt = pb?.isFirstAttempt !== undefined
-                    ? pb.isFirstAttempt
-                    : idx === history.length - 1 || !history.slice(idx + 1).some(h => h.poemId === item.poemId || h.poemTitle === item.poemTitle);
+                    // Find historical attempts prior in time to this attempt (sortedHistory is ordered newest-first)
+                    const priorAttempts = sortedHistory.slice(idx + 1).filter(h => h.poemTitle ? h.poemTitle === item.poemTitle : h.poemId === item.poemId);
+                    const isFirstAttempt = priorAttempts.length === 0;
 
                   // Helper for accuracy bonus tier scale
                   const getAccTier = (acc: number) => {
@@ -255,8 +248,6 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                     return 0;
                   };
 
-                  // Find historical attempts prior to this attempt (history array is ordered newest-first)
-                  const priorAttempts = history.slice(idx + 1).filter(h => h.poemId === item.poemId || h.poemTitle === item.poemTitle);
                   let priorHighestScore = 0;
                   for (const p of priorAttempts) {
                     const pScore = Number(p.score) || 0;
@@ -267,19 +258,11 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                   const itemDateStr = item.completedAt ? item.completedAt.split(' ')[0] : '';
                   const hasSameDayPriorAttempt = priorAttempts.some(p => p.completedAt && p.completedAt.split(' ')[0] === itemDateStr);
 
-                  // Infer/fallback for legacy items
-                  if (basePts === undefined) {
-                    basePts = !hasSameDayPriorAttempt ? 5 : 0;
-                  }
-                  if (timelyPts === undefined) {
-                    timelyPts = isFirstAttempt ? 10 : 0;
-                  }
-                  if (accBonus === undefined) {
-                    const currentTierBonus = getAccTier(numScore);
-                    const priorTierBonus = priorAttempts.length > 0 ? getAccTier(priorHighestScore) : 0;
-                    accBonus = Math.max(0, currentTierBonus - priorTierBonus);
-                  }
-
+                  const basePts = !hasSameDayPriorAttempt ? 5 : 0;
+                  const timelyPts = isFirstAttempt ? 10 : 0;
+                  const currentTierBonus = getAccTier(numScore);
+                  const priorTierBonus = priorAttempts.length > 0 ? getAccTier(priorHighestScore) : 0;
+                  const accBonus = Math.max(0, currentTierBonus - priorTierBonus);
                   const totalItemEarned = basePts + timelyPts + accBonus;
 
                   return (
@@ -311,7 +294,7 @@ export const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                         <div className="text-right flex items-center gap-3">
                           <div>
                             <span className={`font-bold font-mono text-sm block ${numScore >= 90 ? 'text-emerald-600' : numScore >= 70 ? 'text-blue-600' : 'text-amber-600'}`}>
-                              {numScore}% 正确率
+                              {numScore}%
                             </span>
                           </div>
                           <div className="px-2.5 py-1 bg-amber-500/10 border border-amber-300/60 rounded-xl text-right">

@@ -42,8 +42,21 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
   const displayed = mistakesOnly ? mistakes : details;
 
   const TYPE_LABELS: Record<string, string> = {
-    LineAssembly: '连句组装', VerseCloze: '填空', PinyinMatch: '拼音辨析',
-    TextToCn: '诗意理解', CulturalContext: '文化背景', ImageOrdering: '插图排序', ImageToLine: '图配句',
+    LineAssembly: '连句组装',
+    VerseCloze: '填空',
+    PinyinMatch: '拼音辨析',
+    TextToCn: '诗意理解',
+    CulturalContext: '文化背景',
+    ImageOrdering: '插图排序',
+    ImageToLine: '图配句',
+    IdiomAssembly: '成语还原',
+    IdiomSolitaire: '首尾接龙',
+    IdiomCloze: '成语填空',
+    HomophoneMatch: '字音字形',
+    IdiomMeaning: '成语释义',
+    StoryComprehension: '故事问答',
+    ImageToIdiom: '看图识成语',
+    EmotionMatch: '情感归类',
   };
   const TYPE_COLORS: Record<string, string> = {
     LineAssembly:    'bg-violet-100 text-violet-700',
@@ -53,6 +66,14 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
     CulturalContext: 'bg-rose-100 text-rose-700',
     ImageOrdering:   'bg-indigo-100 text-indigo-700',
     ImageToLine:     'bg-emerald-100 text-emerald-700',
+    IdiomAssembly:   'bg-emerald-100 text-emerald-800 border-emerald-200',
+    IdiomSolitaire:  'bg-indigo-100 text-indigo-800 border-indigo-200',
+    IdiomCloze:      'bg-teal-100 text-teal-800 border-teal-200',
+    HomophoneMatch:  'bg-sky-100 text-sky-800 border-sky-200',
+    IdiomMeaning:    'bg-amber-100 text-amber-800 border-amber-200',
+    StoryComprehension: 'bg-purple-100 text-purple-800 border-purple-200',
+    ImageToIdiom:    'bg-teal-100 text-teal-800 border-teal-200',
+    EmotionMatch:    'bg-rose-100 text-rose-800 border-rose-200',
   };
 
   const cleanText = (s: string) => (s ?? '').toString().replace(/^[A-Z]\.\s*/, '').trim();

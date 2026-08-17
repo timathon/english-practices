@@ -85,3 +85,49 @@ export interface Poem {
   theme: string;
   questions?: PoemQuestion[];
 }
+
+export interface IdiomItem {
+  index: number;
+  word: string;
+  pinyin: string;
+  meaning?: string;
+  partial_meanings?: string;
+  full_meaning?: string;
+  has_story?: boolean;
+}
+
+export type IdiomQuestion =
+  | {
+      id: string;
+      type: 'IdiomAssembly';
+      answer: string;
+      distractor_chars: string[];
+      prompt?: string;
+      explanation?: string;
+    }
+  | {
+      id: string;
+      type: 'IdiomSolitaire' | 'IdiomCloze' | 'HomophoneMatch' | 'IdiomMeaning' | 'StoryComprehension' | 'EmotionMatch';
+      prompt: string;
+      options: string[];
+      answer: number;
+      explanation?: string;
+    }
+  | {
+      id: string;
+      type: 'ImageToIdiom';
+      prompt: string;
+      image: string;
+      options: string[];
+      answer: number;
+      explanation?: string;
+    };
+
+export interface IdiomGroup {
+  id: number;
+  group_number: number;
+  title: string;
+  idioms: IdiomItem[];
+  questions?: IdiomQuestion[];
+}
+

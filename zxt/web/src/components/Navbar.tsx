@@ -271,22 +271,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                               <span>学生工作台</span>
                             </span>
                           </button>
-                          <button
-                            onClick={() => {
-                              setIsMenuOpen(false);
-                              navigate('/bailiange');
-                            }}
-                            className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between transition cursor-pointer ${
-                              currentPath === '/bailiange' || currentPath === '/blg'
-                                ? 'bg-teal-600/30 text-teal-300 font-bold border-l-2 border-teal-400'
-                                : 'text-slate-200 hover:bg-slate-800'
-                            }`}
-                          >
-                            <span className="flex items-center space-x-2">
-                              <span>🪷</span>
-                              <span>白莲阁 (古诗)</span>
-                            </span>
-                          </button>
                         </>
                       )}
                     </div>

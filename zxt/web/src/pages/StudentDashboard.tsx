@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, Poem, PoemQuestion, formatLocalTime } from '../services/api';
+import { apiService, Poem, PoemQuestion, IdiomQuestion, formatLocalTime } from '../services/api';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 import { StudentQuizPreviewModal } from '../components/StudentQuizPreviewModal';
 import { HistoryDetailModal } from '../components/bailiange/HistoryDetailModal';
@@ -42,7 +42,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeView, 
   const [isAssignmentsLoading, setIsAssignmentsLoading] = useState(false);
   const [activeStudentQuiz, setActiveStudentQuiz] = useState<{
     poemTitle: string;
-    questions: PoemQuestion[];
+    questions: (PoemQuestion | IdiomQuestion)[];
     assignmentId?: string;
   } | null>(null);
 
@@ -183,22 +183,46 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeView, 
           user={user}
           assignments={assignments}
           quizHistory={quizHistory}
-          onStartQuiz={(title: string, questions: PoemQuestion[], asgnId?: string) => {
+          onStartQuiz={(title: string, questions: (PoemQuestion | IdiomQuestion)[], asgnId?: string) => {
             let finalQuestions = questions;
-            if (finalQuestions.length === 0) {
+            if (!finalQuestions || finalQuestions.length === 0) {
               const asgn = assignments.find((a: any) => a.id === asgnId);
-              const poem = poems.find(p => p.title === title);
-              if (poem && poem.questions) {
+
+              // 1. Check if it's an idiom group
+              const idiomGroups = apiService.getLocalIdiomGroups();
+              const idiomGroup = idiomGroups.find(g =>
+                g.title === title ||
+                g.id === Number(asgn?.poemId) ||
+                `成语接龙第${g.id}组` === title ||
+                title.includes(`第${g.id}组`)
+              );
+
+              if (idiomGroup && idiomGroup.questions) {
                 if (asgn?.questionIds && asgn.questionIds.length > 0) {
-                  finalQuestions = poem.questions.filter((q: PoemQuestion) => asgn.questionIds.includes(q.id));
+                  finalQuestions = idiomGroup.questions.filter((q: any) => asgn.questionIds.includes(q.id));
                 } else {
-                  finalQuestions = poem.questions;
+                  finalQuestions = idiomGroup.questions;
+                }
+              } else {
+                // 2. Check if it's a poem
+                const poem = poems.find(p => p.title === title || p.id === Number(asgn?.poemId));
+                if (poem && poem.questions) {
+                  if (asgn?.questionIds && asgn.questionIds.length > 0) {
+                    finalQuestions = poem.questions.filter((q: PoemQuestion) => asgn.questionIds.includes(q.id));
+                  } else {
+                    finalQuestions = poem.questions;
+                  }
                 }
               }
             }
+
+            if (!finalQuestions || finalQuestions.length === 0) {
+              alert('未找到该作业包含的题目数据，请联系教师确认。');
+              return;
+            }
+
             setActiveStudentQuiz({ poemTitle: title, questions: finalQuestions, assignmentId: asgnId });
           }}
-          avatarConfig={userAvatarConfig}
         />
       )}
 
@@ -288,9 +312,21 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeView, 
               const studentId = user?.id || 'usr_stu_001';
 
               // 1. Record quiz result synchronously for ZERO-delay points calculation & local storage
+              let resolvedPoemId = 1;
+              const matchedPoem = poems.find(p => p.title === quizInfo.poemTitle);
+              if (matchedPoem) {
+                resolvedPoemId = matchedPoem.id;
+              } else {
+                const idiomGroups = apiService.getLocalIdiomGroups();
+                const ig = idiomGroups.find(g => g.title === quizInfo.poemTitle || `成语接龙第${g.id}组` === quizInfo.poemTitle || quizInfo.poemTitle.includes(`第${g.id}组`));
+                if (ig) {
+                  resolvedPoemId = 10000 + ig.id;
+                }
+              }
+
               const pb = apiService.recordQuizResult(studentId, {
                 poemTitle: quizInfo.poemTitle,
-                poemId: poems.find(p => p.title === quizInfo.poemTitle)?.id || 1,
+                poemId: resolvedPoemId,
                 score: finalScore,
                 accuracy: `${finalScore}%`,
                 quizType: quizInfo.assignmentId ? '班级作业闯关' : '自主修业练习',

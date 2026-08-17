@@ -16,19 +16,8 @@ export function clearHistoryFetchThrottle(studentId?: string) {
 export function calculateTotalPoints(history: any[] = []): number {
   const practicePoints = (history || []).reduce((sum: number, item: any, idx: number) => {
     const numS = Number(item.score) || 0;
-    const pb = item.details?.pointBreakdown;
-    if (pb && pb.totalEarnedPoints !== undefined) {
-      return sum + Number(pb.totalEarnedPoints);
-    }
-
-    const priorAttempts = history.slice(idx + 1).filter((h: any) => h.poemId === item.poemId || h.poemTitle === item.poemTitle);
-    const isFirst = pb?.isFirstAttempt !== undefined
-      ? pb.isFirstAttempt
-      : idx === history.length - 1 || priorAttempts.length === 0;
-
-    let base = pb?.basePoints;
-    let timely = pb?.timelyBonus;
-    let acc = pb?.accuracyBonus;
+    const priorAttempts = history.slice(idx + 1).filter((h: any) => h.poemTitle ? h.poemTitle === item.poemTitle : h.poemId === item.poemId);
+    const isFirst = idx === history.length - 1 || priorAttempts.length === 0;
 
     let priorHighestScore = 0;
     for (const p of priorAttempts) {
@@ -38,16 +27,10 @@ export function calculateTotalPoints(history: any[] = []): number {
     const itemDateStr = item.completedAt ? item.completedAt.split(' ')[0] : '';
     const hasSameDayPriorAttempt = priorAttempts.some((p: any) => p.completedAt && p.completedAt.split(' ')[0] === itemDateStr);
 
-    if (base === undefined) {
-      base = !hasSameDayPriorAttempt ? 5 : 0;
-    }
-    if (timely === undefined) {
-      timely = isFirst ? 10 : 0;
-    }
-    if (acc === undefined) {
-      const getAccTier = (a: number) => (a >= 100 ? 25 : a >= 90 ? 20 : a >= 80 ? 15 : a >= 70 ? 5 : 0);
-      acc = Math.max(0, getAccTier(numS) - (priorAttempts.length > 0 ? getAccTier(priorHighestScore) : 0));
-    }
+    const base = !hasSameDayPriorAttempt ? 5 : 0;
+    const timely = isFirst ? 10 : 0;
+    const getAccTier = (a: number) => (a >= 100 ? 25 : a >= 90 ? 20 : a >= 80 ? 15 : a >= 70 ? 5 : 0);
+    const acc = Math.max(0, getAccTier(numS) - (priorAttempts.length > 0 ? getAccTier(priorHighestScore) : 0));
 
     return sum + base + timely + acc;
   }, 0);
@@ -276,7 +259,7 @@ export const historyService = {
 
     const numScore = Number(result.score) || 0;
     const targetPoemId = result.poemId;
-    const priorAttempts = history.slice(1).filter((h: any) => h.poemId === targetPoemId || h.poemTitle === result.poemTitle);
+    const priorAttempts = history.slice(1).filter((h: any) => h.poemTitle ? h.poemTitle === result.poemTitle : h.poemId === targetPoemId);
     const isFirstAttempt = priorAttempts.length === 0;
 
     let priorHighestScore = 0;

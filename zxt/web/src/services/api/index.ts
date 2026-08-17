@@ -1,5 +1,6 @@
 import { authService, canEditQuizLibrary } from './auth';
 import { poemsService } from './poems';
+import { idiomsService } from './idioms';
 import { rosterService } from './roster';
 import { assignmentsService } from './assignments';
 import { historyService, clearHistoryFetchThrottle, calculateTotalPoints, getGemsHistorySync, getGemsSync, exchangePointsForGems } from './history';
@@ -7,7 +8,7 @@ import { progressService } from './progress';
 
 export * from './types';
 export * from './config';
-export { canEditQuizLibrary, clearHistoryFetchThrottle, calculateTotalPoints, getGemsHistorySync, getGemsSync, exchangePointsForGems };
+export { canEditQuizLibrary, clearHistoryFetchThrottle, calculateTotalPoints, getGemsHistorySync, getGemsSync, exchangePointsForGems, idiomsService };
 
 export const apiService = {
   // Auth
@@ -25,6 +26,13 @@ export const apiService = {
   saveQuizLibrary: poemsService.saveQuizLibrary.bind(poemsService),
   savePoemQuestions: poemsService.savePoemQuestions.bind(poemsService),
   getPoemQuestions: poemsService.getPoemQuestions.bind(poemsService),
+
+  // Idioms
+  getIdiomGroups: idiomsService.getIdiomGroups.bind(idiomsService),
+  getLocalIdiomGroups: idiomsService.getLocalIdiomGroups.bind(idiomsService),
+  saveLocalIdiomGroups: idiomsService.saveLocalIdiomGroups.bind(idiomsService),
+  saveIdiomQuestions: idiomsService.saveIdiomQuestions.bind(idiomsService),
+  getIdiomGroupQuestions: idiomsService.getIdiomGroupQuestions.bind(idiomsService),
 
   // Roster (Classes, Teachers, Students)
   getClasses: rosterService.getClasses.bind(rosterService),

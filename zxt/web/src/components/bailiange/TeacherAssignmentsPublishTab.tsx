@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiService, IdiomGroup } from '../../services/api';
 
 interface TeacherAssignmentsPublishTabProps {
   selectedClass: string;
@@ -10,6 +11,8 @@ interface TeacherAssignmentsPublishTabProps {
   setNewAsgnReq: (req: string) => void;
   newAsgnPoemId: number;
   setNewAsgnPoemId: (id: number) => void;
+  newAsgnIdiomGroupId?: number;
+  setNewAsgnIdiomGroupId?: (id: number) => void;
   newAsgnDueDate: string;
   setNewAsgnDueDate: (date: string) => void;
   poems: any[];
@@ -30,6 +33,8 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
   setNewAsgnReq,
   newAsgnPoemId,
   setNewAsgnPoemId,
+  newAsgnIdiomGroupId = 1,
+  setNewAsgnIdiomGroupId,
   newAsgnDueDate,
   setNewAsgnDueDate,
   poems,
@@ -39,6 +44,13 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
   onPublishAssignment,
   onPreviewAssignment,
 }) => {
+  const [availableIdiomGroups, setAvailableIdiomGroups] = useState<IdiomGroup[]>(() => apiService.getLocalIdiomGroups());
+
+  useEffect(() => {
+    apiService.getIdiomGroups().then(groups => {
+      setAvailableIdiomGroups(groups);
+    });
+  }, []);
   return (
     <div className="grid md:grid-cols-2 gap-6">
 
@@ -46,13 +58,13 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
       <form onSubmit={onPublishAssignment} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
         <h3 className="text-base font-bold font-serif text-ink">发布新作业到【{selectedClass}】</h3>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block font-bold text-slate-700 mb-1">学科 (Subject)</label>
-            <select
-              value={asgnSubject}
-              onChange={(e) => {
-                const sub = e.target.value;
+        {/* Level 1: Subject Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {(['语文', '数学', '英语', '科学'] as const).map(sub => (
+            <button
+              key={sub}
+              type="button"
+              onClick={() => {
                 setAsgnSubject(sub);
                 let sec = '古诗';
                 if (sub === '数学') sec = '数理逻辑';
@@ -74,65 +86,119 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
                 };
                 setNewAsgnReq(reqMap[`${sub}-${sec}`] || `完成【${sub} - ${sec}】相关单元练习`);
               }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer"
+              className={`px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                asgnSubject === sub
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
             >
-              <option value="语文">语文</option>
-              <option value="数学">数学</option>
-              <option value="英语">英语</option>
-              <option value="科学">科学</option>
-            </select>
-          </div>
-          <div>
-            <label className="block font-bold text-slate-700 mb-1">分区 (Section)</label>
-            <select
-              value={asgnSection}
-              onChange={(e) => {
-                const sec = e.target.value;
-                setAsgnSection(sec);
-                const reqMap: Record<string, string> = {
-                  '语文-古诗': '完成诗句连线与古诗背诵打卡',
-                  '语文-成语': '完成成语接龙、释义与典故运用测试',
-                  '语文-识字': '完成汉字笔顺、部首与形近字辨析打卡',
-                  '语文-拼音': '完成声母、韵母、整体认读与拼读打卡',
-                  '数学-数理逻辑': '完成逻辑推理与应用题训练',
-                  '数学-几何基础': '完成图形识别与几何面积计算',
-                  '英语-语法与阅读': '完成语法选择题与短文阅读理解',
-                  '英语-听力口语': '完成听力录音理解与口语朗读打卡',
-                  '科学-自然科学': '完成自然现象观察与科学知识测试',
-                  '科学-物理与化学': '完成基础物理化学实验常识问答',
-                };
-                setNewAsgnReq(reqMap[`${asgnSubject}-${sec}`] || `完成【${asgnSubject} - ${sec}】相关单元练习`);
-              }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer"
-            >
-              {asgnSubject === '语文' && (
-                <>
-                  <option value="古诗">古诗 (白莲阁)</option>
-                  <option value="成语">成语 (900成语)</option>
-                  <option value="识字">识字</option>
-                  <option value="拼音">拼音</option>
-                </>
-              )}
-              {asgnSubject === '数学' && (
-                <>
-                  <option value="数理逻辑">数理逻辑</option>
-                  <option value="几何基础">几何基础</option>
-                </>
-              )}
-              {asgnSubject === '英语' && (
-                <>
-                  <option value="语法与阅读">语法与阅读</option>
-                  <option value="听力口语">听力口语</option>
-                </>
-              )}
-              {asgnSubject === '科学' && (
-                <>
-                  <option value="自然科学">自然科学</option>
-                  <option value="物理与化学">物理与化学</option>
-                </>
-              )}
-            </select>
-          </div>
+              <span>{sub === '语文' ? '📖' : sub === '数学' ? '📐' : sub === '英语' ? '🔤' : '🔬'}</span>
+              <span>{sub}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Level 2: Section Tabs */}
+        <div className="flex flex-wrap gap-1.5 border-b border-slate-100 pb-3">
+          {asgnSubject === '语文' &&
+            [
+              { key: '古诗', label: '古诗', icon: '🪷', activeBg: 'bg-teal-600' },
+              { key: '成语', label: '成语', icon: '🐉', activeBg: 'bg-emerald-600' },
+              { key: '识字', label: '识字', icon: '✍️', activeBg: 'bg-amber-600' },
+              { key: '拼音', label: '拼音', icon: '🔡', activeBg: 'bg-indigo-600' },
+            ].map(secItem => (
+              <button
+                key={secItem.key}
+                type="button"
+                onClick={() => {
+                  setAsgnSection(secItem.key);
+                  const reqMap: Record<string, string> = {
+                    '语文-古诗': '完成诗句连线与古诗背诵打卡',
+                    '语文-成语': '完成成语接龙、释义与典故运用测试',
+                    '语文-识字': '完成汉字笔顺、部首与形近字辨析打卡',
+                    '语文-拼音': '完成声母、韵母、整体认读与拼读打卡',
+                  };
+                  setNewAsgnReq(reqMap[`语文-${secItem.key}`] || `完成【语文 - ${secItem.key}】相关单元练习`);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  asgnSection === secItem.key
+                    ? `${secItem.activeBg} text-white shadow-xs`
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <span>{secItem.icon}</span>
+                <span>{secItem.label}</span>
+              </button>
+            ))}
+
+          {asgnSubject === '数学' &&
+            [
+              { key: '数理逻辑', label: '数理逻辑', icon: '🔢' },
+              { key: '几何基础', label: '几何基础', icon: '📐' },
+            ].map(secItem => (
+              <button
+                key={secItem.key}
+                type="button"
+                onClick={() => {
+                  setAsgnSection(secItem.key);
+                  setNewAsgnReq(`完成【数学 - ${secItem.key}】相关单元练习`);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  asgnSection === secItem.key
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <span>{secItem.icon}</span>
+                <span>{secItem.label}</span>
+              </button>
+            ))}
+
+          {asgnSubject === '英语' &&
+            [
+              { key: '语法与阅读', label: '语法与阅读', icon: '📖' },
+              { key: '听力口语', label: '听力口语', icon: '🎧' },
+            ].map(secItem => (
+              <button
+                key={secItem.key}
+                type="button"
+                onClick={() => {
+                  setAsgnSection(secItem.key);
+                  setNewAsgnReq(`完成【英语 - ${secItem.key}】相关单元练习`);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  asgnSection === secItem.key
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <span>{secItem.icon}</span>
+                <span>{secItem.label}</span>
+              </button>
+            ))}
+
+          {asgnSubject === '科学' &&
+            [
+              { key: '自然科学', label: '自然科学', icon: '🌿' },
+              { key: '物理与化学', label: '物理与化学', icon: '🧪' },
+            ].map(secItem => (
+              <button
+                key={secItem.key}
+                type="button"
+                onClick={() => {
+                  setAsgnSection(secItem.key);
+                  setNewAsgnReq(`完成【科学 - ${secItem.key}】相关单元练习`);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  asgnSection === secItem.key
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <span>{secItem.icon}</span>
+                <span>{secItem.label}</span>
+              </button>
+            ))}
         </div>
 
         {asgnSubject === '语文' && (asgnSection === '古诗' || asgnSection.includes('古诗') || asgnSection.includes('白莲阁')) ? (
@@ -160,12 +226,35 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
         ) : asgnSubject === '语文' && (asgnSection === '成语' || asgnSection.includes('成语')) ? (
           <div>
             <label className="block font-bold text-slate-700 mb-1">选择单元 (已解锁)</label>
-            <select className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer">
-              {Array.from({ length: 33 }, (_, i) => 33 - i).map(num => (
-                <option key={num} value={`idiom_group_${num}`}>
-                  成语接龙第{num}组 (16条成语 + 典故释义)
-                </option>
-              ))}
+            <select
+              value={newAsgnIdiomGroupId}
+              onChange={e => setNewAsgnIdiomGroupId && setNewAsgnIdiomGroupId(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer"
+            >
+              {(() => {
+                const getUnlockedIdiomIds = (): number[] => {
+                  const stored = localStorage.getItem(`zxt_learnt_idioms_${selectedClass}`);
+                  if (stored) {
+                    try {
+                      const parsed = JSON.parse(stored);
+                      if (Array.isArray(parsed)) return parsed.map(Number);
+                    } catch (_) {}
+                  }
+                  return [1];
+                };
+                const unlockedIds = getUnlockedIdiomIds();
+                const unlockedGroups = availableIdiomGroups.filter(g => unlockedIds.includes(Number(g.id)));
+
+                return unlockedGroups.length > 0 ? (
+                  unlockedGroups.map(group => (
+                    <option key={group.id} value={group.id}>
+                      #{group.id} {group.title || `成语接龙第${group.id}组`} ({group.idioms?.length || 16}条成语)
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>⚠️ 当前班级暂无已解锁成语单元 (请在【课程进度】页切换授课状态)</option>
+                );
+              })()}
             </select>
           </div>
         ) : (
@@ -179,13 +268,36 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
         )}
 
         <div>
-          <label className="block font-bold text-slate-700 mb-1">截止时间</label>
-          <input
-            type="date"
-            value={newAsgnDueDate}
-            onChange={(e) => setNewAsgnDueDate(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-          />
+          <div className="flex items-center justify-between mb-1">
+            <label className="font-bold text-slate-700">截止时间</label>
+            <span className="text-[10px] text-slate-400">默认当天 23:59 截止</span>
+          </div>
+          {(() => {
+            const todayStr = (() => {
+              const d = new Date();
+              const year = d.getFullYear();
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const day = String(d.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}`;
+            })();
+
+            return (
+              <input
+                type="date"
+                min={todayStr}
+                value={newAsgnDueDate}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val && val < todayStr) {
+                    setNewAsgnDueDate(todayStr);
+                  } else {
+                    setNewAsgnDueDate(val);
+                  }
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800"
+              />
+            );
+          })()}
         </div>
 
         <div>

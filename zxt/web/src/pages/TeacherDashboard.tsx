@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, Poem } from '../services/api';
+import { apiService, Poem, PoemQuestion, IdiomQuestion } from '../services/api';
 import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 import { StudentQuizPreviewModal } from '../components/StudentQuizPreviewModal';
 import { CachedImage } from '../components/CachedImage';
 import { TeacherAssignmentsPublishTab } from '../components/bailiange/TeacherAssignmentsPublishTab';
 import { TeacherStatsTab } from '../components/bailiange/TeacherStatsTab';
 import { TeacherCourseProgressTab } from '../components/bailiange/TeacherCourseProgressTab';
+
+interface PublishingItem {
+  id: number;
+  title: string;
+  questions?: (PoemQuestion | IdiomQuestion)[];
+  isIdiom?: boolean;
+}
 
 interface TeacherDashboardProps {
   user: any;
@@ -31,15 +38,26 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
   const [teacherTab, setTeacherTab] = useState<'assignments' | 'stats' | 'progress'>('assignments');
   const [teacherMsg, setTeacherMsg] = useState<string>('');
 
+  // Helper to get default due date (1 day later)
+  const getDefaultDueDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Assignment form state
   const [newAsgnPoemId, setNewAsgnPoemId] = useState<number>(1);
-  const [newAsgnDueDate, setNewAsgnDueDate] = useState<string>('2026-08-01');
-  const [newAsgnReq, setNewAsgnReq] = useState<string>('完成诗句连线与古诗背诵打卡');
+  const [newAsgnIdiomGroupId, setNewAsgnIdiomGroupId] = useState<number>(1);
+  const [newAsgnDueDate, setNewAsgnDueDate] = useState<string>(getDefaultDueDate);
+  const [newAsgnReq, setNewAsgnReq] = useState<string>('请认真完成本单元练习，注意书写与拼音。');
   const [asgnSubject, setAsgnSubject] = useState<string>('语文');
   const [asgnSection, setAsgnSection] = useState<string>('古诗');
 
   // Assignment Question Review Modal state
-  const [publishingPoem, setPublishingPoem] = useState<Poem | null>(null);
+  const [publishingPoem, setPublishingPoem] = useState<PublishingItem | null>(null);
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
   const [previewStartIndex, setPreviewStartIndex] = useState<number | null>(null);
   const [modalQuestionFilter, setModalQuestionFilter] = useState<string>('all');
@@ -176,6 +194,19 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
 
   const handlePublishAssignment = (e: React.FormEvent) => {
     e.preventDefault();
+    if (asgnSubject === '语文' && (asgnSection === '成语' || asgnSection.includes('成语'))) {
+      const idiomGroups = apiService.getLocalIdiomGroups();
+      const group = idiomGroups.find(g => g.id === Number(newAsgnIdiomGroupId)) || idiomGroups[0];
+      if (!group) {
+        alert('未找到选中的成语组题库！');
+        return;
+      }
+      const allQs = group.questions || [];
+      setPublishingPoem({ id: group.id, title: group.title, questions: allQs, isIdiom: true } as any);
+      setSelectedQuestionIds(allQs.map(q => q.id));
+      setModalQuestionFilter('all');
+      return;
+    }
     const poem = poems.find(p => p.id === Number(newAsgnPoemId));
     if (!poem) return;
     const allQs = poem.questions || [];
@@ -347,6 +378,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
             setNewAsgnReq={setNewAsgnReq}
             newAsgnPoemId={newAsgnPoemId}
             setNewAsgnPoemId={setNewAsgnPoemId}
+            newAsgnIdiomGroupId={newAsgnIdiomGroupId}
+            setNewAsgnIdiomGroupId={setNewAsgnIdiomGroupId}
             newAsgnDueDate={newAsgnDueDate}
             setNewAsgnDueDate={setNewAsgnDueDate}
             poems={poems}
@@ -426,6 +459,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                 CulturalContext: '文化背景',
                 ImageOrdering: '插图排序',
                 ImageToLine: '图配句',
+                IdiomAssembly: '成语还原',
+                IdiomSolitaire: '首尾接龙',
+                IdiomCloze: '成语填空',
+                HomophoneMatch: '字音字形',
+                IdiomMeaning: '成语释义',
+                StoryComprehension: '故事问答',
+                ImageToIdiom: '看图识成语',
+                EmotionMatch: '情感归类',
               };
 
               const typeColors: Record<string, { active: string; inactive: string; countActive: string; countInactive: string }> = {
@@ -470,6 +511,54 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                   inactive: 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100',
                   countActive: 'bg-white/20 text-white',
                   countInactive: 'bg-emerald-200/70 text-emerald-900',
+                },
+                IdiomAssembly: {
+                  active: 'bg-emerald-600 text-white shadow-xs border border-emerald-700',
+                  inactive: 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-emerald-200/70 text-emerald-900',
+                },
+                IdiomSolitaire: {
+                  active: 'bg-indigo-600 text-white shadow-xs border border-indigo-700',
+                  inactive: 'bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-indigo-200/70 text-indigo-900',
+                },
+                IdiomCloze: {
+                  active: 'bg-teal-600 text-white shadow-xs border border-teal-700',
+                  inactive: 'bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-teal-200/70 text-teal-900',
+                },
+                HomophoneMatch: {
+                  active: 'bg-sky-600 text-white shadow-xs border border-sky-700',
+                  inactive: 'bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-sky-200/70 text-sky-900',
+                },
+                IdiomMeaning: {
+                  active: 'bg-amber-600 text-white shadow-xs border border-amber-700',
+                  inactive: 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-amber-200/70 text-amber-900',
+                },
+                StoryComprehension: {
+                  active: 'bg-purple-600 text-white shadow-xs border border-purple-700',
+                  inactive: 'bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-purple-200/70 text-purple-900',
+                },
+                ImageToIdiom: {
+                  active: 'bg-teal-600 text-white shadow-xs border border-teal-700',
+                  inactive: 'bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-teal-200/70 text-teal-900',
+                },
+                EmotionMatch: {
+                  active: 'bg-rose-600 text-white shadow-xs border border-rose-700',
+                  inactive: 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-rose-200/70 text-rose-900',
                 },
               };
 
@@ -565,15 +654,31 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                   CulturalContext: '文化背景',
                   ImageOrdering: '插图排序',
                   ImageToLine: '图配句',
+                  IdiomAssembly: '成语还原',
+                  IdiomSolitaire: '首尾接龙',
+                  IdiomCloze: '成语填空',
+                  HomophoneMatch: '字音字形',
+                  IdiomMeaning: '成语释义',
+                  StoryComprehension: '故事问答',
+                  ImageToIdiom: '看图识成语',
+                  EmotionMatch: '情感归类',
                 };
                 const typeColors: Record<string, string> = {
-                  LineAssembly: 'bg-violet-100 text-violet-800 border-violet-200',
-                  VerseCloze: 'bg-teal-100 text-teal-800 border-teal-200',
-                  PinyinMatch: 'bg-sky-100 text-sky-800 border-sky-200',
-                  TextToCn: 'bg-amber-100 text-amber-800 border-amber-200',
-                  CulturalContext: 'bg-rose-100 text-rose-800 border-rose-200',
-                  ImageOrdering: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                  ImageToLine: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                  LineAssembly: 'bg-violet-50 text-violet-800 border-violet-200',
+                  VerseCloze: 'bg-teal-50 text-teal-800 border-teal-200',
+                  PinyinMatch: 'bg-sky-50 text-sky-800 border-sky-200',
+                  TextToCn: 'bg-amber-50 text-amber-800 border-amber-200',
+                  CulturalContext: 'bg-rose-50 text-rose-800 border-rose-200',
+                  ImageOrdering: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+                  ImageToLine: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                  IdiomAssembly: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                  IdiomSolitaire: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+                  IdiomCloze: 'bg-teal-50 text-teal-800 border-teal-200',
+                  HomophoneMatch: 'bg-sky-50 text-sky-800 border-sky-200',
+                  IdiomMeaning: 'bg-amber-50 text-amber-800 border-amber-200',
+                  StoryComprehension: 'bg-purple-50 text-purple-800 border-purple-200',
+                  ImageToIdiom: 'bg-teal-50 text-teal-800 border-teal-200',
+                  EmotionMatch: 'bg-rose-50 text-rose-800 border-rose-200',
                 };
 
                 return filteredQuestions.map((q) => {
@@ -623,7 +728,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                           </button>
                         </div>
                         <p className="text-xs font-bold text-slate-800 font-serif leading-relaxed">
-                          {q.prompt || '(全自动互动拼图/排序关联题)'}
+                          {(q as any).type === 'IdiomAssembly' ? `成语还原：“${(q as any).answer}”` : (q.prompt || '(全自动互动拼图/排序关联题)')}
                         </p>
                         {(q as any).image && (
                           <div className="my-1.5">

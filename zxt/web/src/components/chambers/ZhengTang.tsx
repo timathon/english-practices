@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { PoemQuestion } from '../../services/api';
-import { AvatarDisplay, AvatarConfig } from '../AvatarDisplay';
+import { PoemQuestion, IdiomQuestion } from '../../services/api';
 
 interface ZhengTangProps {
   user: any;
   assignments: any[];
   quizHistory?: any[];
-  onStartQuiz: (title: string, questions: PoemQuestion[], assignmentId?: string) => void;
-  avatarConfig?: AvatarConfig;
+  onStartQuiz: (title: string, questions: (PoemQuestion | IdiomQuestion)[], assignmentId?: string) => void;
 }
 
 export const ZhengTang: React.FC<ZhengTangProps> = ({
@@ -15,7 +13,6 @@ export const ZhengTang: React.FC<ZhengTangProps> = ({
   assignments,
   quizHistory = [],
   onStartQuiz,
-  avatarConfig
 }) => {
   const [selectedSubject, setSelectedSubject] = useState<'all' | 'chinese' | 'math' | 'english'>('all');
 
@@ -122,7 +119,6 @@ export const ZhengTang: React.FC<ZhengTangProps> = ({
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-5 p-6">
-          <AvatarDisplay config={avatarConfig} size="lg" className="ring-4 ring-amber-400/50 shadow-2xl flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 text-blue-300/80 text-xs font-medium mb-1.5">
               <span>知新堂 · 第一重天</span>
@@ -177,7 +173,6 @@ export const ZhengTang: React.FC<ZhengTangProps> = ({
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <span className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-sm">📜</span>
               师门下发作业
-              <span className="text-slate-400 font-normal text-sm">Teacher Assignments</span>
             </h2>
             <span className="text-xs bg-gradient-to-r from-amber-400 to-orange-400 text-white px-2.5 py-1 rounded-full font-semibold shadow-sm">
               💎 做作业得星石

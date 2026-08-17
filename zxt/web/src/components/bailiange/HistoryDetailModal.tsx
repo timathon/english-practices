@@ -67,8 +67,10 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
         <div className="p-6 overflow-y-auto flex-1 space-y-4 bg-slate-50">
           {(() => {
             const poem = poems.find(p => p.title === currentRecord.poemTitle) || poems.find(p => p.id === currentRecord.poemId);
+            const idiomGroups = apiService.getLocalIdiomGroups();
+            const idiomGroup = !poem ? idiomGroups.find(g => g.title === currentRecord.poemTitle || `成语接龙第${g.id}组` === currentRecord.poemTitle || currentRecord.poemTitle?.includes(`第${g.id}组`)) : null;
             const hasRecordedDetails = Array.isArray(currentRecord.details) && currentRecord.details.length > 0;
-            const detailItems = hasRecordedDetails ? currentRecord.details : (poem?.questions || []);
+            const detailItems = hasRecordedDetails ? currentRecord.details : (poem?.questions || idiomGroup?.questions || []);
 
             if (detailItems.length === 0) {
               return (
@@ -86,6 +88,14 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
               CulturalContext: '文化背景',
               ImageOrdering: '插图排序',
               ImageToLine: '图配句',
+              IdiomAssembly: '成语还原',
+              IdiomSolitaire: '首尾接龙',
+              IdiomCloze: '成语填空',
+              HomophoneMatch: '字音字形',
+              IdiomMeaning: '成语释义',
+              StoryComprehension: '故事问答',
+              ImageToIdiom: '看图识成语',
+              EmotionMatch: '情感归类',
             };
             const typeColors: Record<string, string> = {
               LineAssembly: 'bg-violet-100 text-violet-800 border-violet-200',
@@ -95,6 +105,14 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
               CulturalContext: 'bg-rose-100 text-rose-800 border-rose-200',
               ImageOrdering: 'bg-indigo-100 text-indigo-800 border-indigo-200',
               ImageToLine: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+              IdiomAssembly: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+              IdiomSolitaire: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+              IdiomCloze: 'bg-teal-100 text-teal-800 border-teal-200',
+              HomophoneMatch: 'bg-sky-100 text-sky-800 border-sky-200',
+              IdiomMeaning: 'bg-amber-100 text-amber-800 border-amber-200',
+              StoryComprehension: 'bg-purple-100 text-purple-800 border-purple-200',
+              ImageToIdiom: 'bg-teal-100 text-teal-800 border-teal-200',
+              EmotionMatch: 'bg-rose-100 text-rose-800 border-rose-200',
             };
 
             return detailItems.map((item: any, idx: number) => {
