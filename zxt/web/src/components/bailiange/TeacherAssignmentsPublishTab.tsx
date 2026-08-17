@@ -54,15 +54,17 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
               onChange={(e) => {
                 const sub = e.target.value;
                 setAsgnSubject(sub);
-                let sec = '白莲阁';
+                let sec = '古诗';
                 if (sub === '数学') sec = '数理逻辑';
                 else if (sub === '英语') sec = '语法与阅读';
                 else if (sub === '科学') sec = '自然科学';
                 setAsgnSection(sec);
 
                 const reqMap: Record<string, string> = {
-                  '语文-白莲阁': '完成诗句连线与古诗背诵打卡',
-                  '语文-现代文阅读': '完成篇章阅读理解与重点词句赏析',
+                  '语文-古诗': '完成诗句连线与古诗背诵打卡',
+                  '语文-成语': '完成成语接龙、释义与典故运用测试',
+                  '语文-识字': '完成汉字笔顺、部首与形近字辨析打卡',
+                  '语文-拼音': '完成声母、韵母、整体认读与拼读打卡',
                   '数学-数理逻辑': '完成逻辑推理与应用题训练',
                   '数学-几何基础': '完成图形识别与几何面积计算',
                   '英语-语法与阅读': '完成语法选择题与短文阅读理解',
@@ -88,8 +90,10 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
                 const sec = e.target.value;
                 setAsgnSection(sec);
                 const reqMap: Record<string, string> = {
-                  '语文-白莲阁': '完成诗句连线与古诗背诵打卡',
-                  '语文-现代文阅读': '完成篇章阅读理解与重点词句赏析',
+                  '语文-古诗': '完成诗句连线与古诗背诵打卡',
+                  '语文-成语': '完成成语接龙、释义与典故运用测试',
+                  '语文-识字': '完成汉字笔顺、部首与形近字辨析打卡',
+                  '语文-拼音': '完成声母、韵母、整体认读与拼读打卡',
                   '数学-数理逻辑': '完成逻辑推理与应用题训练',
                   '数学-几何基础': '完成图形识别与几何面积计算',
                   '英语-语法与阅读': '完成语法选择题与短文阅读理解',
@@ -103,8 +107,10 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
             >
               {asgnSubject === '语文' && (
                 <>
-                  <option value="白莲阁">白莲阁 (古诗文)</option>
-                  <option value="现代文阅读">现代文阅读</option>
+                  <option value="古诗">古诗 (白莲阁)</option>
+                  <option value="成语">成语 (900成语)</option>
+                  <option value="识字">识字</option>
+                  <option value="拼音">拼音</option>
                 </>
               )}
               {asgnSubject === '数学' && (
@@ -129,16 +135,16 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
           </div>
         </div>
 
-        {asgnSubject === '语文' && (asgnSection === '白莲阁' || asgnSection.includes('白莲阁')) ? (
+        {asgnSubject === '语文' && (asgnSection === '古诗' || asgnSection.includes('古诗') || asgnSection.includes('白莲阁')) ? (
           <div>
-            <label className="block font-bold text-slate-700 mb-1">选择古诗 (已完成授课/已解锁)</label>
+            <label className="block font-bold text-slate-700 mb-1">选择单元 (已解锁)</label>
             <select
               value={newAsgnPoemId}
               onChange={(e) => setNewAsgnPoemId(Number(e.target.value))}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer"
             >
               {poems.filter(p => learntPoemIds.map(Number).includes(Number(p.id))).length > 0 ? (
-                poems.filter(p => learntPoemIds.map(Number).includes(Number(p.id))).map(p => {
+                [...poems.filter(p => learntPoemIds.map(Number).includes(Number(p.id)))].reverse().map(p => {
                   const pubCount = assignments.filter((a: any) => a.poemId === p.id || a.poemTitle === p.title).length;
                   return (
                     <option key={p.id} value={p.id}>
@@ -147,16 +153,27 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
                   );
                 })
               ) : (
-                <option value="" disabled>⚠️ 当前班级暂无已解锁古诗 (请在【课程进度】页切换授课状态)</option>
+                <option value="" disabled>⚠️ 当前班级暂无已解锁单元 (请在【课程进度】页切换授课状态)</option>
               )}
+            </select>
+          </div>
+        ) : asgnSubject === '语文' && (asgnSection === '成语' || asgnSection.includes('成语')) ? (
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">选择单元 (已解锁)</label>
+            <select className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer">
+              {Array.from({ length: 33 }, (_, i) => 33 - i).map(num => (
+                <option key={num} value={`idiom_group_${num}`}>
+                  成语接龙第{num}组 (16条成语 + 典故释义)
+                </option>
+              ))}
             </select>
           </div>
         ) : (
           <div>
-            <label className="block font-bold text-slate-700 mb-1">选择学习任务 (Select Task)</label>
+            <label className="block font-bold text-slate-700 mb-1">选择单元 (已解锁)</label>
             <select className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800 cursor-pointer">
-              <option value="task_1">【{asgnSubject} - {asgnSection}】第 1 单元综合练习</option>
               <option value="task_2">【{asgnSubject} - {asgnSection}】第 2 单元能力拓展</option>
+              <option value="task_1">【{asgnSubject} - {asgnSection}】第 1 单元综合练习</option>
             </select>
           </div>
         )}

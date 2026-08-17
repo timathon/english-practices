@@ -136,7 +136,7 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
   const [newAsgnDueDate, setNewAsgnDueDate] = useState<string>('2026-08-01');
   const [newAsgnReq, setNewAsgnReq] = useState<string>('完成诗句连线与古诗背诵打卡');
   const [asgnSubject, setAsgnSubject] = useState<string>('语文');
-  const [asgnSection, setAsgnSection] = useState<string>('白莲阁');
+  const [asgnSection, setAsgnSection] = useState<string>('古诗');
   const [teacherMsg, setTeacherMsg] = useState<string>('');
 
   // Assignment Question Review Modal state
@@ -204,11 +204,11 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     }
   }, [selectedClass, activeView, user]);
 
-  // Keep selected poem ID valid based on cached/DB unlocked poems
+  // Set default selected poem to the latest unlocked poem whenever unlocked list changes
   useEffect(() => {
     const unlocked = poems.filter(p => learntPoemIds.map(Number).includes(Number(p.id)));
-    if (unlocked.length > 0 && !unlocked.some(p => Number(p.id) === Number(newAsgnPoemId))) {
-      setNewAsgnPoemId(Number(unlocked[0].id));
+    if (unlocked.length > 0) {
+      setNewAsgnPoemId(Number(unlocked[unlocked.length - 1].id));
     }
   }, [learntPoemIds, poems]);
 
@@ -273,10 +273,13 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ activeView, user }) => {
     // 2. Fetch fresh roster data from DB in background
     try {
       const allCls = await apiService.getClasses();
-      const allTchs = await apiService.getTeachers();
+      const isAdmin = activeView === 'admin' || (user && user.role === 'admin');
+      const allTchs = isAdmin ? await apiService.getTeachers() : [];
       const allStus = await apiService.getStudents();
 
-      setTeachersList(allTchs);
+      if (isAdmin) {
+        setTeachersList(allTchs);
+      }
       setAllStudentsList(allStus);
 
       if (user && user.role === 'teacher') {

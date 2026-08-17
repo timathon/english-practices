@@ -326,7 +326,7 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
   const [dirty, setDirty] = useState(false);
   const [mobileTab, setMobileTab] = useState<'list' | 'editor'>('list');
   const [selectedSubject, setSelectedSubject] = useState<string>('语文');
-  const [selectedSection, setSelectedSection] = useState<string>('白莲阁');
+  const [selectedSection, setSelectedSection] = useState<string>('古诗');
 
   // Load all poems from quiz library
   useEffect(() => {
@@ -389,7 +389,7 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
 
   const activeQuestion = questions.find(q => q.id === activeQId) ?? null;
 
-  const isBaiLianGe = selectedSubject === '语文' && (selectedSection === '白莲阁' || selectedSection.includes('白莲阁'));
+  const isBaiLianGe = selectedSubject === '语文' && (selectedSection === '古诗' || selectedSection === '白莲阁' || selectedSection.includes('白莲阁') || selectedSection.includes('古诗'));
 
   const canEdit = canEditQuizLibrary(user);
 
@@ -419,7 +419,7 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
                 onChange={(e) => {
                   const sub = e.target.value;
                   setSelectedSubject(sub);
-                  if (sub === '语文') setSelectedSection('白莲阁');
+                  if (sub === '语文') setSelectedSection('古诗');
                   else if (sub === '数学') setSelectedSection('数理逻辑');
                   else if (sub === '英语') setSelectedSection('语法与阅读');
                   else if (sub === '科学') setSelectedSection('自然科学');
@@ -444,8 +444,10 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
               >
                 {selectedSubject === '语文' && (
                   <>
-                    <option value="白莲阁">白莲阁 (古诗文)</option>
-                    <option value="现代文阅读">现代文阅读</option>
+                    <option value="古诗">古诗 (白莲阁)</option>
+                    <option value="成语">成语 (900成语)</option>
+                    <option value="识字">识字</option>
+                    <option value="拼音">拼音</option>
                   </>
                 )}
                 {selectedSubject === '数学' && (
@@ -485,14 +487,14 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
               【{selectedSubject} - {selectedSection}】题库模块建设中
             </h2>
             <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-              该学科分区的题库编辑与AI智能出题模组正在开发推进中。如需测试编辑，请在上方导航中切换至【语文 - 白莲阁 (古诗文)】。
+              该学科分区的题库编辑与AI智能出题模组正在开发推进中。如需测试编辑，请在上方导航中切换至【语文 - 古诗】。
             </p>
           </div>
           <div className="pt-2">
             <button
               onClick={() => {
                 setSelectedSubject('语文');
-                setSelectedSection('白莲阁');
+                setSelectedSection('古诗');
               }}
               className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold shadow-md transition inline-flex items-center gap-1.5"
             >

@@ -73,14 +73,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           {user ? (
             <div className="flex items-center space-x-3">
 
-              {/* Circle Avatar Badge in Navbar */}
-              <div
-                onClick={onOpenAvatarShop}
-                className="flex-shrink-0 cursor-pointer transition-transform hover:scale-105"
-                title="知新使者形象 (点击进入形象设置)"
-              >
-                <AvatarDisplay config={avatarConfig || user.avatarConfig || DEFAULT_AVATAR_CONFIG} size="sm" />
-              </div>
+              {/* Circle Avatar Badge in Navbar (Students/Parents only) */}
+              {user.role !== 'teacher' && user.role !== 'admin' && (
+                <div
+                  onClick={onOpenAvatarShop}
+                  className="flex-shrink-0 cursor-pointer transition-transform hover:scale-105"
+                  title="知新使者形象 (点击进入形象设置)"
+                >
+                  <AvatarDisplay config={avatarConfig || user.avatarConfig || DEFAULT_AVATAR_CONFIG} size="sm" />
+                </div>
+              )}
 
               <div className="text-xs text-right flex items-center space-x-2">
                 <span className="font-bold text-white">{user.name}</span>
