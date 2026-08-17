@@ -22,3 +22,15 @@ This file defines project-specific rules and data fetching patterns for the ZXT 
 3. **Quiz & Submission Writes**:
    - **Write-Through**: Save complete detail records to IndexedDB (`quiz_history_details`) and update local concise lists immediately.
    - Issue non-blocking background POST calls to remote DB (`/api/student/history`), queuing offline sync tasks if network is unavailable.
+
+---
+
+## File Size & Modular Architecture Rules
+
+### 1000-Line Limit Rule:
+- **Hard Limit**: Any source file exceeding **1,000 lines of code** must be refactored and split into smaller, single-responsibility sub-components, helper utilities, or domain workspaces.
+- **Decomposition Guidelines**:
+  - Extract reusable sub-views into dedicated sub-component files (e.g. tabs, modals, workspace panels).
+  - Extract static constants, color mappings, and type dictionaries into separate `*Constants.ts` files.
+  - Extract pure helper functions and business logic into separate `*Utils.ts` or custom hooks.
+  - Keep the parent component as a clean, high-level orchestrator focusing on state management and coordinator flow.

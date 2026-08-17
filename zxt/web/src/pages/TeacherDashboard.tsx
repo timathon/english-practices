@@ -72,8 +72,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
   } | null>(null);
   const [syncErrorModal, setSyncErrorModal] = useState<{ title: string; message: string } | null>(null);
   const [animatingPoemId, setAnimatingPoemId] = useState<number | null>(null);
+  const [previewAssignmentData, setPreviewAssignmentData] = useState<{
+    title: string;
+    questions: (PoemQuestion | IdiomQuestion)[];
+  } | null>(null);
 
-  useLockBodyScroll(publishingPoem !== null || publishSuccessData !== null || syncErrorModal !== null);
+  useLockBodyScroll(publishingPoem !== null || publishSuccessData !== null || syncErrorModal !== null || previewAssignmentData !== null);
 
   useEffect(() => {
     loadPoems();
@@ -388,14 +392,38 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
             isAssignmentsLoading={isAssignmentsLoading}
             onPublishAssignment={handlePublishAssignment}
             onPreviewAssignment={(asgn) => {
-              const poem = poems.find(p => p.id === asgn.poemId) || poems[0];
+              // 1. Check if it's an idiom group
+              const idiomGroups = apiService.getLocalIdiomGroups();
+              const idiomGroup = idiomGroups.find(g =>
+                g.title === asgn.poemTitle ||
+                g.id === Number(asgn.poemId) ||
+                (Number(asgn.poemId) >= 10000 && g.id === Number(asgn.poemId) - 10000) ||
+                `成语接龙第${g.id}组` === asgn.poemTitle ||
+                asgn.poemTitle?.includes(`第${g.id}组`)
+              );
+
+              if (idiomGroup && idiomGroup.questions) {
+                const allQs = idiomGroup.questions || [];
+                const asgnQs = (asgn.questionIds && asgn.questionIds.length > 0)
+                  ? allQs.filter((q: any) => asgn.questionIds.includes(q.id))
+                  : allQs;
+                setPreviewAssignmentData({
+                  title: idiomGroup.title,
+                  questions: asgnQs.length > 0 ? asgnQs : allQs,
+                });
+                return;
+              }
+
+              // 2. Check if it's a poem
+              const poem = poems.find(p => p.id === Number(asgn.poemId) || p.title === asgn.poemTitle) || poems[0];
               const allQs = poem?.questions || [];
               const asgnQs = (asgn.questionIds && asgn.questionIds.length > 0)
                 ? allQs.filter(q => asgn.questionIds.includes(q.id))
                 : allQs;
-              setPublishingPoem(poem);
-              setSelectedQuestionIds(asgnQs.map(q => q.id));
-              setPreviewStartIndex(0);
+              setPreviewAssignmentData({
+                title: poem?.title || asgn.poemTitle,
+                questions: asgnQs.length > 0 ? asgnQs : allQs,
+              });
             }}
           />
         )}
@@ -856,6 +884,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
           }}
           onConfirmPublish={confirmPublishAssignment}
           onClose={() => setPreviewStartIndex(null)}
+        />
+      )}
+
+      {/* Direct Assignment Preview Modal for Published Assignments */}
+      {previewAssignmentData && (
+        <StudentQuizPreviewModal
+          poemTitle={previewAssignmentData.title}
+          questions={previewAssignmentData.questions}
+          initialIndex={0}
+          onClose={() => setPreviewAssignmentData(null)}
         />
       )}
 

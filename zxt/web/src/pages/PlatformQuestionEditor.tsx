@@ -1,429 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService, canEditQuizLibrary, Poem, PoemQuestion, OrderingItem, IdiomGroup, IdiomQuestion } from '../services/api';
-import { CachedImage } from '../components/CachedImage';
-import { playAnswerSFX } from '../utils/sound';
+import { apiService, canEditQuizLibrary, Poem, PoemQuestion, IdiomGroup, IdiomQuestion } from '../services/api';
 import { StudentQuizPreviewModal } from '../components/StudentQuizPreviewModal';
-import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
-
-// ── shared image lightbox ──────────────────────────────────────────────────
-
-const ImageLightbox: React.FC<{ src: string; onClose: () => void }> = ({ src, onClose }) => {
-  useLockBodyScroll(true);
-  return (
-    <div
-      className="fixed inset-0 !mt-0 !m-0 bg-black/80 z-[100] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
-        <img src={src} alt="full-size preview" className="w-full rounded-xl shadow-2xl object-contain max-h-[80vh]" />
-        <button
-          onClick={onClose}
-          className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center text-slate-600 hover:text-red-500 font-bold text-sm transition"
-        >✕</button>
-      </div>
-    </div>
-  );
-};
-
-// ── helpers ────────────────────────────────────────────────────────────────
-
-const genId = () => Math.random().toString(36).slice(2, 10);
-
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  LineAssembly:   '连句组装',
-  VerseCloze:    '诗句填空',
-  PinyinMatch:   '拼音辨析',
-  TextToCn:      '诗意理解',
-  CulturalContext:'文化背景',
-  ImageOrdering: '插图排序',
-  ImageToLine:   '图配句',
-  IdiomAssembly:  '成语还原',
-  IdiomSolitaire: '首尾接龙',
-  IdiomCloze:     '成语填空',
-  HomophoneMatch: '字音字形',
-  IdiomMeaning:   '成语释义',
-  StoryComprehension: '故事问答',
-  ImageToIdiom:   '看图识成语',
-  EmotionMatch:   '情感归类',
-};
-
-const ALL_TYPES = ['LineAssembly', 'VerseCloze', 'PinyinMatch', 'TextToCn', 'CulturalContext', 'ImageOrdering', 'ImageToLine'];
-const IDIOM_TYPES = ['IdiomAssembly', 'IdiomSolitaire', 'IdiomCloze', 'HomophoneMatch', 'IdiomMeaning', 'StoryComprehension', 'ImageToIdiom', 'EmotionMatch'];
-
-const TYPE_COLORS: Record<string, string> = {
-  LineAssembly:   'bg-violet-100 text-violet-800 border-violet-200',
-  VerseCloze:    'bg-teal-100 text-teal-800 border-teal-200',
-  PinyinMatch:   'bg-sky-100 text-sky-800 border-sky-200',
-  TextToCn:      'bg-amber-100 text-amber-800 border-amber-200',
-  CulturalContext:'bg-rose-100 text-rose-800 border-rose-200',
-  ImageOrdering: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  ImageToLine:   'bg-emerald-100 text-emerald-800 border-emerald-200',
-  IdiomAssembly:  'bg-emerald-100 text-emerald-800 border-emerald-200',
-  IdiomSolitaire: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-  IdiomCloze:     'bg-teal-100 text-teal-800 border-teal-200',
-  HomophoneMatch: 'bg-sky-100 text-sky-800 border-sky-200',
-  IdiomMeaning:   'bg-amber-100 text-amber-800 border-amber-200',
-  StoryComprehension: 'bg-purple-100 text-purple-800 border-purple-200',
-  ImageToIdiom:   'bg-teal-100 text-teal-800 border-teal-200',
-  EmotionMatch:   'bg-rose-100 text-rose-800 border-rose-200',
-};
-
-function makeBlankIdiomQuestion(type: string): IdiomQuestion {
-  const id = `q_idm_${Math.random().toString(36).slice(2, 8)}`;
-  if (type === 'IdiomAssembly') {
-    return { id, type: 'IdiomAssembly', answer: '', distractor_chars: [] };
-  }
-  if (type === 'ImageToIdiom') {
-    return { id, type: 'ImageToIdiom', prompt: '', image: '', options: ['', '', '', ''], answer: 0, explanation: '' };
-  }
-  return { id, type: type as any, prompt: '', options: ['', '', '', ''], answer: 0, explanation: '' };
-}
-
-function makeBlankQuestion(type: string): PoemQuestion {
-  const id = genId();
-  if (type === 'LineAssembly') {
-    return { id, type: 'LineAssembly', line_index: 0, prompt: '', distractor_chars: [], answer: '' };
-  }
-  if (type === 'ImageOrdering') {
-    return { id, type: 'ImageOrdering', prompt: '', images: [], explanation: '' };
-  }
-  if (type === 'ImageToLine') {
-    return { id, type: 'ImageToLine', prompt: '', image: '', options: ['', '', '', ''], answer: 0, explanation: '' };
-  }
-  // VerseCloze, PinyinMatch, TextToCn, CulturalContext
-  const optCount = type === 'VerseCloze' ? 6 : 4;
-  return { id, type: type as any, prompt: '', options: Array(optCount).fill(''), answer: 0, explanation: '' };
-}
-
-// ── tag chip input ────────────────────────────────────────────────────────
-
-interface TagInputProps {
-  label: string;
-  tags: string[];
-  onChange: (tags: string[]) => void;
-}
-const TagInput: React.FC<TagInputProps> = ({ label, tags, onChange }) => {
-  const [input, setInput] = useState('');
-  const add = () => {
-    const v = input.trim();
-    if (v) { onChange([...tags, v]); setInput(''); }
-  };
-  return (
-    <div className="space-y-1">
-      <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{label}</label>
-      <div className="flex flex-wrap gap-1.5 p-2 border border-slate-200 rounded-lg bg-slate-50 min-h-[42px] items-center">
-        {tags.map((t, i) => (
-          <span key={i} className="inline-flex items-center gap-1.5 bg-violet-100 text-violet-900 text-sm sm:text-base px-2.5 py-1 rounded-md font-semibold">
-            {t}
-            <button onClick={() => onChange(tags.filter((_, j) => j !== i))} className="text-violet-400 hover:text-red-500 text-sm leading-none font-bold">×</button>
-          </span>
-        ))}
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); } }}
-          placeholder="输入后按 Enter 添加"
-          className="flex-1 min-w-[100px] bg-transparent text-sm outline-none px-1"
-        />
-      </div>
-    </div>
-  );
-};
-
-// ── per-question editor panels ────────────────────────────────────────────
-
-interface QEditorProps {
-  q: PoemQuestion;
-  onChange: (q: PoemQuestion) => void;
-  onPreview: (src: string) => void;
-}
-
-const LineAssemblyEditor: React.FC<QEditorProps> = ({ q, onChange }) => {
-  if (q.type !== 'LineAssembly') return null;
-  const set = (patch: Partial<typeof q>) => onChange({ ...q, ...patch } as PoemQuestion);
-  return (
-    <div className="space-y-3">
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">题目提示 (Prompt)</label>
-        <input value={q.prompt} onChange={e => set({ prompt: e.target.value })}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">诗句行号 (Line Index)</label>
-          <input type="number" min={0} value={q.line_index} onChange={e => set({ line_index: Number(e.target.value) })}
-            className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" />
-        </div>
-        <div>
-          <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">正确答案 (Answer)</label>
-          <input value={q.answer as string} onChange={e => set({ answer: e.target.value })}
-            className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" />
-        </div>
-      </div>
-      <TagInput label="干扰字 (Distractor Chars)" tags={q.distractor_chars} onChange={v => set({ distractor_chars: v })} />
-    </div>
-  );
-};
-
-const MCEditor: React.FC<QEditorProps & { optCount: number }> = ({ q, onChange, optCount }) => {
-  if (q.type === 'LineAssembly' || q.type === 'ImageOrdering' || q.type === 'ImageToLine') return null;
-  const set = (patch: any) => onChange({ ...q, ...patch } as PoemQuestion);
-  const opts = (q.options || []).length === optCount ? q.options! : [...(q.options || []), ...Array(optCount).fill('')].slice(0, optCount);
-  return (
-    <div className="space-y-3">
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">题目提示 (Prompt)</label>
-        <textarea value={q.prompt} onChange={e => set({ prompt: e.target.value })} rows={2}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm resize-none" />
-      </div>
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">选项 (Options) — 点击⭐选为正确答案</label>
-        <div className="mt-1 space-y-1.5">
-          {opts.map((opt, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <button
-                onClick={() => set({ answer: i, options: opts })}
-                className={`w-6 h-6 rounded-full flex-shrink-0 border-2 text-xs font-bold transition ${
-                  q.answer === i ? 'bg-teal-500 border-teal-500 text-white' : 'border-slate-300 text-slate-400 hover:border-teal-400'
-                }`}
-              >{i}</button>
-              <input
-                value={opt}
-                onChange={e => {
-                  const updated = [...opts];
-                  updated[i] = e.target.value;
-                  set({ options: updated });
-                }}
-                className="flex-1 px-2.5 py-1 border border-slate-200 rounded-lg text-sm"
-                placeholder={`选项 ${i}`}
-              />
-            </div>
-          ))}
-        </div>
-        <p className="text-[10px] text-slate-400 mt-1">当前正确答案: 选项 {q.answer}</p>
-      </div>
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">解析 (Explanation)</label>
-        <textarea value={(q as any).explanation || ''} onChange={e => set({ explanation: e.target.value })} rows={2}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm resize-none" />
-      </div>
-    </div>
-  );
-};
-
-const ImageOrderingEditor: React.FC<QEditorProps> = ({ q, onChange, onPreview }) => {
-  if (q.type !== 'ImageOrdering') return null;
-  const set = (patch: Partial<typeof q>) => onChange({ ...q, ...patch } as PoemQuestion);
-  const images: string[] = q.images || [];
-  const addImage = () => set({ images: [...images, ''] });
-  const removeImage = (i: number) => set({ images: images.filter((_: string, j: number) => j !== i) });
-  const updateImage = (i: number, val: string) => { const u = [...images]; u[i] = val; set({ images: u }); };
-  const moveImage = (i: number, dir: -1 | 1) => {
-    const u = [...images]; const ni = i + dir;
-    if (ni < 0 || ni >= u.length) return;
-    [u[i], u[ni]] = [u[ni], u[i]]; set({ images: u });
-  };
-  return (
-    <div className="space-y-3">
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">题目提示 (Prompt)</label>
-        <input value={q.prompt} onChange={e => set({ prompt: e.target.value })}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" />
-      </div>
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">图片 — 正确顺序 (Correct Order)</label>
-            <p className="text-[10px] text-slate-400 mt-0.5">前端出题时自动打乱 · Frontend shuffles at runtime</p>
-          </div>
-          <button onClick={addImage} className="text-xs text-teal-600 hover:text-teal-500 font-bold flex-shrink-0">+ 添加图片</button>
-        </div>
-        <div className="space-y-2">
-          {images.map((img, i) => (
-            <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
-              <span className="text-[10px] text-slate-400 font-mono w-4 flex-shrink-0 text-center">{i + 1}</span>
-              {img ? (
-                <CachedImage src={img} alt={`img-${i}`} onClick={() => onPreview(img)}
-                  className="w-12 h-12 object-cover rounded border border-slate-200 flex-shrink-0 cursor-zoom-in hover:opacity-80 transition" />
-              ) : (
-                <div className="w-12 h-12 rounded border border-dashed border-slate-300 bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-300 text-xs">🖼</div>
-              )}
-              <input value={img} onChange={e => updateImage(i, e.target.value)}
-                placeholder="/assets/blg/poems/p1_l1.webp"
-                className="flex-1 px-2 py-1 border border-slate-200 rounded text-xs font-mono" />
-              <div className="flex flex-col gap-0.5">
-                <button onClick={() => moveImage(i, -1)} disabled={i === 0}
-                  className="text-[10px] text-slate-400 hover:text-indigo-500 disabled:opacity-20 leading-none">▲</button>
-                <button onClick={() => moveImage(i, 1)} disabled={i === images.length - 1}
-                  className="text-[10px] text-slate-400 hover:text-indigo-500 disabled:opacity-20 leading-none">▼</button>
-              </div>
-              <button onClick={() => removeImage(i)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
-            </div>
-          ))}
-          {images.length === 0 && (
-            <div className="text-xs text-slate-400 text-center py-3">暂无图片，点击"添加图片"</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-const ImageToLineEditor: React.FC<QEditorProps> = ({ q, onChange, onPreview }) => {
-  if (q.type !== 'ImageToLine') return null;
-  const set = (patch: any) => onChange({ ...q, ...patch } as PoemQuestion);
-  const opts = q.options || ['', '', '', ''];
-  return (
-    <div className="space-y-3">
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">题目提示 (Prompt)</label>
-        <input value={q.prompt} onChange={e => set({ prompt: e.target.value })}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm" />
-      </div>
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">图片路径 (Image URL)</label>
-        <input value={q.image} onChange={e => set({ image: e.target.value })}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-mono" />
-        {q.image ? (
-          <CachedImage src={q.image} alt="preview"
-            onClick={() => onPreview(q.image)}
-            className="mt-2 h-28 rounded-lg border border-slate-200 object-cover cursor-zoom-in hover:opacity-80 transition" />
-        ) : (
-          <div className="mt-2 h-28 rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-300 text-sm">🖼 图片预览</div>
-        )}
-      </div>
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">选项 (Options) — 点击序号选为正确答案</label>
-        <div className="mt-1 space-y-1.5">
-          {opts.map((opt, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <button
-                onClick={() => set({ answer: i })}
-                className={`w-6 h-6 rounded-full flex-shrink-0 border-2 text-xs font-bold transition ${
-                  q.answer === i ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 text-slate-400 hover:border-emerald-400'
-                }`}
-              >{i}</button>
-              <input value={opt} onChange={e => {
-                const updated = [...opts]; updated[i] = e.target.value; set({ options: updated });
-              }}
-                className="flex-1 px-2.5 py-1 border border-slate-200 rounded-lg text-sm"
-                placeholder={`诗句选项 ${i}`}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">解析 (Explanation)</label>
-        <textarea value={q.explanation || ''} onChange={e => set({ explanation: e.target.value })} rows={2}
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm resize-none" />
-      </div>
-    </div>
-  );
-};
-
-function QuestionEditor({ q, onChange, onPreview }: QEditorProps) {
-  if (q.type === 'LineAssembly') return <LineAssemblyEditor q={q} onChange={onChange} onPreview={onPreview} />;
-  if (q.type === 'ImageOrdering') return <ImageOrderingEditor q={q} onChange={onChange} onPreview={onPreview} />;
-  if (q.type === 'ImageToLine') return <ImageToLineEditor q={q} onChange={onChange} onPreview={onPreview} />;
-  if (q.type === 'VerseCloze') return <MCEditor q={q} onChange={onChange} onPreview={onPreview} optCount={6} />;
-  return <MCEditor q={q} onChange={onChange} onPreview={onPreview} optCount={4} />;
-}
-
-// ── idiom question editor components ──────────────────────────────────────
-
-interface IdiomQEditorProps {
-  q: IdiomQuestion;
-  onChange: (q: IdiomQuestion) => void;
-  onPreview: (src: string) => void;
-}
-
-const IdiomAssemblyEditor: React.FC<{ q: IdiomQuestion; onChange: (q: IdiomQuestion) => void }> = ({ q, onChange }) => {
-  if (q.type !== 'IdiomAssembly') return null;
-  const set = (patch: Partial<typeof q>) => onChange({ ...q, ...patch } as IdiomQuestion);
-  const distCount = (q.distractor_chars || []).length;
-  const isValidDistCount = distCount === 3;
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-          目标成语 (Answer — 4字成语)
-        </label>
-        <input
-          value={q.answer || ''}
-          onChange={e => set({ answer: e.target.value.trim() })}
-          placeholder="例如：神采飞扬"
-          className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-lg text-lg font-serif font-bold text-slate-800 focus:ring-2 focus:ring-emerald-400"
-        />
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-            干扰字 (Distractor Chars) — 必须恰好 3 个
-          </label>
-          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-            isValidDistCount ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-700 border border-amber-200 animate-pulse'
-          }`}>
-            {isValidDistCount ? '✓ 符合 3 干扰字规范' : `当前 ${distCount} / 3 个`}
-          </span>
-        </div>
-        <TagInput
-          label="1个语义陷阱字 + 2个同音字陷阱"
-          tags={q.distractor_chars || []}
-          onChange={v => set({ distractor_chars: v })}
-        />
-        <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
-          💡 <b>幼小衔接出题规范</b>：1 个语义陷阱（如“风”构成“风采”混淆“神采”），2 个同音/近音字陷阱（如“彩”混淆“采”，“杨”混淆“扬”）。
-        </p>
-      </div>
-
-      <div>
-        <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-          题目引导语 (Prompt，可选自定义，留空自动采用释义提示)
-        </label>
-        <input
-          value={q.prompt || ''}
-          onChange={e => set({ prompt: e.target.value })}
-          placeholder="默认：请根据成语释义，点击字块拼接出对应的四字成语："
-          className="mt-1 w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs"
-        />
-      </div>
-
-      {/* Visual Live Preview of Character Blocks */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-2">
-        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-          字块实时预览 (Students' Tile Pool Preview)
-        </label>
-        <div className="flex flex-wrap gap-2 items-center">
-          {(q.answer || '').split('').map((char, idx) => (
-            <span key={idx} className="w-10 h-10 rounded-xl bg-amber-500 text-white font-serif font-bold text-lg flex items-center justify-center shadow-xs">
-              {char}
-            </span>
-          ))}
-          {(q.distractor_chars || []).map((char, idx) => (
-            <span key={`dist_${idx}`} className="w-10 h-10 rounded-xl bg-rose-500 text-white font-serif font-bold text-lg flex items-center justify-center shadow-xs" title="干扰字">
-              {char}
-            </span>
-          ))}
-          {(!q.answer && (!q.distractor_chars || q.distractor_chars.length === 0)) && (
-            <span className="text-xs text-slate-400">请输入成语与干扰字以预览字块</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-function IdiomQuestionEditor({ q, onChange, onPreview }: IdiomQEditorProps) {
-  if (q.type === 'IdiomAssembly') return <IdiomAssemblyEditor q={q} onChange={onChange} />;
-  if (q.type === 'ImageToIdiom') {
-    return <ImageToLineEditor q={q as any} onChange={onChange as any} onPreview={onPreview} />;
-  }
-  return <MCEditor q={q as any} onChange={onChange as any} onPreview={onPreview} optCount={4} />;
-}
-
-// ── main page ─────────────────────────────────────────────────────────────
+import { ALL_TYPES, IDIOM_TYPES, makeBlankQuestion, makeBlankIdiomQuestion } from '../components/editor/editorConstants';
+import { ImageLightbox } from '../components/editor/EditorWidgets';
+import { PoemEditorWorkspace } from '../components/editor/PoemEditorWorkspace';
+import { IdiomEditorWorkspace } from '../components/editor/IdiomEditorWorkspace';
 
 interface PlatformQuestionEditorProps {
   user: any;
@@ -458,25 +39,6 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
   const [selectedSubject, setSelectedSubject] = useState<string>('语文');
   const [selectedSection, setSelectedSection] = useState<string>('古诗');
 
-  // Load poems on mount
-  useEffect(() => {
-    const data = apiService.getQuizLibrary();
-    setPoems(data);
-    if (data.length > 0) selectPoem(data[0], data);
-  }, []);
-
-  // Load idioms when section is成语
-  useEffect(() => {
-    if (selectedSection === '成语' || selectedSection.includes('成语') || selectedSection.includes('900')) {
-      apiService.getIdiomGroups().then(groups => {
-        setIdiomGroups(groups);
-        if (groups.length > 0 && selectedGroupId === null) {
-          selectIdiomGroup(groups[0], groups);
-        }
-      });
-    }
-  }, [selectedSection]);
-
   const selectPoem = useCallback((poem: Poem, allPoems?: Poem[]) => {
     setSelectedPoemId(poem.id);
     const source = allPoems ?? poems;
@@ -498,6 +60,25 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
     setDirty(false);
     setMobileTab('list');
   }, [idiomGroups]);
+
+  // Load poems on mount
+  useEffect(() => {
+    const data = apiService.getQuizLibrary();
+    setPoems(data);
+    if (data.length > 0) selectPoem(data[0], data);
+  }, []);
+
+  // Load idioms when section is成语
+  useEffect(() => {
+    if (selectedSection === '成语' || selectedSection.includes('成语') || selectedSection.includes('900')) {
+      apiService.getIdiomGroups().then(groups => {
+        setIdiomGroups(groups);
+        if (groups.length > 0 && selectedGroupId === null) {
+          selectIdiomGroup(groups[0], groups);
+        }
+      });
+    }
+  }, [selectedSection]);
 
   const selectedPoem = poems.find(p => p.id === selectedPoemId) ?? null;
   const selectedIdiomGroup = idiomGroups.find(g => g.id === selectedGroupId) ?? null;
@@ -582,7 +163,6 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
 
   const isBaiLianGe = selectedSubject === '语文' && (selectedSection === '古诗' || selectedSection === '白莲阁' || selectedSection.includes('白莲阁') || selectedSection.includes('古诗'));
   const isIdiomModule = selectedSubject === '语文' && (selectedSection === '成语' || selectedSection.includes('成语') || selectedSection.includes('900'));
-
   const canEdit = canEditQuizLibrary(user);
 
   return (
@@ -675,492 +255,58 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
 
       {/* ── MAIN CONTENT AREA ── */}
       {isIdiomModule ? (
-        /* 成语接龙 900 题库编辑区域 */
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-130px)]">
-          {/* Mobile Controls for Idioms */}
-          <div className="lg:hidden bg-white border-b border-slate-200 p-3 space-y-2 shadow-xs">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-bold text-slate-500 whitespace-nowrap">选择成语组:</label>
-              <select
-                value={selectedGroupId ?? ''}
-                onChange={(e) => {
-                  const id = Number(e.target.value);
-                  const g = idiomGroups.find(x => x.id === id);
-                  if (g) {
-                    if (dirty && !window.confirm('有未保存的更改，确定切换？')) return;
-                    selectIdiomGroup(g);
-                  }
-                }}
-                className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                {filteredIdiomGroups.map(g => (
-                  <option key={g.id} value={g.id}>
-                    #{g.id} {g.title} ({g.questions?.length ?? 0}题)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex border border-slate-200 rounded-xl bg-slate-100 p-0.5 text-xs font-bold">
-              <button
-                onClick={() => setMobileTab('list')}
-                className={`flex-1 py-1.5 rounded-lg text-center transition ${
-                  mobileTab === 'list' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'
-                }`}
-              >
-                📜 成语与题目 ({idiomQuestions.length})
-              </button>
-              <button
-                onClick={() => setMobileTab('editor')}
-                className={`flex-1 py-1.5 rounded-lg text-center transition ${
-                  mobileTab === 'editor' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'
-                }`}
-              >
-                ✏️ 题目编辑
-              </button>
-            </div>
-          </div>
-
-          {/* LEFT: Idiom Group Selector */}
-          <div className="hidden lg:flex w-72 flex-shrink-0 border-r border-slate-200 bg-white flex-col">
-            <div className="p-3 border-b border-slate-100">
-              <input
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                placeholder="搜索组名、成语词汇…"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none focus:border-emerald-400"
-              />
-              <p className="text-[10px] text-slate-400 mt-1 pl-1">{filteredIdiomGroups.length} / {idiomGroups.length} 组</p>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {filteredIdiomGroups.map(g => {
-                const qCount = g.questions?.length ?? 0;
-                const isSelected = g.id === selectedGroupId;
-                return (
-                  <button
-                    key={g.id}
-                    onClick={() => {
-                      if (dirty && !window.confirm('有未保存的更改，确定切换？')) return;
-                      selectIdiomGroup(g);
-                    }}
-                    className={`w-full text-left px-3 py-2.5 border-b border-slate-100 transition text-xs group ${
-                      isSelected ? 'bg-emerald-50 border-l-2 border-l-emerald-500' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={`font-bold font-serif ${isSelected ? 'text-emerald-700' : 'text-slate-800'}`}>
-                        #{g.id} {g.title}
-                      </span>
-                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                        qCount > 0 ? 'bg-emerald-100 text-emerald-600 font-bold' : 'bg-slate-100 text-slate-400'
-                      }`}>{qCount}题</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                      {g.idioms?.map(i => i.word).slice(0, 4).join(' ➔ ')} ...
-                    </div>
-                  </button>
-                );
-              })}
-              {filteredIdiomGroups.length === 0 && (
-                <div className="p-6 text-center text-xs text-slate-400">
-                  未找到匹配的成语组
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* MIDDLE: Idiom Questions List */}
-          <div className={`w-full lg:w-72 flex-shrink-0 border-r border-slate-200 bg-white flex-col ${
-            mobileTab === 'list' ? 'flex' : 'hidden lg:flex'
-          }`}>
-            {selectedIdiomGroup ? (
-              <>
-                <div className="p-3 border-b border-slate-100 space-y-2">
-                  <div className="font-bold font-serif text-sm text-slate-800 flex items-center justify-between">
-                    <span>{selectedIdiomGroup.title}</span>
-                    <button
-                      onClick={() => setPreviewStartIndex(0)}
-                      className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition flex items-center gap-1 shadow-2xs"
-                      title="从第一题开始预览全套成语题目"
-                    >
-                      👁 预览全套
-                    </button>
-                  </div>
-                  <div className="text-xs text-slate-500 font-medium">{idiomQuestions.length} 道题目 (共 {selectedIdiomGroup.idioms?.length || 16} 个成语)</div>
-
-                  {canEdit && (
-                    <div className="flex gap-1.5 pt-1">
-                      <select
-                        value={idiomAddType}
-                        onChange={e => setIdiomAddType(e.target.value)}
-                        className="flex-1 text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-slate-50 font-medium"
-                      >
-                        {IDIOM_TYPES.map(t => (
-                          <option key={t} value={t}>{QUESTION_TYPE_LABELS[t] || t}</option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={addIdiomQuestion}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs font-bold transition flex-shrink-0"
-                      >
-                        + 添加
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-1 overflow-y-auto">
-                  {idiomQuestions.map((q, idx) => (
-                    <div
-                      key={q.id}
-                      className={`group flex items-start gap-2 px-3 py-2.5 border-b border-slate-100 cursor-pointer transition ${
-                        activeIdiomQId === q.id ? 'bg-emerald-50 border-l-3 border-l-emerald-500' : 'hover:bg-slate-50'
-                      }`}
-                      onClick={() => { setActiveIdiomQId(q.id); setMobileTab('editor'); }}
-                    >
-                      <span className="text-xs text-slate-400 font-mono w-5 flex-shrink-0 mt-0.5">{idx + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <span className={`inline-block text-xs px-2 py-0.5 rounded-md border font-semibold mb-1 ${TYPE_COLORS[q.type] || 'bg-slate-100 text-slate-600'}`}>
-                          {QUESTION_TYPE_LABELS[q.type] || q.type}
-                        </span>
-                        <p className="text-xs sm:text-sm font-bold text-slate-800 truncate">
-                          {q.type === 'IdiomAssembly' ? `成语：“${q.answer || '____'}”` : (q.prompt || '(无提示文字)')}
-                        </p>
-                      </div>
-                      {canEdit && (
-                        <button
-                          onClick={e => { e.stopPropagation(); setConfirmDeleteId(q.id); }}
-                          className="text-slate-300 hover:text-red-400 text-sm opacity-0 group-hover:opacity-100 transition flex-shrink-0 mt-0.5"
-                        >✕</button>
-                      )}
-                    </div>
-                  ))}
-                  {idiomQuestions.length === 0 && (
-                    <div className="p-6 text-center text-xs text-slate-400">
-                      <div className="text-2xl mb-1">📭</div>
-                      暂无成语题目
-                      {canEdit && <div className="mt-1">使用上方"添加"按钮新增题目</div>}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-xs text-slate-400">← 选择一个成语组</div>
-            )}
-          </div>
-
-          {/* RIGHT: Idiom Question Editor Canvas */}
-          <div className={`w-full lg:flex-1 overflow-y-auto bg-slate-50 flex-col ${
-            mobileTab === 'editor' ? 'flex' : 'hidden lg:flex'
-          }`}>
-            {activeIdiomQuestion ? (
-              <div className="p-4 sm:p-5 flex-1">
-                <div className="lg:hidden mb-3">
-                  <button
-                    onClick={() => setMobileTab('list')}
-                    className="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg flex items-center gap-1 shadow-2xs"
-                  >
-                    ⬅ 返回题目列表 ({idiomQuestions.length})
-                  </button>
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2.5 py-1 rounded-full border font-semibold ${TYPE_COLORS[activeIdiomQuestion.type]}`}>
-                      {QUESTION_TYPE_LABELS[activeIdiomQuestion.type]}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono">ID: {activeIdiomQuestion.id}</span>
-                  </div>
-                  {canEdit && dirty && (
-                    <span className="text-[10px] text-amber-500 font-bold animate-pulse">● 未保存</span>
-                  )}
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                  <IdiomQuestionEditor
-                    q={activeIdiomQuestion}
-                    onChange={canEdit ? updateIdiomQuestion : () => {}}
-                    onPreview={setLightboxSrc}
-                  />
-                </div>
-
-                <div className="flex justify-end items-center gap-3 pt-4">
-                  <button
-                    onClick={() => {
-                      const idx = idiomQuestions.findIndex(q => q.id === activeIdiomQId);
-                      setPreviewStartIndex(idx >= 0 ? idx : 0);
-                    }}
-                    className="px-4 py-2.5 rounded-xl font-bold text-sm bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm transition flex items-center gap-1.5"
-                  >
-                    👁 预览当前题目
-                  </button>
-                  {canEdit && (
-                    <button
-                      onClick={saveIdiom}
-                      className={`px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition ${
-                        dirty
-                          ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                          : 'bg-slate-200 text-slate-400 cursor-default'
-                      }`}
-                      disabled={!dirty}
-                    >
-                      💾 保存 {selectedIdiomGroup?.title} 全部题目
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : selectedIdiomGroup ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-sm gap-2">
-                <div className="text-3xl">📝</div>
-                <div>从左侧选择题目进行编辑</div>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-sm gap-2">
-                <div className="text-3xl">🐉</div>
-                <div>请先从左侧选择一个成语组</div>
-              </div>
-            )}
-          </div>
-        </div>
+        <IdiomEditorWorkspace
+          idiomGroups={idiomGroups}
+          filteredIdiomGroups={filteredIdiomGroups}
+          selectedIdiomGroup={selectedIdiomGroup}
+          selectedGroupId={selectedGroupId}
+          idiomQuestions={idiomQuestions}
+          activeIdiomQId={activeIdiomQId}
+          activeIdiomQuestion={activeIdiomQuestion}
+          searchTerm={searchTerm}
+          idiomAddType={idiomAddType}
+          canEdit={canEdit}
+          dirty={dirty}
+          mobileTab={mobileTab}
+          onSearchChange={setSearchTerm}
+          onSelectIdiomGroup={selectIdiomGroup}
+          onIdiomAddTypeChange={setIdiomAddType}
+          onAddIdiomQuestion={addIdiomQuestion}
+          onSetActiveIdiomQId={setActiveIdiomQId}
+          onSetMobileTab={setMobileTab}
+          onSetConfirmDeleteId={setConfirmDeleteId}
+          onUpdateIdiomQuestion={updateIdiomQuestion}
+          onPreviewImage={setLightboxSrc}
+          onPreviewQuestions={setPreviewStartIndex}
+          onSaveIdiom={saveIdiom}
+        />
       ) : isBaiLianGe ? (
-        /* 白莲阁 75 首古诗题库编辑区域 */
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-130px)]">
-          {/* Mobile Controls Header (visible only on small viewports) */}
-          <div className="lg:hidden bg-white border-b border-slate-200 p-3 space-y-2 shadow-xs">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-bold text-slate-500 whitespace-nowrap">选择古诗:</label>
-              <select
-                value={selectedPoemId ?? ''}
-                onChange={(e) => {
-                  const id = Number(e.target.value);
-                  const p = poems.find(x => x.id === id);
-                  if (p) {
-                    if (dirty && !window.confirm('有未保存的更改，确定切换？')) return;
-                    selectPoem(p);
-                  }
-                }}
-                className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                {filteredPoems.map(p => (
-                  <option key={p.id} value={p.id}>
-                    #{p.id} 《{p.title}》 - [{p.dynasty}] {p.author} ({p.questions?.length ?? 0}题)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex border border-slate-200 rounded-xl bg-slate-100 p-0.5 text-xs font-bold">
-              <button
-                onClick={() => setMobileTab('list')}
-                className={`flex-1 py-1.5 rounded-lg text-center transition ${
-                  mobileTab === 'list' ? 'bg-white text-teal-700 shadow-xs' : 'text-slate-500'
-                }`}
-              >
-                📜 题目列表 ({questions.length})
-              </button>
-              <button
-                onClick={() => setMobileTab('editor')}
-                className={`flex-1 py-1.5 rounded-lg text-center transition ${
-                  mobileTab === 'editor' ? 'bg-white text-teal-700 shadow-xs' : 'text-slate-500'
-                }`}
-              >
-                ✏️ 题目编辑
-              </button>
-            </div>
-          </div>
-
-          {/* LEFT: Poem Selector (Desktop side panel) */}
-          <div className="hidden lg:flex w-72 flex-shrink-0 border-r border-slate-200 bg-white flex-col">
-            <div className="p-3 border-b border-slate-100">
-              <input
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                placeholder="搜索诗名、作者、朝代…"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none focus:border-teal-400"
-              />
-              <p className="text-[10px] text-slate-400 mt-1 pl-1">{filteredPoems.length} / {poems.length} 首</p>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {filteredPoems.map(p => {
-                const qCount = p.questions?.length ?? 0;
-                const isSelected = p.id === selectedPoemId;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      if (dirty && !window.confirm('有未保存的更改，确定切换？')) return;
-                      selectPoem(p);
-                    }}
-                    className={`w-full text-left px-3 py-2.5 border-b border-slate-100 transition text-xs group ${
-                      isSelected ? 'bg-teal-50 border-l-2 border-l-teal-500' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={`font-bold font-serif ${isSelected ? 'text-teal-700' : 'text-slate-800'}`}>
-                        #{p.id} 《{p.title}》
-                      </span>
-                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                        qCount > 0 ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-400'
-                      }`}>{qCount}题</span>
-                    </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">[{p.dynasty}] {p.author} · #{p.id}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* MIDDLE: Question List */}
-          <div className={`w-full lg:w-64 flex-shrink-0 border-r border-slate-200 bg-white flex-col ${
-            mobileTab === 'list' ? 'flex' : 'hidden lg:flex'
-          }`}>
-            {selectedPoem ? (
-              <>
-                <div className="p-3 border-b border-slate-100 space-y-2">
-                  <div className="font-bold font-serif text-sm text-slate-800 flex items-center justify-between">
-                    <span>《{selectedPoem.title}》</span>
-                    <button
-                      onClick={() => setPreviewStartIndex(0)}
-                      className="px-2.5 py-1 text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition flex items-center gap-1 shadow-2xs"
-                      title="从第一题开始预览全套题目"
-                    >
-                      👁 预览全套
-                    </button>
-                  </div>
-                  <div className="text-xs text-slate-500 font-medium">{questions.length} 道题目</div>
-
-                  {canEdit && (
-                    <div className="flex gap-1.5 pt-1">
-                      <select
-                        value={addType}
-                        onChange={e => setAddType(e.target.value)}
-                        className="flex-1 text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-slate-50 font-medium"
-                      >
-                        {ALL_TYPES.map(t => (
-                          <option key={t} value={t}>{QUESTION_TYPE_LABELS[t] || t}</option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={addQuestion}
-                        className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-md text-xs font-bold transition flex-shrink-0"
-                      >
-                        + 添加
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-1 overflow-y-auto">
-                  {questions.map((q, idx) => (
-                    <div
-                      key={q.id}
-                      className={`group flex items-start gap-2 px-3 py-2.5 border-b border-slate-100 cursor-pointer transition ${
-                        activeQId === q.id ? 'bg-teal-50 border-l-3 border-l-teal-500' : 'hover:bg-slate-50'
-                      }`}
-                      onClick={() => { setActiveQId(q.id); setMobileTab('editor'); }}
-                    >
-                      <span className="text-xs text-slate-400 font-mono w-5 flex-shrink-0 mt-0.5">{idx + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <span className={`inline-block text-xs px-2 py-0.5 rounded-md border font-semibold mb-1 ${TYPE_COLORS[q.type] || 'bg-slate-100 text-slate-600'}`}>
-                          {QUESTION_TYPE_LABELS[q.type] || q.type}
-                        </span>
-                        <p className="text-xs sm:text-sm text-slate-700 leading-relaxed truncate">{q.prompt || '(无提示文字)'}</p>
-                      </div>
-                      {canEdit && (
-                        <button
-                          onClick={e => { e.stopPropagation(); setConfirmDeleteId(q.id); }}
-                          className="text-slate-300 hover:text-red-400 text-sm opacity-0 group-hover:opacity-100 transition flex-shrink-0 mt-0.5"
-                        >✕</button>
-                      )}
-                    </div>
-                  ))}
-                  {questions.length === 0 && (
-                    <div className="p-4 text-center text-xs text-slate-400">
-                      <div className="text-2xl mb-1">📭</div>
-                      暂无题目
-                      {canEdit && <div className="mt-1">使用上方"添加"按钮新增题目</div>}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-xs text-slate-400">← 选择一首古诗</div>
-            )}
-          </div>
-
-          {/* RIGHT: Question Editor Canvas */}
-          <div className={`w-full lg:flex-1 overflow-y-auto bg-slate-50 flex-col ${
-            mobileTab === 'editor' ? 'flex' : 'hidden lg:flex'
-          }`}>
-            {activeQuestion ? (
-              <div className="p-4 sm:p-5 flex-1">
-                <div className="lg:hidden mb-3">
-                  <button
-                    onClick={() => setMobileTab('list')}
-                    className="px-3 py-1.5 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg flex items-center gap-1 shadow-2xs"
-                  >
-                    ⬅ 返回题目列表 ({questions.length})
-                  </button>
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2.5 py-1 rounded-full border font-semibold ${TYPE_COLORS[activeQuestion.type]}`}>
-                      {QUESTION_TYPE_LABELS[activeQuestion.type]}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono">ID: {activeQuestion.id}</span>
-                  </div>
-                  {canEdit && dirty && (
-                    <span className="text-[10px] text-amber-500 font-bold animate-pulse">● 未保存</span>
-                  )}
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                  <QuestionEditor
-                    q={activeQuestion}
-                    onChange={canEdit ? updateQuestion : () => {}}
-                    onPreview={setLightboxSrc}
-                  />
-                </div>
-
-                <div className="flex justify-end items-center gap-3 pt-4">
-                  <button
-                    onClick={() => {
-                      const idx = questions.findIndex(q => q.id === activeQId);
-                      setPreviewStartIndex(idx >= 0 ? idx : 0);
-                    }}
-                    className="px-4 py-2.5 rounded-xl font-bold text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-sm transition flex items-center gap-1.5"
-                  >
-                    👁 预览当前题目
-                  </button>
-                  {canEdit && (
-                    <button
-                      onClick={save}
-                      className={`px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition ${
-                        dirty
-                          ? 'bg-teal-600 hover:bg-teal-500 text-white'
-                          : 'bg-slate-200 text-slate-400 cursor-default'
-                      }`}
-                      disabled={!dirty}
-                    >
-                      💾 保存《{selectedPoem?.title}》全部题目
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : selectedPoem ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-sm gap-2">
-                <div className="text-3xl">📝</div>
-                <div>从左侧选择题目进行编辑</div>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-sm gap-2">
-                <div className="text-3xl">🪷</div>
-                <div>请先从左侧选择一首古诗</div>
-              </div>
-            )}
-          </div>
-        </div>
+        <PoemEditorWorkspace
+          poems={poems}
+          filteredPoems={filteredPoems}
+          selectedPoem={selectedPoem}
+          selectedPoemId={selectedPoemId}
+          questions={questions}
+          activeQId={activeQId}
+          activeQuestion={activeQuestion}
+          searchTerm={searchTerm}
+          addType={addType}
+          canEdit={canEdit}
+          dirty={dirty}
+          mobileTab={mobileTab}
+          onSearchChange={setSearchTerm}
+          onSelectPoem={selectPoem}
+          onAddTypeChange={setAddType}
+          onAddQuestion={addQuestion}
+          onSetActiveQId={setActiveQId}
+          onSetMobileTab={setMobileTab}
+          onSetConfirmDeleteId={setConfirmDeleteId}
+          onUpdateQuestion={updateQuestion}
+          onPreviewImage={setLightboxSrc}
+          onPreviewQuestions={setPreviewStartIndex}
+          onSave={save}
+        />
       ) : (
-        /* Other subjects placeholder */
         <div className="max-w-4xl mx-auto my-8 p-8 sm:p-12 bg-white rounded-3xl border border-slate-200 shadow-sm text-center space-y-6">
           <div className="w-20 h-20 mx-auto rounded-3xl bg-slate-100 border border-slate-200 flex items-center justify-center text-4xl shadow-inner">
             {selectedSubject === '数学' ? '📐' : selectedSubject === '英语' ? '🔤' : selectedSubject === '科学' ? '🔬' : '📖'}
@@ -1182,7 +328,7 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
                 setSelectedSubject('语文');
                 setSelectedSection('古诗');
               }}
-              className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold shadow-md transition inline-flex items-center gap-1.5"
+              className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold shadow-md transition inline-flex items-center gap-1.5 cursor-pointer"
             >
               <span>🪷 切换至【语文 - 古诗】题库</span>
             </button>
@@ -1191,7 +337,7 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
                 setSelectedSubject('语文');
                 setSelectedSection('成语');
               }}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition inline-flex items-center gap-1.5"
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition inline-flex items-center gap-1.5 cursor-pointer"
             >
               <span>🐉 切换至【语文 - 成语】题库</span>
             </button>
@@ -1206,13 +352,13 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
             <div className="text-xl font-bold text-slate-800 mb-2">删除题目？</div>
             <p className="text-sm text-slate-500 mb-5">此操作不可撤销。确认删除这道题目吗？</p>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setConfirmDeleteId(null)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium">取消</button>
+              <button onClick={() => setConfirmDeleteId(null)} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium cursor-pointer">取消</button>
               <button
                 onClick={() => {
                   if (isIdiomModule) deleteIdiomQuestion(confirmDeleteId);
                   else deleteQuestion(confirmDeleteId);
                 }}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl transition"
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl transition cursor-pointer"
               >
                 确认删除
               </button>
