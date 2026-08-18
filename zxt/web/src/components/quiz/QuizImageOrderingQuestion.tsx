@@ -116,7 +116,8 @@ export const QuizImageOrderingQuestion: React.FC<QuizImageOrderingQuestionProps>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {placedSlots.map((slotImg, sIdx) => {
             const isSelected = !feedback && selectedSource?.type === 'slot' && selectedSource.index === sIdx;
-            const targetImg = ((q as any).images || [])[sIdx];
+            const targetImgs = ((q as any).images || (q as any).items?.map((it: any) => (typeof it === 'string' ? it : it?.image)) || []);
+            const targetImg = targetImgs[sIdx];
             const lineText = poemLines[sIdx] || `第 ${sIdx + 1} 句`;
             const isSlotCorrect = isSubmitted && slotImg === targetImg;
 

@@ -107,19 +107,19 @@ Cultural/historical multiple-choice question from 4 options.
 ```
 
 ### `ImageOrdering`
-Student sorts shuffled poem-line images into the correct order. `answer` is the sorted array of `line_index` values.
+Student sorts shuffled poem-line images into the correct order. The frontend derives slots and answers directly from the ordered sequential `images` list.
 
 ```json
 {
   "id": "q_blg_001_img_order",
   "type": "ImageOrdering",
-  "prompt": "请按诗句顺序排列《池上》的插图：",
-  "items": [
-    { "image": "/assets/blg/poems/p1_l1.webp", "line_index": 0 },
-    { "image": "/assets/blg/poems/p1_l4.webp", "line_index": 3 }
-  ],
-  "answer": [0, 2, 3, 1],
-  "explanation": "..."
+  "prompt": "请按诗句顺序拖拽或排列《池上》的插图：",
+  "images": [
+    "/assets/blg/poems/p1_l1.webp",
+    "/assets/blg/poems/p1_l2.webp",
+    "/assets/blg/poems/p1_l3.webp",
+    "/assets/blg/poems/p1_l4.webp"
+  ]
 }
 ```
 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiService, IdiomGroup } from '../../services/api';
+import { CachedImage } from '../CachedImage';
+import { StudentQuizPreviewModal } from '../StudentQuizPreviewModal';
 
 interface TeacherCourseProgressTabProps {
   selectedClass: string;
@@ -18,6 +20,13 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
 }) => {
   const [selectedSubject, setSelectedSubject] = useState<'语文' | '数学' | '英语'>('语文');
   const [selectedSection, setSelectedSection] = useState<'古诗' | '成语' | '识字' | '拼音'>('古诗');
+
+  // Preview Modals State
+  const [previewLinesPoem, setPreviewLinesPoem] = useState<any | null>(null);
+  const [previewQuizPoem, setPreviewQuizPoem] = useState<any | null>(null);
+
+  const [previewLinesIdiom, setPreviewLinesIdiom] = useState<IdiomGroup | null>(null);
+  const [previewQuizIdiom, setPreviewQuizIdiom] = useState<IdiomGroup | null>(null);
 
   // Available idiom groups from apiService
   const [availableIdiomGroups, setAvailableIdiomGroups] = useState<IdiomGroup[]>(() => apiService.getLocalIdiomGroups());
@@ -66,7 +75,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
       {/* Header Info */}
       <div className="border-b border-slate-100 pb-3">
         <h3 className="text-base font-bold font-serif text-ink">【{selectedClass}】课程教学进度与自学解锁控制</h3>
-        <p className="text-xs text-slate-500">点击勾选已教学单元，勾选后学生端将在“自主拓展学习”中解锁对应单元的知识点、互动练习与拓展赏析。</p>
+        <p className="text-xs text-slate-500">点击【解锁/锁定】按钮控制学生端自学权限，点击【诗句】、【习题】可快速预览教学内容与配套练习。</p>
       </div>
 
       {/* Subject Tabs */}
@@ -78,7 +87,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
               setSelectedSubject(sub);
               if (sub === '语文') setSelectedSection('古诗');
             }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               selectedSubject === sub
                 ? 'bg-slate-900 text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -97,7 +106,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
             <button
               key={sec}
               onClick={() => setSelectedSection(sec)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
                 selectedSection === sec
                   ? sec === '古诗'
                     ? 'bg-teal-600 text-white shadow-xs'
@@ -116,45 +125,104 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
         </div>
       )}
 
-      {/* Grid Content */}
+      {/* Grid Content: 古诗 */}
       {selectedSubject === '语文' && selectedSection === '古诗' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>古诗词进度 (全书共 75 首，已解锁 {learntPoemIds.length} 首)</span>
-            <span className="text-teal-700 font-medium">点击卡片即可切换授课/解锁状态</span>
+            <span className="text-slate-400">独立按钮控制：诗句浏览 · 习题预览 · 权限开关</span>
           </div>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
             {poems.map((poem) => {
               const isLearnt = learntPoemIds.includes(poem.id);
               const isAnimating = animatingPoemId === poem.id;
+              const questionCount = poem.questions?.length || 0;
+
               return (
                 <div
                   key={poem.id}
-                  onClick={() => onToggleLearnt(poem.id)}
-                  className={`p-3.5 rounded-xl border cursor-pointer transition-all duration-300 transform flex items-center justify-between ${
+                  className={`p-3.5 rounded-xl border transition-all duration-300 flex flex-col justify-between gap-3 ${
                     isAnimating
                       ? isLearnt
-                        ? 'scale-105 border-teal-500 bg-teal-100 ring-4 ring-teal-400/50 shadow-lg font-bold'
-                        : 'scale-95 border-amber-400 bg-amber-50 ring-4 ring-amber-400/50 shadow-md'
+                        ? 'border-teal-500 bg-teal-100/60 ring-4 ring-teal-400/50 shadow-lg'
+                        : 'border-amber-400 bg-amber-50 ring-4 ring-amber-400/50 shadow-md'
                       : isLearnt
-                        ? 'border-teal-500 bg-teal-50/80 font-bold hover:scale-[1.01]'
-                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:scale-[1.01]'
+                        ? 'border-teal-400/80 bg-teal-50/40 shadow-2xs'
+                        : 'border-slate-200 bg-slate-50/70 hover:border-slate-300'
                   }`}
                 >
-                  <div>
-                    <div className="font-bold font-serif text-ink flex items-center gap-1.5">
-                      <span>#{poem.id}</span> 《{poem.title}》
-                      {isAnimating && (
-                        <span className="animate-ping inline-flex h-2 w-2 rounded-full bg-teal-400 opacity-75"></span>
-                      )}
+                  {/* Card Header: Poem Info */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-bold font-serif text-ink text-sm flex items-center gap-1.5">
+                        <span className="text-teal-700 font-mono">#{poem.id}</span>
+                        <span>《{poem.title}》</span>
+                        {isAnimating && (
+                          <span className="animate-ping inline-flex h-2 w-2 rounded-full bg-teal-400 opacity-75"></span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        [{poem.dynasty}] {poem.author}
+                        {poem.theme && <span className="ml-1.5 text-slate-400">· {poem.theme}</span>}
+                      </div>
                     </div>
-                    <div className="text-[10px] text-slate-400">[{poem.dynasty}] {poem.author}</div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/60 text-slate-600 font-medium">
+                      {poem.lines?.length || 4} 句 / {questionCount} 题
+                    </span>
                   </div>
-                  <span className={`px-2 py-1 rounded text-[10px] transition-all duration-300 ${
-                    isAnimating ? 'scale-110' : ''
-                  } ${isLearnt ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-200 text-slate-600'}`}>
-                    {isLearnt ? '🔓 已学 (已解锁)' : '🔒 待学 (已锁定)'}
-                  </span>
+
+                  {/* 3 Action Buttons */}
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-200/60">
+                    {/* 1. 诗句 Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewLinesPoem(poem);
+                      }}
+                      className="flex-1 py-1.5 px-2 bg-teal-50 hover:bg-teal-100 active:bg-teal-200 text-teal-800 border border-teal-200/80 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+                      title="查看原诗诗句、拼音与释义"
+                    >
+                      <span>📜</span>
+                      <span>诗句</span>
+                    </button>
+
+                    {/* 2. 习题 Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (questionCount > 0) {
+                          setPreviewQuizPoem(poem);
+                        } else {
+                          alert(`《${poem.title}》暂无配套练习题`);
+                        }
+                      }}
+                      className="flex-1 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-800 border border-indigo-200/80 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+                      title="预览互动习题与互动拼图题库"
+                    >
+                      <span>📝</span>
+                      <span>习题</span>
+                    </button>
+
+                    {/* 3. Lock/Unlock Switch Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleLearnt(poem.id);
+                      }}
+                      className={`flex-1.2 py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer shadow-2xs ${
+                        isLearnt
+                          ? 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white'
+                          : 'bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700'
+                      }`}
+                      title={isLearnt ? '已解锁给学生自学 (点击锁定)' : '锁定未授课 (点击解锁)'}
+                    >
+                      <span>{isLearnt ? '🔓' : '🔒'}</span>
+                      <span>{isLearnt ? '已解锁' : '未解锁'}</span>
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -162,57 +230,107 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
         </div>
       )}
 
+      {/* Grid Content: 成语 */}
       {selectedSubject === '语文' && selectedSection === '成语' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>成语接龙课程进度 (共 {availableIdiomGroups.length} 组可用，已解锁 {learntIdiomGroups.filter(id => availableIdiomGroups.some(g => g.id === id)).length} 组)</span>
-            <span className="text-emerald-700 font-medium">点击卡片即可切换授课/解锁状态</span>
+            <span className="text-slate-400">独立按钮控制：词句浏览 · 习题预览 · 权限开关</span>
           </div>
           {availableIdiomGroups.length > 0 ? (
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
               {availableIdiomGroups.map((group) => {
                 const num = group.id;
                 const isLearnt = learntIdiomGroups.includes(num);
                 const isAnimating = animatingIdiomId === num;
                 const idiomCount = group.idioms?.length || 16;
                 const storyCount = (group.idioms || []).filter(i => i.has_story).length;
-                const previewWords = group.idioms?.slice(0, 4).map(i => i.word).join(' ➔ ');
+                const questionCount = (group as any).questions?.length || 0;
 
                 return (
                   <div
                     key={num}
-                    onClick={() => handleToggleIdiomGroup(num)}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition-all duration-300 transform flex items-center justify-between ${
+                    className={`p-3.5 rounded-xl border transition-all duration-300 flex flex-col justify-between gap-3 ${
                       isAnimating
                         ? isLearnt
-                          ? 'scale-105 border-emerald-500 bg-emerald-100 ring-4 ring-emerald-400/50 shadow-lg font-bold'
-                          : 'scale-95 border-amber-400 bg-amber-50 ring-4 ring-amber-400/50 shadow-md'
+                          ? 'border-emerald-500 bg-emerald-100/60 ring-4 ring-emerald-400/50 shadow-lg'
+                          : 'border-amber-400 bg-amber-50 ring-4 ring-amber-400/50 shadow-md'
                         : isLearnt
-                          ? 'border-emerald-500 bg-emerald-50/80 font-bold hover:scale-[1.01]'
-                          : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:scale-[1.01]'
+                          ? 'border-emerald-400/80 bg-emerald-50/40 shadow-2xs'
+                          : 'border-slate-200 bg-slate-50/70 hover:border-slate-300'
                     }`}
                   >
-                    <div>
-                      <div className="font-bold text-ink flex items-center gap-1.5">
-                        <span>🐉</span> {group.title || `成语接龙第${num}组`}
-                        {isAnimating && (
-                          <span className="animate-ping inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">
-                        包含 {idiomCount} 条环形连缀成语 {storyCount > 0 ? `+ ${storyCount}个典故` : ''}
-                      </div>
-                      {previewWords && (
-                        <div className="text-[10px] text-emerald-700/80 font-serif mt-1 truncate max-w-[200px]">
-                          {previewWords} ...
+                    {/* Card Header: Idiom Group Info */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-bold text-ink text-sm flex items-center gap-1.5">
+                          <span>🐉</span>
+                          <span>{group.title || `成语接龙第 ${num} 组`}</span>
+                          {isAnimating && (
+                            <span className="animate-ping inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
+                          )}
                         </div>
-                      )}
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          包含 {idiomCount} 条环形成语 {storyCount > 0 ? `· ${storyCount} 个成语典故` : ''}
+                        </div>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/60 text-slate-600 font-medium">
+                        {questionCount} 题
+                      </span>
                     </div>
-                    <span className={`px-2 py-1 rounded text-[10px] transition-all duration-300 flex-shrink-0 ${
-                      isAnimating ? 'scale-110' : ''
-                    } ${isLearnt ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-200 text-slate-600'}`}>
-                      {isLearnt ? '🔓 已学 (已解锁)' : '🔒 待学 (已锁定)'}
-                    </span>
+
+                    {/* 3 Action Buttons */}
+                    <div className="flex items-center gap-1.5 pt-2 border-t border-slate-200/60">
+                      {/* 1. 成语词条 Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewLinesIdiom(group);
+                        }}
+                        className="flex-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-800 border border-emerald-200/80 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+                        title="查看本组成语词条、拼音与典故"
+                      >
+                        <span>📖</span>
+                        <span>词句</span>
+                      </button>
+
+                      {/* 2. 习题 Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (questionCount > 0) {
+                            setPreviewQuizIdiom(group);
+                          } else {
+                            alert(`成语接龙第 ${num} 组暂无配套练习题`);
+                          }
+                        }}
+                        className="flex-1 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-800 border border-indigo-200/80 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
+                        title="预览成语互动习题"
+                      >
+                        <span>📝</span>
+                        <span>习题</span>
+                      </button>
+
+                      {/* 3. Lock/Unlock Switch Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleIdiomGroup(num);
+                        }}
+                        className={`flex-1.2 py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer shadow-2xs ${
+                          isLearnt
+                            ? 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white'
+                            : 'bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700'
+                        }`}
+                        title={isLearnt ? '已解锁给学生自学 (点击锁定)' : '锁定未授课 (点击解锁)'}
+                      >
+                        <span>{isLearnt ? '🔓' : '🔒'}</span>
+                        <span>{isLearnt ? '已解锁' : '未解锁'}</span>
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -225,6 +343,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
         </div>
       )}
 
+      {/* Modules under development */}
       {selectedSubject === '语文' && (selectedSection === '识字' || selectedSection === '拼音') && (
         <div className="py-12 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
           <div className="text-3xl">{selectedSection === '识字' ? '✍️' : '🔡'}</div>
@@ -239,6 +358,247 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
           <div className="text-sm font-bold text-slate-600">【{selectedSubject}】学科教学进度模块规划中</div>
           <p className="text-xs max-w-sm mx-auto">已支持对应学科作业发布与题库管理，授课章节进度控制模组将同步适配接入。</p>
         </div>
+      )}
+
+      {/* 📜 MODAL 1: 古诗诗句与译注 Preview Modal */}
+      {previewLinesPoem && (
+        <div
+          className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPreviewLinesPoem(null)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                    #{previewLinesPoem.id}
+                  </span>
+                  <h3 className="text-lg font-bold font-serif text-slate-900">
+                    《{previewLinesPoem.title}》
+                  </h3>
+                </div>
+                <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                  <span>[{previewLinesPoem.dynasty}] {previewLinesPoem.author}</span>
+                  {previewLinesPoem.theme && (
+                    <span className="text-teal-700 font-medium">· {previewLinesPoem.theme}</span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewLinesPoem(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body: Poem Lines with Pinyin, cn, en, images */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {(previewLinesPoem.lines || []).map((line: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between"
+                >
+                  <div className="space-y-1 flex-1">
+                    <div className="text-xs text-teal-600 font-mono font-medium tracking-wide">
+                      {line.pinyin}
+                    </div>
+                    <div className="text-lg font-serif font-bold text-slate-900 tracking-wider">
+                      {line.text}
+                    </div>
+                    {line.cn && (
+                      <div className="text-xs text-slate-600 font-sans">
+                        <span className="text-slate-400 font-medium">译：</span>{line.cn}
+                      </div>
+                    )}
+                    {line.en && (
+                      <div className="text-[11px] text-slate-400 font-sans italic">
+                        {line.en}
+                      </div>
+                    )}
+                  </div>
+
+                  {line.image && (
+                    <div className="flex-shrink-0">
+                      <CachedImage
+                        src={line.image}
+                        alt={`line-${idx + 1}`}
+                        className="w-20 h-20 object-cover rounded-xl border border-slate-200 shadow-2xs"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Keywords / Notes if present */}
+              {previewLinesPoem.keywords && previewLinesPoem.keywords.length > 0 && (
+                <div className="p-3 bg-teal-50/50 border border-teal-100 rounded-xl flex items-center gap-2 text-xs">
+                  <span className="text-teal-800 font-bold">🏷️ 意象关键词:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {previewLinesPoem.keywords.map((kw: string, i: number) => (
+                      <span key={i} className="px-2 py-0.5 bg-white text-teal-700 border border-teal-200 rounded text-[10px]">
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  const targetPoem = previewLinesPoem;
+                  setPreviewLinesPoem(null);
+                  if (targetPoem.questions && targetPoem.questions.length > 0) {
+                    setPreviewQuizPoem(targetPoem);
+                  } else {
+                    alert(`《${targetPoem.title}》暂无配套练习题`);
+                  }
+                }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+              >
+                <span>📝</span>
+                <span>查看配套习题 ({previewLinesPoem.questions?.length || 0} 题)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPreviewLinesPoem(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📖 MODAL 2: 成语词条 Preview Modal */}
+      {previewLinesIdiom && (
+        <div
+          className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPreviewLinesIdiom(null)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    第 {previewLinesIdiom.id} 组
+                  </span>
+                  <h3 className="text-lg font-bold font-serif text-slate-900">
+                    {previewLinesIdiom.title || `成语接龙第 ${previewLinesIdiom.id} 组`}
+                  </h3>
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  环形连缀成语表（首尾字符衔接流转）
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewLinesIdiom(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body: 16 Idioms */}
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+              {(previewLinesIdiom.idioms || []).map((item: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 flex flex-col gap-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-bold text-emerald-700 font-mono">#{idx + 1}</span>
+                      <span className="text-base font-bold font-serif text-slate-900">{item.word}</span>
+                      {item.pinyin && (
+                        <span className="text-xs text-slate-400 font-mono font-medium">({item.pinyin})</span>
+                      )}
+                    </div>
+                    {item.has_story && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded font-medium">
+                        📜 典故
+                      </span>
+                    )}
+                  </div>
+                  {item.meaning && (
+                    <div className="text-xs text-slate-600 pl-5">
+                      <span className="text-slate-400">释义：</span>{item.meaning}
+                    </div>
+                  )}
+                  {item.story && (
+                    <div className="text-[11px] text-amber-800 bg-amber-50/40 p-2 rounded-lg border border-amber-100/60 mt-1">
+                      <span className="font-bold">典故：</span>{item.story}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  const targetGroup = previewLinesIdiom;
+                  setPreviewLinesIdiom(null);
+                  if ((targetGroup as any).questions && (targetGroup as any).questions.length > 0) {
+                    setPreviewQuizIdiom(targetGroup);
+                  } else {
+                    alert(`成语接龙第 ${targetGroup.id} 组暂无配套练习题`);
+                  }
+                }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+              >
+                <span>📝</span>
+                <span>查看配套习题 ({(previewLinesIdiom as any).questions?.length || 0} 题)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPreviewLinesIdiom(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📝 MODAL 3: 古诗 习题 StudentQuizPreviewModal */}
+      {previewQuizPoem && (
+        <StudentQuizPreviewModal
+          poemTitle={previewQuizPoem.title}
+          questions={previewQuizPoem.questions || []}
+          initialIndex={0}
+          onClose={() => setPreviewQuizPoem(null)}
+        />
+      )}
+
+      {/* 📝 MODAL 4: 成语 习题 StudentQuizPreviewModal */}
+      {previewQuizIdiom && (
+        <StudentQuizPreviewModal
+          poemTitle={previewQuizIdiom.title || `成语接龙第 ${previewQuizIdiom.id} 组`}
+          questions={(previewQuizIdiom as any).questions || []}
+          initialIndex={0}
+          onClose={() => setPreviewQuizIdiom(null)}
+        />
       )}
     </div>
   );

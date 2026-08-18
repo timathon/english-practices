@@ -141,7 +141,8 @@ export const StudentQuizPreviewModal: React.FC<{
       setScrambledPool(shuffled);
       setSelectedChars([]);
     } else if (q.type === 'ImageOrdering') {
-      const imgs = [...(q.images || [])];
+      const rawImgs = q.images || (q as any).items?.map((it: any) => (typeof it === 'string' ? it : it?.image)) || [];
+      const imgs = [...rawImgs];
       const shuffled = [...imgs].sort(() => Math.random() - 0.5);
       setInitialBankOrder(shuffled);
       setBankImages([...shuffled]);
@@ -334,7 +335,8 @@ export const StudentQuizPreviewModal: React.FC<{
         alert('请将所有备选图片放入对应的目标位置后再提交！');
         return;
       }
-      const isMatch = (q.images || []).every((img, idx) => img === placedSlots[idx]);
+      const targetImages = q.images || (q as any).items?.map((it: any) => (typeof it === 'string' ? it : it?.image)) || [];
+      const isMatch = targetImages.every((img: string, idx: number) => img === placedSlots[idx]);
       if (isMatch) {
         playAnswerSFX('correct');
         currentFeedback = { isCorrect: true, text: '🎉 排序正确！插图与诗句发展顺序完全一致。' };

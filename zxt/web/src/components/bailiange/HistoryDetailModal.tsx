@@ -199,7 +199,7 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
                           <div className="space-y-2">
                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">✓ 正确插图发展顺序</span>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                              {(item.images || []).map((img: string, iIdx: number) => (
+                              {(item.images || item.items?.map((it: any) => (typeof it === 'string' ? it : it?.image)) || []).map((img: string, iIdx: number) => (
                                 <div key={iIdx} className="bg-slate-50 p-2 border border-slate-200 rounded-xl flex flex-col items-center gap-1 text-center">
                                   <span className="text-[10px] font-bold text-indigo-600">第 {iIdx + 1} 幅</span>
                                   <CachedImage src={img} alt={`img-${iIdx}`} className="w-full h-20 object-cover rounded-lg border border-slate-100" />
