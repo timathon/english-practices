@@ -107,6 +107,14 @@ export type IdiomQuestion =
     }
   | {
       id: string;
+      type: 'ChainAssembly';
+      idioms: string[];
+      distractor_chars: string[];
+      prompt?: string;
+      explanation?: string;
+    }
+  | {
+      id: string;
       type: 'IdiomSolitaire' | 'IdiomCloze' | 'HomophoneMatch' | 'IdiomMeaning' | 'StoryComprehension' | 'EmotionMatch';
       prompt: string;
       options: string[];

@@ -11,6 +11,7 @@ export const QUESTION_TYPE_LABELS: Record<string, string> = {
   ImageOrdering: '插图排序',
   ImageToLine:   '图配句',
   IdiomAssembly:  '成语还原',
+  ChainAssembly:  '接龙还原',
   IdiomSolitaire: '首尾接龙',
   IdiomCloze:     '成语填空',
   HomophoneMatch: '字音字形',
@@ -21,7 +22,7 @@ export const QUESTION_TYPE_LABELS: Record<string, string> = {
 };
 
 export const ALL_TYPES = ['LineAssembly', 'VerseCloze', 'PinyinMatch', 'TextToCn', 'CulturalContext', 'ImageOrdering', 'ImageToLine'];
-export const IDIOM_TYPES = ['IdiomAssembly', 'IdiomSolitaire', 'IdiomCloze', 'HomophoneMatch', 'IdiomMeaning', 'StoryComprehension', 'ImageToIdiom', 'EmotionMatch'];
+export const IDIOM_TYPES = ['IdiomAssembly', 'ChainAssembly', 'IdiomSolitaire', 'IdiomCloze', 'HomophoneMatch', 'IdiomMeaning', 'StoryComprehension', 'ImageToIdiom', 'EmotionMatch'];
 
 export const TYPE_COLORS: Record<string, string> = {
   LineAssembly:   'bg-violet-100 text-violet-800 border-violet-200',
@@ -32,6 +33,7 @@ export const TYPE_COLORS: Record<string, string> = {
   ImageOrdering: 'bg-indigo-100 text-indigo-800 border-indigo-200',
   ImageToLine:   'bg-emerald-100 text-emerald-800 border-emerald-200',
   IdiomAssembly:  'bg-emerald-100 text-emerald-800 border-emerald-200',
+  ChainAssembly:  'bg-amber-100 text-amber-800 border-amber-200',
   IdiomSolitaire: 'bg-indigo-100 text-indigo-800 border-indigo-200',
   IdiomCloze:     'bg-teal-100 text-teal-800 border-teal-200',
   HomophoneMatch: 'bg-sky-100 text-sky-800 border-sky-200',
@@ -45,6 +47,9 @@ export function makeBlankIdiomQuestion(type: string): IdiomQuestion {
   const id = `q_idm_${Math.random().toString(36).slice(2, 8)}`;
   if (type === 'IdiomAssembly') {
     return { id, type: 'IdiomAssembly', answer: '', distractor_chars: [] };
+  }
+  if (type === 'ChainAssembly') {
+    return { id, type: 'ChainAssembly', idioms: ['', '', ''], distractor_chars: [] };
   }
   if (type === 'ImageToIdiom') {
     return { id, type: 'ImageToIdiom', prompt: '', image: '', options: ['', '', '', ''], answer: 0, explanation: '' };

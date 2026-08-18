@@ -38,20 +38,37 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
   const [teacherTab, setTeacherTab] = useState<'assignments' | 'stats' | 'progress'>('assignments');
   const [teacherMsg, setTeacherMsg] = useState<string>('');
 
-  // Helper to get default due date (1 day later)
-  const getDefaultDueDate = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
+  // Helper to format datetime-local string (YYYY-MM-DDTHH:mm)
+  const formatDateTimeLocal = (d: Date) => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Helper to get default start datetime (+1 hour)
+  const getDefaultStartDateTime = () => {
+    const d = new Date();
+    d.setHours(d.getHours() + 1);
+    return formatDateTimeLocal(d);
+  };
+
+  // Helper to get default due datetime (tomorrow 23:59)
+  const getDefaultDueDateTime = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(23, 59, 0, 0);
+    return formatDateTimeLocal(d);
   };
 
   // Assignment form state
   const [newAsgnPoemId, setNewAsgnPoemId] = useState<number>(1);
   const [newAsgnIdiomGroupId, setNewAsgnIdiomGroupId] = useState<number>(1);
-  const [newAsgnDueDate, setNewAsgnDueDate] = useState<string>(getDefaultDueDate);
+  const [isImmediateStart, setIsImmediateStart] = useState<boolean>(false);
+  const [newAsgnStartDate, setNewAsgnStartDate] = useState<string>(getDefaultStartDateTime);
+  const [newAsgnDueDate, setNewAsgnDueDate] = useState<string>(getDefaultDueDateTime);
   const [newAsgnReq, setNewAsgnReq] = useState<string>('请认真完成本单元练习，注意书写与拼音。');
   const [asgnSubject, setAsgnSubject] = useState<string>('语文');
   const [asgnSection, setAsgnSection] = useState<string>('古诗');
@@ -61,6 +78,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
   const [previewStartIndex, setPreviewStartIndex] = useState<number | null>(null);
   const [modalQuestionFilter, setModalQuestionFilter] = useState<string>('all');
+  const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
 
   // Publish success & sync error modal state
   const [publishSuccessData, setPublishSuccessData] = useState<{
@@ -77,7 +95,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
     questions: (PoemQuestion | IdiomQuestion)[];
   } | null>(null);
 
-  useLockBodyScroll(publishingPoem !== null || publishSuccessData !== null || syncErrorModal !== null || previewAssignmentData !== null);
+  useLockBodyScroll(publishingPoem !== null || showScheduleModal || publishSuccessData !== null || syncErrorModal !== null || previewAssignmentData !== null);
 
   useEffect(() => {
     loadPoems();
@@ -196,10 +214,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
     }
   };
 
-  const handlePublishAssignment = (e: React.FormEvent) => {
+  const handlePublishAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (asgnSubject === '语文' && (asgnSection === '成语' || asgnSection.includes('成语'))) {
-      const idiomGroups = apiService.getLocalIdiomGroups();
+      const idiomGroups = await apiService.getIdiomGroups();
       const group = idiomGroups.find(g => g.id === Number(newAsgnIdiomGroupId)) || idiomGroups[0];
       if (!group) {
         alert('未找到选中的成语组题库！');
@@ -219,7 +237,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
     setModalQuestionFilter('all');
   };
 
-  const confirmPublishAssignment = async () => {
+  const confirmPublishAssignment = () => {
+    if (!publishingPoem) return;
+    if (selectedQuestionIds.length === 0) {
+      alert('请至少勾选 1 道题目后再发布作业！');
+      return;
+    }
+    setPreviewStartIndex(null);
+    setShowScheduleModal(true);
+  };
+
+  const handleFinalPublishAssignment = async () => {
     if (!publishingPoem) return;
     if (selectedQuestionIds.length === 0) {
       alert('请至少勾选 1 道题目后再发布作业！');
@@ -229,20 +257,24 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
       className: selectedClass,
       poemId: publishingPoem.id,
       poemTitle: publishingPoem.title,
+      startDate: newAsgnStartDate,
       dueDate: newAsgnDueDate,
       requirement: newAsgnReq,
       questionIds: selectedQuestionIds,
+      createdTeacherId: user?.id || 'usr_tea_001',
     });
 
     const successInfo = {
       className: selectedClass,
       poemTitle: publishingPoem.title,
       questionCount: selectedQuestionIds.length,
+      startDate: newAsgnStartDate,
       dueDate: newAsgnDueDate,
       requirement: newAsgnReq,
     };
 
     setTeacherMsg(`成功向【${selectedClass}】发布《${publishingPoem.title}》作业（已精选 ${selectedQuestionIds.length} 道题目）！`);
+    setShowScheduleModal(false);
     setPublishingPoem(null);
     setPublishSuccessData(successInfo);
     await loadTeacherData();
@@ -488,6 +520,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                 ImageOrdering: '插图排序',
                 ImageToLine: '图配句',
                 IdiomAssembly: '成语还原',
+                ChainAssembly: '接龙还原',
                 IdiomSolitaire: '首尾接龙',
                 IdiomCloze: '成语填空',
                 HomophoneMatch: '字音字形',
@@ -545,6 +578,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                   inactive: 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100',
                   countActive: 'bg-white/20 text-white',
                   countInactive: 'bg-emerald-200/70 text-emerald-900',
+                },
+                ChainAssembly: {
+                  active: 'bg-amber-600 text-white shadow-xs border border-amber-700',
+                  inactive: 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100',
+                  countActive: 'bg-white/20 text-white',
+                  countInactive: 'bg-amber-200/70 text-amber-900',
                 },
                 IdiomSolitaire: {
                   active: 'bg-indigo-600 text-white shadow-xs border border-indigo-700',
@@ -683,6 +722,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                   ImageOrdering: '插图排序',
                   ImageToLine: '图配句',
                   IdiomAssembly: '成语还原',
+                  ChainAssembly: '接龙还原',
                   IdiomSolitaire: '首尾接龙',
                   IdiomCloze: '成语填空',
                   HomophoneMatch: '字音字形',
@@ -700,6 +740,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                   ImageOrdering: 'bg-indigo-50 text-indigo-800 border-indigo-200',
                   ImageToLine: 'bg-emerald-50 text-emerald-800 border-emerald-200',
                   IdiomAssembly: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                  ChainAssembly: 'bg-amber-50 text-amber-800 border-amber-200',
                   IdiomSolitaire: 'bg-indigo-50 text-indigo-800 border-indigo-200',
                   IdiomCloze: 'bg-teal-50 text-teal-800 border-teal-200',
                   HomophoneMatch: 'bg-sky-50 text-sky-800 border-sky-200',
@@ -811,12 +852,133 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
                   setPreviewStartIndex(0);
                 }}
                 disabled={selectedQuestionIds.length === 0}
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
               >
-                👁 预览 ({selectedQuestionIds.length} 道精选题目)
+                👁 预览题目并发布 ({selectedQuestionIds.length} 题) →
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Due Date Confirmation Modal */}
+      {showScheduleModal && publishingPoem && (
+        <div className="fixed inset-0 !mt-0 !m-0 z-[115] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowScheduleModal(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-5 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📅</span>
+                <h3 className="text-base font-bold font-serif text-slate-800">
+                  设定作业开始与截止时间
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500">发布班级:</span>
+                <span className="font-bold text-blue-600">{selectedClass}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">作业内容:</span>
+                <span className="font-bold text-slate-800">《{publishingPoem.title}》</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">已选题目:</span>
+                <span className="font-bold text-emerald-600">{selectedQuestionIds.length} 道精选题目</span>
+              </div>
+            </div>
+
+            {/* Start Date & Time */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-xs text-slate-700">开始时间 (Start Time)</label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-emerald-700 select-none bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  <input
+                    type="checkbox"
+                    checked={isImmediateStart}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setIsImmediateStart(checked);
+                      if (checked) {
+                        const d = new Date();
+                        d.setMinutes(d.getMinutes() + 5);
+                        setNewAsgnStartDate(formatDateTimeLocal(d));
+                      } else {
+                        const d = new Date();
+                        d.setHours(d.getHours() + 1);
+                        setNewAsgnStartDate(formatDateTimeLocal(d));
+                      }
+                    }}
+                    className="w-3.5 h-3.5 text-emerald-600 rounded cursor-pointer"
+                  />
+                  <span>立即开始 (5分钟后生效)</span>
+                </label>
+              </div>
+
+              <input
+                type="datetime-local"
+                disabled={isImmediateStart}
+                value={newAsgnStartDate}
+                onChange={(e) => setNewAsgnStartDate(e.target.value)}
+                className={`w-full px-3 py-2 border rounded-xl font-bold text-xs text-slate-800 outline-none transition ${
+                  isImmediateStart
+                    ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-slate-50 border-slate-300 focus:ring-2 focus:ring-blue-500 cursor-pointer'
+                }`}
+              />
+              <p className="text-[10px] text-slate-400">
+                {isImmediateStart ? '💡 学生端将在发布 5 分钟后正式开放答题' : '💡 未到开始时间前，学生端可浏览但无法进入答题'}
+              </p>
+            </div>
+
+            {/* End Date & Time */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-xs text-slate-700">截止时间 (Due Time)</label>
+                <span className="text-[10px] text-slate-400">逾期仍可补交（无准时打卡奖励）</span>
+              </div>
+              <input
+                type="datetime-local"
+                value={newAsgnDueDate}
+                onChange={(e) => setNewAsgnDueDate(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-slate-50 font-bold text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-xs text-slate-700 mb-1">作业要求说明</label>
+              <textarea
+                value={newAsgnReq}
+                onChange={(e) => setNewAsgnReq(e.target.value)}
+                rows={2}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowScheduleModal(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+              >
+                ← 返回挑题
+              </button>
+              <button
+                type="button"
+                onClick={handleFinalPublishAssignment}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition transform active:scale-95 flex items-center gap-1.5 cursor-pointer"
+              >
+                🚀 确认发布作业
+              </button>
+            </div>
           </div>
         </div>
       )}

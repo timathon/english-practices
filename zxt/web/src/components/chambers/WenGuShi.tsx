@@ -50,6 +50,7 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
     ImageOrdering: '插图排序',
     ImageToLine: '图配句',
     IdiomAssembly: '成语还原',
+    ChainAssembly: '接龙还原',
     IdiomSolitaire: '首尾接龙',
     IdiomCloze: '成语填空',
     HomophoneMatch: '字音字形',

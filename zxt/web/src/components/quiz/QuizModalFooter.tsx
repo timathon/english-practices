@@ -99,7 +99,7 @@ export const QuizModalFooter: React.FC<QuizModalFooterProps> = ({
             }}
             className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
           >
-            <span>🚀 确认发布作业</span>
+            <span>📅 设定作业开始与截止日期</span>
           </button>
         </div>
       )}

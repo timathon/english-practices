@@ -7,6 +7,7 @@ import { QUESTION_TYPE_LABELS, TYPE_COLORS } from './quiz/quizConstants';
 import { QuizModalHeader } from './quiz/QuizModalHeader';
 import { QuizCompletionView } from './quiz/QuizCompletionView';
 import { QuizAssemblyQuestion } from './quiz/QuizAssemblyQuestion';
+import { QuizChainAssemblyQuestion } from './quiz/QuizChainAssemblyQuestion';
 import { QuizImageOrderingQuestion } from './quiz/QuizImageOrderingQuestion';
 import { QuizMultipleChoiceQuestion } from './quiz/QuizMultipleChoiceQuestion';
 import { QuizModalFooter } from './quiz/QuizModalFooter';
@@ -127,6 +128,18 @@ export const StudentQuizPreviewModal: React.FC<{
       const shuffled = [...all].sort(() => Math.random() - 0.5);
       setScrambledPool(shuffled);
       setSelectedChars([]);
+    } else if (q.type === 'ChainAssembly') {
+      const missingChars: string[] = [];
+      ((q as any).idioms || []).forEach((w: string) => {
+        if (w.length >= 4) {
+          missingChars.push(w[1], w[2]);
+        }
+      });
+      const distChars = (q as any).distractor_chars || [];
+      const all = [...missingChars, ...distChars];
+      const shuffled = [...all].sort(() => Math.random() - 0.5);
+      setScrambledPool(shuffled);
+      setSelectedChars([]);
     } else if (q.type === 'ImageOrdering') {
       const imgs = [...(q.images || [])];
       const shuffled = [...imgs].sort(() => Math.random() - 0.5);
@@ -137,19 +150,17 @@ export const StudentQuizPreviewModal: React.FC<{
     }
 
     if (q.type === 'VerseCloze') {
-      const rawOpts = q.options || [];
-      const correctOpt = rawOpts[q.answer] ?? rawOpts[0] ?? '';
-      const distractors = rawOpts.filter((_, idx) => idx !== q.answer);
+      const rawOpts = (q as any).options || [];
+      const correctOpt = rawOpts[(q as any).answer] ?? rawOpts[0] ?? '';
+      const distractors = rawOpts.filter((_: any, idx: number) => idx !== (q as any).answer);
       const sampledDistractors = [...distractors].sort(() => Math.random() - 0.5).slice(0, 3);
       const combined = [correctOpt, ...sampledDistractors].sort(() => Math.random() - 0.5);
       setDisplayedOptions(combined);
       setMappedAnswerIndex(combined.indexOf(correctOpt));
-    } else if (q.type !== 'LineAssembly' && q.type !== 'IdiomAssembly' && q.type !== 'ImageOrdering') {
+    } else if (q.type !== 'LineAssembly' && q.type !== 'IdiomAssembly' && q.type !== 'ChainAssembly' && q.type !== 'ImageOrdering') {
       const rawOpts = (q as any).options || [];
-      const correctOpt = rawOpts[(q as any).answer] ?? rawOpts[0] ?? '';
-      const shuffled = [...rawOpts].sort(() => Math.random() - 0.5);
-      setDisplayedOptions(shuffled);
-      setMappedAnswerIndex(shuffled.indexOf(correctOpt));
+      setDisplayedOptions(rawOpts);
+      setMappedAnswerIndex((q as any).answer || 0);
     }
   }, [currentIndex, q, submittedQuestionStates]);
 
@@ -160,7 +171,21 @@ export const StudentQuizPreviewModal: React.FC<{
         return;
       }
 
-      if (isCompleted) return;
+      if (e.key >= '1' && e.key <= '4') {
+        const num = parseInt(e.key, 10);
+        if (q && q.type !== 'LineAssembly' && q.type !== 'IdiomAssembly' && q.type !== 'ChainAssembly' && q.type !== 'ImageOrdering' && feedback === null) {
+          const idx = num - 1;
+          const opts = displayedOptions.length > 0 ? displayedOptions : ((q as any).options || []);
+          if (idx >= 0 && idx < opts.length) {
+            setMcSelection(idx);
+          }
+        }
+      } else if (e.key === ' ') {
+        if (onToggleSelectQuestion && q) {
+          e.preventDefault();
+          onToggleSelectQuestion(q.id);
+        }
+      } else if (isCompleted) return;
       const isPreviewMode = !!(onToggleSelectQuestion || onConfirmPublish);
 
       if (e.key === 'ArrowLeft') {
@@ -184,7 +209,7 @@ export const StudentQuizPreviewModal: React.FC<{
         } else {
           const hasSelection = (() => {
             if (!q) return false;
-            if (q.type === 'LineAssembly' || q.type === 'IdiomAssembly') return selectedChars.length > 0;
+            if (q.type === 'LineAssembly' || q.type === 'IdiomAssembly' || q.type === 'ChainAssembly') return selectedChars.length > 0;
             if (q.type === 'ImageOrdering') return placedSlots.some(s => s !== null);
             return mcSelection !== null;
           })();
@@ -197,7 +222,7 @@ export const StudentQuizPreviewModal: React.FC<{
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, currentRoundQuestions.length, feedback, isCompleted, onToggleSelectQuestion, onConfirmPublish, mcSelection, selectedChars, placedSlots, q]);
+  }, [currentIndex, currentRoundQuestions.length, feedback, isCompleted, onToggleSelectQuestion, onConfirmPublish, mcSelection, selectedChars, placedSlots, q, displayedOptions]);
 
   if (!questions || questions.length === 0 || !q) {
     return (
@@ -277,6 +302,33 @@ export const StudentQuizPreviewModal: React.FC<{
       }
       setFeedback(currentFeedback);
       recordAnswerResult(isRight, `“${studentAns}”`, `“${q.answer}”`);
+    } else if (q.type === 'ChainAssembly') {
+      const targetMissing: string[] = [];
+      ((q as any).idioms || []).forEach((w: string) => {
+        if (w.length >= 4) {
+          targetMissing.push(w[1], w[2]);
+        }
+      });
+      const studentAns = selectedChars.map(c => c.char).join('');
+      const correctAns = targetMissing.join('');
+      const isRight = studentAns === correctAns;
+
+      const chainDisplay = ((q as any).idioms || []).join(' ➡️ ');
+      if (isRight) {
+        playAnswerSFX('correct');
+        currentFeedback = {
+          isCorrect: true,
+          text: `🎉 回答正确！完整接龙成语链为：${chainDisplay}！`
+        };
+      } else {
+        playAnswerSFX('wrong');
+        currentFeedback = {
+          isCorrect: false,
+          text: `❌ 还需要加油哦！正确接龙成语链是：${chainDisplay}`
+        };
+      }
+      setFeedback(currentFeedback);
+      recordAnswerResult(isRight, `填入：“${studentAns}”`, `正确链：“${chainDisplay}”`);
     } else if (q.type === 'ImageOrdering') {
       if (placedSlots.some(slot => slot === null)) {
         alert('请将所有备选图片放入对应的目标位置后再提交！');
@@ -430,15 +482,15 @@ export const StudentQuizPreviewModal: React.FC<{
   };
 
   const hasSelection = (() => {
-    if (q.type === 'LineAssembly' || q.type === 'IdiomAssembly') return selectedChars.length > 0;
+    if (q.type === 'LineAssembly' || q.type === 'IdiomAssembly' || q.type === 'ChainAssembly') return selectedChars.length > 0;
     if (q.type === 'ImageOrdering') return placedSlots.some(s => s !== null);
     return mcSelection !== null;
   })();
 
   return (
-    <div className="fixed inset-0 !mt-0 !m-0 bg-black/75 z-[110] flex items-center justify-center p-4" onClick={() => onClose()}>
+    <div className="fixed inset-0 !mt-0 !m-0 bg-black/75 z-[110] flex items-center justify-center p-2 sm:p-4" onClick={() => onClose()}>
       <div
-        className={`w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto transition-all ${
+        className={`w-full max-w-2xl max-h-[96vh] sm:max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto transition-all ${
           isQuestionSelected
             ? 'bg-white border border-slate-200'
             : 'bg-amber-50 border-2 border-amber-400/80 shadow-amber-900/20'
@@ -475,7 +527,7 @@ export const StudentQuizPreviewModal: React.FC<{
             setIsSubmitted={setIsSubmitted}
           />
         ) : (
-          <div className={`p-6 overflow-y-auto flex-1 space-y-6 transition-colors ${
+          <div className={`p-3 sm:p-6 overflow-y-auto flex-1 space-y-3 sm:space-y-6 transition-colors ${
             isQuestionSelected ? 'bg-slate-50' : 'bg-amber-50'
           }`}>
             {!isQuestionSelected && (
@@ -503,9 +555,11 @@ export const StudentQuizPreviewModal: React.FC<{
                 <span className="text-xs text-slate-400 font-mono">ID: {q.id}</span>
               </div>
               <div className="space-y-2.5">
-                <h4 className="text-lg font-serif font-bold text-slate-800 leading-snug">
-                  {q.prompt || (q.type === 'IdiomAssembly' ? '请根据成语释义，点击字块拼接出对应的四字成语：' : '(未设置题目提示)')}
-                </h4>
+                {(q.prompt || q.type === 'IdiomAssembly') && (
+                  <h4 className="text-lg font-serif font-bold text-slate-800 leading-snug">
+                    {q.prompt || (q.type === 'IdiomAssembly' ? '请根据成语释义，点击字块拼接出对应的四字成语：' : '')}
+                  </h4>
+                )}
                 {q.type === 'IdiomAssembly' && (currentIdiomInfo?.full_meaning || currentIdiomInfo?.meaning) && (
                   <div className="bg-emerald-50/90 border border-emerald-200/90 rounded-2xl p-3.5 text-sm text-emerald-950 leading-relaxed shadow-2xs">
                     <span className="font-bold text-emerald-800 mr-2 inline-flex items-center gap-1">
@@ -555,6 +609,32 @@ export const StudentQuizPreviewModal: React.FC<{
               />
             )}
 
+            {q.type === 'ChainAssembly' && (
+              <QuizChainAssemblyQuestion
+                q={q}
+                selectedChars={selectedChars}
+                scrambledPool={scrambledPool}
+                feedback={feedback}
+                onRemoveSelectedChar={(idx, item) => {
+                  if (feedback !== null) return;
+                  const nextSelected = [...selectedChars];
+                  nextSelected.splice(idx, 1);
+                  setSelectedChars(nextSelected);
+
+                  const nextPool = [...scrambledPool];
+                  nextPool[item.poolIndex] = item.char;
+                  setScrambledPool(nextPool);
+                }}
+                onSelectPoolChar={(char, poolIdx) => {
+                  if (feedback !== null || selectedChars.length >= 6) return;
+                  setSelectedChars([...selectedChars, { char, poolIndex: poolIdx }]);
+                  const nextPool = [...scrambledPool];
+                  nextPool[poolIdx] = null;
+                  setScrambledPool(nextPool);
+                }}
+              />
+            )}
+
             {q.type === 'ImageOrdering' && (
               <QuizImageOrderingQuestion
                 q={q}
@@ -569,7 +649,7 @@ export const StudentQuizPreviewModal: React.FC<{
               />
             )}
 
-            {q.type !== 'LineAssembly' && q.type !== 'IdiomAssembly' && q.type !== 'ImageOrdering' && (
+            {q.type !== 'LineAssembly' && q.type !== 'IdiomAssembly' && q.type !== 'ChainAssembly' && q.type !== 'ImageOrdering' && (
               <QuizMultipleChoiceQuestion
                 displayedOptions={displayedOptions}
                 mcSelection={mcSelection}

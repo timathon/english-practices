@@ -26,11 +26,11 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [idiomQuestions, setIdiomQuestions] = useState<IdiomQuestion[]>([]);
   const [activeIdiomQId, setActiveIdiomQId] = useState<string | null>(null);
-  const [idiomAddType, setIdiomAddType] = useState<string>(IDIOM_TYPES[0]);
+  const [idiomAddType, setIdiomAddType] = useState<IdiomQuestion['type']>(IDIOM_TYPES[0] as IdiomQuestion['type']);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [addType, setAddType] = useState<string>(ALL_TYPES[0]);
+  const [addType, setAddType] = useState<PoemQuestion['type']>(ALL_TYPES[0] as PoemQuestion['type']);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [previewStartIndex, setPreviewStartIndex] = useState<number | null>(null);
@@ -63,9 +63,21 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
 
   // Load poems on mount
   useEffect(() => {
-    const data = apiService.getQuizLibrary();
-    setPoems(data);
-    if (data.length > 0) selectPoem(data[0], data);
+    const load = async () => {
+      const data = await apiService.getPoems();
+      setPoems(data);
+      if (data.length > 0) selectPoem(data[0], data);
+    };
+    load();
+
+    const handlePoemUpdate = (e: any) => {
+      const updated = e.detail?.poems || [];
+      if (updated.length > 0) {
+        setPoems(updated);
+      }
+    };
+    window.addEventListener('zxt_poems_updated', handlePoemUpdate);
+    return () => window.removeEventListener('zxt_poems_updated', handlePoemUpdate);
   }, []);
 
   // Load idioms when section is成语
@@ -78,7 +90,22 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
         }
       });
     }
-  }, [selectedSection]);
+
+    const handleIdiomUpdate = (e: any) => {
+      const updated = e.detail?.groups || [];
+      if (updated.length > 0) {
+        setIdiomGroups(updated);
+        if (selectedGroupId !== null) {
+          const matched = updated.find((g: any) => g.id === selectedGroupId);
+          if (matched) {
+            selectIdiomGroup(matched, updated);
+          }
+        }
+      }
+    };
+    window.addEventListener('zxt_idiom_groups_updated', handleIdiomUpdate);
+    return () => window.removeEventListener('zxt_idiom_groups_updated', handleIdiomUpdate);
+  }, [selectedSection, selectedGroupId]);
 
   const selectedPoem = poems.find(p => p.id === selectedPoemId) ?? null;
   const selectedIdiomGroup = idiomGroups.find(g => g.id === selectedGroupId) ?? null;
@@ -190,64 +217,116 @@ export const PlatformQuestionEditor: React.FC<PlatformQuestionEditorProps> = ({ 
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-800/80 border border-teal-500/30 p-3.5 rounded-xl text-xs text-teal-200 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <label className="font-bold text-teal-200 whitespace-nowrap">学科:</label>
-              <select
-                value={selectedSubject}
-                onChange={(e) => {
-                  const sub = e.target.value;
-                  setSelectedSubject(sub);
-                  if (sub === '语文') setSelectedSection('古诗');
-                  else if (sub === '数学') setSelectedSection('数理逻辑');
-                  else if (sub === '英语') setSelectedSection('语法与阅读');
-                  else if (sub === '科学') setSelectedSection('自然科学');
-                }}
-                className="px-3 py-1.5 bg-slate-900 border border-teal-400/50 rounded-lg text-xs font-bold text-white outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer"
-              >
-                <option value="语文">语文</option>
-                <option value="数学">数学</option>
-                <option value="英语">英语</option>
-                <option value="科学">科学</option>
-              </select>
+          {/* Two Level Tab Buttons for Subject & Section */}
+          <div className="flex flex-col gap-2.5 flex-shrink-0">
+            {/* Level 1: Subject Tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              {(['语文', '数学', '英语', '科学'] as const).map(sub => (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() => {
+                    setSelectedSubject(sub);
+                    if (sub === '语文') setSelectedSection('古诗');
+                    else if (sub === '数学') setSelectedSection('数理逻辑');
+                    else if (sub === '英语') setSelectedSection('语法与阅读');
+                    else if (sub === '科学') setSelectedSection('自然科学');
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                    selectedSubject === sub
+                      ? 'bg-slate-950 text-white border border-slate-700 ring-2 ring-teal-400/30'
+                      : 'bg-slate-100/90 text-slate-700 hover:bg-white hover:text-slate-900 border border-slate-200/60'
+                  }`}
+                >
+                  <span>{sub === '语文' ? '📖' : sub === '数学' ? '📐' : sub === '英语' ? '🔤' : '🔬'}</span>
+                  <span>{sub}</span>
+                </button>
+              ))}
             </div>
 
-            <div className="h-6 border-l border-teal-500/30 hidden sm:block"></div>
+            {/* Level 2: Section Tabs */}
+            <div className="flex flex-wrap items-center gap-2">
+              {selectedSubject === '语文' &&
+                [
+                  { key: '古诗', label: '古诗', icon: '🌸', activeBg: 'bg-teal-600' },
+                  { key: '成语', label: '成语', icon: '🐉', activeBg: 'bg-emerald-600' },
+                  { key: '识字', label: '识字', icon: '✍️', activeBg: 'bg-amber-600' },
+                  { key: '拼音', label: '拼音', icon: '🔡', activeBg: 'bg-indigo-600' },
+                ].map(secItem => (
+                  <button
+                    key={secItem.key}
+                    type="button"
+                    onClick={() => setSelectedSection(secItem.key)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedSection === secItem.key
+                        ? `${secItem.activeBg} text-white border border-white/20 ring-2 ring-white/20`
+                        : 'bg-slate-100/90 text-slate-700 hover:bg-white hover:text-slate-900 border border-slate-200/60'
+                    }`}
+                  >
+                    <span>{secItem.icon}</span>
+                    <span>{secItem.label}</span>
+                  </button>
+                ))}
 
-            <div className="flex items-center gap-2">
-              <label className="font-bold text-teal-200 whitespace-nowrap">分区:</label>
-              <select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value)}
-                className="px-3 py-1.5 bg-slate-900 border border-teal-400/50 rounded-lg text-xs font-bold text-white outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer"
-              >
-                {selectedSubject === '语文' && (
-                  <>
-                    <option value="古诗">古诗 (白莲阁75首)</option>
-                    <option value="成语">成语 (900成语接龙)</option>
-                    <option value="识字">识字</option>
-                    <option value="拼音">拼音</option>
-                  </>
-                )}
-                {selectedSubject === '数学' && (
-                  <>
-                    <option value="数理逻辑">数理逻辑</option>
-                    <option value="几何基础">几何基础</option>
-                  </>
-                )}
-                {selectedSubject === '英语' && (
-                  <>
-                    <option value="语法与阅读">语法与阅读</option>
-                    <option value="听力口语">听力口语</option>
-                  </>
-                )}
-                {selectedSubject === '科学' && (
-                  <>
-                    <option value="自然科学">自然科学</option>
-                    <option value="物理与化学">物理与化学</option>
-                  </>
-                )}
-              </select>
+              {selectedSubject === '数学' &&
+                [
+                  { key: '数理逻辑', label: '数理逻辑', icon: '🔢', activeBg: 'bg-blue-600' },
+                  { key: '几何基础', label: '几何基础', icon: '📐', activeBg: 'bg-indigo-600' },
+                ].map(secItem => (
+                  <button
+                    key={secItem.key}
+                    type="button"
+                    onClick={() => setSelectedSection(secItem.key)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedSection === secItem.key
+                        ? `${secItem.activeBg} text-white border border-white/20 ring-2 ring-white/20`
+                        : 'bg-slate-100/90 text-slate-700 hover:bg-white hover:text-slate-900 border border-slate-200/60'
+                    }`}
+                  >
+                    <span>{secItem.icon}</span>
+                    <span>{secItem.label}</span>
+                  </button>
+                ))}
+
+              {selectedSubject === '英语' &&
+                [
+                  { key: '语法与阅读', label: '语法与阅读', icon: '📖', activeBg: 'bg-indigo-600' },
+                  { key: '听力口语', label: '听力口语', icon: '🎧', activeBg: 'bg-violet-600' },
+                ].map(secItem => (
+                  <button
+                    key={secItem.key}
+                    type="button"
+                    onClick={() => setSelectedSection(secItem.key)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedSection === secItem.key
+                        ? `${secItem.activeBg} text-white border border-white/20 ring-2 ring-white/20`
+                        : 'bg-slate-100/90 text-slate-700 hover:bg-white hover:text-slate-900 border border-slate-200/60'
+                    }`}
+                  >
+                    <span>{secItem.icon}</span>
+                    <span>{secItem.label}</span>
+                  </button>
+                ))}
+
+              {selectedSubject === '科学' &&
+                [
+                  { key: '自然科学', label: '自然科学', icon: '🌿', activeBg: 'bg-emerald-600' },
+                  { key: '物理与化学', label: '物理与化学', icon: '🧪', activeBg: 'bg-teal-600' },
+                ].map(secItem => (
+                  <button
+                    key={secItem.key}
+                    type="button"
+                    onClick={() => setSelectedSection(secItem.key)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      selectedSection === secItem.key
+                        ? `${secItem.activeBg} text-white border border-white/20 ring-2 ring-white/20`
+                        : 'bg-slate-100/90 text-slate-700 hover:bg-white hover:text-slate-900 border border-slate-200/60'
+                    }`}
+                  >
+                    <span>{secItem.icon}</span>
+                    <span>{secItem.label}</span>
+                  </button>
+                ))}
             </div>
           </div>
         </div>

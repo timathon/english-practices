@@ -7,6 +7,7 @@ import { PlatformHome } from './pages/PlatformHome';
 import { apiService, canEditQuizLibrary, UserSession } from './services/api';
 import { preloadAudioSFX } from './utils/sound';
 import { SyncQueueModal } from './components/SyncQueueModal';
+import { DataChangeAlertModal, DataChangeNotification } from './components/DataChangeAlertModal';
 
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
 const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
@@ -24,12 +25,13 @@ export const App: React.FC = () => {
   const [isViewSwitcherOpen, setIsViewSwitcherOpen] = useState(false);
   const [isPointsHistoryOpen, setIsPointsHistoryOpen] = useState(false);
   const [isSyncQueueOpen, setIsSyncQueueOpen] = useState(false);
+  const [dataChangeNotification, setDataChangeNotification] = useState<DataChangeNotification | null>(null);
 
   useEffect(() => {
     // Preload audio sound effects for instant playback
     preloadAudioSFX();
 
-    // Seed the full quiz library into localStorage on first load
+    // Fast initial cache seed
     apiService.seedQuizLibrary();
 
     // Check initial logged-in user
@@ -38,6 +40,44 @@ export const App: React.FC = () => {
       setUser(existing);
       setActiveView(existing.role);
     }
+
+    // Check remote cloud updates in background for Poems and Idioms
+    const checkUpdates = async () => {
+      // 1. Check Idiom Changes
+      const idiomDiff = await apiService.checkRemoteIdiomChanges();
+      if (idiomDiff.hasChanges) {
+        setDataChangeNotification({
+          type: 'idioms',
+          title: '成语接龙题库更新',
+          message: '云端成语接龙题库有更新内容（包括新增题目与题型）。点击确认后将同步并写入本地 IndexedDB 离线缓存。',
+          diffSummary: idiomDiff.diffSummary,
+          onApply: async () => {
+            await apiService.applyRemoteIdiomGroups(idiomDiff.remoteGroups);
+            setDataChangeNotification(null);
+          },
+          onDismiss: () => setDataChangeNotification(null)
+        });
+        return;
+      }
+
+      // 2. Check Poem Changes
+      const poemDiff = await apiService.checkRemotePoemChanges();
+      if (poemDiff.hasChanges) {
+        setDataChangeNotification({
+          type: 'poems',
+          title: '白莲阁古诗题库更新',
+          message: '云端古诗题库有更新内容（包括诗句题目与解析）。点击确认后将同步并写入本地 IndexedDB 离线缓存。',
+          diffSummary: poemDiff.diffSummary,
+          onApply: async () => {
+            await apiService.applyRemotePoems(poemDiff.remotePoems);
+            setDataChangeNotification(null);
+          },
+          onDismiss: () => setDataChangeNotification(null)
+        });
+      }
+    };
+
+    checkUpdates();
 
     const handlePopState = () => {
       const path = window.location.pathname || '/';
@@ -181,6 +221,10 @@ export const App: React.FC = () => {
       <SyncQueueModal
         isOpen={isSyncQueueOpen}
         onClose={() => setIsSyncQueueOpen(false)}
+      />
+
+      <DataChangeAlertModal
+        notification={dataChangeNotification}
       />
 
     </div>

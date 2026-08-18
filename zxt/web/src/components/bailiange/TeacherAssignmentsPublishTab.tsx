@@ -266,40 +266,6 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
             </select>
           </div>
         )}
-
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="font-bold text-slate-700">截止时间</label>
-            <span className="text-[10px] text-slate-400">默认当天 23:59 截止</span>
-          </div>
-          {(() => {
-            const todayStr = (() => {
-              const d = new Date();
-              const year = d.getFullYear();
-              const month = String(d.getMonth() + 1).padStart(2, '0');
-              const day = String(d.getDate()).padStart(2, '0');
-              return `${year}-${month}-${day}`;
-            })();
-
-            return (
-              <input
-                type="date"
-                min={todayStr}
-                value={newAsgnDueDate}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val && val < todayStr) {
-                    setNewAsgnDueDate(todayStr);
-                  } else {
-                    setNewAsgnDueDate(val);
-                  }
-                }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-slate-800"
-              />
-            );
-          })()}
-        </div>
-
         <div>
           <label className="block font-bold text-slate-700 mb-1">作业要求说明</label>
           <textarea
@@ -312,9 +278,9 @@ export const TeacherAssignmentsPublishTab: React.FC<TeacherAssignmentsPublishTab
 
         <button
           type="submit"
-          className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md transition cursor-pointer"
+          className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-2"
         >
-          🚀 立即向【{selectedClass}】发布作业
+          <span>🎯 审题与挑选作业题目</span>
         </button>
       </form>
 

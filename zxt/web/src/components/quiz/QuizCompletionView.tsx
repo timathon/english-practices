@@ -86,9 +86,9 @@ export const QuizCompletionView: React.FC<QuizCompletionViewProps> = ({
               onClose();
               onConfirmPublish();
             }}
-            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-sm shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2"
+            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-sm shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>🚀 确认发布作业</span>
+            <span>📅 设定作业开始与截止日期</span>
           </button>
         </div>
       ) : (

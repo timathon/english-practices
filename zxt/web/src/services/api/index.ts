@@ -21,18 +21,24 @@ export const apiService = {
 
   // Poems
   getPoems: poemsService.getPoems.bind(poemsService),
+  getCachedPoems: poemsService.getCachedPoems.bind(poemsService),
   seedQuizLibrary: poemsService.seedQuizLibrary.bind(poemsService),
   getQuizLibrary: poemsService.getQuizLibrary.bind(poemsService),
   saveQuizLibrary: poemsService.saveQuizLibrary.bind(poemsService),
   savePoemQuestions: poemsService.savePoemQuestions.bind(poemsService),
   getPoemQuestions: poemsService.getPoemQuestions.bind(poemsService),
+  checkRemotePoemChanges: poemsService.checkRemotePoemChanges.bind(poemsService),
+  applyRemotePoems: poemsService.applyRemotePoems.bind(poemsService),
 
   // Idioms
   getIdiomGroups: idiomsService.getIdiomGroups.bind(idiomsService),
+  getCachedIdiomGroups: idiomsService.getCachedIdiomGroups.bind(idiomsService),
   getLocalIdiomGroups: idiomsService.getLocalIdiomGroups.bind(idiomsService),
   saveLocalIdiomGroups: idiomsService.saveLocalIdiomGroups.bind(idiomsService),
   saveIdiomQuestions: idiomsService.saveIdiomQuestions.bind(idiomsService),
   getIdiomGroupQuestions: idiomsService.getIdiomGroupQuestions.bind(idiomsService),
+  checkRemoteIdiomChanges: idiomsService.checkRemoteIdiomChanges.bind(idiomsService),
+  applyRemoteIdiomGroups: idiomsService.applyRemoteIdiomGroups.bind(idiomsService),
 
   // Roster (Classes, Teachers, Students)
   getClasses: rosterService.getClasses.bind(rosterService),

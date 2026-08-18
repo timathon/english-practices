@@ -45,17 +45,30 @@ export const assignmentsService = {
     });
   },
 
-  async createAssignment(assignment: { className: string; poemId: number; poemTitle: string; dueDate: string; requirement: string; questionIds?: string[] }) {
+  async createAssignment(assignment: {
+    className: string;
+    poemId: number;
+    poemTitle: string;
+    startDate?: string;
+    dueDate: string;
+    requirement: string;
+    questionIds?: string[];
+    createdTeacherId?: string;
+  }) {
+    const user = authService.getSession();
     let createdAsgn = {
       id: `asgn_${Date.now()}`,
       classId: 'c1',
       className: assignment.className,
       poemId: assignment.poemId,
       poemTitle: assignment.poemTitle,
+      startDate: assignment.startDate || new Date().toISOString(),
       dueDate: assignment.dueDate,
       status: '待完成',
       requirement: assignment.requirement,
-      questionIds: assignment.questionIds || []
+      questionIds: assignment.questionIds || [],
+      createdTeacherId: assignment.createdTeacherId || user?.id || 'usr_tea_001',
+      isWithdrawn: false,
     };
 
     if (USE_BACKEND) {

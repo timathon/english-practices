@@ -55,22 +55,49 @@ localGroups.forEach(g => {
 console.log('═'.repeat(70) + '\n');
 
 // ── Confirm ───────────────────────────────────────────────────────────────────
-const rl = createInterface({ input: process.stdin, output: process.stdout });
-const answer = await new Promise(resolve =>
-  rl.question('🚀 Push local idiom groups to remote D1? [y/N] ', resolve)
-);
-rl.close();
+const isAutoYes = process.argv.includes('--yes') || process.argv.includes('-y');
+if (!isAutoYes) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise(resolve =>
+    rl.question('🚀 Push local idiom groups to remote D1? [y/N] ', resolve)
+  );
+  rl.close();
 
-if (answer.trim().toLowerCase() !== 'y') {
-  console.log('\n⛔ Push cancelled.\n');
-  process.exit(0);
+  if (answer.trim().toLowerCase() !== 'y') {
+    console.log('\n⛔ Push cancelled.\n');
+    process.exit(0);
+  }
 }
 
 // ── Push ──────────────────────────────────────────────────────────────────────
+console.log(`\n🔑 Authenticating as admin (mmd) …`);
+let token = '';
+try {
+  const authRes = await fetch(`${API_BASE}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'mmd', password: 'zhiyuzhishan' }),
+  });
+  if (authRes.ok) {
+    const authData = await authRes.json();
+    token = authData.token || '';
+    console.log(`✅ Authentication successful.`);
+  } else {
+    console.error(`❌ Authentication failed: ${authRes.status}`);
+    process.exit(1);
+  }
+} catch (e) {
+  console.error(`❌ Authentication request failed: ${e.message}`);
+  process.exit(1);
+}
+
 console.log(`\n📤 Pushing ${localGroups.length} group(s) to D1 …`);
 const pushRes = await fetch(`${API_BASE}/api/idioms/groups/batch`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
   body: JSON.stringify({ groups: localGroups }),
 });
 

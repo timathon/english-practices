@@ -1,10 +1,11 @@
 // IndexedDB Service for ZXT App Local Caching
 
 const DB_NAME = 'ZXT_IndexedDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_LIST = 'quiz_history_list';
 const STORE_DETAILS = 'quiz_history_details';
 const STORE_IDIOM_GROUPS = 'idiom_groups';
+const STORE_POEMS = 'poems';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -29,6 +30,9 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_IDIOM_GROUPS)) {
         db.createObjectStore(STORE_IDIOM_GROUPS, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_POEMS)) {
+        db.createObjectStore(STORE_POEMS, { keyPath: 'id' });
       }
     };
 
@@ -154,6 +158,54 @@ export const idbService = {
       const tx = db.transaction(STORE_IDIOM_GROUPS, 'readwrite');
       const store = tx.objectStore(STORE_IDIOM_GROUPS);
       store.put(group);
+    } catch (_) {}
+  },
+
+  /**
+   * Get all cached poems from IndexedDB
+   */
+  async getPoems(): Promise<any[] | null> {
+    try {
+      const db = await openDB();
+      return new Promise((resolve) => {
+        const tx = db.transaction(STORE_POEMS, 'readonly');
+        const store = tx.objectStore(STORE_POEMS);
+        const req = store.getAll();
+        req.onsuccess = () => {
+          resolve(req.result && req.result.length > 0 ? req.result : null);
+        };
+        req.onerror = () => resolve(null);
+      });
+    } catch (_) {
+      return null;
+    }
+  },
+
+  /**
+   * Save all poems to IndexedDB
+   */
+  async savePoems(poems: any[]): Promise<void> {
+    if (!poems || poems.length === 0) return;
+    try {
+      const db = await openDB();
+      const tx = db.transaction(STORE_POEMS, 'readwrite');
+      const store = tx.objectStore(STORE_POEMS);
+      for (const p of poems) {
+        store.put(p);
+      }
+    } catch (_) {}
+  },
+
+  /**
+   * Save a single poem to IndexedDB
+   */
+  async savePoem(poem: any): Promise<void> {
+    if (!poem || !poem.id) return;
+    try {
+      const db = await openDB();
+      const tx = db.transaction(STORE_POEMS, 'readwrite');
+      const store = tx.objectStore(STORE_POEMS);
+      store.put(poem);
     } catch (_) {}
   }
 };
