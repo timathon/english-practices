@@ -84,6 +84,22 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeView, 
   useEffect(() => {
     loadPoems();
     loadStudentData();
+
+    const handlePoemsUpdated = (e: any) => {
+      if (e?.detail?.poems && Array.isArray(e.detail.poems)) {
+        setPoems(e.detail.poems);
+        if (e.detail.poems.length > 0 && !selectedPoem) {
+          setSelectedPoem(e.detail.poems[0]);
+        }
+      } else {
+        loadPoems();
+      }
+    };
+
+    window.addEventListener('zxt_poems_updated', handlePoemsUpdated);
+    return () => {
+      window.removeEventListener('zxt_poems_updated', handlePoemsUpdated);
+    };
   }, [user]);
 
   const loadPoems = async () => {

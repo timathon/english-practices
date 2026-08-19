@@ -19,6 +19,7 @@ export const StudentQuizPreviewModal: React.FC<{
   selectedQuestionIds?: string[];
   onToggleSelectQuestion?: (qId: string) => void;
   onConfirmPublish?: () => void;
+  isPurePreview?: boolean;
   onClose: (result?: { score: number; completed: boolean; details?: any[] }) => void;
 }> = ({
   poemTitle,
@@ -27,6 +28,7 @@ export const StudentQuizPreviewModal: React.FC<{
   selectedQuestionIds,
   onToggleSelectQuestion,
   onConfirmPublish,
+  isPurePreview = false,
   onClose,
 }) => {
   useLockBodyScroll(true);
@@ -683,6 +685,7 @@ export const StudentQuizPreviewModal: React.FC<{
             hasSelection={hasSelection}
             onToggleSelectQuestion={onToggleSelectQuestion}
             onConfirmPublish={onConfirmPublish}
+            isPurePreview={isPurePreview}
             onClose={onClose}
             onPrev={() => setCurrentIndex(i => Math.max(0, i - 1))}
             onNext={() => setCurrentIndex(i => Math.min(currentRoundQuestions.length - 1, i + 1))}

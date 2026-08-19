@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiService, IdiomGroup } from '../../services/api';
 import { CachedImage } from '../CachedImage';
 import { StudentQuizPreviewModal } from '../StudentQuizPreviewModal';
+import { PoemStudyDetailModal } from './StudentSelfStudyTab';
 
 interface TeacherCourseProgressTabProps {
   selectedClass: string;
@@ -130,7 +131,6 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>古诗词进度 (全书共 75 首，已解锁 {learntPoemIds.length} 首)</span>
-            <span className="text-slate-400">独立按钮控制：诗句浏览 · 习题预览 · 权限开关</span>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
             {poems.map((poem) => {
@@ -141,87 +141,89 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
               return (
                 <div
                   key={poem.id}
-                  className={`p-3.5 rounded-xl border transition-all duration-300 flex flex-col justify-between gap-3 ${
+                  className={`p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between gap-3 group hover:shadow-md ${
                     isAnimating
                       ? isLearnt
-                        ? 'border-teal-500 bg-teal-100/60 ring-4 ring-teal-400/50 shadow-lg'
+                        ? 'border-emerald-500 bg-emerald-100/60 ring-4 ring-emerald-400/50 shadow-lg'
                         : 'border-amber-400 bg-amber-50 ring-4 ring-amber-400/50 shadow-md'
                       : isLearnt
-                        ? 'border-teal-400/80 bg-teal-50/40 shadow-2xs'
-                        : 'border-slate-200 bg-slate-50/70 hover:border-slate-300'
+                        ? 'border-emerald-200 bg-emerald-50/40 hover:border-emerald-400'
+                        : 'border-slate-200 bg-slate-50/70 hover:border-slate-300 hover:bg-white'
                   }`}
                 >
-                  {/* Card Header: Poem Info */}
+                  {/* Card Header */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="font-bold font-serif text-ink text-sm flex items-center gap-1.5">
+                      <div className="font-bold font-serif text-ink text-sm flex items-center gap-1.5 group-hover:text-emerald-800">
                         <span className="text-teal-700 font-mono">#{poem.id}</span>
                         <span>《{poem.title}》</span>
                         {isAnimating && (
-                          <span className="animate-ping inline-flex h-2 w-2 rounded-full bg-teal-400 opacity-75"></span>
+                          <span className="animate-ping inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
+                      <div className="text-[11px] text-slate-500 mt-1">
                         [{poem.dynasty}] {poem.author}
                         {poem.theme && <span className="ml-1.5 text-slate-400">· {poem.theme}</span>}
                       </div>
                     </div>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/60 text-slate-600 font-medium">
-                      {poem.lines?.length || 4} 句 / {questionCount} 题
-                    </span>
-                  </div>
 
-                  {/* 3 Action Buttons */}
-                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-200/60">
-                    {/* 1. 诗句 Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPreviewLinesPoem(poem);
-                      }}
-                      className="flex-1 py-1.5 px-2 bg-teal-50 hover:bg-teal-100 active:bg-teal-200 text-teal-800 border border-teal-200/80 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
-                      title="查看原诗诗句、拼音与释义"
-                    >
-                      <span>📜</span>
-                      <span>诗句</span>
-                    </button>
-
-                    {/* 2. 习题 Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (questionCount > 0) {
-                          setPreviewQuizPoem(poem);
-                        } else {
-                          alert(`《${poem.title}》暂无配套练习题`);
-                        }
-                      }}
-                      className="flex-1 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-800 border border-indigo-200/80 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
-                      title="预览互动习题与互动拼图题库"
-                    >
-                      <span>📝</span>
-                      <span>习题</span>
-                    </button>
-
-                    {/* 3. Lock/Unlock Switch Button */}
+                    {/* 解锁 / 已解锁 Toggle Button */}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onToggleLearnt(poem.id);
                       }}
-                      className={`flex-1.2 py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all duration-200 cursor-pointer shadow-2xs ${
+                      className={`text-xs px-2 py-0.5 font-sans font-bold rounded whitespace-nowrap transition cursor-pointer border shadow-2xs flex items-center gap-1 active:scale-95 ${
                         isLearnt
-                          ? 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white'
-                          : 'bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700'
+                          ? 'bg-emerald-100 hover:bg-emerald-200 active:bg-emerald-300 text-emerald-800 border-emerald-300'
+                          : 'bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-600 border-slate-300'
                       }`}
-                      title={isLearnt ? '已解锁给学生自学 (点击锁定)' : '锁定未授课 (点击解锁)'}
+                      title={isLearnt ? '已解锁给学生自学 (点击锁定)' : '未解锁 (点击解锁)'}
                     >
                       <span>{isLearnt ? '🔓' : '🔒'}</span>
-                      <span>{isLearnt ? '已解锁' : '未解锁'}</span>
+                      <span>{isLearnt ? '已解锁' : '解锁'}</span>
                     </button>
+                  </div>
+
+                  {/* Card Footer Buttons: 详情 & 习题 */}
+                  <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-500">
+                      {poem.lines?.length || 4} 句 / {questionCount} 题
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {/* 1. 详情 Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewLinesPoem(poem);
+                        }}
+                        className="py-1 px-2.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 text-emerald-800 border border-emerald-200/80 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                        title="查看古诗全文、拼音、译文与意境"
+                      >
+                        <span>📖</span>
+                        <span>详情</span>
+                      </button>
+
+                      {/* 2. 习题 Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (questionCount > 0) {
+                            setPreviewQuizPoem(poem);
+                          } else {
+                            alert(`《${poem.title}》暂无配套习题`);
+                          }
+                        }}
+                        className="py-1 px-2.5 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-800 border border-indigo-200/80 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                        title="免计分预览自测全部题目"
+                      >
+                        <span>📝</span>
+                        <span>习题</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -235,7 +237,6 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>成语接龙课程进度 (共 {availableIdiomGroups.length} 组可用，已解锁 {learntIdiomGroups.filter(id => availableIdiomGroups.some(g => g.id === id)).length} 组)</span>
-            <span className="text-slate-400">独立按钮控制：词句浏览 · 习题预览 · 权限开关</span>
           </div>
           {availableIdiomGroups.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
@@ -360,125 +361,13 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
         </div>
       )}
 
-      {/* 📜 MODAL 1: 古诗诗句与译注 Preview Modal */}
+      {/* 📜 MODAL 1: 古诗 详情 (PoemStudyDetailModal identical to Student dashboard) */}
       {previewLinesPoem && (
-        <div
-          className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setPreviewLinesPoem(null)}
-        >
-          <div
-            className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
-                    #{previewLinesPoem.id}
-                  </span>
-                  <h3 className="text-lg font-bold font-serif text-slate-900">
-                    《{previewLinesPoem.title}》
-                  </h3>
-                </div>
-                <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                  <span>[{previewLinesPoem.dynasty}] {previewLinesPoem.author}</span>
-                  {previewLinesPoem.theme && (
-                    <span className="text-teal-700 font-medium">· {previewLinesPoem.theme}</span>
-                  )}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPreviewLinesPoem(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center transition cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Body: Poem Lines with Pinyin, cn, en, images */}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-              {(previewLinesPoem.lines || []).map((line: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between"
-                >
-                  <div className="space-y-1 flex-1">
-                    <div className="text-xs text-teal-600 font-mono font-medium tracking-wide">
-                      {line.pinyin}
-                    </div>
-                    <div className="text-lg font-serif font-bold text-slate-900 tracking-wider">
-                      {line.text}
-                    </div>
-                    {line.cn && (
-                      <div className="text-xs text-slate-600 font-sans">
-                        <span className="text-slate-400 font-medium">译：</span>{line.cn}
-                      </div>
-                    )}
-                    {line.en && (
-                      <div className="text-[11px] text-slate-400 font-sans italic">
-                        {line.en}
-                      </div>
-                    )}
-                  </div>
-
-                  {line.image && (
-                    <div className="flex-shrink-0">
-                      <CachedImage
-                        src={line.image}
-                        alt={`line-${idx + 1}`}
-                        className="w-20 h-20 object-cover rounded-xl border border-slate-200 shadow-2xs"
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* Keywords / Notes if present */}
-              {previewLinesPoem.keywords && previewLinesPoem.keywords.length > 0 && (
-                <div className="p-3 bg-teal-50/50 border border-teal-100 rounded-xl flex items-center gap-2 text-xs">
-                  <span className="text-teal-800 font-bold">🏷️ 意象关键词:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {previewLinesPoem.keywords.map((kw: string, i: number) => (
-                      <span key={i} className="px-2 py-0.5 bg-white text-teal-700 border border-teal-200 rounded text-[10px]">
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => {
-                  const targetPoem = previewLinesPoem;
-                  setPreviewLinesPoem(null);
-                  if (targetPoem.questions && targetPoem.questions.length > 0) {
-                    setPreviewQuizPoem(targetPoem);
-                  } else {
-                    alert(`《${targetPoem.title}》暂无配套练习题`);
-                  }
-                }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-              >
-                <span>📝</span>
-                <span>查看配套习题 ({previewLinesPoem.questions?.length || 0} 题)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPreviewLinesPoem(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
-              >
-                关闭
-              </button>
-            </div>
-          </div>
-        </div>
+        <PoemStudyDetailModal
+          poem={previewLinesPoem}
+          isLearnt={learntPoemIds.includes(previewLinesPoem.id)}
+          onClose={() => setPreviewLinesPoem(null)}
+        />
       )}
 
       {/* 📖 MODAL 2: 成语词条 Preview Modal */}
@@ -587,6 +476,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
           poemTitle={previewQuizPoem.title}
           questions={previewQuizPoem.questions || []}
           initialIndex={0}
+          isPurePreview={true}
           onClose={() => setPreviewQuizPoem(null)}
         />
       )}
@@ -597,6 +487,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
           poemTitle={previewQuizIdiom.title || `成语接龙第 ${previewQuizIdiom.id} 组`}
           questions={(previewQuizIdiom as any).questions || []}
           initialIndex={0}
+          isPurePreview={true}
           onClose={() => setPreviewQuizIdiom(null)}
         />
       )}

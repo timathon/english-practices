@@ -100,6 +100,22 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
   useEffect(() => {
     loadPoems();
     loadRosters();
+
+    const handlePoemsUpdated = (e: any) => {
+      if (e?.detail?.poems && Array.isArray(e.detail.poems)) {
+        setPoems(e.detail.poems);
+      } else {
+        loadPoems();
+      }
+    };
+
+    window.addEventListener('zxt_poems_updated', handlePoemsUpdated);
+    window.addEventListener('zxt_idioms_updated', loadTeacherData);
+
+    return () => {
+      window.removeEventListener('zxt_poems_updated', handlePoemsUpdated);
+      window.removeEventListener('zxt_idioms_updated', loadTeacherData);
+    };
   }, []);
 
   useEffect(() => {

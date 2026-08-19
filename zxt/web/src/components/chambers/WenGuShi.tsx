@@ -80,7 +80,7 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
   const cleanText = (s: string) => (s ?? '').toString().replace(/^[A-Z]\.\s*/, '').trim();
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-3 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 !mt-0 !m-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-3 sm:p-4" onClick={onClose}>
       <div
         className="bg-white w-full max-w-2xl max-h-[88vh] rounded-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()}
@@ -242,6 +242,7 @@ const QuizRecordModal: React.FC<{ record: any; onClose: () => void }> = ({ recor
 export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [], learntPoemIds = [], selectedPoem, onSelectPoem }) => {
   const [activeMainTab, setActiveMainTab] = useState<'history' | 'mistakes' | 'selfstudy'>('history');
   const [activeSubjectTab, setActiveSubjectTab] = useState<'chinese' | 'math' | 'english'>('chinese');
+  const [activeChineseSubTab, setActiveChineseSubTab] = useState<'gushi' | 'chengyu' | 'shizi' | 'pinyin'>('gushi');
   const [showFirstAttemptOnly, setShowFirstAttemptOnly] = useState<boolean>(false);
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
 
@@ -350,7 +351,7 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
   });
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto p-4">
+    <div className="space-y-6">
 
       {/* ── Hero Banner ── */}
       <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ background: 'linear-gradient(135deg, #0f2b1a 0%, #134e2b 50%, #0f172a 100%)' }}>
@@ -382,10 +383,13 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
       {/* ── Main Layout Tabs: Practice History vs. Mistake List ── */}
       <div className="bg-white rounded-2xl p-2 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Main Tabs */}
-        <div className="flex bg-slate-100 p-1 rounded-xl gap-1 overflow-x-auto">
+        <div className="flex bg-slate-100 p-1 rounded-xl gap-1 overflow-x-auto scroll-smooth no-scrollbar">
           <button
-            onClick={() => setActiveMainTab('history')}
-            className={`flex-1 sm:flex-initial px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+            onClick={(e) => {
+              setActiveMainTab('history');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            }}
+            className={`flex-1 sm:flex-initial px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeMainTab === 'history'
                 ? 'bg-white text-emerald-700 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
@@ -394,8 +398,11 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
             📜 修业历史 <span className="text-xs ml-1 opacity-70">({quizHistory.length})</span>
           </button>
           <button
-            onClick={() => setActiveMainTab('mistakes')}
-            className={`flex-1 sm:flex-initial px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+            onClick={(e) => {
+              setActiveMainTab('mistakes');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            }}
+            className={`flex-1 sm:flex-initial px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeMainTab === 'mistakes'
                 ? 'bg-white text-red-600 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
@@ -404,8 +411,11 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
             ❌ 错题归纳 <span className="text-xs ml-1 opacity-70">({allMistakeItems.length})</span>
           </button>
           <button
-            onClick={() => setActiveMainTab('selfstudy')}
-            className={`flex-1 sm:flex-initial px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+            onClick={(e) => {
+              setActiveMainTab('selfstudy');
+              e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            }}
+            className={`flex-1 sm:flex-initial px-5 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeMainTab === 'selfstudy'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800'
@@ -459,6 +469,32 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
         </div>
       </div>
 
+      {/* ── Sub-level Tabs for 语文 in Self-Study (自主学习) ── */}
+      {activeMainTab === 'selfstudy' && activeSubjectTab === 'chinese' && (
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          {[
+            { id: 'gushi',   label: '古诗', emoji: '🌸', activeBg: 'bg-teal-600 text-white ring-2 ring-teal-500/30' },
+            { id: 'chengyu', label: '成语', emoji: '🐉', activeBg: 'bg-emerald-600 text-white ring-2 ring-emerald-500/30' },
+            { id: 'shizi',   label: '识字', emoji: '✍️', activeBg: 'bg-amber-600 text-white ring-2 ring-amber-500/30' },
+            { id: 'pinyin',  label: '拼音', emoji: '🔡', activeBg: 'bg-indigo-600 text-white ring-2 ring-indigo-500/30' },
+          ].map((subTab) => (
+            <button
+              key={subTab.id}
+              type="button"
+              onClick={() => setActiveChineseSubTab(subTab.id as any)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                activeChineseSubTab === subTab.id
+                  ? subTab.activeBg
+                  : 'bg-slate-100/90 text-slate-700 hover:bg-white hover:text-slate-900 border border-slate-200/60'
+              }`}
+            >
+              <span>{subTab.emoji}</span>
+              <span>{subTab.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ── Main Tab 3: Self Study (自主学习) ── */}
       {activeMainTab === 'selfstudy' && (
         <StudentSelfStudyTab
@@ -467,6 +503,7 @@ export const WenGuShi: React.FC<WenGuShiProps> = ({ user, quizHistory, poems = [
           selectedPoem={selectedPoem}
           onSelectPoem={onSelectPoem || (() => {})}
           subject={activeSubjectTab}
+          chineseSubTab={activeChineseSubTab}
         />
       )}
 

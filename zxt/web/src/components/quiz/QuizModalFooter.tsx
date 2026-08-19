@@ -10,6 +10,7 @@ interface QuizModalFooterProps {
   hasSelection: boolean;
   onToggleSelectQuestion?: (qId: string) => void;
   onConfirmPublish?: () => void;
+  isPurePreview?: boolean;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -26,13 +27,14 @@ export const QuizModalFooter: React.FC<QuizModalFooterProps> = ({
   hasSelection,
   onToggleSelectQuestion,
   onConfirmPublish,
+  isPurePreview = false,
   onClose,
   onPrev,
   onNext,
   onAdvanceNext,
   onVerify,
 }) => {
-  const isPreviewMode = !!(onToggleSelectQuestion || onConfirmPublish);
+  const isPreviewMode = !!(onToggleSelectQuestion || onConfirmPublish || isPurePreview);
   const isNextDisabled = currentIndex === currentRoundQuestions.length - 1 || (!isPreviewMode && feedback === null);
   const isSubmitDisabled = feedback !== null || !hasSelection;
 

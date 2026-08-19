@@ -6,7 +6,7 @@ interface GuanXingTaiProps {
 
 export const GuanXingTai: React.FC<GuanXingTaiProps> = ({ user }) => {
   return (
-    <div className="space-y-6 max-w-6xl mx-auto p-4">
+    <div className="space-y-6">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">

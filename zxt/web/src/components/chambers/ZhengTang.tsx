@@ -108,7 +108,7 @@ export const ZhengTang: React.FC<ZhengTangProps> = ({
   ];
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto p-4">
+    <div className="space-y-6">
 
       {/* ── Hero Banner ── */}
       <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e1b4b 100%)' }}>
