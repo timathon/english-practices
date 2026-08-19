@@ -362,13 +362,31 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
       )}
 
       {/* 📜 MODAL 1: 古诗 详情 (PoemStudyDetailModal identical to Student dashboard) */}
-      {previewLinesPoem && (
-        <PoemStudyDetailModal
-          poem={previewLinesPoem}
-          isLearnt={learntPoemIds.includes(previewLinesPoem.id)}
-          onClose={() => setPreviewLinesPoem(null)}
-        />
-      )}
+      {previewLinesPoem && (() => {
+        const currentIndex = poems.findIndex((p: any) => Number(p.id) === Number(previewLinesPoem.id));
+        const hasPrev = currentIndex > 0;
+        const hasNext = currentIndex >= 0 && currentIndex < poems.length - 1;
+
+        return (
+          <PoemStudyDetailModal
+            poem={previewLinesPoem}
+            isLearnt={learntPoemIds.map(Number).includes(Number(previewLinesPoem.id))}
+            onClose={() => setPreviewLinesPoem(null)}
+            hasPrev={hasPrev}
+            hasNext={hasNext}
+            onPrev={() => {
+              if (hasPrev) {
+                setPreviewLinesPoem(poems[currentIndex - 1]);
+              }
+            }}
+            onNext={() => {
+              if (hasNext) {
+                setPreviewLinesPoem(poems[currentIndex + 1]);
+              }
+            }}
+          />
+        );
+      })()}
 
       {/* 📖 MODAL 2: 成语词条 Preview Modal */}
       {previewLinesIdiom && (

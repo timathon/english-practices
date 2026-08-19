@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CachedImage } from '../CachedImage';
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
 import { StudentQuizPreviewModal } from '../StudentQuizPreviewModal';
@@ -17,13 +17,26 @@ export const PoemStudyDetailModal: React.FC<{
   poem: any;
   isLearnt: boolean;
   onClose: () => void;
-}> = ({ poem, isLearnt, onClose }) => {
+  onPrev?: () => void;
+  onNext?: () => void;
+  hasPrev?: boolean;
+  hasNext?: boolean;
+}> = ({ poem, isLearnt, onClose, onPrev, onNext, hasPrev = false, hasNext = false }) => {
   useLockBodyScroll(true);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const [showPinyin, setShowPinyin] = useState(true);
   const [showOriginal, setShowOriginal] = useState(true);
   const [showTranslation, setShowTranslation] = useState(true);
   const [showImages, setShowImages] = useState(true);
+
+  // Automatically scroll content container to top when poem changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [poem?.id]);
 
   return (
     <div
@@ -36,8 +49,9 @@ export const PoemStudyDetailModal: React.FC<{
       >
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white p-5 sm:p-6 flex-shrink-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
+          <div className="relative flex flex-col items-center justify-center">
+            {/* Top row badges and close button */}
+            <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-xs font-bold rounded-full">
                   拓展自学
@@ -51,82 +65,138 @@ export const PoemStudyDetailModal: React.FC<{
                     未解锁
                   </span>
                 )}
+                {poem.id && (
+                  <span className="px-2 py-0.5 bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-bold rounded-full">
+                    #{poem.id}
+                  </span>
+                )}
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold font-serif tracking-wide pt-1">
-                《{poem.title}》
-                <span className="text-sm sm:text-base font-normal text-emerald-200 ml-2 font-sans">
-                  [{poem.dynasty}] {poem.author}
-                </span>
-              </h2>
-              {poem.theme && (
-                <div className="text-xs text-emerald-300/80 font-sans">
-                  主题：{poem.theme}
-                </div>
-              )}
+              <button
+                onClick={onClose}
+                className="text-white/60 hover:text-white text-2xl leading-none p-1 rounded-lg hover:bg-white/10 transition cursor-pointer"
+                title="关闭"
+              >
+                ✕
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="text-white/60 hover:text-white text-2xl leading-none p-1 rounded-lg hover:bg-white/10 transition"
-              title="关闭"
-            >
-              ✕
-            </button>
+
+            {/* Centered Title with Prev / Next Navigation Arrows, Dynasty/Author, and Theme */}
+            <div className="w-full flex items-center justify-between gap-3 mt-1">
+              {/* Left Arrow (Previous Poem) */}
+              <button
+                type="button"
+                disabled={!hasPrev}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (hasPrev && onPrev) onPrev();
+                }}
+                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
+                  hasPrev
+                    ? 'text-emerald-100 hover:text-white bg-white/15 hover:bg-emerald-500/40 border border-white/20 hover:border-emerald-400/50 active:scale-90 cursor-pointer shadow-md'
+                    : 'text-white/20 bg-white/5 border border-white/5 cursor-not-allowed opacity-20'
+                }`}
+                title={hasPrev ? '上一首 (点击切换)' : '已是第一首'}
+              >
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              {/* Centered Title & Metadata */}
+              <div className="text-center space-y-1 flex-1 px-2">
+                <h2 className="text-2xl sm:text-3xl font-bold font-serif tracking-wide">
+                  《{poem.title}》
+                </h2>
+                <div className="text-sm sm:text-base font-normal text-emerald-200 font-sans">
+                  [{poem.dynasty}] {poem.author}
+                </div>
+                {poem.theme && (
+                  <div className="text-xs text-emerald-300/80 font-sans pt-0.5">
+                    主题：{poem.theme}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Arrow (Next Poem) */}
+              <button
+                type="button"
+                disabled={!hasNext}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (hasNext && onNext) onNext();
+                }}
+                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
+                  hasNext
+                    ? 'text-emerald-100 hover:text-white bg-white/15 hover:bg-emerald-500/40 border border-white/20 hover:border-emerald-400/50 active:scale-90 cursor-pointer shadow-md'
+                    : 'text-white/20 bg-white/5 border border-white/5 cursor-not-allowed opacity-20'
+                }`}
+                title={hasNext ? '下一首 (点击切换)' : '已是最后一首'}
+              >
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* 4 View Toggles: 拼音, 原文, 译文, 图片 */}
-          <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-white/15">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mt-4 pt-3.5 border-t border-white/10">
+            {/* 1. 拼音 */}
             <button
               type="button"
               onClick={() => setShowPinyin(!showPinyin)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer ${
+              className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-200 cursor-pointer border flex items-center gap-1.5 ${
                 showPinyin
-                  ? 'bg-amber-500 text-white border-amber-400 shadow-sm'
-                  : 'bg-white/15 text-white/70 border-white/20 hover:bg-white/25'
+                  ? 'bg-emerald-500/30 border-emerald-400/50 text-emerald-200 shadow-sm shadow-emerald-950/20'
+                  : 'bg-white/10 border-white/15 text-white/50 hover:bg-white/15 hover:text-white/80'
               }`}
             >
-              拼音
+              <span>拼音</span>
             </button>
 
+            {/* 2. 原文 */}
             <button
               type="button"
               onClick={() => setShowOriginal(!showOriginal)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer ${
+              className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-200 cursor-pointer border flex items-center gap-1.5 ${
                 showOriginal
-                  ? 'bg-blue-500 text-white border-blue-400 shadow-sm'
-                  : 'bg-white/15 text-white/70 border-white/20 hover:bg-white/25'
+                  ? 'bg-emerald-500/30 border-emerald-400/50 text-emerald-200 shadow-sm shadow-emerald-950/20'
+                  : 'bg-white/10 border-white/15 text-white/50 hover:bg-white/15 hover:text-white/80'
               }`}
             >
-              原文
+              <span>原文</span>
             </button>
 
+            {/* 3. 译文 */}
             <button
               type="button"
               onClick={() => setShowTranslation(!showTranslation)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer ${
+              className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-200 cursor-pointer border flex items-center gap-1.5 ${
                 showTranslation
-                  ? 'bg-emerald-500 text-white border-emerald-400 shadow-sm'
-                  : 'bg-white/15 text-white/70 border-white/20 hover:bg-white/25'
+                  ? 'bg-emerald-500/30 border-emerald-400/50 text-emerald-200 shadow-sm shadow-emerald-950/20'
+                  : 'bg-white/10 border-white/15 text-white/50 hover:bg-white/15 hover:text-white/80'
               }`}
             >
-              译文
+              <span>译文</span>
             </button>
 
+            {/* 4. 图片 */}
             <button
               type="button"
               onClick={() => setShowImages(!showImages)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer ${
+              className={`px-3 py-1 text-xs font-bold rounded-full transition-all duration-200 cursor-pointer border flex items-center gap-1.5 ${
                 showImages
-                  ? 'bg-purple-500 text-white border-purple-400 shadow-sm'
-                  : 'bg-white/15 text-white/70 border-white/20 hover:bg-white/25'
+                  ? 'bg-emerald-500/30 border-emerald-400/50 text-emerald-200 shadow-sm shadow-emerald-950/20'
+                  : 'bg-white/10 border-white/15 text-white/50 hover:bg-white/15 hover:text-white/80'
               }`}
             >
-              图片
+              <span>图片</span>
             </button>
           </div>
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-6">
+        <div ref={scrollContainerRef} className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-6">
           {/* Poem Text & Media Cards */}
           <div className="bg-amber-50/50 p-4 sm:p-5 rounded-2xl border border-amber-200/60 grid grid-cols-1 lg:grid-cols-2 gap-4 text-center">
             {poem.lines?.map((lineObj: any, idx: number) => {
@@ -380,13 +450,35 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
       </div>
 
       {/* Detail Modal (拓展自学 / 诗句详情) */}
-      {activeModalPoem && (
-        <PoemStudyDetailModal
-          poem={activeModalPoem}
-          isLearnt={learntPoemIds.map(Number).includes(Number(activeModalPoem.id))}
-          onClose={() => setActiveModalPoem(null)}
-        />
-      )}
+      {activeModalPoem && (() => {
+        const currentIndex = poems.findIndex((p: any) => p.id === activeModalPoem.id);
+        const hasPrev = currentIndex > 0;
+        const hasNext = currentIndex >= 0 && currentIndex < poems.length - 1;
+
+        return (
+          <PoemStudyDetailModal
+            poem={activeModalPoem}
+            isLearnt={learntPoemIds.map(Number).includes(Number(activeModalPoem.id))}
+            onClose={() => setActiveModalPoem(null)}
+            hasPrev={hasPrev}
+            hasNext={hasNext}
+            onPrev={() => {
+              if (hasPrev) {
+                const prevPoem = poems[currentIndex - 1];
+                onSelectPoem(prevPoem);
+                setActiveModalPoem(prevPoem);
+              }
+            }}
+            onNext={() => {
+              if (hasNext) {
+                const nextPoem = poems[currentIndex + 1];
+                onSelectPoem(nextPoem);
+                setActiveModalPoem(nextPoem);
+              }
+            }}
+          />
+        );
+      })()}
 
       {/* Questions Preview Modal (习题预览, 免成绩提交) */}
       {activeQuizPreviewPoem && (
