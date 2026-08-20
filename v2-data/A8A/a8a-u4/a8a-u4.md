@@ -412,10 +412,6 @@ The captain sighed. This was the thickest fog he had ever seen. They were over 3
 
 Suddenly, the captain remembered the homing pigeons. He ran to them quickly, wrote a message for help, and tied it to Big Blue's leg. Big Blue flew up and then returned almost right away. The captain became more worried.
 
----
-
-### --- APPENDIX: PDF PAGE 14 (PRINTED PAGE 86) ---
-
 "You are our last hope, little guy," said the captain as he tied a note to Arny, the smaller and younger of the two pigeons.
 
 The captain threw him into the air. Arny flew around and around, higher and higher. Soon, the bird was away from the ship, and the captain couldn't see Arny anymore.

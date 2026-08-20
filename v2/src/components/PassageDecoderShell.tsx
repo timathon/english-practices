@@ -142,70 +142,166 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         }
     };
 
-    const renderSentenceText = useCallback((sentence: any) => {
-        if (!sentence.highlight) return sentence.en;
+    const renderFormattedInlineText = useCallback((
+        text: string,
+        highlights: string[] = [],
+        vocabGuide: any = null,
+        onWordClick?: (vocabItem: any) => void
+    ): React.ReactNode => {
+        if (!text) return null;
 
-        const highlights = Array.from(new Set(sentence.highlight.split(',').map((s: string) => s.trim()).filter(Boolean)));
-        
-        const escapeRegExp = (string: string) => {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        };
-
-        // Sort highlights by length descending to match longer phrases first
-        const sortedHighlights = [...highlights].sort((a: any, b: any) => (b as string).length - (a as string).length);
-
-        const patterns = sortedHighlights.map((h: any) => {
-            const hStr = h as string;
-            if (hStr.includes('...')) {
-                const parts = hStr.split('...').map((p: any) => p.trim());
-                return parts.map(escapeRegExp).join('.*?');
-            } else {
-                return `\\b${escapeRegExp(hStr)}\\b`;
-            }
-        });
-
-        const combinedRegex = new RegExp(`(${patterns.join('|')})`, 'gi');
-        const textWithHighlights = sentence.en.replace(combinedRegex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
-
-        const textParts = textWithHighlights.split(/(\|\|HIGHLIGHT\|\|.*?\|\|ENDHIGHLIGHT\|\|)/g);
-        return textParts.map((part: string, idx: number) => {
-            if (part.startsWith('||HIGHLIGHT||') && part.endsWith('||ENDHIGHLIGHT||')) {
-                const actualText = part.slice(13, -16);
-                
-                const h = (highlights.find((hl: any) => {
-                    if (hl && typeof hl === 'string') {
-                        if (hl.includes('...')) {
-                            const parts = hl.split('...').map((p: any) => p.trim());
-                            const pattern = parts.map(escapeRegExp).join('.*?');
-                            return new RegExp(pattern, 'i').test(actualText);
-                        }
-                        return new RegExp(`\\b${escapeRegExp(hl)}\\b`, 'i').test(actualText) ||
-                               actualText.toLowerCase().includes(hl.toLowerCase());
+        const parts = text.split(/(\*\*.*?\*\*|<u>.*?<\/u>|\*.*?\*|\[\*VISUAL:?\s*.*?\*\])/gi);
+        return (
+            <>
+                {parts.map((part, idx) => {
+                    if (!part) return null;
+                    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+                        return (
+                            <strong key={idx}>
+                                {renderFormattedInlineText(part.slice(2, -2), highlights, vocabGuide, onWordClick)}
+                            </strong>
+                        );
                     }
-                    return false;
-                }) || actualText) as string;
+                    if (part.toLowerCase().startsWith('<u>') && part.toLowerCase().endsWith('</u>') && part.length >= 7) {
+                        return (
+                            <u key={idx} style={{ fontWeight: 'bold' }}>
+                                {renderFormattedInlineText(part.slice(3, -4), highlights, vocabGuide, onWordClick)}
+                            </u>
+                        );
+                    }
+                    if (part.startsWith('*') && part.endsWith('*') && part.length >= 2 && !part.startsWith('**')) {
+                        return (
+                            <em key={idx}>
+                                {renderFormattedInlineText(part.slice(1, -1), highlights, vocabGuide, onWordClick)}
+                            </em>
+                        );
+                    }
+                    if (part.startsWith('[*VISUAL') && part.endsWith('*]')) {
+                        let innerText = part.slice(2, -2).trim();
+                        if (innerText.startsWith('VISUAL:')) {
+                            innerText = innerText.slice(7).trim();
+                        } else if (innerText.startsWith('VISUAL')) {
+                            innerText = innerText.slice(6).trim();
+                        }
+                        return (
+                            <span key={idx} className="pd-visual-tag" style={{ color: '#4b5563', backgroundColor: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', fontStyle: 'normal', fontSize: '0.9em' }}>
+                                🖼️ [图片提示: {innerText}]
+                            </span>
+                        );
+                    }
 
-                const hasGuide = vocabGuide && Array.isArray(vocabGuide.unit_vocabulary);
-                const matchedVocab = hasGuide ? findVocabItem(vocabGuide.unit_vocabulary, h, actualText) : null;
-
-                return (
-                    <span 
-                        key={idx} 
-                        className={`pd-highlight ${matchedVocab ? 'clickable' : ''}`}
-                        onClick={(e) => {
-                            if (matchedVocab) {
-                                e.stopPropagation();
-                                setActiveWordDetail(matchedVocab);
+                    // If highlights are present, check and replace highlights
+                    if (highlights && highlights.length > 0) {
+                        const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const sortedHighlights = [...highlights].sort((a: any, b: any) => (b as string).length - (a as string).length);
+                        const patterns = sortedHighlights.map((h: any) => {
+                            const hStr = h as string;
+                            if (hStr.includes('...')) {
+                                const pParts = hStr.split('...').map((p: any) => p.trim());
+                                return pParts.map(escapeRegExp).join('.*?');
+                            } else {
+                                return `\\b${escapeRegExp(hStr)}\\b`;
                             }
-                        }}
-                    >
-                        {actualText}
-                    </span>
+                        });
+                        const combinedRegex = new RegExp(`(${patterns.join('|')})`, 'gi');
+                        const textWithHighlights = part.replace(combinedRegex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||');
+                        const textParts = textWithHighlights.split(/(\|\|HIGHLIGHT\|\|.*?\|\|ENDHIGHLIGHT\|\|)/g);
+
+                        return textParts.map((subPart: string, sIdx: number) => {
+                            if (subPart.startsWith('||HIGHLIGHT||') && subPart.endsWith('||ENDHIGHLIGHT||')) {
+                                const actualText = subPart.slice(13, -16);
+                                const h = (highlights.find((hl: any) => {
+                                    if (hl && typeof hl === 'string') {
+                                        if (hl.includes('...')) {
+                                            const pParts = hl.split('...').map((p: any) => p.trim());
+                                            const pattern = pParts.map(escapeRegExp).join('.*?');
+                                            return new RegExp(pattern, 'i').test(actualText);
+                                        }
+                                        return new RegExp(`\\b${escapeRegExp(hl)}\\b`, 'i').test(actualText) ||
+                                               actualText.toLowerCase().includes(hl.toLowerCase());
+                                    }
+                                    return false;
+                                }) || actualText) as string;
+
+                                const hasGuide = vocabGuide && Array.isArray(vocabGuide.unit_vocabulary);
+                                const matchedVocab = hasGuide ? findVocabItem(vocabGuide.unit_vocabulary, h, actualText) : null;
+
+                                return (
+                                    <span
+                                        key={`${idx}-${sIdx}`}
+                                        className={`pd-highlight ${matchedVocab ? 'clickable' : ''}`}
+                                        onClick={(e) => {
+                                            if (matchedVocab && onWordClick) {
+                                                e.stopPropagation();
+                                                onWordClick(matchedVocab);
+                                            }
+                                        }}
+                                    >
+                                        {actualText}
+                                    </span>
+                                );
+                            }
+                            return subPart;
+                        });
+                    }
+
+                    return part;
+                })}
+            </>
+        );
+    }, []);
+
+    const renderSentenceText = useCallback((sentence: any) => {
+        const highlights = sentence.highlight
+            ? Array.from(new Set(sentence.highlight.split(',').map((s: string) => s.trim()).filter(Boolean)))
+            : [];
+        return renderFormattedInlineText(sentence.en, highlights as string[], vocabGuide, (item) => setActiveWordDetail(item));
+    }, [vocabGuide, renderFormattedInlineText]);
+
+    const renderMarkdownBlock = useCallback((markdownText: string) => {
+        if (!markdownText) return null;
+        const lines = markdownText.split('\n');
+        return lines.map((line, lIdx) => {
+            const trimmed = line.trim();
+            if (!trimmed) return <div key={lIdx} className="pd-passage-spacer" />;
+
+            // Header line
+            const headerMatch = trimmed.match(/^(#{1,6})\s*(.*)$/);
+            if (headerMatch) {
+                const level = headerMatch[1].length;
+                const content = headerMatch[2];
+                const Tag = `h${Math.min(level + 1, 6)}` as 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+                return (
+                    <Tag key={lIdx} className={`pd-passage-heading pd-heading-${level}`}>
+                        {renderFormattedInlineText(content, [], vocabGuide, (item) => setActiveWordDetail(item))}
+                    </Tag>
                 );
             }
-            return part;
+
+            // Bullet / list item line
+            const bulletMatch = line.match(/^(\s*)([*•^-]|\d+\.)\s+(.*)$/);
+            if (bulletMatch) {
+                const indentSpaces = bulletMatch[1].length;
+                const marker = bulletMatch[2];
+                const content = bulletMatch[3];
+                const indentClass = indentSpaces >= 4 ? 'pd-indent-2' : indentSpaces >= 2 ? 'pd-indent-1' : '';
+                return (
+                    <div key={lIdx} className={`pd-bullet-line ${indentClass}`}>
+                        <span className="pd-bullet-marker">{marker === '-' || marker === '*' || marker === '^' ? '•' : marker}</span>
+                        <span className="pd-bullet-content">
+                            {renderFormattedInlineText(content, [], vocabGuide, (item) => setActiveWordDetail(item))}
+                        </span>
+                    </div>
+                );
+            }
+
+            return (
+                <div key={lIdx} className="pd-block-line">
+                    {renderFormattedInlineText(line, [], vocabGuide, (item) => setActiveWordDetail(item))}
+                </div>
+            );
         });
-    }, [vocabGuide]);
+    }, [vocabGuide, renderFormattedInlineText]);
 
     // Sections list with safe IDs
     const sections = (data.sections || []).map((sec: any, idx: number) => ({
@@ -793,58 +889,125 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                     {/* Upper Viewport: Shows full text context formatted as paragraphs/dialogue */}
                     <div className="pd-upper-viewport">
                         {(() => {
-                            // Group sentences into paragraphs/lines
-                            const paragraphs: any[][] = [];
-                            let currentParagraph: any[] = [];
+                            // Group sentences into passage blocks
+                            const blocks: any[] = [];
+                            let currentBlock: any = null;
 
                             queue.forEach((sentence, idx) => {
-                                if (sentence.newline && currentParagraph.length > 0) {
-                                    paragraphs.push(currentParagraph);
-                                    currentParagraph = [];
+                                const sWithIdx = { ...sentence, index: idx };
+                                const isNewBlock =
+                                    sentence.newline ||
+                                    sentence.header ||
+                                    sentence.prefix ||
+                                    sentence.bullet !== undefined ||
+                                    sentence.indent !== undefined ||
+                                    !currentBlock;
+
+                                if (isNewBlock) {
+                                    if (currentBlock) {
+                                        blocks.push(currentBlock);
+                                    }
+                                    currentBlock = {
+                                        header: sentence.header,
+                                        prefix: sentence.prefix,
+                                        suffix: sentence.suffix,
+                                        speaker: sentence.speaker,
+                                        bullet: sentence.bullet,
+                                        indent: sentence.indent,
+                                        sentences: [sWithIdx]
+                                    };
+                                } else {
+                                    currentBlock.sentences.push(sWithIdx);
+                                    if (sentence.suffix && !currentBlock.suffix) {
+                                        currentBlock.suffix = sentence.suffix;
+                                    }
                                 }
-                                currentParagraph.push({ ...sentence, index: idx });
                             });
-                            if (currentParagraph.length > 0) {
-                                paragraphs.push(currentParagraph);
+                            if (currentBlock) {
+                                blocks.push(currentBlock);
                             }
 
-                            return paragraphs.map((para, paraIdx) => {
-                                const firstSentence = para[0];
+                            return blocks.map((block, bIdx) => {
+                                // Parse block prefix to check if last line is an inline label (e.g. "* **Notice:** ")
+                                let blockLines: string[] = [];
+                                let inlinePrefix: { marker: string; label: string } | null = null;
+                                let blockIndent = block.indent || 0;
+
+                                if (block.prefix) {
+                                    const rawLines = block.prefix.split('\n');
+                                    const lastLine = rawLines[rawLines.length - 1];
+                                    const prevLines = rawLines.slice(0, -1);
+
+                                    const inlineMatch = lastLine.match(/^(\s*)([*•^-]?)\s*(.*:)\s*$/);
+                                    if (inlineMatch) {
+                                        const indentSpaces = inlineMatch[1].length;
+                                        const marker = inlineMatch[2];
+                                        const label = inlineMatch[3];
+                                        blockLines = prevLines;
+                                        inlinePrefix = {
+                                            marker: marker || (indentSpaces > 0 ? '•' : ''),
+                                            label
+                                        };
+                                        if (!blockIndent && indentSpaces > 0) {
+                                            blockIndent = indentSpaces >= 4 ? 2 : 1;
+                                        }
+                                    } else {
+                                        blockLines = rawLines;
+                                    }
+                                }
+
+                                const indentClass = blockIndent === 2 ? 'pd-indent-2' : blockIndent === 1 ? 'pd-indent-1' : '';
+
                                 return (
-                                    <p key={paraIdx} className="pd-paragraph">
-                                        {firstSentence.speaker && (
-                                            <strong className="pd-speaker-prefix">{firstSentence.speaker}: </strong>
-                                        )}
-                                        {para.map((sentence) => {
-                                            const isCurrent = isRedemption
-                                                ? q.originalIndex === sentence.index
-                                                : currentIndex === sentence.index;
-                                            const isPast = isRedemption
-                                                ? false
-                                                : sentence.index < currentIndex;
-                                            return (
-                                                <span
-                                                    key={sentence.id}
-                                                    ref={isCurrent ? activeSentenceRef : null}
-                                                    className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
-                                                >
-                                                    {renderSentenceText(sentence)}{' '}
-                                                    {isCurrent && (isStudentBook(practiceId) || isWorkbook(practiceId)) && (
-                                                        <button
-                                                            className="pd-sentence-play-btn"
-                                                            title="Replay Audio"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                playActiveSentenceAudio(sentence.en);
-                                                            }}
-                                                        >
-                                                            🔊
-                                                        </button>
-                                                    )}
+                                    <div key={bIdx} className="pd-passage-block">
+                                        {block.header && renderMarkdownBlock(block.header)}
+                                        {blockLines.length > 0 && renderMarkdownBlock(blockLines.join('\n'))}
+                                        <p className={`pd-paragraph ${indentClass} ${block.bullet ? 'pd-bullet-item' : ''}`}>
+                                            {block.bullet && <span className="pd-bullet-dot">• </span>}
+                                            {inlinePrefix && (
+                                                <span className="pd-inline-prefix">
+                                                    {inlinePrefix.marker && <span className="pd-bullet-marker">{inlinePrefix.marker} </span>}
+                                                    <span className="pd-label-prefix">
+                                                        {renderFormattedInlineText(inlinePrefix.label, [], vocabGuide, (item) => setActiveWordDetail(item))}{' '}
+                                                    </span>
                                                 </span>
-                                            );
-                                        })}
-                                    </p>
+                                            )}
+                                            {block.speaker && (
+                                                <strong className="pd-speaker-prefix">{block.speaker}: </strong>
+                                            )}
+                                            {block.sentences.map((sentence: any) => {
+                                                const isCurrent = isRedemption
+                                                    ? q.originalIndex === sentence.index
+                                                    : currentIndex === sentence.index;
+                                                const isPast = isRedemption
+                                                    ? false
+                                                    : sentence.index < currentIndex;
+                                                return (
+                                                    <span
+                                                        key={sentence.id}
+                                                        ref={isCurrent ? activeSentenceRef : null}
+                                                        className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
+                                                    >
+                                                        {renderSentenceText(sentence)}{' '}
+                                                        {isCurrent && (isStudentBook(practiceId) || isWorkbook(practiceId)) && (
+                                                            <button
+                                                                className="pd-sentence-play-btn"
+                                                                title="Replay Audio"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const textToPlay = sentence.audioText || sentence.en.replace(/<[^>]*>/g, '').replace(/[*_#`~]/g, '').trim();
+                                                                    playActiveSentenceAudio(textToPlay);
+                                                                }}
+                                                            >
+                                                                🔊
+                                                            </button>
+                                                        )}
+                                                    </span>
+                                                );
+                                            })}
+                                        </p>
+                                        {block.suffix && renderMarkdownBlock(block.suffix)}
+                                    </div>
                                 );
                             });
                         })()}

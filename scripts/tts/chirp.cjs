@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * chirp.cjs (scripts/tts/chirp.cjs)
  * 
