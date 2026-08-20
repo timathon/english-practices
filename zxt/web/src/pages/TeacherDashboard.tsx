@@ -312,6 +312,24 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
     localStorage.setItem(`zxt_learnt_${selectedClass}`, JSON.stringify(updated));
     setTeacherMsg(`已更新【${selectedClass}】古诗解锁状态...`);
 
+    // 🚀 Instant Cross-Tab & Cross-Window Broadcast
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('zxt_sync_channel');
+        bc.postMessage({
+          type: 'ZXT_LEARNT_UPDATED',
+          className: selectedClass,
+          learntPoemIds: updated,
+          poemId: numId,
+          isLearnt: !isCurrentlyLearnt,
+        });
+        bc.close();
+      }
+      window.dispatchEvent(new CustomEvent('zxt_learnt_updated', {
+        detail: { className: selectedClass, learntPoemIds: updated, poemId: numId }
+      }));
+    } catch (_) {}
+
     try {
       await apiService.saveLearntPoemIdsToDB(selectedClass, updated, 30000);
       setTeacherMsg(`已成功同步【${selectedClass}】古诗解锁状态至数据库！`);
@@ -320,6 +338,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ user }) => {
       setLearntPoemIds(prevLearnt);
       localStorage.setItem(`zxt_learnt_${selectedClass}`, JSON.stringify(prevLearnt));
       setTeacherMsg(`⚠️ 解锁状态同步失败，已还原修改。`);
+
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          const bc = new BroadcastChannel('zxt_sync_channel');
+          bc.postMessage({
+            type: 'ZXT_LEARNT_UPDATED',
+            className: selectedClass,
+            learntPoemIds: prevLearnt,
+            poemId: numId,
+            isLearnt: isCurrentlyLearnt,
+          });
+          bc.close();
+        }
+      } catch (_) {}
 
       const poemObj = poems.find(p => Number(p.id) === numId);
       const poemName = poemObj ? `《${poemObj.title}》` : `古诗 #${poemId}`;

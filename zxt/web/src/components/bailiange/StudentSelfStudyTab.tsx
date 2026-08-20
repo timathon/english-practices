@@ -16,12 +16,24 @@ interface StudentSelfStudyTabProps {
 export const PoemStudyDetailModal: React.FC<{
   poem: any;
   isLearnt: boolean;
+  isTeacher?: boolean;
   onClose: () => void;
   onPrev?: () => void;
   onNext?: () => void;
   hasPrev?: boolean;
   hasNext?: boolean;
-}> = ({ poem, isLearnt, onClose, onPrev, onNext, hasPrev = false, hasNext = false }) => {
+  onStartPractice?: (poem: any) => void;
+}> = ({
+  poem,
+  isLearnt,
+  isTeacher = false,
+  onClose,
+  onPrev,
+  onNext,
+  hasPrev = false,
+  hasNext = false,
+  onStartPractice,
+}) => {
   useLockBodyScroll(true);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -269,6 +281,53 @@ export const PoemStudyDetailModal: React.FC<{
               </p>
             </div>
           </div>
+
+          {/* Bottom Action / Practice Bar */}
+          {(() => {
+            const questionCount = poem?.questions?.length || 0;
+            const canPractice = isTeacher || isLearnt;
+
+            return (
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-between flex-wrap gap-3 bg-slate-50/90 -mx-5 sm:-mx-6 -mb-5 sm:-mb-6 p-4 sm:p-5 rounded-b-3xl">
+                <div className="text-xs text-slate-500 flex items-center gap-2">
+                  <span>🎯 配套题库: {questionCount} 道题</span>
+                  {isTeacher && (
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 font-bold rounded text-[11px]">
+                      教师免锁模式
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={!canPractice}
+                  onClick={() => {
+                    if (!canPractice) return;
+                    if (questionCount > 0) {
+                      if (onStartPractice) {
+                        onStartPractice(poem);
+                      }
+                    } else {
+                      alert(`《${poem.title}》暂无配套习题`);
+                    }
+                  }}
+                  className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-md cursor-pointer ${
+                    canPractice
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white shadow-emerald-200'
+                      : 'bg-slate-200 text-slate-400 border border-slate-300 opacity-60 cursor-not-allowed shadow-none'
+                  }`}
+                  title={
+                    canPractice
+                      ? `点击开始《${poem.title}》练习与答题`
+                      : '该古诗尚未解锁，请联系老师在教学进度中解锁后方可练习'
+                  }
+                >
+                  <span>{canPractice ? '📝' : '🔒'}</span>
+                  <span>{canPractice ? `开始练习 (${questionCount}题)` : '未解锁 (练习不可用)'}</span>
+                </button>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
@@ -286,68 +345,54 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
   const [activeModalPoem, setActiveModalPoem] = useState<any | null>(null);
   const [activeQuizPreviewPoem, setActiveQuizPreviewPoem] = useState<any | null>(null);
 
-  if (subject === 'math') {
-    return (
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3">
-        <div className="text-4xl">📐</div>
-        <h3 className="text-lg font-bold text-slate-800">数学 · 自主拓展学习</h3>
-        <p className="text-sm text-slate-500 max-w-md mx-auto">
-          提供算术巧算、几何图形与数理逻辑自主研习资源，包含重难点动画演练与自测习题。
-        </p>
-      </div>
-    );
-  }
+  const [sliderIndex, setSliderIndex] = useState<number>(1);
+  const poemRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
-  if (subject === 'english') {
-    return (
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3">
-        <div className="text-4xl">🔤</div>
-        <h3 className="text-lg font-bold text-slate-800">英语 · 自主拓展学习</h3>
-        <p className="text-sm text-slate-500 max-w-md mx-auto">
-          包含自然拼读、常用词汇卡片、听力对话朗读与分级阅读自主研习。
-        </p>
-      </div>
-    );
-  }
+  // Scroll to poem when slider moves
+  const handleSliderChange = (newIndex: number) => {
+    setSliderIndex(newIndex);
+    const targetPoem = poems[newIndex - 1];
+    if (targetPoem && poemRefs.current[targetPoem.id]) {
+      const el = poemRefs.current[targetPoem.id];
+      if (el) {
+        const yOffset = -140; // offset for sticky header & nav
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+  };
 
-  if (subject === 'chinese' && chineseSubTab === 'chengyu') {
-    return (
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3">
-        <div className="text-4xl">🐉</div>
-        <h3 className="text-lg font-bold text-slate-800">语文 · 成语自主学习</h3>
-        <p className="text-sm text-slate-500 max-w-md mx-auto">
-          成语接龙、成语释义典故、看图识成语与趣味成语闯关自学模块正在建设中。
-        </p>
-      </div>
-    );
-  }
+  // Sync slider position with user scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!poems || poems.length === 0) return;
+      const scrollY = window.scrollY + 180;
+      let closestIdx = 0;
+      let minDistance = Infinity;
 
-  if (subject === 'chinese' && chineseSubTab === 'shizi') {
-    return (
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3">
-        <div className="text-4xl">✍️</div>
-        <h3 className="text-lg font-bold text-slate-800">语文 · 识字自主学习</h3>
-        <p className="text-sm text-slate-500 max-w-md mx-auto">
-          部首结构、笔顺描红、形近字辨析与字义拓展学习模块正在建设中。
-        </p>
-      </div>
-    );
-  }
+      poems.forEach((p, idx) => {
+        const el = poemRefs.current[p.id];
+        if (el) {
+          const top = el.getBoundingClientRect().top + window.scrollY;
+          const dist = Math.abs(top - scrollY);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestIdx = idx + 1;
+          }
+        }
+      });
 
-  if (subject === 'chinese' && chineseSubTab === 'pinyin') {
-    return (
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-3">
-        <div className="text-4xl">🔡</div>
-        <h3 className="text-lg font-bold text-slate-800">语文 · 拼音自主学习</h3>
-        <p className="text-sm text-slate-500 max-w-md mx-auto">
-          声母韵母发音、声调规则、拼读卡片与易混音辨析自主学习模块正在建设中。
-        </p>
-      </div>
-    );
-  }
+      if (closestIdx > 0) {
+        setSliderIndex(closestIdx);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [poems]);
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
       {/* Header Info */}
       <div className="border-b border-slate-100 pb-3 flex items-center justify-between flex-wrap gap-2">
         <div>
@@ -359,15 +404,61 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
         </span>
       </div>
 
+      {/* Sticky Fast-Scroll Slider Bar (Stick directly under 64px top navbar) */}
+      <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2.5 bg-white/95 backdrop-blur-md border-y border-emerald-100/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <span className="text-xs font-bold text-slate-700 whitespace-nowrap flex items-center gap-1">
+            <span>🚀</span>
+            <span>快速定位:</span>
+          </span>
+          <span className="text-xs px-2.5 py-0.5 bg-emerald-600 text-white font-mono font-extrabold rounded-full shadow-2xs whitespace-nowrap">
+            #{sliderIndex} 《{poems[sliderIndex - 1]?.title || ''}》
+          </span>
+        </div>
+
+        {/* Range Slider */}
+        <div className="flex items-center gap-3 w-full sm:flex-1 max-w-md">
+          <span className="text-[11px] font-mono text-slate-400 font-bold">#1</span>
+          <input
+            type="range"
+            min={1}
+            max={Math.max(1, poems.length)}
+            value={sliderIndex}
+            onChange={(e) => handleSliderChange(Number(e.target.value))}
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 hover:accent-emerald-700 transition"
+          />
+          <span className="text-[11px] font-mono text-slate-400 font-bold">#{poems.length}</span>
+        </div>
+
+        {/* Quick-Jump Step Buttons */}
+        <div className="hidden md:flex items-center gap-1 text-[11px]">
+          {[1, 15, 30, 45, 60, poems.length].map((targetId) => (
+            <button
+              key={targetId}
+              type="button"
+              onClick={() => handleSliderChange(targetId)}
+              className={`px-2 py-0.5 rounded font-mono font-bold transition cursor-pointer ${
+                sliderIndex === targetId
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-800'
+              }`}
+            >
+              #{targetId}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Grid of Poem Cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-        {poems.map((poem) => {
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs pt-1">
+        {poems.map((poem, idx) => {
           const isLearnt = learntPoemIds.map(Number).includes(Number(poem.id));
           const questionCount = poem.questions?.length || 0;
 
           return (
             <div
               key={poem.id}
+              ref={(el) => { poemRefs.current[poem.id] = el; }}
               className={`p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between gap-3 group hover:shadow-md ${
                 isLearnt
                   ? 'border-emerald-200 bg-emerald-50/40 hover:border-emerald-400'
@@ -459,9 +550,14 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
           <PoemStudyDetailModal
             poem={activeModalPoem}
             isLearnt={learntPoemIds.map(Number).includes(Number(activeModalPoem.id))}
+            isTeacher={false}
             onClose={() => setActiveModalPoem(null)}
             hasPrev={hasPrev}
             hasNext={hasNext}
+            onStartPractice={(poemToPractice) => {
+              setActiveModalPoem(null);
+              setActiveQuizPreviewPoem(poemToPractice);
+            }}
             onPrev={() => {
               if (hasPrev) {
                 const prevPoem = poems[currentIndex - 1];

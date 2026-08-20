@@ -85,6 +85,55 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeView, 
     loadPoems();
     loadStudentData();
 
+    const targetClass = user?.className || '三年级A班';
+
+    // 1. Cross-Tab / Cross-Window BroadcastChannel sync
+    let bc: BroadcastChannel | null = null;
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        bc = new BroadcastChannel('zxt_sync_channel');
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'ZXT_LEARNT_UPDATED') {
+            if (event.data.className === targetClass && Array.isArray(event.data.learntPoemIds)) {
+              setLearntPoemIds(event.data.learntPoemIds);
+            } else {
+              loadStudentData();
+            }
+          }
+        };
+      }
+    } catch (_) {}
+
+    // 2. Same-window CustomEvent listener
+    const handleLearntUpdated = (e: any) => {
+      if (e?.detail?.learntPoemIds && Array.isArray(e.detail.learntPoemIds)) {
+        if (!e.detail.className || e.detail.className === targetClass) {
+          setLearntPoemIds(e.detail.learntPoemIds);
+        }
+      } else {
+        loadStudentData();
+      }
+    };
+
+    // 3. Native localStorage storage event (fired on other tabs when localStorage changes)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `zxt_learnt_${targetClass}` && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setLearntPoemIds(parsed.map(Number));
+          }
+        } catch (_) {}
+      }
+    };
+
+    // 4. Tab Focus & Visibility change auto-refetch
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        loadStudentData();
+      }
+    };
+
     const handlePoemsUpdated = (e: any) => {
       if (e?.detail?.poems && Array.isArray(e.detail.poems)) {
         setPoems(e.detail.poems);
@@ -97,8 +146,18 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeView, 
     };
 
     window.addEventListener('zxt_poems_updated', handlePoemsUpdated);
+    window.addEventListener('zxt_learnt_updated', handleLearntUpdated);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
     return () => {
+      if (bc) bc.close();
       window.removeEventListener('zxt_poems_updated', handlePoemsUpdated);
+      window.removeEventListener('zxt_learnt_updated', handleLearntUpdated);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
     };
   }, [user]);
 

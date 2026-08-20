@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiService, IdiomGroup } from '../../services/api';
 import { CachedImage } from '../CachedImage';
 import { StudentQuizPreviewModal } from '../StudentQuizPreviewModal';
@@ -31,6 +31,53 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
 
   // Available idiom groups from apiService
   const [availableIdiomGroups, setAvailableIdiomGroups] = useState<IdiomGroup[]>(() => apiService.getLocalIdiomGroups());
+
+  // Fast-scroll slider state for Teacher Ancient Poems view
+  const [sliderIndex, setSliderIndex] = useState<number>(1);
+  const poemRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  const handleSliderChange = (newIndex: number) => {
+    setSliderIndex(newIndex);
+    const targetPoem = poems[newIndex - 1];
+    if (targetPoem && poemRefs.current[targetPoem.id]) {
+      const el = poemRefs.current[targetPoem.id];
+      if (el) {
+        const yOffset = -140;
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (selectedSubject !== '语文' || selectedSection !== '古诗') return;
+
+    const handleScroll = () => {
+      if (!poems || poems.length === 0) return;
+      const scrollY = window.scrollY + 180;
+      let closestIdx = 0;
+      let minDistance = Infinity;
+
+      poems.forEach((p, idx) => {
+        const el = poemRefs.current[p.id];
+        if (el) {
+          const top = el.getBoundingClientRect().top + window.scrollY;
+          const dist = Math.abs(top - scrollY);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestIdx = idx + 1;
+          }
+        }
+      });
+
+      if (closestIdx > 0) {
+        setSliderIndex(closestIdx);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [poems, selectedSubject, selectedSection]);
 
   useEffect(() => {
     apiService.getIdiomGroups().then(groups => {
@@ -128,11 +175,57 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
 
       {/* Grid Content: 古诗 */}
       {selectedSubject === '语文' && selectedSection === '古诗' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>古诗词进度 (全书共 75 首，已解锁 {learntPoemIds.length} 首)</span>
+            <span>古诗词进度 (全书共 {poems.length} 首，已解锁 {learntPoemIds.length} 首)</span>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+
+          {/* Sticky Fast-Scroll Slider Bar for Teacher (Stick directly under 64px top navbar) */}
+          <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2.5 bg-white/95 backdrop-blur-md border-y border-emerald-100/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs font-bold text-slate-700 whitespace-nowrap flex items-center gap-1">
+                <span>🚀</span>
+                <span>快速定位:</span>
+              </span>
+              <span className="text-xs px-2.5 py-0.5 bg-emerald-600 text-white font-mono font-extrabold rounded-full shadow-2xs whitespace-nowrap">
+                #{sliderIndex} 《{poems[sliderIndex - 1]?.title || ''}》
+              </span>
+            </div>
+
+            {/* Range Slider */}
+            <div className="flex items-center gap-3 w-full sm:flex-1 max-w-md">
+              <span className="text-[11px] font-mono text-slate-400 font-bold">#1</span>
+              <input
+                type="range"
+                min={1}
+                max={Math.max(1, poems.length)}
+                value={sliderIndex}
+                onChange={(e) => handleSliderChange(Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 hover:accent-emerald-700 transition"
+              />
+              <span className="text-[11px] font-mono text-slate-400 font-bold">#{poems.length}</span>
+            </div>
+
+            {/* Quick-Jump Step Buttons */}
+            <div className="hidden md:flex items-center gap-1 text-[11px]">
+              {[1, 15, 30, 45, 60, poems.length].map((targetId) => (
+                <button
+                  key={targetId}
+                  type="button"
+                  onClick={() => handleSliderChange(targetId)}
+                  className={`px-2 py-0.5 rounded font-mono font-bold transition cursor-pointer ${
+                    sliderIndex === targetId
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-800'
+                  }`}
+                >
+                  #{targetId}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs pt-1">
             {poems.map((poem) => {
               const isLearnt = learntPoemIds.includes(poem.id);
               const isAnimating = animatingPoemId === poem.id;
@@ -141,6 +234,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
               return (
                 <div
                   key={poem.id}
+                  ref={(el) => { poemRefs.current[poem.id] = el; }}
                   className={`p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between gap-3 group hover:shadow-md ${
                     isAnimating
                       ? isLearnt
@@ -371,9 +465,14 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
           <PoemStudyDetailModal
             poem={previewLinesPoem}
             isLearnt={learntPoemIds.map(Number).includes(Number(previewLinesPoem.id))}
+            isTeacher={true}
             onClose={() => setPreviewLinesPoem(null)}
             hasPrev={hasPrev}
             hasNext={hasNext}
+            onStartPractice={(poemToPractice) => {
+              setPreviewLinesPoem(null);
+              setPreviewQuizPoem(poemToPractice);
+            }}
             onPrev={() => {
               if (hasPrev) {
                 setPreviewLinesPoem(poems[currentIndex - 1]);
