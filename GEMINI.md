@@ -50,6 +50,9 @@ When editing existing codebases:
   ```
   If `--llm` or `--high` is specified in the prompt, append the `--llm` or `--high` flag accordingly.
 
+## 6. Temporary & Scratch Directory Rule
+* Always use `temp/scratch/` for temporary scripts, intermediate generation files, and scratch files. Do NOT create or use a top-level `scratch/` directory in the repository root.
+
 ---
 
 # English Practices Data Transformation Rules
