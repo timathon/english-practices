@@ -357,6 +357,11 @@ This document defines the rules for extracting and converting textbook data into
 - **Vocabulary Highlighting**: 
   - All passage decoders must include a `highlight` property on each sentence object (if matching vocabulary is present).
   - The `highlight` property should contain a comma-separated list of the exact matching words/phrases as they appear in the sentence, corresponding to the vocabulary listed in the unit/module/lesson's `vocab-guide.json`.
+- **Main Verb & Sentence Structure (Grammar Decoding)**:
+  - Each sentence should include:
+    - `verb`: The main finite verb / predicate phrase of the main clause (e.g., `"is"`, `"can be written"`, `"makes"`).
+    - `verb_range`: A 2-element integer array `[start, end]` representing the exact character 0-indexed slice `[start, end]` of `verb` within `en` (e.g. `[82, 84]`).
+    - `pattern`: The core sentence pattern / clause type (e.g., `"SVO"`, `"SVC"`, `"SVOC"`, `"SVOO"`, `"SV (被动)"`, `"SVC (表语从句)"`, `"SVO (宾语从句)"`, `"SVOA"`).
 - **Options and Answer**:
   - Each sentence must have exactly 3 translation options (`options` array): 1 correct and 2 wrong distractors containing subtle traps (e.g., vocabulary swaps, tense errors, negation flips).
   - **Avoid Lazy/Obvious Traps**: Do NOT generate lazy, unnatural, or grammatically incorrect Chinese traps, such as simply prepending "不" to nouns, adjectives, names, pronouns, or adverbial phrases (e.g., "不印度尼西亚...", "不我们...", "不如果你..."), or using silly typos like "大时" instead of "小时". Distractors must be realistic, natural Chinese sentences.
@@ -365,7 +370,7 @@ This document defines the rules for extracting and converting textbook data into
 - **Structure**:
   - `level`: e.g., "Grade 5 Semester 2 - Unit 1".
   - `title`: e.g., "Passage Decoder".
-  - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline, highlight }`).
+  - `sections`: Array of section objects, each containing `title` and `sentences` (array of sentence items: `{ id, en, options, answer, speaker, newline, highlight, verb, verb_range, pattern }`).
 - **Generation**: You may call the Gemini API programmatically (using `GOOGLE_API_KEY_FREE` and `gemini-3.5-flash-lite`) to parse and generate options, or you can perform translations and distractor generation directly within your own context.
 
 ## 10. Test Sheet (TS)

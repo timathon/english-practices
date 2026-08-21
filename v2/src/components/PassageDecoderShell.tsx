@@ -69,6 +69,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const [vocabGuide, setVocabGuide] = useState<any>(null);
     const [activeWordDetail, setActiveWordDetail] = useState<any>(null);
     const [playingWordAudio, setPlayingWordAudio] = useState(false);
+    const [showMainVerb, setShowMainVerb] = useState(false);
 
     useEffect(() => {
         if (!practiceId) return;
@@ -251,12 +252,48 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         );
     }, []);
 
-    const renderSentenceText = useCallback((sentence: any) => {
+    const renderSentenceText = useCallback((sentence: any, isCurrentActive: boolean = false) => {
         const highlights = sentence.highlight
             ? Array.from(new Set(sentence.highlight.split(',').map((s: string) => s.trim()).filter(Boolean)))
             : [];
+
+        if (isCurrentActive && showMainVerb && (sentence.verb_range || sentence.verb)) {
+            const fullText: string = sentence.en;
+            let start = -1;
+            let end = -1;
+
+            if (Array.isArray(sentence.verb_range) && sentence.verb_range.length === 2) {
+                start = sentence.verb_range[0];
+                end = sentence.verb_range[1];
+            } else if (sentence.verb) {
+                start = fullText.indexOf(sentence.verb);
+                if (start !== -1) {
+                    end = start + sentence.verb.length;
+                }
+            }
+
+            if (start >= 0 && end > start && end <= fullText.length) {
+                const before = fullText.slice(0, start);
+                const verbText = fullText.slice(start, end);
+                const after = fullText.slice(end);
+
+                return (
+                    <>
+                        {renderFormattedInlineText(before, highlights as string[], vocabGuide, (item) => setActiveWordDetail(item))}
+                        <mark className="pd-main-verb-highlight" title={sentence.pattern ? `谓语动词 [${sentence.pattern}]` : '谓语动词 (Main Verb)'}>
+                            {renderFormattedInlineText(verbText, highlights as string[], vocabGuide, (item) => setActiveWordDetail(item))}
+                            {sentence.pattern && (
+                                <span className="pd-main-verb-badge">{sentence.pattern}</span>
+                            )}
+                        </mark>
+                        {renderFormattedInlineText(after, highlights as string[], vocabGuide, (item) => setActiveWordDetail(item))}
+                    </>
+                );
+            }
+        }
+
         return renderFormattedInlineText(sentence.en, highlights as string[], vocabGuide, (item) => setActiveWordDetail(item));
-    }, [vocabGuide, renderFormattedInlineText]);
+    }, [vocabGuide, renderFormattedInlineText, showMainVerb]);
 
     const renderMarkdownBlock = useCallback((markdownText: string) => {
         if (!markdownText) return null;
@@ -491,6 +528,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         setIsRedemption(isRedemp)
         setSelectedOption(null)
         setShowOptions(false)
+        setShowMainVerb(false)
         setLocked(false)
         timerExpiredRef.current = false
         countdownTimer.pause()
@@ -988,7 +1026,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                         ref={isCurrent ? activeSentenceRef : null}
                                                         className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
                                                     >
-                                                        {renderSentenceText(sentence)}{' '}
+                                                        {renderSentenceText(sentence, isCurrent)}{' '}
                                                         {isCurrent && (isStudentBook(practiceId) || isWorkbook(practiceId)) && (
                                                             <button
                                                                 className="pd-sentence-play-btn"
@@ -1000,6 +1038,18 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                                 }}
                                                             >
                                                                 🔊
+                                                            </button>
+                                                        )}
+                                                        {isCurrent && (sentence.verb || sentence.verb_range) && (
+                                                            <button
+                                                                className={`pd-sentence-verb-btn ${showMainVerb ? 'active' : ''}`}
+                                                                title={showMainVerb ? "隐藏谓语动词 (Hide Main Verb)" : "显示谓语动词 (Show Main Verb & Structure)"}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShowMainVerb(prev => !prev);
+                                                                }}
+                                                            >
+                                                                ⚡
                                                             </button>
                                                         )}
                                                     </span>

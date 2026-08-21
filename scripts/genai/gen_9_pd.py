@@ -58,6 +58,10 @@ RULES:
   - For normal passages, set `newline: true` only on the first sentence starting a new paragraph.
 - Vocabulary Highlighting:
   - Include a `highlight` property on each sentence (comma-separated string) containing exactly the matching words/phrases as they appear in the sentence, corresponding to the vocabulary list provided. If no match, omit the field or leave empty.
+- Main Verb & Sentence Structure:
+  - `verb`: The main finite verb / predicate of the main clause (e.g., "is", "can be written", "makes", "have").
+  - `verb_range`: A 2-element integer array [start, end] representing the exact 0-based character slice of `verb` in `en` (e.g. [82, 84]). Verify start and end index against `en` string so en[start:end] == verb.
+  - `pattern`: The core sentence pattern (e.g. "SVO", "SVC", "SVOC", "SVOO", "SV", "SV (被动)", "SVC (表语从句)", "SVO (宾语从句)", "SVOA").
 - Options and Answer:
   - Each sentence must have exactly 3 translation options (`options` array): 1 correct and 2 wrong distractors.
   - The wrong distractors MUST contain subtle traps (e.g., vocabulary swaps, tense errors, negation flips).
@@ -68,6 +72,7 @@ RULES:
 - You MUST ALWAYS include the "answer" field with the correct integer index (0, 1, or 2).
 - You MUST ALWAYS include the "speaker" field (use an empty string "" if not a dialogue).
 - You MUST ALWAYS include the "highlight" field (use an empty string "" if no vocab matches).
+- You MUST ALWAYS include "verb", "verb_range", and "pattern" fields.
 
 JSON structure must exactly match this format:
 {{
@@ -88,7 +93,10 @@ JSON structure must exactly match this format:
           "answer": 1,
           "speaker": "Jim",
           "newline": true,
-          "highlight": "family, cafe"
+          "highlight": "family, cafe",
+          "verb": "Look",
+          "verb_range": [0, 4],
+          "pattern": "SV (祈使句)"
         }}
       ]
     }}
@@ -197,6 +205,16 @@ def main():
                 s["highlight"] = ""
             if "newline" not in s:
                 s["newline"] = False
+
+            # Validate / fix verb_range indices against en text
+            en_text = s.get("en", "")
+            verb = s.get("verb", "")
+            verb_range = s.get("verb_range")
+            if verb and (not isinstance(verb_range, list) or len(verb_range) != 2 or en_text[verb_range[0]:verb_range[1]] != verb):
+                # Recalculate verb_range if possible
+                idx = en_text.find(verb)
+                if idx != -1:
+                    s["verb_range"] = [idx, idx + len(verb)]
 
     # Determine output filename
     stem = md_path.stem
