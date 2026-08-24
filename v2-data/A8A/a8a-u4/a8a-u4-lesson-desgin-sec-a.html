@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>A8A-U4 Section A 教学设计与导学练</title>
+    <style>
+        /* CSS Reset & Global Styling */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            color: #1e293b;
+            background-color: #f8fafc;
+            line-height: 1.5;
+            font-size: 10.5pt;
+        }
+
+        /* Screen Only Helper Bar */
+        .no-print-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: #1a365d;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-print-bar span {
+            font-weight: 600;
+            font-size: 11pt;
+        }
+
+        .print-btn {
+            background: #3b82f6;
+            color: #ffffff;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 10pt;
+            transition: background 0.2s;
+        }
+
+        .print-btn:hover {
+            background: #2563eb;
+        }
+
+        /* A4 Sheet Container */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            height: 297mm;
+            padding: 12mm 16mm;
+            margin: 20mm auto 10mm auto;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .a4-page:first-of-type {
+            margin-top: 68px;
+            /* Offset for top fixed bar */
+        }
+
+        /* Typography & Header Elements */
+        h1 {
+            font-size: 18pt;
+            color: #1a365d;
+            border-bottom: 2px solid #1a365d;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        h1 span {
+            font-size: 10pt;
+            color: #64748b;
+            font-weight: normal;
+        }
+
+        .big-question {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 8px 12px;
+            font-size: 11pt;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 10px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* Metadata & Competencies Grids */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+            font-size: 9.5pt;
+        }
+
+        .meta-item {
+            background: #f1f5f9;
+            padding: 5px 8px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .meta-item strong {
+            color: #334155;
+        }
+
+        .competency-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .competency-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 9pt;
+        }
+
+        .competency-box strong {
+            color: #1a365d;
+            display: block;
+            margin-bottom: 2px;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 2px;
+        }
+
+        /* Focus & Difficult Points */
+        .points-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 9pt;
+        }
+
+        .points-col {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 4px;
+            padding: 6px 10px;
+        }
+
+        .points-col.difficult {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .points-col strong {
+            color: #b45309;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .points-col.difficult strong {
+            color: #991b1b;
+        }
+
+        /* Tables (Lesson Plan) */
+        table.lesson-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 8.5pt;
+        }
+
+        table.lesson-table th,
+        table.lesson-table td {
+            border: 1px solid #cbd5e1;
+            padding: 5px 7px;
+            vertical-align: top;
+        }
+
+        table.lesson-table th {
+            background: #1a365d;
+            color: #ffffff;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        table.lesson-table tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #1a365d;
+            margin: 10px 0 6px 0;
+            border-left: 3px solid #1a365d;
+            padding-left: 6px;
+        }
+
+        /* Blackboard Design Layout */
+        .board-container {
+            background: #1b382b;
+            color: #ffffff;
+            border: 6px solid #5c3a21;
+            border-radius: 6px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            font-size: 8.5pt;
+            margin-bottom: 10px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .board-col h3 {
+            color: #fef08a;
+            font-size: 9.5pt;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+        }
+
+        .board-col ul {
+            padding-left: 14px;
+            margin-bottom: 6px;
+        }
+
+        .board-col li {
+            margin-bottom: 3px;
+        }
+
+        .chalk-yellow {
+            color: #fef08a;
+        }
+
+        .chalk-cyan {
+            color: #67e8f9;
+        }
+
+        .chalk-pink {
+            color: #f472b6;
+        }
+
+        .pk-board {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px;
+            border-radius: 4px;
+            margin-top: 5px;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+        }
+
+        /* Student Practice Sheet Styles */
+        .student-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #1a365d;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            font-size: 9.5pt;
+            font-weight: 600;
+            color: #1a365d;
+        }
+
+        .exercise-section {
+            margin-bottom: 8px;
+        }
+
+        .exercise-title {
+            font-weight: bold;
+            color: #1a365d;
+            background: #f1f5f9;
+            padding: 3px 6px;
+            margin-bottom: 5px;
+            font-size: 9pt;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .exercise-body {
+            font-size: 8.5pt;
+            padding-left: 4px;
+        }
+
+        .exercise-body p {
+            margin-bottom: 3px;
+        }
+
+        .blank-line {
+            display: inline-block;
+            border-bottom: 1px solid #334155;
+            width: 80px;
+            margin: 0 3px;
+        }
+
+        .short-blank {
+            display: inline-block;
+            border-bottom: 1px solid #334155;
+            width: 35px;
+            margin: 0 2px;
+        }
+
+        /* Self-Assessment & Preview */
+        .assessment-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            margin-bottom: 6px;
+        }
+
+        .assessment-table th,
+        .assessment-table td {
+            border: 1px solid #cbd5e1;
+            padding: 3px 5px;
+            text-align: center;
+        }
+
+        .assessment-table th {
+            background: #f1f5f9;
+            color: #1a365d;
+        }
+
+        .assessment-table td:first-child {
+            text-align: left;
+        }
+
+        .preview-box {
+            border: 1px dashed #3b82f6;
+            background: #eff6ff;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 8.5pt;
+        }
+
+        .preview-box strong {
+            color: #1e40af;
+        }
+
+        /* Print Media Settings */
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        @media print {
+
+            html,
+            body {
+                background: #ffffff !important;
+                font-size: 10pt;
+            }
+
+            .no-print-bar {
+                display: none !important;
+            }
+
+            .a4-page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                max-height: 297mm !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                padding: 10mm 14mm !important;
+            }
+
+            .a4-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+
+            .board-container {
+                background: #1b382b !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Top Helper Bar (Screen Only) -->
+    <div class="no-print-bar">
+        <span>A8A-U4 Section A 教学设计与导学练 (3-Page Strict A4 Layout)</span>
+        <button class="print-btn" onclick="window.print()">打印文档 / Print Document</button>
+    </div>
+
+    <!-- ================= PAGE 1 ================= -->
+    <div class="a4-page">
+        <div>
+            <h1>Unit 4 Amazing Plants and Animals · Section A <span>教学设计与导学练</span></h1>
+
+            <div class="big-question">
+                ❓ BIG Question: What makes plants and animals amazing? / How do superlative adjectives help us describe
+                extreme nature?
+            </div>
+
+            <div class="meta-grid">
+                <div class="meta-item"><strong>课型：</strong> 听说与语法综合课</div>
+                <div class="meta-item"><strong>时长：</strong> 1 课时 (45 分钟)</div>
+                <div class="meta-item"><strong>年级：</strong> 七年级 (Grade 7)</div>
+                <div class="meta-item"><strong>页码：</strong> Textbook P31–P35</div>
+            </div>
+
+            <div class="competency-grid">
+                <div class="competency-box">
+                    <strong>语言能力 (Language Ability)</strong>
+                    Master core vocabulary (*moss, redwood, cheetah, bamboo, shoot, weigh*); use superlative adjectives
+                    and adverbs correctly to describe extreme attributes of plants and animals.
+                </div>
+                <div class="competency-box">
+                    <strong>文化意识 (Cultural Awareness)</strong>
+                    Understand the cultural symbolism of bamboo in traditional Chinese paintings (*symbol of goodness*),
+                    fostering pride in Chinese culture and global ecological awareness.
+                </div>
+                <div class="competency-box">
+                    <strong>思维品质 (Thinking Qualities)</strong>
+                    Develop critical and comparative thinking by analyzing extreme natural features, classifying
+                    plants/animals, and constructing logical mind maps.
+                </div>
+                <div class="competency-box">
+                    <strong>学习能力 (Learning Ability)</strong>
+                    Enhance listening discrimination skills (stress, intonation, phonetic groups like /eɪ/, /bl/), and
+                    actively engage in pair work and role-play tasks.
+                </div>
+            </div>
+
+            <div class="points-box">
+                <div class="points-col">
+                    <strong>📌 教学重点 (Focus Points)</strong>
+                    1. Superlative forms of adjectives and adverbs (*the largest, the fastest, the most popular*).<br>
+                    2. Vocabulary describing plants and animals (*moss, redwood, bamboo, shoot*).<br>
+                    3. Listening for specific factual details in conversations.
+                </div>
+                <div class="points-col difficult">
+                    <strong>⚠️ 教学难点 (Difficult Points)</strong>
+                    1. <strong>Grammar:</strong> Irregular superlatives and multi-syllable superlative structures.<br>
+                    2. <strong>Phonetics:</strong> Consonant blends (*bl, cl, gl, br, cr, gr*) & sentence stress
+                    shifting meaning.<br>
+                    3. <strong>Culture:</strong> Expressing abstract cultural concepts (e.g., bamboo as a symbol of
+                    goodness) in English.
+                </div>
+            </div>
+
+            <div class="section-title">一、教学详案 (Detailed Lesson Plan)</div>
+
+            <table class="lesson-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">教学环节与时间</th>
+                        <th style="width: 35%;">教师活动 (Teacher Steps & Sample Scripts)</th>
+                        <th style="width: 35%;">学生活动 (Student Activities)</th>
+                        <th style="width: 15%;">设计意图</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Step 1: Warm-up & Lead-in</strong><br>(5 mins)</td>
+                        <td>
+                            1. Show photos of a blue whale, redwood tree, and cheetah (P31–32).<br>
+                            2. Ask: <em>"What do you see? What makes them special?"</em><br>
+                            3. Introduce key adjectives (*fast, heavy, large, tall*).
+                        </td>
+                        <td>
+                            1. Observe pictures and brainstorm descriptive words.<br>
+                            2. Answer teacher's questions freely using known adjectives.
+                        </td>
+                        <td>激活背景知识，引出单元大问题，激发学习兴趣。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step 2: Listening Input & Info Gathering</strong><br>(10 mins)</td>
+                        <td>
+                            1. Guide students through 1b & 1c (Conversations about animals and plants).<br>
+                            2. Play audio; monitor students numbering and matching superlative adjectives.<br>
+                            3. Check answers: <em>"What's the heaviest animal?"</em>
+                        </td>
+                        <td>
+                            1. Listen to Conversations 1 & 2 and number items in order.<br>
+                            2. Match target words (e.g., *heaviest, oldest, tallest*) with correct flora/fauna.<br>
+                            3. Practice mini-dialogues (1d).
+                        </td>
+                        <td>通过听力输入获取核心事实，初步感知最高级形式及语境。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="text-align: right; font-size: 8pt; color: #64748b;">Page 1 of 3</div>
+    </div>
+
+    <!-- ================= PAGE 2 ================= -->
+    <div class="a4-page">
+        <div>
+            <h1>Unit 4 Amazing Plants and Animals · Section A <span>教学设计与导学练 (续)</span></h1>
+
+            <table class="lesson-table" style="margin-top: 4px;">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">教学环节与时间</th>
+                        <th style="width: 35%;">教师活动 (Teacher Steps & Sample Scripts)</th>
+                        <th style="width: 35%;">学生活动 (Student Activities)</th>
+                        <th style="width: 15%;">设计意图</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Step 3: Dialogue & Cultural Focus</strong><br>(10 mins)</td>
+                        <td>
+                            1. Introduce Chen Jie's folding fan conversation (2a, P33).<br>
+                            2. Play audio on bamboo; ask guiding questions about bamboo's uses and cultural meaning.<br>
+                            3. Highlight sentence stress focus in Pronunciation (2).
+                        </td>
+                        <td>
+                            1. Read and listen to 2a; complete the mind map (2c).<br>
+                            2. Notice how stress changes meaning in sentences.<br>
+                            3. Role-play the conversation (2d).
+                        </td>
+                        <td>结合传统文化（竹子与中国画），培养文化意识与综合提取信息能力。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step 4: Grammar Deduction & Scaffolding</strong><br>(8 mins)</td>
+                        <td>
+                            1. Guide students to analyze Grammar Focus sentences (3a).<br>
+                            2. Elicit rules for forming superlatives (-est, most + adj/adv).<br>
+                            3. Monitor completion of 3b and 3c (ginkgo tree passage).
+                        </td>
+                        <td>
+                            1. Observe bolded words and summarize superlative rules.<br>
+                            2. Complete 3b (*cute, beautiful, colorful*) and 3c (*ancient, good*).
+                        </td>
+                        <td>归纳语法规律，通过语境填空巩固形容词和副词最高级用法。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step 5: Practice & Role-play Transfer</strong><br>(7 mins)</td>
+                        <td>
+                            1. Set up Tour Guide task (2e): <em>"Imagine you are a tour guide at the Bamboo
+                                Sea..."</em><br>
+                            2. Circulate and assist pairs in creating dialogues.<br>
+                            3. Invite pairs to perform in front of the class.
+                        </td>
+                        <td>
+                            1. Work in pairs (Tour Guide & Tourist).<br>
+                            2. Act out the conversation about bamboo's importance and traits.<br>
+                            3. Peer-evaluate performance.
+                        </td>
+                        <td>创设真实情境，实现语言输出与迁移创新。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step 6: Summary & Homework</strong><br>(5 mins)</td>
+                        <td>
+                            1. Summarize key vocabulary and superlative grammar rules.<br>
+                            2. Emphasize ecological connection values.<br>
+                            3. Assign homework tasks.
+                        </td>
+                        <td>
+                            1. Review key takeaways with teacher.<br>
+                            2. Note down after-class practice assignments.
+                        </td>
+                        <td>梳理本课核心知识点，落实课后巩固。</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="section-title">二、板书设计 (Blackboard Design Layout)</div>
+
+            <div class="board-container">
+                <div class="board-col">
+                    <h3>1. Core Inquiries</h3>
+                    <ul>
+                        <li><span class="chalk-yellow">BIG Q:</span> What makes plants & animals amazing?</li>
+                        <li><span class="chalk-cyan">Animals:</span></li>
+                        <li>• Blue whale (largest/heaviest)</li>
+                        <li>• Cheetah (fastest running)</li>
+                        <li><span class="chalk-cyan">Plants:</span></li>
+                        <li>• Moss (oldest plant)</li>
+                        <li>• Redwood (tallest tree)</li>
+                        <li>• Bamboo (fastest-growing)</li>
+                    </ul>
+                </div>
+                <div class="board-col">
+                    <h3>2. Grammar & Structure</h3>
+                    <ul>
+                        <li><span class="chalk-pink">Superlatives (最高级):</span></li>
+                        <li>• Short adj: <span class="chalk-yellow">the + adj-est</span><br> (large &rarr; the largest)
+                        </li>
+                        <li>• Long adj: <span class="chalk-yellow">the most + adj</span><br> (useful &rarr; the most
+                            useful)</li>
+                        <li>• Adverb: runs <span class="chalk-yellow">the fastest</span></li>
+                        <li><span class="chalk-cyan">Culture:</span> Bamboo = symbol of <span
+                                class="chalk-pink">goodness</span></li>
+                    </ul>
+                </div>
+                <div class="board-col">
+                    <h3>3. Culture & Group PK</h3>
+                    <ul>
+                        <li><span class="chalk-yellow">Bamboo Sea (Sichuan):</span></li>
+                        <li>• Largest & oldest forest</li>
+                        <li>• Uses: build houses, tools, food (shoots)</li>
+                    </ul>
+                    <div class="pk-board">
+                        <span class="chalk-cyan">🏆 4-Group PK Board</span><br>
+                        G1: <span class="chalk-yellow">85 pts</span> | G2: <span class="chalk-yellow">90 pts</span><br>
+                        G3: <span class="chalk-yellow">88 pts</span> | G4: <span class="chalk-yellow">92 pts</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: right; font-size: 8pt; color: #64748b;">Page 2 of 3</div>
+    </div>
+
+    <!-- ================= PAGE 3 ================= -->
+    <div class="a4-page">
+        <div>
+            <div class="student-header">
+                <span>Unit 4 Section A 课后导学练 (Student Practice Sheet)</span>
+                <span>班级：<span class="short-blank"></span> 姓名：<span class="short-blank"></span> 得分：<span
+                        class="short-blank"></span></span>
+            </div>
+
+            <div class="exercise-section">
+                <div class="exercise-title">第一部分：基础巩固</div>
+                <div class="exercise-body">
+                    <p><strong>I. 核心词汇与短语中英互译</strong></p>
+                    <p>1. 苔藓 <span class="blank-line"></span> 2. 红杉；红木 <span class="blank-line"></span> 3. 猎豹 <span
+                            class="blank-line"></span></p>
+                    <p>4. folding fan <span class="blank-line"></span> 5. bamboo shoot <span class="blank-line"></span>
+                        6. weigh <span class="blank-line"></span></p>
+
+                    <p style="margin-top: 4px;"><strong>II. 用括号内所给词的适当形式填空 (最高级专练)</strong></p>
+                    <p>1. The blue whale is <span class="blank-line"></span> (<span style="color:#2563eb">large</span>)
+                        and <span class="blank-line"></span> (<span style="color:#2563eb">heavy</span>) animal in the
+                        world.</p>
+                    <p>2. I think bamboo is one of <span class="blank-line"></span> (<span
+                            style="color:#2563eb">useful</span>) plants in the world.</p>
+                    <p>3. Among all land animals, the cheetah runs <span class="blank-line"></span> (<span
+                            style="color:#2563eb">fast</span>).</p>
+                    <p>4. Moss is considered to be one of <span class="blank-line"></span> (<span
+                            style="color:#2563eb">old</span>) plants on earth.</p>
+                </div>
+            </div>
+
+            <div class="exercise-section">
+                <div class="exercise-title">第二部分：能力提升</div>
+                <div class="exercise-body">
+                    <p><strong>I. Contextual Dialogue Completion (情境对话填空)</strong></p>
+                    <p><strong>A:</strong> Look at this folding fan, Ella. It has a painting of bamboo on it.</p>
+                    <p><strong>B:</strong> Oh, it's so beautiful! Where did you get it?</p>
+                    <p><strong>A:</strong> At the Bamboo Sea in Sichuan, the <span class="blank-line"
+                            style="width: 120px;"></span> and <span class="blank-line" style="width: 120px;"></span>
+                        bamboo forest in China.</p>
+                    <p><strong>B:</strong> Why do Chinese people like bamboo so much?</p>
+                    <p><strong>A:</strong> Because it's a symbol of <span class="blank-line"
+                            style="width: 100px;"></span> in Chinese culture, and it's also one of the <span
+                            class="blank-line" style="width: 120px;"></span> plants.</p>
+
+                    <p style="margin-top: 4px;"><strong>II. Mini-Writing: Describe Your Favorite Amazing Plant/Animal
+                            (30–50 words)</strong></p>
+                    <div
+                        style="border: 1px solid #cbd5e1; height: 45px; border-radius: 4px; padding: 4px; color: #94a3b8; font-size: 8pt;">
+                        Write here... (e.g., Pandas, ginkgo trees, or elephants)
+                    </div>
+                </div>
+            </div>
+
+            <div class="exercise-section">
+                <div class="exercise-title">第三部分：课后自我评价表 (Self-Assessment Checklist)</div>
+                <div class="exercise-body">
+                    <table class="assessment-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 70%;">评价维度与指标 (Competency Indicators)</th>
+                                <th style="width: 10%;">优秀 ⭐⭐⭐</th>
+                                <th style="width: 10%;">良好 ⭐⭐</th>
+                                <th style="width: 10%;">加油 ⭐</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1. 我能准确拼读并运用本课核心动植物词汇 (*moss, redwood, bamboo*等)。</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>2. 我熟练掌握了形容词和副词最高级的构成及句型结构。</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>3. 我能流利朗读并表演关于竹子及大自然的对话。</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="preview-box">
+                <strong>📌 下节课预习任务 (Next Lesson Preview):</strong><br>
+                1. 预习 Section B (P36–37) 课文，思考蜜蜂 (*bees*) 对生态系统有何重要作用。<br>
+                2. 尝试在课文中划出描写蜜蜂特征和行为的形容词 (*hard-working, important* 等)。
+            </div>
+        </div>
+        <div style="text-align: right; font-size: 8pt; color: #64748b;">Page 3 of 3</div>
+    </div>
+
+</body>
+
+</html>

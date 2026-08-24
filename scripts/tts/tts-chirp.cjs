@@ -29,7 +29,7 @@ const CHIRP3_VOICES = [
     'Callirrhoe', 'Charon', 'Despina', 'Enceladus', 'Erinome', 'Fenrir', /* 'Gacrux', */
     'Iapetus', /* 'Kore', */ 'Laomedeia', 'Leda', 'Orus', /* 'Puck', */ /* 'Pulcherrima', */
     'Rasalgethi', /* 'Sadachbia', */ 'Sadaltager',  /* 'Schedar', */ 'Sulafat', 'Umbriel',
-    'Vindemiatrix', 'Zephyr', 'Zubenelgenubi'
+    'Vindemiatrix', 'Zephyr', /* 'Zubenelgenubi' */
 ];
 
 function getCleanText(text) {

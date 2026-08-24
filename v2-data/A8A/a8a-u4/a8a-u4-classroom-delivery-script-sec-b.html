@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A8A-U4 Section B · Classroom Delivery Script</title>
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --secondary-color: #2b6cb0;
+            --accent-color: #319795;
+            --border-color: #cbd5e1;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --chalkboard-bg: #1b382b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--text-color);
+            background-color: #ffffff;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Top Screen Helper Bar (No Print) */
+        .no-print-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary-color);
+            color: #ffffff;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .no-print-bar button {
+            background: #ffffff;
+            color: var(--primary-color);
+            border: none;
+            padding: 6px 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .no-print-bar button:hover {
+            background: #e2e8f0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Header & Metadata Banner */
+        h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .big-question-banner {
+            background: #ebf8ff;
+            border-left: 4px solid var(--secondary-color);
+            padding: 12px 16px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #2c5282;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            background: var(--bg-color);
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 13px;
+        }
+
+        .metadata-item strong {
+            color: var(--primary-color);
+        }
+
+        /* Legend Box */
+        .legend-box {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 12px;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--primary-color);
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        /* Standard Classroom English Badges */
+        .badge-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 3px;
+            vertical-align: middle;
+            line-height: 1.2;
+        }
+        .tag-greeting { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .tag-directive { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .tag-cfu { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+        .tag-praise { background: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
+        .tag-transition { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+        .tag-task { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; font-weight: 700; }
+
+        /* Step Delivery Sections */
+        .step-section {
+            margin-bottom: 30px;
+            border-top: 2px solid var(--border-color);
+            padding-top: 15px;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .micro-time {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Dialogue Turns */
+        .dialogue-turn {
+            margin-bottom: 10px;
+            font-size: 13.5px;
+        }
+
+        .turn-id {
+            font-family: monospace;
+            font-weight: 700;
+            color: #64748b;
+            margin-right: 6px;
+            font-size: 11px;
+        }
+
+        .speaker-t {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .speaker-s {
+            font-weight: 700;
+            color: #0d9488;
+        }
+
+        .action-box {
+            background: #f8fafc;
+            border-left: 2.5px solid var(--secondary-color);
+            padding: 4px 8px;
+            font-style: italic;
+            font-size: 11px;
+            color: #475569;
+            margin: 4px 0 6px 18px;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .board-snippet {
+            display: inline-block;
+            background: #f1f5f9;
+            border-left: 2.5px solid var(--accent-color);
+            padding: 3px 7px;
+            font-style: normal;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 11px;
+            margin: 4px 0 6px 18px;
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* Print Optimization */
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+            .no-print-bar {
+                display: none;
+            }
+            .container {
+                margin: 0;
+                padding: 10mm;
+                border: none;
+                box-shadow: none;
+                max-width: 100%;
+            }
+            .step-section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Screen Helper Bar -->
+    <div class="no-print-bar">
+        <span>A8A-U4 Section B · Classroom Delivery Script (Master Version)</span>
+        <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+    </div>
+
+    <div class="container">
+
+        <!-- Header & Metadata Banner -->
+        <h1>Unit 4 Amazing Plants and Animals · Section B Classroom Delivery Script</h1>
+        
+        <div class="big-question-banner">
+            ❓ BIG Question: How are plants and animals connected with us?
+        </div>
+
+        <div class="metadata-grid">
+            <div class="metadata-item"><strong>Grade Level:</strong> Grade 8 English / 八年级英语</div>
+            <div class="metadata-item"><strong>Class Duration:</strong> 45 minutes (1 class period)</div>
+            <div class="metadata-item"><strong>Class Type:</strong> Reading, Vocabulary & Ecological Connection Analysis</div>
+            <div class="metadata-item"><strong>Core Competencies:</strong> Comprehending informational texts about bees, extracting ecological mind maps, mastering word-formation suffixes (-ance, -(t)ion, -ness, -ity), exploring human-nature interdependence.</div>
+        </div>
+
+        <!-- Legend Box -->
+        <div class="legend-box">
+            <div class="legend-title">Standard Classroom English Badges Reference</div>
+            <div class="legend-items">
+                <span class="badge-tag tag-greeting">🟢 Greeting & Hook</span>
+                <span class="badge-tag tag-directive">🔵 Instruction & Directives</span>
+                <span class="badge-tag tag-cfu">🟣 Checks for Understanding</span>
+                <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span>
+                <span class="badge-tag tag-transition">🟠 Transition & Pacing</span>
+                <span class="badge-tag tag-task">🔴 Student Task</span>
+            </div>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="step-section">
+            <div class="step-title">Step 1: Warm-Up & Lead-In (00:00 - 07:00)</div>
+            <div class="micro-time">[00:00 - 03:00] Daily Greeting & Group PK Setup | [03:00 - 07:00] Activating Prior Knowledge on Bees</div>
+
+            <div class="dialogue-turn">
+                <span class="turn-id">L01</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-greeting">🟢 Greeting & Hook</span> Good morning, boys and girls! Welcome back to our science and English journey in Unit 4. How are you doing today?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L02</span>
+                <span class="speaker-s">Ss:</span> Good morning, teacher! We're doing great, thank you!
+            </div>
+            <div class="action-box">
+                [T smiles, sweeps gaze across the room, and gestures to the four classroom groups on the whiteboard.]
+            </div>
+            <div class="board-snippet">
+                📋 Blackboard Writing (Left Panel):<br>
+                Unit 4 Section B: How are plants and animals connected with us?<br>
+                Group PK: [ Group 1 ] [ Group 2 ] [ Group 3 ] [ Group 4 ]
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L03</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span> Excellent energy today! Before we start, let's look at our Group PK board. Who will win today? Let's find out! Now, everyone, close your eyes for three seconds. Imagine you wake up tomorrow morning, walk into your local supermarket, and discover that there are almost no fruits, vegetables, honey, milk, eggs, or chocolate. Open your eyes. <span class="badge-tag tag-cfu">🟣 CFU - Checks for Understanding</span> How would you feel if that happened, S1?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L04</span>
+                <span class="speaker-s">S1:</span> Er... I would feel very disappointed, and maybe angry and sad because I love eating fruit and chocolate!
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L05</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span> Spot on! 10 points for Group 2! Disappointed, angry, and sad. Today, in Section B, we are going to explore why we might face such a situation. Let's look at the title on page 36. <span class="badge-tag tag-directive">🔵 Instruction & Directives</span> Please turn to page 36 and look at the picture.
+            </div>
+            <div class="board-snippet">
+                📋 Blackboard Writing (Center Top):<br>
+                Section B: We Can't Live Without Bees<br>
+                Key Words: disappointed, connection, pollination, ecosystem
+            </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-section">
+            <div class="step-title">Step 2: Pre-Reading & Fast Reading (07:00 - 18:00)</div>
+            <div class="micro-time">[07:00 - 11:00] 1a & 1b Adjective Underlining | [11:00 - 18:00] Paragraph-by-Paragraph Detailed Comprehension</div>
+
+            <div class="dialogue-turn">
+                <span class="turn-id">L06</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-task">🔴 Student Task</span> Look at 1a and 1b on page 36. Look at the title "We Can't Live Without Bees" and the close-up photograph of honeybees on the honeycomb. Quickly read the text and underline all the adjectives the writer uses to describe bees. You have 3 minutes. Go!
+            </div>
+            <div class="action-box">
+                [T walks around the classroom, monitoring student underlining work, checking spelling and adjective recognition.]
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L07</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-transition">🟠 Transition & Pacing</span> Time is up! Pens down, eyes on me. S2, what adjectives did you find in paragraph 2?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L08</span>
+                <span class="speaker-s">S2:</span> I found "hard-working". The text says bees are very hard-working animals.
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L09</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span> Excellent! 10 points for Group 3! "Hard-working". What about paragraph 3, S3?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L10</span>
+                <span class="speaker-s">S3:</span> "Interesting"! Bees are also one of the most interesting animals in the world.
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L11</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span> Brilliant! And in the final paragraph, what superlative adjective does the writer use? Look at the last sentence. S4?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L12</span>
+                <span class="speaker-s">S4:</span> "Amazing"! "One of the most amazing animals on earth."
+            </div>
+            <div class="board-snippet">
+                📋 Blackboard Writing (Mind Map Branching - Part 1):<br>
+                Bees Descriptors: hard-working, interesting, amazing<br>
+                Greatest Work: Pollination (visit 50-100 flowers, help 80% plants grow)
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-section">
+            <div class="step-title">Step 3: Post-Reading & Mind Mapping (18:00 - 28:00)</div>
+            <div class="micro-time">[18:00 - 23:00] Completing 1c Mind Map | [23:00 - 28:00] Discussion & Critical Thinking (1d)</div>
+
+            <div class="dialogue-turn">
+                <span class="turn-id">L13</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-directive">🔵 Instruction & Directives</span> Now let's move to Activity 1c on page 37. Complete the mind map with information from the text. Let's check three branches: importance, problem, and interesting facts. Work in pairs for 4 minutes.
+            </div>
+            <div class="action-box">
+                [T draws a blank mind map outline on the board labeled 'Bees' in the center, inviting students to come up and fill in branches.]
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L14</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-cfu">🟣 CFU - Checks for Understanding</span> Group 1 representative, please come to the board and write down the 'importance' branch. S5, show us what you got.
+            </div>
+            <div class="action-box">
+                [S5 walks up to the whiteboard and writes: 1. greatest work: pollination; 2. visit 50 to 100 flowers; 3. help plants grow / 80% of plants.]
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L15</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span> Flawless writing and accurate details! 15 points for Group 1! Now, what about the 'problem' branch? S6?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L16</span>
+                <span class="speaker-s">S6:</span> Their number is dropping, and scientists are worried.
+            </div>
+            <div class="board-snippet">
+                📋 Blackboard Writing (Complete Mind Map):<br>
+                [Bees Center]<br>
+                ├─ Importance: greatest work -> pollination | visit 50-100 flowers | help 80% plants grow<br>
+                ├─ Problem: number is dropping (scientists worried)<br>
+                └─ Interesting Facts: work hard to make honeycombs | use a dance to communicate food location
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L17</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-transition">🟠 Transition & Pacing</span> Excellent. Look at Activity 1d. Let's discuss question 1: Can you give another title for the text? Any creative ideas?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L18</span>
+                <span class="speaker-s">S7:</span> How about "Little Workers in Danger"? Or "Why We Need Bees"?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L19</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span> Outstanding titles! Both capture the core message of the text.
+            </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-section">
+            <div class="step-title">Step 4: Vocabulary in Use & Word Formation (28:00 - 36:00)</div>
+            <div class="micro-time">[28:00 - 32:00] 2a Odd-One-Out | [32:00 - 36:00] 2b Suffix Word Formation & 2c Sentence Completion</div>
+
+            <div class="dialogue-turn">
+                <span class="turn-id">L20</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-directive">🔵 Instruction & Directives</span> Let's turn to page 38, Vocabulary in Use. Look at Activity 2a. Circle the odd ones and give your reasons. Let's do number 1: habit, height, size, weight. Which one is the odd one out? S8?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L21</span>
+                <span class="speaker-s">S8:</span> "Habit" is the odd one out. Height, size, and weight are physical measurements, but habit is a behavior or routine.
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L22</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span> Spot on! 10 points for Group 4! Now let's examine Activity 2b on page 38: adding suffixes *-ance*, *-(t)ion*, *-ness*, and *-ity* to form nouns. Let's write the noun forms on the board.
+            </div>
+            <div class="action-box">
+                [T writes root words on the board and invites student volunteers to write the corresponding derived noun suffixes.]
+            </div>
+            <div class="board-snippet">
+                📋 Blackboard Writing (Vocabulary Derivation Table):<br>
+                act -> action (-tion) | good -> goodness (-ness)<br>
+                appear -> appearance (-ance) | real -> reality (-ity)<br>
+                connect -> connection (-tion) | important -> importance (-ance)<br>
+                communicate -> communication (-tion)
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L23</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-cfu">🟣 CFU - Checks for Understanding</span> Look at those patterns. Notice how verbs and adjectives transform into abstract nouns. Now, let's complete Activity 2c quickly. Number 1: "I felt ________ when my favourite flowers died." S9?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L24</span>
+                <span class="speaker-s">S9:</span> Disappointed. "I felt disappointed when my favourite flowers died."
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L25</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span> Excellent. Perfect grammatical form.
+            </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step-section">
+            <div class="step-title">Step 5: Reading Extension & Writing Scaffold (36:00 - 41:00)</div>
+            <div class="micro-time">[36:00 - 39:00] 3a Blue Whale Facts Table | [39:00 - 41:00] 3b First-Person Rewriting Scaffold</div>
+
+            <div class="dialogue-turn">
+                <span class="turn-id">L26</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-directive">🔵 Instruction & Directives</span> Let's look at page 39, Section 3a: "The Blue Whale". Read the text and complete the table for Blue Whale facts. Let's check the answers rapidly. Weight? S10?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L27</span>
+                <span class="speaker-s">S10:</span> As much as 200 tons.
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L28</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-praise">🟡 Encouragement & Feedback</span> Correct! Where they live? S11?
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L29</span>
+                <span class="speaker-s">S11:</span> All oceans except the Arctic Ocean.
+            </div>
+            <div class="board-snippet">
+                📋 Blackboard Writing (Blue Whale Facts):<br>
+                - Weight: up to 200 tons<br>
+                - Where they live: all oceans except the Arctic Ocean<br>
+                - Food: tiniest animals in the ocean (around 4 tons a day)<br>
+                - Lifespan: up to 90 years<br>
+                - Importance: food for sea animals, creates healthy ecosystem
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L30</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-task">🔴 Student Task</span> Now look at Activity 3b. Imagine you are a blue whale named Billy. Use the first person to rewrite the first paragraph. Let's write a sample sentence structure on the board: "Hello everyone! My name is Billy...". Write your mini-paragraph in your notebooks. You have 2 minutes.
+            </div>
+            <div class="action-box">
+                [T circulates, assisting students with first-person pronoun shifts ("It can weigh" -> "I can weigh").]
+            </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="step-section">
+            <div class="step-title">Step 6: Summary, Project Assignment & Reflection (41:00 - 45:00)</div>
+            <div class="micro-time">[41:00 - 43:00] Project Poster Introduction | [43:00 - 45:00] Summary, Group PK Scores & Homework</div>
+
+            <div class="dialogue-turn">
+                <span class="turn-id">L31</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-transition">🟠 Transition & Pacing</span> Look at page 40, Project: Make a poster about a plant or an animal. For your homework project in groups of four, you will choose a title like "The Strangest Animal" or "The Most Amazing Plant", collect pictures, and prepare a presentation poster!
+            </div>
+            <div class="board-snippet">
+                📋 Blackboard Writing (Homework & Reflection):<br>
+                1. Project: Create a poster about an amazing plant or animal (Page 40).<br>
+                2. Workbook: Complete Section B exercises.<br>
+                3. Core Takeaway: "Take care of animals and plants because we cannot live without them."
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L32</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-cfu">🟣 CFU - Checks for Understanding</span> Let's check our Group PK scores for today's lesson. Group 1 has 85 points, Group 2 has 90 points, Group 3 has 85 points, and Group 4 has 80 points! Let's give a big round of applause to Group 2 for winning today!
+            </div>
+            <div class="action-box">
+                [Class applauds enthusiastically. T beams with encouragement.]
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L33</span>
+                <span class="speaker-t">T:</span> <span class="badge-tag tag-greeting">🟢 Greeting & Hook</span> Remember our quote at the end of page 40: "Take care of animals and plants because we cannot live without them." Thank you, class. Have a wonderful day, and see you next time!
+            </div>
+            <div class="dialogue-turn">
+                <span class="turn-id">L34</span>
+                <span class="speaker-s">Ss:</span> Thank you, teacher! Goodbye!
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

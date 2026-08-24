@@ -307,14 +307,27 @@ This document defines the rules for extracting and converting textbook data into
   - `answer`: (Boolean) The correct answer for the statement (`true` or `false`).
   - `explanation`: Concise Chinese explanation for the true/false statement.
   - `emoji`: One highly relevant emoji mnemonic per node.
-  - `keywords`: Comma-separated string of 2-5 trigger words/hints.
+  - `keywords`: A **comma-separated string** of 2-5 trigger words acting as hints.
   - `highlight`: (Optional) Comma-separated string of glue words or transition phrases.
+  - `word_count`: (Integer) The exact word count of the sentence in `text` (for leaf sentence nodes).
   - `children`: Recursive array of child nodes (empty array `[]` for leaf nodes).
+- **Word Count Metadata (Top-level & Sentence Node):**
+  - **Top-level `word_count` (placed after `part`):** An object containing the target requirement and actual word counts for both models:
+    ```json
+    "word_count": {
+      "required": 80,
+      "actual": {
+        "basic": 78,
+        "advanced": 95
+      }
+    }
+    ```
+  - **Sentence Node `word_count`:** Each leaf sentence node in the tree hierarchy must include a `word_count` field (integer) indicating the exact word count of the sentence (`text`).
+    - **Pre-given Opening/Ending Rule:** When the writing task prompt states that the opening and/or ending sentences are pre-given and not counted towards the word count (e.g. `开头和结尾已给出，不计入总词数`), those specific pre-given opening/ending sentence nodes MUST have `"word_count": 0`. The top-level `actual` word count is the exact sum of `word_count` across all leaf sentence nodes.
 - **Content Strategy:** If a model essay is provided in the source material, generate the models based on it (correcting any grammatical or spelling mistakes if present). Otherwise, generate the model essays using AI to answer the prompt in `writing-task.md`.
   - **Model Basic:** Use simple, direct sentences (SVO). Focus on clarity and core vocabulary from the unit.
   - **Model Advanced:** An advanced extension of Model Basic. Use the same topic and structure but incorporate compound/complex sentences (e.g., relative clauses, `because`, `although`) and cohesive devices (e.g., `For example`, `As a result`, `In addition`).
 - **Structure:** Follow the standard hierarchical tree structure defined in **Section 6 (Text Navigator)**.
-
 
 
 ## 8. Grammar Wizard (GW)

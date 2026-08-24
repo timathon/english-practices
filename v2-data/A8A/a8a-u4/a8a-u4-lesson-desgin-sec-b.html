@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>A8A-U4 Section B 教学设计与导学练</title>
+    <style>
+        /* CSS Blueprint & Print Optimization Standards */
+        @page {
+            size: A4 portrait;
+            margin: 8mm 16mm;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            line-height: 1.45;
+            font-size: 10pt;
+        }
+
+        /* Screen Top Helper Bar */
+        .no-print-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #1a365d;
+            color: #ffffff;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .no-print-bar button {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .no-print-bar button:hover {
+            background: #2b6cb0;
+        }
+
+        /* A4 Page Container */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 10mm 12mm;
+            margin: 15mm auto;
+            background: #ffffff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            page-break-after: always;
+            break-after: page;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .a4-page:last-child {
+            page-break-after: auto;
+            break-after: auto;
+        }
+
+        /* Header Banner */
+        .header-banner {
+            border-bottom: 3px solid #1a365d;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+        .header-banner h1 {
+            font-size: 18pt;
+            color: #1a365d;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        /* BIG Question Banner */
+        .big-question {
+            background: #ebf8ff;
+            border-left: 5px solid #3182ce;
+            padding: 6px 10px;
+            margin-bottom: 8px;
+            font-size: 10.5pt;
+            font-weight: 700;
+            color: #2b6cb0;
+        }
+
+        /* Metadata Grid */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+            font-size: 9pt;
+        }
+        .meta-item {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .meta-item span {
+            font-weight: bold;
+            color: #475569;
+        }
+
+        /* Core Competencies Grid */
+        .competencies-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .competency-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-left: 3px solid #1a365d;
+            padding: 5px 8px;
+            border-radius: 3px;
+            font-size: 8.5pt;
+        }
+        .competency-box strong {
+            color: #1a365d;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* Key & Difficult Points Grid */
+        .points-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 6px;
+            margin-bottom: 8px;
+            font-size: 8.5pt;
+        }
+        .points-box {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            padding: 6px 8px;
+            border-radius: 3px;
+        }
+        .points-box h4 {
+            color: #1a365d;
+            font-size: 9pt;
+            margin-bottom: 3px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 2px;
+        }
+
+        /* Section Headings */
+        h3.section-title {
+            font-size: 11pt;
+            color: #1a365d;
+            border-bottom: 2px solid #1a365d;
+            padding-bottom: 3px;
+            margin: 8px 0 6px 0;
+            font-weight: 700;
+        }
+
+        /* Detailed Lesson Plan Table */
+        .lesson-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+            font-size: 8pt;
+        }
+        .lesson-table th, .lesson-table td {
+            border: 1px solid #cbd5e1;
+            padding: 5px 6px;
+            vertical-align: top;
+        }
+        .lesson-table th {
+            background: #1a365d;
+            color: #ffffff;
+            text-align: left;
+            font-weight: 600;
+        }
+        .lesson-table tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        /* Blackboard Design Layout */
+        .board-container {
+            background: #1b382b;
+            color: #ffffff;
+            border: 6px solid #5c3a21;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 5px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            font-size: 8.5pt;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+        .board-col h4 {
+            color: #fef08a;
+            border-bottom: 1px dashed rgba(255,255,255,0.3);
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+            font-size: 9pt;
+        }
+        .board-col p, .board-col li {
+            margin-bottom: 4px;
+            color: #e2e8f0;
+        }
+        .pk-board {
+            background: rgba(0,0,0,0.2);
+            padding: 4px 6px;
+            border-radius: 4px;
+            margin-top: 6px;
+            border: 1px solid #67e8f9;
+        }
+        .pk-board h5 {
+            color: #67e8f9;
+            font-size: 8pt;
+            margin-bottom: 2px;
+        }
+        .pk-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            font-size: 7.5pt;
+            color: #f472b6;
+        }
+
+        /* Student Practice Sheet Layout */
+        .student-header {
+            display: flex;
+            justify-content: space-between;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 9pt;
+            font-weight: bold;
+        }
+        .practice-section {
+            margin-bottom: 8px;
+        }
+        .practice-section h4 {
+            font-size: 9.5pt;
+            color: #1a365d;
+            background: #e2e8f0;
+            padding: 3px 6px;
+            margin-bottom: 5px;
+            border-left: 3px solid #1a365d;
+        }
+        .practice-item {
+            margin-bottom: 4px;
+            font-size: 8.5pt;
+        }
+        
+        /* Self Assessment Table */
+        .self-eval-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            margin-top: 5px;
+        }
+        .self-eval-table th, .self-eval-table data, .self-eval-table td {
+            border: 1px solid #cbd5e1;
+            padding: 3px 5px;
+            text-align: center;
+        }
+        .self-eval-table th {
+            background: #f1f5f9;
+            color: #1a365d;
+        }
+        .self-eval-table td:first-child {
+            text-align: left;
+        }
+
+        /* Next Lesson Preview Dashed Box */
+        .preview-box {
+            border: 1.5px dashed #3182ce;
+            background: #ebf8ff;
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 8pt;
+        }
+        .preview-box h5 {
+            color: #2b6cb0;
+            margin-bottom: 2px;
+        }
+
+        /* Print Media Overrides */
+        @media print {
+            .no-print-bar { display: none !important; }
+            html, body {
+                background: #ffffff !important;
+                font-size: 9.5pt;
+            }
+            .a4-page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 6mm 10mm !important;
+                height: 297mm !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-after: always !important;
+                break-after: page !important;
+            }
+            .a4-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+            .board-container {
+                background: #1b382b !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .big-question, .meta-item, .competency-box, .points-box, .student-header, .practice-section h4, .preview-box {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Screen Helper Bar -->
+    <div class="no-print-bar">
+        <span><strong>A8A-U4 Section B 教学设计与导学练</strong> (Strict 3-Page A4 Print Version)</span>
+        <button onclick="window.print()">🖨️ 打印 / 导出 PDF</button>
+    </div>
+
+    <!-- ================= PAGE 1 ================= -->
+    <div class="a4-page">
+        <div>
+            <!-- Header Banner -->
+            <div class="header-banner">
+                <h1>Unit 4 Amazing Plants and Animals · Section B 教学设计</h1>
+            </div>
+
+            <!-- BIG Question Banner -->
+            <div class="big-question">
+                ❓ BIG Question: How are plants and animals connected with us? / Why are bees and blue whales crucial to our ecosystem?
+            </div>
+
+            <!-- Metadata Grid -->
+            <div class="meta-grid">
+                <div class="meta-item"><span>课型:</span> 读写与生态人文综合课</div>
+                <div class="meta-item"><span>时长:</span> 1 课时 (45 分钟)</div>
+                <div class="meta-item"><span>年级:</span> 初一 (Grade 7)</div>
+                <div class="meta-item"><span>教材:</span> Unit 4 Pages 36-39</div>
+            </div>
+
+            <!-- Core Competencies Grid -->
+            <div class="competencies-grid">
+                <div class="competency-box">
+                    <strong>语言能力 (Language Ability)</strong>
+                    学生能准确读写 ecosystem, pollination, disappointed 等核心词汇；熟练运用最高级及连接词描述人与自然的关联。
+                </div>
+                <div class="competency-box">
+                    <strong>文化意识 (Cultural Awareness)</strong>
+                    理解“人与自然命运共同体”的内涵，增强保护珍稀动物（蜜蜂、蓝鲸）及维护生态平衡的责任意识。
+                </div>
+                <div class="competency-box">
+                    <strong>思维品质 (Thinking Qualities)</strong>
+                    通过提取、梳理文本思维导图，培养逻辑思维、归纳总结及多维度分析生物生态作用的批判性思维。
+                </div>
+                <div class="competency-box">
+                    <strong>学习能力 (Learning Ability)</strong>
+                    掌握基于标题与图示预测文本大意的阅读策略，积极参与小组合作讨论与海报项目制作。
+                </div>
+            </div>
+
+            <!-- Key & Difficult Points Grid -->
+            <div class="points-container">
+                <div class="points-box">
+                    <h4>教学重难点 (Focus & Difficult Points)</h4>
+                    <ul style="padding-left: 15px;">
+                        <li><strong>重点:</strong> 掌握说明文结构，理解蜜蜂与蓝鲸在生态系统中的作用；词缀构词法（-ance, -tion, -ness, -ity）。</li>
+                        <li><strong>难点:</strong> 
+                            1. 复杂句式中的特殊疑问句语序与连读弱读技巧。<br>
+                            2. 跨文化生态保护理念的内化与第一人称叙述转换（Perspective-taking）。
+                        </li>
+                    </ul>
+                </div>
+                <div class="points-box">
+                    <h4>教学方法与教具 (Methods & Aids)</h4>
+                    <ul style="padding-left: 15px;">
+                        <li><strong>教法:</strong> 任务型教学法 (TBLT)、交际法 (CLT)、情境教学法与PBL。</li>
+                        <li><strong>教具:</strong> 多媒体课件、思维导图板书、任务卡。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Detailed Lesson Plan Table -->
+            <h3 class="section-title">一、教学详案 (Detailed Lesson Plan)</h3>
+            <table class="lesson-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">教学环节与时间</th>
+                        <th style="width: 35%;">教师活动 (Teacher Steps & Sample Scripts)</th>
+                        <th style="width: 30%;">学生活动 (Student Activities)</th>
+                        <th style="width: 20%;">设计意图 (Design Rationale)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Step 1: Warm-up & Lead-in</strong><br>(5 mins)</td>
+                        <td>
+                            1. Greeting & Lead-in: Show images of supermarket shelves with/without bees' pollination.<br>
+                            <em>Script: "Imagine going to the supermarket with no fruit, honey, or milk. How would you feel?"</em><br>
+                            2. Guide students to think about connections.
+                        </td>
+                        <td>
+                            1. Observe pictures and answer questions.<br>
+                            2. Discuss feelings of disappointment or sadness and realize humans and nature are interconnected.
+                        </td>
+                        <td>激活背景知识，创设真实情境，自然引出本节课主题“人与自然的连接”。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step 2: Reading Input (Bees)</strong><br>(10 mins)</td>
+                        <td>
+                            1. Guide students to look at the title and pictures on P36, predict the text.<br>
+                            2. Task students to read the text and underline adjectives describing bees.<br>
+                            3. Check answers and explain key concepts like <em>pollination, ecosystem</em>.
+                        </td>
+                        <td>
+                            1. Skim the title and photos to predict.<br>
+                            2. Read carefully and underline adjectives (hard-working, important, interesting).<br>
+                            3. Complete the mind map in 1c (importance, problem, interesting facts).
+                        </td>
+                        <td>培养提取关键信息和通过思维导图梳理说明文结构的能力。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="text-align: right; font-size: 8pt; color: #64748b;">Page 1 of 3 · A8A-U4 Section B Lesson Design</div>
+    </div>
+
+    <!-- ================= PAGE 2 ================= -->
+    <div class="a4-page">
+        <div>
+            <!-- Detailed Lesson Plan Table (Cont.) -->
+            <h3 class="section-title">一、教学详案 (Detailed Lesson Plan - Continued)</h3>
+            <table class="lesson-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">教学环节与时间</th>
+                        <th style="width: 35%;">教师活动 (Teacher Steps & Sample Scripts)</th>
+                        <th style="width: 30%;">学生活动 (Student Activities)</th>
+                        <th style="width: 20%;">设计意图 (Design Rationale)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Step 3: Critical Thinking & Discussion</strong><br>(8 mins)</td>
+                        <td>
+                            1. Prompt discussion on 1d questions (alternative titles, other bee facts, human-insect connection like ants/butterflies).<br>
+                            2. Guide 1f model dialogue about local ecosystems (e.g., banyan trees and birds).
+                        </td>
+                        <td>
+                            1. Brainstorm alternative titles (e.g., <em>The Tiny Heroes</em>).<br>
+                            2. Discuss in pairs about human and animal connections using local examples.
+                        </td>
+                        <td>锻炼批判性思维与口头表达能力，落实跨文化与生态意识。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step 4: Vocabulary in Use & Grammar</strong><br>(8 mins)</td>
+                        <td>
+                            1. Guide 2a (odd-one-out) and 2b (noun suffixes: -ance, -(t)ion, -ness, -ity).<br>
+                            2. Monitor completion of 2c and 2d (contextual gap-filling with target verbs and nouns).
+                        </td>
+                        <td>
+                            1. Analyze word roots and suffixes in groups.<br>
+                            2. Complete vocabulary exercises independently and check with peers.
+                        </td>
+                        <td>强化构词法认知，巩固词汇在具体语境中的运用能力。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step 5: Reading & Perspective Writing (Blue Whale)</strong><br>(8 mins)</td>
+                        <td>
+                            1. Have students read P39 text about the blue whale and complete the fact sheet (3a).<br>
+                            2. Guide 3b perspective-taking writing (rewrite as Billy the Blue Whale).
+                        </td>
+                        <td>
+                            1. Read 3a text and extract whale data (Weight, Living area, Food, Lifespan, Importance).<br>
+                            2. Rewrite the paragraph using the first person ("My name is Billy...").
+                        </td>
+                        <td>通过角色代入写作，深化对海洋生态巨兽价值的理解。</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Step 6: Summary & Homework</strong><br>(6 mins)</td>
+                        <td>
+                            1. Summarize key learnings: Ecosystem connections, suffixes, superlative reviews.<br>
+                            2. Assign Project (Poster about an amazing plant/animal) and after-class practice.
+                        </td>
+                        <td>
+                            1. Review core takeaways.<br>
+                            2. Note down homework assignments and project group tasks.
+                        </td>
+                        <td>梳理本课核心知识点，通过项目式作业延伸课堂学习。</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Blackboard Design Layout -->
+            <h3 class="section-title">二、板书设计 (Blackboard Design Layout)</h3>
+            <div class="board-container">
+                <div class="board-col">
+                    <h4>1. Core Inquiries & Bees</h4>
+                    <p><strong>Topic:</strong> We Can't Live Without Bees</p>
+                    <p>• <strong>Hard-working:</strong> pollination (80% plants)</p>
+                    <p>• <strong>Interesting:</strong> honeycombs, communication (dance)</p>
+                    <p>• <strong>Problem:</strong> number dropping 📉</p>
+                    <p>• <strong>Call:</strong> Protect our planet!</p>
+                </div>
+                <div class="board-col">
+                    <h4>2. Vocabulary & Grammar Scaffold</h4>
+                    <p><strong>Noun Suffixes:</strong></p>
+                    <p>• -action / connection / pollination</p>
+                    <p>• -importance / appearance</p>
+                    <p>• -happiness / goodness</p>
+                    <p>• -popularity</p>
+                    <p><strong>Blue Whale:</strong> largest & heaviest animal (up to 200 tons)</p>
+                </div>
+                <div class="board-col">
+                    <h4>3. Ecological Connection</h4>
+                    <p>🌱 <strong>Humans ⇄ Plants ⇄ Animals</strong></p>
+                    <p>• Mutual dependence in ecosystem</p>
+                    <div class="pk-board">
+                        <h5>🏆 Group PK Board</h5>
+                        <div class="pk-grid">
+                            <span>Group 1: 45 pts</span>
+                            <span>Group 2: 50 pts</span>
+                            <span>Group 3: 48 pts</span>
+                            <span>Group 4: 52 pts</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: right; font-size: 8pt; color: #64748b;">Page 2 of 3 · A8A-U4 Section B Lesson Design</div>
+    </div>
+
+    <!-- ================= PAGE 3 ================= -->
+    <div class="a4-page">
+        <div>
+            <!-- Student Header Info Bar -->
+            <div class="student-header">
+                <span>班级: _______________</span>
+                <span>姓名: _______________</span>
+                <span>学号: _________</span>
+                <span>得分: _________</span>
+            </div>
+
+            <!-- Student Practice Sheet Header -->
+            <h3 class="section-title" style="margin-top:0;">三、学生课后练习 (Student After-Class Practice Sheet)</h3>
+
+            <!-- Part 1: Foundation -->
+            <div class="practice-section">
+                <h4>第一部分：基础巩固</h4>
+                
+                <div class="practice-item">
+                    <strong>I. 核心单词与短语中英互译</strong>
+                    <table style="width:100%; margin-top:3px; font-size:8pt; border-collapse:collapse;">
+                        <tr>
+                            <td style="border:1px solid #cbd5e1; padding:2px;">1. ecosystem _______________</td>
+                            <td style="border:1px solid #cbd5e1; padding:2px;">2. pollination _______________</td>
+                            <td style="border:1px solid #cbd5e1; padding:2px;">3. 蜂巢 _______________</td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #cbd5e1; padding:2px;">4. disappointed _______________</td>
+                            <td style="border:1px solid #cbd5e1; padding:2px;">5. communicate _______________</td>
+                            <td style="border:1px solid #cbd5e1; padding:2px;">6. 保护 _______________</td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #cbd5e1; padding:2px;">7. 毫无疑问/没有 _______________</td>
+                            <td style="border:1px solid #cbd5e1; padding:2px;">8. 出于这个原因 _______________</td>
+                            <td style="border:1px solid #cbd5e1; padding:2px;">9. 发挥作用 _______________</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="practice-item" style="margin-top:6px;">
+                    <strong>II. 词形转换填空（用括号内所给词的适当形式填空）</strong>
+                    <p>1. We should realize the _______________ (important) of protecting bees in nature.</p>
+                    <p>2. The _______________ (appear) of mushrooms after rain always surprises children.</p>
+                    <p>3. Bees use a special dance to _______________ (communication) with each other.</p>
+                    <p>4. I felt quite _______________ (disappoint) when my favourite flowers died.</p>
+                </div>
+            </div>
+
+            <!-- Part 2: Capability -->
+            <div class="practice-section">
+                <h4>第二部分：能力提升</h4>
+                
+                <div class="practice-item">
+                    <strong>I. 阅读理解 / 语篇填空</strong>
+                    <p style="color:#475569; font-size:8pt;">阅读下面短文，从方框中选择适当的词填空（每词限用一次）。</p>
+                    <div style="background:#f1f5f9; padding:4px; font-size:8.5pt; margin:3px 0; border-radius:3px;">
+                        <em>however, important, land, planet, protect</em>
+                    </div>
+                    <p>You may not realize it, but frogs play an ________ (1) role in our ecosystem. Many people know that frogs help to ________ (2) farms by eating insects. ________ (3) , not everyone understands their importance in nature. Frogs can live on ________ (4) and in water. Because of this, they are popular subjects in studies on our fragile ________ (5).</p>
+                </div>
+
+                <div class="practice-item" style="margin-top:6px;">
+                    <strong>II. 微写作 (Micro-Writing)</strong>
+                    <p>请以 “Why Bees Are Important to Us” 为题，写一篇 40-50 词的短文，简述蜜蜂的贡献及我们保护它们的理由。</p>
+                    <div style="border:1px dashed #cbd5e1; height:45px; margin-top:3px; border-radius:3px; padding:4px; color:#94a3b8; font-size:7.5pt;">
+                        Bees are amazing animals... Their greatest work is pollination... Without them...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Part 3: Self-Assessment & Preview -->
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; margin-top: 4px;">
+                <div>
+                    <h4 style="font-size: 8.5pt; color: #1a365d; border-bottom: 2px solid #1a365d; padding-bottom: 2px; margin-bottom: 3px;">第三部分：课后自我评价表</h4>
+                    <table class="self-eval-table">
+                        <tr>
+                            <th>评价维度与指标</th>
+                            <th>⭐⭐⭐</th>
+                            <th>⭐⭐</th>
+                            <th>⭐</th>
+                        </tr>
+                        <tr>
+                            <td>我能准确掌握本课核心词汇与构词法。</td>
+                            <td></td><td></td><td></td>
+                        </tr>
+                        <tr>
+                            <td>我能理解蜜蜂和蓝鲸在生态系统中的重要作用。</td>
+                            <td></td><td></td><td></td>
+                        </tr>
+                        <tr>
+                            <td>我能运用第一人称进行视角转换写作。</td>
+                            <td></td><td></td><td></td>
+                        </tr>
+                    </table>
+                </div>
+                <div>
+                    <h4 style="font-size: 8.5pt; color: #1a365d; border-bottom: 2px solid #1a365d; padding-bottom: 2px; margin-bottom: 3px;">下节课预习任务 (Next Lesson Preview)</h4>
+                    <div class="preview-box">
+                        <h5>📌 预习聚焦 (Project & Self-Check)</h5>
+                        <p>1. 复习 Unit 4 所有重点词汇与最高级语法句型。</p>
+                        <p>2. 小组合作准备制作关于某种神奇动植物的英文海报（收集图片与核心事实）。</p>
+                        <p>3. 思考：你最喜欢的珍稀动植物是什么？为什么？</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: right; font-size: 8pt; color: #64748b;">Page 3 of 3 · A8A-U4 Section B Lesson Design</div>
+    </div>
+
+</body>
+</html>

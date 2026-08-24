@@ -1,68 +1,87 @@
 #!/usr/bin/env python3
 """
-gen_9_pd.py — Generate a passage-decoder JSON from a unit markdown file and text-navigator JSON via Gemini API.
+gen_9_pd.py — Generate a passage-decoder JSON from a unit markdown file or test markdown file via Gemini API.
 
 Usage:
-    python3 scripts/genai/gen_9_pd.py <path-to-unit.md> [--tn <path-to-text-navigator.json>] [--level "Grade X Semester Y Unit Z"]
+    python3 scripts/genai/gen_9_pd.py <path-to-unit.md-or-test.md> [--tn <path-to-text-navigator.json>] [--level "Grade X Semester Y Unit Z"] [--out <path>]
 
 Example:
-    python3 scripts/genai/gen_9_pd.py data/B-PU1/b-pu1-u1/b-pu1-u1.md \
-        --tn data/B-PU1/b-pu1-u1/b-pu1-u1-text-navigator.json \
-        --level "Pupil's Book 1 - Unit 1"
+    python3 scripts/genai/gen_9_pd.py v2-data/A8A/a8a-u4/a8a-u4-test.md
+    python3 scripts/genai/gen_9_pd.py v2-data/A8A/a8a-u4/a8a-u4.md
 
 Requires:
     pip install google-genai
     export GOOGLE_API_KEY_FREE=<your key>
 
-Input:
-    Uses <same-dir>/<basename>-text-navigator.json (or --tn path) to mirror sentence structure and leaf nodes.
-
 Output:
-    Saves <same-dir>/<basename>-passage-decoder-s.json next to the source file 
-    (or preserves the suffix like -w.json if the source md has -w).
+    For unit md: Saves <same-dir>/<basename>-passage-decoder-s.json
+    For test md: Saves <same-dir>/<unit>-passage-decoder-w.json
 """
 
 import os, sys, json, argparse, re, random, string
 from pathlib import Path
 from google import genai
 from google.genai import types
-from config import get_genai_config, parse_high_flag
+from config import get_genai_config, parse_high_flag, get_fallback_api_key, get_fallback_model
+
 
 def generate_id(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
+
 def extract_json(text: str) -> dict:
-    """Extract the first balanced JSON object from a string."""
+    """Extract the first balanced JSON object from a string with fallback repair logic."""
     start = text.find("{")
     if start == -1:
         raise ValueError("No JSON object found in response")
     depth = 0
+    end_idx = -1
     for i, ch in enumerate(text[start:], start):
         if ch == "{":
             depth += 1
         elif ch == "}":
             depth -= 1
             if depth == 0:
-                return json.loads(text[start:i + 1])
-    raise ValueError("Unbalanced JSON in response")
+                end_idx = i
+                break
+    if end_idx == -1:
+        raise ValueError("Unbalanced JSON in response")
+
+    candidate = text[start:end_idx + 1]
+
+    try:
+        return json.loads(candidate, strict=False)
+    except Exception:
+        pass
+
+    cleaned_commas = re.sub(r',\s*([}\]])', r'\1', candidate)
+    try:
+        return json.loads(cleaned_commas, strict=False)
+    except Exception:
+        pass
+
+    return json.loads(candidate)
+
 
 PROMPT_TEMPLATE = """\
-You are an expert English curriculum designer. Generate a Passage Decoder JSON for the following primary school textbook unit.
+You are an expert English curriculum designer. Generate a Passage Decoder JSON for the following English learning material.
 
-RULES:
-- Extraction Scope & Alignment with Text Navigator (TN): Extract every sentence/dialogue line from the reading passages or listening dialogue sections. CRITICAL: Every element in the "sentences" array SHOULD MIRROR what's in the corresponding leaf nodes of Text Navigator (TN). For textbooks starting with PU1, you MUST include both "The Friendly Farm" and "Literature". For grade levels A7A, A7B, A8A, A8B, and A9, if the first section of the listening scripts (e.g. "Section A, 1b and 1c" or "Section A, 1b, 1c, and 1d" etc.) is long and meaningful enough, include it as the first section in addition to the other sections. Furthermore, for A7A, A7B, A8A, A8B, and A9, if "Reading Plus" (or "Unit X - Reading Plus") is present in the unit markdown file, you MUST include "Reading Plus" in the passage decoder.
+CRITICAL RULES:
+- Extraction Scope: Extract every single sentence/dialogue line from the reading passages or listening dialogue sections.
+  - If the input is a Test markdown file (e.g. *-test.md), extract the full texts from ALL reading sections (such as 完形填空, 阅读理解 A, 阅读理解 B, 语法填空, 任务型阅读). For sentences with blanks or missing words, fill in the correct target word so that the decoded English sentence (`en`) is complete, natural, and grammatically correct. Do NOT include the multiple choice questions/stems/options at the end of each passage as sentences.
+  - For normal textbook units, extract from textbook reading passages / listening scripts.
 - "speaker": (Optional) The name of the speaker if the sentence is a dialogue (e.g., "Rocky", "Emma", "Sam"). If the text includes narrative speech verbs (e.g. 'I say', 'she says', 'says Mum'), keep the full narrative text intact and do NOT use the "speaker" field.
-- Dialogue Formatting:
+- Dialogue & Paragraph Formatting:
   - If a line is spoken by a character (e.g., `Jack: Hi, Lucy!`), extract the name as `speaker` and set `newline: true` on the first sentence of the turn.
   - Subsequent sentences spoken in the same turn share the `speaker` property but do NOT have `newline: true`.
   - For normal passages, set `newline: true` only on the first sentence starting a new paragraph.
 - Vocabulary Highlighting:
   - Include a `highlight` property on each sentence (comma-separated string) containing exactly the matching words/phrases as they appear in the sentence, corresponding to the vocabulary list provided. If no match, omit the field or leave empty.
 - Main Verb & Sentence Structure:
-  - `verb`: The main finite verb / predicate of the main clause (e.g., "is", "can be written", "makes", "have").
+  - `verb`: The main finite verb / predicate of the main clause (e.g., "is", "can be written", "makes", "have", "first appeared", "stands for").
   - `verb_range`: A 2-element integer array [start, end] representing the exact 0-based character slice of `verb` in `en` (e.g. [82, 84]). Verify start and end index against `en` string so en[start:end] == verb.
-  - `pattern`: The core sentence pattern (e.g. "SVO", "SVC", "SVOC", "SVOO", "SV", "SV (被动)", "SVC (表语从句)", "SVO (宾语从句)", "SVOA").
-- Options and Answer:
+  - `pattern`: The core sentence pattern (e.g. "SVO", "SVC", "SVOC", "SVOO", "SV", "SV (被动)", "SVC (表语从句)", "SVO (宾语从句)", "SVOA", "There be").
+- Translation Options and Answer:
   - Each sentence must have exactly 3 translation options (`options` array): 1 correct and 2 wrong distractors.
   - The wrong distractors MUST contain subtle traps (e.g., vocabulary swaps, tense errors, negation flips).
   - Avoid Lazy/Obvious Traps: Do NOT generate lazy, unnatural, or grammatically incorrect Chinese traps (e.g., simply prepending "不" to nouns/adjectives/names, or silly typos). Distractors must be realistic, natural Chinese sentences.
@@ -80,23 +99,23 @@ JSON structure must exactly match this format:
   "title": "Passage Decoder",
   "sections": [
     {{
-      "title": "<Section Title, e.g. Reading Passage / Listen and Read>",
+      "title": "<Section Title, e.g. 完形填空: Plum Blossom / Passage A: Juncao Technology>",
       "sentences": [
         {{
           "id": "pd_1l7r8431",
-          "en": "Look, Jenny, a family! A family in the café.",
+          "en": "Every country has different kinds of flowers.",
           "options": [
-            "看，珍妮，一个朋友！咖啡馆里的一个朋友。",
-            "看，珍妮，一个家庭！咖啡馆里的一个家庭。",
-            "看，吉姆，一个家庭！咖啡馆里的一个家庭。"
+            "每个国家都有不同种类的花。",
+            "每个城市都有相同种类的花。",
+            "很多国家都有极少数种类的花。"
           ],
-          "answer": 1,
-          "speaker": "Jim",
+          "answer": 0,
+          "speaker": "",
           "newline": true,
-          "highlight": "family, cafe",
-          "verb": "Look",
-          "verb_range": [0, 4],
-          "pattern": "SV (祈使句)"
+          "highlight": "country, different",
+          "verb": "has",
+          "verb_range": [14, 17],
+          "pattern": "SVO"
         }}
       ]
     }}
@@ -108,20 +127,22 @@ Output ONLY valid JSON, no markdown fences, no commentary.
 VOCABULARY LIST (For Highlighting):
 {vocab}
 
-TEXT NAVIGATOR SOURCE (Mirror sections and leaf node sentences from this structure):
+TEXT NAVIGATOR SOURCE (If available):
 {text_navigator}
 
-UNIT MARKDOWN:
+SOURCE MARKDOWN CONTENT:
 {source}
 """
+
 
 def main():
     use_high = parse_high_flag()
 
     parser = argparse.ArgumentParser(description="Generate passage-decoder JSON via Gemini API.")
-    parser.add_argument("md_file", help="Path to the unit markdown file (e.g. data/B-PU1/b-pu1-u1/b-pu1-u1.md)")
+    parser.add_argument("md_file", help="Path to the unit markdown file or test markdown file")
     parser.add_argument("--tn", default="", help='Path to text-navigator JSON file')
-    parser.add_argument("--level", default="", help='Level label, e.g. "Pupil\'s Book 1 - Unit 1"')
+    parser.add_argument("--out", "-o", default="", help='Custom output JSON path')
+    parser.add_argument("--level", default="", help='Level label, e.g. "Grade 8 Semester 1 - Unit 4"')
     args = parser.parse_args()
 
     md_path = Path(args.md_file)
@@ -139,14 +160,14 @@ def main():
     for f in md_path.parent.glob("*-vocab-guide.json"):
         vocab_file = f
         break
-    
+
     if vocab_file and vocab_file.exists():
         try:
             vocab_data = json.loads(vocab_file.read_text(encoding="utf-8"))
-            vocab_items = [item["word"] for item in vocab_data.get("unit_vocabulary", []) if "word" in item]
-            vocab_str = ", ".join(vocab_items)
+            vocab_list = [v.get("word", "") for v in vocab_data.get("unit_vocabulary", []) if v.get("word")]
+            vocab_str = ", ".join(vocab_list)
         except Exception as e:
-            print(f"Warning: could not parse {vocab_file}: {e}", file=sys.stderr)
+            print(f"Warning: could not read {vocab_file}: {e}", file=sys.stderr)
 
     # Load text-navigator if provided or exists
     tn_str = "None provided."
@@ -162,31 +183,49 @@ def main():
         except Exception as e:
             print(f"Warning: could not read {tn_file}: {e}", file=sys.stderr)
 
-    api_key, model_name = get_genai_config(use_high)
+    key_val, model_name = get_genai_config(use_high)
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=key_val)
     prompt = PROMPT_TEMPLATE.format(level=level, vocab=vocab_str, text_navigator=tn_str, source=source)
 
     print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
     import time
     response = None
-    for attempt in range(5):
+    for attempt in range(3):
         try:
             response = client.models.generate_content(
                 model=model_name,
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    thinking_config=types.ThinkingConfig(thinking_level="minimal"),
-                    temperature=0.3,
+                    temperature=0.2,
+                    max_output_tokens=16384,
                     response_mime_type="application/json"
                 )
             )
             break
         except Exception as e:
-            print(f"Error calling Gemini API (attempt {attempt + 1}/5): {e}", file=sys.stderr)
-            if attempt == 4:
-                raise e
-            time.sleep(2 ** attempt)
+            alt_model = get_fallback_model(model_name)
+            alt_key = get_fallback_api_key(key_val)
+            retry_model = alt_model or model_name
+            retry_key = alt_key or key_val
+            print(f"Primary model {model_name} failed ({e}). Retrying with Model: {retry_model}...", file=sys.stderr)
+            try:
+                client = genai.Client(api_key=retry_key)
+                response = client.models.generate_content(
+                    model=retry_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0.2,
+                        max_output_tokens=16384,
+                        response_mime_type="application/json"
+                    )
+                )
+                break
+            except Exception as e2:
+                print(f"Error calling Gemini API on retry: {e2}", file=sys.stderr)
+                if attempt == 2:
+                    raise e2
+                time.sleep(2 ** attempt)
 
     parsed = extract_json(response.text)
 
@@ -217,13 +256,21 @@ def main():
                     s["verb_range"] = [idx, idx + len(verb)]
 
     # Determine output filename
-    stem = md_path.stem
-    if "passage-decoder" in stem:
-        out_name = f"{stem}.json"
+    if args.out:
+        out_path = Path(args.out)
     else:
-        out_name = f"{stem}-passage-decoder-s.json"
-        
-    out_path = md_path.parent / out_name
+        stem = md_path.stem
+        if "passage-decoder" in stem:
+            out_name = f"{stem}.json"
+        elif stem.endswith("-test"):
+            prefix = stem[:-5]
+            out_name = f"{prefix}-passage-decoder-w.json"
+        elif stem.endswith("-w"):
+            out_name = f"{stem}-passage-decoder.json"
+        else:
+            out_name = f"{stem}-passage-decoder-s.json"
+        out_path = md_path.parent / out_name
+
     parsed["generated_by"] = model_name
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(parsed, f, ensure_ascii=False, indent=2)

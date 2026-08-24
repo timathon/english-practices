@@ -15,8 +15,10 @@
 - **`a8a-u4-recall-map.json`**: ✅ PASS (0 issues)
 - **`a8a-u4-text-navigator.json`**: ✅ PASS (0 issues)
 - **`a8a-u4-writing-map.json`**: ✅ PASS (0 issues)
+- **`a8a-u4-writing-map-2.json`**: ✅ PASS (0 issues)
 - **`a8a-u4-grammar-wizard.json`**: ✅ PASS (0 issues)
 - **`a8a-u4-passage-decoder-s.json`**: ✅ PASS (0 issues)
+- **`a8a-u4-passage-decoder-w.json`**: ✅ PASS (0 issues)
 
 ---
 

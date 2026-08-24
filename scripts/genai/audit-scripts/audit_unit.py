@@ -719,6 +719,34 @@ def audit_writing_map(data, filename):
             "description": "Missing required section 'Model Essay Advanced'."
         })
 
+    # Check top-level word_count
+    wc = data.get("word_count")
+    if not wc or not isinstance(wc, dict):
+        issues.append({
+            "json_file": filename,
+            "rule_section": "7. Model Writing Map (MWM)",
+            "item_id": "word_count",
+            "issue_type": "Missing Word Count",
+            "description": "Top-level object is missing required 'word_count' object (with 'required' and 'actual')."
+        })
+    else:
+        if "required" not in wc:
+            issues.append({
+                "json_file": filename,
+                "rule_section": "7. Model Writing Map (MWM)",
+                "item_id": "word_count:required",
+                "issue_type": "Missing Required Word Count",
+                "description": "'word_count' object is missing 'required' field."
+            })
+        if "actual" not in wc or not isinstance(wc.get("actual"), dict):
+            issues.append({
+                "json_file": filename,
+                "rule_section": "7. Model Writing Map (MWM)",
+                "item_id": "word_count:actual",
+                "issue_type": "Missing Actual Word Count",
+                "description": "'word_count' object is missing 'actual' dictionary."
+            })
+
     for sec in sections:
         sec_name = sec.get("section", "")
         sec_tree = sec.get("tree", {})
@@ -746,6 +774,18 @@ def audit_writing_map(data, filename):
                 })
 
             children = node.get("children", [])
+            # Check for leaf node word_count
+            if not children and depth > 0:
+                node_wc = node.get("word_count")
+                if node_wc is None:
+                    issues.append({
+                        "json_file": filename,
+                        "rule_section": "7. Model Writing Map (MWM)",
+                        "item_id": f"{sec_name}:{nid}",
+                        "issue_type": "Missing Node Word Count",
+                        "description": f"Leaf sentence node '{nid}' is missing 'word_count' field."
+                    })
+
             # Check for flat structure (direct children > 5 where children are all leaf nodes)
             if children and len(children) > 5 and all(len(c.get("children", [])) == 0 for c in children):
                 issues.append({
@@ -762,6 +802,8 @@ def audit_writing_map(data, filename):
         check_wm_node(sec_tree, 0)
 
     return issues
+
+
 
 def main():
     skip_llm = "--no-llm" in sys.argv or "--skip-llm" in sys.argv
