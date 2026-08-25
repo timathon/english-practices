@@ -323,11 +323,19 @@ This document defines the rules for extracting and converting textbook data into
     }
     ```
   - **Sentence Node `word_count`:** Each leaf sentence node in the tree hierarchy must include a `word_count` field (integer) indicating the exact word count of the sentence (`text`).
-    - **Pre-given Opening/Ending & Content Rule:** When the writing task prompt states that certain opening, greeting, intro, or ending sentences are pre-given and not counted towards the word count (e.g., `开头和结尾已给出，不计入总词数`, `已给出内容不计入总词数`, `题目和开头已给出，但不计入总词数`, letter openings like `Dear [Name], I'm glad to get your letter...`, or sign-offs like `Best wishes, Yours, [Name]`), those specific pre-given sentence nodes **MUST have `"word_count": 0`**. The top-level `actual` word count is the exact sum of `word_count` across all leaf sentence nodes, and the student-composed body content alone must fulfill the `required` word count.
+    - **Pre-given Opening/Ending & Content Rule:** When the writing task prompt states that certain opening, greeting, intro, or ending sentences are pre-given and not counted towards the word count (e.g., `开头和结尾已给出，不计入总词数`, `已给出内容不计入总词数`, `题目和开头已给出，但不计入总词数`, letter openings like `Dear [Name], I'm glad to get your letter...`, or sign-offs like `Best wishes, Yours, [Name]`), those specific pre-given sentence nodes **MUST have `"word_count": 0` and `"is_given": true`**. 
+    - **Identical Pre-given Content in Both Models:** Pre-given sentences provided in the prompt **MUST remain 100% verbatim and identical in BOTH Model Essay Basic AND Model Essay Advanced**. Do NOT alter, rewrite, or "upgrade" pre-given sentences in the Advanced model.
+    - The top-level `actual` word count is the exact sum of `word_count` across all leaf sentence nodes, and the student-composed body content alone must fulfill the `required` word count.
 - **Content Strategy:** If a model essay is provided in the source material, generate the models based on it (correcting any grammatical or spelling mistakes if present). Otherwise, generate the model essays using AI to answer the prompt in `writing-task.md`.
   - **Model Basic:** Use simple, direct sentences (SVO). Focus on clarity and core vocabulary from the unit.
-  - **Model Advanced:** An advanced extension of Model Basic. Use the same topic and structure but incorporate compound/complex sentences (e.g., relative clauses, `because`, `although`) and cohesive devices (e.g., `For example`, `As a result`, `In addition`).
+  - **Model Advanced:** An advanced extension of Model Basic. Use the same topic and structure but incorporate compound/complex sentences (e.g., relative clauses, `because`, `although`) and cohesive devices (e.g., `For example`, `As a result`, `In addition`). Keep all pre-given sentences identical to Model Basic.
 - **Structure:** Follow the standard hierarchical tree structure defined in **Section 6 (Text Navigator)**.
+- **Writing Task Markdown (`*-writing-task*.md`) Column Formatting Rule:**
+  - Writing task markdown files displayed in the shell upper section must use `<!-- col -->` comments to divide the prompt cleanly across up to 4 columns, preventing vertical overflow:
+    - **Column 1:** Task scenario / Background introduction (e.g. `假如你是李华...`).
+    - **Column 2:** Content table / Visual prompt data (use `<br>` for linebreaks in table cells).
+    - **Column 3:** Writing requirements & Reference words (`**要求：**`, `**注意：**`).
+    - **Column 4:** Letter template / Pre-given stem (e.g. `> Dear Tom,\n>\n> Today is my birthday...`).
 
 
 ## 8. Grammar Wizard (GW)

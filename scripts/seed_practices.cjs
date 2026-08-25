@@ -55,7 +55,7 @@ function myFetch(url, options = {}) {
 
 function getChangedOrAddedJsonFiles() {
     try {
-        const statusOutput = execSync('git status --porcelain -uall "v2-data/**/*.json"', { encoding: 'utf8' });
+        const statusOutput = execSync('git status --porcelain -uall "v2-data/**/*.json" "v2-data/**/*writing-task*.md"', { encoding: 'utf8' });
         const filesSet = new Set();
         
         if (statusOutput.trim()) {
@@ -73,7 +73,19 @@ function getChangedOrAddedJsonFiles() {
                     filePath = filePath.substring(1, filePath.length - 1);
                 }
                 if (filePath.startsWith('v2-data/')) {
-                    filesSet.add(filePath);
+                    if (filePath.endsWith('.json')) {
+                        filesSet.add(filePath);
+                    } else if (filePath.includes('writing-task') && filePath.endsWith('.md')) {
+                        const dir = path.dirname(filePath);
+                        if (fs.existsSync(dir)) {
+                            const siblings = fs.readdirSync(dir);
+                            for (const f of siblings) {
+                                if (f.includes('writing-map') && f.endsWith('.json')) {
+                                    filesSet.add(path.join(dir, f));
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

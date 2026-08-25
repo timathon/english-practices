@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import md5 from 'md5'
 import { Link } from 'react-router-dom'
@@ -8,6 +8,17 @@ import { PronunciationModal } from './PronunciationModal'
 import './MindMapShell.css'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev"
+
+const SPEAKER_COLORS = [
+  { color: '#93c5fd', bg: 'rgba(59, 130, 246, 0.22)', border: 'rgba(96, 165, 250, 0.5)' },
+  { color: '#6ee7b7', bg: 'rgba(16, 185, 129, 0.22)', border: 'rgba(52, 211, 153, 0.5)' },
+  { color: '#fcd34d', bg: 'rgba(245, 158, 11, 0.22)', border: 'rgba(251, 191, 36, 0.5)' },
+  { color: '#d8b4fe', bg: 'rgba(168, 85, 247, 0.22)', border: 'rgba(192, 132, 252, 0.5)' },
+  { color: '#fda4af', bg: 'rgba(244, 63, 94, 0.22)', border: 'rgba(251, 113, 133, 0.5)' },
+  { color: '#67e8f9', bg: 'rgba(6, 182, 212, 0.22)', border: 'rgba(34, 211, 238, 0.5)' },
+  { color: '#f0abfc', bg: 'rgba(217, 70, 239, 0.22)', border: 'rgba(232, 121, 249, 0.5)' },
+  { color: '#5eead4', bg: 'rgba(20, 184, 166, 0.22)', border: 'rgba(45, 212, 191, 0.5)' },
+]
 
 interface Node {
   id: string
@@ -23,6 +34,8 @@ interface Node {
   state?: 'hidden' | 'empty' | 'emoji' | 'keywords' | 'full'
   children?: Node[]
   speaker?: string
+  word_count?: number
+  is_given?: boolean
 }
 
 interface MindMapShellProps {
@@ -60,6 +73,36 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false)
   const [tempEnNodeId, setTempEnNodeId] = useState<string | null>(null)
   const tempEnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Map each unique speaker in dialogue order to guaranteed distinct color themes
+  const speakerColorMap = useMemo(() => {
+    const map = new Map<string, { color: string; bg: string; border: string }>()
+    let index = 0
+    const collectSpeakers = (node: Node) => {
+      if (node.speaker && !map.has(node.speaker)) {
+        const theme = SPEAKER_COLORS[index % SPEAKER_COLORS.length]
+        map.set(node.speaker, theme)
+        index++
+      }
+      if (node.children) {
+        node.children.forEach(collectSpeakers)
+      }
+    }
+    if (data.tree) {
+      collectSpeakers(data.tree)
+    }
+    return map
+  }, [data.tree])
+
+  const getSpeakerStyle = (speaker?: string) => {
+    if (!speaker) return {}
+    const theme = speakerColorMap.get(speaker) || SPEAKER_COLORS[0]
+    return {
+      color: theme.color,
+      backgroundColor: theme.bg,
+      borderColor: theme.border,
+    }
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -769,7 +812,7 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
     if (node.speaker && (!isCnMode || isShowingTempEn)) {
       displayedText = (
         <>
-          <strong className="mm-node-speaker">{node.speaker}: </strong>
+          <strong className="mm-node-speaker" style={getSpeakerStyle(node.speaker)}>{node.speaker}</strong>
           {displayedText}
         </>
       )
@@ -783,12 +826,13 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
 
     const isActionsActive = activeActionsNodeId === node.id
     const isPlaying = playingNodeId === node.id
+    const isGiven = !!node.is_given
 
     return (
       <div className="mm-node-wrapper" key={node.id}>
         <div 
           id={isPlaying ? `playing-${node.id}` : `node-${node.id}`}
-          className={`mm-node-box ${state} level-${depth} ${allChildrenFull ? 'collapsible' : ''} ${activeNodeId === node.id ? 'active' : ''} ${isPlaying ? 'playing' : ''} ${(isActionsActive && !isCnMode) ? 'actions-active' : ''}`}
+          className={`mm-node-box ${state} level-${depth} ${allChildrenFull ? 'collapsible' : ''} ${activeNodeId === node.id ? 'active' : ''} ${isPlaying ? 'playing' : ''} ${(isActionsActive && !isCnMode) ? 'actions-active' : ''} ${isGiven ? 'is-given' : ''}`}
           onClick={(e) => {
             e.stopPropagation()
             
@@ -821,10 +865,14 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
               <span className="mm-node-content-emoji">{node.emoji}</span>
               <span className="mm-node-content-keywords">
                 {isCnMode && !isShowingTempEn ? (
-                  node.cn || node.text
+                  <>
+                    {isGiven && <span className="mm-given-badge">已给出</span>}
+                    {node.cn || node.text}
+                  </>
                 ) : (
                   <>
-                    {node.speaker && <strong className="mm-node-speaker">{node.speaker}: </strong>}
+                    {isGiven && <span className="mm-given-badge">已给出</span>}
+                    {node.speaker && <strong className="mm-node-speaker" style={getSpeakerStyle(node.speaker)}>{node.speaker}</strong>}
                     {isShowingTempEn ? node.text : node.keywords}
                   </>
                 )}
@@ -834,7 +882,10 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
           {state === 'full' && (
             <>
               <span className="mm-node-content-emoji">{node.emoji}</span>
-              <span className="mm-node-content-text">{displayedText}</span>
+              <span className="mm-node-content-text">
+                {isGiven && <span className="mm-given-badge">已给出</span>}
+                {displayedText}
+              </span>
             </>
           )}
 

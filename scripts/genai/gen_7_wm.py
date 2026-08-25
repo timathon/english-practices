@@ -79,10 +79,11 @@ You are an expert English writing curriculum designer. Generate a Model Writing 
   1. section: "Model Essay Basic"
   2. section: "Model Essay Advanced"
 - CRITICAL: If the writing task states that opening/ending sentences or greetings are pre-given (e.g., '开头和结尾已给出，不计入总词数' or '已给出内容不计入总词数'), include those pre-given sentences in the tree for complete speech/essay/letter delivery, but ensure that the student-composed body text by itself meets the required word count (~80 words for Basic, ~90-110 words for Advanced, or matching the specific prompt number).
+- CRITICAL (PRE-GIVEN SENTENCES): Any pre-given opening, greeting, or ending sentences provided in the prompt (e.g., 'Dear Tom, I am glad to get your letter and tell you about my life.') MUST remain 100% verbatim and identical across BOTH 'Model Essay Basic' and 'Model Essay Advanced'. Do NOT change, embellish, or upgrade pre-given sentences in the Advanced model.
 
 === CONTENT STRATEGY ===
 - Model Essay Basic: Write a clear, well-structured model essay answering the writing task prompt using simple, direct sentences (SVO). Focus on clarity, accuracy, and fundamental vocabulary.
-- Model Essay Advanced: Write an enhanced version of the essay for the same prompt. Use compound/complex sentences (relative clauses, subordinate conjunctions like 'because', 'although', 'if') and cohesive transitions (e.g., 'For example', 'As a result', 'In addition').
+- Model Essay Advanced: Write an enhanced version of the essay for the same prompt. Use compound/complex sentences (relative clauses, subordinate conjunctions like 'because', 'although', 'if') and cohesive transitions (e.g., 'For example', 'As a result', 'In addition'). Keep all pre-given sentences strictly identical to Model Essay Basic.
 
 === TREE RULES & SCHEMA ===
 - Each section contains a "tree" object (hierarchical mindmap, root node ID "root").
@@ -159,10 +160,12 @@ def process_tree_word_counts(node: dict, given_phrases: list[str]) -> int:
         
         if is_given:
             wc = 0
+            node["word_count"] = 0
+            node["is_given"] = True
         else:
             wc = count_words(text)
+            node["word_count"] = wc
             
-        node["word_count"] = wc
         return wc
     
     total = 0
@@ -171,10 +174,62 @@ def process_tree_word_counts(node: dict, given_phrases: list[str]) -> int:
     return total
 
 
+def ensure_writing_task_columns(content: str) -> tuple[str, bool]:
+    """Ensures writing-task markdown has <!-- col --> separators if missing."""
+    if "<!-- col -->" in content:
+        return content, False
+
+    lines = content.strip().split("\n")
+    intro_lines = []
+    table_lines = []
+    req_lines = []
+    letter_lines = []
+    state = "intro"
+
+    for line in lines:
+        if re.search(r"^\s*(>|\*)?\s*Dear\b", line, re.IGNORECASE) and state != "letter":
+            state = "letter"
+        elif re.search(r"^\s*(\*\*|##)?\s*(要求|注意|Requirements)\s*[:：]?", line) and state not in ("req", "letter"):
+            state = "req"
+        elif line.strip().startswith("|") and state == "intro":
+            state = "table"
+
+        if state == "intro":
+            intro_lines.append(line)
+        elif state == "table":
+            if re.search(r"^\s*(\*\*|##)?\s*(要求|注意|Requirements)\s*[:：]?", line):
+                state = "req"
+                req_lines.append(line)
+            else:
+                table_lines.append(line)
+        elif state == "req":
+            if re.search(r"^\s*(>|\*)?\s*Dear\b", line, re.IGNORECASE):
+                state = "letter"
+                letter_lines.append(line)
+            else:
+                req_lines.append(line)
+        elif state == "letter":
+            letter_lines.append(line)
+
+    sections = [
+        "\n".join(intro_lines).strip(),
+        "\n".join(table_lines).strip(),
+        "\n".join(req_lines).strip(),
+        "\n".join(letter_lines).strip(),
+    ]
+    sections = [s for s in sections if s]
+
+    if len(sections) > 1:
+        new_content = "\n\n<!-- col -->\n\n".join(sections) + "\n"
+        return new_content, True
+
+    return content, False
+
+
 def main():
     use_high = parse_high_flag()
 
-    parser = argparse.ArgumentParser(description="Generate model writing map (*-writing-map.json) via Gemini API.")
+    parser = argparse.ArgumentParser(description="Generate Writing Map JSON from Writing Task Markdown via Gemini API.")
     parser.add_argument("writing_task_file", help="Path to the writing task markdown file (e.g. data/A8A/a8a-u8/a8a-u8-writing-task.md)")
     parser.add_argument("--level", default="", help='Level label, e.g. "Grade 8 Semester 1"')
     parser.add_argument("--part", default="", help='Part label, e.g. "Unit 8"')
@@ -186,6 +241,13 @@ def main():
         sys.exit(1)
 
     wt_content = wt_path.read_text(encoding="utf-8")
+
+    # Ensure writing task has <!-- col --> separators
+    updated_wt_content, is_updated = ensure_writing_task_columns(wt_content)
+    if is_updated:
+        wt_path.write_text(updated_wt_content, encoding="utf-8")
+        wt_content = updated_wt_content
+        print(f"Added <!-- col --> separators to {wt_path.name}", file=sys.stderr)
 
     # Try to find corresponding main unit markdown file for context
     unit_stem_base = re.sub(r"-writing-task.*", "", wt_path.stem)
