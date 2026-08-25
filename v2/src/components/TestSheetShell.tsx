@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate, useBlocker } from 'react-router-dom'
+import { Link, useBlocker } from 'react-router-dom'
 import { audioCache } from '../lib/audioCache'
 import { API_URL, useSession } from '../lib/auth'
 import { cache } from '../lib/cache'
@@ -7,212 +7,23 @@ import { petService } from '../lib/petService'
 import { trialsTracker } from '../lib/trialsTracker'
 import './TestSheetShell.css'
 
-const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
-
-const getOrdinal = (n: number) => {
-  if (n === 1) return "1st"
-  if (n === 2) return "2nd"
-  if (n === 3) return "3rd"
-  if (n === 4) return "4th"
-  if (n === 5) return "5th"
-  return `${n}th`
-}
-
-const parseWordBlocks = (prompt?: string): string[] => {
-  if (!prompt) return []
-  const result: string[] = []
-  const rawParts = prompt.includes(',')
-    ? prompt.split(',').map(s => s.trim()).filter(Boolean)
-    : prompt.split(/\s+/).filter(Boolean)
-
-  for (const part of rawParts) {
-    const match = part.match(/^(.*?)\s*(\([.?!,;:]+\))$/)
-    if (match) {
-      if (match[1]) result.push(match[1])
-      if (match[2]) result.push(match[2])
-    } else {
-      result.push(part)
-    }
-  }
-  return result
-}
-
-const unwrapBlockText = (raw: string): string => {
-  if (raw.startsWith('(') && raw.endsWith(')')) {
-    return raw.slice(1, -1)
-  }
-  return raw
-}
-
-const formatSentenceFromBlocks = (blocks: string[]): string => {
-  let sentence = ""
-  for (let i = 0; i < blocks.length; i++) {
-    const text = unwrapBlockText(blocks[i])
-    const isPunct = /^[.?!,;:]+$/.test(text)
-    if (i === 0 || isPunct) {
-      sentence += text
-    } else {
-      sentence += " " + text
-    }
-  }
-  return sentence
-}
-
-const formatOptionWithLetter = (opt: string, idx: number): string => {
-  const prefix = String.fromCharCode(65 + idx)
-  const trimmed = String(opt || '').trim()
-  if (/^[A-G][\.\s、]/i.test(trimmed)) {
-    return trimmed
-  }
-  return `${prefix}. ${trimmed}`
-}
-
-const normalizeSentence = (str: string): string => {
-  return String(str || '')
-    .trim()
-    .toLowerCase()
-    .replace(/,/g, '')
-    .replace(/\s+([.?!])/g, '$1')
-    .replace(/\s+/g, ' ')
-}
-
-const renderFormattedInlineText = (text: string): React.ReactNode => {
-  if (!text) return null
-  const parts = text.split(/(\*\*.*?\*\*|<u>.*?<\/u>|\[\*VISUAL:?\s*.*?\*\])/gi)
-  return (
-    <>
-      {parts.map((part, idx) => {
-        if (part.toLowerCase().startsWith('**') && part.endsWith('**')) {
-          return <strong key={idx}>{renderFormattedInlineText(part.slice(2, -2))}</strong>
-        }
-        if (part.toLowerCase().startsWith('<u>') && part.toLowerCase().endsWith('</u>')) {
-          return <u key={idx} style={{ fontWeight: 'bold' }}>{renderFormattedInlineText(part.slice(3, -4))}</u>
-        }
-        if (part.startsWith('[*VISUAL') && part.endsWith('*]')) {
-          let innerText = part.slice(2, -2).trim()
-          if (innerText.startsWith('VISUAL:')) {
-            innerText = innerText.slice(7).trim()
-          } else if (innerText.startsWith('VISUAL')) {
-            innerText = innerText.slice(6).trim()
-          }
-          return (
-            <span key={idx} className="ts-visual-tag" style={{ color: '#4b5563', backgroundColor: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', fontStyle: 'normal' }}>
-              🖼️ [图片提示: {innerText}]
-            </span>
-          )
-        }
-        return part
-      })}
-    </>
-  )
-}
-
-const isAnswerCorrect = (userAns: any, correctAns: any, sectionType?: string, qType?: string): boolean => {
-  if (userAns === undefined || userAns === null || userAns === '' || correctAns === undefined || correctAns === null || correctAns === '') {
-    return false
-  }
-
-  if (sectionType === 'multiple-choice' || sectionType === 'cloze-passage' || (sectionType === 'reading-comprehension' && qType === 'multiple-choice')) {
-    if (!isNaN(Number(userAns)) && !isNaN(Number(correctAns))) {
-      return Number(userAns) === Number(correctAns)
-    }
-  }
-
-  if (sectionType === 'true-false') {
-    return String(userAns).trim().toLowerCase() === String(correctAns).trim().toLowerCase()
-  }
-
-  if (sectionType === 'reading-comprehension' && qType === 'short-answer') {
-    return String(userAns || '').trim().length > 0
-  }
-
-  if (sectionType === 'fill-in-the-blank-firstletter') {
-    const ans = String(correctAns).trim().toLowerCase()
-    const uAnsRaw = String(userAns).trim().toLowerCase()
-    
-    // Normalize multi-blank delimiters ('|||' or spaces) into clean space-separated tokens
-    const uTokens = uAnsRaw.split(/\|\|\||\s+/).filter(Boolean)
-    const cTokens = ans.split(/\s+/).filter(Boolean)
-
-    if (uTokens.length === cTokens.length && uTokens.length > 1) {
-      return uTokens.every((uTok, idx) => {
-        const cTok = cTokens[idx]
-        return uTok === cTok || (cTok.length > 1 && uTok === cTok.substring(1))
-      })
-    }
-
-    const uAns = uTokens.join(' ')
-    return uAns === ans || (ans.length > 1 && uAns === ans.substring(1))
-  }
-
-  if (sectionType === 'put-words-in-order') {
-    const normUser = normalizeSentence(String(userAns))
-    const normAns = normalizeSentence(String(correctAns))
-    return normUser === normAns
-  }
-
-  // String / Wordbank / Matching / Cloze comparison
-  const uStr = String(userAns).trim().toLowerCase()
-  const cStr = String(correctAns).trim().toLowerCase()
-
-  if (uStr === cStr) return true
-
-  const extractLetter = (s: string) => {
-    const trimmed = s.trim().toLowerCase()
-    if (/^[a-z]$/.test(trimmed)) return trimmed
-    const m = trimmed.match(/^([a-z])[\.\s]/)
-    return m ? m[1] : null
-  }
-
-  const uLetter = extractLetter(uStr)
-  const cLetter = extractLetter(cStr)
-
-  if (uLetter && cLetter && uLetter === cLetter) {
-    return true
-  }
-
-  return false
-}
-
-interface Question {
-  id: string
-  prompt?: string
-  answer: string | number | boolean
-  options?: string[]
-  translation?: string
-  explanation?: string
-  blankIndex?: number
-  type?: 'multiple-choice' | 'short-answer'
-}
-
-interface Section {
-  id: string
-  title: string
-  instruction: string
-  type: 'fill-in-the-blank-wordbank' | 'fill-in-the-blank-firstletter' | 'multiple-choice' | 'definition-matching' | 'matching' | 'dialogue-completion' | 'cloze-passage' | 'true-false' | 'reading-comprehension' | 'cloze-passage-wordbank' | 'put-words-in-order' | string
-  wordbank?: string[]
-  options?: string[]
-  passage?: string
-  dialogue?: { speaker: string; text: string }[]
-  questions: Question[]
-}
-
-interface TestSheetData {
-  level: string
-  title: string
-  sections: Section[]
-}
-
-interface TestSheetShellProps {
-  data: TestSheetData
-  practiceId: string
-  unit: string
-  textbook: string
-  initialAnswers?: Record<string, string | number | boolean>
-  initialSubmitted?: boolean
-  initialScore?: number
-  onCloseReadOnly?: () => void
-}
+import type {
+  Section,
+  TestSheetShellProps,
+  HighlightedSentence
+} from './test-sheet/TestSheetTypes'
+import {
+  PUBLIC_URL_BASE,
+  isAnswerCorrect,
+  formatOptionWithLetter
+} from './test-sheet/testSheetUtils'
+import { StartModal, ConfirmSubmitModal } from './test-sheet/TestSheetModals'
+import { TestSheetQuestionItem } from './test-sheet/TestSheetQuestionItem'
+import {
+  TestSheetInteractivePassage,
+  TestSheetInlineBlanksPassage
+} from './test-sheet/TestSheetPassage'
+import { TestSheetPrintView } from './test-sheet/TestSheetPrintView'
 
 export function TestSheetShell({
   data,
@@ -224,7 +35,6 @@ export function TestSheetShell({
   initialScore,
   onCloseReadOnly
 }: TestSheetShellProps) {
-  const navigate = useNavigate()
   const { data: session } = useSession()
   const isAdmin = (session?.user as any)?.role === 'admin'
 
@@ -234,12 +44,13 @@ export function TestSheetShell({
   const [showStartModal, setShowStartModal] = useState(!isReadOnly)
   const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false)
   const [activeSectionIdx, setActiveSectionIdx] = useState(0)
-  const [highlightedSentence, setHighlightedSentence] = useState<{ paraIdx: string | number; sentenceIdx: number } | null>(null)
+  const [highlightedSentence, setHighlightedSentence] = useState<HighlightedSentence | null>(null)
 
   const handleResetAttempts = () => {
     trialsTracker.resetTrials(practiceId, 'test-sheet')
     setRemainingAttempts(trialsTracker.getRemainingTrials(practiceId, 'test-sheet'))
   }
+
   const [userAnswers, setUserAnswers] = useState<Record<string, string | number | boolean>>(initialAnswers || {})
   const [selectedBlocksMap, setSelectedBlocksMap] = useState<Record<string, number[]>>({})
   const [submitted, setSubmitted] = useState(!!initialSubmitted)
@@ -255,44 +66,44 @@ export function TestSheetShell({
   const blocker = useBlocker(
     ({ nextLocation, currentLocation }) =>
       !isReadOnly && !showStartModal && !submitted && nextLocation.pathname !== currentLocation.pathname
-  );
+  )
 
   useEffect(() => {
     if (!isReadOnly && blocker.state === 'blocked') {
-      const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。');
+      const proceed = window.confirm('您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。')
       if (proceed) {
-        blocker.proceed();
+        blocker.proceed()
       } else {
-        blocker.reset();
+        blocker.reset()
       }
     }
-  }, [blocker, isReadOnly]);
+  }, [blocker, isReadOnly])
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isReadOnly) return
       if (!showStartModal && !submitted) {
-        e.preventDefault();
-        e.returnValue = '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
-        return '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。';
+        e.preventDefault()
+        e.returnValue = '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。'
+        return '您当前正在进行挑战，确定要离开吗？未保存的进度将会丢失。'
       }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [showStartModal, submitted]);
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [showStartModal, submitted, isReadOnly])
 
   useEffect(() => {
     if (!showStartModal && !submitted) {
-      document.body.classList.add('taking-test');
+      document.body.classList.add('taking-test')
     } else {
-      document.body.classList.remove('taking-test');
+      document.body.classList.remove('taking-test')
     }
     return () => {
-      document.body.classList.remove('taking-test');
-    };
-  }, [showStartModal, submitted]);
+      document.body.classList.remove('taking-test')
+    }
+  }, [showStartModal, submitted])
 
   // Drag to scroll tabs refs & state
   const tabsRef = useRef<HTMLDivElement | null>(null)
@@ -378,7 +189,7 @@ export function TestSheetShell({
     if (!isDraggingRef.current || !tabsRef.current) return
     e.preventDefault()
     const x = e.pageX - tabsRef.current.offsetLeft
-    const walk = (x - startXRef.current) * 1.5 // multiplier for scroll speed
+    const walk = (x - startXRef.current) * 1.5
     tabsRef.current.scrollLeft = scrollLeftRef.current - walk
   }
 
@@ -412,9 +223,9 @@ export function TestSheetShell({
 
   // Sync record with server
   const syncRecord = async (scorePercent: number, isFinished: boolean) => {
-    if (isReadOnly) return;
+    if (isReadOnly) return
     try {
-      console.log(`Syncing record for ${textbook} ${unit}`);
+      console.log(`Syncing record for ${textbook} ${unit}`)
       if (isFinished) {
         hasFinishedRef.current = true
       } else if (hasFinishedRef.current) {
@@ -585,957 +396,6 @@ export function TestSheetShell({
     setActiveSectionIdx(0)
   }
 
-
-  const cleanOptionText = (text: string, oIdx: number) => {
-    const prefix = String.fromCharCode(65 + oIdx);
-    const regex = new RegExp(`^${prefix}\\s*[.\\u3001]\\s*`, 'i');
-    return text.replace(regex, '');
-  };
-
-
-  // Inline parser to render select elements for cloze passages & dialogue
-  const parseInlineBlanks = (text: string, section: Section) => {
-    const lines = text.split('\n')
-    const renderedBlocks: React.ReactNode[] = []
-
-    let inTable = false
-    let tableHeaders: string[] = []
-    let tableRows: string[][] = []
-
-    const parseLineContent = (lineText: string) => {
-      const trimmed = lineText.trim()
-      if (trimmed.startsWith('[HTML:') && trimmed.endsWith(']')) {
-        const rawHtml = trimmed.slice(6, -1)
-        return <div key="html-block" className="ts-html-passage-block" style={{ width: '100%', overflowX: 'auto' }} dangerouslySetInnerHTML={{ __html: rawHtml }} />
-      }
-      const parts = lineText.split(/(\[\d+\])/g)
-      return parts.map((part, index) => {
-        const match = part.match(/^\[(\d+)\]$/)
-        if (match) {
-          const blankNum = parseInt(match[1], 10)
-          const q = section.questions.find(item => item.blankIndex === blankNum)
-          if (!q) return part
-
-          const isClozeIndex = section.type === 'cloze-passage'
-          const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section.type, q.type)
-
-          let selectClass = "ts-inline-select"
-          if (section.type === 'dialogue-completion') {
-            selectClass += " dialogue-type"
-          }
-          if (submitted) {
-            selectClass += isUserCorrect ? " correct" : " wrong"
-          }
-
-          const correctRaw = isClozeIndex
-            ? (q.options?.[Number(q.answer)] || '')
-            : String(q.answer)
-          const correctDisplay = isClozeIndex
-            ? cleanOptionText(correctRaw, Number(q.answer))
-            : correctRaw
-
-          return (
-            <span key={index} className="ts-inline-select-wrapper" style={{ margin: '0 4px', display: 'inline-block' }}>
-              <select
-                className={selectClass}
-                value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
-                disabled={submitted}
-                onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
-                style={{
-                  padding: '4px 8px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  background: submitted ? (isUserCorrect ? '#d1fae5' : '#fee2e2') : '#fff',
-                  color: '#374151',
-                  fontSize: '0.95em',
-                  cursor: submitted ? 'not-allowed' : 'pointer'
-                }}
-              >
-                <option value="">({blankNum})</option>
-                {section.type === 'cloze-passage' ? (
-                  q.options?.map((opt, optIdx) => (
-                    <option key={optIdx} value={optIdx}>
-                      {opt}
-                    </option>
-                  ))
-                ) : section.type === 'cloze-passage-wordbank' ? (
-                  section.wordbank?.map((word, wordIdx) => {
-                    const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(word))
-                    const showSuffix = usingQ && usingQ.id !== q.id
-                    const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
-                    return (
-                      <option key={wordIdx} value={word}>
-                        {word}{suffix}
-                      </option>
-                    )
-                  })
-                ) : section.type === 'dialogue-completion' ? (
-                  section.options?.map((opt, optIdx) => {
-                    const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(opt))
-                    const showSuffix = usingQ && usingQ.id !== q.id
-                    const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
-                    return (
-                      <option key={optIdx} value={opt}>
-                        {opt}{suffix}
-                      </option>
-                    )
-                  })
-                ) : null}
-              </select>
-              {submitted && !isUserCorrect && (
-                <span className="ts-inline-reveal-word" style={{ marginLeft: '4px', color: '#10b981', fontWeight: 'bold' }}>
-                  ({correctDisplay})
-                </span>
-              )}
-            </span>
-          )
-        }
-
-        // Parse inline formatting (**bold** and <u>underline</u>) for non-blank text
-        return <span key={`text-${index}`}>{renderFormattedInlineText(part)}</span>
-      })
-    }
-
-    const flushTable = (key: string | number) => {
-      if (tableRows.length > 0 || tableHeaders.length > 0) {
-        renderedBlocks.push(
-          <div key={`table-${key}`} className="ts-passage-table-wrapper">
-            <table className="ts-passage-table">
-              {tableHeaders.length > 0 && (
-                <thead>
-                  <tr>
-                    {tableHeaders.map((h, i) => (
-                      <th key={i}>
-                        {parseLineContent(h)}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-              )}
-              <tbody>
-                {tableRows.map((row, rowIndex) => {
-                  const diff = tableHeaders.length - row.length
-                  return (
-                    <tr key={rowIndex}>
-                      {row.map((cell, cellIndex) => {
-                        const isLast = cellIndex === row.length - 1
-                        const colSpan = (isLast && diff > 0) ? diff + 1 : undefined
-                        return (
-                          <td key={cellIndex} colSpan={colSpan} style={colSpan ? { textAlign: 'center' } : undefined}>
-                            {parseLineContent(cell)}
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )
-        tableHeaders = []
-        tableRows = []
-      }
-      inTable = false
-    }
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (line.startsWith('|') && line.endsWith('|')) {
-        const cells = line.split('|').map(c => c.trim()).slice(1, -1)
-
-        if (cells.every(c => /^:-*-*:*$/.test(c) || /^-+$/.test(c))) {
-          continue
-        }
-
-        if (!inTable) {
-          inTable = true
-          tableHeaders = cells
-        } else {
-          tableRows.push(cells)
-        }
-      } else {
-        if (inTable) {
-          flushTable(i)
-        }
-
-        if (line) {
-          if (section.type === 'dialogue-completion') {
-            renderedBlocks.push(
-              <span key={i} style={{ display: 'inline' }}>
-                {parseLineContent(line)}
-              </span>
-            )
-          } else {
-            renderedBlocks.push(
-              <p key={i} style={{ margin: '12px 0', minHeight: 'auto' }}>
-                {parseLineContent(line)}
-              </p>
-            )
-          }
-        } else {
-          renderedBlocks.push(
-            <div key={`empty-${i}`} style={{ minHeight: '12px' }} />
-          )
-        }
-      }
-    }
-
-    if (inTable) {
-      flushTable('end')
-    }
-
-    return renderedBlocks
-  }
-
-  const renderPromptText = (text?: string) => {
-    if (!text) return null
-    const trimmed = text.trim()
-    if (trimmed.startsWith('[HTML:') && trimmed.endsWith(']')) {
-      const rawHtml = trimmed.slice(6, -1)
-      return <span dangerouslySetInnerHTML={{ __html: rawHtml }} />
-    }
-    return <span style={{ whiteSpace: 'pre-wrap' }}>{renderFormattedInlineText(text)}</span>
-  }
-
-  // Render question types dynamically
-  const renderQuestion = (q: Question, section: Section, index: number) => {
-    const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section.type, q.type)
-
-    switch (section.type) {
-      case 'fill-in-the-blank-wordbank': {
-        const promptText = q.prompt || ''
-        const parts = promptText.split(/_{2,}/)
-        return (
-          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-            <div className="ts-question-header">
-              <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">
-                {parts.map((part, pIdx) => (
-                  <span key={pIdx}>
-                    {renderPromptText(part)}
-                    {pIdx < parts.length - 1 && (
-                      <select
-                        className="ts-wordbank-select"
-                        value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
-                        disabled={submitted}
-                        onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
-                      >
-                        <option value="">-- Choose --</option>
-                        {section.wordbank?.map(word => {
-                          const usingQIdx = section.questions.findIndex(otherQ => userAnswers[otherQ.id] === word)
-                          const showSuffix = usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id
-                          const suffix = showSuffix ? ` (${usingQIdx + 1})` : ''
-                          return (
-                            <option key={word} value={word}>
-                              {word}{suffix}
-                            </option>
-                          )
-                        })}
-                      </select>
-                    )}
-                  </span>
-                ))}
-              </span>
-            </div>
-
-            {submitted && (
-              <div className="ts-feedback-detail">
-                {!isUserCorrect && (
-                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
-                )}
-                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
-                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
-              </div>
-            )}
-          </div>
-        )
-      }
-
-      case 'matching':
-      case 'definition-matching': {
-        const optionsList = section.options || section.wordbank || []
-        return (
-          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-            <div className="ts-question-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <span className="ts-question-prompt">
-                <span className="ts-question-num">{index + 1}.</span> {renderPromptText(q.prompt)}
-              </span>
-              <select
-                className="ts-wordbank-select"
-                value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
-                disabled={submitted}
-                onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
-              >
-                <option value="">-- Choose Option --</option>
-                {optionsList.map((opt, optIdx) => {
-                  const usingQIdx = section.questions.findIndex(otherQ => String(userAnswers[otherQ.id]) === String(opt))
-                  const showSuffix = usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id
-                  const suffix = showSuffix ? ` (${usingQIdx + 1})` : ''
-                  return (
-                    <option key={optIdx} value={opt}>
-                      {formatOptionWithLetter(opt, optIdx)}{suffix}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-
-            {submitted && (
-              <div className="ts-feedback-detail">
-                {!isUserCorrect && (
-                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
-                )}
-                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
-                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
-              </div>
-            )}
-          </div>
-        )
-      }
-
-      case 'true-false': {
-        const userVal = userAnswers[q.id]
-        return (
-          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-            <div className="ts-question-header">
-              <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
-            </div>
-            <div className="ts-tf-container" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              {[true, false].map((val) => {
-                const label = val ? 'T' : 'F'
-                let btnClass = "ts-option-btn ts-tf-btn"
-                if (userVal === val) btnClass += " selected"
-                if (submitted) {
-                  if (q.answer === val) btnClass += " correct-reveal"
-                  else if (userVal === val) btnClass += " wrong-reveal"
-                }
-                return (
-                  <button
-                    key={label}
-                    className={btnClass}
-                    disabled={submitted}
-                    style={{ padding: '6px 20px', minWidth: '60px' }}
-                    onClick={() => handleAnswerChange(q.id, val)}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-            {submitted && (
-              <div className="ts-feedback-detail">
-                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
-                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
-              </div>
-            )}
-          </div>
-        )
-      }
-
-      case 'reading-comprehension': {
-        const isMultipleChoice = q.type === 'multiple-choice'
-        const activeOptIdx = (isMultipleChoice && userAnswers[q.id] !== undefined) ? Number(userAnswers[q.id]) : null
-
-        return (
-          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-            <div className="ts-question-header">
-              <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
-            </div>
-
-            {isMultipleChoice ? (
-              <div className="ts-options-container">
-                {q.options?.map((option, oIdx) => {
-                  let btnClass = "ts-option-btn"
-                  if (activeOptIdx === oIdx) btnClass += " selected"
-                  
-                  if (submitted) {
-                    if (Number(q.answer) === oIdx) {
-                      btnClass += " correct-reveal"
-                    } else if (activeOptIdx === oIdx) {
-                      btnClass += " wrong-reveal"
-                    }
-                  }
-
-                  return (
-                    <button
-                      key={oIdx}
-                      className={btnClass}
-                      disabled={submitted}
-                      onClick={() => handleAnswerChange(q.id, oIdx)}
-                    >
-                      <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                      <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx))}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="ts-short-answer-container" style={{ marginTop: '10px' }}>
-                <textarea
-                  className="ts-blank-input"
-                  style={{ width: '100%', minHeight: '80px', padding: '10px', boxSizing: 'border-box' }}
-                  value={String(userAnswers[q.id] || '')}
-                  disabled={submitted}
-                  onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                  placeholder="Type your response here..."
-                />
-              </div>
-            )}
-
-            {submitted && (
-              <div className="ts-feedback-detail">
-                {!isMultipleChoice && (
-                  <p className="ts-correct-ans-reveal">Sample Answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
-                )}
-                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
-                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
-              </div>
-            )}
-          </div>
-        )
-      }
-
-      case 'cloze-passage':
-      case 'cloze-passage-wordbank':
-      case 'dialogue-completion': {
-        const isClozeIndex = section.type === 'cloze-passage'
-        const correctDisplay = isClozeIndex
-          ? (q.options?.[Number(q.answer)] || '')
-          : String(q.answer)
-
-        const userDisplay = isClozeIndex
-          ? (userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' ? q.options?.[Number(userAnswers[q.id])] : '--')
-          : (userAnswers[q.id] || '--')
-
-        return (
-          <div key={q.id} className={`ts-question-card ${isUserCorrect ? 'correct' : 'wrong'}`}>
-            <div className="ts-question-header">
-              <span className="ts-question-num">Blank ({q.blankIndex}):</span>
-              <span className="ts-question-prompt">
-                Your Answer: <strong className="ts-user-ans">{String(userDisplay)}</strong>
-              </span>
-            </div>
-            <div className="ts-feedback-detail">
-              {!isUserCorrect && (
-                <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{correctDisplay}</strong></p>
-              )}
-              {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
-              {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
-            </div>
-          </div>
-        )
-      }
-
-      case 'fill-in-the-blank-firstletter': {
-        const promptText = q.prompt || ''
-        const parts = promptText.split(/_{2,}/)
-        const currentAnsRaw = String(userAnswers[q.id] || '')
-        const currentAnswersList = currentAnsRaw.includes('|||')
-          ? currentAnsRaw.split('|||')
-          : (parts.length - 1 > 1 ? currentAnsRaw.split(' ') : [currentAnsRaw])
-
-        const handleBlankChange = (blankIdx: number, val: string) => {
-          if (parts.length - 1 === 1) {
-            handleAnswerChange(q.id, val)
-          } else {
-            const nextList = []
-            for (let b = 0; b < parts.length - 1; b++) {
-              nextList.push(b === blankIdx ? val : (currentAnswersList[b] || ''))
-            }
-            handleAnswerChange(q.id, nextList.join('|||'))
-          }
-        }
-
-        return (
-          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-            <div className="ts-question-header">
-              <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">
-                {parts.map((part, pIdx) => {
-                  const val = currentAnswersList[pIdx] || ''
-                  return (
-                    <span key={pIdx}>
-                      {renderPromptText(part)}
-                      {pIdx < parts.length - 1 && (
-                        <input
-                          type="text"
-                          className="ts-blank-input"
-                          value={val}
-                          disabled={submitted}
-                          onChange={(e) => handleBlankChange(pIdx, e.target.value)}
-                          placeholder="type here..."
-                        />
-                      )}
-                    </span>
-                  )
-                })}
-              </span>
-            </div>
-
-            {submitted && (
-              <div className="ts-feedback-detail">
-                {!isUserCorrect && (
-                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
-                )}
-                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
-                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
-              </div>
-            )}
-          </div>
-        )
-      }
-
-      case 'multiple-choice': {
-        const activeOptIdx = userAnswers[q.id] !== undefined ? Number(userAnswers[q.id]) : null
-        return (
-          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-            <div className="ts-question-header">
-              <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
-            </div>
-
-            <div className="ts-options-container">
-              {q.options?.map((option, oIdx) => {
-                let btnClass = "ts-option-btn"
-                if (activeOptIdx === oIdx) btnClass += " selected"
-                
-                if (submitted) {
-                  if (Number(q.answer) === oIdx) {
-                    btnClass += " correct-reveal"
-                  } else if (activeOptIdx === oIdx) {
-                    btnClass += " wrong-reveal"
-                  }
-                }
-
-                return (
-                  <button
-                    key={oIdx}
-                    className={btnClass}
-                    disabled={submitted}
-                    onClick={() => handleAnswerChange(q.id, oIdx)}
-                  >
-                    <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                    <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx))}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            {submitted && (
-              <div className="ts-feedback-detail">
-                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
-                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
-              </div>
-            )}
-          </div>
-        )
-      }
-
-      case 'short-answer': {
-        return (
-          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-            <div className="ts-question-header">
-              <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">{renderPromptText(q.prompt || '')}</span>
-            </div>
-
-            <div className="ts-short-answer-container" style={{ marginTop: '10px' }}>
-              <input
-                type="text"
-                className="ts-blank-input"
-                style={{ width: '100%', padding: '10px', boxSizing: 'border-box', borderRadius: '6px' }}
-                value={String(userAnswers[q.id] || '')}
-                disabled={submitted}
-                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                placeholder="Type your answer here..."
-              />
-            </div>
-
-            {submitted && (
-              <div className="ts-feedback-detail">
-                {!isUserCorrect && (
-                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
-                )}
-                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
-                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
-              </div>
-            )}
-          </div>
-        )
-      }
-
-      case 'put-words-in-order': {
-        const availableBlocks = parseWordBlocks(q.prompt)
-        const selectedIndices = selectedBlocksMap[q.id] || []
-        const userVal = String(userAnswers[q.id] || '')
-
-        return (
-          <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-            <div className="ts-question-header">
-              <span className="ts-question-num">{index + 1}.</span>
-              <span className="ts-question-prompt">
-                <span style={{ fontSize: '0.85em', color: '#64748b', fontWeight: 500, marginRight: '8px' }}>
-                  (Click words to form sentence)
-                </span>
-              </span>
-            </div>
-
-            {/* Available Word Blocks / Scrambled Pool */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px', marginBottom: '14px' }}>
-              {availableBlocks.map((block, bIdx) => {
-                const isUsed = selectedIndices.includes(bIdx)
-                return (
-                  <button
-                    key={bIdx}
-                    disabled={submitted || isUsed}
-                    className="ts-option-btn"
-                    style={{
-                      padding: '6px 14px',
-                      fontSize: '0.95rem',
-                      fontWeight: 600,
-                      borderRadius: '8px',
-                      opacity: isUsed ? 0.35 : 1,
-                      cursor: (submitted || isUsed) ? 'default' : 'pointer',
-                      border: '1.5px solid #cbd5e1',
-                      background: isUsed ? '#f1f5f9' : '#ffffff',
-                      color: isUsed ? '#94a3b8' : '#334155',
-                      boxShadow: isUsed ? 'none' : '0 1px 2px rgba(0,0,0,0.05)'
-                    }}
-                    onClick={() => {
-                      if (submitted || isUsed) return
-                      const newIndices = [...selectedIndices, bIdx]
-                      setSelectedBlocksMap(prev => ({ ...prev, [q.id]: newIndices }))
-                      const newAns = formatSentenceFromBlocks(newIndices.map(i => availableBlocks[i]))
-                      handleAnswerChange(q.id, newAns, section)
-                    }}
-                  >
-                    {block}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Assembled Sentence Display */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '10px', minHeight: '44px', padding: '10px 14px', borderRadius: '8px', border: '1.5px solid #cbd5e1', background: '#f8fafc' }}>
-              <div style={{ fontSize: '1.05rem', fontWeight: 600, color: userVal ? '#1e293b' : '#94a3b8', flex: 1 }}>
-                {userVal || <span style={{ fontWeight: 400, fontStyle: 'italic' }}>Click word blocks above to form sentence...</span>}
-              </div>
-
-              {!submitted && userVal && (
-                <button
-                  type="button"
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    background: '#ffffff',
-                    color: '#64748b',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => {
-                    setSelectedBlocksMap(prev => ({ ...prev, [q.id]: [] }))
-                    handleAnswerChange(q.id, '', section)
-                  }}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-
-            {/* Assembled Chips / Tokens Preview when clicked */}
-            {selectedIndices.length > 0 && !submitted && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748b', marginRight: '4px' }}>Selected:</span>
-                {selectedIndices.map((bIdx, pos) => (
-                  <span
-                    key={pos}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '3px 10px',
-                      borderRadius: '6px',
-                      background: '#eff6ff',
-                      border: '1px solid #bfdbfe',
-                      color: '#1d4ed8',
-                      fontSize: '0.9rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
-                    title="Click to remove"
-                    onClick={() => {
-                      const newIndices = selectedIndices.filter((_, p) => p !== pos)
-                      setSelectedBlocksMap(prev => ({ ...prev, [q.id]: newIndices }))
-                      const newAns = formatSentenceFromBlocks(newIndices.map(i => availableBlocks[i]))
-                      handleAnswerChange(q.id, newAns, section)
-                    }}
-                  >
-                    {availableBlocks[bIdx]} ✕
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {submitted && (
-              <div className="ts-feedback-detail">
-                {!isUserCorrect && (
-                  <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
-                )}
-                {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
-                {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
-              </div>
-            )}
-          </div>
-        )
-      }
-
-      default:
-        return (
-          <div key={q.id} className="ts-question-card">
-            <p>Unsupported question type: {section.type}</p>
-          </div>
-        )
-    }
-  }
-
-  const renderPassage = (passageText: string) => {
-    const lines = passageText.split('\n')
-    const renderedBlocks: React.ReactNode[] = []
-    
-    let inTable = false
-    let tableHeaders: string[] = []
-    let tableRows: string[][] = []
-
-    const renderInlineFormatting = (text: string) => {
-      return renderFormattedInlineText(text)
-    }
-
-    const renderSentences = (text: string, pIdx: string | number) => {
-      const sentences = text.split(/(?<=[.!?])\s+/)
-      return sentences.map((sentence, sIdx) => {
-        const isHighlighted = highlightedSentence?.paraIdx === pIdx && highlightedSentence?.sentenceIdx === sIdx
-        return (
-          <span
-            key={sIdx}
-            className={`ts-passage-sentence ${isHighlighted ? 'highlighted' : ''}`}
-            style={{ cursor: 'pointer', borderRadius: '3px', padding: '1px 3px', transition: 'background 0.2s ease' }}
-            onClick={() => setHighlightedSentence(prev => prev?.paraIdx === pIdx && prev?.sentenceIdx === sIdx ? null : { paraIdx: pIdx, sentenceIdx: sIdx })}
-          >
-            {renderInlineFormatting(sentence)}{' '}
-          </span>
-        )
-      })
-    }
-
-    const flushTable = (key: string | number) => {
-      if (tableRows.length > 0 || tableHeaders.length > 0) {
-        renderedBlocks.push(
-          <div key={`table-${key}`} className="ts-passage-table-wrapper">
-            <table className="ts-passage-table">
-              {tableHeaders.length > 0 && (
-                <thead>
-                  <tr>
-                    {tableHeaders.map((h, i) => (
-                      <th key={i}>
-                        {renderSentences(h, `th-${key}-${i}`)}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-              )}
-              <tbody>
-                {tableRows.map((row, rowIndex) => {
-                  const diff = tableHeaders.length - row.length
-                  return (
-                    <tr key={rowIndex}>
-                      {row.map((cell, cellIndex) => {
-                        const isLast = cellIndex === row.length - 1
-                        const colSpan = (isLast && diff > 0) ? diff + 1 : undefined
-                        return (
-                          <td key={cellIndex} colSpan={colSpan} style={colSpan ? { textAlign: 'center' } : undefined}>
-                            {renderSentences(cell, `td-${key}-${rowIndex}-${cellIndex}`)}
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )
-        tableHeaders = []
-        tableRows = []
-      }
-      inTable = false
-    }
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (line.startsWith('|') && line.endsWith('|')) {
-        const cells = line.split('|').map(c => c.trim()).slice(1, -1)
-        
-        if (cells.every(c => /^:-*-*:*$/.test(c) || /^-+$/.test(c))) {
-          continue
-        }
-
-        if (!inTable) {
-          inTable = true
-          tableHeaders = cells
-        } else {
-          tableRows.push(cells)
-        }
-      } else {
-        if (inTable) {
-          flushTable(i)
-        }
-        
-        if (line.startsWith('[HTML:') && line.endsWith(']')) {
-          const rawHtml = line.slice(6, -1)
-          renderedBlocks.push(
-            <div key={`html-${i}`} className="ts-html-passage-block" dangerouslySetInnerHTML={{ __html: rawHtml }} style={{ margin: '15px 0', width: '100%', overflowX: 'auto' }} />
-          )
-          continue
-        }
-
-        if (line) {
-          if (line.startsWith('#')) {
-            const match = line.match(/^(#+)\s*(.*)$/)
-            if (match) {
-              const headerLevel = Math.min(match[1].length + 1, 6)
-              const content = match[2]
-              const Tag = `h${headerLevel}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
-              renderedBlocks.push(
-                <Tag key={`h-${i}`} style={{ marginBottom: '12px', fontWeight: 'bold', color: '#1e293b' }}>
-                  {renderInlineFormatting(content)}
-                </Tag>
-              )
-              continue
-            }
-          }
-          renderedBlocks.push(
-            <p key={`p-${i}`} style={{ marginBottom: '12px' }}>
-              {renderSentences(line, i)}
-            </p>
-          )
-        }
-      }
-    }
-
-    if (inTable) {
-      flushTable('end')
-    }
-
-    return renderedBlocks
-  }
-
-  const renderPrintPassage = (passageText: string, isCloze: boolean = false) => {
-    const lines = passageText.split('\n')
-    const renderedBlocks: React.ReactNode[] = []
-    
-    let inTable = false
-    let tableHeaders: string[] = []
-    let tableRows: string[][] = []
-
-    const parseLine = (lineText: string) => {
-      const trimmed = lineText.trim()
-      if (trimmed.startsWith('[HTML:') && trimmed.endsWith(']')) {
-        const rawHtml = trimmed.slice(6, -1)
-        return <div key="html" className="ts-print-html-block" dangerouslySetInnerHTML={{ __html: rawHtml }} />
-      }
-
-      if (isCloze) {
-        const parts = lineText.split(/(\[\d+\])/g)
-        return parts.map((part, index) => {
-          const match = part.match(/^\[(\d+)\]$/)
-          if (match) {
-            const blankNum = match[1]
-            return <span key={index} className="ts-print-blank"> ___({blankNum})___ </span>
-          }
-          return <span key={`text-${index}`}>{renderFormattedInlineText(part)}</span>
-        })
-      }
-
-      return renderFormattedInlineText(lineText)
-    }
-
-    const flushTable = (key: string | number) => {
-      if (tableRows.length > 0 || tableHeaders.length > 0) {
-        renderedBlocks.push(
-          <div key={`table-${key}`} className="ts-print-table-wrapper">
-            <table className="ts-print-table">
-              {tableHeaders.length > 0 && (
-                <thead>
-                  <tr>
-                    {tableHeaders.map((h, i) => (
-                      <th key={i}>{parseLine(h)}</th>
-                    ))}
-                  </tr>
-                </thead>
-              )}
-              <tbody>
-                {tableRows.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {row.map((cell, cellIndex) => (
-                      <td key={cellIndex}>{parseLine(cell)}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
-        tableHeaders = []
-        tableRows = []
-      }
-      inTable = false
-    }
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (line.startsWith('|') && line.endsWith('|')) {
-        const cells = line.split('|').map(c => c.trim()).slice(1, -1)
-        if (cells.every(c => /^:-*-*:*$/.test(c) || /^-+$/.test(c))) {
-          continue
-        }
-        if (!inTable) {
-          inTable = true
-          tableHeaders = cells
-        } else {
-          tableRows.push(cells)
-        }
-      } else {
-        if (inTable) flushTable(i)
-        if (line) {
-          if (line.startsWith('#')) {
-            const match = line.match(/^(#+)\s*(.*)$/)
-            if (match) {
-              renderedBlocks.push(
-                <div key={`h-${i}`} className="ts-print-passage-heading">
-                  {renderFormattedInlineText(match[2])}
-                </div>
-              )
-              continue
-            }
-          }
-          renderedBlocks.push(
-            <p key={`p-${i}`} className="ts-print-passage-p">
-              {parseLine(line)}
-            </p>
-          )
-        }
-      }
-    }
-
-    if (inTable) flushTable('end')
-    return renderedBlocks
-  }
-
   const activeSection = data.sections[activeSectionIdx]
 
   return (
@@ -1631,376 +491,189 @@ export function TestSheetShell({
             )}
           </aside>
 
-        {/* Content sheet */}
-        <main className="ts-sheet-paper">
-          {activeSection && (
-            <div className="ts-section-view">
-              <div className="ts-section-header">
-                <p className="ts-instruction">{activeSection.instruction}</p>
-              </div>
-
-              {/* Wordbank or Matching options pool at top of active section */}
-              {(activeSection.type === 'fill-in-the-blank-wordbank' || activeSection.type === 'definition-matching' || activeSection.type === 'matching') && (activeSection.wordbank || activeSection.options) && (
-                <div className="ts-wordbank-pool">
-                  {(activeSection.options || activeSection.wordbank)?.map((opt, optIdx) => {
-                    const isUsed = activeSection.questions.some(q => {
-                      const ans = userAnswers[q.id]
-                      return ans !== undefined && (String(ans) === String(opt) || (typeof ans === 'number' && ans === optIdx))
-                    })
-                    return (
-                      <span key={optIdx} className={`ts-wordbank-chip ${isUsed ? 'used' : ''}`}>
-                        {formatOptionWithLetter(opt, optIdx)}
-                      </span>
-                    )
-                  })}
-                </div>
-              )}
-
-
-              {/* Render Dialogue Completion Inline Text */}
-              {activeSection.type === 'dialogue-completion' && activeSection.dialogue && (
-                <div className="ts-dialogue-completion-container" style={{ margin: '20px 0', padding: '15px', background: '#fafafa', border: '1px solid #eaeaea', borderRadius: '8px' }}>
-                  {activeSection.dialogue.map((turn, tIdx) => {
-                    const elements = parseInlineBlanks(turn.text, activeSection)
-                    return (
-                      <div key={tIdx} className="ts-dialogue-turn" style={{ margin: '8px 0', lineHeight: '1.6' }}>
-                        <strong className="ts-speaker" style={{ color: '#4b5563', marginRight: '8px' }}>{turn.speaker}:</strong>
-                        <span className="ts-turn-text">{elements}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Render Cloze Passage Inline Text */}
-              {(activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank') && activeSection.passage && (
-                <div className="ts-cloze-passage-container" style={{ margin: '20px 0', padding: '15px', background: '#fafafa', border: '1px solid #eaeaea', borderRadius: '8px', lineHeight: '2.2', fontSize: '1.05em' }}>
-                  {parseInlineBlanks(activeSection.passage, activeSection)}
-                </div>
-              )}
-
-              {/* Render Reading/True-False Passage */}
-              {(activeSection.type === 'reading-comprehension' || activeSection.type === 'true-false' || activeSection.type === 'fill-in-the-blank-wordbank') && activeSection.passage && (
-                <div className="ts-reading-comprehension-passage" style={{ margin: '20px 0', padding: '20px', background: '#fcfcfc', borderLeft: '4px solid #3b82f6', borderRadius: '4px', lineHeight: '1.8', fontSize: '1.05em', fontStyle: 'italic', color: '#374151' }}>
-                  {renderPassage(activeSection.passage)}
-                </div>
-              )}
-
-              {/* Questions List */}
-              <div className="ts-questions-list">
-                {activeSection.questions.map((q, qIdx) => {
-                  // For inline questions, don't show the feedback cards before submission
-                  if ((activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank' || activeSection.type === 'dialogue-completion') && !submitted) {
-                    return null
-                  }
-                  return renderQuestion(q, activeSection, qIdx)
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Bottom actions */}
-          <div className="ts-footer-actions" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-            {!submitted ? (
-              activeSectionIdx < data.sections.length - 1 ? (
-                <>
-                  {activeSectionIdx > 0 && (
-                    <button
-                      className="ts-submit-btn ts-prev-btn"
-                      onClick={() => setActiveSectionIdx(prev => prev - 1)}
-                      style={{ maxWidth: '80px' }}
-                    >
-                      &lt;
-                    </button>
-                  )}
-                  <button
-                    className="ts-submit-btn ts-next-btn"
-                    onClick={() => setActiveSectionIdx(prev => prev + 1)}
-                    style={{ margin: 0 }}
-                  >
-                    Next Section
-                  </button>
-                </>
-              ) : (
-                <>
-                  {activeSectionIdx > 0 && (
-                    <button
-                      className="ts-submit-btn ts-prev-btn"
-                      onClick={() => setActiveSectionIdx(prev => prev - 1)}
-                      style={{ maxWidth: '80px' }}
-                    >
-                      &lt;
-                    </button>
-                  )}
-                  <button
-                    className="ts-submit-btn"
-                    onClick={() => setShowConfirmSubmitModal(true)}
-                    style={{ margin: 0 }}
-                  >
-                    Submit Test
-                  </button>
-                </>
-              )
-            ) : (
-              <div className="ts-results-dashboard">
-                <h3>🎉 Test Graded!</h3>
-                <div className="ts-rewards-grid">
-                  <div className="ts-reward-card">
-                    <span className="ts-reward-emoji">⚡</span>
-                    <span className="ts-reward-val">+{gainedXp} XP</span>
-                  </div>
-                  <div className="ts-reward-card">
-                    <span className="ts-reward-emoji">❤️</span>
-                    <span className="ts-reward-val">+{gainedLove} Love</span>
-                  </div>
-                  {gainedCoins > 0 && (
-                    <div className="ts-reward-card">
-                      <span className="ts-reward-emoji">🪙</span>
-                      <span className="ts-reward-val">+{gainedCoins} Coin{gainedCoins > 1 ? 's' : ''}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </main>
-        </div>
-      </div>
-      {showStartModal && (
-        <div className="ts-modal-overlay">
-          <div className="ts-modal-card">
-            <h2 className="ts-modal-title">Ready to Begin?</h2>
-            {remainingAttempts > 0 ? (
-              <>
-                <p className="ts-modal-text">
-                  This is your <strong>{getOrdinal(6 - remainingAttempts)}</strong> attempt today. You have a maximum of <strong>5</strong> attempts daily.
-                </p>
-                <p className="ts-modal-subtext">Are you ready to start the test?</p>
-                <div className="ts-modal-buttons">
-                  <button className="ts-modal-btn yes" onClick={handleStartTest}>Yes, start!</button>
-                  <button className="ts-modal-btn no" onClick={() => navigate('/dashboard')}>No, go back</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="ts-modal-text">
-                  You have <strong>no attempts</strong> left today. Please come back tomorrow!
-                </p>
-                <div className="ts-modal-buttons">
-                  <button className="ts-modal-btn back" onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
-                  {isAdmin && (
-                    <button className="ts-modal-btn yes" style={{ backgroundColor: '#10b981', color: '#fff' }} onClick={handleResetAttempts}>
-                      Reset Attempts (Admin)
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-      {showConfirmSubmitModal && (
-        <div className="ts-modal-overlay">
-          <div className="ts-modal-card">
-            <h2 className="ts-modal-title">Confirm Submission</h2>
-            <p className="ts-modal-text">
-              Scores of 70 to 89 earn 1 coin; scores of 90 and above earn 2 coins.
-            </p>
-            <p className="ts-modal-subtext">Proceed to check?</p>
-            <div className="ts-modal-buttons">
-              <button className="ts-modal-btn yes" onClick={() => {
-                setShowConfirmSubmitModal(false)
-                handleSubmit()
-              }}>Yes</button>
-              <button className="ts-modal-btn no" onClick={() => setShowConfirmSubmitModal(false)}>No</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Printable Sheet (visible only in print mode) */}
-      <div className="ts-print-document">
-        <div className="ts-print-header">
-          <div className="ts-print-title-group">
-            <h1 className="ts-print-title">{data.title}</h1>
-            <span className="ts-print-subtitle">({data.level})</span>
-          </div>
-          <div className="ts-print-meta-info">
-            <span>姓名: ____________</span>
-            <span>班级: ____________</span>
-            <span>学号: ____________</span>
-            <span>得分: ____________</span>
-          </div>
-        </div>
-
-        <div className="ts-print-columns">
-          {data.sections.map((sec, sIdx) => {
-            return (
-              <section key={sec.id || sIdx} className="ts-print-section">
-                <div className="ts-print-section-header">
-                  <div className="ts-print-sec-title">
-                    {sec.title}
-                  </div>
-                  {sec.instruction && (
-                    <div className="ts-print-sec-instruction">{sec.instruction}</div>
-                  )}
+          {/* Content sheet */}
+          <main className="ts-sheet-paper">
+            {activeSection && (
+              <div className="ts-section-view">
+                <div className="ts-section-header">
+                  <p className="ts-instruction">{activeSection.instruction}</p>
                 </div>
 
-                {/* Wordbank or Matching options if present */}
-                {(sec.wordbank || sec.options) && sec.type !== 'dialogue-completion' && (
-                  <div className="ts-print-box">
-                    <div className="ts-print-box-title">【 {sec.type === 'matching' || sec.type === 'definition-matching' ? '匹配备选选项 / Options' : '词汇备选框 / Word Bank'} 】</div>
-                    <div className="ts-print-wordbank-list">
-                      {(sec.options || sec.wordbank)?.map((w, wIdx) => (
-                        <span key={wIdx} className="ts-print-word-item">{formatOptionWithLetter(w, wIdx)}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Dialogue completion options if present */}
-                {sec.type === 'dialogue-completion' && sec.options && sec.options.length > 0 && (
-                  <div className="ts-print-box">
-                    <div className="ts-print-box-title">【 补全对话备选选项 / Options 】</div>
-                    <div className="ts-print-dialogue-options-grid">
-                      {sec.options.map((opt, oIdx) => (
-                        <div key={oIdx} className="ts-print-dialogue-opt-item">
-                          {formatOptionWithLetter(opt, oIdx)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Dialogue body */}
-                {sec.type === 'dialogue-completion' && sec.dialogue && (
-                  <div className="ts-print-dialogue">
-                    {sec.dialogue.map((turn, tIdx) => {
-                      const parts = turn.text.split(/(\[\d+\])/g)
+                {/* Wordbank or Matching options pool at top of active section */}
+                {(activeSection.type === 'fill-in-the-blank-wordbank' || activeSection.type === 'definition-matching' || activeSection.type === 'matching') && (activeSection.wordbank || activeSection.options) && (
+                  <div className="ts-wordbank-pool">
+                    {(activeSection.options || activeSection.wordbank)?.map((opt, optIdx) => {
+                      const isUsed = activeSection.questions.some(q => {
+                        const ans = userAnswers[q.id]
+                        return ans !== undefined && (String(ans) === String(opt) || (typeof ans === 'number' && ans === optIdx))
+                      })
                       return (
-                        <div key={tIdx} className="ts-print-dialogue-turn">
-                          <strong>{turn.speaker}: </strong>
-                          <span>
-                            {parts.map((p, pIdx) => {
-                              const m = p.match(/^\[(\d+)\]$/)
-                              if (m) {
-                                return <span key={pIdx} className="ts-print-blank"> ___({m[1]})___ </span>
-                              }
-                              return <span key={pIdx}>{renderFormattedInlineText(p)}</span>
-                            })}
-                          </span>
-                        </div>
+                        <span key={optIdx} className={`ts-wordbank-chip ${isUsed ? 'used' : ''}`}>
+                          {formatOptionWithLetter(opt, optIdx)}
+                        </span>
                       )
                     })}
                   </div>
                 )}
 
-                {/* Passage for cloze or reading */}
-                {sec.passage && (
-                  <div className="ts-print-passage">
-                    {renderPrintPassage(sec.passage, sec.type === 'cloze-passage' || sec.type === 'cloze-passage-wordbank')}
-                  </div>
-                )}
-
-                {/* Cloze questions options list */}
-                {sec.type === 'cloze-passage' && (
-                  <div className="ts-print-cloze-questions">
-                    {sec.questions.map((q, qIdx) => (
-                      <div key={q.id || qIdx} className="ts-print-cloze-q-row">
-                        <span className="ts-print-q-num">({q.blankIndex || qIdx + 1})</span>
-                        <div className="ts-print-options-grid">
-                          {q.options?.map((opt, oIdx) => (
-                            <span key={oIdx} className="ts-print-option-item">
-                              {formatOptionWithLetter(opt, oIdx)}
-                            </span>
-                          ))}
-                        </div>
+                {/* Render Dialogue Completion Inline Text */}
+                {activeSection.type === 'dialogue-completion' && activeSection.dialogue && (
+                  <div className="ts-dialogue-completion-container" style={{ margin: '20px 0', padding: '15px', background: '#fafafa', border: '1px solid #eaeaea', borderRadius: '8px' }}>
+                    {activeSection.dialogue.map((turn, tIdx) => (
+                      <div key={tIdx} className="ts-dialogue-turn" style={{ margin: '8px 0', lineHeight: '1.6' }}>
+                        <strong className="ts-speaker" style={{ color: '#4b5563', marginRight: '8px' }}>{turn.speaker}:</strong>
+                        <span className="ts-turn-text">
+                          <TestSheetInlineBlanksPassage
+                            text={turn.text}
+                            section={activeSection}
+                            userAnswers={userAnswers}
+                            submitted={submitted}
+                            handleAnswerChange={handleAnswerChange}
+                          />
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* General questions list for other types */}
-                {sec.type !== 'cloze-passage' && sec.type !== 'cloze-passage-wordbank' && sec.type !== 'dialogue-completion' && (
-                  <div className="ts-print-questions-list">
-                    {sec.questions.map((q, qIdx) => {
-                      if (sec.type === 'multiple-choice' || (sec.type === 'reading-comprehension' && q.type === 'multiple-choice')) {
-                        return (
-                          <div key={q.id || qIdx} className="ts-print-q-card">
-                            <div className="ts-print-q-prompt">
-                              <span className="ts-print-q-prefix">( &nbsp;&nbsp;&nbsp; ) {qIdx + 1}.</span> {renderPromptText(q.prompt)}
-                            </div>
-                            {q.options && q.options.length > 0 && (
-                              <div className="ts-print-options-grid">
-                                {q.options.map((opt, oIdx) => (
-                                  <span key={oIdx} className="ts-print-option-item">
-                                    {formatOptionWithLetter(opt, oIdx)}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )
-                      }
-
-                      if (sec.type === 'fill-in-the-blank-wordbank') {
-                        return (
-                          <div key={q.id || qIdx} className="ts-print-q-card">
-                            <div className="ts-print-q-prompt">
-                              <span className="ts-print-q-prefix">{qIdx + 1}.</span>{' '}
-                              {renderPromptText(q.prompt?.replace(/_{2,}/g, ' _______________ '))}
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      if (sec.type === 'definition-matching' || sec.type === 'matching' || sec.type === 'true-false') {
-                        return (
-                          <div key={q.id || qIdx} className="ts-print-q-card">
-                            <div className="ts-print-q-prompt">
-                              <span className="ts-print-q-prefix">( &nbsp;&nbsp;&nbsp; ) {qIdx + 1}.</span> {renderPromptText(q.prompt)}
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      if (sec.type === 'put-words-in-order') {
-                        return (
-                          <div key={q.id || qIdx} className="ts-print-q-card">
-                            <div className="ts-print-q-prompt">
-                              <span className="ts-print-q-prefix">{qIdx + 1}.</span> [ {q.prompt} ]
-                            </div>
-                            <div className="ts-print-answer-line">答: ________________________________________________________________</div>
-                          </div>
-                        )
-                      }
-
-                      if (sec.type === 'fill-in-the-blank-firstletter') {
-                        return (
-                          <div key={q.id || qIdx} className="ts-print-q-card">
-                            <div className="ts-print-q-prompt">
-                              <span className="ts-print-q-prefix">{qIdx + 1}.</span> {renderPromptText(q.prompt)}
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      // Default or Short Answer
-                      return (
-                        <div key={q.id || qIdx} className="ts-print-q-card">
-                          <div className="ts-print-q-prompt">
-                            <span className="ts-print-q-prefix">{qIdx + 1}.</span> {renderPromptText(q.prompt)}
-                          </div>
-                          <div className="ts-print-answer-line">答: ________________________________________________________________</div>
-                        </div>
-                      )
-                    })}
+                {/* Render Cloze Passage Inline Text */}
+                {(activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank') && activeSection.passage && (
+                  <div className="ts-cloze-passage-container" style={{ margin: '20px 0', padding: '15px', background: '#fafafa', border: '1px solid #eaeaea', borderRadius: '8px', lineHeight: '2.2', fontSize: '1.05em' }}>
+                    <TestSheetInlineBlanksPassage
+                      text={activeSection.passage}
+                      section={activeSection}
+                      userAnswers={userAnswers}
+                      submitted={submitted}
+                      handleAnswerChange={handleAnswerChange}
+                    />
                   </div>
                 )}
-              </section>
-            )
-          })}
+
+                {/* Render Reading/True-False Passage */}
+                {(activeSection.type === 'reading-comprehension' || activeSection.type === 'true-false' || activeSection.type === 'fill-in-the-blank-wordbank') && activeSection.passage && (
+                  <div className="ts-reading-comprehension-passage" style={{ margin: '20px 0', padding: '20px', background: '#fcfcfc', borderLeft: '4px solid #3b82f6', borderRadius: '4px', lineHeight: '1.8', fontSize: '1.05em', fontStyle: 'italic', color: '#374151' }}>
+                    <TestSheetInteractivePassage
+                      passageText={activeSection.passage}
+                      highlightedSentence={highlightedSentence}
+                      setHighlightedSentence={setHighlightedSentence}
+                    />
+                  </div>
+                )}
+
+                {/* Questions List */}
+                <div className="ts-questions-list">
+                  {activeSection.questions.map((q, qIdx) => {
+                    if ((activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank' || activeSection.type === 'dialogue-completion') && !submitted) {
+                      return null
+                    }
+                    return (
+                      <TestSheetQuestionItem
+                        key={q.id}
+                        q={q}
+                        section={activeSection}
+                        index={qIdx}
+                        submitted={submitted}
+                        userAnswers={userAnswers}
+                        selectedBlocksMap={selectedBlocksMap}
+                        setSelectedBlocksMap={setSelectedBlocksMap}
+                        handleAnswerChange={handleAnswerChange}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Bottom actions */}
+            <div className="ts-footer-actions" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              {!submitted ? (
+                activeSectionIdx < data.sections.length - 1 ? (
+                  <>
+                    {activeSectionIdx > 0 && (
+                      <button
+                        className="ts-submit-btn ts-prev-btn"
+                        onClick={() => setActiveSectionIdx(prev => prev - 1)}
+                        style={{ maxWidth: '80px' }}
+                      >
+                        &lt;
+                      </button>
+                    )}
+                    <button
+                      className="ts-submit-btn ts-next-btn"
+                      onClick={() => setActiveSectionIdx(prev => prev + 1)}
+                      style={{ margin: 0 }}
+                    >
+                      Next Section
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {activeSectionIdx > 0 && (
+                      <button
+                        className="ts-submit-btn ts-prev-btn"
+                        onClick={() => setActiveSectionIdx(prev => prev - 1)}
+                        style={{ maxWidth: '80px' }}
+                      >
+                        &lt;
+                      </button>
+                    )}
+                    <button
+                      className="ts-submit-btn"
+                      onClick={() => setShowConfirmSubmitModal(true)}
+                      style={{ margin: 0 }}
+                    >
+                      Submit Test
+                    </button>
+                  </>
+                )
+              ) : (
+                <div className="ts-results-dashboard">
+                  <h3>🎉 Test Graded!</h3>
+                  <div className="ts-rewards-grid">
+                    <div className="ts-reward-card">
+                      <span className="ts-reward-emoji">⚡</span>
+                      <span className="ts-reward-val">+{gainedXp} XP</span>
+                    </div>
+                    <div className="ts-reward-card">
+                      <span className="ts-reward-emoji">❤️</span>
+                      <span className="ts-reward-val">+{gainedLove} Love</span>
+                    </div>
+                    {gainedCoins > 0 && (
+                      <div className="ts-reward-card">
+                        <span className="ts-reward-emoji">🪙</span>
+                        <span className="ts-reward-val">+{gainedCoins} Coin{gainedCoins > 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </main>
         </div>
       </div>
+
+      {showStartModal && (
+        <StartModal
+          remainingAttempts={remainingAttempts}
+          isAdmin={isAdmin}
+          onStart={handleStartTest}
+          onResetAttempts={handleResetAttempts}
+        />
+      )}
+
+      {showConfirmSubmitModal && (
+        <ConfirmSubmitModal
+          onConfirm={() => {
+            setShowConfirmSubmitModal(false)
+            handleSubmit()
+          }}
+          onCancel={() => setShowConfirmSubmitModal(false)}
+        />
+      )}
+
+      {/* Printable Sheet (visible only in print mode) */}
+      <TestSheetPrintView data={data} />
     </div>
   )
 }
+export default TestSheetShell
