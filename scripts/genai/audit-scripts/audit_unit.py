@@ -801,6 +801,30 @@ def audit_writing_map(data, filename):
 
         check_wm_node(sec_tree, 0)
 
+        # Verify that declared actual word count matches sum of leaf nodes
+        leaf_sum = [0]
+        def sum_leaf_wc(node):
+            ch = node.get("children", [])
+            if not ch:
+                wc_val = node.get("word_count", 0)
+                if isinstance(wc_val, int):
+                    leaf_sum[0] += wc_val
+            for c in ch:
+                sum_leaf_wc(c)
+        sum_leaf_wc(sec_tree)
+
+        sec_key = "basic" if "Basic" in sec_name else ("advanced" if "Advanced" in sec_name else "")
+        if sec_key and isinstance(wc, dict) and "actual" in wc and isinstance(wc["actual"], dict):
+            declared = wc["actual"].get(sec_key)
+            if declared is not None and declared != leaf_sum[0]:
+                issues.append({
+                    "json_file": filename,
+                    "rule_section": "7. Model Writing Map (MWM)",
+                    "item_id": f"word_count:actual:{sec_key}",
+                    "issue_type": "Word Count Sum Mismatch",
+                    "description": f"Declared actual {sec_key} word count ({declared}) does not match sum of leaf node word_count fields ({leaf_sum[0]})."
+                })
+
     return issues
 
 

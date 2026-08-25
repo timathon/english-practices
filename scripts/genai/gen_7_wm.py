@@ -44,18 +44,23 @@ def parse_required_word_count(text: str) -> int:
 def extract_given_phrases(wt_content: str) -> list[str]:
     """Extract opening/ending sentences if marked as pre-given and not counted towards words."""
     patterns = []
-    if re.search(r"(?:开头|结尾).*?(?:已给出|给出).*?(?:不计入|不计)", wt_content):
+    if re.search(r"(?:开头|结尾|已给出内容|已给出).*?(?:已给出|给出).*?(?:不计入|不计|不包括)", wt_content) or re.search(r"(?:已给出内容不计入总词数|不计入总词数)", wt_content):
         for line in wt_content.splitlines():
             line = line.strip()
-            if "________" in line:
+            if line.startswith(">"):
+                clean_l = re.sub(r"^[>\s*#`]+", "", line).strip()
+                clean_l = re.sub(r"[*#`]+$", "", clean_l).strip()
+                if clean_l and not clean_l.startswith("___") and not clean_l.startswith("智慧背囊") and len(clean_l) > 2:
+                    patterns.append(clean_l)
+            elif "________" in line:
                 parts = re.split(r"_{4,}", line)
                 for p in parts:
-                    clean_p = re.sub(r"[*#`]", "", p).strip()
+                    clean_p = re.sub(r"[*#`> ]+", " ", p).strip()
                     if clean_p and len(clean_p) > 2:
                         patterns.append(clean_p)
             elif line.startswith("**") and line.endswith("**"):
                 clean_l = re.sub(r"[*#`]", "", line).strip()
-                if clean_l:
+                if clean_l and not clean_l.startswith("要求") and not clean_l.startswith("注意") and not clean_l.startswith("参考词汇"):
                     patterns.append(clean_l)
     return patterns
 
@@ -73,7 +78,7 @@ You are an expert English writing curriculum designer. Generate a Model Writing 
 - The two sections MUST be:
   1. section: "Model Essay Basic"
   2. section: "Model Essay Advanced"
-- CRITICAL: If the writing task states that opening/ending sentences are pre-given (e.g., '开头和结尾已给出，不计入总词数'), include those pre-given sentences in the tree for complete speech/essay delivery, but ensure that the student-composed body text by itself meets the required word count (~80 words for Basic, ~90-110 words for Advanced).
+- CRITICAL: If the writing task states that opening/ending sentences or greetings are pre-given (e.g., '开头和结尾已给出，不计入总词数' or '已给出内容不计入总词数'), include those pre-given sentences in the tree for complete speech/essay/letter delivery, but ensure that the student-composed body text by itself meets the required word count (~80 words for Basic, ~90-110 words for Advanced, or matching the specific prompt number).
 
 === CONTENT STRATEGY ===
 - Model Essay Basic: Write a clear, well-structured model essay answering the writing task prompt using simple, direct sentences (SVO). Focus on clarity, accuracy, and fundamental vocabulary.
@@ -136,10 +141,19 @@ def process_tree_word_counts(node: dict, given_phrases: list[str]) -> int:
     children = node.get("children", [])
     if not children:
         text = node.get("text", "").strip()
-        # Check if text is one of the pre-given phrases
         is_given = False
         for gp in given_phrases:
-            if text == gp or text.startswith(gp) or gp.startswith(text):
+            gp_clean = gp.strip()
+            if text == gp_clean or text.startswith(gp_clean) or gp_clean.startswith(text):
+                is_given = True
+                break
+            if text.startswith("Dear ") and gp_clean.startswith("Dear "):
+                is_given = True
+                break
+            if text.startswith("Best wishes") and gp_clean.startswith("Best wishes"):
+                is_given = True
+                break
+            if text in ("Yours,", "Yours sincerely,", "Li Hua", "Daniel", "Liu Bo", "Ella White"):
                 is_given = True
                 break
         
