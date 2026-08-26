@@ -788,12 +788,11 @@ Find photos of a place in different seasons. Tell the class about them.
 
 ### Fuel Up Activity 3: Listen and Write
 
-Mary: Hello, Leylay!
-Cody: Hi, Cody!
+Mary: Hello, Leylay! Hi, Cody!
 Leylay: Hi, Mary! Wow, the flowers are beautiful. Are you in a park?
 Mary: Yes, it's spring here! It is a good time to enjoy flowers.
 Leylay: Oh, yes. It's autumn here in my city.
-Mary: Where are you now, Leylay? I can see many oranges.
+Cody: Where are you now, Leylay? I can see many oranges.
 Leylay: I'm in my grandpa's garden, and I'm here to help grandpa pick oranges.
 Cody: Lucky you! In my city, it's summer all year round. I want winter!
 Leylay: But you can play in the water every day, Cody!
