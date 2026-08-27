@@ -939,6 +939,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                     sentence.prefix ||
                                     sentence.bullet !== undefined ||
                                     sentence.indent !== undefined ||
+                                    (sentence.speaker !== undefined && sentence.speaker !== currentBlock?.speaker) ||
                                     !currentBlock;
 
                                 if (isNewBlock) {
