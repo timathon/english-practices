@@ -84,6 +84,7 @@ CRITICAL RULES:
 - Translation Options and Answer:
   - Each sentence must have exactly 3 translation options (`options` array): 1 correct and 2 wrong distractors.
   - The wrong distractors MUST contain subtle traps (e.g., vocabulary swaps, tense errors, negation flips).
+  - Proper Names in Power Up (PU1): "Friendly" is the family name of the main characters. "The Friendly Farm" translates as "弗兰德利农场" (not "友好的农场"), and "the Friendly family" translates as "弗兰德利一家".
   - Avoid Lazy/Obvious Traps: Do NOT generate lazy, unnatural, or grammatically incorrect Chinese traps (e.g., simply prepending "不" to nouns/adjectives/names, or silly typos). Distractors must be realistic, natural Chinese sentences.
   - Parenthetical explanations must NOT be included in the options. Clean strings only.
   - Provide the index of the correct option in `answer` (0, 1, or 2, randomized).

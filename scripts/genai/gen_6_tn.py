@@ -63,7 +63,7 @@ Output ONLY valid JSON, no markdown fences, no commentary.
       "tree": {{
         "id": "root",
         "text": "The Friendly Farm",
-        "cn": "友好的农场",
+        "cn": "弗兰德利农场",
         "emoji": "🚜",
         "children": [
           {{
@@ -159,7 +159,11 @@ def main():
     level_upper = args.level.upper() if args.level else ""
 
     if "PU1" in path_upper or "PU1" in level_upper:
-        section_instructions = '- Sections to include: "The Friendly Farm" and "Literature" (the comic strip and playscript sections).'
+        section_instructions = (
+            '- Sections to include: "The Friendly Farm" and "Literature" (the comic strip and playscript sections).\n'
+            '- Translation Note for Power Up: "Friendly" is the family name of the main characters (the Friendly family). '
+            'Therefore, "The Friendly Farm" MUST be translated into Chinese as "弗兰德利农场" (NOT "友好的农场").'
+        )
     elif any(x in path_upper or x in level_upper for x in ["A3A", "A3B", "A4A", "A4B", "A5A", "A5B", "A6A", "A6B"]):
         section_instructions = (
             '- Sections to include: "Get Ready - Activity 1", "Start Up", "Speed Up", "Fuel Up - Activity 1", '
