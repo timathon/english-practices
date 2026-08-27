@@ -2,18 +2,18 @@
 
 **Target Directory:** `v2-data/A7A/a7a-u1`  
 **Audit Standard:** Rules specified in `GEMINI.md`  
-**Total Issues Identified:** 69
+**Total Issues Identified:** 76
 
 ---
 
 ## Summary by File
 
 - **`a7a-u1-vocab-guide.json`**: ✅ PASS (0 issues)
-- **`a7a-u1-vocab-master.json`**: ⚠️ 51 issue(s)
+- **`a7a-u1-vocab-master.json`**: ⚠️ 53 issue(s)
 - **`a7a-u1-spelling-hero.json`**: ✅ PASS (0 issues)
-- **`a7a-u1-sentence-architect.json`**: ⚠️ 11 issue(s)
+- **`a7a-u1-sentence-architect.json`**: ⚠️ 12 issue(s)
 - **`a7a-u1-recall-map.json`**: ✅ PASS (0 issues)
-- **`a7a-u1-text-navigator.json`**: ⚠️ 7 issue(s)
+- **`a7a-u1-text-navigator.json`**: ⚠️ 11 issue(s)
 - **`a7a-u1-writing-map.json`**: ✅ PASS (0 issues)
 - **`a7a-u1-grammar-wizard.json`**: ✅ PASS (0 issues)
 - **`a7a-u1-passage-decoder-s.json`**: ✅ PASS (0 issues)
@@ -75,6 +75,8 @@
 | `a7a-u1-vocab-master.json` | 2. Vocab Master (VM) | `q58f9g0h1` | ID Format | Question ID 'q58f9g0h1' is not an 8-character alphanumeric string. | Pending |
 | `a7a-u1-vocab-master.json` | 2. Vocab Master (VM) | `q59g0h1i2` | ID Format | Question ID 'q59g0h1i2' is not an 8-character alphanumeric string. | Pending |
 | `a7a-u1-vocab-master.json` | 2. Vocab Master (VM) | `q60h1i2j3` | ID Format | Question ID 'q60h1i2j3' is not an 8-character alphanumeric string. | Pending |
+| `a7a-u1-vocab-master.json` | 2. Vocab Master (VM) | `q41o2p3q4` | LLM: Missing Hint in Ambiguous Cloze | The prompt consists only of a punctuation mark and a hint, making it a pure vocabulary test rather than a contextual cloze question.<br>**Suggested Prompt:** `What ____ do you come from? (提示: 国家)` | Pending |
+| `a7a-u1-vocab-master.json` | 2. Vocab Master (VM) | `q55c6d7e8` | LLM: Missing Hint in Ambiguous Cloze | Context sentence alone allows any sport as a valid answer, but lacks a Chinese hint.<br>**Suggested Prompt:** `My favourite sport is ____. (提示: 网球)` | Pending |
 | `a7a-u1-sentence-architect.json` | 4. Sentence Architect (SA) | `409f4835` | Expanded Contraction in Accept | Accept variation 'Hi, I am Peter Brown.' expands contraction 'i'm' from en 'Hi, I'm Peter Brown.'. | Pending |
 | `a7a-u1-sentence-architect.json` | 4. Sentence Architect (SA) | `36bb9dec` | Expanded Contraction in Accept | Accept variation 'I am twelve years old.' expands contraction 'i'm' from en 'I'm twelve years old.'. | Pending |
 | `a7a-u1-sentence-architect.json` | 4. Sentence Architect (SA) | `43ff1783` | Expanded Contraction in Accept | Accept variation 'He is from the US.' expands contraction 'he's' from en 'He's from the US.'. | Pending |
@@ -86,10 +88,15 @@
 | `a7a-u1-sentence-architect.json` | 4. Sentence Architect (SA) | `5562d256` | Expanded Contraction in Accept | Accept variation 'It is a parrot.' expands contraction 'it's' from en 'It's a parrot.'. | Pending |
 | `a7a-u1-sentence-architect.json` | 4. Sentence Architect (SA) | `204dcc09` | Expanded Contraction in Accept | Accept variation 'First, do not be shy.' expands contraction 'don't' from en 'First, don't be shy.'. | Pending |
 | `a7a-u1-sentence-architect.json` | 4. Sentence Architect (SA) | `6881c19b` | Expanded Contraction in Accept | Accept variation 'It is important to get people's names right.' expands contraction 'it's' from en 'It's important to get people's names right.'. | Pending |
+| `a7a-u1-sentence-architect.json` | 4. Sentence Architect (SA) | `58b8d38d` | LLM: Noise Word Overlap | The noise word 'It' appears verbatim in the primary sentence 'It's Ms Gao, not Ms Hui.' (case-insensitive match for 'It').<br>**Suggested Noise:** ['He', 'are'] | Pending |
+| `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Section A, 1b and 1c:root` | Missing CN Translation | Node 'root' (Listening Conversations) is missing a Chinese translation ('cn' field). | Pending |
 | `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Section A, 1b and 1c:conv1_sub1` | Flat Tree Structure | Node 'conv1_sub1' has 7 direct leaf children without logical thematic sub-headings or grouping nodes (Level 1/2). | Pending |
 | `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Section A, 1b and 1c:conv1_sub2` | Flat Tree Structure | Node 'conv1_sub2' has 6 direct leaf children without logical thematic sub-headings or grouping nodes (Level 1/2). | Pending |
 | `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Section A, 1b and 1c:conv2_sub1` | Flat Tree Structure | Node 'conv2_sub1' has 7 direct leaf children without logical thematic sub-headings or grouping nodes (Level 1/2). | Pending |
+| `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Section A Activity 2a:root` | Missing CN Translation | Node 'root' (Introducing Teacher and Friend) is missing a Chinese translation ('cn' field). | Pending |
 | `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Section A Activity 2a:secA_2a_sub1` | Flat Tree Structure | Node 'secA_2a_sub1' has 7 direct leaf children without logical thematic sub-headings or grouping nodes (Level 1/2). | Pending |
 | `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Section A Activity 2a:secA_2a_sub2` | Flat Tree Structure | Node 'secA_2a_sub2' has 10 direct leaf children without logical thematic sub-headings or grouping nodes (Level 1/2). | Pending |
+| `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Section B Activity 1b:root` | Missing CN Translation | Node 'root' (Making New Friends Posts) is missing a Chinese translation ('cn' field). | Pending |
 | `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Section B Activity 1b:post_p_sub1` | Flat Tree Structure | Node 'post_p_sub1' has 6 direct leaf children without logical thematic sub-headings or grouping nodes (Level 1/2). | Pending |
+| `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Reading Plus:root` | Missing CN Translation | Node 'root' (Making New Friends at School) is missing a Chinese translation ('cn' field). | Pending |
 | `a7a-u1-text-navigator.json` | 6. Text Navigator (TN) | `Reading Plus:rp_last_sub1` | Flat Tree Structure | Node 'rp_last_sub1' has 6 direct leaf children without logical thematic sub-headings or grouping nodes (Level 1/2). | Pending |
