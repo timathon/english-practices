@@ -1,3 +1,35 @@
+# Unit 5: What a Delicious Meal! (p.41)
+
+> **Big Question:** Why do we learn to cook?
+
+---
+
+## Section A: How do we make food?
+
+- **Listening:** A conversation about making mashed potatoes
+- **Speaking:** Describe the process for making food
+- **Pronunciation:** /əʊ/, /aʊ/, /ɪə/, /eə/, /ʊə/, /sk/, /st/, /sp/, /str/, Intonation and pauses
+- **Grammar:** Exclamatory sentences; countable / uncountable nouns
+
+---
+
+## Section B: What does cooking give us?
+
+- **Reading:** A reflection on food and memory
+- **Writing:** Write a post on how to make a dish
+- **Vocabulary:**
+  - Adverbs of sequence
+  - Words related to food and cooking
+  - Measure words
+
+---
+
+## *Project
+
+- Create a recipe for a tasty dish
+
+
+
 ### --- PRINTED PAGE 41 ---
 
 # UNIT 5 What a Delicious Meal!

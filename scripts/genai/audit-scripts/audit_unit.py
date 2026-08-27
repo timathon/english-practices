@@ -650,6 +650,16 @@ def audit_text_navigator(tn, unit_path, filename):
                 })
             
             text = node.get("text", "")
+            cn = node.get("cn", "")
+            if not cn:
+                issues.append({
+                    "json_file": filename,
+                    "rule_section": "6. Text Navigator (TN)",
+                    "item_id": f"{sec_name}:{nid}",
+                    "issue_type": "Missing CN Translation",
+                    "description": f"Node '{nid}' ({text}) is missing a Chinese translation ('cn' field)."
+                })
+
             speaker = node.get("speaker")
             if speaker and text.startswith(speaker + ":"):
                 issues.append({

@@ -72,6 +72,72 @@ function extractTreeText(node, textsSet) {
     }
 }
 
+// Helper to resolve target audio record JSON path in temp/audio_records
+function getAudioRecordInfo(absPath) {
+    const repoRoot = path.resolve(__dirname, '../');
+
+    let relativeToData = path.relative(path.resolve(repoRoot, 'v2-data'), absPath);
+    if (relativeToData.startsWith('..')) {
+        relativeToData = path.relative(path.resolve(repoRoot, 'data'), absPath);
+    }
+
+    const isDir = fs.statSync(absPath).isDirectory();
+    const unitDirRel = isDir ? relativeToData : path.dirname(relativeToData);
+    const folderName = path.basename(unitDirRel);
+    const targetJsonPath = path.join(repoRoot, 'temp/audio_records', unitDirRel, `${folderName}-records.json`);
+
+    return { targetJsonPath, relativeToData };
+}
+
+// Helper to sync audio records JSON (only items with upload-done === 1 or confirmed on R2)
+function syncAudioRecords(targetAbsPath, items, bName) {
+    try {
+        const recordInfo = getAudioRecordInfo(targetAbsPath);
+        const targetJsonPath = recordInfo.targetJsonPath;
+        const targetDir = path.dirname(targetJsonPath);
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+        }
+
+        let existingRecords = { bookName: bName, items: [] };
+        if (fs.existsSync(targetJsonPath)) {
+            try {
+                existingRecords = JSON.parse(fs.readFileSync(targetJsonPath, 'utf8'));
+                if (!Array.isArray(existingRecords.items)) existingRecords.items = [];
+            } catch (e) { }
+        }
+
+        const recordMap = new Map();
+        existingRecords.items.forEach(item => {
+            if (item.hash) recordMap.set(item.hash, item);
+        });
+
+        items.forEach(item => {
+            if (item["upload-done"] === 1 || item["upload-done"] === "1") {
+                const rec = recordMap.get(item.hash) || {};
+                recordMap.set(item.hash, {
+                    ...rec,
+                    text: item.text,
+                    hash: item.hash,
+                    voice: item.voice || rec.voice || "Gemini-TTS",
+                    "tts-done": 1,
+                    "upload-done": 1,
+                    r2Url: item.r2Url || rec.r2Url || `https://r2.smartedu.com/ep/${bName}/${item.hash}.mp3`,
+                    updatedAt: new Date().toISOString()
+                });
+            }
+        });
+
+        existingRecords.bookName = bName;
+        existingRecords.items = Array.from(recordMap.values());
+
+        fs.writeFileSync(targetJsonPath, JSON.stringify(existingRecords, null, 2), 'utf8');
+        console.log(`📝 Updated audio record index: ${targetJsonPath}`);
+    } catch (e) {
+        console.error(`⚠️ Failed to update audio_records: ${e.message}`);
+    }
+}
+
 async function checkAudioExists(text, bookName) {
     const hash = crypto.createHash('md5').update(text).digest('hex');
     const r2Key = `ep/${bookName}/${hash}.mp3`;
@@ -275,28 +341,82 @@ async function main() {
             tasksToProcess = Array.from(textsSet).map(text => ({ context_sentence: text }));
             console.log(`--regenerate flag active. Processing all ${tasksToProcess.length} items...`);
         } else {
-            console.log("Checking existing audios on R2 in batches of 5...");
-            const checkResults = [];
-            const checkBatchSize = 5;
-            const textsArray = Array.from(textsSet);
-            let checkedCount = 0;
-            let existingCount = 0;
-
-            for (let i = 0; i < textsArray.length; i += checkBatchSize) {
-                const batch = textsArray.slice(i, i + checkBatchSize);
-                const batchResults = await Promise.all(batch.map(async (text) => {
-                    const res = await checkAudioExists(text, bookName);
-                    checkedCount++;
-                    if (res.exists) existingCount++;
-                    process.stdout.write(`\r🔍 Checking R2 cache [${checkedCount}/${textsArray.length}] (Found existing: ${existingCount})`);
-                    return res;
-                }));
-                checkResults.push(...batchResults);
+            // Load existing audio_records map if available
+            const audioRecordsMap = new Map(); // hash -> record object
+            let recordInfo = null;
+            try {
+                recordInfo = getAudioRecordInfo(absoluteTarget);
+                if (fs.existsSync(recordInfo.targetJsonPath)) {
+                    const existingData = JSON.parse(fs.readFileSync(recordInfo.targetJsonPath, 'utf8'));
+                    if (existingData && existingData.items && Array.isArray(existingData.items)) {
+                        existingData.items.forEach(item => {
+                            if (item.hash) audioRecordsMap.set(item.hash, item);
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error(`⚠️ Notice parsing audio_records: ${e.message}`);
             }
-            process.stdout.write('\n');
-            const missing = checkResults.filter(r => !r.exists);
-            console.log(`Check complete: ${checkResults.length - missing.length} exist, ${missing.length} missing.`);
-            tasksToProcess = missing.map(m => ({ context_sentence: m.text }));
+
+            const textsArray = Array.from(textsSet);
+            const neededAfterLocalCache = [];
+            const r2ConfirmedItems = [];
+
+            // 1. Check local audio_records first
+            for (const text of textsArray) {
+                const hash = crypto.createHash('md5').update(text).digest('hex');
+                if (audioRecordsMap.has(hash)) {
+                    // Cached locally
+                } else {
+                    neededAfterLocalCache.push({ text, hash });
+                }
+            }
+
+            const cachedCount = textsArray.length - neededAfterLocalCache.length;
+            if (cachedCount > 0) {
+                console.log(`⚡ Found ${cachedCount} item(s) in local audio_records cache. Skipping R2 check & TTS for those.`);
+            }
+
+            // 2. Check R2 for items not found in local audio_records
+            if (neededAfterLocalCache.length > 0) {
+                console.log(`Checking existing audios on R2 for ${neededAfterLocalCache.length} remaining item(s) in batches of 5...`);
+                const checkResults = [];
+                const checkBatchSize = 5;
+                let checkedCount = 0;
+                let existingCount = 0;
+
+                for (let i = 0; i < neededAfterLocalCache.length; i += checkBatchSize) {
+                    const batch = neededAfterLocalCache.slice(i, i + checkBatchSize);
+                    const batchResults = await Promise.all(batch.map(async (item) => {
+                        const res = await checkAudioExists(item.text, bookName);
+                        checkedCount++;
+                        if (res.exists) {
+                            existingCount++;
+                            r2ConfirmedItems.push({
+                                text: res.text,
+                                hash: res.hash,
+                                "upload-done": 1
+                            });
+                        }
+                        process.stdout.write(`\r🔍 Checking R2 cache [${checkedCount}/${neededAfterLocalCache.length}] (Found existing: ${existingCount})`);
+                        return res;
+                    }));
+                    checkResults.push(...batchResults);
+                }
+                process.stdout.write('\n');
+
+                // Sync newly discovered R2 items into audio_records immediately
+                if (r2ConfirmedItems.length > 0) {
+                    syncAudioRecords(absoluteTarget, r2ConfirmedItems, bookName);
+                }
+
+                const missing = checkResults.filter(r => !r.exists);
+                console.log(`Check complete: ${cachedCount + (checkResults.length - missing.length)} exist (${cachedCount} local records + ${checkResults.length - missing.length} R2), ${missing.length} missing.`);
+                tasksToProcess = missing.map(m => ({ context_sentence: m.text }));
+            } else {
+                console.log(`Check complete: all ${textsArray.length} items exist in local audio_records. 0 missing.`);
+                tasksToProcess = [];
+            }
         }
 
         const now = new Date();
@@ -308,6 +428,7 @@ async function main() {
 
         jobState = {
             bookName,
+            targetPath: absoluteTarget,
             tongjiaMap,
             noUpload,
             forceRegenerate,

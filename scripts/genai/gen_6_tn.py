@@ -63,6 +63,7 @@ Output ONLY valid JSON, no markdown fences, no commentary.
       "tree": {{
         "id": "root",
         "text": "The Friendly Farm",
+        "cn": "友好的农场",
         "emoji": "🚜",
         "children": [
           {{

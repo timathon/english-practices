@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit 5 What a Delicious Meal! · Section A Classroom Delivery Script</title>
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --secondary-color: #2b6cb0;
+            --accent-color: #d69e2e;
+            --bg-color: #f8fafc;
+            --border-color: #cbd5e1;
+            --text-color: #2d3748;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .no-print-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #1a365d;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .no-print-bar button {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .no-print-bar button:hover {
+            background: #2b6cb0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .big-question-banner {
+            background: #ebf8ff;
+            border-left: 5px solid #3182ce;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #2b6cb0;
+            margin: 20px 0;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            font-size: 13px;
+        }
+
+        .metadata-item strong {
+            color: var(--primary-color);
+        }
+
+        .legend-box {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            font-size: 12px;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--primary-color);
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        /* Badges */
+        .badge-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 3px;
+            vertical-align: middle;
+            line-height: 1.2;
+        }
+        .tag-greeting { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .tag-directive { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .tag-cfu { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+        .tag-praise { background: #fef9c3; color: #854d0e; border: 1px solid #fef08a; }
+        .tag-transition { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+        .tag-task { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; font-weight: 700; }
+
+        .board-snippet {
+            display: inline-block;
+            background: #f8fafc;
+            border-left: 2.5px solid var(--accent-color);
+            padding: 2px 6px;
+            font-style: normal;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 10.5px;
+            border-radius: 0 2px 2px 0;
+            margin: 2px 0;
+        }
+
+        .action-box {
+            background: #f8fafc;
+            border-left: 2.5px solid var(--secondary-color);
+            padding: 3px 6px;
+            font-style: italic;
+            font-size: 10.5px;
+            color: #475569;
+            margin: 2px 0;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .step-section {
+            margin-bottom: 40px;
+        }
+
+        .step-title {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 12px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .micro-time {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin: 15px 0 8px 0;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 4px;
+        }
+
+        .dialogue-turn {
+            margin-bottom: 10px;
+            font-size: 13.5px;
+        }
+
+        .turn-id {
+            font-family: monospace;
+            font-weight: 700;
+            color: #64748b;
+            margin-right: 6px;
+        }
+
+        .speaker-t {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .speaker-s {
+            font-weight: 700;
+            color: #0d9488;
+        }
+
+        @media print {
+            .no-print-bar { display: none; }
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; margin: 0; max-width: 100%; padding: 10px; }
+            .step-section { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print-bar">
+    <span>Classroom Delivery Script: Unit 5 Section A (Grade 7 English)</span>
+    <button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<div class="container">
+    <h1>Unit 5: What a Delicious Meal! · Section A Classroom Delivery Script</h1>
+    
+    <div class="big-question-banner">
+        ❓ BIG Question: Why do we learn to cook? / How do we make food?
+    </div>
+
+    <div class="metadata-grid">
+        <div class="metadata-item"><strong>Grade Level / Subject:</strong> Grade 7 English / 七年级英语</div>
+        <div class="metadata-item"><strong>Class Duration:</strong> 45 minutes (1 Class Period)</div>
+        <div class="metadata-item"><strong>Class Type:</strong> Listening, Speaking & Vocabulary Integration</div>
+        <div class="metadata-item"><strong>Core Competencies:</strong> Food preparation steps, sequential adverbs, listening skills & communicative fluency.</div>
+    </div>
+
+    <div class="legend-box">
+        <div class="legend-title">Standard Classroom English & Action Tags Legend</div>
+        <div class="legend-items">
+            <span class="badge-tag tag-greeting">Greeting & Hook</span>
+            <span class="badge-tag tag-directive">Instruction & Directives</span>
+            <span class="badge-tag tag-cfu">Checks for Understanding</span>
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span>
+            <span class="badge-tag tag-transition">Transition & Pacing</span>
+            <span class="badge-tag tag-task">Student Task</span>
+        </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="step-section">
+        <div class="step-title">Step 1: Warm-Up & Lead-In (00:00 - 05:00)</div>
+        
+        <div class="micro-time">[00:00 - 02:00] Daily Greeting & Hook</div>
+        
+        <div class="dialogue-turn">
+            <span class="turn-id">L01</span>
+            <span class="speaker-t">Teacher (T):</span> 
+            <span class="badge-tag tag-greeting">Greeting & Hook</span> 
+            Good morning, boys and girls! Welcome back to class. How are you doing today?
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L02</span>
+            <span class="speaker-s">Students (Ss):</span> 
+            Good morning, teacher! We're fine, thank you. And you?
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L03</span>
+            <span class="speaker-t">T:</span> 
+            I'm wonderful, thank you! Please sit down. 
+            <div class="action-box">[T walks to the projector, displaying Unit 5 cover page with pictures of delicious meals and food preparation.]</div>
+            <span class="badge-tag tag-directive">Instruction & Directives</span> 
+            Now, look at the screen, everyone. Look at the photos on page 41. What a delicious meal! 
+            <div class="board-snippet">[Blackboard Writing: Unit 5 What a Delicious Meal! | Big Question: Why do we learn to cook?]</div>
+        </div>
+
+        <div class="micro-time">[02:00 - 05:00] Exploring Unit Big Question & Prior Knowledge</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L04</span>
+            <span class="speaker-t">T:</span> 
+            Let's look at our Big Question for this unit: <span style="color: #2b6cb0; font-weight: 700;">Why do we learn to cook?</span> Turn to your partner and share your thoughts in 30 seconds. Go!
+            <div class="action-box">[T circulates the room, listening to student pairs discuss cooking habits.]</div>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L05</span>
+            <span class="speaker-t">T:</span> 
+            Time is up! Hands down, eyes on me please. <span class="badge-tag tag-cfu">CFU - Checks for Understanding</span> S1, what did you and your partner discuss? Why do we learn to cook?
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L06</span>
+            <span class="speaker-s">Student 1 (S1):</span> 
+            We learn to cook because we need to eat every day, and... it's a good way to show love to our family.
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L07</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span> Spot on! Outstanding answer! 10 points for Group 1! Learning to cook helps us feed ourselves and care for others. Now, let's move to Section A: <span style="font-weight: 700;">How do we make food?</span>
+            <div class="board-snippet">[Blackboard Writing: Section A: How do we make food? | Group PK Table: Group 1 (10pts) | Group 2 (0) | Group 3 (0) | Group 4 (0)]</div>
+        </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-section">
+        <div class="step-title">Step 2: Vocabulary & Picture Matching (05:00 - 15:00)</div>
+        
+        <div class="micro-time">[05:00 - 10:00] Introducing Kitchen Verbs & Nouns (Page 42)</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L08</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-directive">Instruction & Directives</span> Please open your books to page 42. Look at Activity 1a. We have six pictures showing different cooking actions. Let's study the words first. 
+            <div class="action-box">[T points to the blackboard and writes key vocabulary with phonetic symbols and gestures.]</div>
+            <span class="board-snippet">[Blackboard Writing: Vocabulary Focus: cut up, mix, bake, oven, pour... into, boil, pepper, flour, butter, cheese]</div>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L09</span>
+            <span class="speaker-t">T:</span> 
+            Repeat after me, please: <span style="font-style: italic;">cut up</span>...
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L10</span>
+            <span class="speaker-s">Ss:</span> 
+            Cut up!
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L11</span>
+            <span class="speaker-t">T:</span> 
+            <span style="font-style: italic;">Bake the cake in the oven</span>...
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L12</span>
+            <span class="speaker-s">Ss:</span> 
+            Bake the cake in the oven!
+        </div>
+
+        <div class="micro-time">[10:00 - 15:00] Matching Instructions with Pictures (Activity 1a)</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L13</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-task">Student Task</span> Now, match the instructions with pictures A to F in 1a. Work independently for 2 minutes. Ready? Begin!
+            <div class="action-box">[T monitors student work, checking individual answers across rows.]</div>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L14</span>
+            <span class="speaker-t">T:</span> 
+            Time is up. Let's check the answers together. S2, number 1: "Add pepper to the soup." Which picture?
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L15</span>
+            <span class="speaker-s">Student 2 (S2):</span> 
+            It's picture D, teacher!
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L16</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span> Excellent! Picture D. 10 points for Group 2! What about "Boil the potatoes"? S3?
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L17</span>
+            <span class="speaker-s">Student 3 (S3):</span> 
+            Picture C!
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L18</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span> Perfect! Picture C. Everyone, check your answers: D, E, B, A, F, C. Brilliant job!
+        </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step-section">
+        <div class="step-title">Step 3: Listening Comprehension (15:00 - 25:00)</div>
+        
+        <div class="micro-time">[15:00 - 20:00] Listening for Ingredients (Activity 1b)</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L19</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-transition">Transition & Pacing</span> Now that we know how to describe actions, let's listen to Peter and Teng Fei making mashed potatoes. Look at Activity 1b on page 42. 
+            <span class="badge-tag tag-directive">Instruction & Directives</span> Listen to the conversation and tick the ingredients you hear. Are you ready? Let's listen!
+            <div class="action-box">[T plays the audio track for Activity 1b & 1c once.]</div>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L20</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-cfu">CFU - Checks for Understanding</span> Hands up. Which ingredients did you hear? S4?
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L21</span>
+            <span class="speaker-s">Student 4 (S4):</span> 
+            Potatoes, milk, butter, salt, and pepper!
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L22</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span> Spot on! 10 points for Group 3! Potatoes, milk, butter, salt, and pepper.
+        </div>
+
+        <div class="micro-time">[20:00 - 25:00] Numbering Instructions (Activity 1c) & Pronunciation Focus</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L23</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-directive">Instruction & Directives</span> Now, listen again for Activity 1c. Number the instructions in the correct order from 1 to 6. Let's play the audio again.
+            <div class="action-box">[T plays audio a second time. Students write numbers in boxes.]</div>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L24</span>
+            <span class="speaker-t">T:</span> 
+            Let's check the sequence. What is step 1? S5?
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L25</span>
+            <span class="speaker-s">Student 5 (S5):</span> 
+            Wash the potatoes and cut them into pieces.
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L26</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span> Fantastic! The full order on the board: 1-Wash & cut, 2-Boil until soft, 3-Get butter & milk, 4-Mash potatoes, 5-Add milk & butter and mix, 6-Add salt and pepper.
+            <div class="action-box">[T updates blackboard writing with the sequence mindmap.]</div>
+            <span class="board-snippet">[Blackboard Writing: Mashed Potatoes Sequence: First (Wash & cut) -> Next (Boil) -> Then (Get butter/milk & mash) -> Next (Add milk/butter) -> Finally (Add salt & pepper)]</span>
+        </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step-section">
+        <div class="step-title">Step 4: Speaking & Pronunciation Workshop (25:00 - 33:00)</div>
+        
+        <div class="micro-time">[25:00 - 29:00] Pronunciation Sounds & Intonation (Page 43)</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L27</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-directive">Instruction & Directives</span> Please turn to page 43. Let's look at the pronunciation table. Notice diphthongs like /əʊ/ in <span style="font-style: italic;">potato</span> and /aʊ/ in <span style="font-style: italic;">house</span>, as well as consonant clusters like /sk/, /st/, /sp/, /str/. Listen and repeat after the recording.
+            <div class="action-box">[T plays pronunciation audio. Students listen and repeat chorally.]</div>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L28</span>
+            <span class="speaker-t">T:</span> 
+            Listen to the intonation and pauses in Activity 2: <span style="font-style: italic;">To make a banana milkshake... First, peel the bananas. Then, cut up the bananas.</span> Notice the pause marked with double bars ||. Excellent rhythm, everyone!
+        </div>
+
+        <div class="micro-time">[29:00 - 33:00] Pair Speaking Practice (Activity 1d & 2d)</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L29</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-task">Student Task</span> Now, let's practice speaking! Look at Activity 1d and 2d. Work with your elbow partner. One student asks "How do we make mashed potatoes / steamed fish?", and the other answers using sequential adverbs: <span style="font-weight: 700;">First... Next... Then... Finally...</span> You have 3 minutes. Go!
+            <div class="action-box">[T walks around the room, coaching pairs on intonation and vocabulary usage.]</div>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L30</span>
+            <span class="speaker-t">T:</span> 
+            Stop, please! Let's invite a pair to role-play in front of the class. Group 4 volunteers? S6 and S7, please!
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L31</span>
+            <span class="speaker-s">S6 & S7:</span> 
+            <span style="font-style: italic;">[Standing up]</span><br>
+            <strong>S6:</strong> How do we make stir-fried eggs and tomatoes?<br>
+            <strong>S7:</strong> First, cut the tomatoes into small pieces. Next, mix the eggs in a bowl...
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L32</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span> Wow, what a brilliant performance! Loud and clear! 15 points for Group 4! Let's give them a big hand.
+        </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step-section">
+        <div class="step-title">Step 5: Grammar Focus & Exclamatory Sentences (33:00 - 40:00)</div>
+        
+        <div class="micro-time">[33:00 - 37:00] Analyzing Exclamatory Sentences (Page 45)</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L33</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-directive">Instruction & Directives</span> Please turn to page 45. Let's study the <span style="font-weight: 700;">Grammar Focus</span>. Look at how we express strong feelings using exclamatory sentences with <span style="color: #2b6cb0;">What</span> and <span style="color: #2b6cb0;">How</span>.
+            <div class="action-box">[T writes grammar formulas on the blackboard clearly.]</div>
+            <span class="board-snippet">[Blackboard Writing: Grammar Focus: Exclamatory Sentences<br>1. What + (a/an) + adj. + noun (+ subject + verb)!<br>   Ex: What an amazing smell it is! / What a mess!<br>2. How + adj. / adv. + subject + verb!<br>   Ex: How delicious the dish looks! / How clever you are!]</span>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L34</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-cfu">CFU - Checks for Understanding</span> Notice the structure! With a countable singular noun, we use <span style="font-weight: 700;">What a/an</span>. With adjectives alone, we use <span style="font-weight: 700;">How</span>. Let's check Activity 3b. Number 1: "It's a pretty hat." How do we change it with "what"? S8?
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L35</span>
+            <span class="speaker-s">Student 8 (S8):</span> 
+            What a pretty hat it is!
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L36</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span> Spot on! What a pretty hat (it is)! Number 2: "The weather is terrible" with "how"? S9?
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L37</span>
+            <span class="speaker-s">Student 9 (S9):</span> 
+            How terrible the weather is!
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L38</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span> Brilliant! How terrible the weather is! You've mastered the grammar rule.
+        </div>
+
+        <div class="micro-time">[37:00 - 40:00] Completing Conversations (Activity 3c)</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L39</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-task">Student Task</span> Complete Activity 3c using the Word Bank expressions in 2 minutes. Go!
+            <div class="action-box">[T reviews student answers quickly across the room.]</div>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L40</span>
+            <span class="speaker-t">T:</span> 
+            Let's check: 1. C (What a lovely cake!), 2. B (What a surprise!), 3. E (How time flies!), 4. D & F. Excellent work!
+        </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="step-section">
+        <div class="step-title">Step 6: Summary, Wrap-Up & Homework (40:00 - 45:00)</div>
+        
+        <div class="micro-time">[40:00 - 43:00] Lesson Summary & Group PK Winner Declaration</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L41</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-transition">Transition & Pacing</span> We are almost out of time. Let's summarize what we learned today. We learned food vocabulary, listening to cooking instructions, using sequential adverbs (<span style="font-style: italic;">First, Next, Then, Finally</span>), and expressing strong feelings with exclamatory sentences.
+            <div class="action-box">[T tallies up the group PK points on the blackboard.]</div>
+            <span class="board-snippet">[Blackboard Writing: Final Scores: Group 1 (40pts) | Group 2 (40pts) | Group 3 (30pts) | Group 4 (45pts) -> Winner: Group 4!]</span>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L42</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-praise">Encouragement & Feedback</span> Congratulations to <span style="font-weight: 700; color: #2b6cb0;">Group 4</span> for winning today's cooking challenge with 45 points! Let's give a big round of applause to everyone!
+        </div>
+
+        <div class="micro-time">[43:00 - 45:00] Homework Assignment</div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L43</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-directive">Instruction & Directives</span> Here is your homework for tonight:
+            <div class="action-box">[T writes homework tasks on the blackboard.]</div>
+            <span class="board-snippet">[Blackboard Writing: Homework:<br>1. Write down the recipe for your favourite dish using sequential adverbs (Activity 3c on page 49).<br>2. Practice the conversation of making stir-fried eggs and tomatoes with a partner.<br>3. Preview Section B (Food for Thought).]</span>
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L44</span>
+            <span class="speaker-t">T:</span> 
+            <span class="badge-tag tag-greeting">Greeting & Hook</span> Thank you, class. You did an amazing job today! Have a wonderful day, and goodbye!
+        </div>
+
+        <div class="dialogue-turn">
+            <span class="turn-id">L45</span>
+            <span class="speaker-s">Ss:</span> 
+            Goodbye, teacher!
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

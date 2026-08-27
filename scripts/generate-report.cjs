@@ -14,6 +14,70 @@ const s3Client = new S3Client({
 });
 const BUCKET_NAME = "embroid-001";
 
+function getAudioRecordInfo(absPath) {
+    const repoRoot = path.resolve(__dirname, '../');
+
+    let relativeToData = path.relative(path.resolve(repoRoot, 'v2-data'), absPath);
+    if (relativeToData.startsWith('..')) {
+        relativeToData = path.relative(path.resolve(repoRoot, 'data'), absPath);
+    }
+
+    const isDir = fs.existsSync(absPath) && fs.statSync(absPath).isDirectory();
+    const unitDirRel = isDir ? relativeToData : path.dirname(relativeToData);
+    const folderName = path.basename(unitDirRel);
+    const targetJsonPath = path.join(repoRoot, 'temp/audio_records', unitDirRel, `${folderName}-records.json`);
+
+    return { targetJsonPath, relativeToData };
+}
+
+function syncAudioRecords(targetAbsPath, items, bName) {
+    try {
+        const recordInfo = getAudioRecordInfo(targetAbsPath);
+        const targetJsonPath = recordInfo.targetJsonPath;
+        const targetDir = path.dirname(targetJsonPath);
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+        }
+
+        let existingRecords = { bookName: bName, items: [] };
+        if (fs.existsSync(targetJsonPath)) {
+            try {
+                existingRecords = JSON.parse(fs.readFileSync(targetJsonPath, 'utf8'));
+                if (!Array.isArray(existingRecords.items)) existingRecords.items = [];
+            } catch (e) { }
+        }
+
+        const recordMap = new Map();
+        existingRecords.items.forEach(item => {
+            if (item.hash) recordMap.set(item.hash, item);
+        });
+
+        items.forEach(item => {
+            if (item.done === 1 || item["upload-done"] === 1 || item["upload-done"] === "1") {
+                const rec = recordMap.get(item.hash) || {};
+                recordMap.set(item.hash, {
+                    ...rec,
+                    text: item.text,
+                    hash: item.hash,
+                    voice: item.voice || rec.voice || "Gemini-TTS",
+                    "tts-done": 1,
+                    "upload-done": 1,
+                    r2Url: item.r2Url || rec.r2Url || `https://r2.smartedu.com/ep/${bName}/${item.hash}.mp3`,
+                    updatedAt: new Date().toISOString()
+                });
+            }
+        });
+
+        existingRecords.bookName = bName;
+        existingRecords.items = Array.from(recordMap.values());
+
+        fs.writeFileSync(targetJsonPath, JSON.stringify(existingRecords, null, 2), 'utf8');
+        console.log(`📝 Updated audio record index: ${targetJsonPath}`);
+    } catch (e) {
+        console.error(`⚠️ Failed to update audio_records: ${e.message}`);
+    }
+}
+
 function main() {
     let jobFilePath = "";
     const jobFileArg = process.argv[2];
@@ -150,6 +214,12 @@ function main() {
                         console.log(`✅ Uploaded [${doneCount}/${totalCount}]: "${item.text}" -> ${r2Key}`);
                         if (doneCount === totalCount) {
                             console.log(`\n🎉 All ${totalCount} items uploaded successfully!`);
+                        }
+
+                        // Sync newly uploaded item to audio_records JSON
+                        if (jobState.targetPath || jobFilePath) {
+                            const targetAbsPath = jobState.targetPath ? path.resolve(jobState.targetPath) : jobFilePath;
+                            syncAudioRecords(targetAbsPath, [item], bookName);
                         }
                     }
 

@@ -262,15 +262,15 @@ This document defines the rules for extracting and converting textbook data into
   - **Nesting depth:** Keep the hierarchy structured with a maximum nesting depth of 4 levels (i.e. `root` -> Level 1 -> Level 2 -> Level 3 -> Level 4) to ensure it is easy to navigate. Do not chain sentences infinitely into a single deep path.
 - **Node Rules:**
   - `id`: Unique, logical string IDs (e.g., `root`, `p1`, `p1_1`). IDs must be unique within each `tree`.
-  - `text`: **Exact verbatim text** from the passage (escape double quotes). Generally, **each node should contain only one sentence, and occasionally two (for very short, closely related fragments)**. If a speaker is specified, the speaker prefix must be omitted from `text`.
+  - `text`: **Exact verbatim text** from the passage (escape double quotes) for sentence nodes, or descriptive thematic heading for root/intermediate category nodes. If a speaker is specified, the speaker prefix must be omitted from `text`.
   - `speaker`: (Optional) The name of the speaker if the sentence is a dialogue (e.g. `"Emma"`). If present, the speaker prefix (e.g. `"Emma:"`) must NOT be part of the `text` field. **Important**: If the text includes narrative speech verbs (e.g. `I say`, `says Mum`, `she says`), keep the full narrative text intact and do NOT populate the `speaker` field.
-  - `cn`: Chinese translation of the sentence.
-  - `notes`: Brief explanations of difficult vocabulary, expressions, or grammar points.
-  - `statement`: A simple true/false statement in Chinese about the sentence's grammar or vocabulary.
+  - `cn`: Chinese translation of the sentence (for sentence nodes) or Chinese title/translation of the topic/heading (for root and intermediate category/grouping nodes).
+  - `notes`: Brief explanations of difficult vocabulary, expressions, or grammar points (for sentence nodes).
+  - `statement`: A simple true/false statement in Chinese about the sentence's grammar or vocabulary (for sentence nodes).
   - `answer`: (Boolean) The correct answer for the statement (`true` or `false`).
-  - `explanation`: Concise Chinese explanation for the true/false statement.
+  - `explanation`: Concise Chinese explanation for the true/false statement (for sentence nodes).
   - `emoji`: One highly relevant emoji mnemonic per node.
-  - `keywords`: A **comma-separated string** of 2-5 trigger words acting as hints (e.g., `"huge, storm"`, not for `root`).
+  - `keywords`: A **comma-separated string** of 2-5 trigger words acting as hints (e.g., `"huge, storm"`, not for `root` or intermediate category nodes).
   - `highlight`: (Optional) A **comma-separated string** of glue words or transition phrases to be highlighted in the browser (e.g., `"However, but, For example"`). Use `...` for split patterns.
   - `children`: Recursive array of child nodes (empty array `[]` for leaf nodes).
 - **Metadata (top-level, shared across all sections):**
