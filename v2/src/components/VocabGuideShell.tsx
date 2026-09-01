@@ -19,6 +19,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [playingIndex, setPlayingIndex] = useState<number | null>(null)
     const [tempShowAll, setTempShowAll] = useState(true)
+    const [printMode, setPrintMode] = useState<'guide' | 'c2e' | null>(null)
 
     // Modal Triggers
     const [showFlashcards, setShowFlashcards] = useState(false)
@@ -32,6 +33,16 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     for (let i = 0; i < vocab.length; i += 10) {
         chunks.push(vocab.slice(i, i + 10))
     }
+
+    useEffect(() => {
+        const handleAfterPrint = () => {
+            setPrintMode(null)
+        }
+        window.addEventListener('afterprint', handleAfterPrint)
+        return () => {
+            window.removeEventListener('afterprint', handleAfterPrint)
+        }
+    }, [])
 
     useEffect(() => {
         const originalStyle = {
@@ -175,6 +186,14 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const handlePrint = () => {
         const showChinese = window.confirm("是否在打印的词汇手册中包含中文释义？\n(确定: 包含中文 | 取消: 隐藏中文)");
         setHideCN(!showChinese);
+        setPrintMode('guide');
+        setTimeout(() => {
+            window.print();
+        }, 150);
+    };
+
+    const handlePrintC2E = () => {
+        setPrintMode('c2e');
         setTimeout(() => {
             window.print();
         }, 150);
@@ -184,9 +203,10 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const scrollToBottom = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
 
     const shownCount = vocab.length - hiddenIndices.size
+    const c2eWords = vocab.filter(item => showHiddenMode || !hiddenIndices.has(item.originalIndex))
 
     return (
-        <div className="vg-shell" ref={shellRef}>
+        <div className={`vg-shell ${printMode === 'c2e' ? 'vg-print-c2e-mode' : ''}`} ref={shellRef}>
             <table className="vg-print-table">
                 <thead className="vg-print-header-group">
                     <tr>
@@ -233,6 +253,9 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                 </button>
                                 <button id="print-btn" onClick={handlePrint} className="vg-control-btn">
                                     <span>Print 🖨️</span>
+                                </button>
+                                <button id="print-c2e-btn" onClick={handlePrintC2E} className="vg-control-btn" title="Print Chinese to English Dictation Sheet">
+                                    <span>Print C2E 📝</span>
                                 </button>
                             </div>
 
@@ -352,10 +375,40 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     <span>🖨️</span>
                     <small>Print</small>
                 </button>
+                <button onClick={handlePrintC2E} className="vg-mobile-btn" title="Print C2E">
+                    <span>📝</span>
+                    <small>C2E</small>
+                </button>
                 <button onClick={resetHidden} className="vg-mobile-btn danger">
                     <span>🧹</span>
                     <small>Reset</small>
                 </button>
+            </div>
+
+            {/* C2E Printable Document */}
+            <div className="vg-c2e-print-doc">
+                <div className="vg-c2e-header">
+                    <div className="vg-c2e-title-row">
+                        <h1 className="vg-c2e-title">Vocabulary Dictation (Chinese ➔ English)</h1>
+                        <span className="vg-c2e-level">{data.level}</span>
+                    </div>
+                    <div className="vg-c2e-meta-row">
+                        <span className="vg-c2e-meta-item">姓名 (Name): <span className="vg-c2e-meta-line"></span></span>
+                        <span className="vg-c2e-meta-item">班级 (Class): <span className="vg-c2e-meta-line"></span></span>
+                        <span className="vg-c2e-meta-item">日期 (Date): <span className="vg-c2e-meta-line"></span></span>
+                        <span className="vg-c2e-meta-item">得分 (Score): <span className="vg-c2e-meta-line short"></span> / {c2eWords.length}</span>
+                    </div>
+                </div>
+
+                <div className="vg-c2e-grid">
+                    {c2eWords.map((item, idx) => (
+                        <div key={item.originalIndex ?? idx} className="vg-c2e-item">
+                            <span className="vg-c2e-num">{idx + 1}.</span>
+                            <span className="vg-c2e-meaning">{item.meaning}</span>
+                            <span className="vg-c2e-blank-line"></span>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             {showFlashcards && (
