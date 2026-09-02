@@ -549,8 +549,8 @@ export function TestSheetShell({
                   </div>
                 )}
 
-                {/* Render Reading/True-False Passage */}
-                {(activeSection.type === 'reading-comprehension' || activeSection.type === 'true-false' || activeSection.type === 'fill-in-the-blank-wordbank') && activeSection.passage && (
+                {/* Render Passage for reading comprehension, true-false, or other reading tasks with passage (e.g., 读后写) */}
+                {activeSection.type !== 'cloze-passage' && activeSection.type !== 'cloze-passage-wordbank' && activeSection.passage && (
                   <div className="ts-reading-comprehension-passage" style={{ margin: '20px 0', padding: '20px', background: '#fcfcfc', borderLeft: '4px solid #3b82f6', borderRadius: '4px', lineHeight: '1.8', fontSize: '1.05em', fontStyle: 'italic', color: '#374151' }}>
                     <TestSheetInteractivePassage
                       passageText={activeSection.passage}

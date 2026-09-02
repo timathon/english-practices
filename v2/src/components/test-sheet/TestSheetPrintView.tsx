@@ -89,6 +89,13 @@ export function TestSheetPrintView({ data }: TestSheetPrintViewProps) {
       } else {
         if (inTable) flushTable(i)
         if (line) {
+          if (line.startsWith('[HTML:') && line.endsWith(']')) {
+            const rawHtml = line.slice(6, -1)
+            renderedBlocks.push(
+              <div key={`html-${i}`} className="ts-print-html-block" dangerouslySetInnerHTML={{ __html: rawHtml }} />
+            )
+            continue
+          }
           if (line.startsWith('#')) {
             const match = line.match(/^(#+)\s*(.*)$/)
             if (match) {
