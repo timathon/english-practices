@@ -2,14 +2,14 @@
 
 **Target Directory:** `v2-data/A8A/a8a-u4`  
 **Audit Standard:** Rules specified in `GEMINI.md`  
-**Total Issues Identified:** 13
+**Total Issues Identified:** 12
 
 ---
 
 ## Summary by File
 
 - **`a8a-u4-vocab-guide.json`**: ⚠️ 1 issue(s)
-- **`a8a-u4-vocab-master.json`**: ⚠️ 12 issue(s)
+- **`a8a-u4-vocab-master.json`**: ⚠️ 11 issue(s)
 - **`a8a-u4-spelling-hero.json`**: ✅ PASS (0 issues)
 - **`a8a-u4-sentence-architect.json`**: ✅ PASS (0 issues)
 - **`a8a-u4-recall-map.json`**: ✅ PASS (0 issues)
@@ -38,4 +38,3 @@
 | `a8a-u4-vocab-master.json` | 2. Vocab Master (VM) | `q108v5w6x` | ID Format | Question ID 'q108v5w6x' is not an 8-character alphanumeric string. | Pending |
 | `a8a-u4-vocab-master.json` | 2. Vocab Master (VM) | `q109y7z8a` | ID Format | Question ID 'q109y7z8a' is not an 8-character alphanumeric string. | Pending |
 | `a8a-u4-vocab-master.json` | 2. Vocab Master (VM) | `q110b9c0d` | ID Format | Question ID 'q110b9c0d' is not an 8-character alphanumeric string. | Pending |
-| `a8a-u4-vocab-master.json` | 2. Vocab Master (VM) | `q102c3d4e` | LLM: Missing Hint in Ambiguous Cloze | Cloze question prompt is ambiguous because multiple items listed in a supermarket context (like honey, money, funny) could technically fit syntactically/semantically as nouns/things without the exact target meaning, but lacking a clear Chinese hint makes it ambiguous.<br>**Suggested Prompt:** `Imagine you go to the supermarket, but there are almost no fruits, vegetables, ____... (提示: 蜂蜜)`<br>**Suggested Options:** ['money', 'honey', 'funny', 'sunny', 'bunny', 'pony'] | Pending |

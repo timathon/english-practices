@@ -53,6 +53,14 @@ When editing existing codebases:
 ## 6. Temporary & Scratch Directory Rule
 * Always use `temp/scratch/` for temporary scripts, intermediate generation files, and scratch files. Do NOT create or use a top-level `scratch/` directory in the repository root.
 
+## 7. Lightweight Data Edits (TN / PD / Practice Files)
+* **Check Schema in GEMINI.md First:** Before generating or editing practice data, always read the corresponding section in `GEMINI.md` (e.g., Section 6 for TN, Section 9 for PD) to use the exact schema directly, instead of grepping or over-analyzing other units.
+* **Direct Edits Over Intermediate Scaffolding:** For straightforward data additions (e.g., adding sections/passages to Text Navigator, Passage Decoder, or practice JSONs), construct and insert the JSON blocks directly using file edit tools. Do NOT create scratch scripts (`temp/scratch/*`) or multi-step execution pipelines unless doing full-unit bulk migrations.
+* **No Unsolicited Unit Audits:** Never run `audit_unit.py` (especially with LLM evaluation) on routine JSON additions/edits. Only run the unit audit when:
+  - The user explicitly inputs `"audit <folder>"` or asks for an audit.
+  - Conducting an end-to-end unit generation workflow.
+* **Minimal Targeted Validation:** For routine edits, only validate JSON syntax and the modified fields—do NOT trigger repository-wide or full-unit test suites.
+
 ---
 
 # English Practices Data Transformation Rules
