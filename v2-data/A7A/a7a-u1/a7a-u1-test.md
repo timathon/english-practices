@@ -92,7 +92,7 @@ Her name is Li Ting. Li is her last name and Ting is her first name. She is from
 
 My name is Fred. Nice to meet you! I'm 13 years old. I'm in No. 1 Middle School. I am often in a white jacket. That's my favourite colour. Do you know what my favourite subject is? It's science.
 
-I can do a lot of things. I love sports and I can play football well. I can draw beautiful pictures. I can speak some simple Chinese, like "nihao" and "zaijian".
+I can do a lot of things. I love sports and I can play football well. I can draw beautiful pictures. I can speak some <u>simple</u> Chinese, like "nihao" and "zaijian".
 
 I like making friends. Bill is my first friend in the middle school. His mother is our English teacher Mrs Black. We are in the same neighbourhood (街区), so we go to school together every morning. I have some other friends in the middle school. Jack is one of them. He is also my cousin. He is in No. 1 Middle School, too, but we are in different grades. He is in Grade 8 and I'm in Grade 7. Jack and I are both in the same sports club.
 
