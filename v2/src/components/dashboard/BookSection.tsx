@@ -619,7 +619,21 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 ...sentenceArchitectItems.map((p: any) => p.id),
                 ...grammarWizardItems.map((p: any) => p.id)
               ]);
-              const otherItems = items.filter((p: any) => !matchedIds.has(p.id));
+              const otherItems = items
+                .filter((p: any) => !matchedIds.has(p.id))
+                .sort((a: any, b: any) => {
+                  const typeA = (a.type || '').toLowerCase();
+                  const typeB = (b.type || '').toLowerCase();
+                  if (typeA && typeB && typeA !== typeB) {
+                    return typeA.localeCompare(typeB, undefined, { numeric: true, sensitivity: 'base' });
+                  }
+                  const idA = (a.id || '').toLowerCase();
+                  const idB = (b.id || '').toLowerCase();
+                  if (idA && idB && idA !== idB) {
+                    return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
+                  }
+                  return (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' });
+                });
 
               const groups = [
                 { title: '1. Recall Map', items: recallMapItems },

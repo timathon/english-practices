@@ -1,5 +1,5 @@
 import type React from 'react'
-import type { Question, Section } from './TestSheetTypes'
+import type { Question, Section, HighlightedSentence } from './TestSheetTypes'
 import {
   isAnswerCorrect,
   renderPromptText,
@@ -8,6 +8,9 @@ import {
   parseWordBlocks,
   formatSentenceFromBlocks
 } from './testSheetUtils'
+
+import { TestSheetAudioPlayer } from './TestSheetAudioPlayer'
+import { TestSheetInteractivePassage } from './TestSheetPassage'
 
 interface TestSheetQuestionItemProps {
   q: Question
@@ -18,6 +21,11 @@ interface TestSheetQuestionItemProps {
   selectedBlocksMap: Record<string, number[]>
   setSelectedBlocksMap: React.Dispatch<React.SetStateAction<Record<string, number[]>>>
   handleAnswerChange: (qId: string, value: string | number | boolean, section?: Section) => void
+  textbook: string
+  replayCounts: Record<string, number>
+  onPlayIncrement: (key: string) => void
+  highlightedSentence?: HighlightedSentence | null
+  setHighlightedSentence?: React.Dispatch<React.SetStateAction<HighlightedSentence | null>>
 }
 
 export function TestSheetQuestionItem({
@@ -28,9 +36,58 @@ export function TestSheetQuestionItem({
   userAnswers,
   selectedBlocksMap,
   setSelectedBlocksMap,
-  handleAnswerChange
+  handleAnswerChange,
+  textbook,
+  replayCounts,
+  onPlayIncrement,
+  highlightedSentence,
+  setHighlightedSentence
 }: TestSheetQuestionItemProps) {
   const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section.type, q.type)
+
+  const renderAudioPlayer = () => {
+    if (!q.audio) return null
+    return (
+      <div style={{ marginBottom: '8px' }}>
+        <TestSheetAudioPlayer
+          audio={q.audio}
+          audioKey={`q_${q.id}`}
+          textbook={textbook}
+          submitted={submitted}
+          replayCounts={replayCounts}
+          onPlayIncrement={onPlayIncrement}
+        />
+        {submitted && q.audio.text && (
+          <div
+            className="ts-reading-comprehension-passage"
+            style={{
+              margin: '8px 0',
+              padding: '10px 14px',
+              background: '#f8fafc',
+              borderLeft: '3px solid #8b5cf6',
+              borderRadius: '4px',
+              lineHeight: '1.6',
+              fontSize: '0.98em',
+              color: '#334155'
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#6d28d9', marginBottom: '4px' }}>
+              🎧 听力原文:
+            </div>
+            {setHighlightedSentence ? (
+              <TestSheetInteractivePassage
+                passageText={q.audio.text}
+                highlightedSentence={highlightedSentence ?? null}
+                setHighlightedSentence={setHighlightedSentence}
+              />
+            ) : (
+              <div style={{ fontStyle: 'italic' }}>{q.audio.text}</div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   switch (section.type) {
     case 'fill-in-the-blank-wordbank': {
@@ -128,6 +185,7 @@ export function TestSheetQuestionItem({
       const userVal = userAnswers[q.id]
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
             <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
@@ -170,6 +228,7 @@ export function TestSheetQuestionItem({
 
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
             <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
@@ -281,6 +340,7 @@ export function TestSheetQuestionItem({
 
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
             <span className="ts-question-prompt">
@@ -322,6 +382,7 @@ export function TestSheetQuestionItem({
       const activeOptIdx = userAnswers[q.id] !== undefined ? Number(userAnswers[q.id]) : null
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
             <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
@@ -367,6 +428,7 @@ export function TestSheetQuestionItem({
     case 'short-answer': {
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
             <span className="ts-question-prompt">{renderPromptText(q.prompt || '')}</span>

@@ -81,6 +81,7 @@ CRITICAL RULES:
   - `verb`: The main finite verb / predicate of the main clause (e.g., "is", "can be written", "makes", "have", "first appeared", "stands for").
   - `verb_range`: A 2-element integer array [start, end] representing the exact 0-based character slice of `verb` in `en` (e.g. [82, 84]). Verify start and end index against `en` string so en[start:end] == verb.
   - `pattern`: The core sentence pattern (e.g. "SVO", "SVC", "SVOC", "SVOO", "SV", "SV (被动)", "SVC (表语从句)", "SVO (宾语从句)", "SVOA", "There be").
+  - Compound Sentences & Multiple Main Verbs Rule: For compound sentences joined by coordinating conjunctions (such as `, but`, `, and`, `, or`, `, so`) where multiple coordinate clauses each have their own distinct subject and finite predicate (e.g., "Mia wants to save for a new bike, but Tom often spends money on candy and toys."), keep the sentence intact as a single item and specify a `verbs` array instead of a single `verb`/`verb_range`/`pattern`. Each item of `verbs` has `{ "verb": string, "verb_range": [start, end], "pattern": string }` (e.g. `[{"verb": "wants", "verb_range": [4, 9], "pattern": "SVO"}, {"verb": "spends", "verb_range": [51, 57], "pattern": "SVO"}]`).
 - Translation Options and Answer:
   - Each sentence must have exactly 3 translation options (`options` array): 1 correct and 2 wrong distractors.
   - The wrong distractors MUST contain subtle traps (e.g., vocabulary swaps, tense errors, negation flips).
@@ -248,13 +249,22 @@ def main():
 
             # Validate / fix verb_range indices against en text
             en_text = s.get("en", "")
-            verb = s.get("verb", "")
-            verb_range = s.get("verb_range")
-            if verb and (not isinstance(verb_range, list) or len(verb_range) != 2 or en_text[verb_range[0]:verb_range[1]] != verb):
-                # Recalculate verb_range if possible
-                idx = en_text.find(verb)
-                if idx != -1:
-                    s["verb_range"] = [idx, idx + len(verb)]
+            if isinstance(s.get("verbs"), list):
+                for v_item in s["verbs"]:
+                    v_word = v_item.get("verb", "")
+                    v_range = v_item.get("verb_range")
+                    if v_word and (not isinstance(v_range, list) or len(v_range) != 2 or en_text[v_range[0]:v_range[1]] != v_word):
+                        v_idx = en_text.find(v_word)
+                        if v_idx != -1:
+                            v_item["verb_range"] = [v_idx, v_idx + len(v_word)]
+            else:
+                verb = s.get("verb", "")
+                verb_range = s.get("verb_range")
+                if verb and (not isinstance(verb_range, list) or len(verb_range) != 2 or en_text[verb_range[0]:verb_range[1]] != verb):
+                    # Recalculate verb_range if possible
+                    idx = en_text.find(verb)
+                    if idx != -1:
+                        s["verb_range"] = [idx, idx + len(verb)]
 
     # Determine output filename
     if args.out:

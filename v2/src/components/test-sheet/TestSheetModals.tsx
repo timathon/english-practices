@@ -72,3 +72,32 @@ export function ConfirmSubmitModal({ onConfirm, onCancel }: ConfirmSubmitModalPr
     </div>
   )
 }
+
+interface ConfirmStopAudioModalProps {
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+export function ConfirmStopAudioModal({ onConfirm, onCancel }: ConfirmStopAudioModalProps) {
+  return (
+    <div className="ts-modal-overlay">
+      <div className="ts-modal-card">
+        <h2 className="ts-modal-title">Stop Listening Audio?</h2>
+        <p className="ts-modal-text" style={{ color: '#ef4444', fontWeight: 600 }}>
+          Warning: There will be 0 replays left once stopped.
+        </p>
+        <p className="ts-modal-subtext">
+          You will not be able to play this audio again. Are you sure you want to stop?
+        </p>
+        <div className="ts-modal-buttons">
+          <button className="ts-modal-btn yes" style={{ backgroundColor: '#ef4444', color: '#fff' }} onClick={onConfirm}>
+            Yes, stop audio
+          </button>
+          <button className="ts-modal-btn no" onClick={onCancel}>
+            Keep playing
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

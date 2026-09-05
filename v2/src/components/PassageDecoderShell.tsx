@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useBlocker } from 'react-router-dom'
 import './PassageDecoderShell.css'
 import { DailyLockModal } from './DailyLockModal'
@@ -257,39 +257,102 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
             ? Array.from(new Set(sentence.highlight.split(',').map((s: string) => s.trim()).filter(Boolean)))
             : [];
 
-        if (isCurrentActive && showMainVerb && (sentence.verb_range || sentence.verb)) {
-            const fullText: string = sentence.en;
-            let start = -1;
-            let end = -1;
-
-            if (Array.isArray(sentence.verb_range) && sentence.verb_range.length === 2) {
-                start = sentence.verb_range[0];
-                end = sentence.verb_range[1];
-            } else if (sentence.verb) {
-                start = fullText.indexOf(sentence.verb);
-                if (start !== -1) {
-                    end = start + sentence.verb.length;
+        const verbsList: Array<{ verb: string; verb_range: [number, number]; pattern?: string }> = [];
+        if (Array.isArray(sentence.verbs) && sentence.verbs.length > 0) {
+            for (const vObj of sentence.verbs) {
+                if (!vObj) continue;
+                let start = -1;
+                let end = -1;
+                if (Array.isArray(vObj.verb_range) && vObj.verb_range.length === 2) {
+                    const [s, e] = vObj.verb_range;
+                    if (s >= 0 && e <= sentence.en.length && (!vObj.verb || sentence.en.slice(s, e) === vObj.verb)) {
+                        start = s;
+                        end = e;
+                    }
+                }
+                if (start === -1 && vObj.verb) {
+                    const idx = sentence.en.indexOf(vObj.verb);
+                    if (idx !== -1) {
+                        start = idx;
+                        end = idx + vObj.verb.length;
+                    }
+                }
+                if (start >= 0 && end > start) {
+                    verbsList.push({
+                        verb: vObj.verb || sentence.en.slice(start, end),
+                        verb_range: [start, end],
+                        pattern: vObj.pattern
+                    });
                 }
             }
+        } else if (sentence.verb || sentence.verb_range) {
+            let start = -1;
+            let end = -1;
+            if (Array.isArray(sentence.verb_range) && sentence.verb_range.length === 2) {
+                const [s, e] = sentence.verb_range;
+                if (s >= 0 && e <= sentence.en.length && (!sentence.verb || sentence.en.slice(s, e) === sentence.verb)) {
+                    start = s;
+                    end = e;
+                }
+            }
+            if (start === -1 && sentence.verb) {
+                const idx = sentence.en.indexOf(sentence.verb);
+                if (idx !== -1) {
+                    start = idx;
+                    end = idx + sentence.verb.length;
+                }
+            }
+            if (start >= 0 && end > start && end <= sentence.en.length) {
+                verbsList.push({
+                    verb: sentence.verb || sentence.en.slice(start, end),
+                    verb_range: [start, end],
+                    pattern: sentence.pattern
+                });
+            }
+        }
 
-            if (start >= 0 && end > start && end <= fullText.length) {
-                const before = fullText.slice(0, start);
+        if (isCurrentActive && showMainVerb && verbsList.length > 0) {
+            // Sort by start index ascending
+            verbsList.sort((a, b) => a.verb_range[0] - b.verb_range[0]);
+
+            const fullText: string = sentence.en;
+            const fragments: React.ReactNode[] = [];
+            let lastIdx = 0;
+
+            for (let i = 0; i < verbsList.length; i++) {
+                const item = verbsList[i];
+                const [start, end] = item.verb_range;
+                if (start < lastIdx || end > fullText.length) continue;
+
+                if (start > lastIdx) {
+                    fragments.push(
+                        <React.Fragment key={`frag-text-${i}`}>
+                            {renderFormattedInlineText(fullText.slice(lastIdx, start), highlights as string[], vocabGuide, (w) => setActiveWordDetail(w))}
+                        </React.Fragment>
+                    );
+                }
+
                 const verbText = fullText.slice(start, end);
-                const after = fullText.slice(end);
+                fragments.push(
+                    <mark key={`frag-verb-${i}`} className="pd-main-verb-highlight" title={item.pattern ? `谓语动词 [${item.pattern}]` : '谓语动词 (Main Verb)'}>
+                        {renderFormattedInlineText(verbText, highlights as string[], vocabGuide, (w) => setActiveWordDetail(w))}
+                        {item.pattern && (
+                            <span className="pd-main-verb-badge">{item.pattern}</span>
+                        )}
+                    </mark>
+                );
+                lastIdx = end;
+            }
 
-                return (
-                    <>
-                        {renderFormattedInlineText(before, highlights as string[], vocabGuide, (item) => setActiveWordDetail(item))}
-                        <mark className="pd-main-verb-highlight" title={sentence.pattern ? `谓语动词 [${sentence.pattern}]` : '谓语动词 (Main Verb)'}>
-                            {renderFormattedInlineText(verbText, highlights as string[], vocabGuide, (item) => setActiveWordDetail(item))}
-                            {sentence.pattern && (
-                                <span className="pd-main-verb-badge">{sentence.pattern}</span>
-                            )}
-                        </mark>
-                        {renderFormattedInlineText(after, highlights as string[], vocabGuide, (item) => setActiveWordDetail(item))}
-                    </>
+            if (lastIdx < fullText.length) {
+                fragments.push(
+                    <React.Fragment key="frag-text-end">
+                        {renderFormattedInlineText(fullText.slice(lastIdx), highlights as string[], vocabGuide, (w) => setActiveWordDetail(w))}
+                    </React.Fragment>
                 );
             }
+
+            return <>{fragments}</>;
         }
 
         return renderFormattedInlineText(sentence.en, highlights as string[], vocabGuide, (item) => setActiveWordDetail(item));
@@ -1041,7 +1104,7 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                                 🔊
                                                             </button>
                                                         )}
-                                                        {isCurrent && (sentence.verb || sentence.verb_range) && (
+                                                        {isCurrent && (sentence.verb || sentence.verb_range || (Array.isArray(sentence.verbs) && sentence.verbs.length > 0)) && (
                                                             <button
                                                                 className={`pd-sentence-verb-btn ${showMainVerb ? 'active' : ''}`}
                                                                 title={showMainVerb ? "隐藏谓语动词 (Hide Main Verb)" : "显示谓语动词 (Show Main Verb & Structure)"}

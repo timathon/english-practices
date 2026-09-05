@@ -323,6 +323,21 @@ async function main() {
                             }
                         });
                     }
+                } else if (file.includes('-test')) {
+                    if (content.sections && Array.isArray(content.sections)) {
+                        content.sections.forEach(section => {
+                            if (section.audio && section.audio.text) {
+                                textsSet.add(getCleanText(section.audio.text));
+                            }
+                            if (section.questions && Array.isArray(section.questions)) {
+                                section.questions.forEach(q => {
+                                    if (q.audio && q.audio.text) {
+                                        textsSet.add(getCleanText(q.audio.text));
+                                    }
+                                });
+                            }
+                        });
+                    }
                 }
             } catch (e) {
                 console.error(`❌ Failed to parse ${filePath}: ${e.message}`);

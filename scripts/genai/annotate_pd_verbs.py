@@ -21,6 +21,7 @@ Analyze the following list of English sentences from a reading passage and deter
 1. "verb": The main finite verb or predicate phrase of the main clause (e.g. "is", "was", "went", "can be written", "makes", "have had", "look").
 2. "verb_range": A 2-element integer array [start, end] representing the 0-indexed character slice within the EXACT "en" string such that en[start:end] equals the "verb".
 3. "pattern": The core sentence structure pattern (e.g., "SVO", "SVC", "SVOC", "SVOO", "SV", "SV (被动)", "SVC (表语从句)", "SVO (宾语从句)", "SVOA", "SVA", "SV (祈使句)", "SVO (祈使句)").
+4. "verbs": (Optional) If the sentence is a compound sentence joined by a coordinating conjunction (such as `, but`, `, and`, `, or`, `, so`) with multiple coordinate clauses having distinct subjects and finite predicates, provide a "verbs" array containing each clause's { "verb", "verb_range", "pattern" } instead of a single "verb".
 
 CRITICAL:
 - Accurately calculate [start, end] so that sentence["en"][start:end] matches sentence["verb"].
@@ -29,7 +30,7 @@ CRITICAL:
 Sentences to analyze:
 {sentences_json}
 
-Return ONLY a JSON array of objects with the fields "id", "verb", "verb_range", "pattern", matching the input IDs in the exact same order.
+Return ONLY a JSON array of objects with the fields "id", "verb", "verb_range", "pattern" (or "verbs" for compound sentences), matching the input IDs in the exact same order.
 Example format:
 [
   {{
@@ -37,6 +38,13 @@ Example format:
     "verb": "is",
     "verb_range": [82, 84],
     "pattern": "SVC (表语从句)"
+  }},
+  {{
+    "id": "pd_yyy",
+    "verbs": [
+      {{ "verb": "wants", "verb_range": [4, 9], "pattern": "SVO" }},
+      {{ "verb": "spends", "verb_range": [51, 57], "pattern": "SVO" }}
+    ]
   }}
 ]
 """
@@ -104,23 +112,43 @@ def process_file(file_path: Path, client: genai.Client, model_name: str):
                 s_id = s.get("id")
                 if s_id in res_map:
                     analysis = res_map[s_id]
-                    verb = analysis.get("verb", "")
-                    verb_range = analysis.get("verb_range")
-                    pattern = analysis.get("pattern", "")
-                    
-                    en_text = s.get("en", "")
-                    
-                    # Verify / fix verb_range
-                    if verb:
-                        if not isinstance(verb_range, list) or len(verb_range) != 2 or en_text[verb_range[0]:verb_range[1]] != verb:
-                            # Fallback exact find
-                            idx = en_text.find(verb)
-                            if idx != -1:
-                                verb_range = [idx, idx + len(verb)]
-                    
-                    s["verb"] = verb
-                    s["verb_range"] = verb_range
-                    s["pattern"] = pattern
+                    if "verbs" in analysis and isinstance(analysis["verbs"], list):
+                        verified_verbs = []
+                        for v_item in analysis["verbs"]:
+                            v_verb = v_item.get("verb", "")
+                            v_range = v_item.get("verb_range")
+                            v_pattern = v_item.get("pattern", "")
+                            if v_verb:
+                                if not isinstance(v_range, list) or len(v_range) != 2 or en_text[v_range[0]:v_range[1]] != v_verb:
+                                    v_idx = en_text.find(v_verb)
+                                    if v_idx != -1:
+                                        v_range = [v_idx, v_idx + len(v_verb)]
+                                verified_verbs.append({
+                                    "verb": v_verb,
+                                    "verb_range": v_range,
+                                    "pattern": v_pattern
+                                })
+                        s["verbs"] = verified_verbs
+                        s.pop("verb", None)
+                        s.pop("verb_range", None)
+                        s.pop("pattern", None)
+                    else:
+                        verb = analysis.get("verb", "")
+                        verb_range = analysis.get("verb_range")
+                        pattern = analysis.get("pattern", "")
+                        
+                        # Verify / fix verb_range
+                        if verb:
+                            if not isinstance(verb_range, list) or len(verb_range) != 2 or en_text[verb_range[0]:verb_range[1]] != verb:
+                                # Fallback exact find
+                                idx = en_text.find(verb)
+                                if idx != -1:
+                                    verb_range = [idx, idx + len(verb)]
+                        
+                        s["verb"] = verb
+                        s["verb_range"] = verb_range
+                        s["pattern"] = pattern
+                        s.pop("verbs", None)
                     total_updated += 1
 
     with open(file_path, "w", encoding="utf-8") as f:

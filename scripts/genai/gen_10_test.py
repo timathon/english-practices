@@ -20,7 +20,7 @@ import os, sys, json, argparse, re, random, string
 from pathlib import Path
 from google import genai
 from google.genai import types
-from config import get_genai_config, parse_high_flag
+from config import get_genai_config, parse_high_flag, parse_paid_flag, get_fallback_api_key, get_fallback_model
 
 def generate_id(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -83,6 +83,19 @@ RULES:
    - **任务型阅读 Conversion Rule:** Always map the section "任务型阅读" (Task-based Reading, which traditionally has open-ended or short-answer questions based on a passage) to the `"multiple-choice"` type under a `"reading-comprehension"` section (instead of short-answer), and generate 4 plausible multiple-choice options (`options` array) with one correct answer index (0-3) for each question using AI.
    - **Multi-Passage Reading Comprehension Rule:** When a reading comprehension section in the markdown source contains multiple distinct passages (e.g. labeled "### A", "### B", or "Passage A", "Passage B"), you MUST generate each passage as its own separate section object in the `sections` array (e.g. `s2`: "二、阅读理解 A", `s3`: "三、阅读理解 B"), with its own `id`, `title`, `instruction`, `type`: `"reading-comprehension"`, `passage` containing ONLY that passage's text, and its respective subset of `questions`. Do NOT combine multiple distinct passages into a single section.
    - **Visual Diagram Conversion Rule:** If there is any `[*VISUAL: ...*]` diagram description (like a bar chart or graph) inside a passage, convert it into a beautiful, styled, responsive HTML/CSS diagram/chart (with proper bars, colors, labels, legends, etc. using inline CSS layout styles) wrapped in `[HTML: <chart-html>]`. The design must be extremely clean, polished, use modern color palettes, and be readable on light background themes.
+   - **Listening Questions & Audio Specification Rule:**
+      When a section contains listening comprehension exercises (e.g., instructions like "听对话", "听短文", "根据听到的内容", "听录音", or questions tied to listening scripts under `听力原文` / appendix at the bottom of the markdown):
+      - **One Section per Spoken Audio:** Each distinct listening passage or dialogue (e.g., "请听第一段对话, 完成第1、2小题", "请听第二段对话, 完成第3、4、5小题") MUST be its own separate section object in `sections` (e.g., `s1`: "一、听对话 1", `s2`: "二、听对话 2") so that questions 1 and 2 share the first conversation audio at the section level, and questions 3, 4, and 5 share the second conversation audio at their section level.
+      - Place the `audio` object at the **section level** (`section.audio`):
+        ```json
+        "audio": {{
+          "text": "Boy: Hi, Amy! Do you often spend your pocket money on toys?\\nGirl: No, not really. I like to save my pocket money.\\nBoy: Then what do you usually do with it?\\nGirl: I buy books and share them with my classmates.\\nBoy: That's wise.",
+          "maxReplays": 1
+        }}
+        ```
+      - Do NOT place duplicate `audio` on each individual question item if they share the section dialogue/passage.
+      - `audio.text` MUST contain ONLY the spoken English dialogue/monologue verbatim without Chinese directions like "请听第一段对话..." or question guidance.
+      - `audio.maxReplays` must be an integer, default to 1.
    - `id`: Unique string ID identifying the section (e.g. "s1", "s2", "s3").
    - `title`: Short, clean, and concise display title (e.g. "一、完形填空", "二、阅读理解").
    - `instruction`: Instruction text in Chinese.
@@ -101,6 +114,7 @@ RULES:
    - `wordbank`: (Required for `fill-in-the-blank-wordbank`, `cloze-passage-wordbank`, `definition-matching`) Array of strings representing candidate words or sentences.
    - `dialogue`: (Required for `dialogue-completion`) Array of turn objects: `{{ "speaker": string, "text": string }}` where blanks are indicated by placeholders like "[1]".
    - `options`: (Required for `dialogue-completion` at section level) Array of candidate sentences.
+   - `audio`: (Optional for listening section) `{{ "text": string, "maxReplays": 1 }}`
    - `questions`: Array of question items.
 
 4. Question item fields:
@@ -141,6 +155,7 @@ TEST MARKDOWN:
 
 def main():
     use_high = parse_high_flag()
+    force_paid = parse_paid_flag()
 
     parser = argparse.ArgumentParser(description="Generate test JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to the test markdown file (e.g. data/A8A/a8a-u1/a8a-u1-test.md)")
@@ -171,7 +186,7 @@ def main():
             "(0-indexed integer)."
         )
 
-    api_key, model_name = get_genai_config(use_high)
+    api_key, model_name = get_genai_config(use_high, force_paid=force_paid)
 
     client = genai.Client(api_key=api_key)
     prompt = PROMPT_TEMPLATE.format(level=level, conversion_instruction=conversion_instruction, source=source)
@@ -179,24 +194,34 @@ def main():
     print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
     import time
     parsed = None
+    gen_config = {
+        "temperature": 0.2,
+        "response_mime_type": "application/json"
+    }
+    if "3.5" in model_name:
+        gen_config["thinking_config"] = types.ThinkingConfig(thinking_level="minimal")
+    elif "3.7" in model_name:
+        gen_config["thinking_config"] = types.ThinkingConfig(thinking_budget=0)
+
     for attempt in range(5):
         try:
             response = client.models.generate_content(
                 model=model_name,
                 contents=prompt,
-                config=types.GenerateContentConfig(
-                    thinking_config=types.ThinkingConfig(thinking_level="minimal"),
-                    temperature=0.2,
-                    response_mime_type="application/json"
-                )
+                config=types.GenerateContentConfig(**gen_config)
             )
             parsed = extract_json(response.text)
             break
         except Exception as e:
             print(f"Error calling Gemini API / parsing JSON (attempt {attempt + 1}/5): {e}", file=sys.stderr)
+            alt_key = get_fallback_api_key(api_key)
+            if alt_key and alt_key != api_key:
+                print("Switching to alternative API key...", file=sys.stderr)
+                api_key = alt_key
+                client = genai.Client(api_key=api_key)
             if attempt == 4:
                 raise e
-            time.sleep(2 ** attempt)
+            time.sleep(min(30, 2 ** (attempt + 2)))
 
     # Post-process to ensure all sections and questions have valid structure/IDs
     for i, section in enumerate(parsed.get("sections", []), 1):
@@ -207,9 +232,20 @@ def main():
         if "title" in section:
             section["title"] = section["title"].strip()
 
+        if "audio" in section and isinstance(section["audio"], dict):
+            if "maxReplays" not in section["audio"] or not isinstance(section["audio"]["maxReplays"], int):
+                section["audio"]["maxReplays"] = 1
+            if "text" in section["audio"]:
+                section["audio"]["text"] = section["audio"]["text"].strip()
+
         for q in section.get("questions", []):
             if "id" not in q or len(q["id"]) != 8:
                 q["id"] = generate_id(8)
+            if "audio" in q and isinstance(q["audio"], dict):
+                if "maxReplays" not in q["audio"] or not isinstance(q["audio"]["maxReplays"], int):
+                    q["audio"]["maxReplays"] = 1
+                if "text" in q["audio"]:
+                    q["audio"]["text"] = q["audio"]["text"].strip()
 
     # Determine output path
     stem = md_path.stem

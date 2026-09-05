@@ -237,7 +237,7 @@ export function TestSheetInlineBlanksPassage({
                   )
                 })
               ) : section.type === 'dialogue-completion' ? (
-                section.options?.map((opt, optIdx) => {
+                (section.options || section.wordbank)?.map((opt, optIdx) => {
                   const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(opt))
                   const showSuffix = usingQ && usingQ.id !== q.id
                   const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''

@@ -392,6 +392,7 @@ This document defines the rules for extracting and converting textbook data into
     - `verb`: The main finite verb / predicate phrase of the main clause (e.g., `"is"`, `"can be written"`, `"makes"`).
     - `verb_range`: A 2-element integer array `[start, end]` representing the exact character 0-indexed slice `[start, end]` of `verb` within `en` (e.g. `[82, 84]`).
     - `pattern`: The core sentence pattern / clause type (e.g., `"SVO"`, `"SVC"`, `"SVOC"`, `"SVOO"`, `"SV (被动)"`, `"SVC (表语从句)"`, `"SVO (宾语从句)"`, `"SVOA"`).
+  - **Compound Sentences & Multiple Main Verbs Rule**: For compound sentences joined by coordinating conjunctions (such as `, but`, `, and`, `, or`, `, so`) where multiple coordinate clauses each have their own distinct subject and finite predicate (e.g., `"Mia wants to save for a new bike, but Tom often spends money on candy and toys."`), keep the sentence intact as a single item and specify a `verbs` array instead of a single `verb`/`verb_range`/`pattern`. Each element of `verbs` has `{ "verb": string, "verb_range": [start, end], "pattern": string }` (e.g. `[{"verb": "wants", "verb_range": [4, 9], "pattern": "SVO"}, {"verb": "spends", "verb_range": [51, 57], "pattern": "SVO"}]`). This allows both main verbs and their respective SVO tags to be highlighted simultaneously without unnaturally splitting the sentence.
 - **Options and Answer**:
   - Each sentence must have exactly 3 translation options (`options` array): 1 correct and 2 wrong distractors containing subtle traps (e.g., vocabulary swaps, tense errors, negation flips).
   - **Avoid Lazy/Obvious Traps**: Do NOT generate lazy, unnatural, or grammatically incorrect Chinese traps, such as simply prepending "不" to nouns, adjectives, names, pronouns, or adverbial phrases (e.g., "不印度尼西亚...", "不我们...", "不如果你..."), or using silly typos like "大时" instead of "小时". Distractors must be realistic, natural Chinese sentences.
@@ -661,6 +662,25 @@ module.exports = {
   ]
 }
 ```
+
+---
+
+## 14. Test Sheet (TS)
+**Source:** Test markdown file (e.g. `*-test.md`, `*-test-xtza.md`).
+**Target:** `*-test*.json` (Save in the same folder as source)
+
+- **Structure:**
+  - `level`: Grade/Semester info (e.g. "Grade 6 Semester 1 - Unit 1").
+  - `title`: Test title (e.g. "Unit 1 学习质量评价 (A卷)").
+  - `sections`: Array of section objects.
+- **Listening Questions & Audio Specifications:**
+  - When the source markdown contains listening exercises (e.g. `听对话`, `听短文`, `根据听到的内容`, with listening scripts provided under `听力原文` or in the appendix):
+    - **One Section per Listening Audio:** Each distinct listening dialogue or passage (e.g. "请听第一段对话, 完成第1、2小题", "请听第二段对话, 完成第3、4、5小题") MUST be generated as its own separate section object in `sections` (e.g., `s1`: "一、听力理解 - 第一段对话", `s2`: "二、听力理解 - 第二段对话"), with that conversation/passage's audio placed at the **section level** (`section.audio`).
+    - Questions belonging to that dialogue/passage must NOT repeat `audio` on each question card; students listen to the audio once/twice for the whole group of questions.
+    - `audio` object fields:
+      - `text`: The clean English transcript/dialogue to be spoken by TTS (e.g. `"Boy: Hi, Amy! Do you often spend your pocket money on toys?\nGirl: No, not really. I like to save my pocket money..."`). Remove Chinese directions like "请听第一段对话".
+      - `maxReplays`: Integer specifying how many times the audio can be replayed after the initial play. **Defaults to `1`** (meaning 1 initial play + 1 replay = 2 total plays).
+- **Question Types:** Supports `multiple-choice`, `true-false`, `reading-comprehension`, `cloze-passage`, `cloze-passage-wordbank`, `fill-in-the-blank-wordbank`, `fill-in-the-blank-firstletter`, `dialogue-completion`, `definition-matching`, `matching`, `put-words-in-order`.
 
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.** If the textbook for the generated JSONs does not exist in `v2/public/textbooks.json` or `v2/src/lib/textbooks.ts`, you must add the textbook to both files.

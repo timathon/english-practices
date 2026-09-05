@@ -1,3 +1,9 @@
+export interface AudioSpec {
+  text: string
+  maxReplays?: number
+  url?: string
+}
+
 export interface Question {
   id: string
   prompt?: string
@@ -7,6 +13,7 @@ export interface Question {
   explanation?: string
   blankIndex?: number
   type?: 'multiple-choice' | 'short-answer'
+  audio?: AudioSpec
 }
 
 export interface Section {
@@ -30,6 +37,7 @@ export interface Section {
   options?: string[]
   passage?: string
   dialogue?: { speaker: string; text: string }[]
+  audio?: AudioSpec
   questions: Question[]
 }
 

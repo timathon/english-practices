@@ -23,6 +23,7 @@ import {
   TestSheetInteractivePassage,
   TestSheetInlineBlanksPassage
 } from './test-sheet/TestSheetPassage'
+import { TestSheetAudioPlayer } from './test-sheet/TestSheetAudioPlayer'
 import { TestSheetPrintView } from './test-sheet/TestSheetPrintView'
 
 export function TestSheetShell({
@@ -53,7 +54,15 @@ export function TestSheetShell({
 
   const [userAnswers, setUserAnswers] = useState<Record<string, string | number | boolean>>(initialAnswers || {})
   const [selectedBlocksMap, setSelectedBlocksMap] = useState<Record<string, number[]>>({})
+  const [replayCounts, setReplayCounts] = useState<Record<string, number>>({})
   const [submitted, setSubmitted] = useState(!!initialSubmitted)
+
+  const handlePlayIncrement = useCallback((key: string) => {
+    setReplayCounts(prev => ({
+      ...prev,
+      [key]: (prev[key] || 0) + 1
+    }))
+  }, [])
   const [score, setScore] = useState(initialScore || 0)
   const [gainedXp, setGainedXp] = useState(0)
   const [gainedLove, setGainedLove] = useState(0)
@@ -383,6 +392,8 @@ export function TestSheetShell({
   // Retry the test
   const handleRetry = () => {
     setUserAnswers({})
+    setSelectedBlocksMap({})
+    setReplayCounts({})
     setSubmitted(false)
     setScore(0)
     setGainedXp(0)
@@ -497,10 +508,47 @@ export function TestSheetShell({
               <div className="ts-section-view">
                 <div className="ts-section-header">
                   <p className="ts-instruction">{activeSection.instruction}</p>
+                  {activeSection.audio && (
+                    <div style={{ marginTop: '10px' }}>
+                      <TestSheetAudioPlayer
+                        audio={activeSection.audio}
+                        audioKey={`sec_${activeSection.id}`}
+                        textbook={textbook}
+                        submitted={submitted}
+                        replayCounts={replayCounts}
+                        onPlayIncrement={handlePlayIncrement}
+                      />
+                    </div>
+                  )}
+                  {submitted && activeSection.audio?.text && (
+                    <div
+                      className="ts-reading-comprehension-passage"
+                      style={{
+                        margin: '18px 0 10px 0',
+                        padding: '16px 20px',
+                        background: '#f8fafc',
+                        borderLeft: '4px solid #8b5cf6',
+                        borderRadius: '6px',
+                        lineHeight: '1.8',
+                        fontSize: '1.05em',
+                        color: '#334155'
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#6d28d9', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>🎧</span>
+                        <span>听力原文 (Listening Script)</span>
+                      </div>
+                      <TestSheetInteractivePassage
+                        passageText={activeSection.audio.text}
+                        highlightedSentence={highlightedSentence}
+                        setHighlightedSentence={setHighlightedSentence}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Wordbank or Matching options pool at top of active section */}
-                {(activeSection.type === 'fill-in-the-blank-wordbank' || activeSection.type === 'definition-matching' || activeSection.type === 'matching') && (activeSection.wordbank || activeSection.options) && (
+                {(activeSection.type === 'fill-in-the-blank-wordbank' || activeSection.type === 'definition-matching' || activeSection.type === 'matching' || activeSection.type === 'dialogue-completion') && (activeSection.wordbank || activeSection.options) && (
                   <div className="ts-wordbank-pool">
                     {(activeSection.options || activeSection.wordbank)?.map((opt, optIdx) => {
                       const isUsed = activeSection.questions.some(q => {
@@ -577,6 +625,11 @@ export function TestSheetShell({
                         selectedBlocksMap={selectedBlocksMap}
                         setSelectedBlocksMap={setSelectedBlocksMap}
                         handleAnswerChange={handleAnswerChange}
+                        textbook={textbook}
+                        replayCounts={replayCounts}
+                        onPlayIncrement={handlePlayIncrement}
+                        highlightedSentence={highlightedSentence}
+                        setHighlightedSentence={setHighlightedSentence}
                       />
                     )
                   })}
