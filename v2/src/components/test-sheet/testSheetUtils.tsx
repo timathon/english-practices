@@ -1,6 +1,17 @@
 import React from 'react'
+import md5 from 'md5'
 
 export const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
+
+export const resolveTestAudioUrl = (audio: { url?: string; text?: string } | undefined | null, textbook: string): string => {
+  if (!audio) return ''
+  if (audio.url) return audio.url
+  const text = audio.text?.trim()
+  if (!text) return ''
+  const hash = md5(text)
+  const bookCategory = (textbook || '').toLowerCase()
+  return `${PUBLIC_URL_BASE}/ep/${bookCategory}/${hash}.mp3`
+}
 
 export const getOrdinal = (n: number): string => {
   if (n === 1) return "1st"
@@ -66,6 +77,18 @@ export const cleanOptionText = (text: string, oIdx: number): string => {
   return text.replace(regex, '')
 }
 
+export const renderOptionContent = (opt: string, idx: number): React.ReactNode => {
+  const prefix = String.fromCharCode(65 + idx)
+  const cleaned = cleanOptionText(String(opt || ''), idx)
+  return (
+    <>
+      <strong className="ts-option-prefix">{prefix}. </strong>
+      {renderPromptText(cleaned)}
+    </>
+  )
+}
+
+
 export const normalizeSentence = (str: string): string => {
   return String(str || '')
     .trim()
@@ -108,12 +131,24 @@ export const renderFormattedInlineText = (text: string): React.ReactNode => {
 
 export const renderPromptText = (text?: string): React.ReactNode => {
   if (!text) return null
-  const trimmed = text.trim()
-  if (trimmed.startsWith('[HTML:') && trimmed.endsWith(']')) {
-    const rawHtml = trimmed.slice(6, -1)
-    return <span dangerouslySetInnerHTML={{ __html: rawHtml }} />
+  // Strip leading question numbering like "1. ", "2. ", "(1) " if present so it doesn't duplicate ts-question-num
+  const cleanText = text.trim().replace(/^(\d+[\.、\)]|\(\d+\))\s*/, '')
+  if (cleanText.includes('[HTML:')) {
+    const parts = cleanText.split(/(\[HTML:[\s\S]*?\])/g)
+    return (
+      <>
+        {parts.map((part, idx) => {
+          if (part.startsWith('[HTML:') && part.endsWith(']')) {
+            const rawHtml = part.slice(6, -1)
+            return <span key={idx} dangerouslySetInnerHTML={{ __html: rawHtml }} />
+          }
+          if (!part.trim()) return null
+          return <span key={idx} style={{ whiteSpace: 'pre-wrap' }}>{renderFormattedInlineText(part)}</span>
+        })}
+      </>
+    )
   }
-  return <span style={{ whiteSpace: 'pre-wrap' }}>{renderFormattedInlineText(text)}</span>
+  return <span style={{ whiteSpace: 'pre-wrap' }}>{renderFormattedInlineText(cleanText)}</span>
 }
 
 export const isAnswerCorrect = (userAns: any, correctAns: any, sectionType?: string, qType?: string): boolean => {
@@ -132,6 +167,14 @@ export const isAnswerCorrect = (userAns: any, correctAns: any, sectionType?: str
   }
 
   if (sectionType === 'reading-comprehension' && qType === 'short-answer') {
+    if (correctAns !== undefined && correctAns !== null && String(correctAns).trim().length > 0) {
+      const u = String(userAns || '').trim().toLowerCase()
+      const c = String(correctAns || '').trim().toLowerCase()
+      if (u === c) return true
+      if (c === '11' && (u === '11' || u === 'eleven')) return true
+      if (c === 'eleven' && (u === '11' || u === 'eleven')) return true
+      return false
+    }
     return String(userAns || '').trim().length > 0
   }
 

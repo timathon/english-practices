@@ -186,13 +186,7 @@ export function TestSheetInlineBlanksPassage({
         const isClozeIndex = section.type === 'cloze-passage'
         const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section.type, q.type)
 
-        let selectClass = "ts-inline-select"
-        if (section.type === 'dialogue-completion') {
-          selectClass += " dialogue-type"
-        }
-        if (submitted) {
-          selectClass += isUserCorrect ? " correct" : " wrong"
-        }
+        const isSelectMode = section.type === 'cloze-passage' || section.type === 'cloze-passage-wordbank' || section.type === 'dialogue-completion' || (q.options && q.options.length > 0) || (section.wordbank && section.wordbank.length > 0)
 
         const correctRaw = isClozeIndex
           ? (q.options?.[Number(q.answer)] || '')
@@ -200,6 +194,55 @@ export function TestSheetInlineBlanksPassage({
         const correctDisplay = isClozeIndex
           ? cleanOptionText(correctRaw, Number(q.answer))
           : correctRaw
+
+        if (!isSelectMode) {
+          const uVal = userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : ''
+          let inputClass = "ts-inline-input"
+          if (submitted) {
+            inputClass += isUserCorrect ? " correct" : " wrong"
+          }
+          return (
+            <span key={index} className="ts-inline-input-wrapper" style={{ margin: '0 4px', display: 'inline-flex', alignItems: 'center', verticalAlign: 'baseline' }}>
+              <span style={{ fontSize: '0.85em', color: '#6b7280', marginRight: '4px', fontWeight: 'bold' }}>({blankNum})</span>
+              <input
+                type="text"
+                className={inputClass}
+                value={uVal}
+                disabled={submitted}
+                placeholder="____"
+                onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
+                style={{
+                  padding: '3px 10px',
+                  border: 'none',
+                  borderBottom: submitted ? (isUserCorrect ? '2px solid #10b981' : '2px solid #ef4444') : '2px solid #3b82f6',
+                  borderRadius: '0',
+                  background: submitted ? (isUserCorrect ? '#d1fae5' : '#fee2e2') : '#f8fafc',
+                  color: '#1f2937',
+                  fontSize: '1em',
+                  fontWeight: '600',
+                  width: `${Math.max(130, Math.max(uVal.length, q.answer ? String(q.answer).length : 0) * 13 + 30)}px`,
+                  minWidth: '130px',
+                  textAlign: 'center',
+                  outline: 'none',
+                  cursor: submitted ? 'not-allowed' : 'text'
+                }}
+              />
+              {submitted && !isUserCorrect && (
+                <span className="ts-inline-reveal-word" style={{ marginLeft: '4px', color: '#10b981', fontWeight: 'bold', fontSize: '0.9em' }}>
+                  ({correctDisplay})
+                </span>
+              )}
+            </span>
+          )
+        }
+
+        let selectClass = "ts-inline-select"
+        if (section.type === 'dialogue-completion') {
+          selectClass += " dialogue-type"
+        }
+        if (submitted) {
+          selectClass += isUserCorrect ? " correct" : " wrong"
+        }
 
         return (
           <span key={index} className="ts-inline-select-wrapper" style={{ margin: '0 4px', display: 'inline-block' }}>
@@ -229,9 +272,13 @@ export function TestSheetInlineBlanksPassage({
                 section.wordbank?.map((word, wordIdx) => {
                   const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(word))
                   const showSuffix = usingQ && usingQ.id !== q.id
-                  const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
+                  const suffix = showSuffix ? ` 🔹(${usingQ.blankIndex})` : ''
                   return (
-                    <option key={wordIdx} value={word}>
+                    <option
+                      key={wordIdx}
+                      value={word}
+                      style={showSuffix ? { color: '#2563eb', fontWeight: 'bold' } : undefined}
+                    >
                       {word}{suffix}
                     </option>
                   )
@@ -240,9 +287,13 @@ export function TestSheetInlineBlanksPassage({
                 (section.options || section.wordbank)?.map((opt, optIdx) => {
                   const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(opt))
                   const showSuffix = usingQ && usingQ.id !== q.id
-                  const suffix = showSuffix ? ` (${usingQ.blankIndex})` : ''
+                  const suffix = showSuffix ? ` 🔹(${usingQ.blankIndex})` : ''
                   return (
-                    <option key={optIdx} value={opt}>
+                    <option
+                      key={optIdx}
+                      value={opt}
+                      style={showSuffix ? { color: '#2563eb', fontWeight: 'bold' } : undefined}
+                    >
                       {opt}{suffix}
                     </option>
                   )
@@ -307,7 +358,8 @@ export function TestSheetInlineBlanksPassage({
   }
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim()
+    const rawLine = lines[i]
+    const line = rawLine.trim()
     if (line.startsWith('|') && line.endsWith('|')) {
       const cells = line.split('|').map(c => c.trim()).slice(1, -1)
 
@@ -327,6 +379,44 @@ export function TestSheetInlineBlanksPassage({
       }
 
       if (line) {
+        if (line.startsWith('#')) {
+          const match = line.match(/^(#+)\s*(.*)$/)
+          if (match) {
+            const headerLevel = Math.min(match[1].length + 1, 6)
+            const content = match[2]
+            const Tag = `h${headerLevel}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+            renderedBlocks.push(
+              <Tag key={`h-${i}`} style={{ margin: '12px 0 8px', fontWeight: 'bold', color: '#1e293b' }}>
+                {parseLineContent(content)}
+              </Tag>
+            )
+            continue
+          }
+        }
+
+        const listMatch = rawLine.match(/^(\s*)([*+-])\s+(.*)$/)
+        if (listMatch) {
+          const spaces = listMatch[1].length
+          const content = listMatch[3]
+          const indentLevel = Math.floor(spaces / 2)
+          renderedBlocks.push(
+            <div
+              key={`li-${i}`}
+              className="ts-passage-list-item"
+              style={{
+                margin: '6px 0',
+                paddingLeft: `${16 + indentLevel * 20}px`,
+                position: 'relative',
+                lineHeight: '2.0'
+              }}
+            >
+              <span style={{ position: 'absolute', left: `${indentLevel * 20 + 4}px`, color: '#6b7280' }}>•</span>
+              {parseLineContent(content)}
+            </div>
+          )
+          continue
+        }
+
         if (section.type === 'dialogue-completion') {
           renderedBlocks.push(
             <span key={i} style={{ display: 'inline' }}>
@@ -335,7 +425,7 @@ export function TestSheetInlineBlanksPassage({
           )
         } else {
           renderedBlocks.push(
-            <p key={i} style={{ margin: '12px 0', minHeight: 'auto' }}>
+            <p key={i} style={{ margin: '12px 0', minHeight: 'auto', lineHeight: '2.0' }}>
               {parseLineContent(line)}
             </p>
           )

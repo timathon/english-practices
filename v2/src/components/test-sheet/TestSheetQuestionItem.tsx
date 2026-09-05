@@ -24,6 +24,8 @@ interface TestSheetQuestionItemProps {
   textbook: string
   replayCounts: Record<string, number>
   onPlayIncrement: (key: string) => void
+  onPlayingStateChange?: (key: string, isPlaying: boolean, stopAudio: () => void) => void
+  activePlayingKey?: string | null
   highlightedSentence?: HighlightedSentence | null
   setHighlightedSentence?: React.Dispatch<React.SetStateAction<HighlightedSentence | null>>
 }
@@ -40,6 +42,8 @@ export function TestSheetQuestionItem({
   textbook,
   replayCounts,
   onPlayIncrement,
+  onPlayingStateChange,
+  activePlayingKey,
   highlightedSentence,
   setHighlightedSentence
 }: TestSheetQuestionItemProps) {
@@ -48,42 +52,46 @@ export function TestSheetQuestionItem({
   const renderAudioPlayer = () => {
     if (!q.audio) return null
     return (
-      <div style={{ marginBottom: '8px' }}>
-        <TestSheetAudioPlayer
-          audio={q.audio}
-          audioKey={`q_${q.id}`}
-          textbook={textbook}
-          submitted={submitted}
-          replayCounts={replayCounts}
-          onPlayIncrement={onPlayIncrement}
-        />
-        {submitted && q.audio.text && (
-          <div
-            className="ts-reading-comprehension-passage"
-            style={{
-              margin: '8px 0',
-              padding: '10px 14px',
-              background: '#f8fafc',
-              borderLeft: '3px solid #8b5cf6',
-              borderRadius: '4px',
-              lineHeight: '1.6',
-              fontSize: '0.98em',
-              color: '#334155'
-            }}
-          >
-            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#6d28d9', marginBottom: '4px' }}>
-              🎧 听力原文:
-            </div>
-            {setHighlightedSentence ? (
-              <TestSheetInteractivePassage
-                passageText={q.audio.text}
-                highlightedSentence={highlightedSentence ?? null}
-                setHighlightedSentence={setHighlightedSentence}
-              />
-            ) : (
-              <div style={{ fontStyle: 'italic' }}>{q.audio.text}</div>
-            )}
-          </div>
+      <TestSheetAudioPlayer
+        audio={q.audio}
+        audioKey={`q_${q.id}`}
+        textbook={textbook}
+        submitted={submitted}
+        replayCounts={replayCounts}
+        onPlayIncrement={onPlayIncrement}
+        onPlayingStateChange={onPlayingStateChange}
+        activePlayingKey={activePlayingKey}
+      />
+    )
+  }
+
+  const renderListeningScriptAfterSubmit = () => {
+    if (!submitted || !q.audio?.text) return null
+    return (
+      <div
+        className="ts-reading-comprehension-passage"
+        style={{
+          margin: '8px 0',
+          padding: '10px 14px',
+          background: '#f8fafc',
+          borderLeft: '3px solid #8b5cf6',
+          borderRadius: '4px',
+          lineHeight: '1.6',
+          fontSize: '0.98em',
+          color: '#334155'
+        }}
+      >
+        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#6d28d9', marginBottom: '4px' }}>
+          🎧 听力原文:
+        </div>
+        {setHighlightedSentence ? (
+          <TestSheetInteractivePassage
+            passageText={q.audio.text}
+            highlightedSentence={highlightedSentence ?? null}
+            setHighlightedSentence={setHighlightedSentence}
+          />
+        ) : (
+          <div style={{ fontStyle: 'italic' }}>{q.audio.text}</div>
         )}
       </div>
     )
@@ -112,9 +120,13 @@ export function TestSheetQuestionItem({
                       {section.wordbank?.map(word => {
                         const usingQIdx = section.questions.findIndex(otherQ => userAnswers[otherQ.id] === word)
                         const showSuffix = usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id
-                        const suffix = showSuffix ? ` (${usingQIdx + 1})` : ''
+                        const suffix = showSuffix ? ` 🔹(${usingQIdx + 1})` : ''
                         return (
-                          <option key={word} value={word}>
+                          <option
+                            key={word}
+                            value={word}
+                            style={showSuffix ? { color: '#2563eb', fontWeight: 'bold' } : undefined}
+                          >
                             {word}{suffix}
                           </option>
                         )
@@ -144,28 +156,38 @@ export function TestSheetQuestionItem({
       const optionsList = section.options || section.wordbank || []
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-          <div className="ts-question-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <span className="ts-question-prompt">
-              <span className="ts-question-num">{index + 1}.</span> {renderPromptText(q.prompt)}
-            </span>
-            <select
-              className="ts-wordbank-select"
-              value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
-              disabled={submitted}
-              onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
-            >
-              <option value="">-- Choose Option --</option>
-              {optionsList.map((opt, optIdx) => {
-                const usingQIdx = section.questions.findIndex(otherQ => String(userAnswers[otherQ.id]) === String(opt))
-                const showSuffix = usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id
-                const suffix = showSuffix ? ` (${usingQIdx + 1})` : ''
-                return (
-                  <option key={optIdx} value={opt}>
-                    {formatOptionWithLetter(opt, optIdx)}{suffix}
-                  </option>
-                )
-              })}
-            </select>
+          <div className="ts-question-header" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', width: '100%' }}>
+              <span className="ts-question-num">{index + 1}.</span>
+              <span className="ts-question-prompt" style={{ flex: 1, minWidth: 0, width: '100%' }}>
+                {renderPromptText(q.prompt)}
+              </span>
+            </div>
+            <div style={{ width: '100%', marginTop: '4px' }}>
+              <select
+                className="ts-wordbank-select"
+                style={{ width: '100%', maxWidth: '100%', margin: 0, boxSizing: 'border-box' }}
+                value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
+                disabled={submitted}
+                onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
+              >
+                <option value="">-- Choose Option --</option>
+                {optionsList.map((opt, optIdx) => {
+                  const usingQIdx = section.questions.findIndex(otherQ => String(userAnswers[otherQ.id]) === String(opt))
+                  const showSuffix = usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id
+                  const suffix = showSuffix ? ` 🔹(${usingQIdx + 1})` : ''
+                  return (
+                    <option
+                      key={optIdx}
+                      value={opt}
+                      style={showSuffix ? { color: '#2563eb', fontWeight: 'bold' } : undefined}
+                    >
+                      {formatOptionWithLetter(opt, optIdx)}{suffix}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
           </div>
 
           {submitted && (
@@ -185,9 +207,9 @@ export function TestSheetQuestionItem({
       const userVal = userAnswers[q.id]
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
+            {renderAudioPlayer()}
             <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
           </div>
           <div className="ts-tf-container" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
@@ -204,7 +226,6 @@ export function TestSheetQuestionItem({
                   key={label}
                   className={btnClass}
                   disabled={submitted}
-                  style={{ padding: '6px 20px', minWidth: '60px' }}
                   onClick={() => handleAnswerChange(q.id, val)}
                 >
                   {label}
@@ -214,6 +235,7 @@ export function TestSheetQuestionItem({
           </div>
           {submitted && (
             <div className="ts-feedback-detail">
+              {renderListeningScriptAfterSubmit()}
               {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
               {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
             </div>
@@ -228,9 +250,9 @@ export function TestSheetQuestionItem({
 
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
+            {renderAudioPlayer()}
             <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
           </div>
 
@@ -276,6 +298,7 @@ export function TestSheetQuestionItem({
 
           {submitted && (
             <div className="ts-feedback-detail">
+              {renderListeningScriptAfterSubmit()}
               {!isMultipleChoice && (
                 <p className="ts-correct-ans-reveal">Sample Answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
               )}
@@ -340,9 +363,9 @@ export function TestSheetQuestionItem({
 
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
+            {renderAudioPlayer()}
             <span className="ts-question-prompt">
               {parts.map((part, pIdx) => {
                 const val = currentAnswersList[pIdx] || ''
@@ -367,6 +390,7 @@ export function TestSheetQuestionItem({
 
           {submitted && (
             <div className="ts-feedback-detail">
+              {renderListeningScriptAfterSubmit()}
               {!isUserCorrect && (
                 <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
               )}
@@ -382,9 +406,9 @@ export function TestSheetQuestionItem({
       const activeOptIdx = userAnswers[q.id] !== undefined ? Number(userAnswers[q.id]) : null
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
+            {renderAudioPlayer()}
             <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
           </div>
 
@@ -417,6 +441,7 @@ export function TestSheetQuestionItem({
 
           {submitted && (
             <div className="ts-feedback-detail">
+              {renderListeningScriptAfterSubmit()}
               {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
               {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
             </div>
@@ -428,9 +453,9 @@ export function TestSheetQuestionItem({
     case 'short-answer': {
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-          {renderAudioPlayer()}
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
+            {renderAudioPlayer()}
             <span className="ts-question-prompt">{renderPromptText(q.prompt || '')}</span>
           </div>
 
@@ -448,6 +473,7 @@ export function TestSheetQuestionItem({
 
           {submitted && (
             <div className="ts-feedback-detail">
+              {renderListeningScriptAfterSubmit()}
               {!isUserCorrect && (
                 <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
               )}

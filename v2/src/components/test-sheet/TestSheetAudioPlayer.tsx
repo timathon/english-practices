@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import md5 from 'md5'
 import { audioCache } from '../../lib/audioCache'
-import { PUBLIC_URL_BASE } from './testSheetUtils'
+import { resolveTestAudioUrl } from './testSheetUtils'
 import { ConfirmStopAudioModal } from './TestSheetModals'
 import type { AudioSpec } from './TestSheetTypes'
 
@@ -12,6 +12,8 @@ interface TestSheetAudioPlayerProps {
   submitted?: boolean
   replayCounts: Record<string, number>
   onPlayIncrement: (key: string) => void
+  onPlayingStateChange?: (key: string, isPlaying: boolean, stopAudio: () => void) => void
+  activePlayingKey?: string | null
 }
 
 export function TestSheetAudioPlayer({
@@ -20,10 +22,11 @@ export function TestSheetAudioPlayer({
   textbook,
   submitted = false,
   replayCounts,
-  onPlayIncrement
+  onPlayIncrement,
+  onPlayingStateChange,
+  activePlayingKey
 }: TestSheetAudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [showConfirmStopModal, setShowConfirmStopModal] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -31,12 +34,20 @@ export function TestSheetAudioPlayer({
   const audioHash = audio.text ? md5(audio.text.trim()) : audioKey
   const trackKey = audioKey.startsWith('sec_') ? audioKey : `hash_${audioHash}`
   const timesPlayed = replayCounts[trackKey] || replayCounts[audioKey] || 0
-  const maxTotalPlays = maxReplays + 1
-  const remainingPlays = Math.max(0, maxTotalPlays - timesPlayed)
-  const remainingReplays = Math.max(0, remainingPlays - 1)
+  const remainingReplays = Math.max(0, maxReplays - timesPlayed)
 
-  // In test mode: allow play only if remainingPlays > 0. In submitted review mode: unlimited play
-  const canPlay = submitted || remainingPlays > 0
+  // Another audio in the test is currently playing
+  const isAnotherPlaying = !!activePlayingKey && activePlayingKey !== audioKey
+
+  // In review mode: unlimited play. In test mode: can only initiate play if replays remain (timesPlayed < maxReplays)
+  const canPlay = !isAnotherPlaying && (submitted || remainingReplays > 0)
+
+  // Notify parent component of playing state changes
+  useEffect(() => {
+    if (onPlayingStateChange) {
+      onPlayingStateChange(audioKey, isPlaying, stopAudioPermanently)
+    }
+  }, [isPlaying, audioKey, onPlayingStateChange])
 
   useEffect(() => {
     return () => {
@@ -44,16 +55,14 @@ export function TestSheetAudioPlayer({
         audioRef.current.pause()
         audioRef.current = null
       }
+      if (onPlayingStateChange) {
+        onPlayingStateChange(audioKey, false, () => {})
+      }
     }
-  }, [audioKey])
+  }, [audioKey, onPlayingStateChange])
 
   const resolveAudioUrl = (): string => {
-    if (audio.url) return audio.url
-    const text = audio.text?.trim()
-    if (!text) return ''
-    const hash = md5(text)
-    const bookCategory = textbook.toLowerCase()
-    return `${PUBLIC_URL_BASE}/ep/${bookCategory}/${hash}.mp3`
+    return resolveTestAudioUrl(audio, textbook)
   }
 
   const stopAudioPermanently = () => {
@@ -64,9 +73,9 @@ export function TestSheetAudioPlayer({
     setIsPlaying(false)
     setShowConfirmStopModal(false)
 
-    // Ensure all plays are exhausted so it cannot be played again
+    // Ensure all replays are exhausted so it cannot be played again
     if (!submitted) {
-      for (let i = 0; i < remainingPlays; i++) {
+      for (let i = 0; i < remainingReplays; i++) {
         onPlayIncrement(trackKey)
       }
     }
@@ -98,9 +107,7 @@ export function TestSheetAudioPlayer({
     if (!url) return
 
     try {
-      setLoading(true)
       const blob = await audioCache.cacheAudio(url)
-      setLoading(false)
       if (!blob) {
         console.warn('Audio not found or failed to load:', url)
         return
@@ -124,14 +131,13 @@ export function TestSheetAudioPlayer({
         URL.revokeObjectURL(blobUrl)
       }
 
-      await a.play()
-      setIsPlaying(true)
       if (!submitted) {
         onPlayIncrement(trackKey)
       }
+      setIsPlaying(true)
+      await a.play()
     } catch (err) {
       console.error('Audio playback error:', err)
-      setLoading(false)
       setIsPlaying(false)
     }
   }
@@ -145,7 +151,9 @@ export function TestSheetAudioPlayer({
           disabled={!canPlay && !isPlaying}
           onClick={handleButtonClick}
           title={
-            submitted
+            isAnotherPlaying
+              ? 'Another audio is currently playing'
+              : submitted
               ? (isPlaying ? 'Stop Audio' : 'Play Audio')
               : isPlaying
               ? 'Stop Audio'
@@ -154,9 +162,7 @@ export function TestSheetAudioPlayer({
               : '0 replay left'
           }
         >
-          {loading ? (
-            <span className="ts-audio-spinner" />
-          ) : isPlaying ? (
+          {isPlaying ? (
             /* Stop Button Icon (Square) */
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <rect x="5" y="5" width="14" height="14" rx="2" />
@@ -170,14 +176,9 @@ export function TestSheetAudioPlayer({
         </button>
 
         <div className="ts-audio-info">
-          <span className="ts-audio-label">
-            {isPlaying ? 'Playing audio...' : 'Listening Material'}
-          </span>
           {!submitted ? (
-            <span className={`ts-replay-badge ${remainingPlays === 0 ? 'exhausted' : ''}`}>
-              {timesPlayed === 0
-                ? `${maxReplays} replay left`
-                : `${remainingReplays} replay left`}
+            <span className={`ts-replay-badge ${remainingReplays === 0 ? 'exhausted' : ''}`}>
+              {`${remainingReplays} replay left`}
             </span>
           ) : (
             <span className="ts-replay-badge submitted">Review Mode</span>

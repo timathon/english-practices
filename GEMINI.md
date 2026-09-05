@@ -61,7 +61,12 @@ When editing existing codebases:
   - Conducting an end-to-end unit generation workflow.
 * **Minimal Targeted Validation:** For routine edits, only validate JSON syntax and the modified fields—do NOT trigger repository-wide or full-unit test suites.
 
+## 8. Visual Image Prompts to SVG Workflow
+* **Reference Guide:** When converting visual prompts (e.g. `[*VISUAL: ...*]`) in test sheets or practice JSONs into SVG prompts, ALWAYS follow the standard workflow documented in [`v2-plan/image-prompt-to-svg.md`](file:///home/timathon/codes/smartedu/english-practices/v2-plan/image-prompt-to-svg.md).
+* **Core Principle:** Crop textbook-authentic illustrations, compress to grayscale WebP (`quality=75`, ~5–8 KB payload), and embed inside `<svg>` wrapped with `[HTML: <svg ...><image href="data:image/webp;base64,..."/></svg>]`. Avoid oversized raw PNG base64 strings or synthetic vectors.
+
 ---
+
 
 # English Practices Data Transformation Rules
 

@@ -9,15 +9,16 @@ import './TestSheetShell.css'
 
 import type {
   Section,
+  TestSheetData,
   TestSheetShellProps,
   HighlightedSentence
 } from './test-sheet/TestSheetTypes'
 import {
   PUBLIC_URL_BASE,
   isAnswerCorrect,
-  formatOptionWithLetter
+  resolveTestAudioUrl
 } from './test-sheet/testSheetUtils'
-import { StartModal, ConfirmSubmitModal } from './test-sheet/TestSheetModals'
+import { StartModal, ConfirmSubmitModal, ConfirmStopAudioModal } from './test-sheet/TestSheetModals'
 import { TestSheetQuestionItem } from './test-sheet/TestSheetQuestionItem'
 import {
   TestSheetInteractivePassage,
@@ -25,6 +26,63 @@ import {
 } from './test-sheet/TestSheetPassage'
 import { TestSheetAudioPlayer } from './test-sheet/TestSheetAudioPlayer'
 import { TestSheetPrintView } from './test-sheet/TestSheetPrintView'
+
+const shuffleArray = <T,>(arr: T[]): T[] => {
+  const copy = [...arr]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
+
+export function shuffleTestData(sourceData: TestSheetData): TestSheetData {
+  if (!sourceData) return sourceData
+  return {
+    ...sourceData,
+    sections: sourceData.sections.map(section => {
+      const secCopy: Section = { ...section }
+
+      // Shuffle section-level option bank / wordbank
+      if (secCopy.options && Array.isArray(secCopy.options)) {
+        secCopy.options = shuffleArray(secCopy.options)
+      }
+      if (secCopy.wordbank && Array.isArray(secCopy.wordbank)) {
+        secCopy.wordbank = shuffleArray(secCopy.wordbank)
+      }
+
+      // Shuffle question-level options (e.g. multiple-choice, cloze-passage)
+      if (secCopy.questions && Array.isArray(secCopy.questions)) {
+        secCopy.questions = secCopy.questions.map(q => {
+          if (q.options && Array.isArray(q.options) && q.options.length > 1) {
+            const originalCorrectText = typeof q.answer === 'number'
+              ? q.options[q.answer]
+              : String(q.answer)
+
+            const shuffledOptions = shuffleArray(q.options)
+            let newAnswer = q.answer
+
+            if (typeof q.answer === 'number') {
+              const newIdx = shuffledOptions.indexOf(originalCorrectText)
+              if (newIdx !== -1) {
+                newAnswer = newIdx
+              }
+            }
+
+            return {
+              ...q,
+              options: shuffledOptions,
+              answer: newAnswer
+            }
+          }
+          return q
+        })
+      }
+
+      return secCopy
+    })
+  }
+}
 
 export function TestSheetShell({
   data,
@@ -41,6 +99,18 @@ export function TestSheetShell({
 
   const isReadOnly = !!initialAnswers
 
+  // Shuffled test data (or original if read-only review)
+  const [testData, setTestData] = useState<TestSheetData>(() => {
+    if (!data || isReadOnly) return data
+    return shuffleTestData(data)
+  })
+
+  useEffect(() => {
+    if (data) {
+      setTestData(isReadOnly ? data : shuffleTestData(data))
+    }
+  }, [data, isReadOnly])
+
   // State
   const [showStartModal, setShowStartModal] = useState(!isReadOnly)
   const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false)
@@ -56,6 +126,26 @@ export function TestSheetShell({
   const [selectedBlocksMap, setSelectedBlocksMap] = useState<Record<string, number[]>>({})
   const [replayCounts, setReplayCounts] = useState<Record<string, number>>({})
   const [submitted, setSubmitted] = useState(!!initialSubmitted)
+
+  const [playingAudioInfo, setPlayingAudioInfo] = useState<{ key: string; stopAudio: () => void } | null>(null)
+  const [pendingSectionIdx, setPendingSectionIdx] = useState<number | null>(null)
+
+  const handleAudioPlayingChange = useCallback((key: string, isPlaying: boolean, stopAudio: () => void) => {
+    if (isPlaying) {
+      setPlayingAudioInfo({ key, stopAudio })
+    } else {
+      setPlayingAudioInfo(prev => (prev?.key === key ? null : prev))
+    }
+  }, [])
+
+  const handleSectionChange = useCallback((targetIdx: number) => {
+    if (targetIdx === activeSectionIdx) return
+    if (playingAudioInfo && !submitted) {
+      setPendingSectionIdx(targetIdx)
+    } else {
+      setActiveSectionIdx(targetIdx)
+    }
+  }, [activeSectionIdx, playingAudioInfo, submitted])
 
   const handlePlayIncrement = useCallback((key: string) => {
     setReplayCounts(prev => ({
@@ -202,11 +292,28 @@ export function TestSheetShell({
     tabsRef.current.scrollLeft = scrollLeftRef.current - walk
   }
 
-  // Preload SFX
+  // Preload SFX and all Listening audio for the test sheet (stored in IndexedDB, detects R2 updates via HEAD)
   useEffect(() => {
     audioCache.preloadAndSync(`${PUBLIC_URL_BASE}/ep/sfx/correct.mp3`)
     audioCache.preloadAndSync(`${PUBLIC_URL_BASE}/ep/sfx/error.mp3`)
-  }, [])
+
+    if (data?.sections) {
+      for (const sec of data.sections) {
+        if (sec.audio) {
+          const url = resolveTestAudioUrl(sec.audio, textbook)
+          if (url) audioCache.preloadAndSync(url)
+        }
+        if (Array.isArray(sec.questions)) {
+          for (const q of sec.questions) {
+            if (q.audio) {
+              const url = resolveTestAudioUrl(q.audio, textbook)
+              if (url) audioCache.preloadAndSync(url)
+            }
+          }
+        }
+      }
+    }
+  }, [data, textbook])
 
   // Scroll to top when active section changes
   useEffect(() => {
@@ -356,7 +463,7 @@ export function TestSheetShell({
     let totalQuestions = 0
     let correctCount = 0
 
-    data.sections.forEach(section => {
+    testData.sections.forEach(section => {
       section.questions.forEach(q => {
         totalQuestions++
         const userAns = userAnswers[q.id]
@@ -405,9 +512,10 @@ export function TestSheetShell({
     recordIdPromiseRef.current = null
     hasFinishedRef.current = false
     setActiveSectionIdx(0)
+    setTestData(shuffleTestData(data))
   }
 
-  const activeSection = data.sections[activeSectionIdx]
+  const activeSection = testData.sections[activeSectionIdx]
 
   return (
     <div className="ts-shell-container">
@@ -420,9 +528,9 @@ export function TestSheetShell({
             <Link to="/dashboard" className="ts-home-btn">🏠</Link>
           )}
           <div className="ts-title-wrapper">
-            <h1>{data.title}</h1>
+            <h1>{testData.title}</h1>
             <div className="ts-subtitle-row">
-              <h2>{data.level}</h2>
+              <h2>{testData.level}</h2>
               <button
                 type="button"
                 className="ts-header-print-btn no-print"
@@ -460,13 +568,13 @@ export function TestSheetShell({
             onMouseUp={handleTabsMouseUp}
             onMouseMove={handleTabsMouseMove}
           >
-            {data.sections.map((sec, idx) => (
+            {testData.sections.map((sec, idx) => (
               <button
                 key={sec.id}
                 className={`ts-section-tab ${activeSectionIdx === idx ? 'active' : ''}`}
-                onClick={() => setActiveSectionIdx(idx)}
+                onClick={() => handleSectionChange(idx)}
               >
-                <span className="ts-tab-num">{idx + 1}/{data.sections.length}</span>
+                <span className="ts-tab-num">{idx + 1}/{testData.sections.length}</span>
                 <span className="ts-tab-title">{sec.title}</span>
               </button>
             ))}
@@ -517,6 +625,8 @@ export function TestSheetShell({
                         submitted={submitted}
                         replayCounts={replayCounts}
                         onPlayIncrement={handlePlayIncrement}
+                        onPlayingStateChange={handleAudioPlayingChange}
+                        activePlayingKey={playingAudioInfo?.key}
                       />
                     </div>
                   )}
@@ -547,22 +657,7 @@ export function TestSheetShell({
                   )}
                 </div>
 
-                {/* Wordbank or Matching options pool at top of active section */}
-                {(activeSection.type === 'fill-in-the-blank-wordbank' || activeSection.type === 'definition-matching' || activeSection.type === 'matching' || activeSection.type === 'dialogue-completion') && (activeSection.wordbank || activeSection.options) && (
-                  <div className="ts-wordbank-pool">
-                    {(activeSection.options || activeSection.wordbank)?.map((opt, optIdx) => {
-                      const isUsed = activeSection.questions.some(q => {
-                        const ans = userAnswers[q.id]
-                        return ans !== undefined && (String(ans) === String(opt) || (typeof ans === 'number' && ans === optIdx))
-                      })
-                      return (
-                        <span key={optIdx} className={`ts-wordbank-chip ${isUsed ? 'used' : ''}`}>
-                          {formatOptionWithLetter(opt, optIdx)}
-                        </span>
-                      )
-                    })}
-                  </div>
-                )}
+
 
                 {/* Render Dialogue Completion Inline Text */}
                 {activeSection.type === 'dialogue-completion' && activeSection.dialogue && (
@@ -584,9 +679,13 @@ export function TestSheetShell({
                   </div>
                 )}
 
-                {/* Render Cloze Passage Inline Text */}
-                {(activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank') && activeSection.passage && (
-                  <div className="ts-cloze-passage-container" style={{ margin: '20px 0', padding: '15px', background: '#fafafa', border: '1px solid #eaeaea', borderRadius: '8px', lineHeight: '2.2', fontSize: '1.05em' }}>
+                {/* Render Inline Blanks Passage (Cloze, Wordbank, or Short-Answer/Profile cards with blankIndex) */}
+                {activeSection.passage && (
+                  activeSection.type === 'cloze-passage' ||
+                  activeSection.type === 'cloze-passage-wordbank' ||
+                  activeSection.questions.some(q => q.blankIndex !== undefined)
+                ) && (
+                  <div className="ts-cloze-passage-container" style={{ margin: '20px 0', padding: '16px 20px', background: '#fafafa', border: '1px solid #e2e8f0', borderRadius: '8px', lineHeight: '2.2', fontSize: '1.05em' }}>
                     <TestSheetInlineBlanksPassage
                       text={activeSection.passage}
                       section={activeSection}
@@ -597,8 +696,11 @@ export function TestSheetShell({
                   </div>
                 )}
 
-                {/* Render Passage for reading comprehension, true-false, or other reading tasks with passage (e.g., 读后写) */}
-                {activeSection.type !== 'cloze-passage' && activeSection.type !== 'cloze-passage-wordbank' && activeSection.passage && (
+                {/* Render Passage for reading comprehension, true-false, or other reading tasks with passage without inline blanks */}
+                {activeSection.passage &&
+                  activeSection.type !== 'cloze-passage' &&
+                  activeSection.type !== 'cloze-passage-wordbank' &&
+                  !activeSection.questions.some(q => q.blankIndex !== undefined) && (
                   <div className="ts-reading-comprehension-passage" style={{ margin: '20px 0', padding: '20px', background: '#fcfcfc', borderLeft: '4px solid #3b82f6', borderRadius: '4px', lineHeight: '1.8', fontSize: '1.05em', fontStyle: 'italic', color: '#374151' }}>
                     <TestSheetInteractivePassage
                       passageText={activeSection.passage}
@@ -611,7 +713,8 @@ export function TestSheetShell({
                 {/* Questions List */}
                 <div className="ts-questions-list">
                   {activeSection.questions.map((q, qIdx) => {
-                    if ((activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank' || activeSection.type === 'dialogue-completion') && !submitted) {
+                    const allInline = activeSection.questions.every(item => item.blankIndex !== undefined)
+                    if ((activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank' || activeSection.type === 'dialogue-completion' || allInline) && !submitted) {
                       return null
                     }
                     return (
@@ -628,6 +731,8 @@ export function TestSheetShell({
                         textbook={textbook}
                         replayCounts={replayCounts}
                         onPlayIncrement={handlePlayIncrement}
+                        onPlayingStateChange={handleAudioPlayingChange}
+                        activePlayingKey={playingAudioInfo?.key}
                         highlightedSentence={highlightedSentence}
                         setHighlightedSentence={setHighlightedSentence}
                       />
@@ -640,12 +745,12 @@ export function TestSheetShell({
             {/* Bottom actions */}
             <div className="ts-footer-actions" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
               {!submitted ? (
-                activeSectionIdx < data.sections.length - 1 ? (
+                activeSectionIdx < testData.sections.length - 1 ? (
                   <>
                     {activeSectionIdx > 0 && (
                       <button
                         className="ts-submit-btn ts-prev-btn"
-                        onClick={() => setActiveSectionIdx(prev => prev - 1)}
+                        onClick={() => handleSectionChange(activeSectionIdx - 1)}
                         style={{ maxWidth: '80px' }}
                       >
                         &lt;
@@ -653,7 +758,7 @@ export function TestSheetShell({
                     )}
                     <button
                       className="ts-submit-btn ts-next-btn"
-                      onClick={() => setActiveSectionIdx(prev => prev + 1)}
+                      onClick={() => handleSectionChange(activeSectionIdx + 1)}
                       style={{ margin: 0 }}
                     >
                       Next Section
@@ -664,7 +769,7 @@ export function TestSheetShell({
                     {activeSectionIdx > 0 && (
                       <button
                         className="ts-submit-btn ts-prev-btn"
-                        onClick={() => setActiveSectionIdx(prev => prev - 1)}
+                        onClick={() => handleSectionChange(activeSectionIdx - 1)}
                         style={{ maxWidth: '80px' }}
                       >
                         &lt;
@@ -724,9 +829,27 @@ export function TestSheetShell({
         />
       )}
 
+      {pendingSectionIdx !== null && (
+        <ConfirmStopAudioModal
+          onConfirm={() => {
+            if (playingAudioInfo) {
+              playingAudioInfo.stopAudio()
+            }
+            setPlayingAudioInfo(null)
+            const nextIdx = pendingSectionIdx
+            setPendingSectionIdx(null)
+            setActiveSectionIdx(nextIdx)
+          }}
+          onCancel={() => {
+            setPendingSectionIdx(null)
+          }}
+        />
+      )}
+
       {/* Printable Sheet (visible only in print mode) */}
-      <TestSheetPrintView data={data} />
+      <TestSheetPrintView data={testData} />
     </div>
   )
 }
 export default TestSheetShell
+
