@@ -10,24 +10,48 @@ export const PRACTICE_TYPE_ICONS: Record<string, string> = {
 
 export const translatePracticeName = (name: string): string => {
   const norm = name.trim();
-  const suffixMatch = norm.match(/\s+(Test\s+\d+|Challenge\s+\d+|Model\s+\d+|\d+|[a-zA-Z]\d+|[a-zA-Z])$/i);
+
+  if (norm.startsWith('Text Navigator')) {
+    return norm.replace(/^Text Navigator/i, '阅读导航');
+  }
+  if (norm.startsWith('Writing Map')) {
+    return norm.replace(/^Writing Map/i, '写作导图');
+  }
+  if (norm.startsWith('Passage Decoder')) {
+    return norm.replace(/^Passage Decoder/i, '课文翻译');
+  }
+  if (norm.startsWith('Audio Detective')) {
+    return norm.replace(/^Audio Detective/i, '听力侦探');
+  }
+  if (norm.startsWith('Bug Hunter')) {
+    return norm.replace(/^Bug Hunter/i, 'Bug 猎手');
+  }
+  if (norm.startsWith('Sentence Architect')) {
+    return norm.replace(/^Sentence Architect/i, '句子架构师');
+  }
+  if (norm.startsWith('Grammar Wizard')) {
+    return norm.replace(/^Grammar Wizard/i, '语法向导');
+  }
+  if (norm.startsWith('Vocab Master')) {
+    return norm.replace(/^Vocab Master/i, '词汇大师');
+  }
+  if (norm.startsWith('Vocab Guide')) {
+    return norm.replace(/^Vocab Guide/i, '词汇导学');
+  }
+  if (norm.startsWith('Spelling Hero')) {
+    return norm.replace(/^Spelling Hero/i, '拼写达人');
+  }
+  if (norm.startsWith('Recall Map')) {
+    return norm.replace(/^Recall Map/i, '单元总览');
+  }
+  if (norm.startsWith('Test')) {
+    return norm.replace(/^Test/i, '单元测试');
+  }
+
+  const suffixMatch = norm.match(/\s+(Test\s+\d+|Challenge\s+\d+|Model\s+\d+|\d+|[a-zA-Z\d-]+)$/i);
   const suffix = suffixMatch ? suffixMatch[0] : '';
   const baseName = suffixMatch ? norm.substring(0, norm.length - suffix.length).trim() : norm;
 
-  if (baseName.startsWith('Text Navigator')) {
-    if (baseName === 'Text Navigator 2 Start Up') return '阅读导航2 Start Up' + suffix;
-    if (baseName === 'Text Navigator 3 Speed Up') return '阅读导航3 Speed Up' + suffix;
-    return baseName.replace('Text Navigator', '阅读导航') + suffix;
-  }
-  if (baseName.startsWith('Writing Map')) {
-    if (baseName === 'Writing Map Model 1') return '写作导图 Model 1' + suffix;
-    if (baseName === 'Writing Map Model 2') return '写作导图 Model 2' + suffix;
-    return baseName.replace('Writing Map', '写作导图') + suffix;
-  }
-  if (baseName.startsWith('Passage Decoder')) {
-    if (baseName.toLowerCase().endsWith('w')) return '*练习册翻译*' + suffix;
-    return '课文翻译' + suffix;
-  }
   const map: Record<string, string> = {
     'Recall Map': '单元总览',
     'Vocab Guide': '词汇导学',
@@ -42,6 +66,7 @@ export const translatePracticeName = (name: string): string => {
   const translatedBase = map[baseName] || map[baseName.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')] || baseName;
   return translatedBase + suffix;
 };
+
 
 export const translateTextbookName = (name: string): string => {
   const map: Record<string, string> = {

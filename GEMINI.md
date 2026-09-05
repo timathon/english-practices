@@ -65,6 +65,10 @@ When editing existing codebases:
 * **Reference Guide:** When converting visual prompts (e.g. `[*VISUAL: ...*]`) in test sheets or practice JSONs into SVG prompts, ALWAYS follow the standard workflow documented in [`v2-plan/image-prompt-to-svg.md`](file:///home/timathon/codes/smartedu/english-practices/v2-plan/image-prompt-to-svg.md).
 * **Core Principle:** Crop textbook-authentic illustrations, compress to grayscale WebP (`quality=75`, ~5–8 KB payload), and embed inside `<svg>` wrapped with `[HTML: <svg ...><image href="data:image/webp;base64,..."/></svg>]`. Avoid oversized raw PNG base64 strings or synthetic vectors.
 
+## 9. Fast Architecture Map & Direct-Edit Routing
+* **Reference Guide:** Always check [`v2-plan/ARCHITECTURE.md`](file:///home/timathon/codes/smartedu/english-practices/v2-plan/ARCHITECTURE.md) before debugging, refactoring, or modifying the Dashboard or UI systems.
+* **Direct-Edit Over Exploratory Traversal:** When the user reports a UI issue, missing label translation, suffix handling, or tab behavior, use the Direct-Edit Routing table in `v2-plan/ARCHITECTURE.md` to edit the responsible root file directly (e.g. `v2/src/lib/dashboardUtils.ts` for translations, `v2/src/config/textbooks.ts` for textbook metadata, `v2/src/components/Dashboard.tsx` for state/tabs). Do NOT run wide codebase scans across intermediate caller files.
+
 ---
 
 
@@ -384,11 +388,10 @@ This document defines the rules for extracting and converting textbook data into
 
 **Target:** `*-passage-decoder-[suffix].json` (Save in the same folder as source)
 
-- **Extraction Scope**: Extract every sentence/dialogue line from the passage or listening dialogue section.
-- **Dialogue Formatting**: 
-  - If a line is spoken by a character (e.g., `Jack: Hi, Lucy!`), extract the name as `speaker` and set `newline: true` on the first sentence of the turn.
-  - Subsequent sentences spoken in the same turn share the `speaker` property but do not have `newline: true`.
-  - For normal passages, set `newline: true` only on the first sentence starting a new paragraph.
+- **Extraction Scope & Sentence Granularity**: 
+  - Extract every sentence/dialogue line from the passage or listening dialogue section.
+  - **Sentence Granularity & Length Guideline**: Each item in `sentences` should ideally be a single sentence, but can be **1–2 short, closely connected sentences** sharing the same immediate topic (e.g. intro/follow-up pairs or dialogue greetings like `"Max: I know him. What does the story say?"`), provided they are not excessively long or overloaded. If combining them creates an overly long chunk (e.g. 3+ sentences or complex multi-clause descriptions), split them into separate sentence objects so students can digest and translate them easily.
+  - **Dialogue & Paragraph Formatting**: Set `newline: true` on the first item starting a new paragraph or dialogue turn. Subsequent sentence items in the same turn/paragraph should have `newline: false`.
 - **Vocabulary Highlighting**: 
   - All passage decoders must include a `highlight` property on each sentence object (if matching vocabulary is present).
   - The `highlight` property should contain a comma-separated list of the exact matching words/phrases as they appear in the sentence, corresponding to the vocabulary listed in the unit/module/lesson's `vocab-guide.json`.
