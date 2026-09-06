@@ -1,60 +1,23 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import type { ReactNode } from 'react'
-import md5 from 'md5'
-import { Link } from 'react-router-dom'
 import { audioCache } from '../lib/audioCache'
 import { petService } from '../lib/petService'
 import { PronunciationModal } from './PronunciationModal'
 import './MindMapShell.css'
 
-const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev"
+import type { Node, MindMapShellProps } from './mind-map/MindMapTypes'
+import {
+  PUBLIC_URL_BASE,
+  getAudioUrl,
+  getMaxDepth,
+  findNode,
+  buildSpeakerColorMap,
+} from './mind-map/mindMapUtils'
+import { QuestionModal, WritingPromptModal } from './mind-map/MindMapModals'
+import { MindMapHeader } from './mind-map/MindMapHeader'
+import { MindMapSliders } from './mind-map/MindMapSliders'
+import { MindMapNodeView } from './mind-map/MindMapNodeView'
 
-const SPEAKER_COLORS = [
-  { color: '#93c5fd', bg: 'rgba(59, 130, 246, 0.22)', border: 'rgba(96, 165, 250, 0.5)' },
-  { color: '#6ee7b7', bg: 'rgba(16, 185, 129, 0.22)', border: 'rgba(52, 211, 153, 0.5)' },
-  { color: '#fcd34d', bg: 'rgba(245, 158, 11, 0.22)', border: 'rgba(251, 191, 36, 0.5)' },
-  { color: '#d8b4fe', bg: 'rgba(168, 85, 247, 0.22)', border: 'rgba(192, 132, 252, 0.5)' },
-  { color: '#fda4af', bg: 'rgba(244, 63, 94, 0.22)', border: 'rgba(251, 113, 133, 0.5)' },
-  { color: '#67e8f9', bg: 'rgba(6, 182, 212, 0.22)', border: 'rgba(34, 211, 238, 0.5)' },
-  { color: '#f0abfc', bg: 'rgba(217, 70, 239, 0.22)', border: 'rgba(232, 121, 249, 0.5)' },
-  { color: '#5eead4', bg: 'rgba(20, 184, 166, 0.22)', border: 'rgba(45, 212, 191, 0.5)' },
-]
-
-interface Node {
-  id: string
-  text: string
-  emoji: string
-  cn?: string
-  notes?: string
-  statement?: string
-  answer?: boolean
-  explanation?: string
-  keywords?: string
-  highlight?: string
-  state?: 'hidden' | 'empty' | 'emoji' | 'keywords' | 'full'
-  children?: Node[]
-  speaker?: string
-  word_count?: number
-  is_given?: boolean
-}
-
-interface MindMapShellProps {
-  data: {
-    level: string
-    part: string
-    section: string
-    tree: Node
-    writingPrompt?: string
-    tts?: {
-      by: string
-    }
-  }
-  textbook: string
-  unit: string
-  practiceId?: string
-  isWritingMap: boolean
-  headerSlot?: ReactNode
-}
+export type { Node, MindMapData, MindMapShellProps } from './mind-map/MindMapTypes'
 
 export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, headerSlot }: MindMapShellProps) {
   const enableAudio = !isWritingMap || !!data.tts
@@ -75,34 +38,7 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
   const tempEnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Map each unique speaker in dialogue order to guaranteed distinct color themes
-  const speakerColorMap = useMemo(() => {
-    const map = new Map<string, { color: string; bg: string; border: string }>()
-    let index = 0
-    const collectSpeakers = (node: Node) => {
-      if (node.speaker && !map.has(node.speaker)) {
-        const theme = SPEAKER_COLORS[index % SPEAKER_COLORS.length]
-        map.set(node.speaker, theme)
-        index++
-      }
-      if (node.children) {
-        node.children.forEach(collectSpeakers)
-      }
-    }
-    if (data.tree) {
-      collectSpeakers(data.tree)
-    }
-    return map
-  }, [data.tree])
-
-  const getSpeakerStyle = (speaker?: string) => {
-    if (!speaker) return {}
-    const theme = speakerColorMap.get(speaker) || SPEAKER_COLORS[0]
-    return {
-      color: theme.color,
-      backgroundColor: theme.bg,
-      borderColor: theme.border,
-    }
-  }
+  const speakerColorMap = useMemo(() => buildSpeakerColorMap(data.tree), [data.tree])
 
   useEffect(() => {
     const handleResize = () => {
@@ -166,32 +102,10 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
 
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Calculate audio URL for a node
   const ttsBy = data?.tts?.by
-  const getAudioUrl = useCallback((text: string) => {
-    if (!text || typeof text !== 'string') return ''
-    const hash = md5(text)
-    const isCf = ttsBy === 'melotts'
-    return `${PUBLIC_URL_BASE}/ep/${textbook.toLowerCase()}/${isCf ? 'cf/' : ''}${hash}.mp3`
+  const resolveAudioUrl = useCallback((text: string) => {
+    return getAudioUrl(text, textbook, ttsBy)
   }, [textbook, ttsBy])
-
-  // Get max depth of tree
-  const getMaxDepth = useCallback((node: Node, currentDepth = 0): number => {
-    if (!node.children || node.children.length === 0) return currentDepth
-    return Math.max(...node.children.map(child => getMaxDepth(child, currentDepth + 1)))
-  }, [])
-
-  // Node helper
-  const findNode = useCallback((root: Node, id: string): Node | null => {
-    if (root.id === id) return root
-    if (root.children) {
-      for (const child of root.children) {
-        const found = findNode(child, id)
-        if (found) return found
-      }
-    }
-    return null
-  }, [])
 
   // Auto scroll to active/playing node
   const scrollToNode = useCallback((nodeId: string | null, isPlaying = false) => {
@@ -305,7 +219,7 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
     }
     setAllFull(fullTree)
     setTreeData(fullTree)
-  }, [data.tree, getMaxDepth, findNode])
+  }, [data.tree])
 
   // Replay steps up to targetIndex on a cloned tree
   const applyStepsUpTo = (targetIndex: number, overrideInitialTree?: Node) => {
@@ -495,7 +409,7 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
     }
 
     setPlayingNodeId(node.id)
-    const audioUrl = getAudioUrl(node.text)
+    const audioUrl = resolveAudioUrl(node.text)
 
     try {
       const blob = await audioCache.cacheAudio(audioUrl)
@@ -548,7 +462,7 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
   const playNodeAudioAsync = useCallback((node: Node): Promise<void> => {
     return new Promise(async (resolve) => {
       setPlayingNodeId(node.id)
-      const audioUrl = getAudioUrl(node.text)
+      const audioUrl = resolveAudioUrl(node.text)
 
       const handleSpeechSynthesis = () => {
         if ('speechSynthesis' in window) {
@@ -596,7 +510,7 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
         handleSpeechSynthesis()
       }
     })
-  }, [getAudioUrl])
+  }, [resolveAudioUrl])
 
   const stopPlayAll = useCallback(() => {
     setIsPlayingAll(false)
@@ -664,11 +578,11 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
       const visible = collectVisibleNodes(treeData)
       visible.forEach(n => {
         if (!n || !n.text) return
-        const url = getAudioUrl(n.text)
+        const url = resolveAudioUrl(n.text)
         if (url) audioCache.preloadAndSync(url)
       })
     }
-  }, [enableAudio, showAllMode, treeData, collectVisibleNodes, getAudioUrl])
+  }, [enableAudio, showAllMode, treeData, collectVisibleNodes, resolveAudioUrl])
 
   // Question Modal Helpers
   const showQuestionModal = (node: Node, event?: React.MouseEvent) => {
@@ -758,386 +672,115 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
     return () => window.removeEventListener('click', handleOutsideClick)
   }, [])
 
-  // Recursive Tree Render Engine
-  const renderNode = (node: Node, depth = 0): React.ReactNode => {
-    const state = node.state || 'hidden'
-    if (state === 'hidden') return null
-    if (showAllMode > 0 && depth > maxDepthVisible) return null
-
-    const hasChildren = node.children && node.children.length > 0
-    const isCollapsed = collapsedNodes.has(node.id)
-    const isDepthLimited = showAllMode > 0 && depth >= maxDepthVisible
-    
-    const allChildrenFull = hasChildren && node.children!.every(c => c.state === 'full' || c.state === 'keywords')
-    const hideChildren = (isCollapsed && allChildrenFull) || (isDepthLimited && hasChildren)
-
-    const isShowingTempEn = tempEnNodeId === node.id
-    // Parse Highlight words
-    let displayedText: React.ReactNode = (isCnMode && !isShowingTempEn) ? (node.cn || node.text) : node.text
-    if ((!isCnMode || isShowingTempEn) && state === 'full' && node.highlight) {
-      const highlights = Array.from(new Set(node.highlight.split(',').map(s => s.trim()).filter(Boolean)))
-
-      // Escape regex helper
-      const escapeRegExp = (string: string) => {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const handleNodeClick = (node: Node, allChildrenFull: boolean) => {
+    if (isCnMode) {
+      if (node.state === 'full' || node.state === 'keywords') {
+        showEnglishTemporarily(node.id)
+      } else if (allChildrenFull) {
+        toggleCollapse(node.id)
+        setActiveNodeId(node.id)
       }
-
-      // Sort highlights by length descending to match longer phrases first
-      const sortedHighlights = [...highlights].sort((a: any, b: any) => (b as string).length - (a as string).length)
-
-      const patterns = sortedHighlights.map((h: any) => {
-        const hStr = h as string
-        if (hStr.includes('...')) {
-          const parts = hStr.split('...').map(p => p.trim())
-          return parts.map(escapeRegExp).join('.*?')
-        } else {
-          return `\\b${escapeRegExp(hStr)}\\b`
-        }
-      })
-
-      const combinedRegex = new RegExp(`(${patterns.join('|')})`, 'gi')
-      const textWithHighlights = node.text.replace(combinedRegex, '||HIGHLIGHT||$1||ENDHIGHLIGHT||')
-
-      // Convert back to JSX array
-      const textParts = textWithHighlights.split(/(\|\|HIGHLIGHT\|\|.*?\|\|ENDHIGHLIGHT\|\|)/g)
-      displayedText = textParts.map((part, idx) => {
-        if (part.startsWith('||HIGHLIGHT||') && part.endsWith('||ENDHIGHLIGHT||')) {
-          const actualText = part.slice(13, -16)
-          return <span key={idx} className="mm-highlight">{actualText}</span>
-        }
-        return part
-      })
+      return
     }
 
-    if (node.speaker && (!isCnMode || isShowingTempEn)) {
-      displayedText = (
-        <>
-          <strong className="mm-node-speaker" style={getSpeakerStyle(node.speaker)}>{node.speaker}</strong>
-          {displayedText}
-        </>
-      )
+    if (node.state === 'full') {
+      if (activeActionsNodeId === node.id) {
+        closeActions()
+      } else {
+        setActiveActionsNodeId(node.id)
+        refreshActionsTimeout()
+      }
+    } else if (allChildrenFull) {
+      toggleCollapse(node.id)
+      setActiveNodeId(node.id)
     }
+  }
 
-    const visibleChildren = hasChildren && !hideChildren
-      ? node.children!
-          .map(child => ({ child, el: renderNode(child, depth + 1) }))
-          .filter(item => item.el !== null)
-      : []
-
-    const isActionsActive = activeActionsNodeId === node.id
-    const isPlaying = playingNodeId === node.id
-    const isGiven = !!node.is_given
-
-    return (
-      <div className="mm-node-wrapper" key={node.id}>
-        <div 
-          id={isPlaying ? `playing-${node.id}` : `node-${node.id}`}
-          className={`mm-node-box ${state} level-${depth} ${allChildrenFull ? 'collapsible' : ''} ${activeNodeId === node.id ? 'active' : ''} ${isPlaying ? 'playing' : ''} ${(isActionsActive && !isCnMode) ? 'actions-active' : ''} ${isGiven ? 'is-given' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            
-            if (isCnMode) {
-              if (state === 'full' || state === 'keywords') {
-                showEnglishTemporarily(node.id)
-              } else if (allChildrenFull) {
-                toggleCollapse(node.id)
-                setActiveNodeId(node.id)
-              }
-              return
-            }
-
-            if (state === 'full') {
-              if (activeActionsNodeId === node.id) {
-                closeActions()
-              } else {
-                setActiveActionsNodeId(node.id)
-                refreshActionsTimeout()
-              }
-            } else if (allChildrenFull) {
-              toggleCollapse(node.id)
-              setActiveNodeId(node.id)
-            }
-          }}
-        >
-          {state === 'emoji' && <span className="mm-node-content-emoji">{node.emoji}</span>}
-          {state === 'keywords' && (
-            <>
-              <span className="mm-node-content-emoji">{node.emoji}</span>
-              <span className="mm-node-content-keywords">
-                {isCnMode && !isShowingTempEn ? (
-                  <>
-                    {isGiven && <span className="mm-given-badge">已给出</span>}
-                    {node.cn || node.text}
-                  </>
-                ) : (
-                  <>
-                    {isGiven && <span className="mm-given-badge">已给出</span>}
-                    {node.speaker && <strong className="mm-node-speaker" style={getSpeakerStyle(node.speaker)}>{node.speaker}</strong>}
-                    {isShowingTempEn ? node.text : node.keywords}
-                  </>
-                )}
-              </span>
-            </>
-          )}
-          {state === 'full' && (
-            <>
-              <span className="mm-node-content-emoji">{node.emoji}</span>
-              <span className="mm-node-content-text">
-                {isGiven && <span className="mm-given-badge">已给出</span>}
-                {displayedText}
-              </span>
-            </>
-          )}
-
-          {hideChildren && node.state !== 'empty' && (
-            <span className="mm-collapsed-indicator" title="Hidden nodes">+{node.children?.length}</span>
-          )}
-
-          {/* Action Overlay */}
-          {state === 'full' && isActionsActive && !isCnMode && (
-            <div className="mm-node-actions" onClick={(e) => e.stopPropagation()}>
-              {enableAudio && (
-                <button 
-                  className="mm-action-btn" 
-                  onClick={(e) => { playNodeAudio(node, e); refreshActionsTimeout(); }}
-                  title="Play Audio"
-                >
-                  🔊
-                </button>
-              )}
-
-              {node.cn && (
-                <button 
-                  className="mm-action-btn" 
-                  onClick={() => {
-                    setVisibleTooltipType(prev => prev?.nodeId === node.id && prev.type === 'cn' ? null : { nodeId: node.id, type: 'cn' })
-                    refreshActionsTimeout()
-                  }}
-                  title="Translation"
-                >
-                  CN
-                  {visibleTooltipType?.nodeId === node.id && visibleTooltipType.type === 'cn' && (
-                    <span className="mm-tooltip visible">{node.cn}</span>
-                  )}
-                </button>
-              )}
-
-              {node.notes && (
-                <button 
-                  className="mm-action-btn" 
-                  onClick={() => {
-                    setVisibleTooltipType(prev => prev?.nodeId === node.id && prev.type === 'notes' ? null : { nodeId: node.id, type: 'notes' })
-                    refreshActionsTimeout()
-                  }}
-                  title="Notes"
-                >
-                  💡
-                  {visibleTooltipType?.nodeId === node.id && visibleTooltipType.type === 'notes' && (
-                    <span className="mm-tooltip visible">{node.notes}</span>
-                  )}
-                </button>
-              )}
-
-              {node.statement && (
-                <button 
-                  className="mm-action-btn" 
-                  onClick={(e) => showQuestionModal(node, e)}
-                  title="Question"
-                >
-                  ❓
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {visibleChildren.length > 0 && (
-          <div className="mm-children-container">
-            {visibleChildren.map(({ child, el }) => (
-              <div className="mm-child-row" key={child.id}>
-                {el}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    )
+  const handleToggleTooltip = (nodeId: string, type: 'cn' | 'notes') => {
+    setVisibleTooltipType(prev => prev?.nodeId === nodeId && prev.type === type ? null : { nodeId, type })
+    refreshActionsTimeout()
   }
 
   return (
     <div className="mm-shell">
       {/* Header */}
-      <header className="mm-header">
-        <div className="mm-header-left">
-          <Link to="/dashboard" state={{ textbook, unit }} className="mm-home-link" title="Back (返回)">🏠</Link>
-          <div className="mm-header-titles">
-            <h1>
-              {isWritingMap ? "Writing Map" : "Text Navigator"}: {data.part} 
-              <span className="mm-section-title"> {data.level}</span>
-            </h1>
-            {headerSlot ? (
-              <div className="mm-header-slot" style={{ display: 'flex', overflow: 'visible', position: 'relative' }}>
-                {headerSlot}
-              </div>
-            ) : (
-              <p>{data.section}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="mm-controls">
-          {isWritingMap && data.writingPrompt && (
-            <button className="mm-ctrl-btn prompt" onClick={() => setShowPromptModal(true)} title="Writing Prompt (写作要求)">📝</button>
-          )}
-          {enableAudio && showAllMode === 3 && maxDepthVisible === maxTreeDepth && (
-            <button className="mm-ctrl-btn play-all" onClick={startPlayAll} title={isPlayingAll ? "Stop Play All (停止播放)" : "Play All (顺序播放)"}>
-              {isPlayingAll ? "⏹️" : "🔊"}
-            </button>
-          )}
-          {enableAudio && showAllMode === 3 && maxDepthVisible === maxTreeDepth && !isMobile && <div className="mm-btn-separator" />}
-          {!isMobile && (
-            <button 
-              className="mm-ctrl-btn layout-toggle" 
-              onClick={toggleLayoutOrientation} 
-              title={layoutOrientation === 'horizontal' ? "Switch to Vertical Layout (切换至垂直布局)" : "Switch to Horizontal Layout (切换至水平布局)"}
-            >
-              {layoutOrientation === 'horizontal' ? "📋" : "🌳"}
-            </button>
-          )}
-          <button className="mm-ctrl-btn" onClick={resetMap} title="Reset (重置)">🔄</button>
-          <button className="mm-ctrl-btn" onClick={prevStep} disabled={currentStepIndex <= 1 || showAllMode > 0} title="Previous Step (上一步)">◀️</button>
-          <button className="mm-ctrl-btn next" onClick={nextStep} disabled={(currentStepIndex >= actionSteps.length && showAllMode === 0) || showAllMode > 0} title="Next Step (下一步)">▶️</button>
-          <button 
-            className="mm-ctrl-btn cn-toggle" 
-            onClick={() => setIsCnMode(!isCnMode)} 
-            title={isCnMode ? "Switch to English (切换至英文)" : "Switch to Chinese (切换至中文)"}
-            style={{
-              color: 'var(--tab-active-text)',
-              backgroundColor: 'rgba(var(--tab-active-text-rgb, 79, 70, 229), 0.1)',
-              borderColor: 'var(--tab-active-text)'
-            }}
-          >
-            {isCnMode ? "EN" : "CN"}
-          </button>
-          <button
-            className="mm-ctrl-btn eval-toggle"
-            onClick={() => setIsEvalModalOpen(true)}
-            title="Reading Pronunciation Evaluation (朗读发音评测)"
-            style={{
-              color: '#38bdf8',
-              backgroundColor: 'rgba(56, 189, 248, 0.1)',
-              borderColor: '#38bdf8'
-            }}
-          >
-            🎙️
-          </button>
-        </div>
-
-        <div className="mm-progress-container">
-          <div className="mm-progress-bar" style={{ width: `${actionSteps.length > 0 ? (currentStepIndex / actionSteps.length) * 100 : 0}%` }} />
-        </div>
-      </header>
+      <MindMapHeader
+        isWritingMap={isWritingMap}
+        part={data.part}
+        level={data.level}
+        section={data.section}
+        textbook={textbook}
+        unit={unit}
+        headerSlot={headerSlot}
+        enableAudio={enableAudio}
+        hasWritingPrompt={Boolean(data.writingPrompt)}
+        showAllMode={showAllMode}
+        maxDepthVisible={maxDepthVisible}
+        maxTreeDepth={maxTreeDepth}
+        isPlayingAll={isPlayingAll}
+        isMobile={isMobile}
+        layoutOrientation={layoutOrientation}
+        currentStepIndex={currentStepIndex}
+        totalActionSteps={actionSteps.length}
+        isCnMode={isCnMode}
+        onShowPromptModal={() => setShowPromptModal(true)}
+        onTogglePlayAll={startPlayAll}
+        onToggleLayout={toggleLayoutOrientation}
+        onReset={resetMap}
+        onPrevStep={prevStep}
+        onNextStep={nextStep}
+        onToggleCnMode={() => setIsCnMode(!isCnMode)}
+        onOpenEvalModal={() => setIsEvalModalOpen(true)}
+      />
 
       {/* Sliders Overlay */}
-      <div className="mm-sliders-wrapper">
-        <div className={`mm-slider-container ${isCnMode ? 'disabled' : ''}`}>
-          <div className="mm-slider-labels">
-            <span className={showAllMode === 0 ? 'active' : ''} onClick={() => !isCnMode && updateMode(0)}>Manual</span>
-            <span className={showAllMode === 1 ? 'active' : ''} onClick={() => !isCnMode && updateMode(1)}>Emoji</span>
-            <span className={showAllMode === 2 ? 'active' : ''} onClick={() => !isCnMode && updateMode(2)}>Key Words</span>
-            <span className={showAllMode === 3 ? 'active' : ''} onClick={() => !isCnMode && updateMode(3)}>Sentence</span>
-          </div>
-          <input 
-            type="range" 
-            min="0" 
-            max="3" 
-            step="1" 
-            value={showAllMode} 
-            onChange={(e) => updateMode(parseInt(e.target.value))} 
-            className="mm-range-slider"
-            disabled={isCnMode}
-          />
-        </div>
-
-        {showAllMode > 0 && (
-          <div className={`mm-slider-container depth ${isCnMode ? 'disabled' : ''}`}>
-            <div className="mm-slider-labels">
-              {Array.from({ length: maxTreeDepth + 1 }).map((_, idx) => (
-                <span 
-                  key={idx} 
-                  className={maxDepthVisible === idx ? 'active' : ''} 
-                  onClick={() => !isCnMode && updateDepth(idx)}
-                >
-                  L{idx}
-                </span>
-              ))}
-            </div>
-            <input 
-              type="range" 
-              min="0" 
-              max={maxTreeDepth} 
-              step="1" 
-              value={maxDepthVisible} 
-              onChange={(e) => updateDepth(parseInt(e.target.value))} 
-              className="mm-range-slider"
-              disabled={isCnMode}
-            />
-          </div>
-        )}
-      </div>
+      <MindMapSliders
+        showAllMode={showAllMode}
+        maxDepthVisible={maxDepthVisible}
+        maxTreeDepth={maxTreeDepth}
+        isCnMode={isCnMode}
+        onUpdateMode={updateMode}
+        onUpdateDepth={updateDepth}
+      />
 
       {/* Main Mindmap Area */}
       <main className={`mm-container ${layoutOrientation === 'vertical' ? 'vertical-layout' : ''}`} ref={containerRef}>
-        {renderNode(treeData)}
+        <MindMapNodeView
+          node={treeData}
+          depth={0}
+          showAllMode={showAllMode}
+          maxDepthVisible={maxDepthVisible}
+          collapsedNodes={collapsedNodes}
+          activeNodeId={activeNodeId}
+          activeActionsNodeId={activeActionsNodeId}
+          visibleTooltipType={visibleTooltipType}
+          playingNodeId={playingNodeId}
+          tempEnNodeId={tempEnNodeId}
+          isCnMode={isCnMode}
+          enableAudio={enableAudio}
+          speakerColorMap={speakerColorMap}
+          onNodeClick={handleNodeClick}
+          onPlayNodeAudio={playNodeAudio}
+          onToggleTooltip={handleToggleTooltip}
+          onShowQuestionModal={showQuestionModal}
+        />
       </main>
 
       {/* Question Modal */}
-      {questionNode && (
-        <div className="mm-modal-overlay" onClick={() => setQuestionNode(null)}>
-          <div className="mm-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="mm-modal-close" onClick={() => setQuestionNode(null)}>×</button>
-            <div className="mm-modal-body">
-              <h3>True or False Statement</h3>
-              <div className="mm-modal-statement">{questionNode.statement}</div>
-              <div className="mm-modal-choices">
-                <button className="mm-choice-btn true" onClick={() => handleCheckAnswer(true)}>
-                  TRUE (正确)
-                </button>
-                <button className="mm-choice-btn false" onClick={() => handleCheckAnswer(false)}>
-                  FALSE (错误)
-                </button>
-              </div>
-              
-              {showFeedback && (
-                <div className={`mm-modal-feedback ${userAnswer === questionNode.answer ? 'correct' : 'incorrect'}`}>
-                  <div className="mm-feedback-heading">
-                    {userAnswer === questionNode.answer ? "✅ Correct! (正确)" : "❌ Incorrect (错误)"}
-                  </div>
-                  <div className="mm-feedback-explanation">
-                    {questionNode.explanation}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <QuestionModal
+        node={questionNode}
+        userAnswer={userAnswer}
+        showFeedback={showFeedback}
+        onClose={() => setQuestionNode(null)}
+        onAnswer={handleCheckAnswer}
+      />
 
       {/* Writing Prompt Modal */}
-      {showPromptModal && data.writingPrompt && (
-        <div className="mm-modal-overlay" onClick={() => setShowPromptModal(false)}>
-          <div className="mm-modal-content prompt" onClick={(e) => e.stopPropagation()}>
-            <button className="mm-modal-close" onClick={() => setShowPromptModal(false)}>×</button>
-            <div className="mm-modal-body">
-              <h3>Writing Task Prompt</h3>
-              <div 
-                className="mm-prompt-text"
-                dangerouslySetInnerHTML={{ __html: data.writingPrompt.replace(/\n/g, '<br/>') }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <WritingPromptModal
+        isOpen={showPromptModal}
+        writingPrompt={data.writingPrompt}
+        onClose={() => setShowPromptModal(false)}
+      />
 
       <PronunciationModal
         isOpen={isEvalModalOpen}

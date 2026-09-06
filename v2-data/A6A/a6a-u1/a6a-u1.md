@@ -426,3 +426,15 @@ Today, Dad and I ^1 __________ some old books. We made 100 yuan! Dad said I can 
 * **saving** /'seɪvɪŋ/ *n.* 存钱
 * **crayon** /'kreɪən/ *n.* 彩色蜡笔
 * **surprised** /sə'praɪzd/ *adj.* 吃惊的
+
+
+## Listening Scripts
+
+**Fuel up - Activity 3: Listen and write**
+
+* **Tutu:** Happy birthday, Dad. Here's your card. I made it for you. I hope you like it.
+* **Dad:** Thank you, Tutu. The card is beautiful.
+* **Mom:** Tutu, what happened? You took 50 yuan this morning to buy a sweater for Dad.
+* **Tutu:** Yes, Mom. But I saw a money box for people in need. I wanted to help. So I put all my money into the box.
+* **Dad:** Oh, Tutu, your kind heart is the best birthday gift for me.
+* **Mom:** Yes, you did the right thing. We love you very much.

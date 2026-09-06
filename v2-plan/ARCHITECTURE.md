@@ -43,7 +43,51 @@ When a user request matches one of these scenarios, edit the indicated file **im
 
 ---
 
-## 2. Architecture Expansion Roadmap
+---
+
+## 2. Mind Map Architecture (`v2/src/components/MindMapShell.tsx` & `v2/src/components/mind-map/`)
+
+The Mind Map Shell powers hierarchical interactive mindmaps for **Text Navigator (TN)**, **Recall Map (RM)**, and **Model Writing Map (WM)**.
+
+### File Responsibility Index
+
+| File Path | Role & Responsibilities | Key Functions / Exports |
+| :--- | :--- | :--- |
+| [`v2/src/components/MindMapShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/MindMapShell.tsx) | **Orchestrator shell.** Manages step-by-step progressive reveal animations, audio queue & sequential Play All, mode/depth filtering, collapse state, keyboard shortcuts (`Space`, `Arrow`, `A`/`D`), and layout orientation. | `MindMapShell` component |
+| [`v2/src/components/MindMapShell.css`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/MindMapShell.css) | **Mind map styles.** Tree branch connecting lines, horizontal/vertical layouts, node pills (`full`, `keywords`, `emoji`, `empty`), actions overlay, modals. | Styles for `.mm-*` containers |
+| [`v2/src/components/mind-map/MindMapTypes.ts`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/MindMapTypes.ts) | **Type definitions.** `Node`, `MindMapData`, `MindMapShellProps`, and `SPEAKER_COLORS` palette. | `Node`, `MindMapData`, `MindMapShellProps`, `SPEAKER_COLORS` |
+| [`v2/src/components/mind-map/mindMapUtils.ts`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/mindMapUtils.ts) | **Audio URL & tree traversal helpers.** MD5 audio hashing, tree depth calculation, node lookup, and dynamic speaker theme allocation. | `getAudioUrl`, `getMaxDepth`, `findNode`, `buildSpeakerColorMap`, `escapeRegExp` |
+| [`v2/src/components/mind-map/MindMapNodeView.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/MindMapNodeView.tsx) | **Recursive node rendering.** Node states (`emoji`, `keywords`, `full`), speaker pill badges, keyword/phrase highlights, collapse indicators, and inline action overlays (🔊 Audio, CN Translation, 💡 Notes, ❓ Question). | `MindMapNodeView` component |
+| [`v2/src/components/mind-map/MindMapHeader.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/MindMapHeader.tsx) | **Top header bar.** Breadcrumbs, Play All button, orientation toggle, reset button, step-by-step controls, EN/CN mode toggle, pronunciation assessment button, and top progress bar. | `MindMapHeader` component |
+| [`v2/src/components/mind-map/MindMapSliders.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/MindMapSliders.tsx) | **Mode & depth sliders.** 4-level display mode slider (`Manual` / `Emoji` / `Key Words` / `Sentence`) and tree level depth filter slider (`L0` - `LN`). | `MindMapSliders` component |
+| [`v2/src/components/mind-map/MindMapModals.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/MindMapModals.tsx) | **Modals.** True/False statement question modal with feedback, and sanitized Writing Task Prompt viewer modal. | `QuestionModal`, `WritingPromptModal` |
+| [`v2/src/components/WritingMapShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/WritingMapShell.tsx) | **Writing map wrapper.** Handles model section selection (`Basic` vs. `Advanced`), model essay sanitization, and 1-page A4 landscape printable sheet with upper prompt + lower 4-column model trees. | `WritingMapShell` component, `stripModelEssaysFromPrompt` |
+| [`v2/src/components/TextNavigatorShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/TextNavigatorShell.tsx) | **Text navigator wrapper.** Wraps single-section and multi-section text navigator data for `MindMapShell`. | `TextNavigatorShell` component |
+
+---
+
+### Direct-Edit Routing Table for Mind Map Shell
+
+When a user request matches one of these scenarios, edit the indicated file **immediately**:
+
+1. **Bug or enhancement in Audio hashing, TTS URL resolution, or Speaker Color Theme Assignment**:
+   👉 Edit [`v2/src/components/mind-map/mindMapUtils.ts`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/mindMapUtils.ts).
+2. **Node Pill rendering, Text Highlights, Speaker Badges, or Inline Hover Tooltips (Audio/CN/Notes/Question)**:
+   👉 Edit [`v2/src/components/mind-map/MindMapNodeView.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/MindMapNodeView.tsx).
+3. **Header controls, Progress Bar, Play All toggle, or Orientation Switch**:
+   👉 Edit [`v2/src/components/mind-map/MindMapHeader.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/MindMapHeader.tsx).
+4. **Mode Slider (`Manual`/`Emoji`/`Keywords`/`Sentence`) or Level Depth Slider (`L0`-`LN`)**:
+   👉 Edit [`v2/src/components/mind-map/MindMapSliders.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/MindMapSliders.tsx).
+5. **True/False Question Modal or Writing Task Prompt Modal**:
+   👉 Edit [`v2/src/components/mind-map/MindMapModals.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/mind-map/MindMapModals.tsx).
+6. **Progressive reveal animation steps, Play All sequential playback engine, or Keyboard Shortcuts**:
+   👉 Edit [`v2/src/components/MindMapShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/MindMapShell.tsx).
+7. **Writing Map Model Selector, Prompt Markdown Columns, or A4 Printable Sheet**:
+   👉 Edit [`v2/src/components/WritingMapShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/WritingMapShell.tsx).
+
+---
+
+## 3. Architecture Expansion Roadmap
 
 The following modules will be documented and added to this architecture map in future phases:
 
@@ -56,3 +100,4 @@ The following modules will be documented and added to this architecture map in f
 - [ ] **Phase 4: Data Transformation & Seeding**:
   - `scripts/seed_practices.cjs` (D1 database upload, partial sync, cryptographic obscuration).
   - GenAI audit and extraction pipelines in `scripts/genai/`.
+

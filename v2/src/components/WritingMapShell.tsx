@@ -51,13 +51,26 @@ function inlineFormat(text: string): string {
     .replace(/_{4,}/g, '<span class="wm-print-blank">________________</span>')
 }
 
+export function stripModelEssaysFromPrompt(md: string): string {
+  if (!md) return ''
+  // Split on headers or markers indicating sample / model essay passages:
+  // e.g. "十四、例文:", "## 例文", "**例文:**", "**范文:**", "### Model Essay", etc.
+  const regex = /(?:^|\n)\s*(?:#{1,6}\s*|\*{0,2}(?:[一二三四五六七八九十0-9]+[、.．\s]*)?)?(?:例文|范文|参考范文|优秀范文|参考作文|Model\s*Essay|Sample\s*Essay|Sample\s*Answer|Sample\s*Writing|Example\s*Essay)(?:[:：\s*#\-]|$)/i
+  const match = md.search(regex)
+  if (match !== -1) {
+    return md.slice(0, match).trim()
+  }
+  return md
+}
+
 function splitPromptColumns(md: string): string[] {
   if (!md) return []
-  const parts = md
+  const cleanMd = stripModelEssaysFromPrompt(md)
+  const parts = cleanMd
     .split(/<!--\s*col(?:umn)?\s*-->|===col===|---col---/i)
     .map((s) => s.trim())
     .filter(Boolean)
-  return parts.length > 0 ? parts : [md]
+  return parts.length > 0 ? parts : [cleanMd]
 }
 
 function renderMarkdownToHtml(md: string): string {
@@ -298,7 +311,7 @@ export function WritingMapShell({ data, textbook, unit }: WritingMapShellProps) 
       part: data.part,
       section: activeSection.section,
       tree: activeSection.tree,
-      writingPrompt: data.writingPrompt,
+      writingPrompt: data.writingPrompt ? stripModelEssaysFromPrompt(data.writingPrompt) : undefined,
       tts: data.tts,
     }
   }, [data, sections, activeIdx])

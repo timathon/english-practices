@@ -30,8 +30,27 @@ export function RecallMapShell({ data, textbook, unit }: Omit<RecallMapShellProp
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set())
   const [showAllMode, setShowAllMode] = useState(2) // 0: manual, 1: emoji, 2: keywords/full
   const [savedCollapsedNodes, setSavedCollapsedNodes] = useState<Set<string> | null>(null)
+  const [layoutOrientation, setLayoutOrientation] = useState<'horizontal' | 'vertical'>(() => {
+    return (localStorage.getItem('mm-layout-orientation') as 'horizontal' | 'vertical') || 'horizontal'
+  })
+  const [isMobile, setIsMobile] = useState(false)
   
   const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const toggleLayoutOrientation = () => {
+    const next = layoutOrientation === 'horizontal' ? 'vertical' : 'horizontal'
+    setLayoutOrientation(next)
+    localStorage.setItem('mm-layout-orientation', next)
+  }
 
   // Initialize steps
   useEffect(() => {
@@ -337,9 +356,18 @@ export function RecallMapShell({ data, textbook, unit }: Omit<RecallMapShellProp
           </div>
         </div>
         <div className="rm-controls">
-          <button className="rm-ctrl-btn" onClick={() => applyStepsUpTo(1)}>🔄</button>
-          <button className="rm-ctrl-btn" onClick={prevStep} disabled={currentStepIndex <= 1}>◀️</button>
-          <button className="rm-ctrl-btn next" onClick={nextStep} disabled={currentStepIndex >= actionSteps.length && showAllMode === 0}>▶️</button>
+          {!isMobile && (
+            <button 
+              className="rm-ctrl-btn layout-toggle" 
+              onClick={toggleLayoutOrientation} 
+              title={layoutOrientation === 'horizontal' ? "Switch to Vertical Layout (切换至垂直布局)" : "Switch to Horizontal Layout (切换至水平布局)"}
+            >
+              {layoutOrientation === 'horizontal' ? "📋" : "🌳"}
+            </button>
+          )}
+          <button className="rm-ctrl-btn" onClick={() => applyStepsUpTo(1)} title="Reset (重置)">🔄</button>
+          <button className="rm-ctrl-btn" onClick={prevStep} disabled={currentStepIndex <= 1} title="Previous Step (上一步)">◀️</button>
+          <button className="rm-ctrl-btn next" onClick={nextStep} disabled={currentStepIndex >= actionSteps.length && showAllMode === 0} title="Next Step (下一步)">▶️</button>
         </div>
         <div className="rm-progress-bg">
           <div className="rm-progress-bar" style={{ width: `${(currentStepIndex / actionSteps.length) * 100}%` }} />
@@ -360,7 +388,7 @@ export function RecallMapShell({ data, textbook, unit }: Omit<RecallMapShellProp
         />
       </div>
 
-      <main className="rm-container" ref={containerRef}>
+      <main className={`rm-container ${layoutOrientation === 'vertical' ? 'vertical-layout' : ''}`} ref={containerRef}>
         {renderNode(treeData)}
       </main>
     </div>

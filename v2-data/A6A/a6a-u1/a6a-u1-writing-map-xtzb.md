@@ -11,4 +11,4 @@
 
 **十四、例文:**
 
-> I get twenty yuan of pocket money every week from my parents. I often buy storybooks and pens with my pocket money. I always save some pocket money for later use. I keep it in my piggy bank. Sometimes I give a little of it to kids in need, so they can buy school things. I really like the way I spend my pocket money. It helps me learn to value every small coin.
+> Every week, I get twenty yuan in pocket money from my parents. I often buy storybooks and pens with my pocket money. I always save some pocket money for later use. I keep it in my piggy bank. Sometimes I give a little of it to kids in need, so they can buy school things. I really like the way I spend my pocket money. It helps me learn to value every small coin.
