@@ -568,16 +568,23 @@ export function TestSheetShell({
             onMouseUp={handleTabsMouseUp}
             onMouseMove={handleTabsMouseMove}
           >
-            {testData.sections.map((sec, idx) => (
-              <button
-                key={sec.id}
-                className={`ts-section-tab ${activeSectionIdx === idx ? 'active' : ''}`}
-                onClick={() => handleSectionChange(idx)}
-              >
-                <span className="ts-tab-num">{idx + 1}/{testData.sections.length}</span>
-                <span className="ts-tab-title">{sec.title}</span>
-              </button>
-            ))}
+            {testData.sections.map((sec, idx) => {
+              const hasError = submitted && Array.isArray(sec.questions) && sec.questions.some(q => {
+                const userAns = userAnswers[q.id]
+                return !isAnswerCorrect(userAns, q.answer, sec.type, q.type)
+              })
+
+              return (
+                <button
+                  key={sec.id}
+                  className={`ts-section-tab ${activeSectionIdx === idx ? 'active' : ''} ${hasError ? 'has-error' : ''}`}
+                  onClick={() => handleSectionChange(idx)}
+                >
+                  <span className="ts-tab-num">{idx + 1}/{testData.sections.length}</span>
+                  <span className="ts-tab-title">{sec.title}</span>
+                </button>
+              )
+            })}
           </div>
           <button
             type="button"
