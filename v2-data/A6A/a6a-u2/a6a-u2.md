@@ -400,3 +400,24 @@ Your opinion: I think __________ are better.
 | **explore** | 探讨, 探究 |
 | **truth** | 事实, 真相, 实情 |
 | **reason** | 原因, 理由 |
+
+## Listening Script
+
+
+# Fuel up. Activity three. Listen and choose. What is the talk about?
+
+**Alex:** Hey Olivia, some parts of the Cinderella story don't feel right to me.
+
+**Olivia:** Which parts are you talking about, Alex?
+
+**Alex:** First of all, the magic goes away at 12 a.m., but the shoes stay. Why don't they go away, too?
+
+**Olivia:** Oh, I see.
+
+**Alex:** And only Cinderella can wear the shoes. How could one of them come off her foot?
+
+**Olivia:** These are interesting questions, Alex. I never really thought about them before.
+
+**Alex:** I know it's a fairy tale, but I still think it's important to think carefully and ask questions.
+
+**Olivia:** You're right.
