@@ -209,10 +209,12 @@ export function TestSheetPrintView({ data }: TestSheetPrintViewProps) {
               {sec.type === 'dialogue-completion' && sec.dialogue && (
                 <div className="ts-print-dialogue">
                   {sec.dialogue.map((turn, tIdx) => {
-                    const parts = turn.text.split(/(\[\d+\])/g)
+                    const speaker = typeof turn === 'string' ? '' : (turn?.speaker || '')
+                    const rawText = typeof turn === 'string' ? turn : (turn?.text || '')
+                    const parts = rawText.split(/(\[\d+\])/g)
                     return (
                       <div key={tIdx} className="ts-print-dialogue-turn">
-                        <strong>{turn.speaker}: </strong>
+                        {speaker ? <strong>{speaker}: </strong> : null}
                         <span>
                           {parts.map((p, pIdx) => {
                             const m = p.match(/^\[(\d+)\]$/)
