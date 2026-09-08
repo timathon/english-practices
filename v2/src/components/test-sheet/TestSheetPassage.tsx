@@ -108,8 +108,21 @@ export function TestSheetInteractivePassage({
         flushTable(i)
       }
       
-      if (line.startsWith('[HTML:') && line.endsWith(']')) {
-        const rawHtml = line.slice(6, -1)
+      if (line.startsWith('[HTML:')) {
+        let rawHtml = line.slice(6)
+        if (rawHtml.endsWith(']')) {
+          rawHtml = rawHtml.slice(0, -1)
+        } else {
+          while (i + 1 < lines.length && !lines[i + 1].trim().endsWith(']')) {
+            i++
+            rawHtml += '\n' + lines[i]
+          }
+          if (i + 1 < lines.length) {
+            i++
+            const lastPart = lines[i].trim()
+            rawHtml += '\n' + (lastPart.endsWith(']') ? lastPart.slice(0, -1) : lastPart)
+          }
+        }
         renderedBlocks.push(
           <div key={`html-${i}`} className="ts-html-passage-block" dangerouslySetInnerHTML={{ __html: rawHtml }} style={{ margin: '15px 0', width: '100%', overflowX: 'auto' }} />
         )
@@ -379,6 +392,27 @@ export function TestSheetInlineBlanksPassage({
       }
 
       if (line) {
+        if (line.startsWith('[HTML:')) {
+          let rawHtml = line.slice(6)
+          if (rawHtml.endsWith(']')) {
+            rawHtml = rawHtml.slice(0, -1)
+          } else {
+            while (i + 1 < lines.length && !lines[i + 1].trim().endsWith(']')) {
+              i++
+              rawHtml += '\n' + lines[i]
+            }
+            if (i + 1 < lines.length) {
+              i++
+              const lastPart = lines[i].trim()
+              rawHtml += '\n' + (lastPart.endsWith(']') ? lastPart.slice(0, -1) : lastPart)
+            }
+          }
+          renderedBlocks.push(
+            <div key={`html-${i}`} className="ts-html-passage-block" style={{ width: '100%', overflowX: 'auto', margin: '15px 0' }} dangerouslySetInnerHTML={{ __html: rawHtml }} />
+          )
+          continue
+        }
+
         if (line.startsWith('#')) {
           const match = line.match(/^(#+)\s*(.*)$/)
           if (match) {
