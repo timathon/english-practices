@@ -35,16 +35,24 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
   // Fast-scroll slider state for Teacher Ancient Poems view
   const [sliderIndex, setSliderIndex] = useState<number>(1);
   const poemRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const isProgrammaticScrollRef = useRef<boolean>(false);
+  const scrollTimerRef = useRef<any>(null);
 
   const handleSliderChange = (newIndex: number) => {
     setSliderIndex(newIndex);
+    isProgrammaticScrollRef.current = true;
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+    }, 200);
+
     const targetPoem = poems[newIndex - 1];
     if (targetPoem && poemRefs.current[targetPoem.id]) {
       const el = poemRefs.current[targetPoem.id];
       if (el) {
         const yOffset = -140;
         const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
+        window.scrollTo({ top: y, behavior: 'auto' });
       }
     }
   };
@@ -53,6 +61,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
     if (selectedSubject !== '语文' || selectedSection !== '古诗') return;
 
     const handleScroll = () => {
+      if (isProgrammaticScrollRef.current) return;
       if (!poems || poems.length === 0) return;
       const scrollY = window.scrollY + 180;
       let closestIdx = 0;
@@ -76,7 +85,10 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
   }, [poems, selectedSubject, selectedSection]);
 
   useEffect(() => {

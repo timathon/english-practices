@@ -347,17 +347,25 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
 
   const [sliderIndex, setSliderIndex] = useState<number>(1);
   const poemRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const isProgrammaticScrollRef = useRef<boolean>(false);
+  const scrollTimerRef = useRef<any>(null);
 
   // Scroll to poem when slider moves
   const handleSliderChange = (newIndex: number) => {
     setSliderIndex(newIndex);
+    isProgrammaticScrollRef.current = true;
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+    }, 200);
+
     const targetPoem = poems[newIndex - 1];
     if (targetPoem && poemRefs.current[targetPoem.id]) {
       const el = poemRefs.current[targetPoem.id];
       if (el) {
         const yOffset = -140; // offset for sticky header & nav
         const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
+        window.scrollTo({ top: y, behavior: 'auto' });
       }
     }
   };
@@ -365,6 +373,7 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
   // Sync slider position with user scroll
   useEffect(() => {
     const handleScroll = () => {
+      if (isProgrammaticScrollRef.current) return;
       if (!poems || poems.length === 0) return;
       const scrollY = window.scrollY + 180;
       let closestIdx = 0;
@@ -388,7 +397,10 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
   }, [poems]);
 
   return (

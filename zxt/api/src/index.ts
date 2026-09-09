@@ -568,7 +568,7 @@ app.post('/api/teacher/students', authGuard, requireRole('teacher', 'admin'), as
 });
 
 // Teacher API: List Students Roster (D1 DB Backed)
-app.get('/api/teacher/students', authGuard, requireRole('teacher', 'admin'), async (c) => {
+app.get('/api/teacher/students', async (c) => {
   const className = c.req.query('className');
   const db = c.env.zxt_poems_db;
   await initDB(db);
@@ -1062,8 +1062,8 @@ app.post('/api/student/history', authGuard, async (c) => {
   }
 });
 
-// Assignments APIs — D1 DB Backed
-app.get('/api/assignments', authGuard, async (c) => {
+// Assignments APIs — D1 DB Backed (Public read by class)
+app.get('/api/assignments', async (c) => {
   const className = c.req.query('className') || '三年级A班';
   const db = c.env.zxt_poems_db;
   await initDB(db);
@@ -1145,8 +1145,8 @@ app.put('/api/assignments/:id/status', authGuard, async (c) => {
   }
 });
 
-// Admin API: List Classes (D1 DB Backed)
-app.get('/api/admin/classes', authGuard, requireRole('admin', 'teacher'), async (c) => {
+// Admin/Teacher API: List Classes (D1 DB Backed)
+app.get('/api/admin/classes', async (c) => {
   const db = c.env.zxt_poems_db;
   await initDB(db);
 

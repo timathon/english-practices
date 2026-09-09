@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://zxtapi.vibequizzing.com';
+export const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'https://zxtapi.vibequizzing.com';
 export const USE_BACKEND = true; // Set to true when remote worker API is running
 
 export function parseDate(timeStr?: string): Date | null {
