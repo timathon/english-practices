@@ -1,0 +1,401 @@
+/* TextNavigatorShell styles & print layout */
+
+.tn-select-container {
+  position: relative;
+  display: inline-block;
+  width: clamp(180px, 50vw, 280px);
+  max-width: 100%;
+  height: 32px;
+  margin: 4px 0;
+}
+
+.tn-model-select {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: #1e293b;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.tn-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tn-print-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 32px;
+  padding: 0;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 6px;
+  font-size: 1.05rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.tn-print-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.6);
+  transform: translateY(-1px);
+}
+
+.tn-print-btn:active {
+  transform: translateY(0);
+}
+
+/* Screen presentation: Hide printable sheet */
+@media screen {
+  .tn-print-sheet {
+    display: none !important;
+  }
+}
+
+/* Print presentation: Multi-section bilingual foldable translation sheet */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm 10mm 15mm 10mm;
+    @top-right {
+      content: none;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 8pt;
+      color: #64748b;
+      font-weight: 500;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #root {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide interactive shells, mindmap UI, headers, audio, modals, companion */
+  .mm-shell,
+  .no-print,
+  .mm-header,
+  .tn-header,
+  .tn-header-controls,
+  .pet-float-wrapper,
+  .pet-floating-companion,
+  [class*="pet-float"],
+  .pronunciation-modal-overlay {
+    display: none !important;
+  }
+
+  .tn-print-sheet {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+  }
+
+  .tn-print-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: baseline !important;
+    border-bottom: 1.5px solid #2563eb !important;
+    padding-bottom: 2px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .tn-print-title {
+    margin: 0 !important;
+    font-size: 13pt !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+  }
+
+  .tn-print-subtitle {
+    font-size: 8.5pt !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+  }
+
+  .tn-print-sections-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .tn-print-section-item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 10px !important;
+  }
+
+  .tn-print-section-divider {
+    margin-bottom: 4px !important;
+  }
+
+  .tn-print-sec-badge {
+    display: inline-block !important;
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: 3.5px solid #2563eb !important;
+    padding: 1.5px 8px !important;
+    border-radius: 3px !important;
+  }
+
+  .tn-print-grid-cols {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .tn-print-col {
+    border: 1.2px solid #cbd5e1 !important;
+    border-radius: 5px !important;
+    padding: 5px 6px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #f8fafc !important;
+    box-sizing: border-box !important;
+    min-height: 0 !important;
+  }
+
+  .tn-print-col.lang-cn {
+    background: #fdfefe !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  .tn-print-col-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 4px !important;
+    padding-bottom: 2px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  .tn-print-badge {
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    padding: 1px 6px !important;
+    border-radius: 3px !important;
+    white-space: nowrap !important;
+  }
+
+  .tn-print-badge.lang-en {
+    color: #1d4ed8 !important;
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+  }
+
+  .tn-print-badge.lang-cn {
+    color: #047857 !important;
+    background: #ecfdf5 !important;
+    border: 1px solid #a7f3d0 !important;
+  }
+
+  .tn-print-tree-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+  }
+
+  .tn-tree-node-item {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .tn-tree-node-pill {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 3.5px !important;
+    box-sizing: border-box !important;
+    border-radius: 4px !important;
+    word-break: break-word !important;
+    font-size: 8pt !important;
+    line-height: 1.25 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* Level 0: Root */
+  .tn-tree-node-pill.level-0 {
+    background: #1e293b !important;
+    color: #ffffff !important;
+    border: 1.5px solid #0f172a !important;
+    padding: 2.5px 5px !important;
+    font-size: 8.8pt !important;
+    font-weight: 700 !important;
+  }
+
+  /* Level 1: Green (#10b981) */
+  .tn-tree-node-pill.level-1 {
+    border: 1.2px solid #10b981 !important;
+    padding: 2px 4.5px !important;
+  }
+  .tn-tree-node-pill.level-1.has-children {
+    background: #ecfdf5 !important;
+    color: #065f46 !important;
+    font-size: 8.4pt !important;
+    font-weight: 700 !important;
+  }
+
+  /* Level 2: Sky Blue (#0ea5e9) */
+  .tn-tree-node-pill.level-2 {
+    border: 1.2px solid #0ea5e9 !important;
+    padding: 2px 4.5px !important;
+  }
+  .tn-tree-node-pill.level-2.has-children {
+    background: #f0f9ff !important;
+    color: #0369a1 !important;
+    font-size: 8.2pt !important;
+    font-weight: 600 !important;
+  }
+
+  /* Level 3: Purple (#8b5cf6) */
+  .tn-tree-node-pill.level-3 {
+    border: 1.2px solid #8b5cf6 !important;
+    padding: 2px 4.5px !important;
+  }
+  .tn-tree-node-pill.level-3.has-children {
+    background: #faf5ff !important;
+    color: #6d28d9 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Level 4: Amber (#f59e0b) */
+  .tn-tree-node-pill.level-4 {
+    border: 1.2px solid #f59e0b !important;
+    padding: 2px 4.5px !important;
+  }
+  .tn-tree-node-pill.level-4.has-children {
+    background: #fffbeb !important;
+    color: #92400e !important;
+    font-weight: 600 !important;
+  }
+
+  /* Level 5: Rose/Pink (#ec4899) */
+  .tn-tree-node-pill.level-5 {
+    border: 1.2px solid #ec4899 !important;
+    padding: 2px 4.5px !important;
+  }
+  .tn-tree-node-pill.level-5.has-children {
+    background: #fdf2f8 !important;
+    color: #9d174d !important;
+    font-weight: 600 !important;
+  }
+
+  /* Level 6+: Teal (#14b8a6) */
+  .tn-tree-node-pill.level-6,
+  .tn-tree-node-pill.level-7,
+  .tn-tree-node-pill.level-8,
+  .tn-tree-node-pill.level-9,
+  .tn-tree-node-pill.level-10 {
+    border: 1.2px solid #14b8a6 !important;
+    padding: 2px 4.5px !important;
+  }
+  .tn-tree-node-pill.level-6.has-children,
+  .tn-tree-node-pill.level-7.has-children,
+  .tn-tree-node-pill.level-8.has-children,
+  .tn-tree-node-pill.level-9.has-children,
+  .tn-tree-node-pill.level-10.has-children {
+    background: #f0fdfa !important;
+    color: #0f766e !important;
+    font-weight: 600 !important;
+  }
+
+  .tn-tree-node-pill.is-given {
+    background: #fffbeb !important;
+    border: 1.2px dashed #f59e0b !important;
+    color: #451a03 !important;
+  }
+
+  .tn-print-given-tag {
+    font-size: 7.2pt !important;
+    font-weight: 700 !important;
+    color: #b45309 !important;
+    background: #fef3c7 !important;
+    padding: 0.5px 3px !important;
+    border-radius: 2px !important;
+    margin-right: 3px !important;
+  }
+
+  .tn-tree-speaker {
+    color: #2563eb !important;
+    margin-right: 3px !important;
+  }
+
+  .tn-tree-emoji {
+    font-size: 8.5pt !important;
+    line-height: 1.15 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .tn-tree-text {
+    flex: 1 !important;
+  }
+
+  .tn-tree-branches {
+    display: flex !important;
+    flex-direction: column !important;
+    border-left: 1.2px solid #cbd5e1 !important;
+    margin-left: 5px !important;
+    padding-left: 4px !important;
+    margin-top: 2.5px !important;
+    gap: 3px !important;
+  }
+
+  .tn-tree-node-item > .tn-tree-branches > .tn-tree-node-item {
+    position: relative !important;
+  }
+
+  .tn-tree-node-item > .tn-tree-branches > .tn-tree-node-item::before {
+    content: "" !important;
+    position: absolute !important;
+    left: -4px !important;
+    top: 7px !important;
+    width: 3.5px !important;
+    height: 1.2px !important;
+    background: #cbd5e1 !important;
+  }
+}
