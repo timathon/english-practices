@@ -28,9 +28,11 @@ This file defines project-specific rules and data fetching patterns for the ZXT 
 ## File Size & Modular Architecture Rules
 
 ### 1000-Line Limit Rule:
-- **Hard Limit**: Any source file exceeding **1,000 lines of code** must be refactored and split into smaller, single-responsibility sub-components, helper utilities, or domain workspaces.
+- **Strict Hard Limit**: **No file can be over 1,000 lines of code.**
+- **Immediate Split Requirement**: When any file hits or approaches 1,000 lines, you must immediately refactor and split the file into smaller, single-responsibility sub-components, helper utilities, or domain workspaces before adding further features.
 - **Decomposition Guidelines**:
   - Extract reusable sub-views into dedicated sub-component files (e.g. tabs, modals, workspace panels).
   - Extract static constants, color mappings, and type dictionaries into separate `*Constants.ts` files.
   - Extract pure helper functions and business logic into separate `*Utils.ts` or custom hooks.
   - Keep the parent component as a clean, high-level orchestrator focusing on state management and coordinator flow.
+
