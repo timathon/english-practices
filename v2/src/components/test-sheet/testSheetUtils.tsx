@@ -140,7 +140,7 @@ export const renderPromptText = (text?: string): React.ReactNode => {
         {parts.map((part, idx) => {
           if (part.startsWith('[HTML:') && part.endsWith(']')) {
             const rawHtml = part.slice(6, -1)
-            return <span key={idx} dangerouslySetInnerHTML={{ __html: rawHtml }} />
+            return <span key={idx} className="ts-html-embed" dangerouslySetInnerHTML={{ __html: rawHtml }} />
           }
           if (!part.trim()) return null
           return <span key={idx} style={{ whiteSpace: 'pre-wrap' }}>{renderFormattedInlineText(part)}</span>
