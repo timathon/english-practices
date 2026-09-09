@@ -563,14 +563,15 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
 
       {/* Detail Modal (拓展自学 / 诗句详情) */}
       {activeModalPoem && (() => {
-        const currentIndex = poems.findIndex((p: any) => p.id === activeModalPoem.id);
+        const liveModalPoem = poems.find((p: any) => p.id === activeModalPoem.id) || activeModalPoem;
+        const currentIndex = poems.findIndex((p: any) => p.id === liveModalPoem.id);
         const hasPrev = currentIndex > 0;
         const hasNext = currentIndex >= 0 && currentIndex < poems.length - 1;
 
         return (
           <PoemStudyDetailModal
-            poem={activeModalPoem}
-            isLearnt={learntPoemIds.map(Number).includes(Number(activeModalPoem.id))}
+            poem={liveModalPoem}
+            isLearnt={learntPoemIds.map(Number).includes(Number(liveModalPoem.id))}
             isTeacher={false}
             onClose={() => setActiveModalPoem(null)}
             hasPrev={hasPrev}

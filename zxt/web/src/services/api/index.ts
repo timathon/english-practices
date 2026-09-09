@@ -22,6 +22,7 @@ export const apiService = {
   // Poems
   getPoems: poemsService.getPoems.bind(poemsService),
   getCachedPoems: poemsService.getCachedPoems.bind(poemsService),
+  refreshPoemsFromRemote: poemsService.refreshPoemsFromRemote.bind(poemsService),
   seedQuizLibrary: poemsService.seedQuizLibrary.bind(poemsService),
   getQuizLibrary: poemsService.getQuizLibrary.bind(poemsService),
   saveQuizLibrary: poemsService.saveQuizLibrary.bind(poemsService),

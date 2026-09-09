@@ -19,9 +19,13 @@ export const poemsService = {
     return [];
   },
 
-  async getPoems(): Promise<Poem[]> {
+  async getPoems(forceRefresh = false): Promise<Poem[]> {
     const cached = await this.getCachedPoems();
-    if (cached.length > 0) {
+
+    // Trigger background SWR revalidation from remote API
+    this.refreshPoemsFromRemote().catch(e => console.warn('Background poems refresh failed:', e));
+
+    if (!forceRefresh && cached.length > 0) {
       return cached;
     }
 
@@ -39,7 +43,32 @@ export const poemsService = {
     } catch (e) {
       console.warn('Remote API unavailable, using local quiz library.', e);
     }
-    return this.getQuizLibrary();
+    return cached.length > 0 ? cached : this.getQuizLibrary();
+  },
+
+  /**
+   * Revalidate poems against remote D1 in the background; update cache and notify listeners if changed
+   */
+  async refreshPoemsFromRemote(): Promise<Poem[] | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/blg/poems`);
+      if (!res.ok) return null;
+      const data = await res.json() as { poems?: Poem[] };
+      if (!data.poems || !Array.isArray(data.poems) || data.poems.length === 0) return null;
+
+      const remotePoems = [...data.poems].sort((a, b) => a.id - b.id);
+      const cached = await this.getCachedPoems();
+
+      if (JSON.stringify(remotePoems) !== JSON.stringify(cached)) {
+        this.saveQuizLibrary(remotePoems);
+        await idbService.savePoems(remotePoems);
+        window.dispatchEvent(new CustomEvent('zxt_poems_updated', { detail: { poems: remotePoems } }));
+        return remotePoems;
+      }
+    } catch (e) {
+      console.warn('Background poems refresh failed:', e);
+    }
+    return null;
   },
 
   /**
@@ -77,6 +106,8 @@ export const poemsService = {
             diffSummary.push(`古诗 #${rp.id} 《${rp.title}》: 题目数变动 (${lqCount} 题 ➔ ${rqCount} 题)`);
           } else if (JSON.stringify(lp.questions) !== JSON.stringify(rp.questions)) {
             diffSummary.push(`古诗 #${rp.id} 《${rp.title}》: 题目内容更新`);
+          } else if (JSON.stringify(lp) !== JSON.stringify(rp)) {
+            diffSummary.push(`古诗 #${rp.id} 《${rp.title}》: 诗词资料或关键词更新`);
           }
         }
       }

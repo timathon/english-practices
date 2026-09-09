@@ -36,13 +36,33 @@ export const BaiLianGe: React.FC<BaiLianGeProps> = ({ user }) => {
 
   useEffect(() => {
     loadPoems();
-  }, []);
+
+    const handlePoemsUpdated = (e: any) => {
+      if (e?.detail?.poems && Array.isArray(e.detail.poems)) {
+        setPoems(e.detail.poems);
+        if (selectedPoem) {
+          const updated = e.detail.poems.find((p: any) => p.id === selectedPoem.id);
+          if (updated) setSelectedPoem(updated);
+        }
+      } else {
+        loadPoems();
+      }
+    };
+
+    window.addEventListener('zxt_poems_updated', handlePoemsUpdated);
+    return () => {
+      window.removeEventListener('zxt_poems_updated', handlePoemsUpdated);
+    };
+  }, [selectedPoem]);
 
   const loadPoems = async () => {
     const data = await apiService.getPoems();
     setPoems(data);
     if (data.length > 0 && !selectedPoem) {
       setSelectedPoem(data[0]);
+    } else if (selectedPoem) {
+      const updated = data.find(p => p.id === selectedPoem.id);
+      if (updated) setSelectedPoem(updated);
     }
   };
 
