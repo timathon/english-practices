@@ -35,6 +35,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
   // Fast-scroll slider state for Teacher Ancient Poems view
   const [sliderIndex, setSliderIndex] = useState<number>(1);
   const poemRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const poemListContainerRef = useRef<HTMLDivElement | null>(null);
   const isProgrammaticScrollRef = useRef<boolean>(false);
   const scrollTimerRef = useRef<any>(null);
 
@@ -47,30 +48,32 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
     }, 200);
 
     const targetPoem = poems[newIndex - 1];
-    if (targetPoem && poemRefs.current[targetPoem.id]) {
+    if (targetPoem && poemRefs.current[targetPoem.id] && poemListContainerRef.current) {
+      const container = poemListContainerRef.current;
       const el = poemRefs.current[targetPoem.id];
       if (el) {
-        const yOffset = -140;
-        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'auto' });
+        const targetTop = el.offsetTop - container.offsetTop;
+        container.scrollTo({ top: Math.max(0, targetTop - 8), behavior: 'auto' });
       }
     }
   };
 
   useEffect(() => {
     if (selectedSubject !== '语文' || selectedSection !== '古诗') return;
+    const container = poemListContainerRef.current;
+    if (!container) return;
 
     const handleScroll = () => {
       if (isProgrammaticScrollRef.current) return;
       if (!poems || poems.length === 0) return;
-      const scrollY = window.scrollY + 180;
+      const scrollY = container.scrollTop + 60;
       let closestIdx = 0;
       let minDistance = Infinity;
 
       poems.forEach((p, idx) => {
         const el = poemRefs.current[p.id];
         if (el) {
-          const top = el.getBoundingClientRect().top + window.scrollY;
+          const top = el.offsetTop - container.offsetTop;
           const dist = Math.abs(top - scrollY);
           if (dist < minDistance) {
             minDistance = dist;
@@ -84,9 +87,9 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    container.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      container.removeEventListener('scroll', handleScroll);
       if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
     };
   }, [poems, selectedSubject, selectedSection]);
@@ -192,8 +195,8 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
             <span>古诗词进度 (全书共 {poems.length} 首，已解锁 {learntPoemIds.length} 首)</span>
           </div>
 
-          {/* Sticky Fast-Scroll Slider Bar for Teacher (Stick directly under 64px top navbar) */}
-          <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2.5 bg-white/95 backdrop-blur-md border-y border-emerald-100/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Fast-Scroll Slider Bar for Teacher */}
+          <div className="bg-emerald-50/50 rounded-xl px-4 py-2.5 border border-emerald-100 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <span className="text-xs font-bold text-slate-700 whitespace-nowrap flex items-center gap-1">
                 <span>🚀</span>
@@ -237,8 +240,13 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs pt-1">
-            {poems.map((poem) => {
+          {/* Scrollable Container for Poem Cards */}
+          <div
+            ref={poemListContainerRef}
+            className="relative max-h-[640px] md:max-h-[calc(100vh-320px)] overflow-y-auto pr-1 sm:pr-1.5 scroll-smooth rounded-xl border border-slate-100/80 p-2 bg-slate-50/30"
+          >
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+              {poems.map((poem) => {
               const isLearnt = learntPoemIds.includes(poem.id);
               const isAnimating = animatingPoemId === poem.id;
               const questionCount = poem.questions?.length || 0;
@@ -334,6 +342,7 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
       )}
