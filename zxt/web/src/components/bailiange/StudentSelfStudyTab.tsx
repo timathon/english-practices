@@ -365,7 +365,7 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
       const container = poemListContainerRef.current;
       const el = poemRefs.current[targetPoem.id];
       if (el) {
-        const targetTop = el.offsetTop - container.offsetTop;
+        const targetTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
         container.scrollTo({ top: Math.max(0, targetTop - 8), behavior: 'auto' });
       }
     }
@@ -379,15 +379,15 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
     const handleScroll = () => {
       if (isProgrammaticScrollRef.current) return;
       if (!poems || poems.length === 0) return;
-      const scrollY = container.scrollTop + 60;
+      const containerTop = container.getBoundingClientRect().top;
       let closestIdx = 0;
       let minDistance = Infinity;
 
       poems.forEach((p, idx) => {
         const el = poemRefs.current[p.id];
         if (el) {
-          const top = el.offsetTop - container.offsetTop;
-          const dist = Math.abs(top - scrollY);
+          const rect = el.getBoundingClientRect();
+          const dist = Math.abs(rect.top - containerTop - 8);
           if (dist < minDistance) {
             minDistance = dist;
             closestIdx = idx + 1;
@@ -428,7 +428,7 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
             <span>快速定位:</span>
           </span>
           <span className="text-xs px-2.5 py-0.5 bg-emerald-600 text-white font-mono font-extrabold rounded-full shadow-2xs whitespace-nowrap">
-            #{sliderIndex} 《{poems[sliderIndex - 1]?.title || ''}》
+            #{sliderIndex}
           </span>
         </div>
 
@@ -465,12 +465,12 @@ export const StudentSelfStudyTab: React.FC<StudentSelfStudyTabProps> = ({
         </div>
       </div>
 
-      {/* Scrollable Container for Poem Cards */}
+      {/* Scrollable Container for Poem Cards (4 Rows in View) */}
       <div
         ref={poemListContainerRef}
-        className="relative max-h-[640px] md:max-h-[calc(100vh-320px)] overflow-y-auto pr-1 sm:pr-1.5 scroll-smooth rounded-xl border border-slate-100/80 p-2 bg-slate-50/30"
+        className="relative h-[550px] max-h-[550px] overflow-y-auto pr-1 sm:pr-1.5 scroll-smooth rounded-xl border border-slate-100/80 p-2 bg-slate-50/30"
       >
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs pb-[420px]">
           {poems.map((poem, idx) => {
           const isLearnt = learntPoemIds.map(Number).includes(Number(poem.id));
           const questionCount = poem.questions?.length || 0;
