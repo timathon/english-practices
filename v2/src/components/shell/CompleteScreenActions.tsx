@@ -65,7 +65,7 @@ export const CompleteScreenActions: React.FC<CompleteScreenActionsProps> = ({
                     borderBottomColor: '#cbd5e1'
                 }}
             >
-                Back to Challenges
+                ❮ BACK
             </button>
 
             {showModeModal && (

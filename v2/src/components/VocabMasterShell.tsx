@@ -18,6 +18,7 @@ import { FooterAction } from './shell/FooterAction'
 import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
 import { ShellHistoryModal } from './shell/ShellHistoryModal'
 import { CompleteScreenActions } from './shell/CompleteScreenActions'
+import { QuestionReviewList, getEncouragementMessage, type QuestionResultItem } from './shell/QuestionReviewList'
 
 const renderHighlightedSentence = (sentence: string, word: string) => {
     if (!sentence || !word) return sentence;
@@ -68,8 +69,6 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
     const [practiceRecords, setPracticeRecords] = useState<any[]>([])
     const [gainedXp, setGainedXp] = useState(0)
     const [gainedLove, setGainedLove] = useState(0)
-    const [historicalBest, setHistoricalBest] = useState(0)
-    const [isNewHigh, setIsNewHigh] = useState(false)
     const [invisibleMode, setInvisibleMode] = useState(false)
    const [historyModal, setHistoryModal] = useState<{title: string, logs: any[]} | null>(null)
     const [lockModalOpen, setLockModalOpen] = useState(false)
@@ -78,6 +77,8 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const timerExpiredRef = useRef(false)
    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
     const [vocabGuide, setVocabGuide] = useState<any>(null)
+
+    const [questionResults, setQuestionResults] = useState<QuestionResultItem[]>([])
 
     useEffect(() => {
         if (!practiceId) return;
@@ -138,7 +139,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    })
 
    const primaryColor = data.primaryColor || '#3b82f6'
-   const primaryDarkColor = data.primaryColorDark || '#2563eb'
+   const primaryDarkColor = data.primaryColorDark || '#1d4ed8'
 
     const loadRecords = async () => {
         try {
@@ -146,7 +147,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
             if (cached) {
                 setPracticeRecords(cached)
             }
-            const res = await fetch(API_URL + '/api/records', { credentials: 'include' })
+            const res = await fetch(`${API_URL}/api/records`, { credentials: 'include' })
             const json = await res.json()
             if (Array.isArray(json)) {
                 cache.setRecords(json)
@@ -180,6 +181,7 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        setActiveRecordId(null)
        setGainedXp(0)
        setGainedLove(0)
+       setQuestionResults([])
        recordIdPromiseRef.current = null
        hasFinishedRef.current = false
        
@@ -372,6 +374,22 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        let updatedMistakes = [...mistakeQueue]
        let updatedScoreLog = [...scoreLog]
 
+        if (!isRedemption) {
+            const userAnswerText = selectedOption !== null && q.options[selectedOption] ? q.options[selectedOption] : ''
+            const correctAnswerText = q.options[q.answer]
+            setQuestionResults(prev => {
+                const next = [...prev]
+                next[currentIndex] = {
+                    id: q.id || currentIndex,
+                    prompt: q.prompt,
+                    userAnswer: userAnswerText,
+                    correctAnswer: correctAnswerText,
+                    isCorrect: isCorrect
+                }
+                return next
+            })
+        }
+
         if (isCorrect) {
             playSfx('correct')
             if (!invisibleMode) {
@@ -452,12 +470,6 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        
         const scorePercent = Math.round((totalScore / finalQueue.length) * 100)
         setFinalScore(scorePercent)
-
-        const u = `${practiceId} (${activeChallenge.title})`
-        const logs = practiceRecords.filter(r => r.unit === u)
-        const histBest = logs.length > 0 ? Math.max(...logs.map(t => t.score)) : 0
-        setHistoricalBest(histBest)
-        setIsNewHigh(histBest === 0 ? scorePercent > 0 : scorePercent > histBest)
 
         if (!invisibleMode) {
             petService.awardQuizCompletion()
@@ -604,54 +616,42 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
             <div className="vm-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
                 <div className="vm-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '30px 20px' }}>
                     <h1 style={{ color: 'var(--primary)', fontSize: '3.5rem', margin: '0' }}>{finalScore}%</h1>
-                     <h2 style={{ margin: '5px 0 10px 0', color: '#333', fontSize: '1.5rem', fontWeight: 'bold' }}>Challenge Complete!</h2>
-                     
-                     {/* High Score / Record Status */}
-                     <div style={{ margin: '10px 0 20px 0', fontSize: '1rem', color: '#555' }}>
-                         {invisibleMode ? (
-                             <div style={{ color: '#64748b', fontStyle: 'italic' }}>
-                                 Practice Mode (Invisible). Score not saved.
-                             </div>
-                         ) : isNewHigh ? (
-                             <div style={{ color: '#10b981', fontWeight: 'bold' }}>
-                                 🎉 New High Score! You've set a new record!
-                             </div>
-                         ) : (
-                             <div>
-                                 Keep trying! Your highest score is <strong style={{ color: 'var(--primary)' }}>{historicalBest}%</strong>. You can do even better!
-                             </div>
-                         )}
-                     </div>
+                    <h2 style={{ margin: '6px 0 14px 0', color: '#1e293b', fontSize: '1.4rem', fontWeight: 'bold' }}>
+                        {getEncouragementMessage(finalScore).title}
+                    </h2>
 
-                     {/* Rewards Summary Card */}
-                     <div style={{
-                         width: '100%',
-                         maxWidth: '400px',
-                         background: '#f8fafc',
-                         border: '1.5px solid #e2e8f0',
-                         borderRadius: '20px',
-                         padding: '16px 20px',
-                         marginBottom: '30px',
-                         display: 'flex',
-                         justifyContent: 'space-around',
-                         alignItems: 'center'
-                     }}>
-                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                             <span style={{ fontSize: '1.8rem', marginBottom: '4px' }}>⚡</span>
-                             <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>XP</span>
-                             <strong style={{ fontSize: '1.1rem', color: '#334155' }}>+{gainedXp}</strong>
-                         </div>
-                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                             <span style={{ fontSize: '1.8rem', marginBottom: '4px' }}>❤️</span>
-                             <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>LOVE</span>
-                             <strong style={{ fontSize: '1.1rem', color: '#334155' }}>+{gainedLove}</strong>
-                         </div>
-                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                             <span style={{ fontSize: '1.8rem', marginBottom: '4px' }}>🏆</span>
-                             <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>SCORE</span>
-                             <strong style={{ fontSize: '1.1rem', color: '#334155' }}>{finalScore}%</strong>
-                         </div>
-                     </div>
+                    {/* Compact Rewards Summary Bar */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px',
+                        background: '#f8fafc',
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: '12px',
+                        padding: '8px 16px',
+                        marginBottom: '16px',
+                        maxWidth: '400px',
+                        width: '100%',
+                        boxSizing: 'border-box'
+                    }}>
+                        {invisibleMode ? (
+                            <span style={{ fontSize: '0.85rem', color: '#64748b', fontStyle: 'italic' }}>
+                                👻 Invisible Practice (Score not saved)
+                            </span>
+                        ) : (
+                            <>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0284c7' }}>⚡ +{gainedXp} XP</span>
+                                <span style={{ color: '#cbd5e1' }}>|</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e11d48' }}>❤️ +{gainedLove} LOVE</span>
+                                <span style={{ color: '#cbd5e1' }}>|</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ca8a04' }}>🪙 +1 Coin</span>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Question Review List */}
+                    <QuestionReviewList items={questionResults} maxHeight={290} />
 
                       <CompleteScreenActions
                           remainingTrials={trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)}

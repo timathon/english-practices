@@ -18,6 +18,7 @@ import { FooterAction } from './shell/FooterAction'
 import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
 import { ShellHistoryModal } from './shell/ShellHistoryModal'
 import { CompleteScreenActions } from './shell/CompleteScreenActions'
+import { QuestionReviewList, getEncouragementMessage, type QuestionResultItem } from './shell/QuestionReviewList'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -179,9 +180,8 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
     const [finalScore, setFinalScore]     = useState(0)
     const [gainedXp, setGainedXp]         = useState(0)
     const [gainedLove, setGainedLove]     = useState(0)
-    const [historicalBest, setHistoricalBest] = useState(0)
-    const [isNewHigh, setIsNewHigh]       = useState(false)
     const [invisibleMode, setInvisibleMode] = useState(false)
+    const [questionResults, setQuestionResults] = useState<QuestionResultItem[]>([])
     const [showFeedback, setShowFeedback] = useState(false)
     const [isCorrect, setIsCorrect]       = useState(false)
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
@@ -370,6 +370,7 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
         hasFinishedRef.current = false
         setGainedXp(0)
         setGainedLove(0)
+        setQuestionResults([])
         setActiveChallenge(c)
         setQueue(shuffled)
         setCurrentIndex(0)
@@ -438,6 +439,24 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
             } else {
                 correct = soupSelection.map(s => s.text).join('') === q.word
             }
+        }
+
+        const userSpelling = q.qtype === 'linear' 
+            ? userChunks.join('') 
+            : soupSelection.map(s => s.text).join('')
+
+        if (!redemptionRef.current) {
+            setQuestionResults(prev => {
+                const next = [...prev]
+                next[indexRef.current] = {
+                    id: (q as any).id || indexRef.current,
+                    prompt: q.cn ? `${q.cn} (${q.word})` : q.word,
+                    userAnswer: userSpelling,
+                    correctAnswer: q.word,
+                    isCorrect: correct
+                }
+                return next
+            })
         }
 
         setIsCorrect(correct)
@@ -596,12 +615,6 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
             const totalCorrect = currentLog.filter(s => s === 'green').length
             const score        = Math.round((totalCorrect / currentQueue.length) * 100)
             setFinalScore(score)
-            
-            const prevStats = activeChallengeRef.current ? getChallengeStats(practiceId, activeChallengeRef.current.id) : null;
-            const histBest = prevStats ? prevStats.lifetime.best : 0;
-            setHistoricalBest(histBest)
-            setIsNewHigh(histBest === 0 ? score > 0 : score > histBest)
-
             setCompleted(true)
             if (!invisibleMode) {
                 if (activeChallengeRef.current) recordFinish(practiceId, activeChallengeRef.current.id, score)
@@ -664,64 +677,42 @@ export function SpellingHeroShell({ data, practiceId, unit, textbook }: { data: 
             <div className="sh-container" style={{ '--primary': '#58cc02', '--primary-dark': '#46a302' } as any}>
                 <div className="sh-complete-screen" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '30px 20px', textAlign: 'center' }}>
                     <p className="sh-score-display" style={{ fontSize: '3.5rem', margin: '0', fontWeight: 'bold', color: 'var(--primary)' }}>{finalScore}%</p>
-                    <p className="sh-complete-subtitle" style={{ margin: '5px 0 10px 0', color: '#333', fontSize: '1.5rem', fontWeight: 'bold' }}>Challenge Complete!</p>
-                    
-                    {/* High Score / Record Status */}
-                    <div style={{ margin: '10px 0 20px 0', fontSize: '1rem', color: '#555' }}>
-                        {invisibleMode ? (
-                            <div style={{ color: '#64748b', fontStyle: 'italic' }}>
-                                Practice Mode (Invisible). Score not saved.
-                            </div>
-                        ) : isNewHigh ? (
-                            <div style={{ color: '#10b981', fontWeight: 'bold' }}>
-                                🎉 New High Score! You've set a new record!
-                            </div>
-                        ) : (
-                            <div>
-                                Keep trying! Your highest score is <strong style={{ color: 'var(--primary)' }}>{historicalBest}%</strong>. You can do even better!
-                            </div>
-                        )}
-                    </div>
+                    <h2 style={{ margin: '6px 0 14px 0', color: '#1e293b', fontSize: '1.4rem', fontWeight: 'bold' }}>
+                        {getEncouragementMessage(finalScore).title}
+                    </h2>
 
-                    {/* Rewards Summary Card */}
+                    {/* Compact Rewards Summary Bar */}
                     <div style={{
-                        width: '100%',
-                        maxWidth: '400px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px',
                         background: '#f8fafc',
                         border: '1.5px solid #e2e8f0',
-                        borderRadius: '20px',
-                        padding: '16px 20px',
-                        marginBottom: '30px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                        borderRadius: '12px',
+                        padding: '8px 16px',
+                        marginBottom: '16px',
+                        maxWidth: '400px',
+                        width: '100%',
+                        boxSizing: 'border-box'
                     }}>
                         {invisibleMode ? (
-                            <div style={{ color: '#64748b', fontSize: '0.95rem', fontStyle: 'italic' }}>
-                                Practice Mode active. No rewards are awarded.
-                            </div>
+                            <span style={{ fontSize: '0.85rem', color: '#64748b', fontStyle: 'italic' }}>
+                                👻 Invisible Practice (Score not saved)
+                            </span>
                         ) : (
                             <>
-                                <h3 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Rewards Earned</h3>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-around',
-                                    alignItems: 'center'
-                                }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>⚡</span>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#0284c7' }}>+{gainedXp} XP</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>❤️</span>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e11d48' }}>+{gainedLove} ❤️</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>🪙</span>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ca8a04' }}>+1 Coin</span>
-                                    </div>
-                                </div>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0284c7' }}>⚡ +{gainedXp} XP</span>
+                                <span style={{ color: '#cbd5e1' }}>|</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e11d48' }}>❤️ +{gainedLove} LOVE</span>
+                                <span style={{ color: '#cbd5e1' }}>|</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ca8a04' }}>🪙 +1 Coin</span>
                             </>
                         )}
                     </div>
+
+                    {/* Question Review List */}
+                    <QuestionReviewList items={questionResults} maxHeight={290} />
 
                     <CompleteScreenActions
                         remainingTrials={trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)}

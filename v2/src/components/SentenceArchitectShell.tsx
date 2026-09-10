@@ -17,6 +17,7 @@ import { FooterAction } from './shell/FooterAction'
 import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
 import { ShellHistoryModal } from './shell/ShellHistoryModal'
 import { CompleteScreenActions } from './shell/CompleteScreenActions'
+import { QuestionReviewList, getEncouragementMessage, type QuestionResultItem } from './shell/QuestionReviewList'
 
 interface PoolWord {
     id: number;
@@ -81,9 +82,8 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
     const [practiceRecords, setPracticeRecords] = useState<any[]>([])
     const [gainedXp, setGainedXp] = useState(0)
     const [gainedLove, setGainedLove] = useState(0)
-    const [historicalBest, setHistoricalBest] = useState(0)
-    const [isNewHigh, setIsNewHigh] = useState(false)
     const [invisibleMode, setInvisibleMode] = useState(false)
+    const [questionResults, setQuestionResults] = useState<QuestionResultItem[]>([])
     const [historyModal, setHistoryModal] = useState<{ title: string, logs: any[] } | null>(null)
     const [lockModalOpen, setLockModalOpen] = useState(false)
     const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
@@ -169,6 +169,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
         setActiveRecordId(null)
         setGainedXp(0)
         setGainedLove(0)
+        setQuestionResults([])
         recordIdPromiseRef.current = null
         hasFinishedRef.current = false
 
@@ -208,6 +209,10 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
         setQ(nextQ)
         setIsRedemption(isRedemp)
+        setLocked(false)
+        setShowFeedback(false)
+        setUserSelection([])
+        setUserSentenceStr("")
         setHintUsed(false)
         setShowHintModal(false)
         setIsClosing(false)
@@ -215,27 +220,17 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
             clearInterval(hintIntervalRef.current)
             hintIntervalRef.current = null
         }
-        setLocked(false)
-        setShowFeedback(false)
-        setUserSelection([])
-        setContinueCountdown(0)
-        setContinueDisabled(false)
         timerExpiredRef.current = false
 
-        // Generate Shuffled Word Pool
-        const cleanEn = nextQ.en.replace(/[.!?]$/, "");
-        const originalWords = cleanEn.split(" ");
-        
-        // Randomly select 2 or 3 noise words from the pool
-        const noisePool = [...(nextQ.noise || [])];
-        const noiseCount = Math.floor(Math.random() * 2) + 2; // Randomly choose 2 or 3
-        const selectedNoise: string[] = [];
-        while (selectedNoise.length < noiseCount && noisePool.length > 0) {
-            const randomIndex = Math.floor(Math.random() * noisePool.length);
-            selectedNoise.push(noisePool.splice(randomIndex, 1)[0]);
+        // Parse sentence words and noise words for the pool
+        const originalWords = nextQ.en.replace(/[.!?]$/, "").split(/\s+/);
+        let noiseWords: string[] = [];
+        if (nextQ.noise) {
+            noiseWords = typeof nextQ.noise === 'string' ? nextQ.noise.split(/\s+/) : nextQ.noise;
         }
-        
-        const allWords = shuffle([...originalWords, ...selectedNoise]);
+
+        // Combine and shuffle words
+        const allWords = shuffle([...originalWords, ...noiseWords]);
 
         const poolItems = allWords.map((word, idx) => {
             let displayWord = word;
@@ -409,6 +404,20 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
             }
         }
 
+        if (!isRedemption) {
+            setQuestionResults(prev => {
+                const next = [...prev]
+                next[currentIndex] = {
+                    id: q.id || currentIndex,
+                    prompt: q.cn,
+                    userAnswer: constructed,
+                    correctAnswer: q.en,
+                    isCorrect: isCorrect
+                }
+                return next
+            })
+        }
+
         setIsCorrectFeedback(isCorrect)
         setShowFeedback(true)
 
@@ -511,12 +520,6 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
 
         const scorePercent = Math.round((totalScore / finalQueue.length) * 100)
         setFinalScore(scorePercent)
-
-        const u = `${practiceId} (${activeChallenge.title})`
-        const logs = practiceRecords.filter(r => r.unit === u)
-        const histBest = logs.length > 0 ? Math.max(...logs.map(t => t.score)) : 0
-        setHistoricalBest(histBest)
-        setIsNewHigh(histBest === 0 ? scorePercent > 0 : scorePercent > histBest)
 
         if (!invisibleMode) {
             petService.awardQuizCompletion()
@@ -659,77 +662,42 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
             <div className="sa-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
                 <div className="sa-screen" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '30px 20px' }}>
                     <h1 style={{ color: 'var(--primary)', fontSize: '3.5rem', margin: '0' }}>{finalScore}%</h1>
-                    <h2 style={{ margin: '5px 0 10px 0', color: '#333', fontSize: '1.5rem', fontWeight: 'bold' }}>Challenge Complete!</h2>
-                    
-                    {/* High Score / Record Status */}
-                    <div style={{ margin: '10px 0 20px 0', fontSize: '1rem', color: '#555' }}>
-                        {invisibleMode ? (
-                            <div style={{ color: '#64748b', fontStyle: 'italic' }}>
-                                Practice Mode (Invisible). Score not saved.
-                            </div>
-                        ) : isNewHigh ? (
-                            <div style={{ color: '#10b981', fontWeight: 'bold' }}>
-                                🎉 New High Score! You've set a new record!
-                            </div>
-                        ) : (
-                            <div>
-                                Keep trying! Your highest score is <strong style={{ color: 'var(--primary)' }}>{historicalBest}%</strong>. You can do even better!
-                            </div>
-                        )}
-                    </div>
+                    <h2 style={{ margin: '6px 0 14px 0', color: '#1e293b', fontSize: '1.4rem', fontWeight: 'bold' }}>
+                        {getEncouragementMessage(finalScore).title}
+                    </h2>
 
-                    {/* Rewards Summary Card */}
+                    {/* Compact Rewards Summary Bar */}
                     <div style={{
-                        width: '100%',
-                        maxWidth: '400px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px',
                         background: '#f8fafc',
                         border: '1.5px solid #e2e8f0',
-                        borderRadius: '20px',
-                        padding: '16px 20px',
-                        marginBottom: '30px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                        borderRadius: '12px',
+                        padding: '8px 16px',
+                        marginBottom: '16px',
+                        maxWidth: '400px',
+                        width: '100%',
+                        boxSizing: 'border-box'
                     }}>
                         {invisibleMode ? (
-                            <div style={{ color: '#64748b', fontSize: '0.95rem', fontStyle: 'italic' }}>
-                                Practice Mode active. No rewards are awarded.
-                            </div>
+                            <span style={{ fontSize: '0.85rem', color: '#64748b', fontStyle: 'italic' }}>
+                                👻 Invisible Practice (Score not saved)
+                            </span>
                         ) : (
                             <>
-                                <h3 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Rewards Earned</h3>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-around',
-                                    alignItems: 'center'
-                                }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>⚡</span>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#0284c7' }}>+{gainedXp} XP</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>❤️</span>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#e11d48' }}>+{gainedLove} ❤️</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.8rem', marginBottom: '2px' }}>🪙</span>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ca8a04' }}>+1 Coin</span>
-                                    </div>
-                                </div>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0284c7' }}>⚡ +{gainedXp} XP</span>
+                                <span style={{ color: '#cbd5e1' }}>|</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e11d48' }}>❤️ +{gainedLove} LOVE</span>
+                                <span style={{ color: '#cbd5e1' }}>|</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ca8a04' }}>🪙 +1 Coin</span>
                             </>
                         )}
                     </div>
-                    
-                    {/* Review Mistakes Section */}
-                    {(() => {
-                        if (finalScore === 100) {
-                            return <div className="sa-perfect-run-badge" style={{ marginBottom: '25px' }}>🎉 Perfect Run! No mistakes.</div>;
-                        } else if (finalScore >= 80) {
-                            return <div className="sa-perfect-run-badge" style={{ color: '#0284c7', marginBottom: '25px' }}>✨ Great job! Challenge completed with mistakes corrected.</div>;
-                        } else if (finalScore >= 60) {
-                            return <div className="sa-perfect-run-badge" style={{ color: '#0f766e', marginBottom: '25px' }}>👍 Good effort! All mistakes corrected. Keep it up!</div>;
-                        } else {
-                            return <div className="sa-perfect-run-badge" style={{ color: '#64748b', marginBottom: '25px' }}>💪 Nice practice! You corrected all mistakes. Keep improving!</div>;
-                        }
-                    })()}
+
+                    {/* Question Review List */}
+                    <QuestionReviewList items={questionResults} maxHeight={290} />
 
                     <CompleteScreenActions
                         remainingTrials={trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)}
