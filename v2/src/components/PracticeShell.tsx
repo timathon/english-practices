@@ -14,6 +14,7 @@ import { PassageDecoderShell } from './PassageDecoderShell'
 import { TestSheetShell } from './TestSheetShell'
 import { AudioDetectiveShell } from './AudioDetectiveShell'
 import { BugHunterShell } from './BugHunterShell'
+import { VerbReferenceShell } from './VerbReferenceShell'
 
 import { practiceCache } from '../lib/practiceCache'
 import { cache } from '../lib/cache'
@@ -243,6 +244,10 @@ export function PracticeShell() {
 
     if (cleanType.startsWith('writing-map')) {
         return <WritingMapShell data={practice.content} textbook={practice.textbook} unit={practice.unit} />
+    }
+
+    if (cleanType.startsWith('irregular-verbs') || cleanType.startsWith('verb-expressions')) {
+        return <VerbReferenceShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} unit={practice.unit} />
     }
 
     return (

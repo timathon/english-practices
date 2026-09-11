@@ -6,6 +6,8 @@ export const PRACTICE_TYPE_ICONS: Record<string, string> = {
   'Writing Map': '📝',
   'Audio Detective': '🎧',
   'Bug Hunter': '🐛',
+  'Irregular Verbs': '⚡',
+  'Verb Expressions': '💡',
 }
 
 export const translatePracticeName = (name: string): string => {
@@ -44,6 +46,12 @@ export const translatePracticeName = (name: string): string => {
   if (norm.startsWith('Recall Map')) {
     return norm.replace(/^Recall Map/i, '单元总览');
   }
+  if (norm.startsWith('Irregular Verbs')) {
+    return norm.replace(/^Irregular Verbs/i, '不规则动词表');
+  }
+  if (norm.startsWith('Verb Expressions')) {
+    return norm.replace(/^Verb Expressions/i, '动词短语与搭配');
+  }
   if (norm.startsWith('Test')) {
     return norm.replace(/^Test/i, '单元测试');
   }
@@ -61,6 +69,8 @@ export const translatePracticeName = (name: string): string => {
     'Sentence Architect': '句子架构师',
     'Audio Detective': '听力侦探',
     'Bug Hunter': 'Bug 猎手',
+    'Irregular Verbs': '不规则动词表',
+    'Verb Expressions': '动词短语与搭配',
     'Test': '单元测试',
   };
   const translatedBase = map[baseName] || map[baseName.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')] || baseName;

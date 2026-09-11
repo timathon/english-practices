@@ -299,6 +299,8 @@ async function seed() {
                 'text-navigator',
                 'writing-map',
                 'passage-decoder',
+                'irregular-verbs',
+                'verb-expressions',
                 'test'
             ];
             

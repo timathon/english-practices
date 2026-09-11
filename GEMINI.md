@@ -613,10 +613,116 @@ module.exports = {
     - For **spelling** errors: always `"spelling"`.
     - For **grammar** errors: a concise grammar concept, e.g. `"past tense"`, `"subject-verb"`, `"article"`, `"plural noun"`, `"singular noun"`, `"adjective form"`, `"object pronoun"`, `"possessive pronoun"`, `"verb form"`, `"noun form"`.
 
-- **Spelling Bug Rules:**
-  - Introduce realistic misspellings (e.g., doubled letters, wrong vowel, phonetic misspelling).
-  - Distractors: other plausible but wrong spellings of the same word.
-  - The `buggy_word` must appear verbatim (without punctuation) inside `buggy`.
+## 14. Word Matrix (WM)
+**Source:** `*-vocab-guide.json`
+**Target:** `*-word-matrix.json` (Save in the same folder as source)
+
+- **Purpose:** Matrix / grid-based vocabulary and collocation practice.
+
+---
+
+## 15. Irregular Verbs List (IV)
+**Source:** Textbook unit markdowns (`*-u*.md`), unit vocabulary guides (`*-vocab-guide.json`), and test markdowns (`*-test-*.md`).
+**Target:** `*-irregular-verbs.json` (Save under `*-uz/` or `*-uz-vocab/`)
+
+- **Scope & Extraction:**
+  - Extract all irregular verbs introduced or practiced across the textbook units.
+  - Determine verb forms based on textbook target level:
+    - Primary (Grade 3–6): `base` (原形) and `past` (过去式). `past_participle` (过去分词) is optional or included for completion.
+    - Junior / Senior High (Grade 7+): Include `base`, `past`, and `past_participle`.
+  - Include UK standard `ipa`, Chinese `meaning`, and pattern `category` (e.g., `A-A-A`, `A-B-B (d->t)`, `A-B-B (vowel change)`, `A-B-C`, `A-B-A`).
+- **Authentic Context & Source References:**
+  - **Source Priority:** Always prioritize authentic example sentences directly from the main unit lesson markdowns (`*-u*.md`, such as *Get Ready*, *Start Up*, *Story Time*, *Speed Up*, *Hit it big*, *Reading*, *Grammar Focus*) before falling back to test exercises.
+  - **Detail Format Rule:**
+    - For sentences from textbook lesson markdowns (`*-u*.md`), include the printed page number and section title, e.g. `"Page 10 (Hit it big)"` or `"Page 4 (Start Up)"`.
+    - For sentences from test markdowns (`*-test-*.md`), format as `"Xtza"` / `"Xtzb"` or with section e.g. `"Xtza (Get Ready)"`, strictly **without page numbers**.
+  - Each example object must separate `unit` (e.g. `"Unit 1"`, `"Unit 2"`) from `detail`:
+    - `sentence`: Full English sentence from source.
+    - `cn`: Natural Chinese translation.
+    - `unit`: Source unit identifier (e.g., `"Unit 1"`, `"Unit 2"`).
+    - `detail`: Specific location details (e.g., `"Page 10 (Hit it big)"`, `"Xtza (Get Ready)"`, `"Xtzb"`).
+- **Format:** Strict JSON following this template:
+```json
+{
+  "level": "Grade 6 Semester 1 - Unit Z",
+  "title": "Irregular Verbs",
+  "type": "irregular-verbs",
+  "verbs": [
+    {
+      "id": "iv_spend",
+      "base": "spend",
+      "past": "spent",
+      "past_participle": "spent",
+      "ipa": "/spend/",
+      "meaning": "v. 用（钱），花费；度过",
+      "category": "A-B-B (d->t)",
+      "examples": [
+        {
+          "sentence": "What do you spend your pocket money on?",
+          "cn": "你把零花钱花在什么上面？",
+          "unit": "Unit 1",
+          "detail": "Page 10 (Hit it big)"
+        },
+        {
+          "sentence": "Do you often spend your pocket money on toys?",
+          "cn": "你经常把零花钱花在玩具上吗？",
+          "unit": "Unit 1",
+          "detail": "Xtza (Get Ready)"
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 16. Verb Expressions List (VE)
+**Source:** Main unit markdowns (`*-u*.md`) prioritized over test markdowns (`*-u*-test-*.md`).
+**Target:** `*-verb-expressions.json` (Save under `*-uz/` or `*-uz-vocab/`)
+
+- **Scope & Extraction:**
+  - **Phrasal Verbs**: Verbs paired with prepositions or particles (e.g., `give up`, `turn into`, `look after`, `pick up`, `grow up`).
+  - **Verb Patterns & Collocations**: Key verb phrases and syntactic structures (e.g., `spend ... on`, `take pride in`, `make friends with`, `play a role in`, `stop ... from doing`).
+  - Categorize each entry (`"Phrasal Verb"`, `"Collocation"`, or `"Verb Pattern"`).
+  - Include structural formula (`structure`, e.g., `"spend + money/time + on + sth."`), Chinese `meaning`, and root `verb_base`.
+- **Authentic Context & Source References:**
+  - **Source Priority:** Prioritize verbatim context sentences directly from main textbook lesson sections (e.g., *Get Ready*, *Start Up*, *Story Time*, *Hit it big*, *Dialogue*, *Reading*) over test papers.
+  - **Detail Format Rule:** Use `"Page X (Section)"` for textbook lesson files and `"Xtza (Section)"` / `"Xtzb"` (without page numbers) for test files.
+  - Separate `unit` (e.g. `"Unit 1"`, `"Unit 3"`) and `detail` (e.g. `"Page 10 (Hit it big)"`, `"Xtza (Get Ready)"`) for front-end unit filtering:
+    - `sentence`: Full English sentence from source.
+    - `cn`: Natural Chinese translation.
+    - `unit`: Source unit identifier (e.g., `"Unit 1"`).
+    - `detail`: Specific location details (e.g., `"Page 10 (Hit it big)"`, `"Xtza (Get Ready)"`).
+- **Format:** Strict JSON following this template:
+```json
+{
+  "level": "Grade 6 Semester 1 - Unit Z",
+  "title": "Verb Expressions",
+  "type": "verb-expressions",
+  "expressions": [
+    {
+      "id": "ve_spend_on",
+      "expression": "spend ... on",
+      "verb_base": "spend",
+      "category": "Collocation",
+      "structure": "spend + money/time + on + sth.",
+      "meaning": "把（金钱/时间）花在……上",
+      "examples": [
+        {
+          "sentence": "Do you often spend your pocket money on toys?",
+          "cn": "你经常把零花钱花在玩具上吗？",
+          "unit": "Unit 1",
+          "detail": "Page 4 (Get Ready)"
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
 
 - **Grammar Bug Rules:**
   - Introduce grammatically incorrect forms (wrong tense, wrong article, wrong plural/singular, wrong pronoun, wrong adjective/adverb form).

@@ -658,6 +658,8 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 if (t.includes('passage-decoder')) return '📖';
                 if (t.includes('audio-detective')) return '🎧';
                 if (t.includes('bug-hunter')) return '🐛';
+                if (t.includes('irregular-verb') || t.includes('irregular')) return '⚡';
+                if (t.includes('verb-expression') || t.includes('expression')) return '💡';
                 return PRACTICE_TYPE_ICONS[typeStr] ?? '▶️';
               };
 

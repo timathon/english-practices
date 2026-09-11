@@ -250,6 +250,27 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
                             }
                         });
                     }
+                } else if (file.includes('-irregular-verbs')) {
+                    if (content.verbs && Array.isArray(content.verbs)) {
+                        content.verbs.forEach(v => {
+                            if (v.base) textsSet.add(getCleanText(v.base));
+                            if (v.examples && Array.isArray(v.examples)) {
+                                v.examples.forEach(ex => {
+                                    if (ex.sentence) textsSet.add(getCleanText(ex.sentence));
+                                });
+                            }
+                        });
+                    }
+                } else if (file.includes('-verb-expressions')) {
+                    if (content.expressions && Array.isArray(content.expressions)) {
+                        content.expressions.forEach(e => {
+                            if (e.examples && Array.isArray(e.examples)) {
+                                e.examples.forEach(ex => {
+                                    if (ex.sentence) textsSet.add(getCleanText(ex.sentence));
+                                });
+                            }
+                        });
+                    }
                 } else if (file.includes('-test')) {
                     if (content.sections && Array.isArray(content.sections)) {
                         content.sections.forEach(section => {
