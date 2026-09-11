@@ -301,6 +301,17 @@ export function TestSheetPrintView({ data }: TestSheetPrintViewProps) {
                       )
                     }
 
+                    if (sec.type === 'story-ordering') {
+                      const prefixText = q.isExample ? `(  ${q.answer}  )` : `( &nbsp;&nbsp;&nbsp; )`
+                      return (
+                        <div key={q.id || qIdx} className="ts-print-q-card">
+                          <div className="ts-print-q-prompt">
+                            <span className="ts-print-q-prefix" dangerouslySetInnerHTML={{ __html: prefixText }} /> {renderPromptText(q.prompt)}
+                          </div>
+                        </div>
+                      )
+                    }
+
                     if (sec.type === 'definition-matching' || sec.type === 'matching' || sec.type === 'true-false') {
                       return (
                         <div key={q.id || qIdx} className="ts-print-q-card">

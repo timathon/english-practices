@@ -14,6 +14,7 @@ export interface Question {
   blankIndex?: number
   type?: 'multiple-choice' | 'short-answer'
   audio?: AudioSpec
+  isExample?: boolean
 }
 
 export interface Section {
@@ -32,6 +33,7 @@ export interface Section {
     | 'reading-comprehension'
     | 'cloze-passage-wordbank'
     | 'put-words-in-order'
+    | 'story-ordering'
     | string
   wordbank?: string[]
   options?: string[]

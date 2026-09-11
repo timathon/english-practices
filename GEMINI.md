@@ -517,10 +517,20 @@ This document defines the rules for extracting and converting textbook data into
        - `answer`: The correctly ordered full sentence string (e.g. `"Amy can do chores well."`).
        - `translation` & `explanation`: Chinese text.
 
-
+  8. **`story-ordering`** (Ordering sentences chronologically based on a passage / 故事排序):
+     - `type`: `"story-ordering"`
+     - `passage`: Full reading passage text.
+     - `options`: Array of chronological ordering numbers (e.g. `["1", "2", "3", "4", "5"]`).
+     - `questions`: Array of sentence objects to be ordered chronologically:
+       - `id`: 8-character alphanumeric string.
+       - `prompt`: The English sentence string.
+       - `answer`: String representing its chronological position (e.g. `"1"`, `"2"`, `"3"`, `"4"`, `"5"`).
+       - `isExample`: (Optional boolean) Set to `true` if the original test paper gives this answer as an example (e.g. `"第一个答案已给出"`). Example items are automatically pre-filled and locked in the UI, omitted from error highlighting, and excluded from the total question count and scoring calculation.
+       - `translation` & `explanation`: Chinese text.
 
       - **Visual Diagram Conversion Rule:** If there is any `[*VISUAL: ...*]` diagram description (like a bar chart or graph) inside a passage, convert it into a beautiful, styled, responsive HTML/CSS diagram/chart (with proper bars, colors, labels, legends, etc. using inline CSS layout styles) wrapped in `[HTML: <chart-html>]`. The design must be extremely clean, polished, use modern color palettes, and be readable on light background themes.
 
+---
 
 ## 11. Reading & Expression (RE)
 **Source:** Reading and Expression Markdown (e.g., `data/A7B/a7b-workbooks/a7b-re-old.md`).

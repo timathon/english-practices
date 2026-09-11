@@ -110,10 +110,11 @@ RULES:
      - "dialogue-completion" (Completing dialogue with candidate sentences)
      - "true-false" (True or False questions)
      - "put-words-in-order" (Putting words/punctuation blocks in order to form a sentence / 连词成句)
-   - `passage`: (Required for `cloze-passage`, `cloze-passage-wordbank`, `reading-comprehension`, `true-false` if applicable) Full text string with blanks represented by "[1]", "[2]", etc.
+     - "story-ordering" (Ordering sentences chronologically based on a passage / 故事排序)
+   - `passage`: (Required for `cloze-passage`, `cloze-passage-wordbank`, `reading-comprehension`, `story-ordering`, `true-false` if applicable) Full text string with blanks represented by "[1]", "[2]", etc.
    - `wordbank`: (Required for `fill-in-the-blank-wordbank`, `cloze-passage-wordbank`, `definition-matching`) Array of strings representing candidate words or sentences.
    - `dialogue`: (Required for `dialogue-completion`) Array of turn objects: `{{ "speaker": string, "text": string }}` where blanks are indicated by placeholders like "[1]".
-   - `options`: (Required for `dialogue-completion` at section level) Array of candidate sentences.
+   - `options`: (Required for `dialogue-completion` and `story-ordering` at section level) Array of candidate sentences (for dialogue) or number strings (e.g. `["1", "2", "3", "4", "5"]` for story-ordering).
    - `audio`: (Optional for listening section) `{{ "text": string, "maxReplays": 1 }}`
    - `questions`: Array of question items.
 
@@ -137,6 +138,10 @@ RULES:
      - `answer`: 0-indexed integer of the correct item in `wordbank`.
    - For `dialogue-completion`:
      - `answer`: 0-indexed integer of the correct sentence in section-level `options`.
+   - For `story-ordering`:
+     - `prompt`: The English sentence string to be ordered.
+     - `answer`: String representing its chronological position (e.g. `"1"`, `"2"`, `"3"`, `"4"`, `"5"`).
+     - `isExample`: (Optional boolean) Set to `true` if the question was given as an example in the test paper (e.g. `"第一个答案已给出"`).
    - For `fill-in-the-blank-firstletter`:
      - `prompt`: Question sentence. Use "______" for the blank.
      - `answer`: Correct word string.

@@ -6,7 +6,8 @@ import {
   cleanOptionText,
   formatOptionWithLetter,
   parseWordBlocks,
-  formatSentenceFromBlocks
+  formatSentenceFromBlocks,
+  toRomanNumeral
 } from './testSheetUtils'
 
 import { TestSheetAudioPlayer } from './TestSheetAudioPlayer'
@@ -118,14 +119,29 @@ export function TestSheetQuestionItem({
                     >
                       <option value="">-- Choose --</option>
                       {section.wordbank?.map(word => {
-                        const usingQIdx = section.questions.findIndex(otherQ => userAnswers[otherQ.id] === word)
-                        const showSuffix = usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id
-                        const suffix = showSuffix ? ` 🔹(${usingQIdx + 1})` : ''
+                        const exampleQ = section.questions.find(otherQ => otherQ.isExample && String(otherQ.answer) === String(word))
+                        const usingQIdx = section.questions.findIndex(otherQ => !otherQ.isExample && userAnswers[otherQ.id] === word)
+
+                        let showSuffix = false
+                        let suffix = ''
+                        let isOptDisabled = false
+
+                        if (exampleQ && !q.isExample) {
+                          const exIdx = section.questions.findIndex(otherQ => otherQ.id === exampleQ.id)
+                          showSuffix = true
+                          suffix = ` 🔹(${exIdx + 1} 例)`
+                          isOptDisabled = true
+                        } else if (usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id) {
+                          showSuffix = true
+                          suffix = ` 🔹(${usingQIdx + 1})`
+                        }
+
                         return (
                           <option
                             key={word}
                             value={word}
-                            style={showSuffix ? { color: '#2563eb', fontWeight: 'bold' } : undefined}
+                            disabled={isOptDisabled}
+                            style={showSuffix ? { color: isOptDisabled ? '#94a3b8' : '#2563eb', fontWeight: 'bold' } : undefined}
                           >
                             {word}{suffix}
                           </option>
@@ -146,6 +162,87 @@ export function TestSheetQuestionItem({
                     ? section.wordbank[q.answer]
                     : String(q.answer)}
                 </strong></p>
+              )}
+              {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
+              {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    case 'story-ordering': {
+      const optionsList = section.options || section.wordbank || []
+      const romanNumeral = toRomanNumeral(index + 1)
+      return (
+        <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
+          <div className="ts-question-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', flexWrap: 'wrap' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#475569' }}>(</span>
+              <select
+                className="ts-wordbank-select"
+                style={{
+                  minWidth: '65px',
+                  padding: '4px 8px',
+                  margin: '0 2px',
+                  textAlign: 'center',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  borderRadius: '6px',
+                  ...(q.isExample ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#1e293b' } : {})
+                }}
+                value={q.isExample ? String(q.answer) : (userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
+                disabled={submitted || !!q.isExample}
+                onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
+              >
+                <option value="">--</option>
+                {optionsList.map((opt, optIdx) => {
+                  const exampleQ = section.questions.find(otherQ => otherQ.isExample && String(otherQ.answer) === String(opt))
+                  const usingQIdx = section.questions.findIndex(otherQ => !otherQ.isExample && String(userAnswers[otherQ.id]) === String(opt))
+
+                  let showSuffix = false
+                  let suffix = ''
+                  let isOptDisabled = false
+
+                  if (exampleQ && !q.isExample) {
+                    const exIdx = section.questions.findIndex(otherQ => otherQ.id === exampleQ.id)
+                    showSuffix = true
+                    suffix = ` 🔹(${toRomanNumeral(exIdx + 1)} 例)`
+                    isOptDisabled = true
+                  } else if (usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id) {
+                    showSuffix = true
+                    suffix = ` 🔹(${toRomanNumeral(usingQIdx + 1)})`
+                  }
+
+                  return (
+                    <option
+                      key={optIdx}
+                      value={opt}
+                      disabled={isOptDisabled}
+                      style={showSuffix ? { color: isOptDisabled ? '#94a3b8' : '#2563eb', fontWeight: isOptDisabled ? 'normal' : 'bold' } : undefined}
+                    >
+                      {opt}{suffix}
+                    </option>
+                  )
+                })}
+              </select>
+              <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#475569' }}>)</span>
+            </div>
+            <span className="ts-question-prompt" style={{ flex: 1, minWidth: '200px' }}>
+              <strong style={{ marginRight: '6px', color: '#334155' }}>{romanNumeral}.</strong>
+              {renderPromptText(q.prompt)}
+              {q.isExample && (
+                <span style={{ marginLeft: '8px', fontSize: '0.8rem', color: '#64748b', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                  例 (Example)
+                </span>
+              )}
+            </span>
+          </div>
+
+          {submitted && (
+            <div className="ts-feedback-detail">
+              {!isUserCorrect && (
+                <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
               )}
               {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
               {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}

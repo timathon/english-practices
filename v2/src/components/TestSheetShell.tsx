@@ -45,17 +45,22 @@ export function shuffleTestData(sourceData: TestSheetData): TestSheetData {
     sections: sourceData.sections.map(section => {
       const secCopy: Section = { ...section }
 
-      // Shuffle section-level option bank / wordbank
+      // Shuffle section-level option bank / wordbank (preserve sequential order for story-ordering)
       let shuffledOptions = secCopy.options
       let shuffledWordbank = secCopy.wordbank
 
-      if (secCopy.options && Array.isArray(secCopy.options)) {
+      if (secCopy.type !== 'story-ordering' && secCopy.options && Array.isArray(secCopy.options)) {
         shuffledOptions = shuffleArray(secCopy.options)
         secCopy.options = shuffledOptions
       }
-      if (secCopy.wordbank && Array.isArray(secCopy.wordbank)) {
+      if (secCopy.type !== 'story-ordering' && secCopy.wordbank && Array.isArray(secCopy.wordbank)) {
         shuffledWordbank = shuffleArray(secCopy.wordbank)
         secCopy.wordbank = shuffledWordbank
+      }
+
+      // Shuffle questions order for story-ordering
+      if (secCopy.type === 'story-ordering' && secCopy.questions && Array.isArray(secCopy.questions)) {
+        secCopy.questions = shuffleArray(secCopy.questions)
       }
 
       // Shuffle question-level options (e.g. multiple-choice, cloze-passage) or word order blocks (put-words-in-order)
@@ -142,11 +147,29 @@ export function TestSheetShell({
     return shuffleTestData(data)
   })
 
+  const getInitialAnswersWithExamples = useCallback((tData: TestSheetData, existing?: Record<string, string | number | boolean>) => {
+    const res: Record<string, string | number | boolean> = { ...(existing || {}) }
+    if (tData && tData.sections) {
+      tData.sections.forEach(sec => {
+        if (Array.isArray(sec.questions)) {
+          sec.questions.forEach(q => {
+            if (q.isExample && q.answer !== undefined && res[q.id] === undefined) {
+              res[q.id] = String(q.answer)
+            }
+          })
+        }
+      })
+    }
+    return res
+  }, [])
+
   useEffect(() => {
     if (data) {
-      setTestData(isReadOnly ? data : shuffleTestData(data))
+      const preparedData = isReadOnly ? data : shuffleTestData(data)
+      setTestData(preparedData)
+      setUserAnswers(prev => getInitialAnswersWithExamples(preparedData, prev))
     }
-  }, [data, isReadOnly])
+  }, [data, isReadOnly, getInitialAnswersWithExamples])
 
   // State
   const [showStartModal, setShowStartModal] = useState(!isReadOnly)
@@ -159,7 +182,9 @@ export function TestSheetShell({
     setRemainingAttempts(trialsTracker.getRemainingTrials(practiceId, 'test-sheet'))
   }
 
-  const [userAnswers, setUserAnswers] = useState<Record<string, string | number | boolean>>(initialAnswers || {})
+  const [userAnswers, setUserAnswers] = useState<Record<string, string | number | boolean>>(() =>
+    getInitialAnswersWithExamples(data, initialAnswers || {})
+  )
   const [selectedBlocksMap, setSelectedBlocksMap] = useState<Record<string, number[]>>({})
   const [replayCounts, setReplayCounts] = useState<Record<string, number>>({})
   const [submitted, setSubmitted] = useState(!!initialSubmitted)
@@ -470,10 +495,11 @@ export function TestSheetShell({
          section.type === 'cloze-passage-wordbank' ||
          section.type === 'definition-matching' ||
          section.type === 'matching' ||
-         section.type === 'dialogue-completion')
+         section.type === 'dialogue-completion' ||
+         section.type === 'story-ordering')
       ) {
         section.questions.forEach(otherQ => {
-          if (otherQ.id !== qId && String(next[otherQ.id] || '') === String(value)) {
+          if (otherQ.id !== qId && !otherQ.isExample && String(next[otherQ.id] || '') === String(value)) {
             next[otherQ.id] = ""
           }
         })
@@ -502,6 +528,7 @@ export function TestSheetShell({
 
     testData.sections.forEach(section => {
       section.questions.forEach(q => {
+        if (q.isExample) return
         totalQuestions++
         const userAns = userAnswers[q.id]
         if (isAnswerCorrect(userAns, q.answer, section, q.type)) {
@@ -535,7 +562,9 @@ export function TestSheetShell({
 
   // Retry the test
   const handleRetry = () => {
-    setUserAnswers({})
+    const newShuffledData = shuffleTestData(data)
+    setTestData(newShuffledData)
+    setUserAnswers(getInitialAnswersWithExamples(newShuffledData))
     setSelectedBlocksMap({})
     setReplayCounts({})
     setSubmitted(false)
@@ -549,7 +578,6 @@ export function TestSheetShell({
     recordIdPromiseRef.current = null
     hasFinishedRef.current = false
     setActiveSectionIdx(0)
-    setTestData(shuffleTestData(data))
   }
 
   const activeSection = testData.sections[activeSectionIdx]
@@ -607,6 +635,7 @@ export function TestSheetShell({
           >
             {testData.sections.map((sec, idx) => {
               const hasError = submitted && Array.isArray(sec.questions) && sec.questions.some(q => {
+                if (q.isExample) return false
                 const userAns = userAnswers[q.id]
                 return !isAnswerCorrect(userAns, q.answer, sec, q.type)
               })

@@ -13,6 +13,23 @@ export const resolveTestAudioUrl = (audio: { url?: string; text?: string } | und
   return `${PUBLIC_URL_BASE}/ep/${bookCategory}/${hash}.mp3`
 }
 
+export const toRomanNumeral = (num: number): string => {
+  const romanMap: [number, string][] = [
+    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+    [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+    [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+  ]
+  let result = ''
+  let n = num
+  for (const [val, roman] of romanMap) {
+    while (n >= val) {
+      result += roman
+      n -= val
+    }
+  }
+  return result || String(num)
+}
+
 export const getOrdinal = (n: number): string => {
   if (n === 1) return "1st"
   if (n === 2) return "2nd"

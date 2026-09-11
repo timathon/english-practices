@@ -263,16 +263,17 @@ export function TestSheetInlineBlanksPassage({
             <select
               className={selectClass}
               value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
-              disabled={submitted}
+              disabled={submitted || !!q.isExample}
               onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
               style={{
                 padding: '4px 8px',
                 border: '1px solid #d1d5db',
                 borderRadius: '4px',
-                background: submitted ? (isUserCorrect ? '#d1fae5' : '#fee2e2') : '#fff',
-                color: '#374151',
+                background: submitted ? (isUserCorrect ? '#d1fae5' : '#fee2e2') : (q.isExample ? '#f3f4f6' : '#fff'),
+                color: q.isExample ? '#4b5563' : '#374151',
                 fontSize: '0.95em',
-                cursor: submitted ? 'not-allowed' : 'pointer'
+                fontWeight: q.isExample ? 'bold' : 'normal',
+                cursor: (submitted || q.isExample) ? 'not-allowed' : 'pointer'
               }}
             >
               <option value="">({blankNum})</option>
@@ -284,14 +285,28 @@ export function TestSheetInlineBlanksPassage({
                 ))
               ) : section.type === 'cloze-passage-wordbank' ? (
                 section.wordbank?.map((word, wordIdx) => {
-                  const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(word))
-                  const showSuffix = usingQ && usingQ.id !== q.id
-                  const suffix = showSuffix ? ` 🔹(${usingQ.blankIndex})` : ''
+                  const exampleQ = section.questions.find(otherQ => otherQ.isExample && String(otherQ.answer) === String(word))
+                  const usingQ = section.questions.find(otherQ => !otherQ.isExample && String(userAnswers[otherQ.id] || '') === String(word))
+
+                  let showSuffix = false
+                  let suffix = ''
+                  let isOptDisabled = false
+
+                  if (exampleQ && !q.isExample) {
+                    showSuffix = true
+                    suffix = ` 🔹(${exampleQ.blankIndex} 例)`
+                    isOptDisabled = true
+                  } else if (usingQ && usingQ.id !== q.id) {
+                    showSuffix = true
+                    suffix = ` 🔹(${usingQ.blankIndex})`
+                  }
+
                   return (
                     <option
                       key={wordIdx}
                       value={word}
-                      style={showSuffix ? { color: '#2563eb', fontWeight: 'bold' } : undefined}
+                      disabled={isOptDisabled}
+                      style={showSuffix ? { color: isOptDisabled ? '#94a3b8' : '#2563eb', fontWeight: 'bold' } : undefined}
                     >
                       {word}{suffix}
                     </option>
@@ -299,14 +314,28 @@ export function TestSheetInlineBlanksPassage({
                 })
               ) : section.type === 'dialogue-completion' ? (
                 (section.options || section.wordbank)?.map((opt, optIdx) => {
-                  const usingQ = section.questions.find(otherQ => String(userAnswers[otherQ.id] || '') === String(opt))
-                  const showSuffix = usingQ && usingQ.id !== q.id
-                  const suffix = showSuffix ? ` 🔹(${usingQ.blankIndex})` : ''
+                  const exampleQ = section.questions.find(otherQ => otherQ.isExample && String(otherQ.answer) === String(opt))
+                  const usingQ = section.questions.find(otherQ => !otherQ.isExample && String(userAnswers[otherQ.id] || '') === String(opt))
+
+                  let showSuffix = false
+                  let suffix = ''
+                  let isOptDisabled = false
+
+                  if (exampleQ && !q.isExample) {
+                    showSuffix = true
+                    suffix = ` 🔹(${exampleQ.blankIndex} 例)`
+                    isOptDisabled = true
+                  } else if (usingQ && usingQ.id !== q.id) {
+                    showSuffix = true
+                    suffix = ` 🔹(${usingQ.blankIndex})`
+                  }
+
                   return (
                     <option
                       key={optIdx}
                       value={opt}
-                      style={showSuffix ? { color: '#2563eb', fontWeight: 'bold' } : undefined}
+                      disabled={isOptDisabled}
+                      style={showSuffix ? { color: isOptDisabled ? '#94a3b8' : '#2563eb', fontWeight: 'bold' } : undefined}
                     >
                       {opt}{suffix}
                     </option>
