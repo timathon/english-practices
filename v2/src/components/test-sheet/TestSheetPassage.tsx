@@ -197,13 +197,14 @@ export function TestSheetInlineBlanksPassage({
         if (!q) return part
 
         const isClozeIndex = section.type === 'cloze-passage'
-        const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section.type, q.type)
+        const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section, q.type)
 
         const isSelectMode = section.type === 'cloze-passage' || section.type === 'cloze-passage-wordbank' || section.type === 'dialogue-completion' || (q.options && q.options.length > 0) || (section.wordbank && section.wordbank.length > 0)
 
+        const wordbankList = section.wordbank || section.options || []
         const correctRaw = isClozeIndex
           ? (q.options?.[Number(q.answer)] || '')
-          : String(q.answer)
+          : (typeof q.answer === 'number' && wordbankList[q.answer] ? wordbankList[q.answer] : String(q.answer))
         const correctDisplay = isClozeIndex
           ? cleanOptionText(correctRaw, Number(q.answer))
           : correctRaw

@@ -437,7 +437,8 @@ This document defines the rules for extracting and converting textbook data into
   - **Underlining**: For phonetic/pronunciation questions requiring visual comparison of specific letters in words, wrap those target letters/groups inside HTML underline tags: `<u>letters</u>` (e.g., `Let's <u>g</u>o to the zoo and see the <u>g</u>iraffes.`). Any markdown bold markers (e.g., `**l**ove`) in phonetic/pronunciation questions must be converted to HTML underline tags (e.g., `<u>l</u>ove`).
   - `options`: (Required for `multiple-choice` type) Array of strings.
   - `answer`: 
-    - For fill-in-the-blanks: string representing the correct answer.
+    - For questions with `wordbank` (e.g. `fill-in-the-blank-wordbank`, `cloze-passage-wordbank`, `definition-matching`) or `dialogue-completion` (with section-level `options`): 0-indexed integer of the correct item in `wordbank`/`options`. (Note: The frontend supports both integer indices and string matches for backward compatibility, but new test JSONs must use 0-indexed integers).
+    - For fill-in-the-blanks without wordbank (`fill-in-the-blank-firstletter`): string representing the correct answer.
     - For multiple-choice: integer index of the correct option (0-indexed).
   - `translation`: Chinese translation of the sentence.
   - `explanation`: Detailed grammatical explanation in Chinese.
@@ -451,7 +452,7 @@ This document defines the rules for extracting and converting textbook data into
      - `questions`: Array of question items where:
        - `id`: 8-character alphanumeric string.
        - `prompt`: Definition sentence.
-       - `answer`: Correct word string matching an item in `wordbank`.
+       - `answer`: 0-indexed integer index of the correct word in `wordbank`.
        - `translation` & `explanation`: Chinese text.
 
   2. **`dialogue-completion`** (Completing dialogue with candidate sentences):
@@ -461,7 +462,7 @@ This document defines the rules for extracting and converting textbook data into
      - `questions`: Array of question items mapping to each blank:
        - `id`: 8-character alphanumeric string.
        - `blankIndex`: 1-based index corresponding to `[1]`, `[2]`, etc.
-       - `answer`: Correct option sentence (or index/character). Prefer the exact option text string.
+       - `answer`: 0-indexed integer index of the correct sentence in `options`.
        - `translation` & `explanation`: Chinese text.
 
   3. **`cloze-passage`** (Passage with inline blanks where each blank has its own independent options):
@@ -501,7 +502,7 @@ This document defines the rules for extracting and converting textbook data into
      - `questions`: Array of question items mapping to each blank:
        - `id`: 8-character alphanumeric string.
        - `blankIndex`: 1-based index corresponding to the blank.
-       - `answer`: Correct word or sentence string matching an item in `wordbank`.
+       - `answer`: 0-indexed integer index of the correct item in `wordbank`.
        - `translation` & `explanation`: Chinese text.
      - **Instruction Mapping Rule:** Always map sections with instructions such as "阅读短文，从所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。", "阅读短文，从方框内所给的选项中选出可以填入空白处的最佳选项，其中有一个多余的选项。", or "从文后的七个选项中选择五个还原到文章中" (typically known as "阅读还原") to this `"cloze-passage-wordbank"` type.
      - **Cloze-Passage Conversion Rule for A7A-A9:** For textbooks A7A, A7B, A8A, A8B, and A9, the section "短文填空" (which asks to fill in the blanks with correct forms of bracketed words) must be converted into the `"cloze-passage"` type (multiple-choice format with distractors). In the `passage` text, keep the bracketed hint in place next to the blank placeholder (e.g. `"... [20] (wonder) ..."`).

@@ -47,7 +47,7 @@ export function TestSheetQuestionItem({
   highlightedSentence,
   setHighlightedSentence
 }: TestSheetQuestionItemProps) {
-  const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section.type, q.type)
+  const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section, q.type)
 
   const renderAudioPlayer = () => {
     if (!q.audio) return null
@@ -141,7 +141,11 @@ export function TestSheetQuestionItem({
           {submitted && (
             <div className="ts-feedback-detail">
               {!isUserCorrect && (
-                <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">{String(q.answer)}</strong></p>
+                <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">
+                  {typeof q.answer === 'number' && section.wordbank && section.wordbank[q.answer]
+                    ? section.wordbank[q.answer]
+                    : String(q.answer)}
+                </strong></p>
               )}
               {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
               {q.explanation && <p className="ts-explanation">💡 {q.explanation}</p>}

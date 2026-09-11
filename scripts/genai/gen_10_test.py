@@ -133,8 +133,10 @@ RULES:
    - For `reading-comprehension` (short-answer):
      - `prompt`: The question prompt.
      - `answer`: A sample answer string.
-   - For `fill-in-the-blank-wordbank` / `definition-matching` / `cloze-passage-wordbank` / `dialogue-completion`:
-     - `answer`: Correct word/sentence string matching an item in `wordbank` or `options`.
+   - For `fill-in-the-blank-wordbank` / `definition-matching` / `cloze-passage-wordbank`:
+     - `answer`: 0-indexed integer of the correct item in `wordbank`.
+   - For `dialogue-completion`:
+     - `answer`: 0-indexed integer of the correct sentence in section-level `options`.
    - For `fill-in-the-blank-firstletter`:
      - `prompt`: Question sentence. Use "______" for the blank.
      - `answer`: Correct word string.

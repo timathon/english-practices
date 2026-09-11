@@ -151,10 +151,18 @@ export const renderPromptText = (text?: string): React.ReactNode => {
   return <span style={{ whiteSpace: 'pre-wrap' }}>{renderFormattedInlineText(cleanText)}</span>
 }
 
-export const isAnswerCorrect = (userAns: any, correctAns: any, sectionType?: string, qType?: string): boolean => {
+export const isAnswerCorrect = (userAns: any, correctAns: any, sectionTypeOrSection?: string | any, qType?: string): boolean => {
   if (userAns === undefined || userAns === null || userAns === '' || correctAns === undefined || correctAns === null || correctAns === '') {
     return false
   }
+
+  const sectionType = typeof sectionTypeOrSection === 'string'
+    ? sectionTypeOrSection
+    : (sectionTypeOrSection?.type || '')
+  const sectionObj = typeof sectionTypeOrSection === 'object' && sectionTypeOrSection !== null
+    ? sectionTypeOrSection
+    : null
+  const wordbank = sectionObj?.wordbank || sectionObj?.options
 
   if (sectionType === 'multiple-choice' || sectionType === 'cloze-passage' || (sectionType === 'reading-comprehension' && qType === 'multiple-choice')) {
     if (!isNaN(Number(userAns)) && !isNaN(Number(correctAns))) {
@@ -201,6 +209,28 @@ export const isAnswerCorrect = (userAns: any, correctAns: any, sectionType?: str
     const normUser = normalizeSentence(String(userAns))
     const normAns = normalizeSentence(String(correctAns))
     return normUser === normAns
+  }
+
+  // Wordbank / options index vs string comparison
+  if (wordbank && Array.isArray(wordbank)) {
+    // If correctAns is a numeric index (e.g. 2)
+    if (!isNaN(Number(correctAns)) && typeof correctAns !== 'boolean') {
+      const targetIdx = Number(correctAns)
+      if (targetIdx >= 0 && targetIdx < wordbank.length) {
+        const targetWord = wordbank[targetIdx]
+        // Compare with user string or user index
+        if (!isNaN(Number(userAns)) && Number(userAns) === targetIdx) return true
+        if (String(userAns).trim().toLowerCase() === String(targetWord).trim().toLowerCase()) return true
+      }
+    }
+    // If userAns is a numeric index (e.g. 2) but correctAns is a string
+    if (!isNaN(Number(userAns)) && typeof userAns !== 'boolean') {
+      const uIdx = Number(userAns)
+      if (uIdx >= 0 && uIdx < wordbank.length) {
+        const userWord = wordbank[uIdx]
+        if (String(userWord).trim().toLowerCase() === String(correctAns).trim().toLowerCase()) return true
+      }
+    }
   }
 
   // String / Wordbank / Matching / Cloze comparison

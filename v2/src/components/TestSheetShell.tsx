@@ -16,7 +16,9 @@ import type {
 import {
   PUBLIC_URL_BASE,
   isAnswerCorrect,
-  resolveTestAudioUrl
+  resolveTestAudioUrl,
+  renderPromptText,
+  parseWordBlocks
 } from './test-sheet/testSheetUtils'
 import { StartModal, ConfirmSubmitModal, ConfirmStopAudioModal } from './test-sheet/TestSheetModals'
 import { TestSheetQuestionItem } from './test-sheet/TestSheetQuestionItem'
@@ -44,26 +46,48 @@ export function shuffleTestData(sourceData: TestSheetData): TestSheetData {
       const secCopy: Section = { ...section }
 
       // Shuffle section-level option bank / wordbank
+      let shuffledOptions = secCopy.options
+      let shuffledWordbank = secCopy.wordbank
+
       if (secCopy.options && Array.isArray(secCopy.options)) {
-        secCopy.options = shuffleArray(secCopy.options)
+        shuffledOptions = shuffleArray(secCopy.options)
+        secCopy.options = shuffledOptions
       }
       if (secCopy.wordbank && Array.isArray(secCopy.wordbank)) {
-        secCopy.wordbank = shuffleArray(secCopy.wordbank)
+        shuffledWordbank = shuffleArray(secCopy.wordbank)
+        secCopy.wordbank = shuffledWordbank
       }
 
-      // Shuffle question-level options (e.g. multiple-choice, cloze-passage)
+      // Shuffle question-level options (e.g. multiple-choice, cloze-passage) or word order blocks (put-words-in-order)
       if (secCopy.questions && Array.isArray(secCopy.questions)) {
         secCopy.questions = secCopy.questions.map(q => {
+          // Remap numeric answer if section-level wordbank or options was shuffled
+          if (typeof q.answer === 'number') {
+            if (section.wordbank && shuffledWordbank) {
+              const originalWord = section.wordbank[q.answer]
+              const newIdx = shuffledWordbank.indexOf(originalWord)
+              if (newIdx !== -1) {
+                return { ...q, answer: newIdx }
+              }
+            } else if (section.options && shuffledOptions) {
+              const originalOption = section.options[q.answer]
+              const newIdx = shuffledOptions.indexOf(originalOption)
+              if (newIdx !== -1) {
+                return { ...q, answer: newIdx }
+              }
+            }
+          }
+
           if (q.options && Array.isArray(q.options) && q.options.length > 1) {
             const originalCorrectText = typeof q.answer === 'number'
               ? q.options[q.answer]
               : String(q.answer)
 
-            const shuffledOptions = shuffleArray(q.options)
+            const qShuffledOptions = shuffleArray(q.options)
             let newAnswer = q.answer
 
             if (typeof q.answer === 'number') {
-              const newIdx = shuffledOptions.indexOf(originalCorrectText)
+              const newIdx = qShuffledOptions.indexOf(originalCorrectText)
               if (newIdx !== -1) {
                 newAnswer = newIdx
               }
@@ -71,10 +95,23 @@ export function shuffleTestData(sourceData: TestSheetData): TestSheetData {
 
             return {
               ...q,
-              options: shuffledOptions,
+              options: qShuffledOptions,
               answer: newAnswer
             }
           }
+
+          // Shuffle word blocks for sentence formation / 连词成句
+          if (secCopy.type === 'put-words-in-order') {
+            const blocks = parseWordBlocks(q.prompt)
+            if (blocks.length > 1) {
+              const shuffledBlocks = shuffleArray(blocks)
+              return {
+                ...q,
+                prompt: shuffledBlocks.map(b => /^[.?!,;:]+$/.test(b) ? `(${b})` : b).join(', ')
+              }
+            }
+          }
+
           return q
         })
       }
@@ -467,7 +504,7 @@ export function TestSheetShell({
       section.questions.forEach(q => {
         totalQuestions++
         const userAns = userAnswers[q.id]
-        if (isAnswerCorrect(userAns, q.answer, section.type, q.type)) {
+        if (isAnswerCorrect(userAns, q.answer, section, q.type)) {
           correctCount++
         }
       })
@@ -571,7 +608,7 @@ export function TestSheetShell({
             {testData.sections.map((sec, idx) => {
               const hasError = submitted && Array.isArray(sec.questions) && sec.questions.some(q => {
                 const userAns = userAnswers[q.id]
-                return !isAnswerCorrect(userAns, q.answer, sec.type, q.type)
+                return !isAnswerCorrect(userAns, q.answer, sec, q.type)
               })
 
               return (
@@ -622,7 +659,9 @@ export function TestSheetShell({
             {activeSection && (
               <div className="ts-section-view">
                 <div className="ts-section-header">
-                  <p className="ts-instruction">{activeSection.instruction}</p>
+                  <div className="ts-instruction" style={{ lineHeight: '1.6', marginBottom: '12px' }}>
+                    {renderPromptText(activeSection.instruction)}
+                  </div>
                   {activeSection.audio && (
                     <div style={{ marginTop: '10px' }}>
                       <TestSheetAudioPlayer

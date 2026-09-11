@@ -175,7 +175,7 @@ export function TestSheetPrintView({ data }: TestSheetPrintViewProps) {
                   {sec.title}
                 </div>
                 {sec.instruction && (
-                  <div className="ts-print-sec-instruction">{sec.instruction}</div>
+                  <div className="ts-print-sec-instruction">{renderPromptText(sec.instruction)}</div>
                 )}
               </div>
 
