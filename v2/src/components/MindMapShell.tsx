@@ -673,12 +673,13 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
   }, [])
 
   const handleNodeClick = (node: Node, allChildrenFull: boolean) => {
+    setActiveNodeId(node.id)
+
     if (isCnMode) {
       if (node.state === 'full' || node.state === 'keywords') {
         showEnglishTemporarily(node.id)
       } else if (allChildrenFull) {
         toggleCollapse(node.id)
-        setActiveNodeId(node.id)
       }
       return
     }
@@ -692,7 +693,6 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
       }
     } else if (allChildrenFull) {
       toggleCollapse(node.id)
-      setActiveNodeId(node.id)
     }
   }
 
