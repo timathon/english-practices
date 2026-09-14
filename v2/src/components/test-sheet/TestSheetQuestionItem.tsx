@@ -346,7 +346,7 @@ export function TestSheetQuestionItem({
     }
 
     case 'reading-comprehension': {
-      const isMultipleChoice = q.type === 'multiple-choice'
+      const isMultipleChoice = q.type === 'multiple-choice' || (q.options && q.options.length > 0)
       const activeOptIdx = (isMultipleChoice && userAnswers[q.id] !== undefined) ? Number(userAnswers[q.id]) : null
 
       return (

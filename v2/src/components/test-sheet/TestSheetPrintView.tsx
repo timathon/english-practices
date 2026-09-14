@@ -270,7 +270,7 @@ export function TestSheetPrintView({ data }: TestSheetPrintViewProps) {
                 ) : (
                   <div className="ts-print-questions-list">
                     {sec.questions.map((q, qIdx) => {
-                      if (sec.type === 'multiple-choice' || (sec.type === 'reading-comprehension' && q.type === 'multiple-choice')) {
+                      if (sec.type === 'multiple-choice' || (sec.type === 'reading-comprehension' && (q.type === 'multiple-choice' || (q.options && q.options.length > 0)))) {
                         return (
                           <div key={q.id || qIdx} className="ts-print-q-card">
                             <div className="ts-print-q-prompt">
