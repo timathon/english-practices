@@ -467,7 +467,7 @@ This document defines the rules for extracting and converting textbook data into
 
   3. **`cloze-passage`** (Passage with inline blanks where each blank has its own independent options):
      - `type`: `"cloze-passage"`
-     - `passage`: Full text string with blanks represented by `"[1]"`, `"[2]"`, etc.
+     - `passage`: Full text string or string array (e.g. `["[HTML: <svg...>]", "1. text [1]..."]`) with blanks represented by `"[1]"`, `"[2]"`, etc. When `passage` is an array of strings, frontend components automatically merge the elements.
      - `questions`: Array of question items mapping to each blank:
        - `id`: 8-character alphanumeric string.
        - `blankIndex`: 1-based index corresponding to the blank.
@@ -486,7 +486,7 @@ This document defines the rules for extracting and converting textbook data into
 
   5. **`reading-comprehension`** (Reading passages with multiple-choice or short-answer questions):
      - `type`: `"reading-comprehension"`
-     - `passage`: Full text string.
+     - `passage`: Full text string or string array (e.g. `["[HTML: <svg...>]", "Paragraph 1..."]`).
      - `questions`: Array of question items where:
        - `id`: 8-character alphanumeric string.
        - `type`: `"multiple-choice"` or `"short-answer"`.
@@ -497,7 +497,7 @@ This document defines the rules for extracting and converting textbook data into
 
   6. **`cloze-passage-wordbank`** (Passage with inline blanks filled from a shared option/word pool; each option can be used once):
      - `type`: `"cloze-passage-wordbank"`
-     - `passage`: Full text string with blanks represented by `"[1]"`, `"[2]"`, etc.
+     - `passage`: Full text string or string array (e.g. `["[HTML: <svg...>]", "1. text [1]..."]`) with blanks represented by `"[1]"`, `"[2]"`, etc. When `passage` is an array of strings, frontend components automatically merge the elements.
      - `wordbank`: Array of strings representing candidate words or sentences.
      - `questions`: Array of question items mapping to each blank:
        - `id`: 8-character alphanumeric string.
@@ -805,6 +805,7 @@ module.exports = {
     - `audio` object fields:
       - `text`: The clean English transcript/dialogue to be spoken by TTS (e.g. `"Boy: Hi, Amy! Do you often spend your pocket money on toys?\nGirl: No, not really. I like to save my pocket money..."`). Remove Chinese directions like "请听第一段对话".
       - `maxReplays`: Integer specifying how many times the audio can be replayed after the initial play. **Defaults to `1`** (meaning 1 initial play + 1 replay = 2 total plays).
+- **Passage Format:** `passage` can be represented as either a single string or an array of strings (e.g. `["[HTML: <svg...>]", "1. text..."]`). The array format is supported in frontend components and can be used for easier editing and readability of multi-illustration / comic strip passages.
 - **Question Types:** Supports `multiple-choice`, `true-false`, `reading-comprehension`, `cloze-passage`, `cloze-passage-wordbank`, `fill-in-the-blank-wordbank`, `fill-in-the-blank-firstletter`, `dialogue-completion`, `definition-matching`, `matching`, `put-words-in-order`.
 
 ---

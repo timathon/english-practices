@@ -13,8 +13,9 @@ interface TestSheetPrintViewProps {
 }
 
 export function TestSheetPrintView({ data }: TestSheetPrintViewProps) {
-  const renderPrintPassage = (passageText: string, isCloze: boolean = false) => {
-    const lines = passageText.split('\n')
+  const renderPrintPassage = (passageText: string | string[], isCloze: boolean = false) => {
+    const normalizedText = Array.isArray(passageText) ? passageText.join('\n\n') : (passageText || '')
+    const lines = normalizedText.split('\n')
     const renderedBlocks: React.ReactNode[] = []
     
     let inTable = false

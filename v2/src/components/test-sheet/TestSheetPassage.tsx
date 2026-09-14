@@ -8,7 +8,7 @@ import {
 } from './testSheetUtils'
 
 interface TestSheetInteractivePassageProps {
-  passageText: string
+  passageText: string | string[]
   highlightedSentence: HighlightedSentence | null
   setHighlightedSentence: React.Dispatch<React.SetStateAction<HighlightedSentence | null>>
 }
@@ -18,7 +18,8 @@ export function TestSheetInteractivePassage({
   highlightedSentence,
   setHighlightedSentence
 }: TestSheetInteractivePassageProps) {
-  const lines = passageText.split('\n')
+  const normalizedText = Array.isArray(passageText) ? passageText.join('\n\n') : (passageText || '')
+  const lines = normalizedText.split('\n')
   const renderedBlocks: React.ReactNode[] = []
   
   let inTable = false
@@ -197,7 +198,7 @@ export function TestSheetInteractivePassage({
 }
 
 interface TestSheetInlineBlanksPassageProps {
-  text: string
+  text: string | string[]
   section: Section
   userAnswers: Record<string, string | number | boolean>
   submitted: boolean
@@ -211,7 +212,8 @@ export function TestSheetInlineBlanksPassage({
   submitted,
   handleAnswerChange
 }: TestSheetInlineBlanksPassageProps) {
-  const lines = text.split('\n')
+  const normalizedText = Array.isArray(text) ? text.join('\n\n') : (text || '')
+  const lines = normalizedText.split('\n')
   const renderedBlocks: React.ReactNode[] = []
 
   let inTable = false
@@ -298,7 +300,7 @@ export function TestSheetInlineBlanksPassage({
           <span key={index} className="ts-inline-select-wrapper" style={{ margin: '0 4px', display: 'inline-block' }}>
             <select
               className={selectClass}
-              value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
+              value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : (q.isExample ? String(q.answer) : '')) as any}
               disabled={submitted || !!q.isExample}
               onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
               style={{

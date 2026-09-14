@@ -37,7 +37,7 @@ export interface Section {
     | string
   wordbank?: string[]
   options?: string[]
-  passage?: string
+  passage?: string | string[]
   dialogue?: { speaker: string; text: string }[]
   audio?: AudioSpec
   questions: Question[]
