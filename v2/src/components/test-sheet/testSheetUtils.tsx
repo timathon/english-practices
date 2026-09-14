@@ -42,11 +42,29 @@ export const getOrdinal = (n: number): string => {
 export const parseWordBlocks = (prompt?: string): string[] => {
   if (!prompt) return []
   const result: string[] = []
-  const rawParts = prompt.includes(',')
-    ? prompt.split(',').map(s => s.trim()).filter(Boolean)
-    : prompt.split(/\s+/).filter(Boolean)
+  
+  // Tokenize taking into account parenthesized tokens like (,), (.), (?), etc.
+  const tokens: string[] = []
+  let current = ''
+  let inParen = false
+  for (let i = 0; i < prompt.length; i++) {
+    const ch = prompt[i]
+    if (ch === '(') {
+      inParen = true
+      current += ch
+    } else if (ch === ')') {
+      inParen = false
+      current += ch
+    } else if (ch === ',' && !inParen) {
+      if (current.trim()) tokens.push(current.trim())
+      current = ''
+    } else {
+      current += ch
+    }
+  }
+  if (current.trim()) tokens.push(current.trim())
 
-  for (const part of rawParts) {
+  for (const part of tokens) {
     const match = part.match(/^(.*?)\s*(\([.?!,;:]+\))$/)
     if (match) {
       if (match[1]) result.push(match[1])
@@ -59,10 +77,11 @@ export const parseWordBlocks = (prompt?: string): string[] => {
 }
 
 export const unwrapBlockText = (raw: string): string => {
-  if (raw.startsWith('(') && raw.endsWith(')')) {
-    return raw.slice(1, -1)
+  const trimmed = raw.trim()
+  if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+    return trimmed.slice(1, -1).trim()
   }
-  return raw
+  return trimmed
 }
 
 export const formatSentenceFromBlocks = (blocks: string[]): string => {
@@ -76,7 +95,11 @@ export const formatSentenceFromBlocks = (blocks: string[]): string => {
       sentence += " " + text
     }
   }
-  return sentence
+
+  // Capitalize the first alphabetic letter in the formed sentence
+  return sentence.replace(/^([^a-zA-Z]*)([a-z])/, (_match, prefix, firstChar) => {
+    return prefix + firstChar.toUpperCase()
+  })
 }
 
 export const formatOptionWithLetter = (opt: string, idx: number): string => {
@@ -114,13 +137,51 @@ export const normalizeSentence = (str: string): string => {
     .replace(/\s+([.?!])/g, '$1')
     .replace(/\s+/g, ' ')
 }
+export const splitIntoSentences = (text: string): string[] => {
+  if (!text) return []
+  // Common honorifics and abbreviations that should NOT terminate a sentence
+  const honorificRegex = /\b(Mr|Mrs|Ms|Miss|Dr|Prof|Sr|Jr|St|vs|etc|e\.g|i\.e|No|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Vol|pp|p)\.$/i
+  // Single capital letter initial like "A.", "B.", "J. K." (but not words ending with periods)
+  const initialRegex = /(^|\s)[A-Z]\.$/
+
+  const rawTokens = text.split(/(?<=[.!?])\s+/)
+  const sentences: string[] = []
+  let buffer = ''
+
+  for (let i = 0; i < rawTokens.length; i++) {
+    const token = rawTokens[i]
+    buffer = buffer ? `${buffer} ${token}` : token
+
+    const trimmed = buffer.trim()
+    const nextToken = i + 1 < rawTokens.length ? rawTokens[i + 1].trim() : ''
+
+    const isHonorific = honorificRegex.test(trimmed)
+    const isInitial = initialRegex.test(trimmed)
+    // A period after a number is only a decimal separator if the next token starts with digits (e.g., "3." + "14")
+    const isDecimal = /\d\.$/.test(trimmed) && /^\d/.test(nextToken)
+
+    if (i === rawTokens.length - 1 || (!isHonorific && !isInitial && !isDecimal)) {
+      sentences.push(buffer)
+      buffer = ''
+    }
+  }
+
+  if (buffer) {
+    sentences.push(buffer)
+  }
+
+  return sentences
+}
 
 export const renderFormattedInlineText = (text: string): React.ReactNode => {
   if (!text) return null
-  const parts = text.split(/(\*\*.*?\*\*|<u>.*?<\/u>|\[\*VISUAL:?\s*.*?\*\])/gi)
+  const parts = text.split(/(\*\*.*?\*\*|<u>.*?<\/u>|<br\s*\/?>|\[\*VISUAL:?\s*.*?\*\])/gi)
   return (
     <>
       {parts.map((part, idx) => {
+        if (/^<br\s*\/?>$/i.test(part)) {
+          return <br key={idx} />
+        }
         if (part.toLowerCase().startsWith('**') && part.endsWith('**')) {
           return <strong key={idx}>{renderFormattedInlineText(part.slice(2, -2))}</strong>
         }

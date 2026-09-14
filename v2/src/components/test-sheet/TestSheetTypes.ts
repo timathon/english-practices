@@ -62,5 +62,5 @@ export interface TestSheetShellProps {
 
 export interface HighlightedSentence {
   paraIdx: string | number
-  sentenceIdx: number
+  sentenceIdx: number | string
 }

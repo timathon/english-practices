@@ -3,7 +3,8 @@ import type { Section, HighlightedSentence } from './TestSheetTypes'
 import {
   isAnswerCorrect,
   cleanOptionText,
-  renderFormattedInlineText
+  renderFormattedInlineText,
+  splitIntoSentences
 } from './testSheetUtils'
 
 interface TestSheetInteractivePassageProps {
@@ -29,18 +30,29 @@ export function TestSheetInteractivePassage({
   }
 
   const renderSentences = (text: string, pIdx: string | number) => {
-    const sentences = text.split(/(?<=[.!?])\s+/)
-    return sentences.map((sentence, sIdx) => {
-      const isHighlighted = highlightedSentence?.paraIdx === pIdx && highlightedSentence?.sentenceIdx === sIdx
+    // If the text contains <br> or <br/> tags, split by <br> blocks first
+    const brParts = text.split(/(<br\s*\/?>)/gi)
+    return brParts.map((part, brIdx) => {
+      if (/^<br\s*\/?>$/i.test(part)) {
+        return <br key={`br-${brIdx}`} />
+      }
+      const sentences = splitIntoSentences(part)
       return (
-        <span
-          key={sIdx}
-          className={`ts-passage-sentence ${isHighlighted ? 'highlighted' : ''}`}
-          style={{ cursor: 'pointer', borderRadius: '3px', padding: '1px 3px', transition: 'background 0.2s ease' }}
-          onClick={() => setHighlightedSentence(prev => prev?.paraIdx === pIdx && prev?.sentenceIdx === sIdx ? null : { paraIdx: pIdx, sentenceIdx: sIdx })}
-        >
-          {renderInlineFormatting(sentence)}{' '}
-        </span>
+        <React.Fragment key={`part-${brIdx}`}>
+          {sentences.map((sentence, sIdx) => {
+            const isHighlighted = highlightedSentence?.paraIdx === pIdx && highlightedSentence?.sentenceIdx === `${brIdx}-${sIdx}`
+            return (
+              <span
+                key={sIdx}
+                className={`ts-passage-sentence ${isHighlighted ? 'highlighted' : ''}`}
+                style={{ cursor: 'pointer', borderRadius: '3px', padding: '1px 3px', transition: 'background 0.2s ease' }}
+                onClick={() => setHighlightedSentence(prev => prev?.paraIdx === pIdx && prev?.sentenceIdx === `${brIdx}-${sIdx}` ? null : { paraIdx: pIdx, sentenceIdx: `${brIdx}-${sIdx}` })}
+              >
+                {renderInlineFormatting(sentence)}{' '}
+              </span>
+            )
+          })}
+        </React.Fragment>
       )
     })
   }
@@ -53,11 +65,27 @@ export function TestSheetInteractivePassage({
             {tableHeaders.length > 0 && (
               <thead>
                 <tr>
-                  {tableHeaders.map((h, i) => (
-                    <th key={i}>
-                      {renderSentences(h, `th-${key}-${i}`)}
-                    </th>
-                  ))}
+                  {tableHeaders.map((h, i) => {
+                    const isNonEmptyOnly = tableHeaders.filter(thText => Boolean(thText.trim())).length === 1 && Boolean(h.trim())
+                    const colSpan = isNonEmptyOnly ? tableHeaders.length : undefined
+                    if (!h.trim() && tableHeaders.some((thText, idx) => idx < i && Boolean(thText.trim()))) {
+                      return null
+                    }
+                    return (
+                      <th
+                        key={i}
+                        colSpan={colSpan}
+                        style={{
+                          textAlign: isNonEmptyOnly ? 'center' : undefined,
+                          fontSize: isNonEmptyOnly ? '1.1rem' : undefined,
+                          padding: '12px 16px',
+                          verticalAlign: 'top'
+                        }}
+                      >
+                        {renderSentences(h, `th-${key}-${i}`)}
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
             )}
@@ -70,7 +98,15 @@ export function TestSheetInteractivePassage({
                       const isLast = cellIndex === row.length - 1
                       const colSpan = (isLast && diff > 0) ? diff + 1 : undefined
                       return (
-                        <td key={cellIndex} colSpan={colSpan} style={colSpan ? { textAlign: 'center' } : undefined}>
+                        <td
+                          key={cellIndex}
+                          colSpan={colSpan}
+                          style={{
+                            textAlign: colSpan ? 'center' : undefined,
+                            verticalAlign: 'top',
+                            padding: '16px'
+                          }}
+                        >
                           {renderSentences(cell, `td-${key}-${rowIndex}-${cellIndex}`)}
                         </td>
                       )

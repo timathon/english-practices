@@ -691,6 +691,19 @@ export function TestSheetShell({
                   <div className="ts-instruction" style={{ lineHeight: '1.6', marginBottom: '12px' }}>
                     {renderPromptText(activeSection.instruction)}
                   </div>
+                  {activeSection.type === 'put-words-in-order' && (
+                    <div className="ts-scrolling-banner" title="在卷面书写时，一定要做到“句首字母大写”。">
+                      <span className="ts-scrolling-badge">
+                        <span>📢</span>
+                        <span>温馨提示</span>
+                      </span>
+                      <div className="ts-scrolling-track">
+                        <span className="ts-scrolling-content">
+                          在卷面书写时，一定要做到“句首字母大写”。
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {activeSection.audio && (
                     <div style={{ marginTop: '10px' }}>
                       <TestSheetAudioPlayer

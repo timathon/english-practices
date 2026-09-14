@@ -358,7 +358,7 @@ export function TestSheetQuestionItem({
           </div>
 
           {isMultipleChoice ? (
-            <div className="ts-options-container">
+            <div className={`ts-options-container ${q.options?.length ? `ts-options-count-${q.options.length}` : ''}`}>
               {q.options?.map((option, oIdx) => {
                 let btnClass = "ts-option-btn"
                 if (activeOptIdx === oIdx) btnClass += " selected"
@@ -513,7 +513,7 @@ export function TestSheetQuestionItem({
             <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
           </div>
 
-          <div className="ts-options-container">
+          <div className={`ts-options-container ${q.options?.length ? `ts-options-count-${q.options.length}` : ''}`}>
             {q.options?.map((option, oIdx) => {
               let btnClass = "ts-option-btn"
               if (activeOptIdx === oIdx) btnClass += " selected"
