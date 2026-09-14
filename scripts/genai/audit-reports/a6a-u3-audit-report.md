@@ -16,7 +16,9 @@
 - **`a6a-u3-text-navigator.json`**: ✅ PASS (0 issues)
 - **`a6a-u3-writing-map-xtzb.json`**: ✅ PASS (0 issues)
 - **`a6a-u3-grammar-wizard.json`**: ✅ PASS (0 issues)
+- **`a6a-u3-passage-decoder-w-xtza.json`**: ✅ PASS (0 issues)
 - **`a6a-u3-passage-decoder-s.json`**: ✅ PASS (0 issues)
+- **`a6a-u3-passage-decoder-w-xtzb.json`**: ✅ PASS (0 issues)
 
 ---
 
