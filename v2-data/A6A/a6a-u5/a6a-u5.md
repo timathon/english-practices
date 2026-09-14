@@ -433,3 +433,15 @@ Use the words with **gr** or **gl** to help Feifei find the doctor.
 * **blackboard** 黑板
 * **dark** 昏暗的;暗处
 * **gladly** 高兴地;快乐地
+
+
+## Listening Script
+
+* **Activity:** Activity 3: Listen and write
+* **Transcript:**
+"Hi everyone, I'm Xiaomin. How can we stay happy and healthy? Here are my ideas:
+* First, do exercise every day. You can run, play ball games, or ride a bike. Exercise can make you strong and happy.
+* Second, share your problems with others. They can be your parents, teachers, or friends. It's important to ask for help.
+* Third, listen to music. You can sing with it, too. Music can help you feel better.
+
+Those are my ideas. What do you think?"

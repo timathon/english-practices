@@ -448,3 +448,18 @@ I want to make [***]. It can [***].
 | **instrument** | n. | 乐器 |
 | **material** | n. | 材料 (如木材、塑料、金属等) |
 | **drum** | n. | 鼓 |
+
+## Listening Script
+
+* **Activity:** Activity 3: Listen and choose
+* **Question:** Why does the music group use special instruments?
+* **Transcript:**
+* **Interviewer:** "Today we're visiting a special music group. Hi, Wang Nan. Can you tell me about your group?"
+* **Wang Nan:** "Sure. We are getting ready for the National Day show tomorrow."
+* **Interviewer:** "Wow, your instruments are very special."
+* **Wang Nan:** "Yes. Let me show you. This is a guitar. We used a paper box to make it. That's a xylophone. We used glass bottles to make it."
+* **Interviewer:** "How about the drums?"
+* **Wang Nan:** "They are cans."
+* **Interviewer:** "Why do you use these special instruments?"
+* **Wang Nan:** "We hope people can use old things more and make the world greener."
+* **Interviewer:** "You have great ideas and clever hands. I'm sure your show will be wonderful."

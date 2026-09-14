@@ -378,3 +378,10 @@ Choices:
 * **traveller** 旅客, 旅行者; 经常旅行的人
 * **interested** 表现出兴趣的
 * **young** 年幼的; 年轻的
+
+## Listening Script
+
+* **Activity:** Activity 3: Listen and choose
+* **Question:** What is the talk about?
+* **Transcript:**
+"Hello, everyone. Today I want to talk about the colors of China. China is a big country. There are so many beautiful places. Panjin in Liaoning is most famous for its Red Beach. The red color comes from a plant. Yangshuo in Guangxi is most famous for its green hills and rivers, like Moon Hill and the Lijiang River. They make the place very beautiful. But my favorite place is in Zhangye, Gansu. It's the Rainbow Mountains. The mountains have many colors. They look wonderful. I love the colors of China. What about you?"

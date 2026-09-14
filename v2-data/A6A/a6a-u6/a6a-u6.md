@@ -374,3 +374,14 @@ China is a very big country. It has a lot of yummy food...
 | **splash** | 溅湿, 往......上泼 |
 | **pretty** | 漂亮的, 好看的, 标致的 |
 | **cultural** | 文化的; 文化上的 |
+
+
+## Listening Script
+
+* **Activity:** Activity 3: Listen and write
+
+* **Transcript:**
+* **Speaker 1:** "Hey Penny, you travel a lot. Do you have any funny travel stories?"
+* **Penny:** "Yes, trips are always full of surprises. Last year, I went to the UK for the first time. I walked up to a taxi and opened the front right door. The driver looked at me and laughed."
+* **Speaker 1:** "Oh, I see. The driver's seat is on the right in the UK. So, what should we do about differences like this?"
+* **Penny:** "First, learn about the places before you go. Be open to differences, and remember it's okay to ask for help. Cultural differences can be hard, but they make traveling fun."

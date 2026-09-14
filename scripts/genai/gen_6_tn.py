@@ -22,7 +22,7 @@ import os, sys, json, argparse
 from pathlib import Path
 from google import genai
 from google.genai import types
-from config import get_genai_config, parse_high_flag
+from config import get_genai_config, parse_high_flag, get_fallback_model
 
 PROMPT_TEMPLATE = """\
 You are an expert English curriculum designer. Generate a text-navigator JSON for the following primary school textbook unit markdown.
@@ -197,11 +197,13 @@ def main():
         source=source
     )
 
-    print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
-
     import time
     response = None
-    for attempt in range(5):
+    actual_model = model_name
+
+    # Try primary model (gemini-3.7-flash) up to 3 times
+    print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
+    for attempt in range(3):
         try:
             response = client.models.generate_content(
                 model=model_name,
@@ -214,16 +216,41 @@ def main():
             )
             break
         except Exception as e:
-            print(f"Error calling Gemini API (attempt {attempt + 1}/5): {e}", file=sys.stderr)
-            if attempt == 4:
-                raise e
-            time.sleep(2 ** attempt)
+            print(f"Error calling Gemini API ({model_name}, attempt {attempt + 1}/3): {e}", file=sys.stderr)
+            if attempt < 2:
+                time.sleep(2 ** attempt)
+
+    # Fallback to model_low (gemini-3.5-flash-lite) if primary model failed and fallback exists
+    if response is None:
+        fallback_model = get_fallback_model(model_name)
+        if fallback_model:
+            print(f"All 3 attempts failed for {model_name}. Falling back to {fallback_model}...", file=sys.stderr)
+            actual_model = fallback_model
+            for attempt in range(3):
+                try:
+                    response = client.models.generate_content(
+                        model=fallback_model,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            thinking_config=types.ThinkingConfig(thinking_level="low"),
+                            temperature=0.3,
+                            response_mime_type="application/json"
+                        )
+                    )
+                    break
+                except Exception as e:
+                    print(f"Error calling Gemini API ({fallback_model}, attempt {attempt + 1}/3): {e}", file=sys.stderr)
+                    if attempt == 2:
+                        raise e
+                    time.sleep(2 ** attempt)
+        else:
+            raise RuntimeError(f"Failed to generate content with {model_name}")
 
     parsed = extract_json(response.text)
 
     stem = md_path.stem
     out_path = md_path.parent / f"{stem}-text-navigator.json"
-    parsed["generated_by"] = model_name
+    parsed["generated_by"] = actual_model
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(parsed, f, ensure_ascii=False, indent=2)
 
