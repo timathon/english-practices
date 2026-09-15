@@ -3,6 +3,7 @@ import { apiService, IdiomGroup } from '../../services/api';
 import { CachedImage } from '../CachedImage';
 import { StudentQuizPreviewModal } from '../StudentQuizPreviewModal';
 import { PoemStudyDetailModal } from './StudentSelfStudyTab';
+import { TeacherQuestionReviewModal, PublishingItem } from './TeacherQuestionReviewModal';
 
 interface TeacherCourseProgressTabProps {
   selectedClass: string;
@@ -24,10 +25,12 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
 
   // Preview Modals State
   const [previewLinesPoem, setPreviewLinesPoem] = useState<any | null>(null);
-  const [previewQuizPoem, setPreviewQuizPoem] = useState<any | null>(null);
-
   const [previewLinesIdiom, setPreviewLinesIdiom] = useState<IdiomGroup | null>(null);
-  const [previewQuizIdiom, setPreviewQuizIdiom] = useState<IdiomGroup | null>(null);
+
+  // Question Review Overview Modal State (Read-only review & preview)
+  const [reviewItem, setReviewItem] = useState<PublishingItem | null>(null);
+  const [modalQuestionFilter, setModalQuestionFilter] = useState<string>('all');
+  const [previewStartIndex, setPreviewStartIndex] = useState<number | null>(null);
 
   // Available idiom groups from apiService
   const [availableIdiomGroups, setAvailableIdiomGroups] = useState<IdiomGroup[]>(() => apiService.getLocalIdiomGroups());
@@ -326,13 +329,19 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
                         onClick={(e) => {
                           e.stopPropagation();
                           if (questionCount > 0) {
-                            setPreviewQuizPoem(poem);
+                            setModalQuestionFilter('all');
+                            setReviewItem({
+                              id: poem.id,
+                              title: poem.title,
+                              questions: poem.questions || [],
+                              isIdiom: false,
+                            });
                           } else {
                             alert(`《${poem.title}》暂无配套习题`);
                           }
                         }}
                         className="py-1 px-2.5 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-800 border border-indigo-200/80 rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                        title="免计分预览自测全部题目"
+                        title="查看全部配套习题与试做体验"
                       >
                         <span>📝</span>
                         <span>习题</span>
@@ -417,13 +426,19 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
                         onClick={(e) => {
                           e.stopPropagation();
                           if (questionCount > 0) {
-                            setPreviewQuizIdiom(group);
+                            setModalQuestionFilter('all');
+                            setReviewItem({
+                              id: group.id,
+                              title: group.title || `成语接龙第 ${group.id} 组`,
+                              questions: (group as any).questions || [],
+                              isIdiom: true,
+                            });
                           } else {
                             alert(`成语接龙第 ${num} 组暂无配套练习题`);
                           }
                         }}
                         className="flex-1 py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-800 border border-indigo-200/80 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition cursor-pointer shadow-2xs"
-                        title="预览成语互动习题"
+                        title="查看全部配套习题与试做体验"
                       >
                         <span>📝</span>
                         <span>习题</span>
@@ -452,19 +467,28 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
               })}
             </div>
           ) : (
-            <div className="p-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50">
-              📭 暂无可用的成语组题库
+            <div className="py-12 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              成语接龙数据加载中或暂无可用数据...
             </div>
           )}
         </div>
       )}
 
-      {/* Modules under development */}
-      {selectedSubject === '语文' && (selectedSection === '识字' || selectedSection === '拼音') && (
-        <div className="py-12 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
-          <div className="text-3xl">{selectedSection === '识字' ? '✍️' : '🔡'}</div>
-          <div className="text-sm font-bold text-slate-600">【语文 - {selectedSection}】单元进度管理正在接入中</div>
-          <p className="text-xs max-w-sm mx-auto">教材标准生字表与声韵拼读单元进度打卡功能将随下个版本同步上线。</p>
+      {/* Grid Content: 识字 (Coming Soon) */}
+      {selectedSubject === '语文' && selectedSection === '识字' && (
+        <div className="py-16 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center gap-2">
+          <span className="text-3xl">🔤</span>
+          <p className="font-bold text-slate-600 text-sm">【识字】模块备课资料筹备中</p>
+          <p className="text-[11px] text-slate-400 max-w-sm">包含汉字笔顺动画、常用偏旁部首及形近字趣味辨析游戏正在接入中。</p>
+        </div>
+      )}
+
+      {/* Grid Content: 拼音 (Coming Soon) */}
+      {selectedSubject === '语文' && selectedSection === '拼音' && (
+        <div className="py-16 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center gap-2">
+          <span className="text-3xl">🔠</span>
+          <p className="font-bold text-slate-600 text-sm">【拼音】模块备课资料筹备中</p>
+          <p className="text-[11px] text-slate-400 max-w-sm">包含声母、韵母、整体认读与音调拼读闯关课程正在接入中。</p>
         </div>
       )}
 
@@ -492,7 +516,13 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
             hasNext={hasNext}
             onStartPractice={(poemToPractice) => {
               setPreviewLinesPoem(null);
-              setPreviewQuizPoem(poemToPractice);
+              setModalQuestionFilter('all');
+              setReviewItem({
+                id: poemToPractice.id,
+                title: poemToPractice.title,
+                questions: poemToPractice.questions || [],
+                isIdiom: false,
+              });
             }}
             onPrev={() => {
               if (hasPrev) {
@@ -508,10 +538,10 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
         );
       })()}
 
-      {/* 📖 MODAL 2: 成语词条 Preview Modal */}
+      {/* 📖 MODAL 2: 成语 词句/典故详情 Modal */}
       {previewLinesIdiom && (
         <div
-          className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 !mt-0 !m-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={() => setPreviewLinesIdiom(null)}
         >
           <div
@@ -521,29 +551,27 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    第 {previewLinesIdiom.id} 组
-                  </span>
-                  <h3 className="text-lg font-bold font-serif text-slate-900">
-                    {previewLinesIdiom.title || `成语接龙第 ${previewLinesIdiom.id} 组`}
-                  </h3>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-bold rounded-full border border-emerald-200 mb-1">
+                  <span>🐉 成语接龙词条详情</span>
                 </div>
-                <div className="text-xs text-slate-500 mt-1">
-                  环形连缀成语表（首尾字符衔接流转）
-                </div>
+                <h3 className="text-xl font-bold font-serif text-ink">
+                  {previewLinesIdiom.title || `成语接龙第 ${previewLinesIdiom.id} 组`}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  共包含 {previewLinesIdiom.idioms?.length || 16} 条环形成语与典故释义
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setPreviewLinesIdiom(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center transition cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1 leading-none cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Modal Body: 16 Idioms */}
-            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+            {/* Idioms List */}
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs">
               {(previewLinesIdiom.idioms || []).map((item: any, idx: number) => (
                 <div
                   key={idx}
@@ -585,7 +613,13 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
                   const targetGroup = previewLinesIdiom;
                   setPreviewLinesIdiom(null);
                   if ((targetGroup as any).questions && (targetGroup as any).questions.length > 0) {
-                    setPreviewQuizIdiom(targetGroup);
+                    setModalQuestionFilter('all');
+                    setReviewItem({
+                      id: targetGroup.id,
+                      title: targetGroup.title || `成语接龙第 ${targetGroup.id} 组`,
+                      questions: (targetGroup as any).questions || [],
+                      isIdiom: true,
+                    });
                   } else {
                     alert(`成语接龙第 ${targetGroup.id} 组暂无配套练习题`);
                   }
@@ -608,25 +642,26 @@ export const TeacherCourseProgressTab: React.FC<TeacherCourseProgressTabProps> =
         </div>
       )}
 
-      {/* 📝 MODAL 3: 古诗 习题 StudentQuizPreviewModal */}
-      {previewQuizPoem && (
-        <StudentQuizPreviewModal
-          poemTitle={previewQuizPoem.title}
-          questions={previewQuizPoem.questions || []}
-          initialIndex={0}
-          isPurePreview={true}
-          onClose={() => setPreviewQuizPoem(null)}
+      {/* 📝 Teacher Question Review & Overview Modal (Read-Only without checkboxes) */}
+      {reviewItem && (
+        <TeacherQuestionReviewModal
+          publishingPoem={reviewItem}
+          modalQuestionFilter={modalQuestionFilter}
+          onSetModalQuestionFilter={setModalQuestionFilter}
+          onPreviewQuestion={(idx) => setPreviewStartIndex(idx)}
+          onClose={() => setReviewItem(null)}
+          isReadOnly={true}
         />
       )}
 
-      {/* 📝 MODAL 4: 成语 习题 StudentQuizPreviewModal */}
-      {previewQuizIdiom && (
+      {/* 📝 Interactive Single/Full Question Preview Modal */}
+      {previewStartIndex !== null && reviewItem && (
         <StudentQuizPreviewModal
-          poemTitle={previewQuizIdiom.title || `成语接龙第 ${previewQuizIdiom.id} 组`}
-          questions={(previewQuizIdiom as any).questions || []}
-          initialIndex={0}
+          poemTitle={reviewItem.title}
+          questions={reviewItem.questions || []}
+          initialIndex={previewStartIndex}
           isPurePreview={true}
-          onClose={() => setPreviewQuizIdiom(null)}
+          onClose={() => setPreviewStartIndex(null)}
         />
       )}
     </div>

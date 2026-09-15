@@ -11,28 +11,30 @@ export interface PublishingItem {
 
 interface TeacherQuestionReviewModalProps {
   publishingPoem: PublishingItem;
-  selectedClass: string;
-  newAsgnDueDate: string;
-  selectedQuestionIds: string[];
+  selectedClass?: string;
+  newAsgnDueDate?: string;
+  selectedQuestionIds?: string[];
   modalQuestionFilter: string;
-  onSetSelectedQuestionIds: React.Dispatch<React.SetStateAction<string[]>>;
+  onSetSelectedQuestionIds?: React.Dispatch<React.SetStateAction<string[]>>;
   onSetModalQuestionFilter: (filter: string) => void;
   onPreviewQuestion: (index: number) => void;
-  onConfirmPublish: () => void;
+  onConfirmPublish?: () => void;
   onClose: () => void;
+  isReadOnly?: boolean;
 }
 
 export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProps> = ({
   publishingPoem,
-  selectedClass,
-  newAsgnDueDate,
-  selectedQuestionIds,
+  selectedClass = '',
+  newAsgnDueDate = '',
+  selectedQuestionIds = [],
   modalQuestionFilter,
   onSetSelectedQuestionIds,
   onSetModalQuestionFilter,
   onPreviewQuestion,
   onConfirmPublish,
-  onClose
+  onClose,
+  isReadOnly = false,
 }) => {
   const allQuestions = publishingPoem.questions || [];
   const totalCount = allQuestions.length;
@@ -189,14 +191,20 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 text-blue-700 text-[11px] font-bold rounded-full border border-blue-200 mb-1">
-              <span>📌 教师发布前审题与挑题</span>
+            <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-bold rounded-full border mb-1 ${
+              isReadOnly ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+            }`}>
+              <span>{isReadOnly ? '📝 单元配套习题总览' : '📌 教师发布前审题与挑题'}</span>
             </div>
             <h3 className="text-xl font-bold font-serif text-ink">
-              《{publishingPoem.title}》作业试题勾选
+              《{publishingPoem.title}》{isReadOnly ? '全部配套习题' : '作业试题勾选'}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              发布班级: <strong className="text-blue-600 font-bold">{selectedClass}</strong> | 截止时间: {newAsgnDueDate}
+              {isReadOnly ? (
+                <>共 <strong className="text-indigo-600 font-bold">{totalCount}</strong> 道练习题 · 支持按题型筛选与单题试做体验</>
+              ) : (
+                <>发布班级: <strong className="text-blue-600 font-bold">{selectedClass}</strong> | 截止时间: {newAsgnDueDate}</>
+              )}
             </p>
           </div>
           <button
@@ -209,28 +217,32 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
         </div>
 
         {/* Selection Toolbar & Filter Tabs */}
-        <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
-          <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none">
-            <input
-              type="checkbox"
-              checked={isAllSelected}
-              ref={el => {
-                if (el) el.indeterminate = isIndeterminate;
-              }}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  onSetSelectedQuestionIds(allQuestions.map(q => q.id));
-                } else {
-                  onSetSelectedQuestionIds([]);
-                }
-              }}
-              className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
-            />
-            <span>
-              已勾选 <span className="text-blue-600 text-sm font-black">{selectedQuestionIds.length}</span> / {totalCount} 道题目
-            </span>
-          </label>
-        </div>
+        {!isReadOnly && (
+          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 select-none">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                ref={el => {
+                  if (el) el.indeterminate = isIndeterminate;
+                }}
+                onChange={(e) => {
+                  if (onSetSelectedQuestionIds) {
+                    if (e.target.checked) {
+                      onSetSelectedQuestionIds(allQuestions.map(q => q.id));
+                    } else {
+                      onSetSelectedQuestionIds([]);
+                    }
+                  }
+                }}
+                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+              />
+              <span>
+                已勾选 <span className="text-blue-600 text-sm font-black">{selectedQuestionIds.length}</span> / {totalCount} 道题目
+              </span>
+            </label>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <button
@@ -248,27 +260,29 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
             </span>
           </button>
 
-          {presentTypes.map(t => {
-            const count = allQuestions.filter(q => q.type === t).length;
-            const isSelected = modalQuestionFilter === t;
-            const style = typeColors[t] || {
-              active: 'bg-blue-600 text-white border-blue-700 shadow-xs',
-              inactive: 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200',
+          {presentTypes.map(type => {
+            const count = allQuestions.filter(q => q.type === type).length;
+            const isSelected = modalQuestionFilter === type;
+            const style = typeColors[type] || {
+              active: 'bg-slate-800 text-white shadow-xs border border-slate-900',
+              inactive: 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200',
               countActive: 'bg-white/20 text-white',
-              countInactive: 'bg-slate-200 text-slate-600'
+              countInactive: 'bg-slate-200 text-slate-700',
             };
 
             return (
               <button
-                key={t}
+                key={type}
                 type="button"
-                onClick={() => onSetModalQuestionFilter(t)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                onClick={() => onSetModalQuestionFilter(type)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                   isSelected ? style.active : style.inactive
                 }`}
               >
-                <span>{typeLabels[t] || t}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isSelected ? style.countActive : style.countInactive}`}>
+                <span>{typeLabels[type] || type}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  isSelected ? style.countActive : style.countInactive
+                }`}>
                   {count}
                 </span>
               </button>
@@ -277,31 +291,37 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
         </div>
 
         {/* Questions List */}
-        <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+        <div className="flex-1 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100">
           {filteredQuestions.map((q) => {
-            const globalIdx = allQuestions.findIndex(item => item.id === q.id);
             const isChecked = selectedQuestionIds.includes(q.id);
+            const globalIdx = allQuestions.findIndex(item => item.id === q.id);
 
             return (
               <div
                 key={q.id}
                 onClick={() => {
-                  onSetSelectedQuestionIds(prev =>
-                    isChecked ? prev.filter(id => id !== q.id) : [...prev, q.id]
-                  );
+                  if (!isReadOnly && onSetSelectedQuestionIds) {
+                    onSetSelectedQuestionIds(prev =>
+                      isChecked ? prev.filter(id => id !== q.id) : [...prev, q.id]
+                    );
+                  }
                 }}
-                className={`p-3 rounded-2xl border-2 transition cursor-pointer flex items-start gap-3 group ${
-                  isChecked
-                    ? 'bg-blue-50/50 border-blue-300 shadow-2xs'
-                    : 'bg-slate-50/70 border-slate-200 opacity-60 hover:opacity-80'
+                className={`p-3 rounded-2xl border transition flex items-start gap-3 group ${
+                  isReadOnly
+                    ? 'bg-slate-50/80 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/30'
+                    : isChecked
+                      ? 'border-2 bg-blue-50/50 border-blue-300 shadow-2xs cursor-pointer'
+                      : 'border-2 bg-slate-50/70 border-slate-200 opacity-60 hover:opacity-80 cursor-pointer'
                 }`}
               >
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={() => { }}
-                  className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer flex-shrink-0"
-                />
+                {!isReadOnly && (
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => { }}
+                    className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer flex-shrink-0"
+                  />
+                )}
 
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center justify-between">
@@ -317,10 +337,11 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
                         e.stopPropagation();
                         onPreviewQuestion(globalIdx);
                       }}
-                      className="px-2 py-0.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition opacity-80 group-hover:opacity-100 flex items-center gap-0.5 cursor-pointer"
-                      title="测试此题学生界面"
+                      className="px-2.5 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                      title="进入学生作答界面测试此题"
                     >
-                      👁 试做
+                      <span>👁</span>
+                      <span>试做</span>
                     </button>
                   </div>
                   <p className="text-xs font-bold text-slate-800 font-serif leading-relaxed">
@@ -360,28 +381,57 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
         </div>
 
         {/* Modal Action Bar */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
-          >
-            取消
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (selectedQuestionIds.length === 0) {
-                alert('请至少勾选 1 道题目后再预览！');
-                return;
-              }
-              onConfirmPublish();
-            }}
-            disabled={selectedQuestionIds.length === 0}
-            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
-          >
-            👁 预览题目并发布 ({selectedQuestionIds.length} 题) →
-          </button>
+        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+          {isReadOnly ? (
+            <>
+              <div className="text-xs text-slate-500 font-medium">
+                点击每道题目的【👁 试做】可单独测试该题
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onPreviewQuestion(0)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>📝</span>
+                  <span>从第 1 题开始完整自测 ({totalCount} 题)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+                >
+                  关闭
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-end gap-3 w-full">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedQuestionIds.length === 0) {
+                    alert('请至少勾选 1 道题目后再预览！');
+                    return;
+                  }
+                  if (onConfirmPublish) {
+                    onConfirmPublish();
+                  }
+                }}
+                disabled={selectedQuestionIds.length === 0}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
+              >
+                👁 预览题目并发布 ({selectedQuestionIds.length} 题) →
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
