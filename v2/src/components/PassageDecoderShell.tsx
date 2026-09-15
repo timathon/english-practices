@@ -70,6 +70,37 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
     const [activeWordDetail, setActiveWordDetail] = useState<any>(null);
     const [playingWordAudio, setPlayingWordAudio] = useState(false);
     const [showMainVerb, setShowMainVerb] = useState(false);
+    const [revealedCnIndex, setRevealedCnIndex] = useState<number | null>(null);
+    const revealedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const getSentenceChinese = useCallback((sentence: any): string => {
+        if (sentence.cn) return sentence.cn;
+        if (Array.isArray(sentence.options) && sentence.answer !== undefined && sentence.options[sentence.answer]) {
+            return sentence.options[sentence.answer];
+        }
+        return '';
+    }, []);
+
+    const handlePastSentenceClick = useCallback((idx: number) => {
+        if (revealedTimeoutRef.current) {
+            clearTimeout(revealedTimeoutRef.current);
+            revealedTimeoutRef.current = null;
+        }
+        setRevealedCnIndex(idx);
+        revealedTimeoutRef.current = setTimeout(() => {
+            setRevealedCnIndex(null);
+            revealedTimeoutRef.current = null;
+        }, 5000);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (revealedTimeoutRef.current) {
+                clearTimeout(revealedTimeoutRef.current);
+                revealedTimeoutRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (!practiceId) return;
@@ -534,6 +565,11 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
         setGainedLove(0)
         recordIdPromiseRef.current = null
         hasFinishedRef.current = false
+        if (revealedTimeoutRef.current) {
+            clearTimeout(revealedTimeoutRef.current);
+            revealedTimeoutRef.current = null;
+        }
+        setRevealedCnIndex(null);
 
         // Passages are played in linear narrative order (NOT shuffled)
         const linearQueue = sec.sentences.map((sentence: any, i: number) => ({
@@ -1081,16 +1117,24 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                 const isCurrent = isRedemption
                                                     ? q.originalIndex === sentence.index
                                                     : currentIndex === sentence.index;
-                                                const isPast = isRedemption
-                                                    ? false
-                                                    : sentence.index < currentIndex;
+                                                const currentActiveIndex = isRedemption ? q.originalIndex : currentIndex;
+                                                const isPast = sentence.index < currentActiveIndex;
+                                                const isRevealedCn = revealedCnIndex === sentence.index;
+                                                const cnText = getSentenceChinese(sentence);
+
                                                 return (
                                                     <span
                                                         key={sentence.id}
                                                         ref={isCurrent ? activeSentenceRef : null}
-                                                        className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed' : ''}`}
+                                                        className={`pd-sentence ${isCurrent ? 'active' : ''} ${isPast ? 'completed clickable' : ''} ${isRevealedCn ? 'cn-revealed' : ''}`}
+                                                        onClick={() => {
+                                                            if (isPast && cnText) {
+                                                                handlePastSentenceClick(sentence.index);
+                                                            }
+                                                        }}
+                                                        title={isPast ? (isRevealedCn ? "5秒后恢复英文" : "点击查看中文释义 (5秒后恢复)") : undefined}
                                                     >
-                                                        {renderSentenceText(sentence, isCurrent)}{' '}
+                                                        {isRevealedCn && cnText ? cnText : renderSentenceText(sentence, isCurrent)}{' '}
                                                         {isCurrent && (isStudentBook(practiceId) || isWorkbook(practiceId)) && (
                                                             <button
                                                                 className="pd-sentence-play-btn"
