@@ -152,7 +152,7 @@ def main():
 
     source = md_path.read_text(encoding="utf-8")
     
-    # Default to high mode ("gemini-3.7-flash") for text-navigator generation
+    # Default to high mode ("gemini-3.8-flash") for text-navigator generation
     api_key, model_name = get_genai_config(use_high=True)
 
     path_upper = str(md_path).upper()
@@ -201,7 +201,7 @@ def main():
     response = None
     actual_model = model_name
 
-    # Try primary model (gemini-3.7-flash) up to 3 times
+    # Try primary model (gemini-3.8-flash) up to 3 times
     print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
     for attempt in range(3):
         try:

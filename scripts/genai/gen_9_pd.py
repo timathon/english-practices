@@ -68,6 +68,7 @@ You are an expert English curriculum designer. Generate a Passage Decoder JSON f
 
 CRITICAL RULES:
 - Extraction Scope: Extract every single sentence/dialogue line from the reading passages or listening dialogue sections.
+  - If a reading passage or article has a standalone title or heading (e.g., "China's Colourful Soil", "A Bite of the Silk Road"), you MUST include the title as the very first sentence of that section with `newline: true` and appropriate grammatical decoding (e.g. pattern "NP" or main verb).
   - If the input is a Test markdown file (e.g. *-test.md), extract the full texts from ALL reading sections (such as 完形填空, 阅读理解 A, 阅读理解 B, 语法填空, 任务型阅读). For sentences with blanks or missing words, fill in the correct target word so that the decoded English sentence (`en`) is complete, natural, and grammatically correct. Do NOT include the multiple choice questions/stems/options at the end of each passage as sentences.
   - For normal textbook units, extract from textbook reading passages / listening scripts.
 - "speaker": (Optional) The name of the speaker if the sentence is a dialogue (e.g., "Rocky", "Emma", "Sam"). If the text includes narrative speech verbs (e.g. 'I say', 'she says', 'says Mum'), keep the full narrative text intact and do NOT use the "speaker" field.

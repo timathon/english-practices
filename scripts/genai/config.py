@@ -8,7 +8,7 @@ import sys
 
 api_key = "GOOGLE_API_KEY"
 api_key_free = "GOOGLE_API_KEY_FREE"
-model_high = "gemini-3.7-flash"
+model_high = "gemini-3.8-flash"
 model_low = "gemini-3.5-flash-lite"
 model_default = model_low
 model_fallback = model_low
@@ -29,9 +29,9 @@ def parse_high_flag() -> bool:
     Also strips obsolete 'model=3.5' or 'model=high' if present.
     """
     use_high = False
-    for flag in ["high", "--high", "model=high", "model=3.7"]:
+    for flag in ["high", "--high", "model=high", "model=3.7", "model=3.8"]:
         if flag in sys.argv:
-            if flag in ["high", "--high", "model=high", "model=3.7"]:
+            if flag in ["high", "--high", "model=high", "model=3.7", "model=3.8"]:
                 use_high = True
             sys.argv.remove(flag)
     return use_high
@@ -54,7 +54,7 @@ def get_genai_config(use_high: bool = False, force_paid: bool = None):
     """
     Returns (key_val, model_name) tuple based on available API keys and model preference.
     Defaults to gemini-3.5-flash-lite (model_low).
-    Uses gemini-3.7-flash (model_high) when use_high is True.
+    Uses gemini-3.8-flash (model_high) when use_high is True.
     Tries GOOGLE_API_KEY_FREE (api_key_free) first by default.
     If GOOGLE_API_KEY_FREE is missing or if force_paid/--paid flag is specified,
     falls back to or uses GOOGLE_API_KEY (api_key).
@@ -97,7 +97,7 @@ def get_fallback_api_key(current_key: str) -> str | None:
 
 def get_fallback_model(current_model: str) -> str | None:
     """
-    Returns fallback model (gemini-3.5-flash-lite) if current_model is gemini-3.7-flash.
+    Returns fallback model (gemini-3.5-flash-lite) if current_model is gemini-3.8-flash.
     """
     if current_model == model_high:
         return model_low

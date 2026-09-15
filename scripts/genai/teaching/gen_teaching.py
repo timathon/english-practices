@@ -6,7 +6,7 @@ Usage:
     python3 scripts/genai/teaching/gen_teaching.py <path-to-unit.md-or-folder> [--type design|delivery|all] [--section A|B|all] [high] [paid]
 
 Default:
-    Defaults to gemini-3.5-flash-lite. Pass 'high' or '--high' to use gemini-3.7-flash.
+    Defaults to gemini-3.5-flash-lite. Pass 'high' or '--high' to use gemini-3.8-flash.
 
 Examples:
     python3 scripts/genai/teaching/gen_teaching.py v2-data/A7A/a7a-u1 --section A

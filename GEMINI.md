@@ -390,6 +390,7 @@ This document defines the rules for extracting and converting textbook data into
 
 - **Extraction Scope & Sentence Granularity**: 
   - Extract every sentence/dialogue line from the passage or listening dialogue section.
+  - **Passage Title as Sentence**: If the reading passage or article has a standalone title/heading (e.g., `"China's Colourful Soil"`, `"A Bite of the Silk Road"`, `"The Night the Earth Didn't Sleep"`), include the title as the very first sentence item in that section's `sentences` array with `newline: true` and appropriate noun phrase / sentence pattern decoding (e.g. `"NP"` or main verb).
   - **Sentence Granularity & Length Guideline**: Each item in `sentences` should ideally be a single sentence, but can be **1–2 short, closely connected sentences** sharing the same immediate topic (e.g. intro/follow-up pairs or dialogue greetings like `"Max: I know him. What does the story say?"`), provided they are not excessively long or overloaded. If combining them creates an overly long chunk (e.g. 3+ sentences or complex multi-clause descriptions), split them into separate sentence objects so students can digest and translate them easily.
   - **Dialogue & Paragraph Formatting**: Set `newline: true` on the first item starting a new paragraph or dialogue turn. Subsequent sentence items in the same turn/paragraph should have `newline: false`.
 - **Vocabulary Highlighting**: 
