@@ -15,6 +15,7 @@ export const QUESTION_TYPE_LABELS: Record<string, string> = {
   StoryComprehension: '故事问答',
   ImageToIdiom:   '看图识成语',
   EmotionMatch:   '情感归类',
+  TyposSpotting:  '错字辨析',
 };
 
 export const TYPE_COLORS: Record<string, string> = {
@@ -34,4 +35,5 @@ export const TYPE_COLORS: Record<string, string> = {
   StoryComprehension: 'bg-purple-100 text-purple-800 border-purple-200',
   ImageToIdiom:   'bg-teal-100 text-teal-800 border-teal-200',
   EmotionMatch:   'bg-rose-100 text-rose-800 border-rose-200',
+  TyposSpotting:  'bg-rose-100 text-rose-800 border-rose-200',
 };

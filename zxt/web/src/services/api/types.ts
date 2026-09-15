@@ -115,7 +115,7 @@ export type IdiomQuestion =
     }
   | {
       id: string;
-      type: 'IdiomSolitaire' | 'IdiomCloze' | 'HomophoneMatch' | 'IdiomMeaning' | 'StoryComprehension' | 'EmotionMatch';
+      type: 'IdiomSolitaire' | 'IdiomCloze' | 'HomophoneMatch' | 'IdiomMeaning' | 'StoryComprehension' | 'EmotionMatch' | 'TyposSpotting';
       prompt: string;
       options: string[];
       answer: number;

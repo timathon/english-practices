@@ -56,6 +56,7 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
     StoryComprehension: '故事问答',
     ImageToIdiom: '看图识成语',
     EmotionMatch: '情感归类',
+    TyposSpotting: '错字辨析',
   };
 
   const typeColors: Record<string, { active: string; inactive: string; countActive: string; countInactive: string }> = {
@@ -155,6 +156,12 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
       countActive: 'bg-white/20 text-white',
       countInactive: 'bg-rose-200/70 text-rose-900',
     },
+    TyposSpotting: {
+      active: 'bg-rose-600 text-white shadow-xs border border-rose-700',
+      inactive: 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100',
+      countActive: 'bg-white/20 text-white',
+      countInactive: 'bg-rose-200/70 text-rose-900',
+    },
   };
 
   const badgeColors: Record<string, string> = {
@@ -174,6 +181,7 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
     StoryComprehension: 'bg-purple-50 text-purple-800 border-purple-200',
     ImageToIdiom: 'bg-teal-50 text-teal-800 border-teal-200',
     EmotionMatch: 'bg-rose-50 text-rose-800 border-rose-200',
+    TyposSpotting: 'bg-rose-50 text-rose-800 border-rose-200',
   };
 
   const presentTypes = Array.from(new Set(allQuestions.map(q => q.type)));
