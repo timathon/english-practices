@@ -99,6 +99,22 @@ export function TestSheetPrintView({ data }: TestSheetPrintViewProps) {
         if (line) {
           if (line.startsWith('[HTML:') && line.endsWith(']')) {
             const rawHtml = line.slice(6, -1)
+            // If followed by paragraph, render side-by-side
+            if (i + 1 < lines.length && lines[i + 1].trim() && !lines[i + 1].trim().startsWith('#') && !lines[i + 1].trim().startsWith('[HTML:') && !lines[i + 1].trim().startsWith('|')) {
+              const nextPara = lines[i + 1].trim()
+              renderedBlocks.push(
+                <div key={`side-${i}`} className="ts-print-passage-side-by-side" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', margin: '8px 0' }}>
+                  <div style={{ flex: 1 }}>
+                    <p className="ts-print-passage-p" style={{ margin: 0 }}>
+                      {parseLine(nextPara)}
+                    </p>
+                  </div>
+                  <div style={{ flexShrink: 0, maxWidth: '140px' }} dangerouslySetInnerHTML={{ __html: rawHtml }} />
+                </div>
+              )
+              i++
+              continue
+            }
             renderedBlocks.push(
               <div key={`html-${i}`} className="ts-print-html-block" dangerouslySetInnerHTML={{ __html: rawHtml }} />
             )

@@ -176,19 +176,22 @@ export function TestSheetQuestionItem({
       const romanNumeral = toRomanNumeral(index + 1)
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
-          <div className="ts-question-header" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', flexWrap: 'wrap' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <div className="ts-question-header" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', width: '100%', flexWrap: 'wrap' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px', width: '96px', minWidth: '96px', maxWidth: '96px', flexShrink: 0, boxSizing: 'border-box' }}>
               <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#475569' }}>(</span>
               <select
                 className="ts-wordbank-select"
                 style={{
-                  minWidth: '65px',
-                  padding: '4px 8px',
+                  width: '68px',
+                  minWidth: '68px',
+                  maxWidth: '68px',
+                  padding: '4px 6px',
                   margin: '0 2px',
                   textAlign: 'center',
                   fontWeight: 700,
                   fontSize: '1rem',
                   borderRadius: '6px',
+                  boxSizing: 'border-box',
                   ...(q.isExample ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#1e293b' } : {})
                 }}
                 value={q.isExample ? String(q.answer) : (userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
@@ -228,15 +231,21 @@ export function TestSheetQuestionItem({
               </select>
               <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#475569' }}>)</span>
             </div>
-            <span className="ts-question-prompt" style={{ flex: 1, minWidth: '200px' }}>
-              <strong style={{ marginRight: '6px', color: '#334155' }}>{romanNumeral}.</strong>
-              {renderPromptText(q.prompt)}
+            <div className="ts-question-prompt" style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <strong style={{ marginRight: '6px', color: '#334155', flexShrink: 0, marginTop: '2px' }}>{romanNumeral}.</strong>
+                <div style={{ flex: 1 }}>
+                  {renderPromptText(q.prompt)}
+                </div>
+              </div>
               {q.isExample && (
-                <span style={{ marginLeft: '8px', fontSize: '0.8rem', color: '#64748b', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
-                  例 (Example)
-                </span>
+                <div style={{ marginTop: '2px' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'inline-block' }}>
+                    例 (Example)
+                  </span>
+                </div>
               )}
-            </span>
+            </div>
           </div>
 
           {submitted && (

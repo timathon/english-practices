@@ -160,6 +160,24 @@ export function TestSheetInteractivePassage({
             rawHtml += '\n' + (lastPart.endsWith(']') ? lastPart.slice(0, -1) : lastPart)
           }
         }
+
+        // If the very next line is a text paragraph, render them side-by-side (text left, illustration right)
+        if (i + 1 < lines.length && lines[i + 1].trim() && !lines[i + 1].trim().startsWith('#') && !lines[i + 1].trim().startsWith('[HTML:') && !lines[i + 1].trim().startsWith('|')) {
+          const nextPara = lines[i + 1].trim()
+          renderedBlocks.push(
+            <div key={`side-${i}`} className="ts-passage-side-by-side">
+              <div style={{ flex: '1 1 260px', minWidth: '200px' }}>
+                <p style={{ margin: 0, lineHeight: 1.7 }}>
+                  {renderSentences(nextPara, i + 1)}
+                </p>
+              </div>
+              <div className="ts-passage-side-img" style={{ flex: '0 0 auto', maxWidth: '170px', display: 'flex', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: rawHtml }} />
+            </div>
+          )
+          i++
+          continue
+        }
+
         renderedBlocks.push(
           <div key={`html-${i}`} className="ts-html-passage-block" dangerouslySetInnerHTML={{ __html: rawHtml }} style={{ margin: '15px 0', width: '100%', overflowX: 'auto' }} />
         )
