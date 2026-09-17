@@ -60,6 +60,28 @@ export function TestSheetInteractivePassage({
 
   const flushTable = (key: string | number) => {
     if (tableRows.length > 0 || tableHeaders.length > 0) {
+      // Calculate rowSpan matrix for table body
+      // If a cell is ^^ (or empty and preceded by a rowspan marker), it merges with the cell directly above it
+      const rowSpanMap: { [key: string]: { rowSpan: number; skip: boolean } } = {}
+      for (let c = 0; c < tableHeaders.length; c++) {
+        let r = 0
+        while (r < tableRows.length) {
+          const cell = tableRows[r][c] !== undefined ? tableRows[r][c].trim() : ''
+          if (cell === '^^') {
+            rowSpanMap[`${r}-${c}`] = { rowSpan: 1, skip: true }
+            r++
+          } else {
+            let span = 1
+            while (r + span < tableRows.length && (tableRows[r + span][c]?.trim() === '^^')) {
+              rowSpanMap[`${r + span}-${c}`] = { rowSpan: 1, skip: true }
+              span++
+            }
+            rowSpanMap[`${r}-${c}`] = { rowSpan: span, skip: false }
+            r += span
+          }
+        }
+      }
+
       renderedBlocks.push(
         <div key={`table-${key}`} className="ts-passage-table-wrapper">
           <table className="ts-passage-table">
@@ -96,16 +118,23 @@ export function TestSheetInteractivePassage({
                 return (
                   <tr key={rowIndex}>
                     {row.map((cell, cellIndex) => {
+                      const spanInfo = rowSpanMap[`${rowIndex}-${cellIndex}`]
+                      if (spanInfo?.skip) {
+                        return null
+                      }
                       const isLast = cellIndex === row.length - 1
                       const colSpan = (isLast && diff > 0) ? diff + 1 : undefined
+                      const rowSpan = spanInfo?.rowSpan && spanInfo.rowSpan > 1 ? spanInfo.rowSpan : undefined
                       return (
                         <td
                           key={cellIndex}
                           colSpan={colSpan}
+                          rowSpan={rowSpan}
                           style={{
-                            textAlign: colSpan ? 'center' : undefined,
-                            verticalAlign: 'top',
-                            padding: '16px'
+                            textAlign: colSpan ? 'center' : (rowSpan ? 'center' : undefined),
+                            verticalAlign: rowSpan ? 'middle' : 'top',
+                            padding: '16px',
+                            fontWeight: (cellIndex === 0 && rowSpan) ? 700 : undefined
                           }}
                         >
                           {renderSentences(cell, `td-${key}-${rowIndex}-${cellIndex}`)}
@@ -415,6 +444,26 @@ export function TestSheetInlineBlanksPassage({
 
   const flushTable = (key: string | number) => {
     if (tableRows.length > 0 || tableHeaders.length > 0) {
+      const rowSpanMap: { [key: string]: { rowSpan: number; skip: boolean } } = {}
+      for (let c = 0; c < tableHeaders.length; c++) {
+        let r = 0
+        while (r < tableRows.length) {
+          const cell = tableRows[r][c] !== undefined ? tableRows[r][c].trim() : ''
+          if (cell === '^^') {
+            rowSpanMap[`${r}-${c}`] = { rowSpan: 1, skip: true }
+            r++
+          } else {
+            let span = 1
+            while (r + span < tableRows.length && (tableRows[r + span][c]?.trim() === '^^')) {
+              rowSpanMap[`${r + span}-${c}`] = { rowSpan: 1, skip: true }
+              span++
+            }
+            rowSpanMap[`${r}-${c}`] = { rowSpan: span, skip: false }
+            r += span
+          }
+        }
+      }
+
       renderedBlocks.push(
         <div key={`table-${key}`} className="ts-passage-table-wrapper">
           <table className="ts-passage-table">
@@ -435,10 +484,25 @@ export function TestSheetInlineBlanksPassage({
                 return (
                   <tr key={rowIndex}>
                     {row.map((cell, cellIndex) => {
+                      const spanInfo = rowSpanMap[`${rowIndex}-${cellIndex}`]
+                      if (spanInfo?.skip) {
+                        return null
+                      }
                       const isLast = cellIndex === row.length - 1
                       const colSpan = (isLast && diff > 0) ? diff + 1 : undefined
+                      const rowSpan = spanInfo?.rowSpan && spanInfo.rowSpan > 1 ? spanInfo.rowSpan : undefined
                       return (
-                        <td key={cellIndex} colSpan={colSpan} style={colSpan ? { textAlign: 'center' } : undefined}>
+                        <td
+                          key={cellIndex}
+                          colSpan={colSpan}
+                          rowSpan={rowSpan}
+                          style={{
+                            textAlign: colSpan ? 'center' : (rowSpan ? 'center' : undefined),
+                            verticalAlign: rowSpan ? 'middle' : 'top',
+                            padding: '16px',
+                            fontWeight: (cellIndex === 0 && rowSpan) ? 700 : undefined
+                          }}
+                        >
                           {parseLineContent(cell)}
                         </td>
                       )
@@ -493,6 +557,24 @@ export function TestSheetInlineBlanksPassage({
               rawHtml += '\n' + (lastPart.endsWith(']') ? lastPart.slice(0, -1) : lastPart)
             }
           }
+
+          // If the very next line is a text paragraph containing blanks or text, render them side-by-side
+          if (i + 1 < lines.length && lines[i + 1].trim() && !lines[i + 1].trim().startsWith('#') && !lines[i + 1].trim().startsWith('[HTML:') && !lines[i + 1].trim().startsWith('|')) {
+            const nextPara = lines[i + 1].trim()
+            renderedBlocks.push(
+              <div key={`side-${i}`} className="ts-passage-side-by-side" style={{ display: 'flex', flexDirection: 'row', gap: '16px', alignItems: 'center', margin: '8px 0' }}>
+                <div style={{ flex: '1 1 260px', minWidth: '200px' }}>
+                  <p style={{ margin: 0, lineHeight: 2.0 }}>
+                    {parseLineContent(nextPara)}
+                  </p>
+                </div>
+                <div className="ts-passage-side-img" style={{ flex: '0 0 auto', maxWidth: '170px', display: 'flex', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: rawHtml }} />
+              </div>
+            )
+            i++
+            continue
+          }
+
           renderedBlocks.push(
             <div key={`html-${i}`} className="ts-html-passage-block" style={{ width: '100%', overflowX: 'auto', margin: '15px 0' }} dangerouslySetInnerHTML={{ __html: rawHtml }} />
           )

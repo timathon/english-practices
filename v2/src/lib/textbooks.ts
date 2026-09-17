@@ -6,6 +6,7 @@ export const TEXTBOOK_EMOJIS: Record<string, string> = {
   A7A: '🚀', A7B: '🛸',
   A8A: '🎓', A8B: '🔭',
   A9: '🏆',
+  A10: '🎯',
   'B-NCE2': '📘',
   'B-PU0': '🎒',
   'B-PU1': '🚌',

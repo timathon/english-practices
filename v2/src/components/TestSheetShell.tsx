@@ -789,7 +789,7 @@ export function TestSheetShell({
                   activeSection.type !== 'cloze-passage' &&
                   activeSection.type !== 'cloze-passage-wordbank' &&
                   !activeSection.questions.some(q => q.blankIndex !== undefined) && (
-                  <div className="ts-reading-comprehension-passage" style={{ margin: '20px 0', padding: '20px', background: '#fcfcfc', borderLeft: '4px solid #3b82f6', borderRadius: '4px', lineHeight: '1.8', fontSize: '1.05em', fontStyle: 'italic', color: '#374151' }}>
+                  <div className="ts-reading-comprehension-passage" style={{ margin: '20px 0', padding: '22px 24px', background: '#fcfcfc', borderLeft: '4px solid #3b82f6', borderRadius: '4px', lineHeight: '2.0', fontSize: '1.18rem', color: '#1e293b' }}>
                     <TestSheetInteractivePassage
                       passageText={activeSection.passage}
                       highlightedSentence={highlightedSentence}

@@ -87,6 +87,7 @@ export const translateTextbookName = (name: string): string => {
     'A7A': '七上', 'A7B': '七下',
     'A8A': '八上', 'A8B': '八下',
     'A9A': '九上', 'A9B': '九下', 'A9': '九全',
+    'A10': '中考',
     'NCE1': '新一', 'NCE2': '新二', 'NCE3': '新三',
     'B-NCE2': '新二',
     'B-THINK1': 'Think 1',
