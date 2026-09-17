@@ -443,6 +443,7 @@ This document defines the rules for extracting and converting textbook data into
     - For multiple-choice: integer index of the correct option (0-indexed).
   - `translation`: Chinese translation of the sentence.
   - `explanation`: Detailed grammatical explanation in Chinese.
+    - **No Letter References in Explanations Rule:** Do NOT use letter references such as "故选A", "故选B", "故选C", "故选D", "答案选A", etc., in `explanation`, because option keys (A/B/C/D) are not displayed and options are randomized/shuffled on the frontend. ALWAYS use the exact correct option content instead, formatted as `"故选[correct option content]"` (or `"故选 '[correct option content]'"` / `"故选 \"[correct option content]\""`), for example: `"故选 grade。"` or `"故选 'No, he isn't.'。"` or `"故选 '来自太原'。"`
 
 - **Additional Question Type Schemas:**
   To support other question types found in textbook sources, represent them using these distinct types and JSON schemas:

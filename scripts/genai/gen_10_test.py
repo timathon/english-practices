@@ -123,6 +123,7 @@ RULES:
    - **Mandatory for EVERY question item in all sections:**
      - `translation`: Chinese translation of the sentence, question prompt, or the context.
      - `explanation`: Detailed grammatical or contextual explanation in Chinese explaining why the answer is correct.
+       - **CRITICAL:** Do NOT use option letter identifiers (like "故选A", "故选B", "故选C", "故选D", "答案选A") in `explanation`, because options are shuffled on the frontend and option letters are not shown. ALWAYS refer directly to the actual content of the correct option, formatted as "故选 [correct option text]" (e.g., "故选 grade。", "故选 'No, he isn't.'。").
    - For `cloze-passage`, `cloze-passage-wordbank`, `dialogue-completion`:
      - `blankIndex`: 1-based integer corresponding to the blank `[1]`, `[2]`, etc.
    - For `reading-comprehension`:
