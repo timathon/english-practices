@@ -23,17 +23,31 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
 
     // Load related cloze practices from local client-side IndexedDB first, then network fallback
     useEffect(() => {
-        let clozePracticeId = 'A10_a10-yp_a10-yp-1';
+        let basePrefix = 'A10_a10-yp_a10-yp';
         if (practiceId && practiceId.includes('_')) {
             const parts = practiceId.split('_');
             if (parts.length >= 2) {
-                clozePracticeId = `${parts[0]}_${parts[1]}_${parts[1]}-1`;
+                basePrefix = `${parts[0]}_${parts[1]}_${parts[1]}`;
             }
         }
 
-        const extractQuestions = (content: any) => {
+        // Support both 1 and 2 (e.g. a10-yp-1 and a10-yp-2)
+        const candidatePracticeIds = [`${basePrefix}-1`, `${basePrefix}-2`];
+        const loadedQuestionsMap: { [pid: string]: any[] } = {};
+
+        const updateAllQuestions = () => {
+            const aggregated: any[] = [];
+            candidatePracticeIds.forEach(pid => {
+                if (loadedQuestionsMap[pid]) {
+                    aggregated.push(...loadedQuestionsMap[pid]);
+                }
+            });
+            setAllPracticeQuestions(aggregated);
+        };
+
+        const processPracticeContent = (pid: string, content: any) => {
             if (!content?.sections) return;
-            const allQs: any[] = [];
+            const qs: any[] = [];
             content.sections.forEach((sec: any) => {
                 const rawSentences = Array.isArray(sec.raw_text) ? sec.raw_text : [];
                 (sec.questions || []).forEach((q: any) => {
@@ -41,7 +55,7 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                     if (!sentenceText && q.sentence_index !== undefined && rawSentences[q.sentence_index]) {
                         sentenceText = rawSentences[q.sentence_index];
                     }
-                    allQs.push({
+                    qs.push({
                         ...q,
                         sentenceText: sentenceText || `第 ${q.blank_num} 空`,
                         sectionTitle: sec.title,
@@ -49,39 +63,42 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                     });
                 });
             });
-            setAllPracticeQuestions(allQs);
+            loadedQuestionsMap[pid] = qs;
+            updateAllQuestions();
         };
 
-        // 1. Check client-side IndexedDB cache
-        practiceCache.get(clozePracticeId).then(cached => {
-            if (cached) {
-                extractQuestions(cached.content || cached);
-            }
-        });
+        candidatePracticeIds.forEach(pid => {
+            // 1. Check client-side IndexedDB cache
+            practiceCache.get(pid).then(cached => {
+                if (cached) {
+                    processPracticeContent(pid, cached.content || cached);
+                }
+            });
 
-        // 2. Network fetch fallback / sync
-        fetch(`${API_URL}/api/practices/${clozePracticeId}`, { credentials: 'include' })
-            .then(res => res.json())
-            .then(resData => {
-                if (resData && !resData.error) {
-                    let content = resData.content;
-                    if (resData.isEncrypted && typeof content === 'string') {
-                        try {
-                            content = decryptContent(content, OBSCURE_KEY);
-                        } catch (e) {
-                            console.error("Cloze practice decryption failed:", e);
-                            return;
+            // 2. Network fetch fallback / sync
+            fetch(`${API_URL}/api/practices/${pid}`, { credentials: 'include' })
+                .then(res => res.json())
+                .then(resData => {
+                    if (resData && !resData.error) {
+                        let content = resData.content;
+                        if (resData.isEncrypted && typeof content === 'string') {
+                            try {
+                                content = decryptContent(content, OBSCURE_KEY);
+                            } catch (e) {
+                                console.error("Cloze practice decryption failed:", e);
+                                return;
+                            }
+                        }
+                        if (content) {
+                            practiceCache.set(pid, resData);
+                            processPracticeContent(pid, content);
                         }
                     }
-                    if (content) {
-                        practiceCache.set(clozePracticeId, resData);
-                        extractQuestions(content);
-                    }
-                }
-            })
-            .catch(err => {
-                console.warn("Failed to load questions for grammar index:", err);
-            });
+                })
+                .catch(err => {
+                    console.warn(`Failed to load questions from ${pid}:`, err);
+                });
+        });
     }, [practiceId]);
 
     const categories = data?.categories || []
