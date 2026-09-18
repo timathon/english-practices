@@ -133,10 +133,11 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                             transition: 'all 0.2s'
                         }}
                     >
-                        全部考点 ({categories.reduce((acc: number, c: any) => acc + (c.points?.length || 0), 0)})
+                        全部 ({categories.reduce((acc: number, c: any) => acc + (c.points?.length || 0), 0)})
                     </button>
                     {categories.map((cat: any) => {
                         const isSelected = activeCategory === cat.id;
+                        const label = cat.name.replace(/^[一二三四五六七八九十]、/, '').replace(/考点/g, '');
                         return (
                             <button
                                 key={cat.id}
@@ -153,7 +154,7 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                                     transition: 'all 0.2s'
                                 }}
                             >
-                                {cat.icon} {cat.name.replace(/^[一二三四五六七八九十]、/, '')}
+                                {label}
                             </button>
                         );
                     })}
@@ -301,17 +302,19 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                                                                     <button
                                                                         onClick={() => toggleRevealAnswer(qKey)}
                                                                         style={{
-                                                                            background: isAnswerRevealed ? '#e0f2fe' : '#f1f5f9',
-                                                                            color: isAnswerRevealed ? '#0369a1' : '#475569',
-                                                                            border: '1px solid ' + (isAnswerRevealed ? '#bae6fd' : '#cbd5e1'),
-                                                                            padding: '2px 8px',
+                                                                            background: isAnswerRevealed ? '#e0f2fe' : 'var(--primary)',
+                                                                            color: isAnswerRevealed ? 'var(--primary-dark)' : '#ffffff',
+                                                                            border: '1px solid ' + (isAnswerRevealed ? '#bae6fd' : 'var(--primary-dark)'),
+                                                                            padding: '3px 10px',
                                                                             borderRadius: '6px',
                                                                             fontSize: '0.78rem',
-                                                                            fontWeight: 600,
-                                                                            cursor: 'pointer'
+                                                                            fontWeight: 700,
+                                                                            cursor: 'pointer',
+                                                                            boxShadow: isAnswerRevealed ? 'none' : '0 1px 3px rgba(2, 132, 199, 0.3)',
+                                                                            transition: 'all 0.15s ease'
                                                                         }}
                                                                     >
-                                                                        {isAnswerRevealed ? '收起答案' : '💡 答案与解析'}
+                                                                        {isAnswerRevealed ? '收起答案' : '答案'}
                                                                     </button>
                                                                 </div>
                                                                 <div style={{ color: '#1e293b', lineHeight: '1.6', fontWeight: 500 }}>
