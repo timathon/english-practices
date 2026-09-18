@@ -15,6 +15,8 @@ import { TestSheetShell } from './TestSheetShell'
 import { AudioDetectiveShell } from './AudioDetectiveShell'
 import { BugHunterShell } from './BugHunterShell'
 import { VerbReferenceShell } from './VerbReferenceShell'
+import { PassageClozeShell } from './PassageClozeShell'
+import { GrammarIndexShell } from './GrammarIndexShell'
 
 import { practiceCache } from '../lib/practiceCache'
 import { cache } from '../lib/cache'
@@ -248,6 +250,14 @@ export function PracticeShell() {
 
     if (cleanType.startsWith('irregular-verbs') || cleanType.startsWith('verb-expressions')) {
         return <VerbReferenceShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} unit={practice.unit} />
+    }
+
+    if (cleanType.startsWith('passage-cloze') || cleanType.startsWith('grammar-cloze') || cleanType.endsWith('-cloze') || cleanType === 'yp' || cleanType.startsWith('yp-') || cleanType.endsWith('-yp') || cleanType.includes('-yp-') || cleanType.startsWith('a10-yp-') && !cleanType.includes('index')) {
+        return <PassageClozeShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
+    if (cleanType.startsWith('grammar-index') || cleanType.startsWith('cloze-index') || cleanType.startsWith('yp-index') || cleanType.endsWith('-yp-index') || cleanType.includes('grammar-index') || cleanType.includes('cloze-index')) {
+        return <GrammarIndexShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} unit={practice.unit} />
     }
 
     return (

@@ -810,6 +810,45 @@ module.exports = {
 - **Passage Format:** `passage` can be represented as either a single string or an array of strings (e.g. `["[HTML: <svg...>]", "1. text..."]`). The array format is supported in frontend components and can be used for easier editing and readability of multi-illustration / comic strip passages.
 - **Question Types:** Supports `multiple-choice`, `true-false`, `reading-comprehension`, `cloze-passage`, `cloze-passage-wordbank`, `fill-in-the-blank-wordbank`, `fill-in-the-blank-firstletter`, `dialogue-completion`, `definition-matching`, `matching`, `put-words-in-order`.
 
+## 15. Passage Cloze / Grammar Fill-in-the-Blank (YP) & Grammar Index
+**Source:** Cloze training markdown (e.g., `*-yp-1.md`) or cheatsheet markdown (`*-yp-intro.md`).
+**Target:** 
+- Practice Data: `*-yp-*.json` (e.g., `a10-yp-1.json`, type: `yp` / `passage-cloze`)
+- Grammar Reference & Index: `*-grammar-index.json` (e.g., `a10-yp-grammar-index.json`, type: `grammar-index`)
+
+### A. Practice Data Schema (`*-yp-*.json`)
+- **Naming Convention:** Files under `a10-yp` are named `a10-yp-1.json`, `a10-yp-2.json`, etc. (the `yp` abbreviation represents 语篇填空).
+- **Structure:**
+  - Top-level object with `level`, `title`, `storageSuffix`, `primaryColor`, `primaryColorDark`, and `sections` array.
+  - Each section represents an article (e.g., Passage A through J), containing:
+    - `id`: unique section ID (e.g. `sec_a`).
+    - `title`: Passage heading (e.g. `Passage A - Ding Chen's Invention`).
+    - `icon`: Relevant emoji icon.
+    - `raw_text`: Array of sentence strings representing the passage with blanks formatted as `1. ________` or `2. ________ (base_word)`. Subheadings start with `#`.
+    - `filled_text`: Array of complete, pure English sentence strings with correct answers filled in into the blanks (no blank numbers, underscores, prompt parentheses, or Chinese vocabulary annotations/glosses like `(节气)`, `(助力器)`, `(溺水)`). Subheadings start with `#`. Matches `raw_text` 1-to-1 (`len(raw_text) == len(filled_text)`).
+    - `filled_text_cn`: Array of complete, natural Chinese translations corresponding to each sentence in `filled_text` 1-to-1 (`len(raw_text) == len(filled_text_cn)`). Subheadings are also translated (e.g. `# 关于健康的建议`).
+    - `questions`: Array of 10 question objects:
+      - `id`: Unique question ID (e.g. `yp_a_1`).
+      - `blank_num`: Integer 1-10.
+      - `prompt_type`: `'given'` (for content words with base word) or `'none'` (for function words/grammar words).
+      - `base_word`: Base word string if given (e.g. `"have"`), or `null`.
+      - `grammar_category`: `"noun"` | `"verb"` | `"adj_adv"` | `"numeral"` | `"pronoun"` | `"article"` | `"conjunction"` | `"preposition"`.
+      - `grammar_point_id`: ID corresponding to the grammar taxonomy in `*-grammar-index.json` (e.g. `"verb_tense"`, `"noun_plural"`, `"prep_collocation"`).
+      - `grammar_point_name`: Concise Chinese label (e.g. `"一般过去时"`, `"可数名词复数"`).
+      - `sentence_index`: 0-based index pointing directly to the sentence in the `raw_text` (and `raw_text_cn`) array containing this blank (avoids data duplication).
+      - `options`: Exactly 4 plausible multiple-choice options (1 correct + 3 trap distractors).
+      - `answer`: Correct option index (0-3).
+      - `explanation`: Detailed Chinese grammatical explanation.
+      - `rule_summary`: Concise one-line grammar rule reminder.
+
+### B. Grammar Knowledge Index Schema (`*-grammar-index.json`)
+- **Structure:**
+  - `title`: Index title.
+  - `overview`: Explains question allocation (6-7 content words with prompts, 3-4 function words without prompts) and solving strategies ("一看二思" and "二定").
+  - `categories`: Array of 8 grammar categories, each containing:
+    - `id`, `name`, `icon`.
+    - `points`: Array of specific grammar rules, each having `id`, `name`, `rule`, `example`, `tags`.
+
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.** If the textbook for the generated JSONs does not exist in `v2/public/textbooks.json` or `v2/src/lib/textbooks.ts`, you must add the textbook to both files.
 

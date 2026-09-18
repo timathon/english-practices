@@ -250,6 +250,20 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
                             }
                         });
                     }
+                } else if (file.includes('-yp-') || file.includes('-cloze') || file.includes('-passage-cloze')) {
+                    if (content.sections && Array.isArray(content.sections)) {
+                        content.sections.forEach(section => {
+                            const items = section.filled_text || section.raw_text || [];
+                            if (Array.isArray(items)) {
+                                items.forEach(s => {
+                                    if (typeof s === 'string') {
+                                        const clean = s.replace(/^#+\s*/, '').trim();
+                                        if (clean) textsSet.add(getCleanText(clean));
+                                    }
+                                });
+                            }
+                        });
+                    }
                 } else if (file.includes('-irregular-verbs')) {
                     if (content.verbs && Array.isArray(content.verbs)) {
                         content.verbs.forEach(v => {

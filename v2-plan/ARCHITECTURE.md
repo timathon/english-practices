@@ -87,7 +87,53 @@ When a user request matches one of these scenarios, edit the indicated file **im
 
 ---
 
-## 3. Architecture Expansion Roadmap
+## 3. Passage Cloze & Grammar Knowledge Index Architecture (`PassageClozeShell.tsx` & `GrammarIndexShell.tsx`)
+
+The Passage Cloze module (**语篇填空 / YP**) provides exam-realistic fill-in-the-blank practice with active recall, coupled with a bidirectional grammar knowledge taxonomy and interactive modals.
+
+### File Responsibility Index
+
+| File Path | Role & Responsibilities | Key Functions / Exports |
+| :--- | :--- | :--- |
+| [`v2/src/components/PassageClozeShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/PassageClozeShell.tsx) | **Interactive Cloze Shell.** Manages split viewport (upper passage blanks + lower active recall / 4-option cards), countdown timer, sound effects, question navigation, in-place grammar point modal, and question review table. | `PassageClozeShell` component |
+| [`v2/src/components/PassageClozeShell.css`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/PassageClozeShell.css) | **Cloze & Index styles.** Split layout, active/answered blank pills (`.cloze-blank-pill`), option buttons, explanation banners, review table, modal overlay, and preposition guide styles. | Styles for `.cloze-*`, `.prep-*` containers |
+| [`v2/src/components/GrammarIndexShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/GrammarIndexShell.tsx) | **Grammar Reference & Index.** Displays categorized rule cards, 📖 介词详解 (Preposition Guide Modal with alphabetical tabs & polysemy), and dynamically aggregates all questions in the unit testing each rule. | `GrammarIndexShell` component |
+| [`v2/src/components/PracticeShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/PracticeShell.tsx) | **Top-level Router & Shell Dispatcher.** Routes `a10-yp-*` / `passage-cloze` practice IDs to `PassageClozeShell`, and `*grammar-index` IDs to `GrammarIndexShell`. | `PracticeShell` component |
+| [`scripts/genai/gen_11_yp.py`](file:///home/timathon/codes/smartedu/english-practices/scripts/genai/gen_11_yp.py) | **GenAI Cloze Generator.** Parses unit markdown files into standardized Passage Cloze JSON format with sentence arrays, strict 4-distractor options, and grammar taxonomy mappings. | Python CLI script |
+
+---
+
+### Data Schema & Conventions for Passage Cloze (YP)
+
+- **Storage & Suffix:** `*-yp-*.json` files live in `v2-data/A10/a10-yp/`.
+- **Passage Text Structure (`raw_text`, `filled_text` & `filled_text_cn`):** Passages contain 3 parallel arrays of discrete sentences (strings):
+  1. `raw_text`: The test-authentic passage with blanks (e.g. `1. ________ (use)`).
+  2. `filled_text`: The complete, pure English passage with correct answers filled in (no blanks, prompt brackets, or Chinese annotations/glosses like `(节气)`).
+  3. `filled_text_cn`: The complete, natural Chinese translations for each sentence in `filled_text`.
+  Sub-headings (e.g., `# Suggestions on health`) are preserved in all 3 arrays at the identical index.
+- **Question Mapping (`sentence_index`):** Each question item in `questions` specifies `sentence_index: number`, which points directly to the 0-based index of its sentence in `raw_text`, `filled_text`, and `filled_text_cn`.
+- **Taxonomy Alignment:** Each question includes `grammar_category` (e.g. `verb`, `noun`, `adj_adv`, `article`, `conjunction`, `preposition`) and `grammar_point_id` (e.g. `verb_voice`, `verb_tense`, `verb_infinitive`, `comparison_degree`, `prep_collocation`) linking directly to `a10-yp-grammar-index.json`.
+
+---
+
+### Direct-Edit Routing Table for Passage Cloze & Grammar Index
+
+When a user request matches one of these scenarios, edit the indicated file **immediately**:
+
+1. **Bug or tweak in Cloze Split Viewport, Sentence Highlighting, Active Recall ("Show Options"), or Option Selection**:
+   👉 Edit [`v2/src/components/PassageClozeShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/PassageClozeShell.tsx).
+2. **Cloze or Grammar Index Styling (Pill metrics, line distance, active sentence styles, option buttons, modal overlay)**:
+   👉 Edit [`v2/src/components/PassageClozeShell.css`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/PassageClozeShell.css).
+3. **Grammar Rule Cards, Taxonomy Filtering, 📖 介词详解 modal, or Cross-Referenced Questions List**:
+   👉 Edit [`v2/src/components/GrammarIndexShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/GrammarIndexShell.tsx).
+4. **Practice Shell Routing for Cloze or Grammar Index**:
+   👉 Edit [`v2/src/components/PracticeShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/PracticeShell.tsx).
+5. **Passage Cloze Data Generation & Extraction Pipeline**:
+   👉 Edit [`scripts/genai/gen_11_yp.py`](file:///home/timathon/codes/smartedu/english-practices/scripts/genai/gen_11_yp.py).
+
+---
+
+## 4. Architecture Expansion Roadmap
 
 The following modules will be documented and added to this architecture map in future phases:
 

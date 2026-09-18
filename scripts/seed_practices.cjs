@@ -301,6 +301,9 @@ async function seed() {
                 'passage-decoder',
                 'irregular-verbs',
                 'verb-expressions',
+                'grammar-index',
+                'passage-cloze',
+                'cloze',
                 'test'
             ];
             

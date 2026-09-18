@@ -680,6 +680,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                       const isPD = p.type.toLowerCase().includes('passage-decoder');
                       const isAD = p.type.toLowerCase().includes('audio-detective');
                       const isTN = p.type.toLowerCase().includes('text-navigator');
+                      const isCloze = p.type.toLowerCase().includes('cloze');
 
                       if ((isVM || isSA || isGW) && p.content?.challenges) {
                         total = p.content.challenges.length;
@@ -692,7 +693,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                           }
                         }
                         if (doneCount > 0) avg = Math.round(sumMax / doneCount);
-                      } else if ((isPD || isAD) && p.content?.sections) {
+                      } else if ((isPD || isAD || isCloze) && p.content?.sections) {
                         total = p.content.sections.length;
                         let sumMax = 0;
                         const baseId = isAD ? p.id.replace(/-ad$/, '') : p.id;

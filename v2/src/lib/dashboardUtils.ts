@@ -52,6 +52,12 @@ export const translatePracticeName = (name: string): string => {
   if (norm.startsWith('Verb Expressions')) {
     return norm.replace(/^Verb Expressions/i, '动词短语与搭配');
   }
+  if (norm.startsWith('Passage Cloze') || norm.startsWith('Grammar Cloze')) {
+    return norm.replace(/^(Passage|Grammar) Cloze/i, '语篇填空');
+  }
+  if (norm.startsWith('Grammar Index') || norm.startsWith('Cloze Index')) {
+    return norm.replace(/^(Grammar|Cloze) Index/i, '考点精讲与索引');
+  }
   if (norm.startsWith('Test')) {
     return norm.replace(/^Test/i, '单元测试');
   }
