@@ -8,6 +8,24 @@ import { VocabTraceModal } from './VocabTraceModal'
 import { VocabFlashcardModal } from './VocabFlashcardModal'
 import { VocabDictationModal } from './VocabDictationModal'
 
+function formatMeaning(item: any): string {
+    if (!item || !item.meaning) return ''
+    const meaning = String(item.meaning)
+    const isPhrase = item.syllable_type === 'phrase' || (typeof item.word === 'string' && item.word.trim().includes(' '))
+    if (isPhrase) {
+        if (/^phrase\b/i.test(meaning)) {
+            return meaning
+        }
+        // If it starts with a standard single-word POS prefix like "v. ", "n. ", "adj. ", etc., replace with "phrase "
+        const posRegex = /^([a-zA-Z]+\.\s*(?:&|and)?\s*[a-zA-Z]*\.?\s*)/i
+        if (posRegex.test(meaning)) {
+            return meaning.replace(posRegex, 'phrase ')
+        }
+        return `phrase ${meaning}`
+    }
+    return meaning
+}
+
 export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const isCf = data?.tts?.by === 'melotts';
     const [vocab, setVocab] = useState<any[]>([])
@@ -311,7 +329,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                             }}>
                                                 <span className="vg-label">🇨🇳 中文释义:</span>
                                                 <span className="vg-value">
-                                                    {(!hideCN || forceShowCN.has(item.originalIndex)) ? item.meaning : <span className="vg-placeholder">Click to show</span>}
+                                                    {(!hideCN || forceShowCN.has(item.originalIndex)) ? formatMeaning(item) : <span className="vg-placeholder">Click to show</span>}
                                                 </span>
                                             </div>
 
@@ -404,7 +422,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     {c2eWords.map((item, idx) => (
                         <div key={item.originalIndex ?? idx} className="vg-c2e-item">
                             <span className="vg-c2e-num">{idx + 1}.</span>
-                            <span className="vg-c2e-meaning">{item.meaning}</span>
+                            <span className="vg-c2e-meaning">{formatMeaning(item)}</span>
                             <span className="vg-c2e-blank-line"></span>
                         </div>
                     ))}
