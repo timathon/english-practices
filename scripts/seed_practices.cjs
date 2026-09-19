@@ -234,8 +234,33 @@ async function seed() {
             }
         }
     } else {
-        for (const relPath of changedFiles) {
-            const fullPath = path.resolve(relPath);
+        function findJsonFiles(dir) {
+            let results = [];
+            if (!fs.existsSync(dir)) return results;
+            const list = fs.readdirSync(dir);
+            list.forEach(file => {
+                const fullPath = path.join(dir, file);
+                const stat = fs.statSync(fullPath);
+                if (stat && stat.isDirectory()) {
+                    results = results.concat(findJsonFiles(fullPath));
+                } else if (file.endsWith('.json')) {
+                    results.push(fullPath);
+                }
+            });
+            return results;
+        }
+
+        const expandedFiles = [];
+        for (const argPath of changedFiles) {
+            const fullPath = path.resolve(argPath);
+            if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+                expandedFiles.push(...findJsonFiles(fullPath));
+            } else {
+                expandedFiles.push(fullPath);
+            }
+        }
+
+        for (const fullPath of expandedFiles) {
             const relativeToData = path.relative(dataDir, fullPath);
             const parts = relativeToData.split(path.sep);
             if (parts.length < 2) continue; // Not inside a textbook subfolder
