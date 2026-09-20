@@ -2,23 +2,23 @@
 > **Total PDF Pages:** 4
 > **Currently Processing:** Pages 1 to 4
 
-### --- PRINTED PAGE 123 ---
-
-[*LAYOUT: Header centered "Unit 2单元作业", subheader with test duration and score: "考试时间: 45分钟 满分: 90分"*]
+### --- PRINTED PAGE 124 ---
 
 # Unit 2单元作业
 
-## 第一部分 选择题 (共50分)
+考试时间: 45分钟 满分: 90分
 
-### 一、阅读理解 (共16小题, 每小题2.5分; 满分40分)
+# 第一部分 选择题 (共50分)
 
-第一节 阅读下面的语言材料, 从每题所给的A、B、C、D四个选项中选出最佳选项。
+## 一、阅读理解 (共16小题, 每小题2.5分; 满分40分)
+
+### 第一节 阅读下面的语言材料, 从每题所给的A、B、C、D四个选项中选出最佳选项。
 
 #### A
 
 I am Julie Black. Linda, Gina and Bill are my good friends.
 
-| Name | Details |
+| Name | Introduction |
 | :--- | :--- |
 | **Linda Miller** | I'm Linda. My grandfather is Tom. He is 70 now. Paul is my father. And my mother's name is Jenny. She's very nice. I love my family very much. |
 | **Gina Brown** | There are four people in my family—my grandmother, my parents and I. My grandmother's name is Mary. My parents are Lucy and Tony. They are Chinese teachers in my school. |
@@ -39,9 +39,9 @@ D. seven
 ( ) 3. Which of the following is TRUE?  
 A. Jenny and Paul are sister and brother.  
 
-### --- PRINTED PAGE 124 ---
+### --- PRINTED PAGE 125 ---
 
-[*LAYOUT: Header labeled "英语 七年级 人教版 Unit 2单元作业"*]
+[*LAYOUT: Header reads "英语 七年级 人教版 Unit 2单元作业"*]
 
 B. Lucy is an English teacher in Gina's school.  
 C. Sally's last name is Brown.  
@@ -89,17 +89,17 @@ D. his school life
 
 #### C
 
-> **Happiest Memories (回忆)**
-> 
+> ### Happiest Memories (回忆)
+>
 > My happiest memory is about my great-grandmother (曾祖母). She always keeps candy (糖果) in her pockets (口袋), and she always gives us some when we come to visit. My dad says, "Grandma, don't give them any candy!" But she did.  
 > —*Rosa, Mexico*
-> 
+>
 > All my aunts and uncles come over for Sunday dinner and there are always about 12 of us around a big table. My cousins and I crawl (爬) under it during dinner and play. I am an only child, so it is nice to be part of a big family.  
 > —*Vasily, Russia*
-> 
+>
 > My sister lives next door. I'm only a little older than my sister's kids, so I grow up with my niece (外甥女) and nephew (外甥). I go over there a lot, and we play together. I am their favourite aunt.  
 > —*Haruka, Japan*
-> 
+>
 > I love playing basketball with my four brothers. I grow up in a blended family (混合家庭), with two stepbrothers (继兄; 继弟) and two half-brothers (同父异母兄弟). Anyway, the five of us play basketball on a team, and we always win.  
 > —*Justin, Canada*
 
@@ -121,21 +121,19 @@ B. Haruka lives next to her sister's family.
 C. Haruka grows up with her niece and cousin.  
 D. Vasily's big family will get together on Saturdays.  
 
-### --- PRINTED PAGE 125 ---
-
-[*LAYOUT: Header labeled "英语七年级上册 人教版 Unit 2单元作业"*]
-
 ( ) 12. What is the passage mainly about?  
 A. Sweet candy in the pockets.  
 B. Big dinners on weekends.  
 C. Great time with their family.  
 D. Nice brothers and sisters.  
 
-#### 第二节 阅读短文, 从方框所给的选项中选出可以填入空白处的最佳选项, 其中有一个多余的选项。
+### 第二节 阅读短文, 从方框所给的选项中选出可以填入空白处的最佳选项, 其中有一个多余的选项。
 
-Good morning, everyone! Nice to meet you! My name is Susan. I'm nine years old. Now let me tell you something about my family. 13. ________
+Good morning, everyone! Nice to meet you! My name is Susan. I'm nine years old. Now let me tell you something about my family. 13. ________ Look at the first one! 14. ________ My mother is very beautiful and my father is very handsome. 15. ________
 
-Look at the first one! 14. ________ My mother is very beautiful and my father is very handsome. 15. ________
+### --- PRINTED PAGE 126 ---
+
+[*LAYOUT: Header reads "英语 七年级上册 人教版 Unit 2单元作业"*]
 
 Who are in the next photo? They're my grandparents, my sister and me. My grandparents say I look like my sister. We're very lovely. Don't you think so? 16. ________ I love my family very much.
 
@@ -145,32 +143,26 @@ Who are in the next photo? They're my grandparents, my sister and me. My grandpa
 > D. You can see my parents in it.  
 > E. There are six people in my family.  
 
----
-
-### 二、完形填空 (共10小题, 每小题1分; 满分10分)
+## 二、完形填空 (共10小题, 每小题1分; 满分10分)
 
 阅读短文, 理解其大意, 从A、B、C、D四个选项中选出可以填入空白处的最佳选项。
 
-My name is David. 17. ________ an English boy. I'm 13 now. I like taking photos. Look at the 18. ________ on my desk. It's a photo of my 19. ________. In it you can see 20. ________ people. These are my grandparents. 21. ________ look very nice. Behind (在……的后面) them are my parents. My dad is wearing (穿) a black jacket and his favourite 22. ________ is black. My mom is wearing a red dress and she looks very beautiful. 23. ________ is the girl in the middle of my parents? She's my sister. She's only 3. My cousin is in this photo, too. 24. ________ name is Mike Brown. Brown is his 25. ________ name. Where am I? Oh, I'm behind Mike. I'm playing with my dog. It is 26. ________. Mike's jacket is white, too. I love my family!
+My name is David. 17. ________ an English boy. I'm 13 now. I like taking photos. Look at the 18. ________ on my desk. It's a photo of my 19. ________ In it you can see 20. ________ people. These are my grandparents. 21. ________ look very nice. Behind (在……的后面) them are my parents. My dad is wearing (穿) a black jacket and his favourite 22. ________ is black. My mom is wearing a red dress and she looks very beautiful. 23. ________ is the girl in the middle of my parents? She's my sister. She's only 3. My cousin is in this photo, too. 24. ________ name is Mike Brown. Brown is his 25. ________ name. Where am I? Oh, I'm behind Mike. I'm playing with my dog. It is 26. ________ Mike's jacket is white, too. I love my family!
 
-| No. | Option A | Option B | Option C | Option D |
-| :---: | :--- | :--- | :--- | :--- |
-| ( ) 17. | It's | I'm | She's | He's |
-| ( ) 18. | phone | map | photo | jacket |
-| ( ) 19. | school | family | quilt | day |
-| ( ) 20. | four | five | six | seven |
-| ( ) 21. | He | She | It | They |
-| ( ) 22. | number | name | colour | ruler |
-| ( ) 23. | Who | What | How | What colour |
-| ( ) 24. | Her | His | Your | My |
-| ( ) 25. | friend | first | middle | last |
-| ( ) 26. | white | black | brown | yellow |
+( ) 17. A. It's B. I'm C. She's D. He's  
+( ) 18. A. phone B. map C. photo D. jacket  
+( ) 19. A. school B. family C. quilt D. day  
+( ) 20. A. four B. five C. six D. seven  
+( ) 21. A. He B. She C. It D. They  
+( ) 22. A. number B. name C. colour D. ruler  
+( ) 23. A. Who B. What C. How D. What colour  
+( ) 24. A. Her B. His C. Your D. My  
+( ) 25. A. friend B. first C. middle D. last  
+( ) 26. A. white B. black C. brown D. yellow  
 
----
+# 第二部分 非选择题 (共40分)
 
-## 第二部分 非选择题 (共40分)
-
-### 三、用括号内所给单词的正确形式填空 (共10小题, 每小题1分; 满分10分)
+## 三、用括号内所给单词的正确形式填空 (共10小题, 每小题1分; 满分10分)
 
 27. Are ________ (that) your books?  
 28. These are my ________ (photo).  
@@ -184,22 +176,20 @@ My name is David. 17. ________ an English boy. I'm 13 now. I like taking photos.
 36. —Who ________ (be) the women behind you?  
 —Mary and Kate.  
 
----
-
-### 四、阅读与表达 (共4小题, 37-39小题, 每小题2分, 40小题4分; 满分10分)
+## 四、阅读与表达 (共4小题, 37-39小题, 每小题2分, 40小题4分; 满分10分)
 
 阅读短文, 然后根据内容回答问题。
 
-> **Why Do Families Love Doing Things Together?**
-> 
+> ### Why Do Families Love Doing Things Together?
+>
 > Family time is important for everyone, especially for students like you. Do you know why families love doing activities together? Let's find out!
-> 
+>
 > First, doing things together makes family members closer. When you play ping-pong with your dad, cook hot pot with your mom, or talk about your school day at dinner, you share your feelings and stories. This helps you understand each other better.
-> 
+>
 > Second, family activities bring happiness. Think about the last time you went hiking with your family. You laughed when you picked small flowers, or when your brother fell down (but he was OK!). These happy moments stay in your heart for a long time.
-> 
+>
 > Third, you can learn new things from family activities. If your mom teaches you to make noodles, you learn a new skill. If your dad teaches you to play Chinese chess, you learn to think carefully. Even playing simple games together can teach you to work with others.
-> 
+>
 > So, next time your family asks you to do something together—say "yes"! It's good for you and your family.
 
 37. What can doing activities together help family members do?  
@@ -207,7 +197,9 @@ My name is David. 17. ________ an English boy. I'm 13 now. I like taking photos.
 39. What can you learn if your dad teaches you to play Chinese chess?  
 40. What happy family moments do you remember? Write 30 words or more.  
 
-## Answer Key
+---
+
+## Answer Key:
 
 一、1-4 DBDA 5-8 CBDB 9-12 DDBC 13-16 BDCA  
 二、17-21 BCBDD 22-26 CABDA  
