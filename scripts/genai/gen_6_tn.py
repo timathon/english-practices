@@ -189,7 +189,6 @@ def main():
     else:
         section_instructions = '- Sections to include: any sections containing long English articles/passages/dialogues. DO NOT include "The Friendly Farm" or "Literature" sections.'
 
-    client = genai.Client(api_key=api_key)
     prompt = PROMPT_TEMPLATE.format(
         level=args.level, 
         part=args.part, 
@@ -197,54 +196,57 @@ def main():
         source=source
     )
 
+    # Execution stages:
+    # 1. model_high (3.8) with free key (3 attempts)
+    # 2. model_high (3.8) with paid key (3 attempts)
+    # 3. model_low (3.5) with free key (3 attempts)
+    free_key = os.environ.get("GOOGLE_API_KEY_FREE") or api_key
+    paid_key = os.environ.get("GOOGLE_API_KEY")
+
+    stages = [
+        ("gemini-3.8-flash", free_key, "free key"),
+    ]
+    if paid_key and paid_key != free_key:
+        stages.append(("gemini-3.8-flash", paid_key, "paid key"))
+    stages.append(("gemini-3.5-flash-lite", free_key, "free key"))
+
     import time
     response = None
     actual_model = model_name
 
-    # Try primary model (gemini-3.8-flash) up to 3 times
-    print(f"Calling {model_name} for: {md_path}", file=sys.stderr)
-    for attempt in range(3):
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    thinking_config=types.ThinkingConfig(thinking_level="low"),
-                    temperature=0.3,
-                    response_mime_type="application/json"
-                )
-            )
-            break
-        except Exception as e:
-            print(f"Error calling Gemini API ({model_name}, attempt {attempt + 1}/3): {e}", file=sys.stderr)
-            if attempt < 2:
-                time.sleep(2 ** attempt)
-
-    # Fallback to model_low (gemini-3.5-flash-lite) if primary model failed and fallback exists
-    if response is None:
-        fallback_model = get_fallback_model(model_name)
-        if fallback_model:
-            print(f"All 3 attempts failed for {model_name}. Falling back to {fallback_model}...", file=sys.stderr)
-            actual_model = fallback_model
-            for attempt in range(3):
-                try:
-                    response = client.models.generate_content(
-                        model=fallback_model,
-                        contents=prompt,
-                        config=types.GenerateContentConfig(
-                            thinking_config=types.ThinkingConfig(thinking_level="low"),
-                            temperature=0.3,
-                            response_mime_type="application/json"
-                        )
+    for stage_idx, (curr_model, curr_key, key_label) in enumerate(stages):
+        if not curr_key:
+            continue
+        print(f"Calling {curr_model} ({key_label}) for: {md_path}", file=sys.stderr)
+        client = genai.Client(api_key=curr_key)
+        stage_succeeded = False
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model=curr_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        thinking_config=types.ThinkingConfig(thinking_level="low"),
+                        temperature=0.3,
+                        response_mime_type="application/json"
                     )
-                    break
-                except Exception as e:
-                    print(f"Error calling Gemini API ({fallback_model}, attempt {attempt + 1}/3): {e}", file=sys.stderr)
-                    if attempt == 2:
-                        raise e
+                )
+                actual_model = curr_model
+                stage_succeeded = True
+                break
+            except Exception as e:
+                print(f"Error calling Gemini API ({curr_model} with {key_label}, attempt {attempt + 1}/3): {e}", file=sys.stderr)
+                if attempt < 2:
                     time.sleep(2 ** attempt)
-        else:
-            raise RuntimeError(f"Failed to generate content with {model_name}")
+
+        if stage_succeeded:
+            break
+        elif stage_idx < len(stages) - 1:
+            next_model, _, next_label = stages[stage_idx + 1]
+            print(f"All 3 attempts failed for {curr_model} ({key_label}). Falling back to {next_model} ({next_label})...", file=sys.stderr)
+
+    if response is None:
+        raise RuntimeError("Failed to generate content after exhausting all fallback stages.")
 
     parsed = extract_json(response.text)
 
