@@ -131,7 +131,7 @@ function syncAudioRecords(targetAbsPath, items, bName) {
 /**
  * Runs TTS synthesis for a target (directory, practice file, or chirp job JSON).
  */
-async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5, speakingRate = 0.9, forceRegenerate = false, targetHashes = null }) {
+async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5, speakingRate = 0.9, forceRegenerate = false, targetHashes = null, rpmLimit = 50 }) {
     const absoluteTarget = path.resolve(targetPath);
     if (!fs.existsSync(absoluteTarget)) {
         throw new Error(`Target path not found: ${absoluteTarget}`);
@@ -167,6 +167,7 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
     console.log(`📚 Category/Book name: ${bookName}`);
     console.log(`⚡ Concurrency Batch Size: ${batchSize}`);
     console.log(`⏱️  Speaking Rate: ${speakingRate}x`);
+    console.log(`🚦 Rate Limit: max ${rpmLimit} requests/min`);
     if (explicitVoice) {
         console.log(`🗣️  Voice: Fixed (${explicitVoice})`);
     } else {
@@ -452,12 +453,36 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
 
     console.log(`📁 Saving generated MP3s locally to: ${batchOutputDir}`);
     console.log(`📄 Job state tracking JSON: ${jobJsonPath}`);
-    console.log(`🚀 Starting GCP Chirp 3 concurrent generation (batch size ${batchSize}) for ${indicesToSynthesize.length} items...\n`);
+    console.log(`🚀 Starting GCP Chirp 3 concurrent generation (batch size ${batchSize}, rate limit: ${rpmLimit} req/min) for ${indicesToSynthesize.length} items...\n`);
 
     let completedCount = 0;
+    const requestTimestamps = []; // tracks timestamps (ms) of requests sent in current window
 
     for (let index = 0; index < indicesToSynthesize.length; index += batchSize) {
+        // Enforce Rate Limit: check requests made in the last 60 seconds
+        const now = Date.now();
+        // Remove timestamps older than 60 seconds
+        while (requestTimestamps.length > 0 && now - requestTimestamps[0] >= 60000) {
+            requestTimestamps.shift();
+        }
+
         const chunkIndices = indicesToSynthesize.slice(index, index + batchSize);
+        if (requestTimestamps.length + chunkIndices.length > rpmLimit) {
+            const oldestInWindow = requestTimestamps[0];
+            const sleepMs = Math.max(1000, 60000 - (now - oldestInWindow) + 1000); // sleep till oldest request expires + 1s buffer
+            const sleepSecs = Math.ceil(sleepMs / 1000);
+            console.log(`\n⏳ Rate limit reached (${requestTimestamps.length}/${rpmLimit} req/min). Sleeping ${sleepSecs}s until next minute window...`);
+            await new Promise(resolve => setTimeout(resolve, sleepMs));
+            // Recalculate timestamps after sleeping
+            const afterSleep = Date.now();
+            while (requestTimestamps.length > 0 && afterSleep - requestTimestamps[0] >= 60000) {
+                requestTimestamps.shift();
+            }
+        }
+
+        // Record request timestamps for this batch
+        const batchStart = Date.now();
+        chunkIndices.forEach(() => requestTimestamps.push(batchStart));
 
         await Promise.all(chunkIndices.map(async (i) => {
             const item = jobState.items[i];

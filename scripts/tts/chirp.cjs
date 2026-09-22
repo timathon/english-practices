@@ -10,6 +10,7 @@
  * 
  * Flags:
  *   --batch <size> Set concurrent request batch size (default: 5).
+ *   --rpm <limit>  Set requests per minute limit (default: 50). Sleeps until next window when hit.
  *   --voice <name> Fix voice name (default: rotates through 30 Chirp 3 HD voices).
  *   --rate <speed> Set speaking rate (default: 0.9 for EFL learner clarity).
  *   --regenerate   Force regeneration of all audios.
@@ -18,7 +19,7 @@
  * 
  * Examples:
  *   node scripts/tts/chirp.cjs v2-data/A8A/a8a-u8
- *   node scripts/tts/chirp.cjs v2-data/A8A/a8a-u8/a8a-u8-vocab-guide.json --batch 10 --rate 0.9
+ *   node scripts/tts/chirp.cjs v2-data/A8A/a8a-u8/a8a-u8-vocab-guide.json --batch 5 --rpm 50
  *   node scripts/tts/chirp.cjs v2-data/A8A/a8a-u8 --voice Kore
  */
 
@@ -44,6 +45,12 @@ async function main() {
         batchSize = parseInt(args[batchIdx + 1], 10);
     }
 
+    let rpmLimit = 50;
+    const rpmIdx = args.indexOf('--rpm');
+    if (rpmIdx !== -1 && args[rpmIdx + 1] && !isNaN(parseInt(args[rpmIdx + 1], 10))) {
+        rpmLimit = parseInt(args[rpmIdx + 1], 10);
+    }
+
     let speakingRate = 0.9;
     const rateIdx = args.indexOf('--rate');
     if (rateIdx !== -1 && args[rateIdx + 1] && !isNaN(parseFloat(args[rateIdx + 1]))) {
@@ -65,12 +72,13 @@ async function main() {
     const targetArg = args.find(a => !a.startsWith('--') && 
         (args[args.indexOf(a) - 1] !== '--voice') && 
         (args[args.indexOf(a) - 1] !== '--batch') && 
+        (args[args.indexOf(a) - 1] !== '--rpm') && 
         (args[args.indexOf(a) - 1] !== '--rate') && 
         (args[args.indexOf(a) - 1] !== '--hashes') && 
         (args[args.indexOf(a) - 1] !== '--port'));
 
     if (!targetArg) {
-        console.error("Usage: node scripts/tts/chirp.cjs <unit_directory_or_file_or_chirp_json_path> [--regenerate] [--voice <name>] [--batch <size>] [--rate <speed>] [--no-play]");
+        console.error("Usage: node scripts/tts/chirp.cjs <unit_directory_or_file_or_chirp_json_path> [--regenerate] [--voice <name>] [--batch <size>] [--rpm <limit>] [--rate <speed>] [--no-play]");
         process.exit(1);
     }
 
@@ -79,6 +87,7 @@ async function main() {
         targetPath: targetArg,
         explicitVoice,
         batchSize,
+        rpmLimit,
         speakingRate,
         forceRegenerate,
         targetHashes

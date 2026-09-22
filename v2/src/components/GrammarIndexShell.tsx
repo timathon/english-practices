@@ -31,8 +31,8 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
             }
         }
 
-        // Support both 1 and 2 (e.g. a10-yp-1 and a10-yp-2)
-        const candidatePracticeIds = [`${basePrefix}-1`, `${basePrefix}-2`];
+        // Support practices 1 through 4 (e.g. a10-yp-1, a10-yp-2, a10-yp-3, a10-yp-4)
+        const candidatePracticeIds = [`${basePrefix}-1`, `${basePrefix}-2`, `${basePrefix}-3`, `${basePrefix}-4`];
         const loadedQuestionsMap: { [pid: string]: any[] } = {};
 
         const updateAllQuestions = () => {
@@ -344,7 +344,8 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                                                                         </div>
                                                                         {rq.explanation && (
                                                                             <div style={{ color: '#475569', fontSize: '0.84rem', lineHeight: '1.5' }}>
-                                                                                <strong>解析：</strong>{rq.explanation}
+                                                                                <strong>解析：</strong>
+                                                                                {rq.explanation.replace(/^句意[:：]\s*.*?[。！？\.\?!]\s*/, '').trim() || rq.explanation}
                                                                             </div>
                                                                         )}
                                                                         {rq.rule_summary && (

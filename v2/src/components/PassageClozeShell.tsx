@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useBlocker } from 'react-router-dom'
 import './PassageClozeShell.css'
 import { DailyLockModal } from './DailyLockModal'
@@ -13,9 +13,13 @@ import { useSession, API_URL } from '../lib/auth'
 import { mistakeService } from '../lib/mistakeService'
 import { petService } from '../lib/petService'
 import { useCountdown } from '../lib/useCountdown'
-import { CountdownRing } from './CountdownRing'
 import md5 from 'md5'
 import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
+import { GrammarPointModal } from './cloze/GrammarPointModal'
+import { ArticleReadingModal } from './cloze/ArticleReadingModal'
+import { PassageViewport } from './cloze/PassageViewport'
+import { QuestionPane } from './cloze/QuestionPane'
+import { CompletionReview } from './cloze/CompletionReview'
 
 const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
@@ -39,23 +43,88 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
     // Article Translation & Reading Modal State
     const [translationModalOpen, setTranslationModalOpen] = useState(false)
     const [revealedTranslationIndex, setRevealedTranslationIndex] = useState<number | null>(null)
+    const [highlightedSentenceIndex, setHighlightedSentenceIndex] = useState<number | null>(null)
     const [playingSentenceIdx, setPlayingSentenceIdx] = useState<number | null>(null)
+    const [autoPlayNext, setAutoPlayNext] = useState(false)
+    const autoPlayNextRef = useRef(false)
+    const translationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const modalSentenceRefs = useRef<{ [idx: number]: HTMLElement | null }>({})
 
-    const playSentenceAudio = async (text: string, idx: number) => {
-        if (!text || !textbook) return;
+    // Auto-scroll playing sentence into view in the reading modal as high as possible (to top)
+    useEffect(() => {
+        if (translationModalOpen && playingSentenceIdx !== null) {
+            const el = modalSentenceRefs.current[playingSentenceIdx];
+            if (el) {
+                el.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+    }, [playingSentenceIdx, translationModalOpen]);
+
+    const toggleTranslation = (sIdx: number) => {
+        setHighlightedSentenceIndex(sIdx);
+        if (translationTimeoutRef.current) {
+            clearTimeout(translationTimeoutRef.current);
+            translationTimeoutRef.current = null;
+        }
+
+        if (revealedTranslationIndex === sIdx) {
+            setRevealedTranslationIndex(null);
+        } else {
+            setRevealedTranslationIndex(sIdx);
+            // Auto revert back to English after 5 seconds
+            translationTimeoutRef.current = setTimeout(() => {
+                setRevealedTranslationIndex(prev => prev === sIdx ? null : prev);
+                translationTimeoutRef.current = null;
+            }, 5000);
+        }
+    };
+
+    const stopSentenceAudio = () => {
         if (sentenceAudioRef.current) {
             sentenceAudioRef.current.pause();
             sentenceAudioRef.current = null;
         }
+        setPlayingSentenceIdx(null);
+    };
+
+    const playSentenceAudio = async (text: string, idx: number) => {
+        if (!text || !textbook) return;
+
+        // If clicking on the currently playing sentence, stop it
+        if (playingSentenceIdx === idx && sentenceAudioRef.current) {
+            stopSentenceAudio();
+            return;
+        }
+
+        if (sentenceAudioRef.current) {
+            sentenceAudioRef.current.pause();
+            sentenceAudioRef.current = null;
+        }
+
         const cleanText = text.replace(/^#+\s*/, '').trim();
         const url = getAudioUrl(cleanText, textbook);
         setPlayingSentenceIdx(idx);
+        setHighlightedSentenceIndex(idx);
+
         try {
             const blob = await audioCache.cacheAudio(url);
             if (blob) {
                 const audio = new Audio(URL.createObjectURL(blob));
                 sentenceAudioRef.current = audio;
-                audio.onended = () => setPlayingSentenceIdx(null);
+                audio.onended = () => {
+                    const allSentences = (activeSection?.filled_text || activeSection?.raw_text || []);
+                    if (autoPlayNextRef.current && idx + 1 < allSentences.length) {
+                        const nextIdx = idx + 1;
+                        const nextSent = allSentences[nextIdx];
+                        const nextClean = nextSent.replace(/^#+\s*/, '').trim();
+                        playSentenceAudio(nextClean, nextIdx);
+                    } else {
+                        setPlayingSentenceIdx(null);
+                    }
+                };
                 audio.play().catch(e => {
                     console.warn("Failed to play sentence audio:", e);
                     setPlayingSentenceIdx(null);
@@ -71,8 +140,6 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
 
     // Load grammar index data
     useEffect(() => {
-        // Derive full practice ID for grammar index matching current textbook & module:
-        // e.g. "A10_a10-yp_a10-yp-1" -> "A10_a10-yp_a10-yp-grammar-index"
         let indexPracticeId = 'A10_a10-yp_a10-yp-grammar-index';
         if (practiceId && practiceId.includes('_')) {
             const parts = practiceId.split('_');
@@ -113,7 +180,7 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
     const [mistakeQueue, setMistakeQueue] = useState<any[]>([])
     const [currentQIndex, setCurrentQIndex] = useState(0)
     const [isRedemption, setIsRedemption] = useState(false)
-    const [answersLog, setAnswersLog] = useState<Array<{ answeredOption: number | null; isCorrect: boolean }>>([])
+    const [answersLog, setAnswersLog] = useState<Array<{ answeredOption: number | null; answeredText?: string | null; isCorrect: boolean }>>([])
 
     const [q, setQ] = useState<any>(null)
     const [showOptions, setShowOptions] = useState(false)
@@ -223,6 +290,25 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
             return
         }
 
+        // Shuffle options and recalculate correct answer index each time question is presented
+        if (nextQ && Array.isArray(nextQ.options) && nextQ.options.length > 0) {
+            const originalCorrect = nextQ.options[nextQ.answer];
+            const indices = nextQ.options.map((_: any, i: number) => i);
+            // Fisher-Yates shuffle
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            const shuffledOptions = indices.map((i: number) => nextQ.options[i]);
+            const newAnswerIndex = shuffledOptions.indexOf(originalCorrect);
+
+            nextQ = {
+                ...nextQ,
+                options: shuffledOptions,
+                answer: newAnswerIndex !== -1 ? newAnswerIndex : nextQ.answer
+            };
+        }
+
         setQ(nextQ)
         setIsRedemption(isRedemp)
         setSelectedOption(null)
@@ -276,6 +362,8 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
         let updatedMistakes = [...mistakeQueue]
         const newAnswersLog = [...answersLog]
 
+        const chosenText = optionIdx !== null && q?.options ? q.options[optionIdx] : null;
+
         if (isCorrect) {
             playSfx('correct')
             if (!invisibleMode) {
@@ -288,6 +376,7 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
             } else {
                 newAnswersLog[q.originalIndex] = {
                     answeredOption: optionIdx,
+                    answeredText: chosenText,
                     isCorrect: true
                 }
             }
@@ -296,6 +385,7 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
             if (!isRedemption) {
                 newAnswersLog[q.originalIndex] = {
                     answeredOption: optionIdx,
+                    answeredText: chosenText,
                     isCorrect: false
                 }
                 updatedMistakes.push(q) // Add to mistake queue for redemption
@@ -307,7 +397,7 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
                         unit,
                         practiceType: 'passage-cloze',
                         question: q,
-                        wrongAnswer: optionIdx !== null ? q.options[optionIdx] : undefined
+                        wrongAnswer: chosenText || undefined
                     });
                 }
             } else {
@@ -456,159 +546,6 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
         }
     };
 
-    // Render formatted passage with interactive blank pills and highlighted active sentence
-    const renderPassageWithPills = () => {
-        if (!activeSection?.raw_text) return null;
-        const rawText = activeSection.raw_text;
-        const activeBlankNum = q?.blank_num;
-        const activeSentenceIdx = q?.sentence_index;
-
-        // If raw_text is already an array of sentences
-        if (Array.isArray(rawText)) {
-            return (
-                <div className="cloze-passage-paragraph">
-                    {rawText.map((sentStr: string, sIdx: number) => {
-                        const isCurrentSentence = activeSentenceIdx !== undefined
-                            ? activeSentenceIdx === sIdx
-                            : (activeBlankNum !== undefined && (sentStr.includes(`${activeBlankNum}. _`) || new RegExp(`\\b${activeBlankNum}\\.\\s*_+`).test(sentStr)));
-
-                        const parts = sentStr.split(/(\d+\.\s*_{3,}(?:\s*\([^)]+\))?)/g);
-
-                        return (
-                            <span
-                                key={sIdx}
-                                ref={isCurrentSentence ? activeSentenceRef : null}
-                                className={`cloze-passage-sentence ${isCurrentSentence ? 'is-active-sentence' : ''}`}
-                            >
-                                {parts.map((part: string, ptIdx: number) => {
-                                    const match = part.match(/^(\d+)\.\s*________(?:\s*\(([^)]+)\))?/);
-                                    if (match) {
-                                        const blankNum = parseInt(match[1]);
-                                        const qIndex = questionsQueue.findIndex(item => item.blank_num === blankNum);
-                                        const isActive = qIndex === currentQIndex;
-                                        const answerData = answersLog[qIndex];
-
-                                        let pillClass = "cloze-blank-pill";
-                                        let pillContent = `${blankNum}. ______`;
-                                        const targetQ = questionsQueue[qIndex];
-                                        const baseWord = targetQ?.base_word || match[2];
-
-                                        if (isActive) {
-                                            pillClass += " active";
-                                        }
-                                        if (answerData) {
-                                            if (answerData.isCorrect) {
-                                                pillClass += " answered-correct";
-                                                pillContent = `${blankNum}. ${targetQ.options[targetQ.answer]}`;
-                                            } else {
-                                                pillClass += " answered-wrong";
-                                                const chosen = answerData.answeredOption !== null ? targetQ.options[answerData.answeredOption] : '未答';
-                                                pillContent = `${blankNum}. ${chosen}`;
-                                            }
-                                        }
-
-                                        return (
-                                            <React.Fragment key={ptIdx}>
-                                                <span
-                                                    className={pillClass}
-                                                    onClick={() => {
-                                                        if (qIndex >= 0 && qIndex < questionsQueue.length) {
-                                                            setCurrentQIndex(qIndex);
-                                                            loadQuestion(questionsQueue, mistakeQueue, qIndex, false);
-                                                        }
-                                                    }}
-                                                    title={`点击跳转至第 ${blankNum} 题`}
-                                                >
-                                                    {pillContent}
-                                                </span>
-                                                {baseWord ? <span className="cloze-base-word-text"> ({baseWord})</span> : null}
-                                            </React.Fragment>
-                                        );
-                                    }
-                                    return <span key={ptIdx}>{part}</span>;
-                                })}{' '}
-                            </span>
-                        );
-                    })}
-                </div>
-            );
-        }
-
-        const paragraphs = (rawText as string).split('\n\n');
-
-        return paragraphs.map((para: string, pIdx: number) => {
-            // Split paragraph into sentences on [.!?] that are NOT preceded by a list number (e.g. avoid splitting "1.")
-            const sentenceMatches = para.split(/(?<=[.!?])(?<!\b\d+[.!?])\s+(?=[A-Z"“\d])/g);
-
-            return (
-                <p key={pIdx} className="cloze-passage-paragraph">
-                    {sentenceMatches.map((sentStr: string, sIdx: number) => {
-                        // Check if this sentence contains the active blank marker: e.g. "1. ___"
-                        const hasActiveBlank = activeBlankNum !== undefined &&
-                            (sentStr.includes(`${activeBlankNum}. _`) || new RegExp(`\\b${activeBlankNum}\\.\\s*_+`).test(sentStr));
-
-                        // Split sentence by blank markers: e.g. 1. ________ (have) or 1. ________
-                        const parts = sentStr.split(/(\d+\.\s*_{3,}(?:\s*\([^)]+\))?)/g);
-
-                        return (
-                            <span
-                                key={sIdx}
-                                ref={hasActiveBlank ? activeSentenceRef : null}
-                                className={`cloze-passage-sentence ${hasActiveBlank ? 'is-active-sentence' : ''}`}
-                            >
-                                {parts.map((part: string, ptIdx: number) => {
-                                    const match = part.match(/^(\d+)\.\s*________(?:\s*\(([^)]+)\))?/);
-                                    if (match) {
-                                        const blankNum = parseInt(match[1]);
-                                        const qIndex = questionsQueue.findIndex(item => item.blank_num === blankNum);
-                                        const isActive = qIndex === currentQIndex;
-                                        const answerData = answersLog[qIndex];
-
-                                        let pillClass = "cloze-blank-pill";
-                                        let pillContent = `${blankNum}. ______`;
-
-                                        if (isActive) {
-                                            pillClass += " active";
-                                        }
-                                        if (answerData) {
-                                            if (answerData.isCorrect) {
-                                                pillClass += " answered-correct";
-                                                const targetQ = questionsQueue[qIndex];
-                                                pillContent = `${blankNum}. ${targetQ.options[targetQ.answer]}`;
-                                            } else {
-                                                pillClass += " answered-wrong";
-                                                const targetQ = questionsQueue[qIndex];
-                                                const chosen = answerData.answeredOption !== null ? targetQ.options[answerData.answeredOption] : '未答';
-                                                pillContent = `${blankNum}. ${chosen}`;
-                                            }
-                                        }
-
-                                        return (
-                                            <span
-                                                key={ptIdx}
-                                                className={pillClass}
-                                                onClick={() => {
-                                                    if (qIndex >= 0 && qIndex < questionsQueue.length) {
-                                                        setCurrentQIndex(qIndex);
-                                                        loadQuestion(questionsQueue, mistakeQueue, qIndex, false);
-                                                    }
-                                                }}
-                                                title={`点击跳转至第 ${blankNum} 题`}
-                                            >
-                                                {pillContent}
-                                            </span>
-                                        );
-                                    }
-                                    return <span key={ptIdx}>{part}</span>;
-                                })}{' '}
-                            </span>
-                        );
-                    })}
-                </p>
-            );
-        });
-    };
-
     // Dashboard View
     if (!activeSection) {
         const mappedChallenges = sections.map((sec: any) => ({
@@ -679,196 +616,56 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
     if (completed) {
         return (
             <div className="cloze-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
-                <div className="cloze-screen" style={{ padding: '24px 20px', textAlign: 'center' }}>
-                    <h1 style={{ color: 'var(--primary)', fontSize: '3.2rem', margin: '0' }}>{finalScore}%</h1>
-                    <h2 style={{ margin: '4px 0 12px 0', color: '#1e293b', fontSize: '1.4rem', fontWeight: 'bold' }}>Section Complete!</h2>
+                <CompletionReview
+                    finalScore={finalScore}
+                    invisibleMode={invisibleMode}
+                    isNewHigh={isNewHigh}
+                    historicalBest={historicalBest}
+                    gainedXp={gainedXp}
+                    gainedLove={gainedLove}
+                    questionsQueue={questionsQueue}
+                    answersLog={answersLog}
+                    onOpenGrammarPoint={openGrammarPoint}
+                    onOpenTranslationModal={() => {
+                        setRevealedTranslationIndex(null);
+                        setTranslationModalOpen(true);
+                    }}
+                    onBackToMenu={() => {
+                        setActiveSection(null);
+                        loadRecords();
+                    }}
+                />
 
-                    <div style={{ margin: '0 0 16px 0', fontSize: '0.95rem', color: '#64748b' }}>
-                        {invisibleMode ? (
-                            <i>Practice Mode (Invisible). Score not recorded.</i>
-                        ) : isNewHigh ? (
-                            <strong style={{ color: '#10b981' }}>🎉 New High Score! You've set a new record!</strong>
-                        ) : (
-                            <span>Highest recorded score: <strong style={{ color: 'var(--primary)' }}>{historicalBest}%</strong></span>
-                        )}
-                    </div>
-
-                    {!invisibleMode && (
-                        <div style={{ display: 'inline-flex', gap: '16px', background: '#f8fafc', padding: '8px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '14px' }}>
-                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0284c7' }}>⚡ +{gainedXp} XP</span>
-                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#e11d48' }}>❤️ +{gainedLove}</span>
-                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#ca8a04' }}>🪙 +1 Coin</span>
-                        </div>
-                    )}
-
-                    {/* Question by Question Review Table */}
-                    <div style={{ textAlign: 'left', margin: '14px 0', overflowX: 'auto' }}>
-                        <h3 style={{ fontSize: '1rem', color: '#334155', marginBottom: '8px' }}>📝 答题回顾与考点索引</h3>
-                        <table className="cloze-results-table">
-                            <thead>
-                                <tr>
-                                    <th>题号</th>
-                                    <th>正确答案</th>
-                                    <th>你的选择</th>
-                                    <th>考点类型</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {questionsQueue.map((item, idx) => {
-                                    const ans = answersLog[idx];
-                                    const isCorrect = ans?.isCorrect;
-                                    const chosenText = ans && ans.answeredOption !== null ? item.options[ans.answeredOption] : '未作答';
-                                    const correctText = item.options[item.answer];
-
-                                    return (
-                                        <tr key={idx}>
-                                            <td style={{ fontWeight: 600 }}>{item.blank_num}</td>
-                                            <td style={{ color: '#10b981', fontWeight: 600 }}>{correctText}</td>
-                                            <td style={{ color: isCorrect ? '#10b981' : '#ef4444', fontWeight: 600 }}>
-                                                {chosenText} {isCorrect ? '✓' : '✗'}
-                                            </td>
-                                            <td>
-                                                <span
-                                                    className="cloze-grammar-badge-clickable"
-                                                    onClick={() => openGrammarPoint(item.grammar_point_id, item.grammar_point_name)}
-                                                    title="点击查看此考点详细解析与例题"
-                                                >
-                                                    🔍 {item.grammar_point_name}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
-                        <button
-                            className="cloze-continue-btn"
-                            onClick={() => {
-                                setRevealedTranslationIndex(null);
-                                setTranslationModalOpen(true);
-                            }}
-                            style={{ background: '#059669', minWidth: '180px' }}
-                        >
-                            📖 文章翻译与朗读
-                        </button>
-                        <button
-                            className="cloze-continue-btn"
-                            onClick={() => {
-                                setActiveSection(null);
-                                loadRecords();
-                            }}
-                            style={{ minWidth: '180px' }}
-                        >
-                            Back to Menu
-                        </button>
-                    </div>
-                </div>
-
-                {/* Article Translation & Reading Modal */}
-                {translationModalOpen && activeSection && (
-                    <div className="cloze-modal-overlay" onClick={() => {
+                <ArticleReadingModal
+                    isOpen={translationModalOpen}
+                    activeSection={activeSection}
+                    onClose={() => {
                         if (sentenceAudioRef.current) sentenceAudioRef.current.pause();
+                        if (translationTimeoutRef.current) {
+                            clearTimeout(translationTimeoutRef.current);
+                            translationTimeoutRef.current = null;
+                        }
                         setPlayingSentenceIdx(null);
+                        setRevealedTranslationIndex(null);
+                        setHighlightedSentenceIndex(null);
                         setTranslationModalOpen(false);
-                    }}>
-                        <div className="cloze-modal-card cloze-article-modal" onClick={e => e.stopPropagation()}>
-                            <button
-                                className="cloze-modal-close"
-                                onClick={() => {
-                                    if (sentenceAudioRef.current) sentenceAudioRef.current.pause();
-                                    setPlayingSentenceIdx(null);
-                                    setTranslationModalOpen(false);
-                                }}
-                            >✕</button>
-                            <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span>{activeSection.icon || '📖'}</span>
-                                <span>{activeSection.title} - 全文精读与朗读</span>
-                            </h3>
+                    }}
+                    revealedTranslationIndex={revealedTranslationIndex}
+                    toggleTranslation={toggleTranslation}
+                    highlightedSentenceIndex={highlightedSentenceIndex}
+                    setHighlightedSentenceIndex={setHighlightedSentenceIndex}
+                    playingSentenceIdx={playingSentenceIdx}
+                    playSentenceAudio={playSentenceAudio}
+                    autoPlayNext={autoPlayNext}
+                    setAutoPlayNext={setAutoPlayNext}
+                    autoPlayNextRef={autoPlayNextRef}
+                    modalSentenceRefs={modalSentenceRefs}
+                />
 
-                            <div className="cloze-article-scroll-container">
-                                {(activeSection.filled_text || activeSection.raw_text || []).map((sent: string, sIdx: number) => {
-                                    const isHeading = sent.startsWith('#');
-                                    const cleanEn = sent.replace(/^#+\s*/, '').trim();
-                                    const cnText = (activeSection.filled_text_cn?.[sIdx] || activeSection.raw_text_cn?.[sIdx] || '').replace(/^#+\s*/, '').trim();
-                                    const isCnRevealed = revealedTranslationIndex === sIdx;
-
-                                    if (isHeading) {
-                                        return (
-                                            <h4 key={sIdx} className="cloze-modal-article-heading">
-                                                {isCnRevealed && cnText ? cnText : cleanEn}
-                                                {cnText && (
-                                                    <button
-                                                        className="cloze-toggle-cn-btn"
-                                                        onClick={() => setRevealedTranslationIndex(isCnRevealed ? null : sIdx)}
-                                                        title={isCnRevealed ? "显示英文" : "显示中文"}
-                                                    >
-                                                        {isCnRevealed ? "英" : "中"}
-                                                    </button>
-                                                )}
-                                            </h4>
-                                        );
-                                    }
-
-                                    return (
-                                        <div key={sIdx} className={`cloze-article-sentence-row ${isCnRevealed ? 'is-cn' : ''}`}>
-                                            <span className="cloze-article-sentence-num">{sIdx + 1}.</span>
-                                            <div className="cloze-article-sentence-body">
-                                                <span className="cloze-article-sentence-text">
-                                                    {isCnRevealed && cnText ? cnText : cleanEn}
-                                                </span>
-                                            </div>
-                                            <div className="cloze-article-sentence-actions">
-                                                {cnText && (
-                                                    <button
-                                                        className={`cloze-toggle-cn-btn ${isCnRevealed ? 'active' : ''}`}
-                                                        onClick={() => setRevealedTranslationIndex(isCnRevealed ? null : sIdx)}
-                                                        title={isCnRevealed ? "切换回英文" : "点击查看该句中文翻译"}
-                                                    >
-                                                        {isCnRevealed ? "英" : "中"}
-                                                    </button>
-                                                )}
-                                                <button
-                                                    className={`cloze-sentence-audio-btn ${playingSentenceIdx === sIdx ? 'is-playing' : ''}`}
-                                                    onClick={() => playSentenceAudio(cleanEn, sIdx)}
-                                                    title="朗读本句"
-                                                >
-                                                    {playingSentenceIdx === sIdx ? '🔊' : '🔈'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Grammar Point Modal in Result Screen */}
-                {activeGrammarPointModal && (
-                    <div className="cloze-modal-overlay" onClick={() => setActiveGrammarPointModal(null)}>
-                        <div className="cloze-modal-card" onClick={e => e.stopPropagation()}>
-                            <button className="cloze-modal-close" onClick={() => setActiveGrammarPointModal(null)}>✕</button>
-                            <h3 style={{ margin: '0 0 10px 0', color: 'var(--primary)', fontSize: '1.25rem' }}>
-                                💡 {activeGrammarPointModal.name}
-                            </h3>
-                            <div style={{ fontSize: '0.95rem', lineHeight: '1.7', color: '#334155' }}>
-                                <p style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
-                                    <strong>考点规则：</strong><br />
-                                    {activeGrammarPointModal.rule}
-                                </p>
-                                {activeGrammarPointModal.example && (
-                                    <p style={{ background: '#f0fdf4', padding: '10px 14px', borderRadius: '8px', borderLeft: '4px solid #10b981', color: '#166534' }}>
-                                        <strong>真题示例：</strong><br />
-                                        <code>{activeGrammarPointModal.example}</code>
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <GrammarPointModal
+                    grammarPoint={activeGrammarPointModal}
+                    onClose={() => setActiveGrammarPointModal(null)}
+                />
             </div>
         )
     }
@@ -912,125 +709,45 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
                 <div className="cloze-split-viewport">
                     {/* Upper Viewport (Full Passage) */}
                     <div className="cloze-upper-viewport">
-                        {renderPassageWithPills()}
+                        <PassageViewport
+                            rawText={activeSection?.raw_text}
+                            activeBlankNum={q?.blank_num}
+                            activeSentenceIdx={q?.sentence_index}
+                            activeSentenceRef={activeSentenceRef}
+                            questionsQueue={questionsQueue}
+                            answersLog={answersLog}
+                            currentQIndex={currentQIndex}
+                            mistakeQueue={mistakeQueue}
+                            onSelectBlank={(qIdx) => {
+                                setCurrentQIndex(qIdx);
+                                loadQuestion(questionsQueue, mistakeQueue, qIdx, false);
+                            }}
+                        />
                     </div>
 
                     {/* Lower Viewport (Question & Think / Options) */}
-                    <div className="cloze-lower-viewport">
-                        <div className="cloze-question-header">
-                            <span className="cloze-q-badge">
-                                {isRedemption ? (
-                                    <span style={{ color: '#ea580c' }}>🔄 错题重练: 第 {q.blank_num} 空 (剩余 {mistakeQueue.length} 题)</span>
-                                ) : (
-                                    `第 ${q.blank_num} 空 (${currentQIndex + 1} / ${questionsQueue.length})`
-                                )}
-                            </span>
-                            {showOptions && !invisibleMode && (
-                                <CountdownRing secondsLeft={countdownTimer.secondsLeft} totalSeconds={15} isRunning={countdownTimer.isRunning} />
-                            )}
-                        </div>
-
-                        {!showOptions ? (
-                            <div className="cloze-think-box">
-                                <button className="cloze-reveal-btn" onClick={revealOptions}>
-                                    Show Options <span className="cloze-shortcut-tag">Enter / Space</span>
-                                </button>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="cloze-options-grid">
-                                    {q.options.map((opt: string, optIdx: number) => {
-                                        let btnClass = "cloze-option-btn";
-                                        if (locked) {
-                                            if (optIdx === q.answer) {
-                                                btnClass += " correct";
-                                            } else if (selectedOption === optIdx) {
-                                                btnClass += " wrong";
-                                            }
-                                        } else if (selectedOption === optIdx) {
-                                            btnClass += " selected";
-                                        }
-
-                                        return (
-                                            <button
-                                                key={optIdx}
-                                                className={btnClass}
-                                                onClick={() => checkAnswer(optIdx)}
-                                                disabled={locked}
-                                            >
-                                                <span className="cloze-option-idx">{String.fromCharCode(65 + optIdx)}</span>
-                                                <span>{opt}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-
-                                {locked && (
-                                    <div className={`cloze-explanation-banner ${selectedOption === q.answer ? '' : 'is-wrong'}`}>
-                                        {(activeSection?.filled_text_cn?.[q.sentence_index] || activeSection?.raw_text_cn?.[q.sentence_index]) && (
-                                            <div className="cloze-sentence-cn-box">
-                                                <span className="cloze-sentence-cn-label">📖 句意：</span>
-                                                <span>{(activeSection.filled_text_cn?.[q.sentence_index] || activeSection.raw_text_cn[q.sentence_index]).replace(/^#+\s*/, '')}</span>
-                                            </div>
-                                        )}
-                                        <div style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <strong>{selectedOption === q.answer ? '💡 解析点拨：' : '⚠️ 正确答案与解析：'}</strong>
-                                            {q.grammar_point_name && (
-                                                <span className="cloze-grammar-label-badge">
-                                                    考点: {q.grammar_point_name}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div>{q.explanation}</div>
-                                        {q.rule_summary && (
-                                            <div style={{ marginTop: '4px', opacity: 0.9 }}>
-                                                <strong>规则速记：</strong>{q.rule_summary}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                <div className="cloze-footer-action">
-                                    <button
-                                        className="cloze-continue-btn"
-                                        onClick={nextQuestion}
-                                        disabled={!locked}
-                                    >
-                                        {!isRedemption
-                                            ? (currentQIndex + 1 >= questionsQueue.length
-                                                ? (mistakeQueue.length > 0 ? `进入错题重做 (${mistakeQueue.length} 题)` : '查看成绩与考点')
-                                                : '下一题 (Next)')
-                                            : (mistakeQueue.length === 0 ? '查看成绩与考点' : `下一道错题 (剩余 ${mistakeQueue.length} 题)`)}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    <QuestionPane
+                        q={q}
+                        currentQIndex={currentQIndex}
+                        totalQuestions={questionsQueue.length}
+                        isRedemption={isRedemption}
+                        mistakeCount={mistakeQueue.length}
+                        showOptions={showOptions}
+                        invisibleMode={invisibleMode}
+                        countdownTimer={countdownTimer}
+                        locked={locked}
+                        selectedOption={selectedOption}
+                        activeSection={activeSection}
+                        onRevealOptions={revealOptions}
+                        onCheckAnswer={checkAnswer}
+                        onNextQuestion={nextQuestion}
+                    />
                 </div>
 
-                {/* Grammar Point Modal during Gameplay */}
-                {activeGrammarPointModal && (
-                    <div className="cloze-modal-overlay" onClick={() => setActiveGrammarPointModal(null)}>
-                        <div className="cloze-modal-card" onClick={e => e.stopPropagation()}>
-                            <button className="cloze-modal-close" onClick={() => setActiveGrammarPointModal(null)}>✕</button>
-                            <h3 style={{ margin: '0 0 10px 0', color: 'var(--primary)', fontSize: '1.25rem' }}>
-                                💡 {activeGrammarPointModal.name}
-                            </h3>
-                            <div style={{ fontSize: '0.95rem', lineHeight: '1.7', color: '#334155' }}>
-                                <p style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
-                                    <strong>考点规则：</strong><br />
-                                    {activeGrammarPointModal.rule}
-                                </p>
-                                {activeGrammarPointModal.example && (
-                                    <p style={{ background: '#f0fdf4', padding: '10px 14px', borderRadius: '8px', borderLeft: '4px solid #10b981', color: '#166534' }}>
-                                        <strong>真题示例：</strong><br />
-                                        <code>{activeGrammarPointModal.example}</code>
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <GrammarPointModal
+                    grammarPoint={activeGrammarPointModal}
+                    onClose={() => setActiveGrammarPointModal(null)}
+                />
             </div>
         </div>
     )
