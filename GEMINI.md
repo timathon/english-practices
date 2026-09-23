@@ -69,6 +69,9 @@ When editing existing codebases:
 * **Reference Guide:** Always check [`v2-plan/ARCHITECTURE.md`](file:///home/timathon/codes/smartedu/english-practices/v2-plan/ARCHITECTURE.md) before debugging, refactoring, or modifying the Dashboard or UI systems.
 * **Direct-Edit Over Exploratory Traversal:** When the user reports a UI issue, missing label translation, suffix handling, or tab behavior, use the Direct-Edit Routing table in `v2-plan/ARCHITECTURE.md` to edit the responsible root file directly (e.g. `v2/src/lib/dashboardUtils.ts` for translations, `v2/src/config/textbooks.ts` for textbook metadata, `v2/src/components/Dashboard.tsx` for state/tabs). Do NOT run wide codebase scans across intermediate caller files.
 
+## 10. Background Task Timer Rule
+* **Always Schedule Check Timers for Background Tasks:** Whenever running commands or operations that execute asynchronously in the background as a task, you MUST always schedule a timer (`schedule` tool) with a reasonable interval (e.g. `DurationSeconds=10` to `60` or conditioned on the task) to check on its status and ensure prompt follow-up without hanging or forgetting running background jobs.
+
 ---
 
 
