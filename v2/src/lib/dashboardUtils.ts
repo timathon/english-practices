@@ -86,6 +86,7 @@ export const translatePracticeName = (name: string): string => {
 
 export const translateTextbookName = (name: string): string => {
   const map: Record<string, string> = {
+    'A2A': '二上',
     'A3A': '三上', 'A3B': '三下',
     'A4A': '四上', 'A4B': '四下',
     'A5A': '五上', 'A5B': '五下',

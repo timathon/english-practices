@@ -1,4 +1,5 @@
 export const TEXTBOOK_EMOJIS: Record<string, string> = {
+  A2A: '🍃',
   A3A: '🌱', A3B: '🌿',
   A4A: '☘️', A4B: '🍀',
   A5A: '🌸', A5B: '🌺',
