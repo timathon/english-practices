@@ -7,6 +7,7 @@ import { getAudioUrl } from '../lib/practiceAudio'
 import { VocabTraceModal } from './VocabTraceModal'
 import { VocabFlashcardModal } from './VocabFlashcardModal'
 import { VocabDictationModal } from './VocabDictationModal'
+import { VocabRecallModal } from './VocabRecallModal'
 
 function formatMeaning(item: any): string {
     if (!item || !item.meaning) return ''
@@ -42,6 +43,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     // Modal Triggers
     const [showFlashcards, setShowFlashcards] = useState(false)
     const [showDictationModal, setShowDictationModal] = useState(false)
+    const [showRecallModal, setShowRecallModal] = useState(false)
     const [traceList, setTraceList] = useState<any[] | null>(null)
 
     const shellRef = useRef<HTMLDivElement>(null)
@@ -249,6 +251,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                     <div className="vg-stats-buttons">
                                         <button className="vg-play-cards-btn" onClick={() => setShowFlashcards(true)} title="Start Flashcards">▶️</button>
                                         <button className="vg-dictation-btn" onClick={() => setShowDictationModal(true)} title="Start Dictation">✍️</button>
+                                        <button className="vg-recall-btn" onClick={() => setShowRecallModal(true)} title="Start Rapid Thinking Practice">💡</button>
                                     </div>
                                 </div>
                             </div>
@@ -448,6 +451,17 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     textbook={textbook}
                     isCf={isCf}
                     onClose={() => setShowDictationModal(false)}
+                />
+            )}
+
+            {showRecallModal && (
+                <VocabRecallModal
+                    vocab={vocab}
+                    hiddenIndices={hiddenIndices}
+                    formatMeaning={formatMeaning}
+                    textbook={textbook}
+                    isCf={isCf}
+                    onClose={() => setShowRecallModal(false)}
                 />
             )}
 
