@@ -32,7 +32,7 @@ RULES:
 - Additionally include up to 10 extra important words/phrases from dialogues and texts. Skip proper nouns.
 - For each item:
   - "word": English word or phrase exactly as it appears
-  - "meaning": Chinese translation with part-of-speech label (e.g. "n. 教室", "v. 分享", "phrase 一起合作")
+  - "meaning": Chinese translation with part-of-speech label (e.g. "n. 教室", "v. 分享", "phr. 一起合作")
   - "page_number": printed page number where word FIRST appears (from "--- PRINTED PAGE X ---" markers)
   - "context_sentence": one exact verbatim sentence from the text containing the word (for phrases, write a short natural English sentence). IMPORTANT: If the sentence contains inline parenthetical Chinese notes for student reading assistance (e.g. "Make a hole (洞) at the top of the plate."), strip out the Chinese characters and parentheses so it becomes pure English (e.g. "Make a hole at the top of the plate.").
   - "ipa": standard British IPA enclosed in forward slashes (e.g. "/ˈpensl/", "/desk/") for single words only; omit for multi-word phrases

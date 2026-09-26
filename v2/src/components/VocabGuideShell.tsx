@@ -14,15 +14,18 @@ function formatMeaning(item: any): string {
     const meaning = String(item.meaning)
     const isPhrase = item.syllable_type === 'phrase' || (typeof item.word === 'string' && item.word.trim().includes(' '))
     if (isPhrase) {
-        if (/^phrase\b/i.test(meaning)) {
+        if (/^phr\.\s*/i.test(meaning)) {
             return meaning
         }
-        // If it starts with a standard single-word POS prefix like "v. ", "n. ", "adj. ", etc., replace with "phrase "
+        if (/^phrase\b\s*/i.test(meaning)) {
+            return meaning.replace(/^phrase\b\s*/i, 'phr. ')
+        }
+        // If it starts with a standard single-word POS prefix like "v. ", "n. ", "adj. ", etc., replace with "phr. "
         const posRegex = /^([a-zA-Z]+\.\s*(?:&|and)?\s*[a-zA-Z]*\.?\s*)/i
         if (posRegex.test(meaning)) {
-            return meaning.replace(posRegex, 'phrase ')
+            return meaning.replace(posRegex, 'phr. ')
         }
-        return `phrase ${meaning}`
+        return `phr. ${meaning}`
     }
     return meaning
 }
@@ -87,7 +90,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         document.body.style.padding = '15px'
         document.body.style.boxSizing = 'border-box'
         document.body.classList.add('vg-active')
-        
+
         const initialVocab = data.unit_vocabulary.map((v: any, i: number) => ({ ...v, originalIndex: i }))
         setVocab(initialVocab)
 
@@ -291,8 +294,8 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                             <div className="vg-word-header">
                                                 <h2 className="vg-word-title">
                                                     <span className="vg-word-num">{item.originalIndex + 1}. </span>
-                                                    <span 
-                                                        className="vg-word-text" 
+                                                    <span
+                                                        className="vg-word-text"
                                                         onClick={() => setTraceList([item])}
                                                         title="Click to see stroke order"
                                                     >
@@ -300,7 +303,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                                     </span>
                                                     <span className="vg-ipa-container">
                                                         {item.ipa && item.ipa !== 'none' && <span className="vg-ipa">{item.ipa}</span>}
-                                                        <button 
+                                                        <button
                                                             className={`vg-word-play-btn ${playingIndex === item.originalIndex + 10000 ? 'playing' : ''}`}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -308,16 +311,16 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                                             }}
                                                             title="Play word audio"
                                                         >
-                                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                                                         </button>
                                                     </span>
                                                 </h2>
                                                 <div className="vg-item-actions">
                                                     {item.unit && <span className="vg-unit">Unit {item.unit}</span>}
                                                     {item.page_number && <span className="vg-page">P{item.page_number}</span>}
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={isHidden} 
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isHidden}
                                                         onChange={() => toggleWordHidden(item.originalIndex)}
                                                         title="Mark as Learnt"
                                                     />
@@ -347,8 +350,8 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                             </div>
 
                                             <div className="vg-context">
-                                                <button 
-                                                    className={`vg-play-btn ${playingIndex === item.originalIndex ? 'playing' : ''}`} 
+                                                <button
+                                                    className={`vg-play-btn ${playingIndex === item.originalIndex ? 'playing' : ''}`}
                                                     onClick={() => playAudio(item.context_sentence, item.originalIndex)}
                                                     disabled={playingIndex === item.originalIndex}
                                                 >
