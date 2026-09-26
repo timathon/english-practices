@@ -201,7 +201,7 @@ export function VocabDictationModal({
                     if (dictationTimerRef.current) clearTimeout(dictationTimerRef.current)
                 }
             } else {
-                const silenceDuration = Math.max(5, Math.round((currentWord || '').length * 0.8))
+                const silenceDuration = Math.max(8, Math.round((currentWord || '').length * 0.8))
                 setSilenceTimeLeft(silenceDuration)
                 setDictationState('silence')
             }
@@ -395,7 +395,7 @@ export function VocabDictationModal({
 
                     {dictationState !== 'finished' ? (() => {
                         const currentWord = dictationWords[dictationCurrentIndex]?.word || ''
-                        const silenceDuration = Math.max(5, Math.round(currentWord.length * 0.8))
+                        const silenceDuration = Math.max(8, Math.round(currentWord.length * 0.8))
                         const displayTime = dictationState === 'playing' ? silenceDuration : silenceTimeLeft
                         return (
                             <>

@@ -7,6 +7,7 @@ interface VocabFlashcardModalProps {
     vocab: any[]
     hiddenIndices: Set<number>
     onToggleWordHidden: (index: number) => void
+    practiceId?: string
     textbook?: string
     isCf?: boolean
     onClose: () => void
@@ -16,6 +17,7 @@ export function VocabFlashcardModal({
     vocab,
     hiddenIndices,
     onToggleWordHidden,
+    practiceId,
     textbook,
     isCf,
     onClose,
@@ -23,13 +25,31 @@ export function VocabFlashcardModal({
     const [deck, setDeck] = useState<any[]>([])
     const [currentDeckIndex, setCurrentDeckIndex] = useState(0)
     const [isFlipped, setIsFlipped] = useState(false)
-    const [countdown, setCountdown] = useState<number | null>(null)
-    const [slideDirection, setSlideDirection] = useState<'next' | null>(null)
+    const [slideDirection, setSlideDirection] = useState<'exit' | 'enter' | null>(null)
     const [hasClickedDontKnow, setHasClickedDontKnow] = useState(false)
     const [isPeeking, setIsPeeking] = useState(false)
     const [isNextButtonLocked, setIsNextButtonLocked] = useState(false)
     const [flashcardsFinished, setFlashcardsFinished] = useState(false)
     const [playingIndex, setPlayingIndex] = useState<number | null>(null)
+    const [weights, setWeights] = useState<Record<string, number>>({})
+
+    const weightsKey = `ep-vg-weights-${practiceId || textbook || 'default'}`
+
+    const loadWeights = (): Record<string, number> => {
+        try {
+            const raw = localStorage.getItem(weightsKey)
+            if (raw) return JSON.parse(raw)
+        } catch (e) {
+            console.error('Failed to load weights:', e)
+        }
+        return {}
+    }
+
+    const getWordWeight = (wordText: string, currentWeightsMap: Record<string, number> = weights): number => {
+        const key = wordText.trim().toLowerCase()
+        if (currentWeightsMap[key] !== undefined) return currentWeightsMap[key]
+        return 3 // Default initial index is 3
+    }
 
     const timerRef = useRef<any>(null)
     const knowCooldownIntervalRef = useRef<any>(null)
@@ -48,17 +68,42 @@ export function VocabFlashcardModal({
     }
 
     const initDeck = () => {
+        const loadedWeights = loadWeights()
+        setWeights(loadedWeights)
+
         let activeDeck = vocab.filter(item => !hiddenIndices.has(item.originalIndex))
         if (activeDeck.length === 0) {
             activeDeck = [...vocab]
         }
-        setDeck(activeDeck)
+
+        // Sort descending by weight (higher index first), maintaining stable relative order for ties
+        const sortedDeck = [...activeDeck].sort((a, b) => {
+            const wA = getWordWeight(a.word, loadedWeights)
+            const wB = getWordWeight(b.word, loadedWeights)
+            return wB - wA
+        })
+
+        setDeck(sortedDeck)
         setCurrentDeckIndex(0)
         setIsFlipped(false)
-        setCountdown(null)
         setSlideDirection(null)
         setHasClickedDontKnow(false)
         setFlashcardsFinished(false)
+    }
+
+    const currentAudioRef = useRef<HTMLAudioElement | null>(null)
+    const audioSequenceTimerRef = useRef<any>(null)
+
+    const stopCurrentAudio = () => {
+        if (audioSequenceTimerRef.current) {
+            clearTimeout(audioSequenceTimerRef.current)
+            audioSequenceTimerRef.current = null
+        }
+        if (currentAudioRef.current) {
+            currentAudioRef.current.pause()
+            currentAudioRef.current = null
+        }
+        setPlayingIndex(null)
     }
 
     useEffect(() => {
@@ -67,6 +112,7 @@ export function VocabFlashcardModal({
             if (timerRef.current) clearInterval(timerRef.current)
             if (knowCooldownIntervalRef.current) clearInterval(knowCooldownIntervalRef.current)
             clearPeekTimeouts()
+            stopCurrentAudio()
         }
     }, [])
 
@@ -78,34 +124,72 @@ export function VocabFlashcardModal({
         return () => clearTimeout(timer)
     }, [currentDeckIndex])
 
-    const playAudio = async (sentence: string, index: number) => {
+    const playAudio = async (text: string, index: number, onEnd?: () => void) => {
         if (!textbook) return
+        stopCurrentAudio()
         setPlayingIndex(index)
-        const url = getAudioUrl(sentence, textbook, isCf)
+        const url = getAudioUrl(text, textbook, isCf)
         try {
             const blob = await audioCache.cacheAudio(url)
             if (blob) {
                 const audio = new Audio(URL.createObjectURL(blob))
-                audio.onended = () => setPlayingIndex(null)
-                audio.onerror = () => setPlayingIndex(null)
-                audio.play()
+                currentAudioRef.current = audio
+                audio.onended = () => {
+                    if (currentAudioRef.current === audio) {
+                        currentAudioRef.current = null
+                        setPlayingIndex(null)
+                    }
+                    if (onEnd) onEnd()
+                }
+                audio.onerror = () => {
+                    if (currentAudioRef.current === audio) {
+                        currentAudioRef.current = null
+                        setPlayingIndex(null)
+                    }
+                    if (onEnd) onEnd()
+                }
+                audio.play().catch(() => {
+                    if (currentAudioRef.current === audio) {
+                        currentAudioRef.current = null
+                        setPlayingIndex(null)
+                    }
+                    if (onEnd) onEnd()
+                })
             } else {
                 setPlayingIndex(null)
+                if (onEnd) onEnd()
             }
         } catch (e) {
             console.error(e)
             setPlayingIndex(null)
+            if (onEnd) onEnd()
         }
     }
 
     useEffect(() => {
         if (deck.length > 0 && deck[currentDeckIndex]) {
             const currentItem = deck[currentDeckIndex]
-            if (currentItem.context_sentence) {
-                const timer = setTimeout(() => {
+            stopCurrentAudio()
+
+            const startTimer = setTimeout(() => {
+                if (currentItem.word) {
+                    // Play word audio first (with word playingIndex)
+                    playAudio(currentItem.word, currentItem.originalIndex + 20000, () => {
+                        // After word ends, wait briefly then play context sentence
+                        if (currentItem.context_sentence) {
+                            audioSequenceTimerRef.current = setTimeout(() => {
+                                playAudio(currentItem.context_sentence, currentItem.originalIndex)
+                            }, 350)
+                        }
+                    })
+                } else if (currentItem.context_sentence) {
                     playAudio(currentItem.context_sentence, currentItem.originalIndex)
-                }, 300)
-                return () => clearTimeout(timer)
+                }
+            }, 300)
+
+            return () => {
+                clearTimeout(startTimer)
+                stopCurrentAudio()
             }
         }
     }, [currentDeckIndex, deck])
@@ -117,15 +201,17 @@ export function VocabFlashcardModal({
             timerRef.current = null
         }
         clearPeekTimeouts()
-        setCountdown(null)
 
-        setSlideDirection('next')
+        setSlideDirection('exit')
         setTimeout(() => {
             setCurrentDeckIndex(prev => {
                 if (prev + 1 < deck.length) {
                     setIsFlipped(false)
-                    setSlideDirection(null)
                     setHasClickedDontKnow(false)
+                    setSlideDirection('enter')
+                    setTimeout(() => {
+                        setSlideDirection(null)
+                    }, 40)
                     return prev + 1
                 } else {
                     ;(async () => {
@@ -145,7 +231,7 @@ export function VocabFlashcardModal({
                     return prev
                 }
             })
-        }, 300)
+        }, 200)
     }
 
     const handleKnow = () => {
@@ -160,28 +246,11 @@ export function VocabFlashcardModal({
     const handleDontKnow = () => {
         if (deck.length === 0) return
         setIsFlipped(true)
-        setCountdown(5)
         setHasClickedDontKnow(true)
         clearPeekTimeouts()
 
         const item = deck[currentDeckIndex]
         playAudio(item.word, item.originalIndex + 20000)
-
-        if (timerRef.current) {
-            clearInterval(timerRef.current)
-        }
-
-        let currentSec = 5
-        timerRef.current = setInterval(() => {
-            currentSec -= 1
-            if (currentSec <= 0) {
-                clearInterval(timerRef.current)
-                timerRef.current = null
-                setCountdown(null)
-            } else {
-                setCountdown(currentSec)
-            }
-        }, 1000)
 
         peekTimeout1Ref.current = setTimeout(() => {
             setIsPeeking(true)
@@ -198,6 +267,7 @@ export function VocabFlashcardModal({
         }, 4000)
     }
 
+
     const handleCardClick = () => {
         if (hasClickedDontKnow) {
             setIsFlipped(prev => !prev)
@@ -206,6 +276,7 @@ export function VocabFlashcardModal({
     }
 
     const handleClose = () => {
+        stopCurrentAudio()
         if (timerRef.current) clearInterval(timerRef.current)
         if (knowCooldownIntervalRef.current) clearInterval(knowCooldownIntervalRef.current)
         clearPeekTimeouts()
@@ -216,6 +287,7 @@ export function VocabFlashcardModal({
 
     const progressPercent = ((currentDeckIndex + 1) / deck.length) * 100
     const currentItem = deck[currentDeckIndex]
+    const currentWeight = currentItem ? getWordWeight(currentItem.word) : 3
 
     return (
         <div className="vg-modal-backdrop" onClick={(e) => e.stopPropagation()}>
@@ -228,6 +300,15 @@ export function VocabFlashcardModal({
                 <div className="vg-card-progress-container">
                     <div className="vg-card-progress-bar" style={{ width: `${flashcardsFinished ? 100 : progressPercent}%` }}></div>
                 </div>
+
+                {!flashcardsFinished && (
+                    <div className="vg-card-index-bar">
+                        <span className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</span>
+                        <span key={currentItem ? currentItem.word : currentDeckIndex} className={`vg-card-weight-badge ${currentWeight >= 4 ? 'hard' : currentWeight <= 2 ? 'easy' : ''}`}>
+                            Index: <b>{currentWeight}</b>
+                        </span>
+                    </div>
+                )}
 
                 {flashcardsFinished ? (
                     <div className="vg-card-container" style={{ height: '266px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
@@ -245,9 +326,20 @@ export function VocabFlashcardModal({
                         <div className="vg-card-inner">
                             {/* Front Side */}
                             <div className="vg-card-front">
-                                <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
                                 <div className="vg-card-top-right">
-                                    <div className="vg-card-word-title">{currentItem.word}</div>
+                                    <div className="vg-card-word-title">
+                                        <button 
+                                            className={`vg-word-play-btn ${playingIndex === currentItem.originalIndex + 20000 ? 'playing' : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                playAudio(currentItem.word, currentItem.originalIndex + 20000);
+                                            }}
+                                            title="Play word audio"
+                                        >
+                                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        </button>
+                                        <span>{currentItem.word}</span>
+                                    </div>
                                     {(currentItem.unit || currentItem.page_number) && (
                                         <div className="vg-card-meta">
                                             {currentItem.unit && (
@@ -297,10 +389,8 @@ export function VocabFlashcardModal({
 
                             {/* Back Side */}
                             <div className="vg-card-back">
-                                <div className="vg-card-index">Card {currentDeckIndex + 1} of {deck.length}</div>
                                 <div className="vg-card-top-right">
                                     <div className="vg-card-word-title">
-                                        {currentItem.word}
                                         <button 
                                             className={`vg-word-play-btn ${playingIndex === currentItem.originalIndex + 20000 ? 'playing' : ''}`}
                                             onClick={(e) => {
@@ -311,6 +401,7 @@ export function VocabFlashcardModal({
                                         >
                                             <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                         </button>
+                                        <span>{currentItem.word}</span>
                                     </div>
                                     {(currentItem.unit || currentItem.page_number) && (
                                         <div className="vg-card-meta">
@@ -361,9 +452,9 @@ export function VocabFlashcardModal({
                             <button 
                                 className="vg-btn-next" 
                                 onClick={moveToNextCard}
-                                disabled={countdown !== null || isNextButtonLocked}
+                                disabled={isNextButtonLocked}
                             >
-                                {countdown !== null ? `Next (${countdown}s)` : 'Next'}
+                                Next
                             </button>
                         </>
                     )}

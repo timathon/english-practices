@@ -9,8 +9,31 @@ import {
 } from '../../lib/dashboardUtils'
 import { FadingPracticeName } from './DashboardShared'
 import { TestSheetShell } from '../TestSheetShell'
+import { VocabFlashcardModal } from '../VocabFlashcardModal'
+import { VocabDictationModal } from '../VocabDictationModal'
+import { VocabRecallModal } from '../VocabRecallModal'
 import { decryptContent, OBSCURE_KEY } from '../../lib/crypto'
 import { API_URL } from '../../lib/auth'
+
+function formatMeaning(item: any): string {
+  if (!item || !item.meaning) return ''
+  const meaning = String(item.meaning)
+  const isPhrase = item.syllable_type === 'phrase' || (typeof item.word === 'string' && item.word.trim().includes(' '))
+  if (isPhrase) {
+    if (/^phr\.\s*/i.test(meaning)) {
+      return meaning
+    }
+    if (/^phrase\b\s*/i.test(meaning)) {
+      return meaning.replace(/^phrase\b\s*/i, 'phr. ')
+    }
+    const posRegex = /^([a-zA-Z]+\.\s*(?:&|and)?\s*[a-zA-Z]*\.?\s*)/i
+    if (posRegex.test(meaning)) {
+      return meaning.replace(posRegex, 'phr. ')
+    }
+    return `phr. ${meaning}`
+  }
+  return meaning
+}
 
 export function BookSection({ tb, units, records, initialUnit, initialPage, showChinese, isTestdrive, onResetTestdrive, initiallyOpen }: { tb: string; units: Record<string, any[]>; records: any[]; initialUnit?: string; initialPage?: string; showChinese: boolean; isTestdrive?: boolean; onResetTestdrive?: () => void; initiallyOpen: boolean }) {
   const [isOpen, setIsOpen] = useState(initiallyOpen)
@@ -20,6 +43,82 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
   const [selectedAttemptForDetails, setSelectedAttemptForDetails] = useState<any | null>(null)
   const [activeTestFullContent, setActiveTestFullContent] = useState<any | null>(null)
   const [loadingContent, setLoadingContent] = useState(false)
+
+  // Vocab Guide Modals State
+  const [activeVgModal, setActiveVgModal] = useState<{
+    type: 'flashcards' | 'dictation' | 'recall'
+    practice: any
+    vocab: any[]
+    chunks: any[][]
+    hiddenIndices: Set<number>
+    isCf: boolean
+  } | null>(null)
+
+  const handleOpenVgModal = async (p: any, modalType: 'flashcards' | 'dictation' | 'recall') => {
+    let content = p.content
+    if (!content || !content.unit_vocabulary) {
+      try {
+        const res = await fetch(`${API_URL}/api/practices/${p.id}`, { credentials: 'include' })
+        const json = await res.json()
+        if (json && json.content) {
+          let decrypted = json.content
+          if (json.isEncrypted && typeof json.content === 'string') {
+            decrypted = decryptContent(json.content, OBSCURE_KEY)
+          }
+          content = decrypted
+        }
+      } catch (e) {
+        console.error("Failed to load vocab guide content:", e)
+        return
+      }
+    }
+
+    if (!content || !Array.isArray(content.unit_vocabulary)) return
+
+    const initialVocab = content.unit_vocabulary.map((v: any, i: number) => ({ ...v, originalIndex: i }))
+    const unitKey = `ep-vg-hidden-${p.id}`
+    let hidden = new Set<number>()
+    const stored = localStorage.getItem(unitKey)
+    if (stored) {
+      try {
+        hidden = new Set(JSON.parse(stored))
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    const chunks: any[][] = []
+    for (let i = 0; i < initialVocab.length; i += 10) {
+      chunks.push(initialVocab.slice(i, i + 10))
+    }
+
+    const isCf = content?.tts?.by === 'melotts'
+
+    setActiveVgModal({
+      type: modalType,
+      practice: p,
+      vocab: initialVocab,
+      chunks,
+      hiddenIndices: hidden,
+      isCf
+    })
+  }
+
+  const handleToggleWordHidden = (index: number) => {
+    if (!activeVgModal) return
+    const newHidden = new Set(activeVgModal.hiddenIndices)
+    if (newHidden.has(index)) {
+      newHidden.delete(index)
+    } else {
+      newHidden.add(index)
+    }
+    const unitKey = `ep-vg-hidden-${activeVgModal.practice.id}`
+    localStorage.setItem(unitKey, JSON.stringify(Array.from(newHidden)))
+    setActiveVgModal({
+      ...activeVgModal,
+      hiddenIndices: newHidden
+    })
+  }
 
   const handleViewAttemptDetails = async (attempt: any) => {
     setSelectedAttemptForDetails(attempt)
@@ -779,6 +878,8 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                         return '#22c55e';
                       };
 
+                      const isVG = p.type.toLowerCase().includes('vocab-guide');
+
                       return (
                         <li key={p.id}>
                           <Link 
@@ -817,6 +918,53 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                 showChinese={showChinese} 
                               />
                             </span>
+                            {isVG && (
+                              <div 
+                                className="vg-stats-buttons"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                              >
+                                <button 
+                                  className="vg-play-cards-btn no-shake" 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleOpenVgModal(p, 'flashcards');
+                                  }} 
+                                  title="Start Flashcards"
+                                  style={{ padding: '1px 7px', fontSize: '0.75rem', height: '22px' }}
+                                >
+                                  ▶️
+                                </button>
+                                <button 
+                                  className="vg-dictation-btn no-shake" 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleOpenVgModal(p, 'dictation');
+                                  }} 
+                                  title="Start Dictation"
+                                  style={{ padding: '1px 7px', fontSize: '0.75rem', height: '22px' }}
+                                >
+                                  ✍️
+                                </button>
+                                <button 
+                                  className="vg-recall-btn no-shake" 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleOpenVgModal(p, 'recall');
+                                  }} 
+                                  title="Start Rapid Thinking Practice"
+                                  style={{ padding: '1px 7px', fontSize: '0.75rem', height: '22px' }}
+                                >
+                                  💡
+                                </button>
+                              </div>
+                            )}
                             {(isVM || isSH || isSA || isGW || isPD || isAD || isTN) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
@@ -1039,6 +1187,40 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
           />
         ) : null}
       </div>
+    )}
+    {activeVgModal && activeVgModal.type === 'flashcards' && (
+      <VocabFlashcardModal
+        vocab={activeVgModal.vocab}
+        hiddenIndices={activeVgModal.hiddenIndices}
+        onToggleWordHidden={handleToggleWordHidden}
+        textbook={activeVgModal.practice.textbook}
+        practiceId={activeVgModal.practice.id}
+        isCf={activeVgModal.isCf}
+        onClose={() => setActiveVgModal(null)}
+      />
+    )}
+
+    {activeVgModal && activeVgModal.type === 'dictation' && (
+      <VocabDictationModal
+        vocab={activeVgModal.vocab}
+        chunks={activeVgModal.chunks}
+        hiddenIndices={activeVgModal.hiddenIndices}
+        textbook={activeVgModal.practice.textbook}
+        isCf={activeVgModal.isCf}
+        onClose={() => setActiveVgModal(null)}
+      />
+    )}
+
+    {activeVgModal && activeVgModal.type === 'recall' && (
+      <VocabRecallModal
+        vocab={activeVgModal.vocab}
+        hiddenIndices={activeVgModal.hiddenIndices}
+        formatMeaning={formatMeaning}
+        textbook={activeVgModal.practice.textbook}
+        practiceId={activeVgModal.practice.id}
+        isCf={activeVgModal.isCf}
+        onClose={() => setActiveVgModal(null)}
+      />
     )}
     </section>
   )

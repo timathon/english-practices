@@ -441,6 +441,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     hiddenIndices={hiddenIndices}
                     onToggleWordHidden={toggleWordHidden}
                     textbook={textbook}
+                    practiceId={practiceId}
                     isCf={isCf}
                     onClose={() => setShowFlashcards(false)}
                 />
@@ -463,6 +464,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     hiddenIndices={hiddenIndices}
                     formatMeaning={formatMeaning}
                     textbook={textbook}
+                    practiceId={practiceId}
                     isCf={isCf}
                     onClose={() => setShowRecallModal(false)}
                 />

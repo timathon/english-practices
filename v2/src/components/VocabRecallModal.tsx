@@ -7,6 +7,7 @@ interface VocabRecallModalProps {
     vocab: any[]
     hiddenIndices: Set<number>
     formatMeaning?: (item: any) => string
+    practiceId?: string
     textbook?: string
     isCf?: boolean
     onClose: () => void
@@ -16,6 +17,7 @@ export function VocabRecallModal({
     vocab,
     hiddenIndices,
     formatMeaning,
+    practiceId,
     textbook,
     isCf,
     onClose,
@@ -26,26 +28,61 @@ export function VocabRecallModal({
     const [timeLeft, setTimeLeft] = useState(10)
     const [isFinished, setIsFinished] = useState(false)
     const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+    const [weights, setWeights] = useState<Record<string, number>>({})
+
+    const weightsKey = `ep-vg-weights-${practiceId || textbook || 'default'}`
+
+    const loadWeights = useCallback((): Record<string, number> => {
+        try {
+            const raw = localStorage.getItem(weightsKey)
+            if (raw) return JSON.parse(raw)
+        } catch (e) {
+            console.error('Failed to load weights:', e)
+        }
+        return {}
+    }, [weightsKey])
+
+    const getWordWeight = useCallback((wordText: string, currentWeightsMap: Record<string, number> = weights): number => {
+        const key = wordText.trim().toLowerCase()
+        if (currentWeightsMap[key] !== undefined) return currentWeightsMap[key]
+        return 3 // Default initial index is 3
+    }, [weights])
 
     const timerRef = useRef<any>(null)
     const audioRef = useRef<HTMLAudioElement | null>(null)
 
     const initDeck = useCallback(() => {
+        const loadedWeights = loadWeights()
+        setWeights(loadedWeights)
+
         let activeDeck = vocab.filter(item => !hiddenIndices.has(item.originalIndex))
         if (activeDeck.length === 0) {
             activeDeck = [...vocab]
         }
-        // Shuffle the deck for practice
-        setDeck(shuffle(activeDeck))
+        // Shuffle first, then sort by weight descending so ties remain randomly distributed
+        const shuffled = shuffle(activeDeck)
+        shuffled.sort((a, b) => {
+            const keyA = a.word.trim().toLowerCase()
+            const keyB = b.word.trim().toLowerCase()
+            const wA = loadedWeights[keyA] !== undefined ? loadedWeights[keyA] : 3
+            const wB = loadedWeights[keyB] !== undefined ? loadedWeights[keyB] : 3
+            return wB - wA
+        })
+
+        setDeck(shuffled)
         setCurrentIndex(0)
         setIsRevealed(false)
         setTimeLeft(10)
         setIsFinished(false)
-    }, [vocab, hiddenIndices])
+    }, [vocab, hiddenIndices, loadWeights])
 
     useEffect(() => {
         initDeck()
-    }, [initDeck])
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current)
+            if (audioRef.current) audioRef.current.pause()
+        }
+    }, [])
 
     const playWordAudio = useCallback(async (wordText: string) => {
         if (!textbook) return
@@ -97,7 +134,11 @@ export function VocabRecallModal({
                 if (prev <= 1) {
                     clearInterval(timerRef.current)
                     timerRef.current = null
-                    revealCurrentWord()
+                    setIsRevealed(true)
+                    const currentItem = deck[currentIndex]
+                    if (currentItem) {
+                        playWordAudio(currentItem.word)
+                    }
                     return 0
                 }
                 return prev - 1
@@ -107,7 +148,7 @@ export function VocabRecallModal({
         return () => {
             if (timerRef.current) clearInterval(timerRef.current)
         }
-    }, [deck, currentIndex, isRevealed, isFinished, revealCurrentWord])
+    }, [currentIndex, isRevealed, isFinished, deck.length])
 
     const handleNext = () => {
         if (audioRef.current) {
@@ -124,6 +165,26 @@ export function VocabRecallModal({
         }
     }
 
+    const updateWeight = (delta: number) => {
+        if (deck.length === 0) return
+        const currentItem = deck[currentIndex]
+        if (currentItem) {
+            const currentW = getWordWeight(currentItem.word)
+            const newW = Math.max(1, currentW + delta)
+            const wordKey = currentItem.word.trim().toLowerCase()
+            const newWeights = { ...weights, [wordKey]: newW }
+
+            setWeights(newWeights)
+            try {
+                localStorage.setItem(weightsKey, JSON.stringify(newWeights))
+            } catch (e) {
+                console.error('Failed to save weights:', e)
+            }
+        }
+
+        handleNext()
+    }
+
     const handleClose = () => {
         if (timerRef.current) clearInterval(timerRef.current)
         if (audioRef.current) audioRef.current.pause()
@@ -135,6 +196,7 @@ export function VocabRecallModal({
     const currentItem = deck[currentIndex]
     const progressPercent = ((currentIndex + 1) / deck.length) * 100
     const meaningText = formatMeaning ? formatMeaning(currentItem) : (currentItem?.meaning || '')
+    const currentWeight = currentItem ? getWordWeight(currentItem.word) : 3
 
     return (
         <div className="vg-modal-backdrop" onClick={(e) => e.stopPropagation()}>
@@ -148,6 +210,15 @@ export function VocabRecallModal({
                     <div className="vg-card-progress-bar" style={{ width: `${isFinished ? 100 : progressPercent}%` }}></div>
                 </div>
 
+                {!isFinished && (
+                    <div className="vg-card-index-bar">
+                        <span className="vg-card-index">Word {currentIndex + 1} of {deck.length}</span>
+                        <span key={currentItem ? currentItem.word : currentIndex} className={`vg-card-weight-badge ${currentWeight >= 4 ? 'hard' : currentWeight <= 2 ? 'easy' : ''}`}>
+                            Index: <b>{currentWeight}</b>
+                        </span>
+                    </div>
+                )}
+
                 {isFinished ? (
                     <div className="vg-recall-content-container" style={{ minHeight: '260px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                         <div className="vg-flashcard-success-hero">
@@ -159,8 +230,6 @@ export function VocabRecallModal({
                 ) : (
                     <div className="vg-recall-content-container">
                         <div className="vg-recall-box">
-                            <div className="vg-card-index">Word {currentIndex + 1} of {deck.length}</div>
-                            
                             {/* Question prompt (Chinese) */}
                             <div className="vg-recall-prompt-section">
                                 <div className="vg-recall-meaning">{meaningText}</div>
@@ -221,12 +290,25 @@ export function VocabRecallModal({
                         <>
                             {!isRevealed ? (
                                 <button className="vg-btn-dont-know" onClick={revealCurrentWord}>
-                                    Show Now ({timeLeft}s)
+                                    Show Now
                                 </button>
                             ) : (
-                                <button className="vg-btn-next" onClick={handleNext}>
-                                    Next ➡️
-                                </button>
+                                <>
+                                    <button 
+                                        className="vg-btn-easy" 
+                                        onClick={() => updateWeight(-1)}
+                                        title="Reduce index (easier)"
+                                    >
+                                        Easy
+                                    </button>
+                                    <button 
+                                        className="vg-btn-hard" 
+                                        onClick={() => updateWeight(1)}
+                                        title="Increase index (harder)"
+                                    >
+                                        Hard
+                                    </button>
+                                </>
                             )}
                         </>
                     )}
