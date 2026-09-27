@@ -78,6 +78,19 @@ export function VocabRecallModal({
 
     useEffect(() => {
         initDeck()
+
+        // Pre-load and save all audio files to IndexedDB for seamless Rapid Thinking practice
+        if (textbook && vocab && vocab.length > 0) {
+            for (const item of vocab) {
+                if (item?.word) {
+                    const url = getAudioUrl(item.word, textbook, isCf)
+                    if (url) {
+                        audioCache.preloadAndSync(url)
+                    }
+                }
+            }
+        }
+
         return () => {
             if (timerRef.current) clearInterval(timerRef.current)
             if (audioRef.current) audioRef.current.pause()
