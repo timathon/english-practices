@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { audioCache } from '../lib/audioCache'
 import { getAudioUrl, shuffle } from '../lib/practiceAudio'
 import { AnimatedWordSVG } from './VocabTraceModal'
+import './VocabMasterShell.css'
 
 interface VocabRecallModalProps {
     vocab: any[]
@@ -28,6 +29,11 @@ export function VocabRecallModal({
     const [timeLeft, setTimeLeft] = useState(10)
     const [isFinished, setIsFinished] = useState(false)
     const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+    const [isRateLocked, setIsRateLocked] = useState(false)
+    const [weightDeltaAnim, setWeightDeltaAnim] = useState<number | null>(null)
+    const [showHintModal, setShowHintModal] = useState(false)
+    const [hintTimeLeft, setHintTimeLeft] = useState(5)
+    const [isClosing, setIsClosing] = useState(false)
     const [weights, setWeights] = useState<Record<string, number>>({})
 
     const weightsKey = `ep-vg-weights-${practiceId || textbook || 'default'}`
@@ -49,7 +55,52 @@ export function VocabRecallModal({
     }, [weights])
 
     const timerRef = useRef<any>(null)
+    const rateLockTimerRef = useRef<any>(null)
+    const weightAnimTimerRef = useRef<any>(null)
+    const hintIntervalRef = useRef<any>(null)
     const audioRef = useRef<HTMLAudioElement | null>(null)
+
+    const forceResetHint = useCallback(() => {
+        setShowHintModal(false)
+        setIsClosing(false)
+        if (hintIntervalRef.current) {
+            clearInterval(hintIntervalRef.current)
+            hintIntervalRef.current = null
+        }
+    }, [])
+
+    const closeHintModal = useCallback(() => {
+        setShowHintModal(prev => {
+            if (!prev) return false
+            setIsClosing(true)
+            setTimeout(() => {
+                setShowHintModal(false)
+                setIsClosing(false)
+                if (hintIntervalRef.current) {
+                    clearInterval(hintIntervalRef.current)
+                    hintIntervalRef.current = null
+                }
+            }, 200)
+            return prev
+        })
+    }, [])
+
+    const handleShowHint = useCallback(() => {
+        setIsClosing(false)
+        setShowHintModal(true)
+        setHintTimeLeft(5)
+
+        if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
+
+        let secondsLeft = 5
+        hintIntervalRef.current = setInterval(() => {
+            secondsLeft -= 1
+            setHintTimeLeft(secondsLeft)
+            if (secondsLeft <= 0) {
+                closeHintModal()
+            }
+        }, 1000)
+    }, [closeHintModal])
 
     const initDeck = useCallback(() => {
         const loadedWeights = loadWeights()
@@ -93,6 +144,9 @@ export function VocabRecallModal({
 
         return () => {
             if (timerRef.current) clearInterval(timerRef.current)
+            if (rateLockTimerRef.current) clearTimeout(rateLockTimerRef.current)
+            if (weightAnimTimerRef.current) clearTimeout(weightAnimTimerRef.current)
+            if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
             if (audioRef.current) audioRef.current.pause()
         }
     }, [])
@@ -135,6 +189,30 @@ export function VocabRecallModal({
         }
     }, [deck, currentIndex, playWordAudio])
 
+    // Lock Easy/Hard buttons for 1 second when word is revealed
+    useEffect(() => {
+        if (isRevealed) {
+            setIsRateLocked(true)
+            if (rateLockTimerRef.current) clearTimeout(rateLockTimerRef.current)
+            rateLockTimerRef.current = setTimeout(() => {
+                setIsRateLocked(false)
+                rateLockTimerRef.current = null
+            }, 1000)
+        } else {
+            setIsRateLocked(false)
+            if (rateLockTimerRef.current) {
+                clearTimeout(rateLockTimerRef.current)
+                rateLockTimerRef.current = null
+            }
+        }
+        return () => {
+            if (rateLockTimerRef.current) {
+                clearTimeout(rateLockTimerRef.current)
+                rateLockTimerRef.current = null
+            }
+        }
+    }, [isRevealed])
+
     // Handle timer for current question
     useEffect(() => {
         if (deck.length === 0 || isFinished || isRevealed) return
@@ -164,6 +242,12 @@ export function VocabRecallModal({
     }, [currentIndex, isRevealed, isFinished, deck.length])
 
     const handleNext = () => {
+        forceResetHint()
+        if (weightAnimTimerRef.current) {
+            clearTimeout(weightAnimTimerRef.current)
+            weightAnimTimerRef.current = null
+        }
+        setWeightDeltaAnim(null)
         if (audioRef.current) {
             audioRef.current.pause()
         }
@@ -179,7 +263,7 @@ export function VocabRecallModal({
     }
 
     const updateWeight = (delta: number) => {
-        if (deck.length === 0) return
+        if (deck.length === 0 || isRateLocked || weightDeltaAnim !== null) return
         const currentItem = deck[currentIndex]
         if (currentItem) {
             const currentW = getWordWeight(currentItem.word)
@@ -195,11 +279,22 @@ export function VocabRecallModal({
             }
         }
 
-        handleNext()
+        setIsRateLocked(true)
+        setWeightDeltaAnim(delta)
+
+        if (weightAnimTimerRef.current) clearTimeout(weightAnimTimerRef.current)
+        weightAnimTimerRef.current = setTimeout(() => {
+            weightAnimTimerRef.current = null
+            setWeightDeltaAnim(null)
+            handleNext()
+        }, 1000)
     }
 
     const handleClose = () => {
+        forceResetHint()
         if (timerRef.current) clearInterval(timerRef.current)
+        if (rateLockTimerRef.current) clearTimeout(rateLockTimerRef.current)
+        if (weightAnimTimerRef.current) clearTimeout(weightAnimTimerRef.current)
         if (audioRef.current) audioRef.current.pause()
         onClose()
     }
@@ -226,8 +321,16 @@ export function VocabRecallModal({
                 {!isFinished && (
                     <div className="vg-card-index-bar">
                         <span className="vg-card-index">Word {currentIndex + 1} of {deck.length}</span>
-                        <span key={currentItem ? currentItem.word : currentIndex} className={`vg-card-weight-badge ${currentWeight >= 4 ? 'hard' : currentWeight <= 2 ? 'easy' : ''}`}>
+                        <span 
+                            key={`${currentItem ? currentItem.word : currentIndex}-${weightDeltaAnim ?? 'none'}`} 
+                            className={`vg-card-weight-badge ${currentWeight >= 4 ? 'hard' : currentWeight <= 2 ? 'easy' : ''} ${weightDeltaAnim !== null ? (weightDeltaAnim < 0 ? 'anim-easy' : 'anim-hard') : ''}`}
+                        >
                             Index: <b>{currentWeight}</b>
+                            {weightDeltaAnim !== null && (
+                                <span className={`vg-badge-delta-floating ${weightDeltaAnim < 0 ? 'delta-minus' : 'delta-plus'}`}>
+                                    {weightDeltaAnim > 0 ? `+${weightDeltaAnim}` : weightDeltaAnim}
+                                </span>
+                            )}
                         </span>
                     </div>
                 )}
@@ -267,9 +370,23 @@ export function VocabRecallModal({
                                         </button>
                                     </div>
                                     <AnimatedWordSVG word={currentItem.word} />
-                                    {currentItem.ipa && currentItem.ipa !== 'none' && (
-                                        <div className="vg-card-detail" style={{ justifyContent: 'center', marginTop: '6px' }}>
-                                            <span className="vg-card-value font-ipa" style={{ fontSize: '1.05em' }}>{currentItem.ipa}</span>
+                                    {((currentItem.ipa && currentItem.ipa !== 'none') || currentItem.memorization_hook || currentItem.hint) && (
+                                        <div className="vg-card-detail" style={{ justifyContent: 'center', alignItems: 'center', marginTop: '6px', display: 'flex', gap: '8px' }}>
+                                            {currentItem.ipa && currentItem.ipa !== 'none' && (
+                                                <span className="vg-card-value font-ipa" style={{ fontSize: '1.05em' }}>{currentItem.ipa}</span>
+                                            )}
+                                            {(currentItem.memorization_hook || currentItem.hint) && (
+                                                <button 
+                                                    className="vm-prompt-hint-btn" 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleShowHint()
+                                                    }}
+                                                    title="Hint"
+                                                >
+                                                    💡
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                     {currentItem.context_sentence && (
@@ -310,6 +427,7 @@ export function VocabRecallModal({
                                     <button 
                                         className="vg-btn-easy" 
                                         onClick={() => updateWeight(-1)}
+                                        disabled={isRateLocked}
                                         title="Reduce index (easier)"
                                     >
                                         Easy
@@ -317,6 +435,7 @@ export function VocabRecallModal({
                                     <button 
                                         className="vg-btn-hard" 
                                         onClick={() => updateWeight(1)}
+                                        disabled={isRateLocked}
                                         title="Increase index (harder)"
                                     >
                                         Hard
@@ -326,6 +445,22 @@ export function VocabRecallModal({
                         </>
                     )}
                 </div>
+
+                {(showHintModal || isClosing) && (
+                    <div className={`vm-modal-overlay${isClosing ? ' closing' : ''}`} onClick={closeHintModal} style={{ zIndex: 1200 }}>
+                        <div className={`vm-modal-content${isClosing ? ' closing' : ''}`} onClick={e => e.stopPropagation()} style={{ textAlign: 'center', background: '#ffffff' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary, #3b82f6)' }}>
+                                    💡 Hint (提示) <span style={{ fontSize: '0.9rem', color: '#999', marginLeft: '6px' }}>({hintTimeLeft}s)</span>
+                                </span>
+                                <button className="vm-close-btn" style={{ margin: 0, width: 'auto', fontSize: '1.2rem' }} onClick={closeHintModal}>✕</button>
+                            </div>
+                            <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                                {currentItem?.memorization_hook || currentItem?.hint || '暂无提示'}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )
