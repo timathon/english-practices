@@ -43,6 +43,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
   const [selectedAttemptForDetails, setSelectedAttemptForDetails] = useState<any | null>(null)
   const [activeTestFullContent, setActiveTestFullContent] = useState<any | null>(null)
   const [loadingContent, setLoadingContent] = useState(false)
+  const [loadingVg, setLoadingVg] = useState(false)
 
   // Vocab Guide Modals State
   const [activeVgModal, setActiveVgModal] = useState<{
@@ -55,6 +56,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
   } | null>(null)
 
   const handleOpenVgModal = async (p: any, modalType: 'flashcards' | 'dictation' | 'recall') => {
+    setLoadingVg(true)
     let content = p.content
     if (!content || !content.unit_vocabulary) {
       try {
@@ -69,11 +71,15 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
         }
       } catch (e) {
         console.error("Failed to load vocab guide content:", e)
+        setLoadingVg(false)
         return
       }
     }
 
-    if (!content || !Array.isArray(content.unit_vocabulary)) return
+    if (!content || !Array.isArray(content.unit_vocabulary)) {
+      setLoadingVg(false)
+      return
+    }
 
     const initialVocab = content.unit_vocabulary.map((v: any, i: number) => ({ ...v, originalIndex: i }))
     const unitKey = `ep-vg-hidden-${p.id}`
@@ -102,6 +108,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
       hiddenIndices: hidden,
       isCf
     })
+    setLoadingVg(false)
   }
 
   const handleToggleWordHidden = (index: number) => {
@@ -1188,6 +1195,42 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
         ) : null}
       </div>
     )}
+    {loadingVg && (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(6px)',
+        zIndex: 10000,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#ffffff'
+      }}>
+        <div style={{
+          width: '36px',
+          height: '36px',
+          border: '4px solid rgba(255, 255, 255, 0.2)',
+          borderTopColor: 'var(--tab-active-text, #3b82f6)',
+          borderRadius: '50%',
+          animation: 'vg-spin 0.8s linear infinite',
+          marginBottom: '16px'
+        }} />
+        <div style={{ fontSize: '1.05rem', fontWeight: 600, letterSpacing: '0.5px' }}>
+          {showChinese ? '正在加载...' : 'Loading...'}
+        </div>
+        <style>{`
+          @keyframes vg-spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    )}
+
     {activeVgModal && activeVgModal.type === 'flashcards' && (
       <VocabFlashcardModal
         vocab={activeVgModal.vocab}
