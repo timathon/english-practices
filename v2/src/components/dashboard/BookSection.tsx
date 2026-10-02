@@ -12,6 +12,7 @@ import { TestSheetShell } from '../TestSheetShell'
 import { VocabFlashcardModal } from '../VocabFlashcardModal'
 import { VocabDictationModal } from '../VocabDictationModal'
 import { VocabRecallModal } from '../VocabRecallModal'
+import { VocabStoryPromptModal } from '../VocabStoryPromptModal'
 import { decryptContent, OBSCURE_KEY } from '../../lib/crypto'
 import { API_URL } from '../../lib/auth'
 
@@ -47,7 +48,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
 
   // Vocab Guide Modals State
   const [activeVgModal, setActiveVgModal] = useState<{
-    type: 'flashcards' | 'dictation' | 'recall'
+    type: 'flashcards' | 'dictation' | 'recall' | 'story-prompt'
     practice: any
     vocab: any[]
     chunks: any[][]
@@ -55,7 +56,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
     isCf: boolean
   } | null>(null)
 
-  const handleOpenVgModal = async (p: any, modalType: 'flashcards' | 'dictation' | 'recall') => {
+  const handleOpenVgModal = async (p: any, modalType: 'flashcards' | 'dictation' | 'recall' | 'story-prompt') => {
     setLoadingVg(true)
     let content = p.content
     if (!content || !content.unit_vocabulary) {
@@ -947,6 +948,18 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                   ▶️
                                 </button>
                                 <button 
+                                  className="vg-story-prompt-btn no-shake" 
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleOpenVgModal(p, 'story-prompt');
+                                  }} 
+                                  title="AI Story Prompt"
+                                  style={{ padding: '1px 7px', fontSize: '0.75rem', height: '22px' }}
+                                >
+                                  🤖
+                                </button>
+                                <button 
                                   className="vg-dictation-btn no-shake" 
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -1239,6 +1252,13 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
         textbook={activeVgModal.practice.textbook}
         practiceId={activeVgModal.practice.id}
         isCf={activeVgModal.isCf}
+        onClose={() => setActiveVgModal(null)}
+      />
+    )}
+
+    {activeVgModal && activeVgModal.type === 'story-prompt' && (
+      <VocabStoryPromptModal
+        vocab={activeVgModal.vocab}
         onClose={() => setActiveVgModal(null)}
       />
     )}

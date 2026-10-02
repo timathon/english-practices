@@ -8,6 +8,7 @@ import { VocabTraceModal } from './VocabTraceModal'
 import { VocabFlashcardModal } from './VocabFlashcardModal'
 import { VocabDictationModal } from './VocabDictationModal'
 import { VocabRecallModal } from './VocabRecallModal'
+import { VocabStoryPromptModal } from './VocabStoryPromptModal'
 
 function formatMeaning(item: any): string {
     if (!item || !item.meaning) return ''
@@ -45,6 +46,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
 
     // Modal Triggers
     const [showFlashcards, setShowFlashcards] = useState(false)
+    const [showStoryPromptModal, setShowStoryPromptModal] = useState(false)
     const [showDictationModal, setShowDictationModal] = useState(false)
     const [showRecallModal, setShowRecallModal] = useState(false)
     const [traceList, setTraceList] = useState<any[] | null>(null)
@@ -253,6 +255,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                     <span>Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b></span>
                                     <div className="vg-stats-buttons">
                                         <button className="vg-play-cards-btn" onClick={() => setShowFlashcards(true)} title="Start Flashcards">▶️</button>
+                                        <button className="vg-story-prompt-btn" onClick={() => setShowStoryPromptModal(true)} title="AI Story Prompt">🤖</button>
                                         <button className="vg-dictation-btn" onClick={() => setShowDictationModal(true)} title="Start Dictation">✍️</button>
                                         <button className="vg-recall-btn" onClick={() => setShowRecallModal(true)} title="Start Rapid Thinking Practice">💡</button>
                                     </div>
@@ -444,6 +447,13 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     practiceId={practiceId}
                     isCf={isCf}
                     onClose={() => setShowFlashcards(false)}
+                />
+            )}
+
+            {showStoryPromptModal && (
+                <VocabStoryPromptModal
+                    vocab={vocab}
+                    onClose={() => setShowStoryPromptModal(false)}
                 />
             )}
 
