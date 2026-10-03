@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const textToSpeech = require('@google-cloud/text-to-speech');
-const { S3Client, HeadObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, HeadObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 const ttsClient = new textToSpeech.TextToSpeechClient();
 
@@ -532,9 +532,6 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
         syncAudioRecords(absoluteTarget, jobState.items, bookName);
     }
 
-    const ttsCompletedItems = jobState.items.filter(i => i["tts-done"] === 1);
-    console.log(`\n\n🎉 Finished generating ${ttsCompletedItems.length} MP3 files in ${batchOutputDir}`);
-
     return {
         jobJsonPath,
         batchOutputDir,
@@ -542,9 +539,65 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
     };
 }
 
+/**
+ * Uploads generated MP3s for a job to Cloudflare R2 and syncs audio records index.
+ */
+async function uploadJobItems(jobState, jobJsonPath, batchSize = 5) {
+    const bookName = jobState.bookName || 'a8a';
+    const itemsToUpload = (jobState.items || []).filter(item => {
+        return item["tts-done"] === 1 && item.mp3 && fs.existsSync(item.mp3) && item["upload-done"] !== 1;
+    });
+
+    if (itemsToUpload.length === 0) {
+        console.log("ℹ️ All MP3 files are already uploaded to Cloudflare R2.");
+        return 0;
+    }
+
+    console.log(`\n☁️ Uploading ${itemsToUpload.length} file(s) to R2 bucket [${BUCKET_NAME}]...`);
+    let uploadedCount = 0;
+
+    for (let i = 0; i < itemsToUpload.length; i += batchSize) {
+        const batch = itemsToUpload.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (item) => {
+            const r2Key = `ep/${bookName}/${item.hash}.mp3`;
+            try {
+                await s3Client.send(new PutObjectCommand({
+                    Bucket: BUCKET_NAME,
+                    Key: r2Key,
+                    Body: fs.readFileSync(item.mp3),
+                    ContentType: 'audio/mpeg'
+                }));
+                uploadedCount++;
+                item["upload-done"] = 1;
+                item.r2Url = `https://r2.smartedu.com/${r2Key}`;
+                process.stdout.write(`\r✅ Uploaded [${uploadedCount}/${itemsToUpload.length}]: ${r2Key}`);
+            } catch (uploadErr) {
+                console.error(`\n❌ Failed to upload ${r2Key}: ${uploadErr.message}`);
+            }
+        }));
+    }
+
+    // Save updated job JSON
+    if (jobJsonPath && fs.existsSync(jobJsonPath)) {
+        fs.writeFileSync(jobJsonPath, JSON.stringify(jobState, null, 2), 'utf8');
+    }
+
+    // Update audio_records JSON index
+    const targetAbsPath = jobState.targetPath ? path.resolve(jobState.targetPath) : jobJsonPath;
+    if (targetAbsPath) {
+        syncAudioRecords(targetAbsPath, jobState.items, bookName);
+    }
+
+    console.log(`\n\n🎉 Upload completed! Successfully uploaded ${uploadedCount} file(s) to R2 bucket [${BUCKET_NAME}].\n`);
+    return uploadedCount;
+}
+
 module.exports = {
     runTtsSynthesis,
+    uploadJobItems,
     CHIRP3_VOICES,
     getAudioRecordInfo,
-    syncAudioRecords
+    syncAudioRecords,
+    s3Client,
+    BUCKET_NAME
 };

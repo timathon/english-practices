@@ -236,7 +236,8 @@ function main() {
     });
 }
 
-function generateHtmlPage(jobData, jsonFileName) {
+function generateHtmlPage(jobData, jsonFileName, options = {}) {
+    const isStatic = !!options.isStatic;
     const items = jobData.items || [];
     const voicesSet = new Set();
     const regenBatchesSet = new Set();
@@ -274,15 +275,17 @@ function generateHtmlPage(jobData, jsonFileName) {
         }
     });
 
-    // Map mp3 local absolute paths to relative /audio/ endpoint
+    // Map mp3 local absolute paths to relative /audio/ endpoint (or direct relative path if isStatic)
     const processedItems = items.map(i => {
         let relativeMp3 = '';
         if (i.mp3) {
             const parts = i.mp3.split('/temp/audio/');
             if (parts.length > 1) {
-                relativeMp3 = '/audio/' + parts[1];
+                relativeMp3 = isStatic ? parts[1] : ('/audio/' + parts[1]);
             } else {
-                relativeMp3 = '/audio/' + path.basename(path.dirname(i.mp3)) + '/' + path.basename(i.mp3);
+                relativeMp3 = isStatic 
+                    ? (path.basename(path.dirname(i.mp3)) + '/' + path.basename(i.mp3)) 
+                    : ('/audio/' + path.basename(path.dirname(i.mp3)) + '/' + path.basename(i.mp3));
             }
         } else if (i.r2Url) {
             relativeMp3 = i.r2Url;
@@ -1034,4 +1037,11 @@ function escapeHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-main();
+if (require.main === module) {
+    main();
+}
+
+module.exports = {
+    generateHtmlPage,
+    main
+};

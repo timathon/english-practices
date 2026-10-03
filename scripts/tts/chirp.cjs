@@ -3,35 +3,41 @@
  * chirp.cjs (scripts/tts/chirp.cjs)
  * 
  * CLI tool for Google Cloud Text-to-Speech (Chirp 3 HD).
- * Generates audio files and then automatically spins up play-chirp.cjs web server.
+ * Generates audio files and automatically uploads them to Cloudflare R2 by default.
  * 
  * Usage:
  *   node scripts/tts/chirp.cjs <unit_directory_or_file_path> [flags]
  * 
  * Flags:
- *   --batch <size> Set concurrent request batch size (default: 5).
- *   --rpm <limit>  Set requests per minute limit (default: 50). Sleeps until next window when hit.
- *   --voice <name> Fix voice name (default: rotates through 30 Chirp 3 HD voices).
- *   --rate <speed> Set speaking rate (default: 0.9 for EFL learner clarity).
- *   --regenerate   Force regeneration of all audios.
- *   --no-play      Skip auto-launching play-chirp web server after generation.
- *   --port <port>  Port for play-chirp server (default: 3300).
+ *   --review, --report Generate standalone HTML review report & skip auto-upload for manual review.
+ *   --no-upload        Skip uploading audio files to Cloudflare R2.
+ *   --upload           Force upload (default).
+ *   --batch <size>     Set concurrent request batch size (default: 5).
+ *   --rpm <limit>      Set requests per minute limit (default: 50). Sleeps until next window when hit.
+ *   --voice <name>     Fix voice name (default: rotates through Chirp 3 HD voices).
+ *   --rate <speed>     Set speaking rate (default: 0.9 for EFL learner clarity).
+ *   --regenerate       Force regeneration of all audios.
+ *   --no-play          Skip auto-launching play-chirp web server after generation.
+ *   --port <port>      Port for play-chirp server (default: 3300).
  * 
  * Examples:
  *   node scripts/tts/chirp.cjs v2-data/A8A/a8a-u8
- *   node scripts/tts/chirp.cjs v2-data/A8A/a8a-u8/a8a-u8-vocab-guide.json --batch 5 --rpm 50
- *   node scripts/tts/chirp.cjs v2-data/A8A/a8a-u8 --voice Kore
+ *   node scripts/tts/chirp.cjs v2-data/A8A/a8a-u8 --review
+ *   node scripts/tts/chirp.cjs v2-data/A8A/a8a-u8 --no-upload --no-play
  */
 
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
-const { runTtsSynthesis } = require('./tts-chirp.cjs');
+const { spawn, execSync } = require('child_process');
+const { runTtsSynthesis, uploadJobItems } = require('./tts-chirp.cjs');
+const { generateHtmlPage } = require('./play-chirp.cjs');
 
 async function main() {
     const args = process.argv.slice(2);
+    const isReview = args.includes('--review') || args.includes('--report') || args.includes('--html');
     const forceRegenerate = args.includes('--regenerate');
     const noPlayFlag = args.includes('--no-play');
+    const noUpload = args.includes('--no-upload') || isReview;
 
     let explicitVoice = null;
     const voiceIdx = args.indexOf('--voice');
@@ -69,16 +75,15 @@ async function main() {
         targetHashes = new Set(args[hashesIdx + 1].split(',').map(h => h.trim()).filter(Boolean));
     }
 
-    const targetArg = args.find(a => !a.startsWith('--') && 
-        (args[args.indexOf(a) - 1] !== '--voice') && 
-        (args[args.indexOf(a) - 1] !== '--batch') && 
-        (args[args.indexOf(a) - 1] !== '--rpm') && 
-        (args[args.indexOf(a) - 1] !== '--rate') && 
-        (args[args.indexOf(a) - 1] !== '--hashes') && 
-        (args[args.indexOf(a) - 1] !== '--port'));
+    const valueFlags = new Set(['--voice', '--batch', '--rpm', '--rate', '--hashes', '--port']);
+    const targetArg = args.find((a, idx) => {
+        if (a.startsWith('--')) return false;
+        if (idx > 0 && valueFlags.has(args[idx - 1])) return false;
+        return true;
+    });
 
     if (!targetArg) {
-        console.error("Usage: node scripts/tts/chirp.cjs <unit_directory_or_file_or_chirp_json_path> [--regenerate] [--voice <name>] [--batch <size>] [--rpm <limit>] [--rate <speed>] [--no-play]");
+        console.error("Usage: node scripts/tts/chirp.cjs <unit_directory_or_file_or_chirp_json_path> [--review] [--no-upload] [--regenerate] [--voice <name>] [--batch <size>] [--rpm <limit>] [--rate <speed>] [--no-play]");
         process.exit(1);
     }
 
@@ -98,12 +103,33 @@ async function main() {
         return;
     }
 
+    // 2. Generate HTML report for audio review if --review / --report / --html is specified
+    if (isReview) {
+        const reportHtmlPath = result.jobJsonPath.replace(/\.json$/, '.html');
+        const htmlContent = generateHtmlPage(result.jobState, path.basename(result.jobJsonPath), { isStatic: true });
+        fs.writeFileSync(reportHtmlPath, htmlContent, 'utf8');
+        console.log(`\n📄 Generated audio review HTML report: ${reportHtmlPath}`);
+
+        try {
+            const winPath = execSync(`wslpath -w "${reportHtmlPath}" 2>/dev/null`, { encoding: 'utf8' }).trim();
+            if (winPath) {
+                console.log(`🌐 Windows Path: ${winPath}`);
+            }
+        } catch (e) {}
+        console.log(`ℹ️ Review mode active: Automatic upload deferred for review.\n   Review generated audio files before uploading via UI or running without --review.`);
+    }
+
+    // 3. Upload to Cloudflare R2 by default (unless --no-upload or --review is active)
+    if (!noUpload) {
+        await uploadJobItems(result.jobState, result.jobJsonPath, batchSize);
+    }
+
+    // 4. Auto-launch play-chirp server if requested or in review mode
     if (noPlayFlag) {
         console.log("ℹ️ --no-play flag specified. Skipping web server launch.");
         return;
     }
 
-    // 2. Auto-launch play-chirp server
     console.log(`\n🌐 Auto-launching play-chirp showcase server...`);
     const playScript = path.resolve(__dirname, 'play-chirp.cjs');
     
