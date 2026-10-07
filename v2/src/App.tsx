@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Navigate, Link, Outlet, useRouteError } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate, Link, Outlet, useRouteError, ScrollRestoration } from 'react-router-dom'
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 
 export function forceRefreshBypassCache() {
@@ -305,22 +305,31 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
 
                   if (loggedInUsers.length > 0) {
                     try {
+                      // Terminate current session on server
+                      await signOut();
+                    } catch (e) {
+                      console.error('Sign out error:', e);
+                    }
+                    try {
                       localStorage.setItem('active_session_token', loggedInUsers[0].token);
                       await authClient.multiSession.setActive({
                         sessionToken: loggedInUsers[0].token
-                      })
+                      });
                     } catch (err) {
-                      console.error('Failed to set next active session on sign out:', err)
+                      console.error('Failed to set next active session on sign out:', err);
                     }
                     window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/dashboard`;
                   } else {
-                    localStorage.removeItem('active_session_token');
                     try {
+                      // Revoke session on server while active_session_token is still present for the auth header
                       await signOut();
                     } catch (e) {
-                      console.error(e);
+                      console.error('Sign out error:', e);
+                    } finally {
+                      localStorage.removeItem('active_session_token');
+                      localStorage.removeItem('epv2_records_cache');
+                      window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`;
                     }
-                    window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`;
                   }
                 }}
                 style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
@@ -357,6 +366,7 @@ function RootLayout() {
 
   return (
     <>
+      <ScrollRestoration />
       <Navigation session={session} showChinese={showChinese} onCycleComplete={() => setShowChinese((prev: boolean) => !prev)} />
       {session && <PetFloatingCompanion />}
       <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>

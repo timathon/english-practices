@@ -138,6 +138,12 @@ export function SwitchUser() {
         // Auto switch to next user
         setSwitchingTo(updatedUsers[0].name)
         try {
+          // Terminate old session on server
+          await signOut()
+        } catch (e) {
+          console.error(e)
+        }
+        try {
           localStorage.setItem('active_session_token', updatedUsers[0].token)
           await authClient.multiSession.setActive({
             sessionToken: updatedUsers[0].token
@@ -147,13 +153,16 @@ export function SwitchUser() {
         }
         window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/dashboard`
       } else {
-        localStorage.removeItem('active_session_token')
         try {
+          // Revoke session on server while active_session_token is still present for the auth header
           await signOut()
         } catch (e) {
           console.error(e)
+        } finally {
+          localStorage.removeItem('active_session_token')
+          localStorage.removeItem('epv2_records_cache')
+          window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`
         }
-        window.location.href = `${import.meta.env.BASE_URL.slice(0, -1) || ''}/signin`
       }
     }
   }

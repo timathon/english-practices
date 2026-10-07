@@ -27,8 +27,6 @@ export function PracticeShell() {
     const { id } = useParams()
     const location = useLocation()
     const tnSiblingIds: string[] = (location.state as any)?.tnSiblingIds || []
-    const [practice, setPractice] = useState<any>(null)
-    const [error, setError] = useState('')
 
     const decrypt = (data: any) => {
         if (data.isEncrypted && typeof data.content === 'string') {
@@ -42,47 +40,59 @@ export function PracticeShell() {
         return data
     }
 
+    const isAudioDetective = id?.endsWith('-ad')
+    const realMainId = isAudioDetective ? id!.replace(/-ad$/, '') : id!
+    const allIds = [realMainId, ...tnSiblingIds]
+
+    const processResults = (results: any[]) => {
+        const [main, ...siblings] = results
+        if (main.error) { setError(main.error); return null }
+        try {
+            const mainData = JSON.parse(JSON.stringify(main))
+            const decryptedMain = decrypt(mainData)
+            if (isAudioDetective) {
+                decryptedMain.type = 'audio-detective';
+                decryptedMain.title = 'Audio Detective';
+                decryptedMain.id = id; // keep original suffix so records save separately
+            }
+            if (siblings.length > 0 && (decryptedMain.type?.toLowerCase().includes('text-navigator') || decryptedMain.type?.toLowerCase().includes('writing-map'))) {
+                const validSiblings = siblings.filter(s => s && !s.error && s.content)
+                const siblingData = validSiblings.map(s => decrypt(JSON.parse(JSON.stringify(s))))
+                const allItems = [decryptedMain, ...siblingData]
+                decryptedMain.content = {
+                    level: decryptedMain.content?.level,
+                    part: decryptedMain.content?.part,
+                    writingPrompt: decryptedMain.content?.writingPrompt,
+                    tts: decryptedMain.content?.tts,
+                    sections: allItems.map((item: any) => ({
+                        section: item.content?.section ?? item.type,
+                        tree: item.content?.tree ?? {},
+                    }))
+                }
+            }
+            return decryptedMain
+        } catch (e: any) {
+            setError(e.message)
+            return null
+        }
+    }
+
+    const [practice, setPractice] = useState<any>(() => {
+        if (!id) return null
+        const syncCached = allIds.map(pid => practiceCache.getSync(pid))
+        if (syncCached.every(item => item !== null)) {
+            return processResults(syncCached)
+        }
+        return null
+    })
+    const [error, setError] = useState('')
+
     useEffect(() => {
+        window.scrollTo(0, 0)
         let active = true
         const controller = new AbortController()
         const { signal } = controller
-        const isAudioDetective = id?.endsWith('-ad')
-        const realMainId = isAudioDetective ? id!.replace(/-ad$/, '') : id!
-        const allIds = [realMainId, ...tnSiblingIds]
         let currentRawDataStr = ''
-
-        const processResults = (results: any[]) => {
-            const [main, ...siblings] = results
-            if (main.error) { setError(main.error); return null }
-            try {
-                const mainData = JSON.parse(JSON.stringify(main))
-                const decryptedMain = decrypt(mainData)
-                if (isAudioDetective) {
-                    decryptedMain.type = 'audio-detective';
-                    decryptedMain.title = 'Audio Detective';
-                    decryptedMain.id = id; // keep original suffix so records save separately
-                }
-                if (siblings.length > 0 && (decryptedMain.type?.toLowerCase().includes('text-navigator') || decryptedMain.type?.toLowerCase().includes('writing-map'))) {
-                    const validSiblings = siblings.filter(s => s && !s.error && s.content)
-                    const siblingData = validSiblings.map(s => decrypt(JSON.parse(JSON.stringify(s))))
-                    const allItems = [decryptedMain, ...siblingData]
-                    decryptedMain.content = {
-                        level: decryptedMain.content?.level,
-                        part: decryptedMain.content?.part,
-                        writingPrompt: decryptedMain.content?.writingPrompt,
-                        tts: decryptedMain.content?.tts,
-                        sections: allItems.map((item: any) => ({
-                            section: item.content?.section ?? item.type,
-                            tree: item.content?.tree ?? {},
-                        }))
-                    }
-                }
-                return decryptedMain
-            } catch (e: any) {
-                setError(e.message)
-                return null
-            }
-        }
 
         const triggerPrefetchUnitPractices = async (mainPracticeData: any) => {
             if (!mainPracticeData || !mainPracticeData.textbook || !mainPracticeData.unit) return

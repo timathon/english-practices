@@ -50,9 +50,27 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [showDictationModal, setShowDictationModal] = useState(false)
     const [showRecallModal, setShowRecallModal] = useState(false)
     const [traceList, setTraceList] = useState<any[] | null>(null)
+    const [weights, setWeights] = useState<Record<string, number>>({})
 
     const shellRef = useRef<HTMLDivElement>(null)
     const unitKey = `ep-vg-hidden-${practiceId}`
+    const weightsKey = `ep-vg-weights-${practiceId || textbook || 'default'}`
+
+    const loadWeights = () => {
+        try {
+            const raw = localStorage.getItem(weightsKey)
+            if (raw) return JSON.parse(raw)
+        } catch (e) {
+            console.error('Failed to load weights:', e)
+        }
+        return {}
+    }
+
+    const getWordWeight = (wordText: string): number => {
+        const key = wordText.trim().toLowerCase()
+        if (weights[key] !== undefined) return weights[key]
+        return 3 // Default initial difficulty index is 3
+    }
 
     const chunks: any[][] = []
     for (let i = 0; i < vocab.length; i += 10) {
@@ -92,6 +110,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
         document.body.style.padding = '15px'
         document.body.style.boxSizing = 'border-box'
         document.body.classList.add('vg-active')
+        window.scrollTo(0, 0)
 
         const initialVocab = data.unit_vocabulary.map((v: any, i: number) => ({ ...v, originalIndex: i }))
         setVocab(initialVocab)
@@ -112,11 +131,13 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             } catch (e) { console.error(e) }
         }
 
+        setWeights(loadWeights())
+
         return () => {
             Object.assign(document.body.style, originalStyle)
             document.body.classList.remove('vg-active')
         }
-    }, [data, practiceId, textbook, unitKey, isCf])
+    }, [data, practiceId, textbook, unitKey, weightsKey, isCf])
 
     useEffect(() => {
         setTempShowAll(true)
@@ -321,6 +342,18 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                                 <div className="vg-item-actions">
                                                     {item.unit && <span className="vg-unit">Unit {item.unit}</span>}
                                                     {item.page_number && <span className="vg-page">P{item.page_number}</span>}
+                                                    {(() => {
+                                                        const difficulty = getWordWeight(item.word);
+                                                        return (
+                                                            <span 
+                                                                className={`vg-difficulty-badge ${difficulty >= 4 ? 'hard' : difficulty <= 2 ? 'easy' : ''}`}
+                                                                title={`Difficulty Index: ${difficulty}`}
+                                                            >
+                                                                <span className="vg-difficulty-label">Diff:</span>
+                                                                <b>{difficulty}</b>
+                                                            </span>
+                                                        );
+                                                    })()}
                                                     <input
                                                         type="checkbox"
                                                         checked={isHidden}
@@ -476,7 +509,10 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     textbook={textbook}
                     practiceId={practiceId}
                     isCf={isCf}
-                    onClose={() => setShowRecallModal(false)}
+                    onClose={() => {
+                        setShowRecallModal(false)
+                        setWeights(loadWeights())
+                    }}
                 />
             )}
 

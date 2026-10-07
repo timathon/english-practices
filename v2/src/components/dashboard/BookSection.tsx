@@ -15,6 +15,7 @@ import { VocabRecallModal } from '../VocabRecallModal'
 import { VocabStoryPromptModal } from '../VocabStoryPromptModal'
 import { decryptContent, OBSCURE_KEY } from '../../lib/crypto'
 import { API_URL } from '../../lib/auth'
+import { practiceCache } from '../../lib/practiceCache'
 
 function formatMeaning(item: any): string {
   if (!item || !item.meaning) return ''
@@ -57,23 +58,34 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
   } | null>(null)
 
   const handleOpenVgModal = async (p: any, modalType: 'flashcards' | 'dictation' | 'recall' | 'story-prompt') => {
-    setLoadingVg(true)
     let content = p.content
     if (!content || !content.unit_vocabulary) {
-      try {
-        const res = await fetch(`${API_URL}/api/practices/${p.id}`, { credentials: 'include' })
-        const json = await res.json()
-        if (json && json.content) {
-          let decrypted = json.content
-          if (json.isEncrypted && typeof json.content === 'string') {
-            decrypted = decryptContent(json.content, OBSCURE_KEY)
-          }
-          content = decrypted
+      // 1. Check synchronous mem cache or IndexedDB first
+      const cached = practiceCache.getSync(p.id) || await practiceCache.get(p.id)
+      if (cached && cached.content) {
+        let decrypted = cached.content
+        if (cached.isEncrypted && typeof cached.content === 'string') {
+          decrypted = decryptContent(cached.content, OBSCURE_KEY)
         }
-      } catch (e) {
-        console.error("Failed to load vocab guide content:", e)
-        setLoadingVg(false)
-        return
+        content = decrypted
+      } else {
+        setLoadingVg(true)
+        try {
+          const res = await fetch(`${API_URL}/api/practices/${p.id}`, { credentials: 'include' })
+          const json = await res.json()
+          if (json && json.content) {
+            await practiceCache.set(p.id, json)
+            let decrypted = json.content
+            if (json.isEncrypted && typeof json.content === 'string') {
+              decrypted = decryptContent(json.content, OBSCURE_KEY)
+            }
+            content = decrypted
+          }
+        } catch (e) {
+          console.error("Failed to load vocab guide content:", e)
+          setLoadingVg(false)
+          return
+        }
       }
     }
 
@@ -131,11 +143,22 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
   const handleViewAttemptDetails = async (attempt: any) => {
     setSelectedAttemptForDetails(attempt)
     if (selectedTestPractice) {
+      const cached = practiceCache.getSync(selectedTestPractice.id) || await practiceCache.get(selectedTestPractice.id)
+      if (cached && cached.content) {
+        let decrypted = cached.content
+        if (cached.isEncrypted && typeof cached.content === 'string') {
+          decrypted = decryptContent(cached.content, OBSCURE_KEY)
+        }
+        setActiveTestFullContent(decrypted)
+        return
+      }
+
       setLoadingContent(true)
       try {
         const res = await fetch(`${API_URL}/api/practices/${selectedTestPractice.id}`, { credentials: 'include' })
         const json = await res.json()
         if (json && json.content) {
+          await practiceCache.set(selectedTestPractice.id, json)
           let decrypted = json.content
           if (json.isEncrypted && typeof json.content === 'string') {
             decrypted = decryptContent(json.content, OBSCURE_KEY)

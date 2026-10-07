@@ -325,7 +325,7 @@ export function VocabRecallModal({
                             key={`${currentItem ? currentItem.word : currentIndex}-${weightDeltaAnim ?? 'none'}`} 
                             className={`vg-card-weight-badge ${currentWeight >= 4 ? 'hard' : currentWeight <= 2 ? 'easy' : ''} ${weightDeltaAnim !== null ? (weightDeltaAnim < 0 ? 'anim-easy' : 'anim-hard') : ''}`}
                         >
-                            Index: <b>{currentWeight}</b>
+                            Difficulty Index: <b>{currentWeight}</b>
                             {weightDeltaAnim !== null && (
                                 <span className={`vg-badge-delta-floating ${weightDeltaAnim < 0 ? 'delta-minus' : 'delta-plus'}`}>
                                     {weightDeltaAnim > 0 ? `+${weightDeltaAnim}` : weightDeltaAnim}
