@@ -192,6 +192,84 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
     ? allQuestions
     : allQuestions.filter(q => q.type === modalQuestionFilter);
 
+  const [isRandomOpen, setIsRandomOpen] = React.useState(false);
+  const [randomCount, setRandomCount] = React.useState<number>(10);
+  const [selectedRandomTypes, setSelectedRandomTypes] = React.useState<string[]>(presentTypes);
+
+  const minRequiredCount = selectedRandomTypes.length;
+
+  // Available candidate questions matching selected types
+  const candidateQuestions = React.useMemo(() => {
+    if (selectedRandomTypes.length === 0) return [];
+    return allQuestions.filter(q => selectedRandomTypes.includes(q.type));
+  }, [allQuestions, selectedRandomTypes]);
+
+  const candidateCount = candidateQuestions.length;
+
+  // Sync types and count when allQuestions change or presentTypes change
+  React.useEffect(() => {
+    setSelectedRandomTypes(presentTypes);
+    setRandomCount(Math.max(presentTypes.length, Math.min(10, allQuestions.length)));
+  }, [publishingPoem.id, totalCount]);
+
+  // Adjust count if candidate pool changes or minimum per-type requirement changes
+  React.useEffect(() => {
+    if (candidateCount > 0) {
+      if (randomCount < minRequiredCount) {
+        setRandomCount(Math.min(minRequiredCount, candidateCount));
+      } else if (randomCount > candidateCount) {
+        setRandomCount(candidateCount);
+      }
+    } else {
+      setRandomCount(0);
+    }
+  }, [candidateCount, minRequiredCount]);
+
+  const handleToggleRandomType = (type: string) => {
+    setSelectedRandomTypes(prev => {
+      if (prev.includes(type)) {
+        return prev.filter(t => t !== type);
+      } else {
+        return [...prev, type];
+      }
+    });
+  };
+
+  const handleSelectAllRandomTypes = () => {
+    setSelectedRandomTypes(presentTypes);
+  };
+
+  const handleRandomSelect = () => {
+    if (!onSetSelectedQuestionIds || candidateCount === 0) return;
+    const clampedCount = Math.max(Math.min(minRequiredCount, candidateCount), Math.min(randomCount, candidateCount));
+
+    const selectedIds: string[] = [];
+    const usedIds = new Set<string>();
+
+    // Step 1: Ensure at least one question for each selected type
+    selectedRandomTypes.forEach(t => {
+      const typeQuestions = allQuestions.filter(q => q.type === t);
+      if (typeQuestions.length > 0) {
+        // Randomly pick 1 question from this type
+        const randomQ = typeQuestions[Math.floor(Math.random() * typeQuestions.length)];
+        if (!usedIds.has(randomQ.id)) {
+          selectedIds.push(randomQ.id);
+          usedIds.add(randomQ.id);
+        }
+      }
+    });
+
+    // Step 2: Fill remaining quota randomly from remaining candidate questions
+    const remainingCandidates = candidateQuestions.filter(q => !usedIds.has(q.id));
+    const shuffledRemaining = [...remainingCandidates].sort(() => 0.5 - Math.random());
+    const needed = Math.max(0, clampedCount - selectedIds.length);
+    const additional = shuffledRemaining.slice(0, needed);
+    additional.forEach(q => selectedIds.push(q.id));
+
+    onSetSelectedQuestionIds(selectedIds);
+    setIsRandomOpen(false);
+  };
+
   return (
     <div className="fixed inset-0 !mt-0 !m-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 space-y-4 h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
@@ -414,7 +492,7 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-end gap-3 w-full">
+            <div className="flex items-center justify-between gap-3 w-full">
               <button
                 type="button"
                 onClick={onClose}
@@ -422,22 +500,195 @@ export const TeacherQuestionReviewModal: React.FC<TeacherQuestionReviewModalProp
               >
                 取消
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (selectedQuestionIds.length === 0) {
-                    alert('请至少勾选 1 道题目后再预览！');
-                    return;
-                  }
-                  if (onConfirmPublish) {
-                    onConfirmPublish();
-                  }
-                }}
-                disabled={selectedQuestionIds.length === 0}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
-              >
-                👁 预览题目并发布 ({selectedQuestionIds.length} 题) →
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Random Selection Control */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRandomOpen(prev => !prev);
+                    }}
+                    disabled={totalCount === 0}
+                    className="px-4 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                  >
+                    <span>🎲</span>
+                    <span>随机选取</span>
+                  </button>
+
+                  {isRandomOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                      {/* Blurry Backdrop */}
+                      <div
+                        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsRandomOpen(false);
+                        }}
+                      />
+
+                      {/* Random Selection Modal Centered */}
+                      <div
+                        className="relative bg-white border border-slate-200 shadow-2xl rounded-3xl p-6 z-10 w-full max-w-lg space-y-4 animate-in fade-in zoom-in-95 duration-150"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                          <span className="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <span className="text-lg">🎲</span> 随机抽选题量与题型
+                          </span>
+                          <span className="text-xs text-slate-500 font-medium bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full border border-blue-100">
+                            可选题池: <strong className="font-bold">{candidateCount}</strong> / {totalCount} 题
+                          </span>
+                        </div>
+
+                        {/* Question Type Filter Section */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-700">包含题型 ({selectedRandomTypes.length}/{presentTypes.length})</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleSelectAllRandomTypes}
+                                className="text-blue-600 hover:text-blue-700 font-bold hover:underline cursor-pointer"
+                              >
+                                全选
+                              </button>
+                              <span className="text-slate-300">|</span>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedRandomTypes([])}
+                                className="text-slate-400 hover:text-slate-600 font-medium hover:underline cursor-pointer"
+                              >
+                                清空
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 rounded-2xl border border-slate-100">
+                            {presentTypes.map(t => {
+                              const isSelected = selectedRandomTypes.includes(t);
+                              const count = allQuestions.filter(q => q.type === t).length;
+                              const style = typeColors[t] || {
+                                active: 'bg-slate-800 text-white shadow-xs border border-slate-900',
+                                inactive: 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200',
+                                countActive: 'bg-white/20 text-white',
+                                countInactive: 'bg-slate-200 text-slate-700',
+                              };
+
+                              return (
+                                <button
+                                  key={t}
+                                  type="button"
+                                  onClick={() => handleToggleRandomType(t)}
+                                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition border flex items-center gap-1.5 cursor-pointer select-none ${
+                                    isSelected
+                                      ? style.active
+                                      : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-100 line-through opacity-60'
+                                  }`}
+                                >
+                                  <span>{typeLabels[t] || t}</span>
+                                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                    isSelected ? style.countActive : 'bg-slate-200 text-slate-500 no-underline'
+                                  }`}>
+                                    {count}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Question Quantity Input & Quick Chips */}
+                        <div className="space-y-2 pt-2 border-t border-slate-100">
+                          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                            <span>抽取数量</span>
+                            {candidateCount === 0 ? (
+                              <span className="text-rose-500 text-xs font-normal">请至少勾选 1 种题型</span>
+                            ) : (
+                              <span className="text-slate-400 font-normal">
+                                最少 {minRequiredCount} 题（每种题型保底 1 题）· 最多 {candidateCount} 题
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="number"
+                              min={minRequiredCount}
+                              max={Math.max(minRequiredCount, candidateCount)}
+                              disabled={candidateCount === 0}
+                              value={randomCount}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                if (isNaN(val)) {
+                                  setRandomCount(minRequiredCount);
+                                } else {
+                                  setRandomCount(Math.max(minRequiredCount, Math.min(val, candidateCount)));
+                                }
+                              }}
+                              className="w-24 px-3 py-2 border border-slate-200 rounded-xl text-base font-bold text-slate-800 text-center focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-slate-100"
+                            />
+                            <span className="text-xs text-slate-500 font-medium">道题</span>
+                            <div className="flex gap-1.5 ml-auto">
+                              {[minRequiredCount, 10, candidateCount]
+                                .filter((v, i, a) => v >= minRequiredCount && v <= candidateCount && a.indexOf(v) === i)
+                                .map(n => (
+                                  <button
+                                    key={n}
+                                    type="button"
+                                    disabled={candidateCount === 0}
+                                    onClick={() => setRandomCount(n)}
+                                    className={`px-2.5 py-1 text-xs font-bold rounded-lg cursor-pointer border transition ${
+                                      randomCount === n
+                                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                                    }`}
+                                  >
+                                    {n === minRequiredCount && n !== candidateCount ? `保底(${n}题)` : n === candidateCount ? '全部' : `${n}题`}
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bottom Popover Actions */}
+                        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => setIsRandomOpen(false)}
+                            className="px-4 py-2 text-xs text-slate-500 hover:text-slate-700 font-bold cursor-pointer"
+                          >
+                            取消
+                          </button>
+                          <button
+                            type="button"
+                            disabled={candidateCount === 0}
+                            onClick={handleRandomSelect}
+                            className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-xs font-bold rounded-xl transition shadow-md cursor-pointer flex items-center gap-1.5"
+                          >
+                            <span>🎲</span>
+                            <span>确认随机抽取 ({Math.min(randomCount, candidateCount)} 题)</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedQuestionIds.length === 0) {
+                      alert('请至少勾选 1 道题目后再预览！');
+                      return;
+                    }
+                    if (onConfirmPublish) {
+                      onConfirmPublish();
+                    }
+                  }}
+                  disabled={selectedQuestionIds.length === 0}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  👁 预览题目并发布 ({selectedQuestionIds.length} 题) →
+                </button>
+              </div>
             </div>
           )}
         </div>

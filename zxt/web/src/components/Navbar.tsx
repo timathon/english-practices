@@ -32,7 +32,49 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [syncQueueCount, setSyncQueueCount] = useState(getSyncQueue().length);
+  const [isSyncing, setIsSyncing] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleSyncDB = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      let updateCount = 0;
+      const details: string[] = [];
+
+      // 1. Sync Idioms
+      const idiomDiff = await apiService.checkRemoteIdiomChanges();
+      if (idiomDiff.remoteGroups && idiomDiff.remoteGroups.length > 0) {
+        await apiService.applyRemoteIdiomGroups(idiomDiff.remoteGroups);
+        if (idiomDiff.hasChanges) {
+          updateCount++;
+          details.push(`成语接龙题库 (${idiomDiff.diffSummary.join(', ') || '已更新'})`);
+        }
+      }
+
+      // 2. Sync Poems
+      const poemDiff = await apiService.checkRemotePoemChanges();
+      if (poemDiff.remotePoems && poemDiff.remotePoems.length > 0) {
+        await apiService.applyRemotePoems(poemDiff.remotePoems);
+        if (poemDiff.hasChanges) {
+          updateCount++;
+          details.push(`古诗题库 (${poemDiff.diffSummary.join(', ') || '已更新'})`);
+        }
+      }
+
+      if (updateCount > 0) {
+        alert(`✅ 题库同步完成！已成功拉取并更新：\n\n- ${details.join('\n- ')}`);
+      } else {
+        alert('✨ 本地题库已是最新版本，无需额外更新！');
+      }
+    } catch (e: any) {
+      console.error('Failed to sync DB:', e);
+      alert(`⚠️ 题库同步失败: ${e?.message || '网络连接异常，请稍后重试'}`);
+    } finally {
+      setIsSyncing(false);
+      setIsMenuOpen(false);
+    }
+  };
 
   useEffect(() => {
     setSyncQueueCount(getSyncQueue().length);
@@ -273,6 +315,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                           </button>
                         </>
                       )}
+                    </div>
+
+                    {/* Active DB Sync */}
+                    <div className="py-1">
+                      <button
+                        onClick={handleSyncDB}
+                        disabled={isSyncing}
+                        className="w-full text-left px-3.5 py-2 text-xs text-slate-200 hover:bg-slate-800 flex items-center justify-between transition cursor-pointer disabled:opacity-50"
+                      >
+                        <span className="flex items-center space-x-2">
+                          <span className={isSyncing ? 'animate-spin inline-block' : ''}>🔁</span>
+                          <span>同步题库</span>
+                        </span>
+                        {isSyncing ? (
+                          <span className="text-[10px] text-teal-400 font-bold animate-pulse">
+                            同步中...
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-500 hover:text-teal-400 transition">
+                            拉取云端
+                          </span>
+                        )}
+                      </button>
                     </div>
 
                     {/* Sync Queue */}
