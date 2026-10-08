@@ -642,10 +642,11 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 if (t.includes('vocab-guide')) return 1;
                 if (t.includes('vocab-master')) return 2;
                 if (t.includes('spelling-hero')) return 3;
-                return 4;
+                if (t.includes('phonics-ninja') || t.includes('phonics')) return 4;
+                return 5;
               };
               const vocabItems = items
-                .filter((p: any) => p.type.toLowerCase().includes('vocab') || p.type.toLowerCase().includes('spelling'))
+                .filter((p: any) => p.type.toLowerCase().includes('vocab') || p.type.toLowerCase().includes('spelling') || p.type.toLowerCase().includes('phonics'))
                 .sort((a: any, b: any) => {
                   const pA = getVocabPriority(a.type);
                   const pB = getVocabPriority(b.type);
@@ -767,7 +768,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
 
               const groups = [
                 { title: '1. Recall Map', items: recallMapItems },
-                { title: '2. Vocabulary & Spelling', items: vocabItems },
+                { title: '2. Vocabulary, Spelling & Phonics', items: vocabItems },
                 { title: '3. Text Navigators & Passage Decoders', items: [...tnGroupItems, ...passageDecoderItems, ...audioDetectiveItems] },
                 { title: '4. Sentence & Grammar', items: [...grammarWizardItems, ...sentenceArchitectItems] },
                 { title: '5. Writing Maps', items: wmGroupItems },
@@ -780,6 +781,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 if (t.includes('vocab-master')) return '🔥';
                 if (t.includes('vocab')) return '📚';
                 if (t.includes('spelling')) return '✏️';
+                if (t.includes('phonics-ninja') || t.includes('phonics')) return '🥷';
                 if (t.includes('sentence')) return '🏗️';
                 if (t.includes('recall')) return '🗺️';
                 if (t.includes('writing')) return '📝';
@@ -805,6 +807,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                       let avg = 0;
                       const isVM = p.type.toLowerCase().includes('vocab-master');
                       const isSH = p.type.toLowerCase().includes('spelling-hero');
+                      const isPN = p.type.toLowerCase().includes('phonics-ninja') || p.type.toLowerCase().includes('phonics');
                       const isSA = p.type.toLowerCase().includes('sentence-architect');
                       const isGW = p.type.toLowerCase().includes('grammar-wizard');
                       const isPD = p.type.toLowerCase().includes('passage-decoder');
@@ -812,7 +815,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                       const isTN = p.type.toLowerCase().includes('text-navigator');
                       const isCloze = p.type.toLowerCase().includes('cloze');
 
-                      if ((isVM || isSA || isGW) && p.content?.challenges) {
+                      if ((isVM || isSA || isGW || isPN) && p.content?.challenges) {
                         total = p.content.challenges.length;
                         let sumMax = 0;
                         for (const chal of p.content.challenges) {

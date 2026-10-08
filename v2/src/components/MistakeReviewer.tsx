@@ -152,10 +152,10 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     const q = mistake.question;
 
     // Type-specific setups
-    if (['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(mistake.practiceType)) {
+    if (['vocab-master', 'grammar-wizard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(mistake.practiceType)) {
       const mapped = q.options.map((text: string, idx: number) => ({ text, originalIdx: idx }));
       setShuffledOptions(shuffle(mapped));
-      countdownTimer.reset(mistake.practiceType === 'grammar-wizard' ? 30 : 15);
+      countdownTimer.reset(mistake.practiceType === 'grammar-wizard' ? 30 : (mistake.practiceType === 'phonics-ninja' ? 25 : 15));
       if (mistake.practiceType === 'audio-detective') {
         setTimeout(() => {
           playAudio(getAudioUrl(q.en, mistake.textbook));
@@ -417,7 +417,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
   if (!currentMistake) return null;
 
   const q = currentMistake.question;
-  const isMc = ['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
+  const isMc = ['vocab-master', 'grammar-wizard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
 
   return (
     <div className="mr-overlay">

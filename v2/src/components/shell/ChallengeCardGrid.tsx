@@ -1,5 +1,6 @@
 import React from 'react'
 import './ChallengeCardGrid.css'
+import { useSession } from '../../lib/auth'
 
 interface ChallengeCardGridProps {
     challenges: any[]
@@ -11,6 +12,7 @@ interface ChallengeCardGridProps {
     flickeringId: string | null
     prefix: string
     invisibleMode?: boolean
+    onResetTrials?: (cId: string) => void
 }
 
 export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
@@ -22,8 +24,11 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
     isLockedToday,
     flickeringId,
     invisibleMode,
-    prefix
+    prefix,
+    onResetTrials
 }) => {
+    const { data: session } = useSession()
+    const isAdmin = (session?.user as any)?.role === 'admin' || session?.user?.email === 'admin@vibequizzing.com'
     return (
         <div className="shell-challenge-grid">
             {challenges.map((c: any) => {
@@ -43,8 +48,33 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
                             <div style={{ display: 'flex', alignItems: 'center' }}>
                                 <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>{c.icon}</span>
                                 <h3 className="shell-card-title" style={{ marginRight: '8px' }}>{c.title}</h3>
-                                <div style={{ fontSize: '0.7rem', color: 'rgb(153, 153, 153)', marginTop: '2px' }}>
-                                    {rem} / 5 attempts left
+                                <div style={{ fontSize: '0.7rem', color: 'rgb(153, 153, 153)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span>{rem} / 5 attempts left</span>
+                                    {isAdmin && isOutOfAttempts && (
+                                        <button
+                                            type="button"
+                                            title="Admin: Reset daily attempts"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onResetTrials) {
+                                                    onResetTrials(c.id);
+                                                }
+                                            }}
+                                            style={{
+                                                background: '#fef3c7',
+                                                border: '1px solid #fde68a',
+                                                color: '#b45309',
+                                                borderRadius: '4px',
+                                                padding: '1px 5px',
+                                                fontSize: '0.65rem',
+                                                fontWeight: 'bold',
+                                                cursor: 'pointer',
+                                                marginLeft: '4px'
+                                            }}
+                                        >
+                                            🔄 Reset
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             <button

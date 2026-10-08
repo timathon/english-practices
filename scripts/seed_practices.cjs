@@ -318,6 +318,7 @@ async function seed() {
                 'vocab-guide',
                 'vocab-master',
                 'spelling-hero',
+                'phonics-ninja',
                 'sentence-architect',
                 'recall-map',
                 'grammar-wizard',

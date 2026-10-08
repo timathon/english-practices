@@ -853,6 +853,36 @@ module.exports = {
     - `points`: Array of specific grammar rules, each having `id`, `name`, `rule`, `example`, `tags`.
 
 ---
+
+## 16. Phonics Ninja (PN)
+**Source:** Textbook unit markdown (`*-u*.md`, specifically the "Pronunciation" or "Phonics" section).
+**Target:** `*-phonics-ninja.json` (Save in the same folder as source)
+
+- **Purpose & Scope:** Focuses on phonics, vowel/consonant contrast, sound-spelling rules, and word/sound discrimination from the textbook's pronunciation sections.
+- **Top-Level Metadata:**
+  - `level`: e.g. `"Grade 7 Semester 1 - Unit 1"`.
+  - `title`: Always `"Phonics Ninja"`.
+  - `focus`: A rich, structured Markdown overview containing:
+    - Markdown comparison table (`| 音标 | 常见字母/字母组合 | 例词辨析 |`).
+    - Callout block (`> 💡 **核心特殊词与陷阱词 (Special Exceptions)**`) explicitly listing special/irregular pronunciation traps (e.g., `have` /hæv/ vs `/eɪ/`, `give`/`live` /ɪ/ vs `/aɪ/`, `bread`/`head` /e/ vs `/iː/`, open vs closed syllables).
+- **Challenge & Question Volume:**
+  - **2 to 3 Challenges** per unit (**10 questions** per challenge, 20–30 total questions).
+  - Each challenge must have a unique `id` (e.g. `"c1"`, `"c2"`), descriptive `title` in Chinese (e.g. `"元音辨音：/iː/ 与 /ɪ/"`), and an `icon` (e.g. `"🎯"`, `"⚡"`, `"🔤"`).
+  - Include both single-choice discrimination (`sound-matching`, `odd-one-out`, `classification`) and multi-select sound hunting (`sound-hunter`) questions.
+  - Test foundational phonics and syllable structure rules (e.g., open vs closed syllables, VCe magic-e, letter teams, and special exception traps like `have`, `give`, `live`, `bread`, `head`, `break`). Words do not need to be restricted to the unit's vocabulary list so students can apply phonics rules broadly.
+- **Question Types & Categories:**
+  - `sound-matching`: Identifying which word or word group matches a given IPA target (e.g., `"下面哪个单词画线部分的发音是 /iː/？"`). Options: 4. `type: "multiple-choice"`, `answer: <number>`.
+  - `odd-one-out`: Finding the word whose underlined sound differs from the others (e.g., `"选出画线部分发音不同的一项："`). Options: 4. `type: "multiple-choice"`, `answer: <number>`.
+  - `classification`: Grouping words sharing the same phonetic sound (e.g., `"单词 “let, bed, net” 画线字母的共同发音音标是："`). Options: 4. `type: "multiple-choice"`, `answer: <number>`.
+  - `sound-hunter`: Multi-select sound discrimination where students hunt for all words matching the prompted sound (e.g., `"【语音搜寻】找出所有画线部分发 /iː/ 的单词（多选）："`). Options: Exactly 8 words (4 correct targets + 4 trap distractors). `type: "multi-select"`, `answer: [<number>, <number>, <number>, <number>]`.
+- **Phonics-Only Constraint (No Contractions):** Keep questions strictly focused on phonetic symbol recognition, sound discrimination, and spelling-sound correspondence. Do NOT include 缩读 / sentence contraction questions.
+- **Formatting & Letter Underlining:**
+  - Target letters/phonemes in English words must be underlined using HTML `<u>letter</u>` tags (e.g. `m<u>ee</u>t`, `sh<u>i</u>p`, `gr<u>a</u>de`, `h<u>ea</u>d`).
+  - `options`: 4 options for standard multiple-choice; 8 options (4 correct + 4 traps) for `sound-hunter` multi-select.
+  - `answer`: 0-indexed integer (0-3) for single-choice, or array of 0-indexed integers (e.g., `[0, 1, 2, 3]`) for multi-select, randomized upon generation.
+  - `explanation` & `hint`: Concise and informative explanations in Chinese highlighting phonetic rules and exception traps.
+
+---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.** If the textbook for the generated JSONs does not exist in `v2/public/textbooks.json` or `v2/src/lib/textbooks.ts`, you must add the textbook to both files.
 
 **V2 Focus:** The project primarily runs on the V2 single-page application (served from the `v2` directory, which loads exercises dynamically from the database). Therefore, **do NOT** run `scripts/*-release-gen-3.cjs` to generate static HTML files unless the user explicitly requests HTML generation or deployment of static pages. Instead, simply generate/modify the JSON files in the `v2-data/` directory, run the database seed/sync scripts to update the database, and test using the V2 local development server. After generating practice JSONs, you only need to run `scripts/tts-in-one.cjs` for TTS generation, excluding passage decoder.

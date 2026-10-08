@@ -209,6 +209,7 @@ export function MistakeBookView({
                       <div className="db-mistake-prompt">
                         {m.practiceType === 'vocab-master' && <strong>{m.question.prompt}</strong>}
                         {m.practiceType === 'grammar-wizard' && <span>{m.question.prompt}</span>}
+                        {m.practiceType === 'phonics-ninja' && <span>{m.question.prompt}</span>}
                         {m.practiceType.startsWith('passage-decoder') && (
                           <>
                             <div style={{ fontStyle: 'italic', color: 'var(--accent)', marginBottom: 4 }}>{m.question.en}</div>

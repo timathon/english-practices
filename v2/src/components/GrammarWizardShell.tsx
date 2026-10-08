@@ -512,6 +512,10 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                         isLockedToday={(c) => getStats(c.title).todayBest === 100}
                         flickeringId={flickeringChallengeId}
                         prefix="gw"
+                        onResetTrials={(cId) => {
+                            trialsTracker.resetTrials(practiceId, cId);
+                            setPracticeRecords([...practiceRecords]);
+                        }}
                     />
                 </div>
                 

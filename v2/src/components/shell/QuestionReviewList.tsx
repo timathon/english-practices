@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import './QuestionReviewList.css'
+import { renderPromptText } from '../test-sheet/testSheetUtils'
 
 export interface QuestionResultItem {
     id?: string | number
@@ -103,7 +104,7 @@ export const QuestionReviewList: React.FC<QuestionReviewListProps> = ({
                     >
                         <div className="q-review-item-header">
                             <span className="q-review-badge">#{idx + 1}</span>
-                            <span className="q-review-prompt">{item.prompt}</span>
+                            <span className="q-review-prompt">{renderPromptText(item.prompt)}</span>
                             <span className="q-review-status-icon">
                                 {item.isCorrect ? '✅' : '❌'}
                             </span>
@@ -113,7 +114,7 @@ export const QuestionReviewList: React.FC<QuestionReviewListProps> = ({
                             <div className="q-review-answer-row">
                                 <span className="q-review-label">Your answer:</span>
                                 <span className={`q-review-ans-val ${item.isCorrect ? 'correct-val' : 'wrong-val'}`}>
-                                    {item.userAnswer || <span className="q-review-empty">(No answer)</span>}
+                                    {item.userAnswer ? renderPromptText(item.userAnswer) : <span className="q-review-empty">(No answer)</span>}
                                 </span>
                             </div>
 
@@ -121,14 +122,14 @@ export const QuestionReviewList: React.FC<QuestionReviewListProps> = ({
                                 <div className="q-review-answer-row">
                                     <span className="q-review-label">Correct answer:</span>
                                     <span className="q-review-ans-val correct-val highlight">
-                                        {item.correctAnswer}
+                                        {renderPromptText(item.correctAnswer)}
                                     </span>
                                 </div>
                             )}
 
                             {item.extraInfo && (
                                 <div className="q-review-extra">
-                                    {item.extraInfo}
+                                    {renderPromptText(item.extraInfo)}
                                 </div>
                             )}
                         </div>

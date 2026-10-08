@@ -1,6 +1,7 @@
 export const PRACTICE_TYPE_ICONS: Record<string, string> = {
   'Vocab Master': '🔥',
   'Spelling Hero': '✏️',
+  'Phonics Ninja': '🥷',
   'Sentence Architect': '🏗️',
   'Recall Map': '🗺️',
   'Writing Map': '📝',
@@ -12,6 +13,10 @@ export const PRACTICE_TYPE_ICONS: Record<string, string> = {
 
 export const translatePracticeName = (name: string): string => {
   const norm = name.trim();
+
+  if (norm.startsWith('Phonics Ninja')) {
+    return norm.replace(/^Phonics Ninja/i, '语音忍者');
+  }
 
   if (norm.startsWith('Text Navigator')) {
     return norm.replace(/^Text Navigator/i, '阅读导航');

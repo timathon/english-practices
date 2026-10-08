@@ -176,7 +176,7 @@ export const splitIntoSentences = (text: string): string[] => {
 
 export const renderFormattedInlineText = (text: string): React.ReactNode => {
   if (!text) return null
-  const parts = text.split(/(\*\*.*?\*\*|<u>.*?<\/u>|<br\s*\/?>|\[\*VISUAL:?\s*.*?\*\])/gi)
+  const parts = text.split(/(\*\*.*?\*\*|`.*?`|<u>.*?<\/u>|<br\s*\/?>|\[\*VISUAL:?\s*.*?\*\])/gi)
   return (
     <>
       {parts.map((part, idx) => {
@@ -185,6 +185,9 @@ export const renderFormattedInlineText = (text: string): React.ReactNode => {
         }
         if (part.toLowerCase().startsWith('**') && part.endsWith('**')) {
           return <strong key={idx}>{renderFormattedInlineText(part.slice(2, -2))}</strong>
+        }
+        if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
+          return <code key={idx} style={{ background: '#f1f5f9', color: '#0369a1', padding: '1px 5px', borderRadius: '4px', fontSize: '0.9em', fontFamily: 'monospace' }}>{part.slice(1, -1)}</code>
         }
         if (part.toLowerCase().startsWith('<u>') && part.toLowerCase().endsWith('</u>')) {
           return <u key={idx} style={{ fontWeight: 'bold' }}>{renderFormattedInlineText(part.slice(3, -4))}</u>

@@ -17,6 +17,7 @@ import { BugHunterShell } from './BugHunterShell'
 import { VerbReferenceShell } from './VerbReferenceShell'
 import { PassageClozeShell } from './PassageClozeShell'
 import { GrammarIndexShell } from './GrammarIndexShell'
+import { PhonicsNinjaShell } from './PhonicsNinjaShell'
 
 import { practiceCache } from '../lib/practiceCache'
 import { cache } from '../lib/cache'
@@ -223,6 +224,10 @@ export function PracticeShell() {
 
     if (cleanType.startsWith('spelling-hero')) {
         return <SpellingHeroShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
+    if (cleanType.startsWith('phonics-ninja')) {
+        return <PhonicsNinjaShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
     if (cleanType.startsWith('sentence-architect')) {
