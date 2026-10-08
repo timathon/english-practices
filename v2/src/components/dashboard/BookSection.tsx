@@ -1011,7 +1011,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                 </button>
                               </div>
                             )}
-                            {(isVM || isSH || isSA || isGW || isPD || isAD || isTN) && total > 0 && (
+                            {(isVM || isSH || isPN || isSA || isGW || isPD || isAD || isTN) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
                                 title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}

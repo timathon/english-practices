@@ -30,9 +30,11 @@ You are an expert English phonics and curriculum analyst. Generate a Phonics Nin
 
 RULES & INSTRUCTIONS:
 1. Target Focus:
-   - Identify the core phonetic targets from the unit markdown's "Pronunciation" or "Phonics" section (e.g. /iː/ vs /ɪ/, /e/ vs /æ/, vowels, consonants, letter combos).
+   - Identify the core phonetic targets from the unit markdown's "Pronunciation" or "Phonics" section.
    - In the top-level "focus" field, provide a clear, beautifully structured Markdown summary containing:
      - A markdown table mapping: 音标, 常见字母/字母组合, 例词辨析.
+     - In the "音标" column, ALWAYS append sound classification marks in bold: e.g. `**/eɪ/** (双元音)`, `**/æ/** (梅花音/短元音)`, `**/iː/** (长元音)`, `**/s/** (清辅音)`, `**/z/** (浊辅音)`. (DO NOT wrap the entire cell or bold syntax in code backticks, use `**/sound/** (mark)` directly).
+     - In the "常见字母/字母组合" column, ALWAYS wrap letter and syllable/context annotations in full parentheses like: `(` `a_e` `开音节), (` `ai` `组合), (` `ay` `组合)` or `(` `a` `闭音节)` or `(` `s` `清辅音后发/s/)`.
      - A callout quote block (> 💡 **核心特殊词与陷阱词 (Special Exceptions)**) highlighting irregular/trap words (e.g., `have` is /æ/ despite looking like VCe, `give`/`live` are /ɪ/ despite looking like VCe, `bread`/`head` are /e/ despite `ea`).
 2. Challenges:
    - Generate 2 to 3 Challenges (e.g., c1: sound contrast group 1, c2: sound contrast group 2, c3: comprehensive discrimination/classification).
@@ -100,6 +102,8 @@ def extract_level_from_filename_or_md(md_path: Path, md_text: str) -> str:
 
 def main():
     use_high = parse_high_flag()
+    from config import parse_paid_flag
+    use_paid = parse_paid_flag()
 
     parser = argparse.ArgumentParser(description="Generate phonics-ninja JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to the unit markdown file (e.g. v2-data/A7A/a7a-u1/a7a-u1.md)")
@@ -114,7 +118,7 @@ def main():
     source = md_path.read_text(encoding="utf-8")
     level = args.level or extract_level_from_filename_or_md(md_path, source)
 
-    key_val, model_name = get_genai_config(use_high=use_high)
+    key_val, model_name = get_genai_config(use_high=use_high, force_paid=use_paid)
     client = genai.Client(api_key=key_val)
 
     prompt = PROMPT_TEMPLATE.format(
@@ -151,7 +155,22 @@ def main():
         for q_idx, q in enumerate(ch.get("questions", [])):
             if not q.get("id") or q.get("id") in used_ids:
                 q["id"] = generate_id(f"pn{c_idx+1}_{q_idx+1}_")
-            used_ids.add(q["id"])
+    # Validate and sanitize focus
+    focus = data.get("focus", "")
+    if focus:
+        lines = focus.split("\n")
+        new_lines = []
+        for line in lines:
+            if line.strip().startswith("|") and not line.strip().startswith("| :---"):
+                parts = line.split("|")
+                if len(parts) >= 3:
+                    # Strip any accidental backticks around bold marks in column 1
+                    parts[1] = re.sub(r"`\*\*([^*`]+)\*\*([^`]*)`", r"**\1**\2", parts[1])
+                    parts[1] = re.sub(r"`\*\*([^*`]+)\*\*`", r"**\1**", parts[1])
+                    parts[1] = parts[1].replace("`", "")
+                    line = "|".join(parts)
+            new_lines.append(line)
+        data["focus"] = "\n".join(new_lines)
 
     # Output file
     out_stem = md_path.stem
