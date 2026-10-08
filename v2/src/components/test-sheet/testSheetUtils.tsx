@@ -113,7 +113,8 @@ export const formatOptionWithLetter = (opt: string, idx: number): string => {
 
 export const cleanOptionText = (text: string, oIdx: number): string => {
   const prefix = String.fromCharCode(65 + oIdx)
-  const regex = new RegExp(`^${prefix}\\s*[.\\u3001]\\s*`, 'i')
+  // Only match alphabetical prefix (A-Z) followed by punctuation, preserving pure numeric values like "2.", "3."
+  const regex = new RegExp(`^${prefix}\\s*[.\\u3001]\\s*`, '')
   return text.replace(regex, '')
 }
 
