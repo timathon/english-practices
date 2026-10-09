@@ -27,10 +27,14 @@ def generate_id(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 PROMPT_TEMPLATE = """\
-You are an expert English curriculum analyst. Generate a Grammar Wizard JSON for the following primary school textbook unit.
+You are an expert English curriculum analyst. Generate a Grammar Wizard JSON for the following textbook unit.
 
 RULES:
 - Target Question Count: Exactly {num_challenges} Challenges of 10 questions each ({total_questions} questions total).
+- Top-level Focus Field:
+  - In the top-level "focus" field, provide a clear, comprehensive, and beautifully structured Markdown summary of the unit's core grammar points.
+  - Include a structured Markdown comparison/reference table (e.g., `| 人称 / 主语 | 语法形式 | 缩略形式 | 示例句子 |` or `| 句型 / 疑问词 | 语法功能 / 用法 | 结构公式 | 例句 |`).
+  - Include a callout quote block (`> 💡 **核心语法口诀与句型规则 (Grammar Focus Rules)**`) summarizing mnemonic chants (口诀), sentence transformation formulas (肯定/否定/疑问句), and common traps/pitfalls (易错点).
 - Content Focus: Focus on the grammar points specified for the unit in the contents JSON (if provided) and the usage patterns in the unit's Markdown.
 - Questions should test:
   - Purpose: communicative function or goal.
@@ -43,11 +47,12 @@ JSON structure must exactly match this format:
 {{
   "level": "{level}",
   "title": "Grammar Wizard",
+  "focus": "<Markdown summary with structured table and grammar rule callouts>",
   "challenges": [
     {{
       "id": "c1",
-      "title": "<Short English Title for Challenge 1>",
-      "icon": "🧙‍♂️",
+      "title": "<Short English/Bilingual Title for Challenge 1>",
+      "icon": "⚡",
       "questions": [
         {{
           "id": "<Unique 8-char alphanumeric string>",

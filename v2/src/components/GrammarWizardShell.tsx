@@ -18,6 +18,7 @@ import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
 import { ShellHistoryModal } from './shell/ShellHistoryModal'
 import { CompleteScreenActions } from './shell/CompleteScreenActions'
 import { QuestionReviewList, getEncouragementMessage, type QuestionResultItem } from './shell/QuestionReviewList'
+import { renderPromptText } from './test-sheet/testSheetUtils'
 
 export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    const { data: session } = useSession()
@@ -58,6 +59,7 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
    const [lockModalOpen, setLockModalOpen] = useState(false)
    const [lastFinishedChallengeId, setLastFinishedChallengeId] = useState<string | null>(null)
    const [flickeringChallengeId, setFlickeringChallengeId] = useState<string | null>(null)
+   const [showFocusGuide, setShowFocusGuide] = useState(true)
    const timerExpiredRef = useRef(false)
    const checkAnswerRef = useRef<(forceWrong?: boolean) => void>(() => {})
 
@@ -475,6 +477,78 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [activeChallenge, completed, historyModal, showHintModal, locked, selectedOption, continueDisabled, nextQuestion, checkAnswer, options, handleOptionClick]);
 
+    const renderMarkdownFocus = (mdText?: string) => {
+        if (!mdText) return null;
+        const lines = mdText.split('\n');
+        let tableRows: string[][] = [];
+        let blockquoteLines: string[] = [];
+
+        const nodes: any[] = [];
+        let keyIdx = 0;
+
+        const flushTable = () => {
+            if (tableRows.length > 0) {
+                const header = tableRows[0];
+                const isSeparator = (row: string[]) => row.every(c => /^:?-+:?$/.test(c.trim()));
+                const bodyRows = tableRows.slice(1).filter(r => !isSeparator(r));
+                nodes.push(
+                    <table key={`table-${keyIdx++}`}>
+                        <thead>
+                            <tr>
+                                {header.map((col, ci) => <th key={ci}>{renderPromptText(col.trim())}</th>)}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {bodyRows.map((row, ri) => (
+                                <tr key={ri}>
+                                    {row.map((col, ci) => <td key={ci}>{renderPromptText(col.trim())}</td>)}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                );
+                tableRows = [];
+            }
+        };
+
+        const flushBlockquote = () => {
+            if (blockquoteLines.length > 0) {
+                nodes.push(
+                    <blockquote key={`bq-${keyIdx++}`}>
+                        {blockquoteLines.map((line, li) => (
+                            <div key={li} style={{ margin: '4px 0' }}>{renderPromptText(line)}</div>
+                        ))}
+                    </blockquote>
+                );
+                blockquoteLines = [];
+            }
+        };
+
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+                flushBlockquote();
+                const cells = trimmed.split('|').slice(1, -1);
+                tableRows.push(cells);
+            } else if (trimmed.startsWith('>')) {
+                flushTable();
+                blockquoteLines.push(trimmed.replace(/^>\s*/, ''));
+            } else if (trimmed.startsWith('###')) {
+                flushTable();
+                flushBlockquote();
+                nodes.push(<h4 key={`h-${keyIdx++}`} style={{ margin: '8px 0', color: '#6d28d9' }}>{renderPromptText(trimmed.replace(/^###\s*/, ''))}</h4>);
+            } else if (trimmed) {
+                flushTable();
+                flushBlockquote();
+                nodes.push(<div key={`p-${keyIdx++}`} style={{ margin: '6px 0' }}>{renderPromptText(trimmed)}</div>);
+            }
+        });
+
+        flushTable();
+        flushBlockquote();
+        return nodes;
+    };
+
     if (!activeChallenge) {
         return (
             <div className="gw-shell-container" style={{ '--primary': primaryColor, '--primary-dark': primaryDarkColor } as any}>
@@ -486,6 +560,20 @@ export function GrammarWizardShell({ data, practiceId, unit, textbook }: any) {
                         unit={unit}
                         prefix="gw"
                     />
+
+                    {data.focus && (
+                        <div className="gw-focus-banner">
+                            <button className="gw-focus-toggle-btn" onClick={() => setShowFocusGuide(!showFocusGuide)}>
+                                <span>⚡ 单元核心语法要点 (Grammar Focus)</span>
+                                <span>{showFocusGuide ? '▲ 收起' : '▼ 展开'}</span>
+                            </button>
+                            {showFocusGuide && (
+                                <div className="gw-focus-content">
+                                    {renderMarkdownFocus(data.focus)}
+                                </div>
+                            )}
+                        </div>
+                    )}
                     
                     <InvisibleModeCheckbox
                         checked={invisibleMode}

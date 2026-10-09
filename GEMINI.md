@@ -371,7 +371,10 @@ This document defines the rules for extracting and converting textbook data into
   - **Usage:** Cloze/sentence-level questions checking application of rules in a sentence context.
   - **Differentiation:** Differentiating the unit's grammar from similar or easily confused rules (e.g., "Why" vs. "What", singular vs. plural forms, adjective vs. adverb).
 - **Structure:**
-  - A top-level object with `level` (e.g., `"Grade 7 Semester 2 - Unit 1"`), `title` (always `"Grammar Wizard"`), and `challenges` (an array).
+  - A top-level object with `level` (e.g., `"Grade 7 Semester 2 - Unit 1"`), `title` (always `"Grammar Wizard"`), `focus` (Markdown overview of grammar rules/tables), and `challenges` (an array).
+  - `focus`: A rich, structured Markdown overview containing:
+    - Markdown reference table summarizing the grammar rules (e.g., `| 人称 / 主语 | 语法形式 | 缩略形式 | 示例句子 |` or `| 句型 / 疑问词 | 语法功能 / 用法 | 结构公式 | 例句 |`).
+    - Callout quote block (`> 💡 **核心语法口诀与句型规则 (Grammar Focus Rules)**`) summarizing mnemonic chants (口诀), sentence transformation formulas (肯定/否定/疑问), and common pitfall traps (易错注意点).
   - Group questions into Challenges of exactly **10 questions** each.
   - Each challenge must have a unique `id` (e.g., `"c1"`, `"c2"`), a `title` (e.g., `"Wh-Questions & Noun Plurals"`, `"Adjectives & General Usage"`), a relevant emoji `icon` (e.g., `"🧙‍♂️"`, `"⚡"`), and an array of 10 question objects under the key `questions`.
 - **Question Schema:**
