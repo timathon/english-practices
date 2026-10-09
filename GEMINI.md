@@ -879,8 +879,13 @@ module.exports = {
   - `classification`: Grouping words sharing the same phonetic sound (e.g., `"单词 “let, bed, net” 画线字母的共同发音音标是："`). Options: 4. `type: "multiple-choice"`, `answer: <number>`.
   - `sound-hunter`: Multi-select sound discrimination where students hunt for all words matching the prompted sound (e.g., `"【语音搜寻】找出所有画线部分发 /iː/ 的单词（多选）："`). Options: Exactly 8 words (4 correct targets + 4 trap distractors). `type: "multi-select"`, `answer: [<number>, <number>, <number>, <number>]`.
 - **Phonics-Only Constraint (No Contractions):** Keep questions strictly focused on phonetic symbol recognition, sound discrimination, and spelling-sound correspondence. Do NOT include 缩读 / sentence contraction questions.
-- **Formatting & Letter Underlining:**
-  - Target letters/phonemes in English words must be underlined using HTML `<u>letter</u>` tags (e.g. `m<u>ee</u>t`, `sh<u>i</u>p`, `gr<u>a</u>de`, `h<u>ea</u>d`).
+- **Formatting & Letter Underlining Rules (Strict Textbook Fidelity):**
+  - **Exact Correspondence with Tested Sound**: The underlined letters `<u>...</u>` must correspond *strictly* to the phoneme being tested:
+    - If testing a **consonant / consonant cluster** (e.g., `/n/`, `/ŋ/`, `/tʃ/`, `/r/`, `/bl/`, `/-tl/`), ONLY the consonant letters must be underlined (e.g. `<u>n</u>ews`, `so<u>ng</u>`, `<u>ch</u>eap`, `<u>r</u>ace`, `<u>wr</u>ite`, `<u>bl</u>ack`, `li<u>ttl</u>e`, `hospi<u>tal</u>`, `mi<u>ddl</u>e`). Never underline vowels in a consonant question!
+    - If testing a **vowel / diphthong** (e.g., `/iː/`, `/eɪ/`, `/ə/`, `/ɜː/`), ONLY the vowel letters / vowel teams must be underlined (e.g. `s<u>ee</u>`, `b<u>ea</u>ch`, `wh<u>a</u>le`, `r<u>ai</u>n`, `st<u>ay</u>`, `t<u>er</u>m`, `Chin<u>a</u>`). Never underline consonants in a vowel question!
+  - **Word Example Underlining in `focus` Table**: All example words in the `focus` table must also have their target phonics letters underlined (e.g., `<u>h</u>abit, <u>w</u>ant, <u>th</u>ink, a<u>c</u>tor, <u>qu</u>iet`).
+  - **Syllabic Consonants / Doubled Consonant Rules**: For syllabic endings (such as `/tl/`, `/dl/`, `/pl/`), repeated consonant letters are underlined, but trailing silent `e` is NOT underlined (e.g., `a<u>ppl</u>e`, `peo<u>pl</u>e`, `li<u>ttl</u>e`, `mi<u>ddl</u>e`, `noo<u>dl</u>e`).
+  - **Single Contiguous Tag**: Always use a single contiguous tag `<u>letters</u>` rather than broken multiple tags (e.g. use `hospi<u>tal</u>` or `<u>kn</u>ow`, NOT `hospi<u>t</u><u>l</u>` or `<u>k</u><u>n</u>ow`).
   - `options`: 4 options for standard multiple-choice; 8 options (4 correct + 4 traps) for `sound-hunter` multi-select.
   - `answer`: 0-indexed integer (0-3) for single-choice, or array of 0-indexed integers (e.g., `[0, 1, 2, 3]`) for multi-select, randomized upon generation.
   - `explanation` & `hint`: Concise and informative explanations in Chinese highlighting phonetic rules and exception traps.

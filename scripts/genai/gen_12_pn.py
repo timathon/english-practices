@@ -45,7 +45,13 @@ RULES & INSTRUCTIONS:
      - `odd-one-out`: Finding the sound that does not match (e.g., "选出画线部分发音不同的一项：", 4 options).
      - `classification`: Grouping words by common phonetic symbol (e.g., "单词 'let, bed, net' 画线字母的共同发音音标是：", 4 options).
      - `sound-hunter`: Multi-select sound discrimination where students hunt for all words matching the target sound (e.g., "【语音搜寻】找出所有画线部分发 /iː/ 的单词（多选）："). Exactly 8 options (4 correct targets + 4 trap distractors). Type: "multi-select", answer: [0, 1, 2, 3] (indices of correct options).
-   - Underline the tested letters in English words using HTML tags: `<u>letter</u>` (e.g., `m<u>ee</u>t`, `sh<u>i</u>p`, `gr<u>a</u>de`).
+   - **Strict Letter Underlining & Bolding Rules**:
+     - Underline the tested letters in English words using HTML tags: `<u>letters</u>`.
+     - **Consonants vs Vowels**: If testing a consonant/cluster (e.g., /n/, /ŋ/, /tʃ/, /bl/, /-tl/), ONLY underline the consonant letters (e.g. `<u>n</u>ews`, `so<u>ng</u>`, `<u>ch</u>eap`, `<u>bl</u>ack`, `li<u>ttl</u>e`, `hospi<u>tal</u>`, `mi<u>ddl</u>e`). Never underline vowels in a consonant question!
+     - If testing a vowel/diphthong (e.g., /iː/, /eɪ/, /ɜː/), ONLY underline the vowel letters/teams (e.g. `s<u>ee</u>`, `wh<u>a</u>le`, `t<u>er</u>m`).
+     - In the `focus` markdown comparison table, ALL example words must have their target letters underlined (e.g. `<u>h</u>abit`, `<u>w</u>ant`, `<u>th</u>ink`).
+     - For syllabic endings (e.g. /-tl/, /-dl/, /-pl/), repeated consonants are underlined, and trailing silent 'e' is NOT underlined (e.g., `a<u>ppl</u>e`, `li<u>ttl</u>e`, `mi<u>ddl</u>e`).
+     - Always use a single contiguous tag `<u>letters</u>` (e.g., `hospi<u>tal</u>`, `<u>kn</u>ow`, NOT `hospi<u>t</u><u>l</u>`).
    - Do NOT include 缩读 / sentence contraction questions (keep it strictly focused on phonics/sound discrimination).
    - Provide concise, accurate Chinese `explanation` and `hint`.
 
@@ -118,68 +124,53 @@ def main():
     source = md_path.read_text(encoding="utf-8")
     level = args.level or extract_level_from_filename_or_md(md_path, source)
 
-    key_val, model_name = get_genai_config(use_high=use_high, force_paid=use_paid)
-    client = genai.Client(api_key=key_val)
+    prompt = PROMPT_TEMPLATE.format(level=level, source=source)
 
-    prompt = PROMPT_TEMPLATE.format(
-        level=level,
-        source=source
-    )
+    api_key, model_name = get_genai_config(use_high=use_high, use_paid=use_paid)
+    client = genai.Client(api_key=api_key)
 
-    print(f"Generating Phonics Ninja for {md_path.name} using {model_name}...")
+    print(f"Calling Gemini ({model_name}) for {md_path.name} (Phonics Ninja)...")
     response = client.models.generate_content(
         model=model_name,
         contents=prompt,
         config=types.GenerateContentConfig(
-            response_mime_type="application/json"
-        )
+            response_mime_type="application/json",
+            temperature=0.2,
+        ),
     )
 
-    raw_text = response.text.strip()
-    # Clean potential markdown fences
-    if raw_text.startswith("```"):
-        raw_text = re.sub(r"^```(?:json)?\n", "", raw_text)
-        raw_text = re.sub(r"\n```$", "", raw_text)
+    text = response.text.strip()
+    text = re.sub(r"^```json\s*", "", text)
+    text = re.sub(r"\s*```$", "", text)
 
     try:
-        data = json.loads(raw_text)
-    except Exception as e:
-        print(f"Error: Failed to parse JSON response: {e}\nRaw output:\n{raw_text}", file=sys.stderr)
+        data = json.loads(text)
+    except json.JSONDecodeError as e:
+        print(f"JSON decode failed: {e}\nResponse was:\n{text[:500]}...", file=sys.stderr)
         sys.exit(1)
 
-    # Validate IDs
-    used_ids = set()
-    for c_idx, ch in enumerate(data.get("challenges", [])):
-        if not ch.get("id"):
-            ch["id"] = f"c{c_idx + 1}"
-        for q_idx, q in enumerate(ch.get("questions", [])):
-            if not q.get("id") or q.get("id") in used_ids:
-                q["id"] = generate_id(f"pn{c_idx+1}_{q_idx+1}_")
-    # Validate and sanitize focus
-    focus = data.get("focus", "")
-    if focus:
-        lines = focus.split("\n")
-        new_lines = []
-        for line in lines:
-            if line.strip().startswith("|") and not line.strip().startswith("| :---"):
-                parts = line.split("|")
-                if len(parts) >= 3:
-                    # Strip any accidental backticks around bold marks in column 1
-                    parts[1] = re.sub(r"`\*\*([^*`]+)\*\*([^`]*)`", r"**\1**\2", parts[1])
-                    parts[1] = re.sub(r"`\*\*([^*`]+)\*\*`", r"**\1**", parts[1])
-                    parts[1] = parts[1].replace("`", "")
-                    line = "|".join(parts)
-            new_lines.append(line)
-        data["focus"] = "\n".join(new_lines)
+    # Post-process question IDs if missing or duplicated
+    seen_ids = set()
+    for ci, c in enumerate(data.get("challenges", [])):
+        for qi, q in enumerate(c.get("questions", [])):
+            qid = q.get("id")
+            if not qid or qid in seen_ids:
+                q["id"] = generate_id(f"pn{ci+1}")
+            seen_ids.add(q["id"])
 
-    # Output file
-    out_stem = md_path.stem
-    # If file was e.g. a7a-u1.md -> a7a-u1-phonics-ninja.json
-    out_path = md_path.parent / f"{out_stem}-phonics-ninja.json"
+    # Output path
+    stem = md_path.stem
+    m = re.match(r"^([a-zA-Z0-9]+-[uU]\d+)", stem)
+    if m:
+        base_name = m.group(1).lower()
+    else:
+        base_name = stem.lower()
+    out_path = md_path.parent / f"{base_name}-phonics-ninja.json"
+
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    print(f"✅ Generated Phonics Ninja saved to: {out_path}")
+    print(f"Saved: {out_path} ({len(data.get('challenges', []))} challenges)")
 
 if __name__ == "__main__":
     main()
