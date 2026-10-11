@@ -198,8 +198,8 @@ export function MistakeBookView({
                 </div>
               </div>
               <div className="db-mistakes-list">
-                {groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].map((m) => (
-                  <div key={m.id} className={`db-mistake-item-card ${m.resolved ? 'resolved' : ''}`}>
+                {groupedMistakes[effectiveMistakeBook][effectiveMistakeUnit].map((m, idx) => (
+                  <div key={`${m.id || 'm'}_${idx}`} className={`db-mistake-item-card ${m.resolved ? 'resolved' : ''}`}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="db-mistake-meta">
                         <FadingMistakeBadge type={m.practiceType} showChinese={showChinese} />
@@ -208,7 +208,7 @@ export function MistakeBookView({
                       </div>
                       <div className="db-mistake-prompt">
                         {m.practiceType === 'vocab-master' && <strong>{m.question.prompt}</strong>}
-                        {m.practiceType === 'grammar-wizard' && <span>{m.question.prompt}</span>}
+                        {(m.practiceType === 'grammar-wizard' || m.practiceType === 'grammar-guard') && <span>{m.question.prompt}</span>}
                         {m.practiceType === 'phonics-ninja' && <span>{m.question.prompt}</span>}
                         {m.practiceType.startsWith('passage-decoder') && (
                           <>

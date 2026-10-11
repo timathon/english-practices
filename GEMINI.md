@@ -891,6 +891,38 @@ module.exports = {
   - `explanation` & `hint`: Concise and informative explanations in Chinese highlighting phonetic rules and exception traps.
 
 ---
+
+## 17. Grammar Guard (GG)
+**Source:** Text Navigator JSON (`*-text-navigator.json`) and Unit Markdown file (`*-u*.md`).
+**Target:** `*-grammar-guard.json` (Save in the same folder as source)
+
+- **Purpose & Scope:** Sentence-level targeted grammar cloze practice strictly based on textbook authentic sentences from Text Navigator.
+  - **CRITICAL DISTINCTION:** Grammar Guard is **NOT** about the specific unit's grammar focus (which belongs to Grammar Wizard). Instead, Grammar Guard is about **foundational/basic grammar**.
+  - **Current Strict Target:** We are starting exclusively with **verb be** (`am`, `is`, `are`, `be` / `was`, `were`). **ONLY questions testing the verb be must be included.**
+- **Top-Level Metadata:**
+  - `level`: e.g. `"Grade 4 Semester 1 - Unit 4"`.
+  - `title`: Always `"Grammar Guard"`.
+  - `storageSuffix`: Unique identifier suffix, e.g. `"_a4a_u4_gg"`.
+  - `primaryColor` (optional): Hex color string (default `'#0284c7'`).
+  - `primaryColorDark` (optional): Darker hex color string (default `'#0369a1'`).
+- **Challenge Volume & Structure:**
+  - **2 Challenges** per unit (**10 questions** per challenge, exactly 20 questions total).
+  - Each challenge must have:
+    - `id`: Unique challenge ID (`"c1"`, `"c2"`).
+    - `title`: E.g., `"Verb Be: Basics 1"`, `"Verb Be: Basics 2"`.
+    - `category`: Always `"verb_be"`.
+    - `icon`: Relevant emoji icon (always `"🛡️"`).
+    - `questions`: Array of 10 question objects.
+- **Question Schema & Textbook Linkage:**
+  - `id`: Unique alphanumeric ID across the file (e.g., `"gg4u1q01"` to `"gg4u1q20"`). **CRITICAL:** Every question MUST have a strictly unique ID to prevent React duplicate key errors.
+  - `tn_id`: The exact node ID corresponding to the sentence in `*-text-navigator.json` (e.g., `"gr_spring"`, `"su_a2"`). This links the question directly to the textbook tree node for authentic bilingual sentence and audio playback.
+  - `prompt`: The authentic textbook sentence with the verb be token replaced by `"______"` (e.g. `"Flowers ______ all around."` or `"This ______ my friend."`). If the sentence uses a contraction (e.g. "I'm ten", "It's cold", "What's this"), expand or replace the be verb with `"______"` (e.g. `"I ______ ten."`, `"It ______ cold."`, `"What ______ this?"`).
+  - `options`: Array of exactly 4 options: `["is", "are", "am", "be"]` (or inflected options suited for the slot). The position of the correct option must be randomized among indices 0–3.
+  - `answer`: 0-indexed integer (0–3) specifying the correct option.
+  - `explanation`: Clear grammatical explanation in Chinese explaining why the form is correct based on the subject (person, singular/plural, tense, or there be structure).
+  - `hint`: Concise hint in Chinese highlighting the subject or person (e.g., `"注意主语 Flowers 是复数形式。"` or `"第一人称单数 I 搭配 am。"`).
+
+---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.** If the textbook for the generated JSONs does not exist in `v2/public/textbooks.json` or `v2/src/lib/textbooks.ts`, you must add the textbook to both files.
 
 **V2 Focus:** The project primarily runs on the V2 single-page application (served from the `v2` directory, which loads exercises dynamically from the database). Therefore, **do NOT** run `scripts/*-release-gen-3.cjs` to generate static HTML files unless the user explicitly requests HTML generation or deployment of static pages. Instead, simply generate/modify the JSON files in the `v2-data/` directory, run the database seed/sync scripts to update the database, and test using the V2 local development server. After generating practice JSONs, you only need to run `scripts/tts-in-one.cjs` for TTS generation, excluding passage decoder.

@@ -10,6 +10,7 @@ import { TextNavigatorShell } from './TextNavigatorShell'
 import { WritingMapShell } from './WritingMapShell'
 import { SentenceArchitectShell } from './SentenceArchitectShell'
 import { GrammarWizardShell } from './GrammarWizardShell'
+import { GrammarGuardShell } from './GrammarGuardShell'
 import { PassageDecoderShell } from './PassageDecoderShell'
 import { TestSheetShell } from './TestSheetShell'
 import { AudioDetectiveShell } from './AudioDetectiveShell'
@@ -236,6 +237,10 @@ export function PracticeShell() {
 
     if (cleanType.startsWith('grammar-wizard')) {
         return <GrammarWizardShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
+    if (cleanType.startsWith('grammar-guard')) {
+        return <GrammarGuardShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
     if (cleanType.startsWith('passage-decoder')) {

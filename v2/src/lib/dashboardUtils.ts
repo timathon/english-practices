@@ -2,6 +2,9 @@ export const PRACTICE_TYPE_ICONS: Record<string, string> = {
   'Vocab Master': '🔥',
   'Spelling Hero': '✏️',
   'Phonics Ninja': '🥷',
+  'Grammar Wizard': '🧙‍♂️',
+  'Grammar Guard': '🛡️',
+  'Passage Decoder': '📖',
   'Sentence Architect': '🏗️',
   'Recall Map': '🗺️',
   'Writing Map': '📝',
@@ -38,6 +41,9 @@ export const translatePracticeName = (name: string): string => {
   }
   if (norm.startsWith('Grammar Wizard')) {
     return norm.replace(/^Grammar Wizard/i, '语法向导');
+  }
+  if (norm.startsWith('Grammar Guard')) {
+    return norm.replace(/^Grammar Guard/i, '语法卫士');
   }
   if (norm.startsWith('Vocab Master')) {
     return norm.replace(/^Vocab Master/i, '词汇大师');

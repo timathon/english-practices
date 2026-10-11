@@ -322,6 +322,7 @@ async function seed() {
                 'sentence-architect',
                 'recall-map',
                 'grammar-wizard',
+                'grammar-guard',
                 'text-navigator',
                 'writing-map',
                 'passage-decoder',

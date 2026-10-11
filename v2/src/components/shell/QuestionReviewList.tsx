@@ -99,7 +99,7 @@ export const QuestionReviewList: React.FC<QuestionReviewListProps> = ({
             <div className="q-review-list" ref={listRef}>
                 {items.map((item, idx) => (
                     <div 
-                        key={item.id ?? idx} 
+                        key={`${item.id ?? 'item'}_${idx}`} 
                         className={`q-review-item ${item.isCorrect ? 'correct' : 'wrong'}`}
                     >
                         <div className="q-review-item-header">

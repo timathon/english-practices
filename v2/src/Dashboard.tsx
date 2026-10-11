@@ -71,7 +71,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
       const recordsData = await recordsRes.json();
       if (Array.isArray(recordsData)) {
         cache.setRecords(recordsData);
-        setRecords(recordsData.filter((r: any) => !r.unit.startsWith('game-')));
+        setRecords(recordsData.filter((r: any) => r?.unit && !r.unit.startsWith('game-')));
       }
 
       if ((session?.user as any)?.role !== 'testdrive') {
@@ -256,7 +256,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
 
       const cachedRecords = cache.getRecords()
       if (cachedRecords) {
-        setRecords(cachedRecords.filter((r: any) => !r.unit.startsWith('game-')))
+        setRecords(cachedRecords.filter((r: any) => r?.unit && !r.unit.startsWith('game-')))
       }
       fetch(API_URL + '/api/records', { credentials: 'include' })
         .then(res => {
@@ -273,7 +273,7 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         .then(data => {
           if (Array.isArray(data)) {
             cache.setRecords(data)
-            setRecords(data.filter((r: any) => !r.unit.startsWith('game-')))
+            setRecords(data.filter((r: any) => r?.unit && !r.unit.startsWith('game-')))
           }
         })
         .catch(console.error)

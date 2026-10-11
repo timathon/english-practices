@@ -40,6 +40,8 @@ When a user request matches one of these scenarios, edit the indicated file **im
    👉 Edit [`v2/src/components/dashboard/DashboardShared.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/dashboard/DashboardShared.tsx).
 6. **Mistake Notebook List / Filters**:
    👉 Edit [`v2/src/components/dashboard/MistakeBookView.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/dashboard/MistakeBookView.tsx).
+7. **Adding a New Practice Type (End-to-End Blueprint: Schema, GenAI script, Backend API, Seed, Frontend Shell, Stats Badges, Mistakes)**:
+   👉 Follow full guide in [`v2-plan/adding-new-practice-type.md`](file:///home/timathon/codes/smartedu/english-practices/v2-plan/adding-new-practice-type.md).
 
 ---
 
