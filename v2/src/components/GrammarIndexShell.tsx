@@ -6,6 +6,24 @@ import { API_URL } from '../lib/auth'
 import { decryptContent, OBSCURE_KEY } from '../lib/crypto'
 import { practiceCache } from '../lib/practiceCache'
 
+const POS_COLORS: Record<string, { bg: string; text: string; border: string; activeBg: string; activeText: string }> = {
+    noun: { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd', activeBg: '#0284c7', activeText: '#ffffff' },          // Sky Blue
+    verb: { bg: '#fee2e2', text: '#b91c1c', border: '#fecaca', activeBg: '#dc2626', activeText: '#ffffff' },          // Rose/Red
+    adj_adv: { bg: '#fef3c7', text: '#b45309', border: '#fde68a', activeBg: '#d97706', activeText: '#ffffff' },       // Amber
+    numeral: { bg: '#f3e8ff', text: '#7e22ce', border: '#e9d5ff', activeBg: '#9333ea', activeText: '#ffffff' },       // Purple
+    pronoun: { bg: '#dcfce7', text: '#15803d', border: '#bbf7d0', activeBg: '#16a34a', activeText: '#ffffff' },       // Green
+    article: { bg: '#ffedd5', text: '#c2410c', border: '#fed7aa', activeBg: '#ea580c', activeText: '#ffffff' },       // Orange
+    conjunction: { bg: '#ccfbf1', text: '#0f766e', border: '#99f6e4', activeBg: '#0d9488', activeText: '#ffffff' },   // Teal
+    preposition: { bg: '#ede9fe', text: '#6d28d9', border: '#ddd6fe', activeBg: '#7c3aed', activeText: '#ffffff' }    // Violet/Indigo
+};
+
+const DEFAULT_POS_PALETTES = [
+    { bg: '#f1f5f9', text: '#334155', border: '#cbd5e1', activeBg: '#475569', activeText: '#ffffff' },
+    { bg: '#fae8ff', text: '#86198f', border: '#f5d0fe', activeBg: '#c026d3', activeText: '#ffffff' },
+    { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe', activeBg: '#4f46e5', activeText: '#ffffff' },
+    { bg: '#ecfdf5', text: '#065f46', border: '#a7f3d0', activeBg: '#059669', activeText: '#ffffff' },
+];
+
 export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
     const [activeCategory, setActiveCategory] = useState<string>('all')
     const [allPracticeQuestions, setAllPracticeQuestions] = useState<any[]>([])
@@ -104,11 +122,13 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
     const categories = data?.categories || []
 
     const filteredPoints = useMemo(() => {
-        let list: Array<{ categoryName: string; categoryIcon: string; point: any }> = [];
-        categories.forEach((cat: any) => {
+        let list: Array<{ categoryId: string; categoryIndex: number; categoryName: string; categoryIcon: string; point: any }> = [];
+        categories.forEach((cat: any, cIdx: number) => {
             if (activeCategory === 'all' || cat.id === activeCategory) {
                 (cat.points || []).forEach((pt: any) => {
                     list.push({
+                        categoryId: cat.id,
+                        categoryIndex: cIdx,
                         categoryName: cat.name,
                         categoryIcon: cat.icon,
                         point: pt
@@ -152,9 +172,12 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                     >
                         全部 ({categories.reduce((acc: number, c: any) => acc + (c.points?.length || 0), 0)})
                     </button>
-                    {categories.map((cat: any) => {
+                    {categories.map((cat: any, index: number) => {
                         const isSelected = activeCategory === cat.id;
                         const label = cat.name.replace(/^[一二三四五六七八九十]、/, '').replace(/考点/g, '');
+                        const count = cat.points?.length || 0;
+                        const palette = POS_COLORS[cat.id] || DEFAULT_POS_PALETTES[index % DEFAULT_POS_PALETTES.length];
+
                         return (
                             <button
                                 key={cat.id}
@@ -162,16 +185,17 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                                 style={{
                                     padding: '6px 14px',
                                     borderRadius: '20px',
-                                    border: '1px solid ' + (isSelected ? 'var(--primary)' : '#e2e8f0'),
-                                    background: isSelected ? 'var(--primary)' : '#f8fafc',
-                                    color: isSelected ? '#ffffff' : '#475569',
+                                    border: '1.5px solid ' + (isSelected ? palette.activeBg : palette.border),
+                                    background: isSelected ? palette.activeBg : palette.bg,
+                                    color: isSelected ? palette.activeText : palette.text,
                                     fontWeight: 600,
                                     cursor: 'pointer',
                                     fontSize: '0.85rem',
-                                    transition: 'all 0.2s'
+                                    transition: 'all 0.2s',
+                                    boxShadow: isSelected ? `0 2px 8px ${palette.activeBg}44` : 'none'
                                 }}
                             >
-                                {label}
+                                {label} ({count})
                             </button>
                         );
                     })}
@@ -184,9 +208,10 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                             没有找到匹配的考点规则。
                         </div>
                     ) : (
-                        filteredPoints.map(({ categoryName, categoryIcon, point }) => {
+                        filteredPoints.map(({ categoryId, categoryIndex, categoryName, categoryIcon, point }) => {
                             const relatedQs = getRelatedQuestions(point.id);
                             const isExpanded = expandedPointId === point.id;
+                            const palette = POS_COLORS[categoryId] || DEFAULT_POS_PALETTES[categoryIndex % DEFAULT_POS_PALETTES.length];
 
                             return (
                                 <div
@@ -204,7 +229,15 @@ export function GrammarIndexShell({ data, practiceId, textbook, unit }: any) {
                                             <span style={{ fontSize: '1.2rem' }}>{categoryIcon}</span>
                                             <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem' }}>{point.name}</h4>
                                         </div>
-                                        <span style={{ fontSize: '0.78rem', color: '#64748b', background: '#e2e8f0', padding: '2px 8px', borderRadius: '4px' }}>
+                                        <span style={{
+                                            fontSize: '0.78rem',
+                                            color: palette.text,
+                                            background: palette.bg,
+                                            border: `1px solid ${palette.border}`,
+                                            padding: '2px 8px',
+                                            borderRadius: '4px',
+                                            fontWeight: 600
+                                        }}>
                                             {categoryName}
                                         </span>
                                     </div>
