@@ -348,6 +348,9 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
         setLocked(true)
         countdownTimer.pause()
 
+        setContinueDisabled(true)
+        setTimeout(() => setContinueDisabled(false), 2000)
+
         const isTimeOut = forceWrong && timerExpiredRef.current
         const isCorrect = !isTimeOut && selectedOption === q.answer
         setIsCorrectFeedback(isCorrect)
@@ -360,9 +363,11 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
             playSfx('wrong')
         }
 
-        // Play the matched sentence audio automatically
+        const isYesNo = activeChallenge?.category === 'yes_no_question'
+
+        // Play the matched sentence audio automatically (only if not yes_no_question)
         const sentenceText = currentMatchedSentence?.text || ''
-        if (sentenceText) {
+        if (sentenceText && !isYesNo) {
             const audioUrl = getAudioUrl(sentenceText, textbook)
             setTimeout(() => {
                 playAudio(audioUrl)
@@ -727,16 +732,18 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
                                             <div className="gg-sentence-cn">{currentMatchedSentence.cn}</div>
                                         )}
                                     </div>
-                                    <button
-                                        className="gg-audio-play-btn"
-                                        title="播放原句音频"
-                                        onClick={() => {
-                                            const audioUrl = getAudioUrl(currentMatchedSentence.text, textbook)
-                                            playAudio(audioUrl)
-                                        }}
-                                    >
-                                        🔊
-                                    </button>
+                                    {activeChallenge?.category !== 'yes_no_question' && (
+                                        <button
+                                            className="gg-audio-play-btn"
+                                            title="播放原句音频"
+                                            onClick={() => {
+                                                const audioUrl = getAudioUrl(currentMatchedSentence.text, textbook)
+                                                playAudio(audioUrl)
+                                            }}
+                                        >
+                                            🔊
+                                        </button>
+                                    )}
                                 </div>
                             )}
 

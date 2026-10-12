@@ -23,9 +23,9 @@ Document whether the practice is:
 #### Minimal Challenge-Based Schema Example:
 ```json
 {
-  "level": "Grade 4 Semester 1 - Unit 4",
+  "level": "Grade 4 Semester 1 - Unit 1",
   "title": "Grammar Guard",
-  "storageSuffix": "_a4a_u4_gg",
+  "storageSuffix": "_a4a_u1_gg",
   "challenges": [
     {
       "id": "c1",
@@ -34,13 +34,35 @@ Document whether the practice is:
       "icon": "🛡️",
       "questions": [
         {
-          "id": "gg4u4q01",
-          "tn_id": "gr_spring",
-          "prompt": "Flowers ______ all around.",
-          "options": ["are", "is", "am", "be"],
+          "id": "gga4au1q01",
+          "tn_id": "sp_s1",
+          "prompt": "I ______ Terry Fox. I like running and playing basketball.",
+          "options": ["is", "are", "am", "be"],
+          "answer": 2,
+          "explanation": "第一人称单数 I 作主语时，一般现在时系动词用 am。",
+          "hint": "注意主语是第一人称单数 I。"
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "title": "Yes/No Questions: Basics 1",
+      "category": "yes_no_question",
+      "icon": "❓",
+      "questions": [
+        {
+          "id": "gga4au1q21",
+          "tn_id": "gr_v1_s1",
+          "prompt": "将陈述句转换为一般疑问句：\nI can run and swim.",
+          "options": [
+            "Can you run and swim?",
+            "Do you run and swim?",
+            "Are you run and swim?",
+            "Does you run and swim?"
+          ],
           "answer": 0,
-          "explanation": "主语 Flowers 是复数名词，一般现在时系动词用 are。",
-          "hint": "注意主语 Flowers 是复数形式。"
+          "explanation": "含有情态动词 can 的陈述句变一般疑问句时，将 Can 提到句首，第一人称 I 改为 you。",
+          "hint": "含有情态动词 can，把 can 提前，I 变为 you。"
         }
       ]
     }

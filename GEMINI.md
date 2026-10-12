@@ -896,31 +896,36 @@ module.exports = {
 **Source:** Text Navigator JSON (`*-text-navigator.json`) and Unit Markdown file (`*-u*.md`).
 **Target:** `*-grammar-guard.json` (Save in the same folder as source)
 
-- **Purpose & Scope:** Sentence-level targeted grammar cloze practice strictly based on textbook authentic sentences from Text Navigator.
+- **Purpose & Scope:** Sentence-level targeted grammar cloze or sentence transformation practice strictly based on textbook authentic sentences from Text Navigator.
   - **CRITICAL DISTINCTION:** Grammar Guard is **NOT** about the specific unit's grammar focus (which belongs to Grammar Wizard). Instead, Grammar Guard is about **foundational/basic grammar**.
-  - **Current Strict Target:** We are starting exclusively with **verb be** (`am`, `is`, `are`, `be` / `was`, `were`). **ONLY questions testing the verb be must be included.**
+  - **Supported Categories:**
+    - `verb_be`: Fill-in-the-blank practice testing `am`, `is`, `are`, `be` / `was`, `were`. Icon `"🛡️"`. Audio is played automatically upon check.
+    - `yes_no_question`: Converting textbook statement sentences into Yes/No general questions (testing auxiliaries `Can`, `Do`, `Does`, `Is`, `Are` and person shifts, e.g. `I` $\to$ `you`). Icon `"❓"`. In `GrammarGuardShell`, after user clicks check, show the full authentic source sentence (often multiple sentences) and Chinese translation from Text Navigator (`tn_id`), without auto-playing audio or showing the speaker button.
 - **Top-Level Metadata:**
-  - `level`: e.g. `"Grade 4 Semester 1 - Unit 4"`.
+  - `level`: e.g. `"Grade 4 Semester 1 - Unit 1"`.
   - `title`: Always `"Grammar Guard"`.
-  - `storageSuffix`: Unique identifier suffix, e.g. `"_a4a_u4_gg"`.
+  - `storageSuffix`: Unique identifier suffix, e.g. `"_a4a_u1_gg"`.
   - `primaryColor` (optional): Hex color string (default `'#0284c7'`).
   - `primaryColorDark` (optional): Darker hex color string (default `'#0369a1'`).
 - **Challenge Volume & Structure:**
-  - **2 Challenges** per unit (**10 questions** per challenge, exactly 20 questions total).
+  - **Up to 2 Challenges per Category** per unit (**10 questions** per challenge).
+  - A unit file can include multiple categories (e.g. `c1` & `c2` for `verb_be`, `c3` & `c4` for `yes_no_question`).
   - Each challenge must have:
-    - `id`: Unique challenge ID (`"c1"`, `"c2"`).
-    - `title`: E.g., `"Verb Be: Basics 1"`, `"Verb Be: Basics 2"`.
-    - `category`: Always `"verb_be"`.
-    - `icon`: Relevant emoji icon (always `"🛡️"`).
+    - `id`: Unique challenge ID (`"c1"`, `"c2"`, `"c3"`, `"c4"`).
+    - `title`: E.g., `"Verb Be: Basics 1"`, `"Yes/No Questions: Basics 1"`.
+    - `category`: `"verb_be"` or `"yes_no_question"`.
+    - `icon`: Relevant emoji icon (`"🛡️"` for `verb_be`, `"❓"` for `yes_no_question`).
     - `questions`: Array of 10 question objects.
 - **Question Schema & Textbook Linkage:**
-  - `id`: Unique alphanumeric ID across the file (e.g., `"gg4u1q01"` to `"gg4u1q20"`). **CRITICAL:** Every question MUST have a strictly unique ID to prevent React duplicate key errors.
-  - `tn_id`: The exact node ID corresponding to the sentence in `*-text-navigator.json` (e.g., `"gr_spring"`, `"su_a2"`). This links the question directly to the textbook tree node for authentic bilingual sentence and audio playback.
-  - `prompt`: The authentic textbook sentence with the verb be token replaced by `"______"` (e.g. `"Flowers ______ all around."` or `"This ______ my friend."`). If the sentence uses a contraction (e.g. "I'm ten", "It's cold", "What's this"), expand or replace the be verb with `"______"` (e.g. `"I ______ ten."`, `"It ______ cold."`, `"What ______ this?"`).
-  - `options`: Array of exactly 4 options: `["is", "are", "am", "be"]` (or inflected options suited for the slot). The position of the correct option must be randomized among indices 0–3.
+  - `id`: Unique alphanumeric ID across the entire file (e.g., `"gga4au1q01"` to `"gga4au1q40"`). **CRITICAL:** Every question MUST have a strictly unique ID to prevent React duplicate key errors.
+  - `tn_id`: The exact node ID corresponding to the sentence in `*-text-navigator.json` (e.g., `"gr_v1_s1"`, `"sp_s1"`). This links the question directly to the textbook tree node for authentic bilingual sentence feedback.
+  - `prompt`:
+    - For `verb_be`: Authentic sentence with the verb be token replaced by `"______"`.
+    - For `yes_no_question`: `"将陈述句转换为一般疑问句：\n[Statement sentence]"`.
+  - `options`: Array of exactly 4 options. Shuffled randomized indices 0–3.
   - `answer`: 0-indexed integer (0–3) specifying the correct option.
-  - `explanation`: Clear grammatical explanation in Chinese explaining why the form is correct based on the subject (person, singular/plural, tense, or there be structure).
-  - `hint`: Concise hint in Chinese highlighting the subject or person (e.g., `"注意主语 Flowers 是复数形式。"` or `"第一人称单数 I 搭配 am。"`).
+  - `explanation`: Clear grammatical explanation in Chinese explaining why the form or question structure is correct.
+  - `hint`: Concise hint in Chinese highlighting the subject, auxiliary, or person change.
 
 ---
 **Standard Instruction:** When asked to "convert" or "generate" exercises for a vocab-guide or textbook markdown, apply these rules and save the resulting JSON in the same directory as the input file. **Unless the user explicitly asks, do NOT generate or include the test sheet JSON (`*-test.json`) when generating exercise JSONs for a unit.** If the textbook for the generated JSONs does not exist in `v2/public/textbooks.json` or `v2/src/lib/textbooks.ts`, you must add the textbook to both files.

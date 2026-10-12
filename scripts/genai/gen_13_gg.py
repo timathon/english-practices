@@ -67,13 +67,13 @@ def extract_tn_sentences(tn_json_path: Path):
 
     return results
 
-PROMPT_TEMPLATE = """\
+PROMPT_TEMPLATE_VERB_BE = """\
 You are an expert English curriculum designer and assessment specialist.
 Generate a Grammar Guard JSON for the given textbook unit.
 
 IMPORTANT CORE DIRECTIVE:
-Grammar Guard is NOT about the unit's grammar focus. It is strictly about basic/foundational grammar, and right now we are ONLY testing the VERB BE (am, is, are, be).
-Every single question in both challenges MUST test the verb be! Do NOT include questions on modal verbs (can/can't), requests (may/can), prepositions, directions, or other grammar points.
+Grammar Guard is strictly about basic/foundational grammar. This category tests VERB BE (am, is, are, be).
+Every single question in both challenges MUST test the verb be!
 
 RULES & SPECIFICATION:
 1. Challenge & Question Count:
@@ -85,68 +85,98 @@ RULES & SPECIFICATION:
 2. Sentence Selection & Linking (`tn_id`):
    - You MUST pick real sentences containing the verb be (am, is, are, be, or contractions like 'm, 's, 're) from the provided TEXT NAVIGATOR SENTENCES list below.
    - For each question, `tn_id` MUST be the exact `tn_id` of the matching sentence from the list.
-   - Replace the verb be in the sentence with `"______"` to create `prompt`:
-     - e.g. "Flowers are all around." -> "Flowers ______ all around."
-     - e.g. "It's so hot in the sun." -> "It ______ so hot in the sun."
-     - e.g. "I'm ten now." -> "I ______ ten now."
-     - e.g. "What's your name?" -> "What ______ your name?"
-     - e.g. "This is my room." -> "This ______ my room."
-     - e.g. "There are books on the desk." -> "There ______ books on the desk."
-   - If the text navigator has fewer than 20 distinct sentences with verb be, select available ones across different activities and vary the subjects, pronouns, or question forms, but ALWAYS ensure tn_id points to an authentic sentence from the text navigator.
+   - Replace the verb be in the sentence with `"______"` to create `prompt`.
 
 3. Question Fields:
-   - `id`: Unique alphanumeric ID across all challenges in the format `gg{{unit_code}}q01` to `gg{{unit_code}}q20` (e.g., `gg{stem_clean}q01`, `gg{stem_clean}q02`, ...). EVERY question must have a unique ID!
+   - `id`: Unique alphanumeric ID across all challenges in the format `gg{stem_clean}q01` to `gg{stem_clean}q20`.
    - `tn_id`: The exact `tn_id` from the provided list.
    - `prompt`: Authentic sentence with `"______"` replacing the verb be.
    - `options`: Exactly 4 options: `["is", "are", "am", "be"]` (shuffled/permuted).
-   - `answer`: 0-indexed integer (0, 1, 2, or 3) indicating the correct option in `options`. The position of the correct answer must be randomized!
-   - `explanation`: Clear grammatical explanation in Chinese explaining why that form of be is correct based on the subject (person: I -> am; singular / he / she / it / uncountable / singular noun -> is; plural / you / we / they / plural noun -> are; there be concord).
-   - `hint`: A helpful Chinese hint guiding the student (e.g. "第一人称单数 I 搭配 am。", "主语是复数名词。", "代词 it 属于第三人称单数。").
+   - `answer`: 0-indexed integer (0-3) indicating the correct option in `options`.
+   - `explanation`: Clear grammatical explanation in Chinese.
+   - `hint`: Concise Chinese hint guiding the student.
 
-JSON structure must strictly match:
+JSON structure:
 {{
-  "level": "{level}",
-  "title": "Grammar Guard",
-  "storageSuffix": "{storage_suffix}",
   "challenges": [
     {{
       "id": "c1",
       "title": "Verb Be: Basics 1",
       "category": "verb_be",
       "icon": "🛡️",
-      "questions": [
-        {{
-          "id": "gg{stem_clean}q01",
-          "tn_id": "<exact_tn_id>",
-          "prompt": "Flowers ______ all around.",
-          "options": ["are", "is", "am", "be"],
-          "answer": 0,
-          "explanation": "主语 Flowers 是复数名词，一般现在时系动词用 are。",
-          "hint": "注意主语 Flowers 是复数形式。"
-        }}
-      ]
+      "questions": [ ... 10 questions ... ]
     }},
     {{
       "id": "c2",
       "title": "Verb Be: Basics 2",
       "category": "verb_be",
       "icon": "🛡️",
-      "questions": [
-        {{
-          "id": "gg{stem_clean}q11",
-          "tn_id": "<exact_tn_id>",
-          "prompt": "The tree ______ ten, too.",
-          "options": ["is", "are", "am", "be"],
-          "answer": 0,
-          "explanation": "主语 The tree 是第三人称单数名词，系动词用 is。",
-          "hint": "The tree 是单数名词。"
-        }}
-      ]
+      "questions": [ ... 10 questions ... ]
     }}
   ]
 }}
 
-TEXT NAVIGATOR SENTENCES (Available for tn_id):
+TEXT NAVIGATOR SENTENCES:
+{tn_sentences_json}
+
+UNIT MARKDOWN CONTEXT:
+{source_markdown}
+"""
+
+PROMPT_TEMPLATE_YES_NO = """\
+You are an expert English primary school curriculum developer.
+Generate TWO challenges of "yes_no_question" category for Grammar Guard.
+Each challenge must have EXACTLY 10 questions (20 questions total).
+
+GOAL:
+Test the student's mastery of transforming authentic textbook statement sentences into Yes/No general questions (一般疑问句).
+Target grammatical mechanics:
+1. Modal verbs (can -> Can you / Can he / Can she...? + bare infinitive)
+2. Simple present auxiliary verbs (do / does -> Do you / Does he / Does she...? + bare infinitive)
+3. Be-verb inversion (am / is / are -> Are you / Is he / Is she / Is it / Are they...?)
+4. Person / pronoun shifts (I -> you, my -> your, me -> you, we -> you).
+
+RULES & REQUIREMENTS:
+1. Every question must correspond to a real statement sentence from the provided TEXT NAVIGATOR SENTENCES list.
+2. `tn_id`: MUST be the exact tn_id from the provided list.
+3. `prompt`: MUST be exactly:
+   "将陈述句转换为一般疑问句：\\n<Statement sentence>"
+4. `options`: Exactly 4 options: 1 correct Yes/No question and 3 plausible, high-quality distractor questions.
+   - Distractors should test common primary school grammatical pitfalls:
+     * Wrong auxiliary: using Do/Are/Does when Can is required, or vice versa.
+     * Missing bare infinitive reduction: keeping 3rd person -s after Does.
+     * Failed pronoun shift (e.g. "Can I swim?" instead of "Can you swim?").
+     * Wrong agreement (e.g. "Does you...", "Do he...").
+5. `answer`: 0-indexed integer (0-3) randomized among the options.
+6. `explanation`: Clear grammatical explanation in Chinese.
+7. `hint`: Concise Chinese clue guiding the student on auxiliary selection or verb form.
+8. Challenge structure:
+   - Challenge 1: id "c3", title "Yes/No Questions: Basics 1", category "yes_no_question", icon "❓", 10 questions.
+   - Challenge 2: id "c4", title "Yes/No Questions: Basics 2", category "yes_no_question", icon "❓", 10 questions.
+   - Question IDs: `gg{stem_clean}q21` up to `gg{stem_clean}q40`.
+
+OUTPUT FORMAT:
+Output ONLY valid JSON:
+{{
+  "challenges": [
+    {{
+      "id": "c3",
+      "title": "Yes/No Questions: Basics 1",
+      "category": "yes_no_question",
+      "icon": "❓",
+      "questions": [ ... 10 questions ... ]
+    }},
+    {{
+      "id": "c4",
+      "title": "Yes/No Questions: Basics 2",
+      "category": "yes_no_question",
+      "icon": "❓",
+      "questions": [ ... 10 questions ... ]
+    }}
+  ]
+}}
+
+TEXT NAVIGATOR SENTENCES:
 {tn_sentences_json}
 
 UNIT MARKDOWN CONTEXT:
@@ -158,7 +188,8 @@ def main():
 
     parser = argparse.ArgumentParser(description="Generate grammar-guard JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to unit markdown file (e.g. v2-data/A4A/a4a-u4/a4a-u4.md)")
-    parser.add_argument("--category", default="verb_be", help="Grammar target category (default: verb_be)")
+    parser.add_argument("--category", choices=["verb_be", "yes_no_question", "all"], default="all",
+                        help="Grammar category: 'verb_be', 'yes_no_question', or 'all' (default: all)")
     parser.add_argument("--level", default="", help='Level label, e.g. "Grade 4 Semester 1 - Unit 4"')
     args = parser.parse_args()
 
@@ -174,7 +205,6 @@ def main():
     # Look for corresponding text-navigator JSON
     tn_path = md_path.parent / f"{base_name}-text-navigator.json"
     if not tn_path.exists():
-        # Fallback search in parent directory
         for p in md_path.parent.glob("*-text-navigator.json"):
             tn_path = p
             break
@@ -191,63 +221,105 @@ def main():
     api_key, model_name = get_genai_config(use_high)
     client = genai.Client(api_key=api_key)
 
-    prompt = PROMPT_TEMPLATE.format(
-        level=level,
-        category=args.category,
-        storage_suffix=storage_suffix,
-        stem_clean=stem_clean,
-        tn_sentences_json=json.dumps(tn_sentences, ensure_ascii=False, indent=2),
-        source_markdown=source_markdown[:15000]
-    )
-
-    print(f"Calling {model_name} for Grammar Guard: {md_path}", file=sys.stderr)
-    import time
-    response = None
-    for attempt in range(5):
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    thinking_config=types.ThinkingConfig(thinking_level="minimal"),
-                    temperature=0.2,
-                    response_mime_type="application/json"
-                )
-            )
-            break
-        except Exception as e:
-            print(f"Error calling Gemini API (attempt {attempt + 1}/5): {e}", file=sys.stderr)
-            if attempt == 4:
-                raise e
-            time.sleep(2 ** attempt)
-
-    text = response.text.strip()
-    text = re.sub(r"^```json\s*", "", text)
-    text = re.sub(r"\s*```$", "", text)
-
-    try:
-        data = json.loads(text)
-    except json.JSONDecodeError as e:
-        print(f"JSON decode failed: {e}\nResponse was:\n{text[:500]}...", file=sys.stderr)
-        sys.exit(1)
-
-    # Ensure unique IDs across all questions
-    seen_ids = set()
-    q_counter = 1
-    for c in data.get("challenges", []):
-        for q in c.get("questions", []):
-            qid = q.get("id")
-            if not qid or qid in seen_ids:
-                q["id"] = f"gg{stem_clean}q{q_counter:02d}"
-            seen_ids.add(q["id"])
-            q_counter += 1
-
     out_path = md_path.parent / f"{base_name}-grammar-guard.json"
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    existing_data = {}
+    if out_path.exists():
+        try:
+            existing_data = json.loads(out_path.read_text(encoding="utf-8"))
+        except Exception:
+            existing_data = {}
 
-    total_qs = sum(len(c.get("questions", [])) for c in data.get("challenges", []))
-    print(f"Saved: {out_path} ({total_qs} questions in {len(data.get('challenges', []))} challenges)", file=sys.stderr)
+    target_categories = ["verb_be", "yes_no_question"] if args.category == "all" else [args.category]
+    challenges_map = {}
+
+    # Index any pre-existing challenges by category
+    for c in existing_data.get("challenges", []):
+        cat = c.get("category", "verb_be")
+        if cat not in target_categories:
+            challenges_map.setdefault(cat, []).append(c)
+
+    import time
+    for cat in target_categories:
+        template = PROMPT_TEMPLATE_VERB_BE if cat == "verb_be" else PROMPT_TEMPLATE_YES_NO
+        prompt = template.format(
+            level=level,
+            storage_suffix=storage_suffix,
+            stem_clean=stem_clean,
+            tn_sentences_json=json.dumps(tn_sentences, ensure_ascii=False, indent=2),
+            source_markdown=source_markdown[:15000]
+        )
+
+        print(f"Calling {model_name} for category '{cat}': {md_path}", file=sys.stderr)
+        response = None
+        for attempt in range(5):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        thinking_config=types.ThinkingConfig(thinking_level="minimal"),
+                        temperature=0.2,
+                        response_mime_type="application/json"
+                    )
+                )
+                break
+            except Exception as e:
+                print(f"Error calling Gemini API (attempt {attempt + 1}/5): {e}", file=sys.stderr)
+                if attempt == 4:
+                    raise e
+                time.sleep(2 ** attempt)
+
+        text = response.text.strip()
+        text = re.sub(r"^```json\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+
+        try:
+            res_json = json.loads(text)
+        except json.JSONDecodeError as e:
+            print(f"JSON decode failed: {e}\nResponse was:\n{text[:500]}...", file=sys.stderr)
+            sys.exit(1)
+
+        challenges = res_json.get("challenges", [])
+        challenges_map[cat] = challenges
+
+    # Assemble challenges in order: verb_be first (c1, c2), then yes_no_question (c3, c4), etc.
+    ordered_challenges = []
+    if "verb_be" in challenges_map:
+        for idx, c in enumerate(challenges_map["verb_be"]):
+            c["id"] = f"c{idx + 1}"
+            c["category"] = "verb_be"
+            c["icon"] = "🛡️"
+            for q_idx, q in enumerate(c.get("questions", [])):
+                q["id"] = f"gg{stem_clean}q{q_idx + idx * 10 + 1:02d}"
+            ordered_challenges.append(c)
+
+    if "yes_no_question" in challenges_map:
+        offset = len(ordered_challenges)
+        for idx, c in enumerate(challenges_map["yes_no_question"]):
+            c["id"] = f"c{offset + idx + 1}"
+            c["category"] = "yes_no_question"
+            c["icon"] = "❓"
+            for q_idx, q in enumerate(c.get("questions", [])):
+                q["id"] = f"gg{stem_clean}q{20 + q_idx + idx * 10 + 1:02d}"
+            ordered_challenges.append(c)
+
+    # Any other pre-existing categories
+    for cat, clist in challenges_map.items():
+        if cat not in ["verb_be", "yes_no_question"]:
+            ordered_challenges.extend(clist)
+
+    final_data = {
+        "level": existing_data.get("level", level),
+        "title": "Grammar Guard",
+        "storageSuffix": existing_data.get("storageSuffix", storage_suffix),
+        "challenges": ordered_challenges
+    }
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(final_data, f, ensure_ascii=False, indent=2)
+
+    total_qs = sum(len(c.get("questions", [])) for c in ordered_challenges)
+    print(f"Saved: {out_path} ({total_qs} questions in {len(ordered_challenges)} challenges)", file=sys.stderr)
 
 if __name__ == "__main__":
     main()
