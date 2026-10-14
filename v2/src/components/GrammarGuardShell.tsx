@@ -328,10 +328,8 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
                 }
             }
         } else {
-            const nextMistakes = mistakeQueue.slice(1)
-            setMistakeQueue(nextMistakes)
-            if (nextMistakes.length > 0) {
-                startQuestion(nextMistakes[0])
+            if (mistakeQueue.length > 0) {
+                startQuestion(mistakeQueue[0])
             } else {
                 finishPractice()
             }
@@ -375,6 +373,8 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
         }
 
         const newScoreLog = [...scoreLog]
+        let updatedMistakes = [...mistakeQueue]
+
         if (!isRedemption) {
             newScoreLog[currentIndex] = isCorrect ? 'green' : 'red'
             setScoreLog(newScoreLog)
@@ -388,9 +388,23 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
             }
 
             if (!isCorrect) {
-                setMistakeQueue(prev => [...prev, q])
+                updatedMistakes.push(q)
             }
+        } else {
+            if (isCorrect) {
+                if (q.originalIndex !== undefined) {
+                    newScoreLog[q.originalIndex] = 'redemption'
+                }
+                updatedMistakes.shift()
+            } else {
+                const missed = updatedMistakes.shift()
+                if (missed) {
+                    updatedMistakes.push(missed)
+                }
+            }
+            setScoreLog(newScoreLog)
         }
+        setMistakeQueue(updatedMistakes)
 
         // Record question review item (only during main quiz, like GrammarWizard)
         if (!isRedemption) {
@@ -451,7 +465,7 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
         hasFinishedRef.current = false
 
         const rawQuestions = challenge.questions || []
-        const qs = shuffle(rawQuestions)
+        const qs = shuffle([...rawQuestions]).map((item: any, i: number) => ({ ...item, originalIndex: i }))
         setQueue(qs)
         setMistakeQueue([])
         setCurrentIndex(0)
@@ -618,7 +632,7 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
                         </div>
                     </div>
 
-                    <QuestionReviewList items={questionResults} maxHeight={440} />
+                    <QuestionReviewList items={questionResults} maxHeight="clamp(340px, 50vh, 560px)" />
 
                     <CompleteScreenActions
                         remainingTrials={trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)}
@@ -634,7 +648,7 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
                             }
                             handleChallengeSelect(activeChallenge, overrideInvisible)
                         }}
-                        prefix="gw"
+                        prefix="gg"
                         isLockedToday={getStats(activeChallenge.title).todayBest === 100}
                         invisibleMode={invisibleMode}
                     />
@@ -674,7 +688,7 @@ export function GrammarGuardShell({ data, practiceId, unit, textbook }: any) {
                     showFeedback={showFeedback}
                     isRedemption={isRedemption}
                     currentQuestion={q}
-                    prefix="gw"
+                    prefix="gg"
                 />
 
                 <div className="gg-question-area">

@@ -25,7 +25,7 @@ interface QuestionReviewListProps {
 
 export const QuestionReviewList: React.FC<QuestionReviewListProps> = ({
     items,
-    maxHeight = 290
+    maxHeight = 'clamp(320px, 48vh, 580px)'
 }) => {
     const listRef = useRef<HTMLDivElement>(null)
     const userInteractedRef = useRef(false)

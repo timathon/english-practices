@@ -701,7 +701,7 @@ export function SentenceArchitectShell({ data, practiceId, unit, textbook }: any
                     </div>
 
                     {/* Question Review List */}
-                    <QuestionReviewList items={questionResults} maxHeight={290} />
+                    <QuestionReviewList items={questionResults} maxHeight="clamp(340px, 50vh, 560px)" />
 
                     <CompleteScreenActions
                         remainingTrials={trialsTracker.getRemainingTrials(practiceId, activeChallenge.id)}
