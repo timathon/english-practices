@@ -152,7 +152,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     const q = mistake.question;
 
     // Type-specific setups
-    if (['vocab-master', 'grammar-wizard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(mistake.practiceType)) {
+    if (['vocab-master', 'grammar-wizard', 'grammar-guard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(mistake.practiceType)) {
       const mapped = q.options.map((text: string, idx: number) => ({ text, originalIdx: idx }));
       setShuffledOptions(shuffle(mapped));
       countdownTimer.reset(mistake.practiceType === 'grammar-wizard' ? 30 : (mistake.practiceType === 'phonics-ninja' ? 25 : 15));
@@ -201,7 +201,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     let wrongAnswer: any = undefined;
 
     if (!forceWrong) {
-      if (['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType)) {
+      if (['vocab-master', 'grammar-wizard', 'grammar-guard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType)) {
         correct = selectedOption === q.answer;
         wrongAnswer = selectedOption !== null ? q.options[selectedOption] : undefined;
       } else if (currentMistake.practiceType === 'sentence-architect') {
@@ -354,7 +354,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (completed || !currentMistake) return;
 
-      const isMc = ['vocab-master', 'grammar-wizard', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
+      const isMc = ['vocab-master', 'grammar-wizard', 'grammar-guard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
 
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -417,7 +417,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
   if (!currentMistake) return null;
 
   const q = currentMistake.question;
-  const isMc = ['vocab-master', 'grammar-wizard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
+  const isMc = ['vocab-master', 'grammar-wizard', 'grammar-guard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
 
   return (
     <div className="mr-overlay">
@@ -618,7 +618,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
                       <p className="mr-context-sentence-cn">🇨🇳 {q.options[q.answer]}</p>
                     </>
                   )}
-                  {currentMistake.practiceType === 'grammar-wizard' && (
+                  {(currentMistake.practiceType === 'grammar-wizard' || currentMistake.practiceType === 'grammar-guard') && (
                     <>
                       <p className="mr-meaning-text"><strong>Correct:</strong> {q.options[q.answer]}</p>
                       {q.explanation && <p className="mr-explanation-text">💡 {q.explanation}</p>}

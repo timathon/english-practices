@@ -138,9 +138,13 @@ Target grammatical mechanics:
 
 RULES & REQUIREMENTS:
 1. Every question must correspond to a real statement sentence from the provided TEXT NAVIGATOR SENTENCES list.
+   - Choose statements that transform into NATURAL, idiomatic English questions.
+   - DO NOT pick statements that result in awkward or unnatural questions (e.g. avoid negative statements like "It never snows!" which lead to unnatural questions like "Does it never snow?").
 2. `tn_id`: MUST be the exact tn_id from the provided list.
-3. `prompt`: MUST be exactly:
-   "将陈述句转换为一般疑问句：\\n<Statement sentence>"
+3. `prompt`:
+   - Standard: "将陈述句转换为一般疑问句：\\n<Statement sentence>"
+   - Person shift marking: If transforming the sentence requires a pronoun change between first person (I / we / my / our) and second person (you / your), you MUST append "（注意人称变换）":
+     "将陈述句转换为一般疑问句（注意人称变换）：\\n<Statement sentence>"
 4. `options`: Exactly 4 options: 1 correct Yes/No question and 3 plausible, high-quality distractor questions.
    - Distractors should test common primary school grammatical pitfalls:
      * Wrong auxiliary: using Do/Are/Does when Can is required, or vice versa.

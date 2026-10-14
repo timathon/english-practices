@@ -921,7 +921,13 @@ module.exports = {
   - `tn_id`: The exact node ID corresponding to the sentence in `*-text-navigator.json` (e.g., `"gr_v1_s1"`, `"sp_s1"`). This links the question directly to the textbook tree node for authentic bilingual sentence feedback.
   - `prompt`:
     - For `verb_be`: Authentic sentence with the verb be token replaced by `"______"`.
-    - For `yes_no_question`: `"将陈述句转换为一般疑问句：\n[Statement sentence]"`.
+    - For `yes_no_question`:
+      - Standard prompt: `"将陈述句转换为一般疑问句：\n[Statement sentence]"`.
+      - **Person Shift Marking:** If the transformation requires changing pronouns between first person (`I` / `we` / `my` / `our`) and second person (`you` / `your`), append `（注意人称变换）` to the prompt title:
+        `"将陈述句转换为一般疑问句（注意人称变换）：\n[Statement sentence]"`
+  - **Sentence Selection Quality for `yes_no_question`:**
+    - Choose authentic statement sentences that transform into **natural, idiomatic English questions**.
+    - **Avoid statements that produce awkward or unnatural questions:** For example, avoid statements with negative adverbs like *"It never snows!"* where mechanical inversion yields unnatural English like *"Does it never snow?"*. Choose alternative declarative statements from the unit (e.g. affirmative statements with clear auxiliaries, be-verbs, or action verbs).
   - `options`: Array of exactly 4 options. Shuffled randomized indices 0–3.
   - `answer`: 0-indexed integer (0–3) specifying the correct option.
   - `explanation`: Clear grammatical explanation in Chinese explaining why the form or question structure is correct.

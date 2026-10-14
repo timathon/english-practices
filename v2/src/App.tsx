@@ -343,7 +343,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             onClick={handleVersionTap}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v261012-1654
+            v261014-2056
           </div>
         </div>
       )}
