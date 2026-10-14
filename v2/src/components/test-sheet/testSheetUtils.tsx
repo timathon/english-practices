@@ -124,7 +124,7 @@ export const renderOptionContent = (opt: string, idx: number): React.ReactNode =
   return (
     <>
       <strong className="ts-option-prefix">{prefix}. </strong>
-      {renderPromptText(cleaned)}
+      {renderPromptText(cleaned, false)}
     </>
   )
 }
@@ -211,10 +211,13 @@ export const renderFormattedInlineText = (text: string): React.ReactNode => {
   )
 }
 
-export const renderPromptText = (text?: string): React.ReactNode => {
+export const renderPromptText = (text?: string, stripLeadingNum: boolean = true): React.ReactNode => {
   if (!text) return null
-  // Strip leading question numbering like "1. ", "2. ", "(1) " if present so it doesn't duplicate ts-question-num
-  const cleanText = text.trim().replace(/^(\d+[\.、\)]|\(\d+\))\s*/, '')
+  const trimmed = text.trim()
+  // Only strip leading question numbering like "1. ", "2. ", "(1) " if requested AND not the entire string (e.g. preserve pure numbers like "3." or "4")
+  const cleanText = (stripLeadingNum && !/^\(?\d+[\.、\)]?$/.test(trimmed))
+    ? trimmed.replace(/^(\d+[\.、\)]|\(\d+\))\s*/, '')
+    : trimmed
   if (cleanText.includes('[HTML:')) {
     const parts = cleanText.split(/(\[HTML:[\s\S]*?\])/g)
     return (
@@ -232,6 +235,7 @@ export const renderPromptText = (text?: string): React.ReactNode => {
   }
   return <span style={{ whiteSpace: 'pre-wrap' }}>{renderFormattedInlineText(cleanText)}</span>
 }
+
 
 export const isAnswerCorrect = (userAns: any, correctAns: any, sectionTypeOrSection?: string | any, qType?: string): boolean => {
   if (userAns === undefined || userAns === null || userAns === '' || correctAns === undefined || correctAns === null || correctAns === '') {

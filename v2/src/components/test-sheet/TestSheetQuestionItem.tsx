@@ -388,7 +388,7 @@ export function TestSheetQuestionItem({
                     onClick={() => handleAnswerChange(q.id, oIdx)}
                   >
                     <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                    <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx))}</span>
+                    <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx), false)}</span>
                   </button>
                 )
               })}
@@ -543,7 +543,7 @@ export function TestSheetQuestionItem({
                   onClick={() => handleAnswerChange(q.id, oIdx)}
                 >
                   <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                  <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx))}</span>
+                  <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx), false)}</span>
                 </button>
               )
             })}
