@@ -353,6 +353,9 @@ In [`v2/src/components/dashboard/MistakeBookView.tsx`](file:///home/timathon/cod
    ```
 2. Handle the question display format (prompt with blanks, correct answer, student wrong answer) so mistake review cards render accurately.
 
+> [!NOTE]
+> Some guided multi-step pedagogical practices (such as `Reading & Expression / YB`) deliberately opt out of recording mistakes into `mistakeService` because intermediate incorrect assembly attempts are handled in-situ as guided steps rather than standalone single-word vocabulary/grammar mistake notebook entries. In such cases, omit `mistakeService.addMistake()` in the shell.
+
 ---
 
 ## 8. Verification & Deployment Lifecycle

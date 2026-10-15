@@ -330,6 +330,7 @@ async function seed() {
                 'verb-expressions',
                 'grammar-index',
                 'passage-cloze',
+                'reading-expression',
                 'cloze',
                 'test'
             ];

@@ -744,11 +744,16 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 .filter((p: any) => p.type.toLowerCase().includes('grammar-guard'))
                 .sort((a: any, b: any) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
 
+              const readingExpressionItems = items
+                .filter((p: any) => p.type.toLowerCase().includes('reading-expression') || p.type.toLowerCase().includes('yb'))
+                .sort((a: any, b: any) => (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' }));
+
               const matchedIds = new Set([
                 ...recallMapItems.map((p: any) => p.id),
                 ...vocabItems.map((p: any) => p.id),
                 ...textNavigatorItems.map((p: any) => p.id),
                 ...passageDecoderItems.map((p: any) => p.id),
+                ...readingExpressionItems.map((p: any) => p.id),
                 ...audioDetectiveItems.map((p: any) => p.id),
                 ...writingMapItems.map((p: any) => p.id),
                 ...sentenceArchitectItems.map((p: any) => p.id),
@@ -774,7 +779,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
               const groups = [
                 { title: '1. Recall Map', items: recallMapItems },
                 { title: '2. Vocabulary, Spelling & Phonics', items: vocabItems },
-                { title: '3. Text Navigators & Passage Decoders', items: [...tnGroupItems, ...passageDecoderItems, ...audioDetectiveItems] },
+                { title: '3. Text Navigators, Passage Decoders & Reading', items: [...tnGroupItems, ...passageDecoderItems, ...readingExpressionItems, ...audioDetectiveItems] },
                 { title: '4. Sentence & Grammar', items: [...grammarWizardItems, ...grammarGuardItems, ...sentenceArchitectItems] },
                 { title: '5. Writing Maps', items: wmGroupItems },
                 { title: 'Other Practices', items: otherItems }
@@ -793,6 +798,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 if (t.includes('text-navigator')) return '🧭';
                 if (t.includes('grammar-wizard')) return '🧙‍♂️';
                 if (t.includes('grammar-guard')) return '🛡️';
+                if (t.includes('reading-expression') || t.includes('yb')) return '💡';
                 if (t.includes('passage-decoder')) return '📖';
                 if (t.includes('audio-detective')) return '🎧';
                 if (t.includes('bug-hunter')) return '🐛';
@@ -817,12 +823,13 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                       const isSA = p.type.toLowerCase().includes('sentence-architect');
                       const isGW = p.type.toLowerCase().includes('grammar-wizard');
                       const isGG = p.type.toLowerCase().includes('grammar-guard');
+                      const isYB = p.type.toLowerCase().includes('reading-expression') || p.type.toLowerCase().includes('yb');
                       const isPD = p.type.toLowerCase().includes('passage-decoder');
                       const isAD = p.type.toLowerCase().includes('audio-detective');
                       const isTN = p.type.toLowerCase().includes('text-navigator');
                       const isCloze = p.type.toLowerCase().includes('cloze');
 
-                      if ((isVM || isSA || isGW || isGG || isPN) && p.content?.challenges) {
+                      if ((isVM || isSA || isGW || isGG || isPN || isYB) && p.content?.challenges) {
                         total = p.content.challenges.length;
                         let sumMax = 0;
                         for (const chal of p.content.challenges) {
@@ -1018,7 +1025,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                 </button>
                               </div>
                             )}
-                            {(isVM || isSH || isPN || isSA || isGW || isGG || isPD || isAD || isTN) && total > 0 && (
+                            {(isVM || isSH || isPN || isSA || isGW || isGG || isYB || isPD || isAD || isTN) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
                                 title={doneCount > 0 ? `Completed ${doneCount} practices out of ${total}. Average score ${avg}% (grade ${getGrade(avg)})` : `Completed 0 practices out of ${total}.`}

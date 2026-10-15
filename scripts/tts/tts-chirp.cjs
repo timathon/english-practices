@@ -265,6 +265,34 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
                             }
                         });
                     }
+                } else if (file.includes('-yb-') || file.includes('-reading-expression')) {
+                    if (content.challenges && Array.isArray(content.challenges)) {
+                        content.challenges.forEach(challenge => {
+                            if (challenge.passage && Array.isArray(challenge.passage)) {
+                                challenge.passage.forEach(item => {
+                                    if (Array.isArray(item)) {
+                                        item.forEach(sent => {
+                                            if (typeof sent === 'string') {
+                                                const clean = sent
+                                                    .replace(/<[^>]+>/g, '')
+                                                    .replace(/\s*[(（][\u4e00-\u9fa5\s/、]+[)）]/g, '')
+                                                    .replace(/^#+\s*/, '')
+                                                    .trim();
+                                                if (clean) textsSet.add(getCleanText(clean));
+                                            }
+                                        });
+                                    } else if (typeof item === 'string') {
+                                        const clean = item
+                                            .replace(/<[^>]+>/g, '')
+                                            .replace(/\s*[(（][\u4e00-\u9fa5\s/、]+[)）]/g, '')
+                                            .replace(/^#+\s*/, '')
+                                            .trim();
+                                        if (clean) textsSet.add(getCleanText(clean));
+                                    }
+                                });
+                            }
+                        });
+                    }
                 } else if (file.includes('-irregular-verbs')) {
                     if (content.verbs && Array.isArray(content.verbs)) {
                         content.verbs.forEach(v => {

@@ -19,6 +19,7 @@ import { VerbReferenceShell } from './VerbReferenceShell'
 import { PassageClozeShell } from './PassageClozeShell'
 import { GrammarIndexShell } from './GrammarIndexShell'
 import { PhonicsNinjaShell } from './PhonicsNinjaShell'
+import { ReadingExpressionShell } from './ReadingExpressionShell'
 
 import { practiceCache } from '../lib/practiceCache'
 import { cache } from '../lib/cache'
@@ -274,6 +275,10 @@ export function PracticeShell() {
 
     if (cleanType.startsWith('passage-cloze') || cleanType.startsWith('grammar-cloze') || cleanType.endsWith('-cloze') || cleanType === 'yp' || cleanType.startsWith('yp-') || cleanType.endsWith('-yp') || cleanType.includes('-yp-') || cleanType.startsWith('a10-yp-') && !cleanType.includes('index')) {
         return <PassageClozeShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
+    if (cleanType.startsWith('reading-expression') || cleanType === 'yb' || cleanType.startsWith('yb-') || cleanType.endsWith('-yb') || cleanType.includes('-yb-') || cleanType.startsWith('a10-yb-')) {
+        return <ReadingExpressionShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
     }
 
     if (cleanType.startsWith('grammar-index') || cleanType.startsWith('cloze-index') || cleanType.startsWith('yp-index') || cleanType.endsWith('-yp-index') || cleanType.includes('grammar-index') || cleanType.includes('cloze-index')) {

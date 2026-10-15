@@ -540,35 +540,54 @@ This document defines the rules for extracting and converting textbook data into
 
 ---
 
-## 11. Reading & Expression (RE)
-**Source:** Reading and Expression Markdown (e.g., `data/A7B/a7b-workbooks/a7b-re-old.md`).
-**Target:** `*-re-old-u[x].json` (Save in the same folder as source)
+## 11. Reading & Expression (YB / RE)
+**Source:** Reading and Expression Markdown (e.g., `v2-data/A10/a10-yb/a10-yb-1.md`).
+**Target:** `*-reading-expression.json` (Save in the same folder as source)
 
-- **Conversion Scope:** Generate separate JSON files for each unit/test found in the markdown source.
-- **Format & Structure:**
-  - `id`: A unique string ID identifying the unit (e.g., `"a7b-re-old-u1"`).
-  - `level`: The grade/semester info (e.g., `"Grade 7 Semester 2"`).
-  - `unit`: The unit name (e.g., `"Unit 1"`).
-  - `title`: The display title for the workbook test.
-  - `passage`: Verbatim text of the reading passage.
-  - `questions`: Array of exactly 4 question objects:
-    - **Questions 1, 2, and 3 (细节题 / Index 0-2):**
-      - `id`: Unique 8-character alphanumeric or logical string (e.g., `"u1-q41"`).
-      - `number`: Question number matching the text (usually 41, 42, 43).
-      - `type`: `"multiple-choice"`.
-      - `prompt`: Question prompt from the markdown text.
-      - `options`: Array of 4 options containing the correct answer and 3 synthetically generated plausible distractors.
-      - `answer`: Index of the correct option (0-3). **Crucially, the correct answer index must be randomized (shuffled).**
-    - **Question 4 (开放题 / Index 3):**
-      - `id`: Unique string ID (e.g., `"u1-q44"`).
-      - `number`: Question number matching the text (usually 44).
-      - `type`: `"sentence-ordering"`.
-      - `prompt`: Open-ended question prompt (e.g., `"What club do you want to join? Why? Write 20 words or more."`).
-      - `blocks`: Array of exactly 6 sentence block objects, where exactly 3 are correct components forming a high-scoring cohesive answer and 3 are incorrect distractors.
-        - Each block has `id`, `text`, `isCorrect` (boolean), and `role` (`"opinion"`, `"reason"`, `"summary"`, or `"distractor"`).
-        - Correct Blocks: Include an **Opinion** (观点), a **Reason** (理由), and a **Summary/Significance** (升华) in the first person ("I", "my") that combined meet the word count requirement (e.g., ≥20 words).
-        - Distractors: 3 incorrect sentence options (e.g., third-person copy-pasted sentences from the passage or unrelated grammar points).
-      - `correctOrder`: Array of the 3 correct block IDs in chronological sequence (e.g., `["b1", "b2", "b3"]`).
+- **Pedagogical Workflow (4-Step Guided Flow in Frontend):**
+  1. **找关键词 (Step 1):** Identify core question prompt keywords/entities.
+  2. **定位关键句 (Step 2):** Tap the exact source sentence in the passage pane.
+  3. **人称转换判断 (Step 3):** Decide if first-person to third-person pronoun transformation is required.
+  4. **连词成句 (Step 4):** Click discrete word chips to assemble the standard answer with ending punctuation.
+
+- **Question Composition Rules (Strictly Enforced):**
+  - **4 Questions per Challenge:** Exactly **3 细节理解题 (detail comprehension)** + **1 开放性问答题 (open-ended question)**.
+  - **Why Questions Must Start With "Because":** When answering questions starting with *"Why..."* (reason questions), the standard answer, word blocks, and multiple-choice options MUST start with **"Because"** (e.g., *"Because Micheal does well in both personal development and schoolwork."*), even if the answer key in the source markdown omits "Because".
+  - **No Translation Tasks:** Translation is no longer tested in the exam format. If source markdown contains a translation question (e.g., *"请将画线句翻译成中文"*), it MUST be replaced with a high-quality detail comprehension question based on the passage text.
+  - **Mistake Book Exclusion:** Errors in reading-expression (YB) must **NOT** be recorded into the mistake book (`mistakeService`). Exercises are designed as guided learning steps rather than standalone single-word mistake notebook entries.
+
+- **Passage Paragraph Separation Rule (Strictly Enforced):**
+  - `passage` MUST be structured as a 2D array of strings: `string[][]`.
+  - Each sub-array represents one paragraph of sentence strings: `[["Paragraph 1 Sentence 1.", "Paragraph 1 Sentence 2."], ["Paragraph 2 Sentence 1."]]`.
+  - In frontend [`ReadingExpressionShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/ReadingExpressionShell.tsx), each sub-array renders as `<p className="yb-passage-paragraph">` with visual paragraph margins and indentation (`text-indent: 2em`).
+  - **Sentence Indexing Fidelity:** The flattened sequence of sentences across paragraphs must maintain a consistent 0-based global index matching `target_sentence_index`.
+  - **Quotation Marks & Vocabulary Glosses Preservation:**
+    - Double quotes (`"..."`) and dialogue quotes from the source markdown MUST be strictly preserved in the JSON sentence strings (e.g. `["\"I tried out table tennis after classes ended, and the Chinese students played like professionals,\" he said."]`), properly escaped as `\"`. Do not drop or strip quotation marks.
+    - Parenthesized Chinese vocabulary translations / glosses from the source markdown (e.g. `douzhi, a fermented(发酵的) bean juice`, `chili peppers(辣椒)`, `damp(潮湿的) weather`) MUST be kept in the passage JSON for student reading support.
+    - The TTS synthesis tool ([`scripts/tts/tts-chirp.cjs`](file:///home/timathon/codes/smartedu/english-practices/scripts/tts/tts-chirp.cjs)) and frontend audio hash calculation automatically strip these parenthesized Chinese glosses (`/\s*[(（][\u4e00-\u9fa5\s/、]+[)）]/g`) before speech generation.
+
+- **Challenge & Question Schema:**
+  - `challenges`: Array of challenge objects.
+    - `id`: e.g. `"c1"`, `"c2"`.
+    - `title`: e.g. `"Passage 1: Hunan Dishes and Culture"`.
+    - `icon`: Relevant emoji icon (e.g. `"🌶️"`, `"🎵"`). In challenge card selection, a text-type badge (e.g. `"说"` for 说明文, `"记"` for 记叙文) is automatically displayed.
+    - `article_type`: Chinese text type (e.g. `"说明文"`, `"记叙文"`, `"议论文"`).
+    - `summary`: Concise Chinese summary of the text.
+    - `passage`: `string[][]` (array of paragraph sentence arrays).
+    - `passage_cn`: `string[][]` (array of paragraph sentence arrays containing sentence-by-sentence Chinese translations).
+    - `questions`: Array of exactly 4 question objects:
+      - `id`: Unique ID (e.g. `"yb_c1_q1"`).
+      - `q_index`: Integer 1 to 4.
+      - `question_type`: `"detail_locate"`, `"reason"`, `"pronoun_transform"`, or `"open_ended"`.
+      - `prompt`: English prompt text.
+      - `prompt_cn`: Chinese translation of the prompt.
+      - `target_sentence_index`: 0-based global index in the flattened passage where the evidence resides.
+      - `thinking`: `{ "keywords": [...], "method": "根据关键信息定位 / 转换人称", "rule": "..." }`.
+      - `standard_answer`: Verbatim or official standard answer.
+      - `word_blocks`: Correct answer tokens plus 3-5 distractor noise words.
+      - `options`: Exactly 4 multiple-choice options (1 correct + 3 high-quality traps).
+      - `answer`: 0-indexed integer (0-3) of the correct option (shuffled across questions).
+      - `explanation`: Detailed Chinese explanation with citation.
 
 
 

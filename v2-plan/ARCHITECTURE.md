@@ -135,7 +135,41 @@ When a user request matches one of these scenarios, edit the indicated file **im
 
 ---
 
-## 4. Architecture Expansion Roadmap
+## 4. Reading & Expression (YB) Architecture (`v2/src/components/ReadingExpressionShell.tsx`)
+
+The Reading & Expression Shell powers interactive Middle School Entrance Exam reading comprehension practices with a 4-step pedagogical guided flow (审题找词 $\to$ 原文定位 $\to$ 人称转换 $\to$ 连词成句).
+
+### File Responsibility Index
+
+| File Path | Role & Responsibilities | Key Functions / Exports |
+| :--- | :--- | :--- |
+| [`v2/src/components/ReadingExpressionShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/ReadingExpressionShell.tsx) | **Interactive YB shell orchestrator.** Manages 4-step sub-step flow, paragraph mapping (`passageParagraphs`), flat sentence index tracking, Step 2 interactive passage sentence click/locate, Step 3 pronoun detection, Step 4 word pool builder, step-back read-only review, trial consumption, 100% challenge title click to preview translation modal, and 2-section finishing screen button layout (mistakes intentionally excluded from Mistake Book). | `ReadingExpressionShell` component |
+| [`v2/src/components/ReadingExpressionShell.css`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/ReadingExpressionShell.css) | **YB styling.** Split viewport layout (passage left, step box right), `.yb-passage-paragraph` indent and margins, sentence hover/selected/target highlights, `.yb-step-flow-bar` status colors (blue current, green done, grey unavailable, underline selected), text type badges (`"说"` / `"记"`), and 2-section vertical completion actions layout (`.yb-complete-actions`, `.primary-action`, `.secondary-actions`). | Styles for `.yb-*` containers |
+| [`v2/src/components/cloze/ArticleReadingModal.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/cloze/ArticleReadingModal.tsx) | **Shared Article Translation & Audio Modal.** Reused in YB finishing screen and challenge card 100% title click for sentence-by-sentence Chinese toggle and sentence audio playback. | `ArticleReadingModal` component |
+| [`scripts/genai/gen_14_yb.py`](file:///home/timathon/codes/smartedu/english-practices/scripts/genai/gen_14_yb.py) | **GenAI generation script.** Transforms markdown reading exercises into `*-reading-expression.json` with 2D paragraph arrays `string[][]`, Chinese vocabulary glosses in parentheses, preserved quotation marks, reason questions starting with "Because", and exactly 3 detail questions + 1 open-ended question per passage. | `main`, `SYSTEM_PROMPT` |
+| [`scripts/tts/tts-chirp.cjs`](file:///home/timathon/codes/smartedu/english-practices/scripts/tts/tts-chirp.cjs) | **TTS synthesizer.** Extracts English passage sentences from `*-reading-expression.json`, strips HTML and parenthesized Chinese vocabulary glosses, and generates speech audio via Chirp 3 HD without speaking Chinese. | `runTtsSynthesis`, `uploadJobItems` |
+| [`v2/src/components/PracticeShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/PracticeShell.tsx) | **Shell routing.** Dispatches `reading-expression` practice type to `ReadingExpressionShell`. | `PracticeShell` component |
+
+### Direct-Edit Routing Table for Reading & Expression (YB)
+
+When a user request matches one of these scenarios, edit the indicated file **immediately**:
+
+1. **Step flow logic (e.g. 4 sub-steps, pronoun check, sentence locating, word pool, step review)**:
+   👉 Edit [`v2/src/components/ReadingExpressionShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/ReadingExpressionShell.tsx).
+2. **Passage display, paragraph breaks, font size, flow bar colors, completion action layout, or mobile responsiveness**:
+   👉 Edit [`v2/src/components/ReadingExpressionShell.css`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/ReadingExpressionShell.css).
+3. **Article translation and listening playback modal (finishing screen or 100% title click)**:
+   👉 Edit [`v2/src/components/cloze/ArticleReadingModal.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/cloze/ArticleReadingModal.tsx) or modal invocation in [`v2/src/components/ReadingExpressionShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/ReadingExpressionShell.tsx).
+4. **TTS audio synthesis or audio hash calculation**:
+   👉 Edit [`scripts/tts/tts-chirp.cjs`](file:///home/timathon/codes/smartedu/english-practices/scripts/tts/tts-chirp.cjs) and `playSentenceAudio` in [`v2/src/components/ReadingExpressionShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/ReadingExpressionShell.tsx).
+5. **Challenge list badge or 100% title clickable behavior**:
+   👉 Edit [`v2/src/components/ReadingExpressionShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/ReadingExpressionShell.tsx) and [`v2/src/components/shell/ChallengeCardGrid.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/shell/ChallengeCardGrid.tsx).
+6. **Data extraction or question generation schema (no translations, 3 details + 1 open question, reason questions starting with "Because", 2D paragraph arrays, preserved quotes and glosses)**:
+   👉 Edit [`scripts/genai/gen_14_yb.py`](file:///home/timathon/codes/smartedu/english-practices/scripts/genai/gen_14_yb.py) and Section 11 of [`GEMINI.md`](file:///home/timathon/codes/smartedu/english-practices/GEMINI.md).
+
+---
+
+## 5. Architecture Expansion Roadmap
 
 The following modules will be documented and added to this architecture map in future phases:
 

@@ -13,6 +13,8 @@ interface ChallengeCardGridProps {
     prefix: string
     invisibleMode?: boolean
     onResetTrials?: (cId: string) => void
+    onTitleClick?: (challenge: any) => void
+    isTitleClickable?: (challenge: any) => boolean
 }
 
 export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
@@ -25,7 +27,9 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
     flickeringId,
     invisibleMode,
     prefix,
-    onResetTrials
+    onResetTrials,
+    onTitleClick,
+    isTitleClickable
 }) => {
     const { data: session } = useSession()
     const isAdmin = (session?.user as any)?.role === 'admin' || session?.user?.email === 'admin@vibequizzing.com'
@@ -36,6 +40,7 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
                 const stats = getChallengeStatsText(c);
                 const lockedToday = isLockedToday(c);
                 const isOutOfAttempts = rem === 0;
+                const canClickTitle = Boolean(isTitleClickable && isTitleClickable(c));
 
                 return (
                     <div
@@ -47,7 +52,24 @@ export const ChallengeCardGrid: React.FC<ChallengeCardGridProps> = ({
                         <div className="shell-card-header">
                             <div style={{ display: 'flex', alignItems: 'center' }}>
                                 <span style={{ fontSize: '1.5rem', marginRight: '10px' }}>{c.icon}</span>
-                                <h3 className="shell-card-title" style={{ marginRight: '8px' }}>{c.title}</h3>
+                                <h3
+                                    className={`shell-card-title ${canClickTitle ? 'clickable-title' : ''}`}
+                                    style={{
+                                        marginRight: '8px',
+                                        cursor: canClickTitle ? 'pointer' : undefined,
+                                        textDecoration: canClickTitle ? 'underline dotted' : undefined,
+                                        textUnderlineOffset: canClickTitle ? '3px' : undefined
+                                    }}
+                                    title={canClickTitle ? '点击查看文章翻译与朗读' : undefined}
+                                    onClick={(e) => {
+                                        if (canClickTitle && onTitleClick) {
+                                            e.stopPropagation();
+                                            onTitleClick(c);
+                                        }
+                                    }}
+                                >
+                                    {c.title}
+                                </h3>
                                 <div style={{ fontSize: '0.7rem', color: 'rgb(153, 153, 153)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                     <span>{rem} / 5 attempts left</span>
                                     {isAdmin && isOutOfAttempts && (
