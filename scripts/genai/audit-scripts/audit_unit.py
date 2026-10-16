@@ -335,9 +335,30 @@ def audit_spelling_hero(sh, vg, filename):
             })
 
         chunks = w.get("chunks", [])
+        concatenated = "".join(chunk.get("correct", "") for chunk in chunks)
+        if "-" not in wstr and concatenated != wstr:
+            issues.append({
+                "json_file": filename,
+                "rule_section": "3. Spelling Hero (SH)",
+                "item_id": wstr,
+                "issue_type": "Chunk Concatenation Mismatch",
+                "description": f"Concatenating chunks '{concatenated}' does not equal word '{wstr}'."
+            })
+
         for c_idx, chunk in enumerate(chunks):
             correct = chunk.get("correct")
             opts = chunk.get("options", [])
+            if "-" not in wstr:
+                for opt in opts:
+                    if "-" in opt:
+                        issues.append({
+                            "json_file": filename,
+                            "rule_section": "3. Spelling Hero (SH)",
+                            "item_id": f"{wstr}_chunk_{c_idx}",
+                            "issue_type": "Forbidden Hyphen Option",
+                            "description": f"Option '{opt}' contains hyphen for non-hyphenated word '{wstr}'."
+                        })
+                        break
             if len(opts) != 3:
                 issues.append({
                     "json_file": filename,

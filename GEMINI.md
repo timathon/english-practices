@@ -183,10 +183,13 @@ This document defines the rules for extracting and converting textbook data into
 - **Word Count:** **Every** single word from the `unit_vocabulary` must be included in the `spelling_words` array.
 - **Word Type:** Determine `single-syllable` or `multi-syllable` from the `syllable_type` field.
 - **Chunking Logic:**
-  - **Single-Syllable:** Split by phonics graphemes (e.g., "cat" -> c, a, t; "boat" -> b, oa, t).
+  - **Single-Syllable:** Split by sequential phonics graphemes (e.g., "cat" -> c, a, t; "boat" -> b, oa, t).
+    - **No Split Vowel Patterns (VCe):** NEVER use split patterns like `"i-e"`, `"a-e"`, `"o-e"`, `"u-e"` as chunks or options (e.g., `["t", "i-e", "m"]` is invalid because `"ti-em"` != `"time"`). Instead, preserve strict linear order and split as onset + vowel + coda with silent 'e' attached to the final consonant (e.g., "time" -> `["t", "i", "me"]`, "nice" -> `["n", "i", "ce"]`, "like" -> `["l", "i", "ke"]`, "cake" -> `["c", "a", "ke"]`, "rule" -> `["r", "u", "le"]`).
+    - **Exact Concatenation Guarantee:** Concatenating all `correct` chunks MUST strictly equal the original `word` (`"".join(c.correct for c in chunks) == word`). Chunks must never insert hyphens or reorder letters.
   - **Multi-Syllable:** Split by standard syllables (e.g., "animal" -> an, i, mal).
   - **Hyphenated Words:** Preserve the hyphen `-` as its own separate chunk in the sequence (e.g., "ping-pong" -> `ping`, `-`, `pong`). The correct choice for the hyphen chunk is `"-"`, and the distractors should be similar symbols like `"~"` and `"`_`"`.
 - **Distractors:** Provide 2 phonetically or visually similar distractors for each chunk (3 options total).
+  - **No Hyphenated Distractors for Non-Hyphen Words:** Distractor options must NEVER contain hyphens (such as `"i-e"`, `"a-e"`, `"o-e"`, `"u-e"`, `"t-e"`) unless the target word itself contains a hyphen.
   - **Spelling & Phonetic Traps**: Distractors must be highly relevant, logical, and plausible spelling or pronunciation traps. Avoid lazy, random character substitutions.
     - *Example (surprise -> sur / prise)*: For `sur`, use distractors like `ser` and `sir`. For `prise`, use distractors like `price` and `prize`.
     - *Example (hamburger -> ham / bur / ger)*: For `bur`, use distractors like `ber` and `bir`.

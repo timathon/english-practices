@@ -38,15 +38,19 @@ Determine from the "syllable_type" field in the vocab-guide:
 - If syllable_type contains a hyphen (e.g. "pen-cil", "teach-er") → type = "multi-syllable"
 
 === CHUNKING RULES ===
-Single-syllable: split by phonics graphemes (onset, vowel team/nucleus, coda).
+Single-syllable: split by sequential phonics graphemes (onset, vowel nucleus, coda).
+  - IMPORTANT: NEVER use split patterns like "i-e", "a-e", "o-e", "u-e" as chunks or options (e.g. "time" cannot be ["t", "i-e", "m"] because "ti-em" is not "time").
+  - For VCe (silent-e) words, split sequentially: attach silent 'e' to the final consonant coda (e.g. "time" → ["t", "i", "me"], "nice" → ["n", "i", "ce"], "rule" → ["r", "u", "le"], "cake" → ["c", "a", "ke"], "like" → ["l", "i", "ke"]).
+  - EXACT CONCATENATION GUARANTEE: Joining all correct chunks MUST equal the exact target word without reordering or inserting hyphens: "".join(chunks) == word.
   Examples:
   - "bag"  → ["b", "a", "g"]
   - "book" → ["b", "oo", "k"]
   - "desk" → ["d", "e", "sk"]
   - "chair" → ["ch", "air"]
-  - "share" → ["sh", "are"]  (VCe or r-controlled, treat -are as one unit)
+  - "share" → ["sh", "are"]  (treat -are as one unit)
   - "kind"  → ["k", "i", "nd"]
-  - "rule"  → ["r", "u-e"]   (VCe: show silent-e pattern)
+  - "rule"  → ["r", "u", "le"]
+  - "time"  → ["t", "i", "me"]
   - "pack"  → ["p", "a", "ck"]
   - "wall"  → ["w", "a", "ll"]
   - "board" → ["b", "oar", "d"]
@@ -70,8 +74,9 @@ For each chunk, provide exactly 2 distractors (3 options total: correct + 2 dist
 - Distractors must be phonetically or visually similar spelling traps:
   - Onset consonants: use similar-sounding or easily confused consonants/digraphs
   - Vowel nuclei: use phonetically similar vowel spellings (e.g. "oo" vs "u", "oa" vs "or")
-  - Codas: use common misspelling endings (e.g. "ck" vs "k", "nd" vs "nt")
+  - Codas: use common misspelling endings (e.g. "ck" vs "k", "nd" vs "nt", "ce" vs "se")
   - Syllables: use similarly-spelled syllables from common English words
+- NO HYPHEN OPTIONS: Options must NEVER contain hyphens (e.g. no "i-e", "a-e", "t-e") unless the word itself is a hyphenated compound word.
 - Shuffle the 3 options array (correct is NOT always first).
 - Do NOT repeat a distractor from another chunk of the same word.
 
