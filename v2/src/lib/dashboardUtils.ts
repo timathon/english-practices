@@ -67,6 +67,9 @@ export const translatePracticeName = (name: string): string => {
   if (norm.startsWith('Verb Expressions')) {
     return norm.replace(/^Verb Expressions/i, '动词短语与搭配');
   }
+  if (norm.startsWith('Reading Expression') || norm.startsWith('Reading And Expression')) {
+    return norm.replace(/^(Reading Expression|Reading And Expression)/i, '阅读与表达');
+  }
   if (norm.startsWith('Passage Cloze') || norm.startsWith('Grammar Cloze')) {
     return norm.replace(/^(Passage|Grammar) Cloze/i, '语篇填空');
   }
@@ -92,6 +95,8 @@ export const translatePracticeName = (name: string): string => {
     'Bug Hunter': 'Bug 猎手',
     'Irregular Verbs': '不规则动词表',
     'Verb Expressions': '动词短语与搭配',
+    'Passage Cloze': '语篇填空',
+    'Reading Expression': '阅读与表达',
     'Test': '单元测试',
   };
   const translatedBase = map[baseName] || map[baseName.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')] || baseName;

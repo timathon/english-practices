@@ -391,12 +391,21 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
                 updatedMistakes.push(q) // Add to mistake queue for redemption
 
                 if (userId && !invisibleMode) {
+                    const rawSentence = activeSection?.raw_text?.[q.sentence_index] || '';
+                    const filledSentence = activeSection?.filled_text?.[q.sentence_index] || '';
+                    const sentenceCn = activeSection?.filled_text_cn?.[q.sentence_index] || activeSection?.raw_text_cn?.[q.sentence_index] || '';
                     mistakeService.addMistake(userId, {
                         practiceId,
                         textbook,
                         unit,
                         practiceType: 'passage-cloze',
-                        question: q,
+                        question: {
+                            ...q,
+                            prompt: rawSentence || q.prompt || (q.blank_num ? `第 ${q.blank_num} 空` : ''),
+                            raw_sentence: rawSentence,
+                            filled_sentence: filledSentence,
+                            cn: sentenceCn
+                        },
                         wrongAnswer: chosenText || undefined
                     });
                 }

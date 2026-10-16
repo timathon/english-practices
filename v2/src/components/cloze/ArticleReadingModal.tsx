@@ -36,10 +36,17 @@ export const ArticleReadingModal: React.FC<ArticleReadingModalProps> = ({
     return (
         <div className="cloze-modal-overlay" onClick={onClose}>
             <div className="cloze-modal-card cloze-article-modal" onClick={e => e.stopPropagation()}>
-                <button className="cloze-modal-close" onClick={onClose}>✕</button>
                 <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>{activeSection.icon || '📖'}</span>
+                        <button
+                            type="button"
+                            className="cloze-modal-close"
+                            onClick={onClose}
+                            title="关闭"
+                            style={{ position: 'static' }}
+                        >
+                            ✕
+                        </button>
                         <span>{activeSection.title} - 全文精读与朗读</span>
                     </div>
                     <label

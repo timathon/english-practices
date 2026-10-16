@@ -24,6 +24,19 @@ function shuffle<T>(array: T[]): T[] {
   return arr;
 }
 
+const MC_PRACTICE_TYPES = [
+  'vocab-master',
+  'grammar-wizard',
+  'grammar-guard',
+  'phonics-ninja',
+  'passage-decoder',
+  'passage-decoder-w',
+  'passage-decoder-s',
+  'audio-detective',
+  'passage-cloze',
+  'reading-expression'
+];
+
 interface SelectedWord {
   poolId: number;
   text: string;
@@ -152,8 +165,8 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     const q = mistake.question;
 
     // Type-specific setups
-    if (['vocab-master', 'grammar-wizard', 'grammar-guard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(mistake.practiceType)) {
-      const mapped = q.options.map((text: string, idx: number) => ({ text, originalIdx: idx }));
+    if (MC_PRACTICE_TYPES.includes(mistake.practiceType)) {
+      const mapped = (q.options || []).map((text: string, idx: number) => ({ text, originalIdx: idx }));
       setShuffledOptions(shuffle(mapped));
       countdownTimer.reset(mistake.practiceType === 'grammar-wizard' ? 30 : (mistake.practiceType === 'phonics-ninja' ? 25 : 15));
       if (mistake.practiceType === 'audio-detective') {
@@ -201,9 +214,9 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     let wrongAnswer: any = undefined;
 
     if (!forceWrong) {
-      if (['vocab-master', 'grammar-wizard', 'grammar-guard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType)) {
+      if (MC_PRACTICE_TYPES.includes(currentMistake.practiceType)) {
         correct = selectedOption === q.answer;
-        wrongAnswer = selectedOption !== null ? q.options[selectedOption] : undefined;
+        wrongAnswer = selectedOption !== null && q.options ? q.options[selectedOption] : undefined;
       } else if (currentMistake.practiceType === 'sentence-architect') {
         const selection = saSelection || userSelection;
         const constructed = selection.map((item, idx) => {
@@ -259,6 +272,9 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
       } else if (currentMistake.practiceType === 'spelling-hero') {
         const wordAudioUrl = q.audio || getAudioUrl(q.word, currentMistake.textbook);
         setTimeout(() => playAudio(wordAudioUrl), 250);
+      } else if (currentMistake.practiceType === 'passage-cloze' && q.filled_sentence) {
+        const sentenceAudioUrl = q.audio || getAudioUrl(q.filled_sentence, currentMistake.textbook);
+        setTimeout(() => playAudio(sentenceAudioUrl), 250);
       }
     } else {
       playSfx('wrong');
@@ -267,6 +283,9 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
 
       if ((currentMistake.practiceType === 'sentence-architect' || currentMistake.practiceType.startsWith('passage-decoder')) && q.en) {
         const sentenceAudioUrl = q.audio || getAudioUrl(q.en, currentMistake.textbook);
+        setTimeout(() => playAudio(sentenceAudioUrl), 250);
+      } else if (currentMistake.practiceType === 'passage-cloze' && q.filled_sentence) {
+        const sentenceAudioUrl = q.audio || getAudioUrl(q.filled_sentence, currentMistake.textbook);
         setTimeout(() => playAudio(sentenceAudioUrl), 250);
       }
       
@@ -354,7 +373,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (completed || !currentMistake) return;
 
-      const isMc = ['vocab-master', 'grammar-wizard', 'grammar-guard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
+      const isMc = MC_PRACTICE_TYPES.includes(currentMistake.practiceType);
 
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -417,7 +436,7 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
   if (!currentMistake) return null;
 
   const q = currentMistake.question;
-  const isMc = ['vocab-master', 'grammar-wizard', 'grammar-guard', 'phonics-ninja', 'passage-decoder', 'passage-decoder-w', 'passage-decoder-s', 'audio-detective'].includes(currentMistake.practiceType);
+  const isMc = MC_PRACTICE_TYPES.includes(currentMistake.practiceType);
 
   return (
     <div className="mr-overlay">
@@ -469,8 +488,21 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
                       </p>
                     )}
                   </div>
+                ) : currentMistake.practiceType === 'passage-cloze' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                    {q.prompt ? (
+                      <div style={{ fontSize: '1.15rem', lineHeight: '1.6' }}>{q.prompt}</div>
+                    ) : (
+                      <div style={{ fontSize: '1.15rem', fontWeight: 600 }}>
+                        第 {q.blank_num || '?'} 空
+                        {q.base_word ? ` (提示词: ${q.base_word})` : ''}
+                        {q.grammar_point_name ? ` · 考点: ${q.grammar_point_name}` : ''}
+                      </div>
+                    )}
+                    {q.cn && <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #94a3b8)', lineHeight: '1.5' }}>{q.cn}</div>}
+                  </div>
                 ) : (
-                  q.prompt
+                  q.prompt || (q.blank_num ? `第 ${q.blank_num} 空` : '')
                 )}
               </div>
               <div className="mr-options-grid">
@@ -622,6 +654,14 @@ export function MistakeReviewer({ userId, initialMistakes, onClose, isPreReview 
                     <>
                       <p className="mr-meaning-text"><strong>Correct:</strong> {q.options[q.answer]}</p>
                       {q.explanation && <p className="mr-explanation-text">💡 {q.explanation}</p>}
+                    </>
+                  )}
+                  {currentMistake.practiceType === 'passage-cloze' && (
+                    <>
+                      <p className="mr-meaning-text"><strong>Correct:</strong> {q.options ? q.options[q.answer] : ''}</p>
+                      {q.filled_sentence && <p className="mr-context-sentence">📖 {q.filled_sentence}</p>}
+                      {q.explanation && <p className="mr-explanation-text">💡 {q.explanation}</p>}
+                      {q.rule_summary && <p className="mr-explanation-text" style={{ opacity: 0.85 }}>📌 {q.rule_summary}</p>}
                     </>
                   )}
                   {currentMistake.practiceType === 'sentence-architect' && (

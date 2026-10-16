@@ -216,6 +216,26 @@ export function MistakeBookView({
                             <div style={{ fontSize: '0.82rem', color: 'var(--text)' }}>Select correct translation</div>
                           </>
                         )}
+                        {m.practiceType === 'passage-cloze' && (
+                          <>
+                            <div>{m.question.prompt || `第 ${m.question.blank_num || '?'} 空${m.question.base_word ? ` (${m.question.base_word})` : ''}`}</div>
+                            {m.question.grammar_point_name && (
+                              <div style={{ fontStyle: 'italic', fontSize: '0.8rem', color: 'var(--text)', marginTop: 4 }}>
+                                📌 考点: {m.question.grammar_point_name}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {(m.practiceType === 'reading-expression' || m.practiceType.includes('yb')) && (
+                          <>
+                            <div>{m.question.prompt || m.question.prompt_cn || m.question.standard_answer || '阅读与表达'}</div>
+                            {m.question.prompt_cn && m.question.prompt && (
+                              <div style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: 4 }}>
+                                🇨🇳 {m.question.prompt_cn}
+                              </div>
+                            )}
+                          </>
+                        )}
                         {m.practiceType === 'sentence-architect' && (
                           <>
                             <div>{m.question.cn}</div>
