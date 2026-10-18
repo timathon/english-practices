@@ -449,8 +449,8 @@ export function ReadingExpressionShell({ data, practiceId, unit, textbook }: { d
     const cleanUser = userStr.trim().toLowerCase()
     const cleanTarget = currentQuestion.standard_answer.trim().toLowerCase()
 
-    // Match either exact sentence with punctuation or stripped equivalent
-    const isMatched = cleanUser === cleanTarget || cleanUser.replace(/[.,!?'"]/g, '') === cleanTarget.replace(/[.,!?'"]/g, '')
+    // Must match exact sentence including punctuation
+    const isMatched = cleanUser === cleanTarget
 
     if (isMatched) {
       setStepError(null)
@@ -661,13 +661,16 @@ export function ReadingExpressionShell({ data, practiceId, unit, textbook }: { d
                         const sIdx = globalSentIdx++
                         const isUserPicked = userPickedSentenceIdx === sIdx
                         const isFinalTarget = isQuestionFinished && currentQuestion?.target_sentence_index === sIdx
+                        const isPreviousTarget = !isFinalTarget && activeChallenge?.questions
+                          .slice(0, activeQuestionIndex)
+                          .some(q => q.target_sentence_index === sIdx)
 
                         return (
                           <span
                             key={sIdx}
                             id={`yb-sent-${sIdx}`}
                             onClick={() => handleSentenceClickInPassage(sIdx)}
-                            className={`yb-sentence ${isFinalTarget ? 'target-highlight' : ''} ${isUserPicked ? 'user-selected' : ''}`}
+                            className={`yb-sentence ${isFinalTarget ? 'target-highlight' : ''} ${isPreviousTarget ? 'previous-target-dimmed' : ''} ${isUserPicked ? 'user-selected' : ''}`}
                             title={subStep === 2 ? '点击选中此句作为定位句' : undefined}
                             dangerouslySetInnerHTML={{ __html: sentence + ' ' }}
                           />
