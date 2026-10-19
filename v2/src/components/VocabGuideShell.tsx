@@ -34,13 +34,19 @@ function formatMeaning(item: any): string {
 export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const isCf = data?.tts?.by === 'melotts';
     const [vocab, setVocab] = useState<any[]>([])
-    const [isAlphabetical, setIsAlphabetical] = useState(false)
+    const [sortMode, setSortMode] = useState<'default' | 'alpha' | 'difficulty'>('default')
     const [hideCN, setHideCN] = useState(true)
     const [showHiddenMode, setShowHiddenMode] = useState(false)
     const [hiddenIndices, setHiddenIndices] = useState<Set<number>>(new Set())
     const [forceShowCN, setForceShowCN] = useState<Set<number>>(new Set())
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [playingIndex, setPlayingIndex] = useState<number | null>(null)
+    const [isAutoPlaying, setIsAutoPlaying] = useState(false)
+    const [autoPlayingIndex, setAutoPlayingIndex] = useState<number | null>(null)
+    const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null)
+    const autoPlayAbortRef = useRef<boolean>(false)
+    const currentAudioRef = useRef<HTMLAudioElement | null>(null)
+    const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map())
     const [tempShowAll, setTempShowAll] = useState(true)
     const [printMode, setPrintMode] = useState<'guide' | 'c2e' | null>(null)
 
@@ -148,10 +154,24 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     }, [practiceId])
 
     const toggleSort = () => {
-        const nextSort = !isAlphabetical
-        setIsAlphabetical(nextSort)
+        let nextMode: 'default' | 'alpha' | 'difficulty' = 'default'
+        if (sortMode === 'default') nextMode = 'alpha'
+        else if (sortMode === 'alpha') nextMode = 'difficulty'
+        else nextMode = 'default'
+
+        setSortMode(nextMode)
         const sorted = [...vocab].sort((a, b) => {
-            if (nextSort) return a.word.localeCompare(b.word)
+            if (nextMode === 'alpha') {
+                return a.word.localeCompare(b.word)
+            }
+            if (nextMode === 'difficulty') {
+                const weightA = getWordWeight(a.word)
+                const weightB = getWordWeight(b.word)
+                if (weightB !== weightA) {
+                    return weightB - weightA // High difficulty to low
+                }
+                return a.word.localeCompare(b.word) // Then A-Z
+            }
             return a.originalIndex - b.originalIndex
         })
         setVocab(sorted)
@@ -208,6 +228,137 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
             setIsRefreshing(false)
         }
     }
+
+    const playSingleAudio = (text: string): Promise<void> => {
+        return new Promise(async (resolve) => {
+            if (!textbook || autoPlayAbortRef.current) {
+                resolve()
+                return
+            }
+            try {
+                const url = getAudioUrl(text, textbook, isCf)
+                const blob = await audioCache.cacheAudio(url)
+                if (autoPlayAbortRef.current) {
+                    resolve()
+                    return
+                }
+                if (blob) {
+                    const audio = new Audio(URL.createObjectURL(blob))
+                    currentAudioRef.current = audio
+                    audio.onended = () => {
+                        currentAudioRef.current = null
+                        resolve()
+                    }
+                    audio.onerror = () => {
+                        currentAudioRef.current = null
+                        resolve()
+                    }
+                    audio.play().catch(() => resolve())
+                } else {
+                    resolve()
+                }
+            } catch (e) {
+                console.error(e)
+                resolve()
+            }
+        })
+    }
+
+    const waitDelay = (ms: number) => new Promise(res => setTimeout(res, ms))
+
+    const stopAutoPlay = () => {
+        autoPlayAbortRef.current = true
+        if (currentAudioRef.current) {
+            currentAudioRef.current.pause()
+            currentAudioRef.current = null
+        }
+        setIsAutoPlaying(false)
+        setAutoPlayingIndex(null)
+    }
+
+    const startAutoPlay = async (startFromIndex?: number) => {
+        // If already playing and clicked play button without a specific target, stop
+        if (isAutoPlaying && startFromIndex === undefined) {
+            stopAutoPlay()
+            return
+        }
+
+        // Interrupt any existing playback
+        autoPlayAbortRef.current = true
+        if (currentAudioRef.current) {
+            currentAudioRef.current.pause()
+            currentAudioRef.current = null
+        }
+
+        // Tiny delay to ensure previous async loop terminates
+        await waitDelay(50)
+
+        autoPlayAbortRef.current = false
+        setIsAutoPlaying(true)
+
+        // Iterate through visible items in current vocab order
+        const itemsToPlay = vocab.filter(item => {
+            const isHidden = hiddenIndices.has(item.originalIndex)
+            return !isHidden || showHiddenMode || tempShowAll
+        })
+
+        const targetIndex = startFromIndex !== undefined ? startFromIndex : (selectedCardIndex ?? null)
+        let startIndex = 0
+        if (targetIndex !== null) {
+            const foundIdx = itemsToPlay.findIndex(item => item.originalIndex === targetIndex)
+            if (foundIdx !== -1) {
+                startIndex = foundIdx
+            }
+        }
+
+        for (let i = startIndex; i < itemsToPlay.length; i++) {
+            if (autoPlayAbortRef.current) break
+            const item = itemsToPlay[i]
+            setAutoPlayingIndex(item.originalIndex)
+
+            // Scroll card into view at a comfortable vertical position
+            const cardEl = cardRefs.current.get(item.originalIndex)
+            if (cardEl) {
+                cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+
+            // Read word 1st time
+            if (item.word) {
+                await playSingleAudio(item.word)
+                if (autoPlayAbortRef.current) break
+                await waitDelay(500)
+            }
+
+            // Read word 2nd time
+            if (item.word) {
+                await playSingleAudio(item.word)
+                if (autoPlayAbortRef.current) break
+                await waitDelay(500)
+            }
+
+            // Read sentence 1 time
+            if (item.context_sentence) {
+                await playSingleAudio(item.context_sentence)
+                if (autoPlayAbortRef.current) break
+                await waitDelay(1000)
+            }
+        }
+
+        if (!autoPlayAbortRef.current) {
+            stopAutoPlay()
+        }
+    }
+
+    // Cleanup audio on unmount
+    useEffect(() => {
+        return () => {
+            autoPlayAbortRef.current = true
+            if (currentAudioRef.current) {
+                currentAudioRef.current.pause()
+                currentAudioRef.current = null
+            }
+        }
+    }, [])
 
     const playAudio = async (sentence: string, index: number) => {
         if (!textbook) return
@@ -272,20 +423,36 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                     <tr>
                         <td>
                             <div className="vg-stats-bar-wrapper">
-                                <div className="vg-stats-bar">
-                                    <span>Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b></span>
-                                    <div className="vg-stats-buttons">
-                                        <button className="vg-play-cards-btn" onClick={() => setShowFlashcards(true)} title="Start Flashcards">▶️</button>
-                                        <button className="vg-story-prompt-btn" onClick={() => setShowStoryPromptModal(true)} title="AI Story Prompt">🤖</button>
-                                        <button className="vg-dictation-btn" onClick={() => setShowDictationModal(true)} title="Start Dictation">✍️</button>
-                                        <button className="vg-recall-btn" onClick={() => setShowRecallModal(true)} title="Start Rapid Thinking Practice">💡</button>
+                                <div className="vg-stats-bar-container">
+                                    <div className="vg-stats-bar">
+                                        <span>Total: <b>{vocab.length}</b> | Shown: <b>{shownCount}</b> | Hidden: <b>{hiddenIndices.size}</b></span>
+                                        <div className="vg-stats-buttons">
+                                            <button className="vg-play-cards-btn" onClick={() => setShowFlashcards(true)} title="Start Flashcards">🃏</button>
+                                            <button className="vg-story-prompt-btn" onClick={() => setShowStoryPromptModal(true)} title="AI Story Prompt">🤖</button>
+                                            <button className="vg-dictation-btn" onClick={() => setShowDictationModal(true)} title="Start Dictation">✍️</button>
+                                            <button className="vg-recall-btn" onClick={() => setShowRecallModal(true)} title="Start Rapid Thinking Practice">💡</button>
+                                        </div>
+                                    </div>
+                                    <div className="vg-stats-play-row">
+                                        <button
+                                            type="button"
+                                            className={`vg-level-play-btn ${isAutoPlaying ? 'playing' : ''}`}
+                                            onClick={() => startAutoPlay()}
+                                            title={isAutoPlaying ? 'Stop Auto Play' : 'Play all words (Word x2, Sentence x1)'}
+                                        >
+                                            {isAutoPlaying ? '⏹️ Stop Playback' : '▶️ Play All Words'}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="vg-controls-container desktop-only">
                                 <button id="sort-toggle" onClick={toggleSort} className="vg-control-btn">
-                                    <span>{isAlphabetical ? 'Textbook Order' : 'Sort A-Z'}</span>
+                                    <span>
+                                        {sortMode === 'default' && 'Textbook Order'}
+                                        {sortMode === 'alpha' && 'Sort A-Z'}
+                                        {sortMode === 'difficulty' && 'Difficulty (High-Low)'}
+                                    </span>
                                 </button>
                                 <button id="toggle-cn" onClick={() => setHideCN(!hideCN)} className="vg-control-btn">
                                     <span>{hideCN ? 'Show CN' : 'Hide CN'}</span>
@@ -311,9 +478,30 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                 {vocab.map((item) => {
                                     const isHidden = hiddenIndices.has(item.originalIndex)
                                     if (isHidden && !showHiddenMode && !tempShowAll) return null
+                                    const isCurrentlyAutoPlaying = autoPlayingIndex === item.originalIndex
+                                    const isSelected = selectedCardIndex === item.originalIndex
+
+                                    const handleCardClick = () => {
+                                        if (isAutoPlaying) {
+                                            if (autoPlayingIndex !== item.originalIndex) {
+                                                setSelectedCardIndex(item.originalIndex)
+                                                startAutoPlay(item.originalIndex)
+                                            }
+                                        } else {
+                                            setSelectedCardIndex(prev => prev === item.originalIndex ? null : item.originalIndex)
+                                        }
+                                    }
 
                                     return (
-                                        <div key={item.originalIndex} className={`vg-item ${isHidden ? 'is-hidden' : ''}`}>
+                                        <div
+                                            key={item.originalIndex}
+                                            ref={(el) => {
+                                                if (el) cardRefs.current.set(item.originalIndex, el)
+                                                else cardRefs.current.delete(item.originalIndex)
+                                            }}
+                                            onClick={handleCardClick}
+                                            className={`vg-item ${isHidden ? 'is-hidden' : ''} ${isCurrentlyAutoPlaying ? 'is-auto-playing' : ''} ${isSelected && !isCurrentlyAutoPlaying ? 'is-selected' : ''}`}
+                                        >
                                             <div className="vg-item-watermark">{item.originalIndex + 1}</div>
                                             <div className="vg-word-header">
                                                 <h2 className="vg-word-title">
@@ -416,7 +604,11 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
 
             <div className="vg-mobile-nav mobile-only">
                 <button onClick={toggleSort} className="vg-mobile-btn">
-                    <span>{isAlphabetical ? '📖' : '🔤'}</span>
+                    <span>
+                        {sortMode === 'default' && '📖'}
+                        {sortMode === 'alpha' && '🔤'}
+                        {sortMode === 'difficulty' && '🔥'}
+                    </span>
                     <small>Sort</small>
                 </button>
                 <button onClick={() => setHideCN(!hideCN)} className="vg-mobile-btn">

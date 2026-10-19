@@ -985,7 +985,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                   title="Start Flashcards"
                                   style={{ padding: '1px 7px', fontSize: '0.75rem', height: '22px' }}
                                 >
-                                  ▶️
+                                  🃏
                                 </button>
                                 <button 
                                   className="vg-story-prompt-btn no-shake" 
