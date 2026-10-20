@@ -49,6 +49,14 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map())
     const [tempShowAll, setTempShowAll] = useState(true)
     const [printMode, setPrintMode] = useState<'guide' | 'c2e' | null>(null)
+    const [visibleSentenceCn, setVisibleSentenceCn] = useState<Record<number, boolean>>({})
+    const sentenceCnTimersRef = useRef<Record<number, any>>({})
+
+    useEffect(() => {
+        return () => {
+            Object.values(sentenceCnTimersRef.current).forEach(clearTimeout)
+        }
+    }, [])
 
     // Modal Triggers
     const [showFlashcards, setShowFlashcards] = useState(false)
@@ -576,12 +584,44 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                             <div className="vg-context">
                                                 <button
                                                     className={`vg-play-btn ${playingIndex === item.originalIndex ? 'playing' : ''}`}
-                                                    onClick={() => playAudio(item.context_sentence, item.originalIndex)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        playAudio(item.context_sentence, item.originalIndex);
+                                                    }}
                                                     disabled={playingIndex === item.originalIndex}
                                                 >
                                                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                                                 </button>
-                                                <span className="vg-sentence">"{item.context_sentence}"</span>
+                                                <div className="vg-context-body">
+                                                    <span
+                                                        className={`vg-sentence ${item.context_sentence_cn ? 'has-translation' : ''}`}
+                                                        onClick={(e) => {
+                                                            const idx = item.originalIndex;
+                                                            setSelectedCardIndex(idx);
+                                                            if (!item.context_sentence_cn) return;
+                                                            e.stopPropagation();
+                                                            setVisibleSentenceCn(prev => ({ ...prev, [idx]: true }));
+                                                            if (sentenceCnTimersRef.current[idx]) {
+                                                                clearTimeout(sentenceCnTimersRef.current[idx]);
+                                                            }
+                                                            sentenceCnTimersRef.current[idx] = setTimeout(() => {
+                                                                setVisibleSentenceCn(prev => {
+                                                                    const updated = { ...prev };
+                                                                    delete updated[idx];
+                                                                    return updated;
+                                                                });
+                                                            }, 5000);
+                                                        }}
+                                                        title={item.context_sentence_cn ? "点击查看中文翻译 (显示5秒)" : undefined}
+                                                    >
+                                                        "{item.context_sentence}"
+                                                    </span>
+                                                    {item.context_sentence_cn && visibleSentenceCn[item.originalIndex] && (
+                                                        <div className="vg-sentence-cn-popup">
+                                                            🇨🇳 {item.context_sentence_cn}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div className="vg-hook">

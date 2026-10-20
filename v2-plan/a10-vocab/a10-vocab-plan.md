@@ -38,3 +38,37 @@
 - Level 3 count: **164**
 - Level 4 count: **336**
 - **Sum:** `145 + 1466 + 348 + 164 + 336 = 2,459` (matches `a10-vocab-full-list.md` line for line).
+
+---
+
+## 5. High-Impact Tools to Add in V2 for Fast & Firm Retention (Suggestions)
+
+To maximize memory retention across the 2,459 words, language acquisition science (e.g. Paul Nation, Robert Bjork, Hermann Ebbinghaus) highlights active retrieval, morphological network construction, and contextual collocations. The following V2 tools are proposed:
+
+### Tool 1: Daily Flashcard SRS (Spaced Retrieval Arena / 词汇闪卡速记)
+- **Cognitive Principle:** Spaced Repetition (SRS) + Active Recall & Testing Effect.
+- **Workflow & UI:**
+  1. **Front:** British audio pronunciation + Syllable breakdown + Example sentence with target blanked out (`____`).
+  2. **Student Action:** Quick recall flip or enter first letter / word.
+  3. **Back:** Complete Chinese translation, high-frequency collocations, phonetic/visual trap comparisons (`comparison`), and mnemonic hooks (`memorization_hook`).
+  4. **Self-Rating:** "Again (Red)", "Hard (Orange)", "Good (Green)".
+- **Integration:** Plugs into existing V2 `records` and mistake notebooks. Words rated "Again" recirculate into the session buffer and form the next day's SRS review cohort.
+
+### Tool 2: Collocation & Lexical Chunks Builder (搭配消消乐 / 语块连连看)
+- **Cognitive Principle:** Lexical Approach (Michael Lewis) & Co-occurrence Fluency.
+- **Why It Matters for A10 (Zhongkao):** Middle school exams heavily test dependent prepositions and fixed verbal phrases (e.g., *according **to***, *agree **with/on***, *take pride **in***, *look forward **to***).
+- **Workflow & UI:**
+  - Interactive grid / 2-column tile matching where students rapidly pair verbs with prepositions, adjectives with particles, or split idiomatic halves (*accuse + of*, *make + progress*, *be famous + for*).
+
+### Tool 3: Word Family & Morpho-Tree Explorer (词根词缀衍生树)
+- **Cognitive Principle:** Morphological Awareness & Lexical Network Theory.
+- **Why It Matters for A10:** Converts isolated word memorization into exponential family learning (*act → action → active → activity → actor*; *able → ability → unable*).
+- **Workflow & UI:**
+  - Interactive branching tree (leveraging the MindMap shell) displaying base root/word + prefixes/suffixes + part-of-speech branches.
+  - Accompanied by rapid-fire transformation drills (*"Given verb `differ`, what is the noun? → difference"*).
+
+### Tool 4: Listening Orthography Sprint (听音速拼 / Audio Speed Spell)
+- **Cognitive Principle:** Phonology-to-Orthography Dual Coding (Stanislas Dehaene).
+- **Workflow & UI:**
+  - Instead of passive multiple-choice recognition, the student listens to high-quality British audio, views the IPA and meaning, and types or taps syllables in correct linear order under time constraints to forge strong sound-spelling connections.
+

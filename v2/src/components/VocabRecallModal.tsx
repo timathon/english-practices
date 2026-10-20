@@ -35,6 +35,10 @@ export function VocabRecallModal({
     const [hintTimeLeft, setHintTimeLeft] = useState(5)
     const [isClosing, setIsClosing] = useState(false)
     const [weights, setWeights] = useState<Record<string, number>>({})
+    const [showSentenceCn, setShowSentenceCn] = useState(false)
+    const [highlightContext, setHighlightContext] = useState(false)
+    const sentenceCnTimerRef = useRef<any>(null)
+    const highlightTimerRef = useRef<any>(null)
 
     const weightsKey = `ep-vg-weights-${practiceId || textbook || 'default'}`
 
@@ -241,6 +245,20 @@ export function VocabRecallModal({
         }
     }, [currentIndex, isRevealed, isFinished, deck.length])
 
+    useEffect(() => {
+        setShowSentenceCn(false)
+        setHighlightContext(false)
+        if (sentenceCnTimerRef.current) clearTimeout(sentenceCnTimerRef.current)
+        if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current)
+    }, [currentIndex])
+
+    useEffect(() => {
+        return () => {
+            if (sentenceCnTimerRef.current) clearTimeout(sentenceCnTimerRef.current)
+            if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current)
+        }
+    }, [])
+
     const handleNext = () => {
         forceResetHint()
         if (weightAnimTimerRef.current) {
@@ -390,7 +408,7 @@ export function VocabRecallModal({
                                         </div>
                                     )}
                                     {currentItem.context_sentence && (
-                                        <div className="vg-card-context" style={{ marginTop: '12px' }}>
+                                        <div className={`vg-card-context ${highlightContext ? 'is-highlighted' : ''}`} style={{ marginTop: '12px' }}>
                                             <button 
                                                 className={`vg-play-btn ${isPlayingAudio ? 'playing' : ''}`}
                                                 onClick={(e) => {
@@ -401,7 +419,34 @@ export function VocabRecallModal({
                                             >
                                                 <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
                                             </button>
-                                            <span className="vg-sentence">"{currentItem.context_sentence}"</span>
+                                            <div className="vg-context-body">
+                                                <span
+                                                    className={`vg-sentence ${currentItem.context_sentence_cn ? 'has-translation' : ''}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setHighlightContext(true)
+                                                        if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current)
+                                                        highlightTimerRef.current = setTimeout(() => {
+                                                            setHighlightContext(false)
+                                                        }, 5000)
+
+                                                        if (!currentItem.context_sentence_cn) return
+                                                        setShowSentenceCn(true)
+                                                        if (sentenceCnTimerRef.current) clearTimeout(sentenceCnTimerRef.current)
+                                                        sentenceCnTimerRef.current = setTimeout(() => {
+                                                            setShowSentenceCn(false)
+                                                        }, 5000)
+                                                    }}
+                                                    title={currentItem.context_sentence_cn ? "点击查看中文翻译 (显示5秒)" : undefined}
+                                                >
+                                                    "{currentItem.context_sentence}"
+                                                </span>
+                                                {currentItem.context_sentence_cn && showSentenceCn && (
+                                                    <div className="vg-sentence-cn-popup">
+                                                        🇨🇳 {currentItem.context_sentence_cn}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
