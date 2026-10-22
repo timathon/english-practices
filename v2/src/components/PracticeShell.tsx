@@ -20,6 +20,7 @@ import { PassageClozeShell } from './PassageClozeShell'
 import { GrammarIndexShell } from './GrammarIndexShell'
 import { PhonicsNinjaShell } from './PhonicsNinjaShell'
 import { ReadingExpressionShell } from './ReadingExpressionShell'
+import { VocabMagicianShell } from './VocabMagicianShell'
 
 import { practiceCache } from '../lib/practiceCache'
 import { cache } from '../lib/cache'
@@ -279,6 +280,10 @@ export function PracticeShell() {
 
     if (cleanType.startsWith('reading-expression') || cleanType === 'yb' || cleanType.startsWith('yb-') || cleanType.endsWith('-yb') || cleanType.includes('-yb-') || cleanType.startsWith('a10-yb-')) {
         return <ReadingExpressionShell data={practice.content} practiceId={practice.id} unit={practice.unit} textbook={practice.textbook} />
+    }
+
+    if (cleanType.startsWith('vocab-magician') || cleanType.includes('vocab-magician')) {
+        return <VocabMagicianShell data={practice.content} practiceId={practice.id} textbook={practice.textbook} unit={practice.unit} />
     }
 
     if (cleanType.startsWith('grammar-index') || cleanType.startsWith('cloze-index') || cleanType.startsWith('yp-index') || cleanType.endsWith('-yp-index') || cleanType.includes('grammar-index') || cleanType.includes('cloze-index')) {

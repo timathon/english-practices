@@ -1,5 +1,6 @@
 export const PRACTICE_TYPE_ICONS: Record<string, string> = {
   'Vocab Master': '🔥',
+  'Vocab Magician': '🪄',
   'Spelling Hero': '✏️',
   'Phonics Ninja': '🥷',
   'Grammar Wizard': '🧙‍♂️',
@@ -51,6 +52,22 @@ export const translatePracticeName = (name: string): string => {
   }
   if (norm.startsWith('Vocab Master')) {
     return norm.replace(/^Vocab Master/i, '词汇大师');
+  }
+  if (norm.startsWith('Vocab Magician Prefix') || norm === 'Vocab Magician Prefix') {
+    return '构词魔法师：前缀总表';
+  }
+  if (norm.startsWith('Vocab Magician Suffix') || norm === 'Vocab Magician Suffix') {
+    return '构词魔法师：后缀总表';
+  }
+  if (norm.startsWith('Vocab Magician Root') || norm === 'Vocab Magician Root') {
+    return '构词魔法师：词根与词族';
+  }
+  if (norm.startsWith('Vocab Magician')) {
+    const sub = norm.replace(/^Vocab Magician\s*/i, '').trim();
+    if (/^prefix/i.test(sub)) return '构词魔法师：前缀总表';
+    if (/^suffix/i.test(sub)) return '构词魔法师：后缀总表';
+    if (/^root/i.test(sub)) return '构词魔法师：词根与词族';
+    return norm.replace(/^Vocab Magician/i, '构词魔法师');
   }
   if (norm.startsWith('Vocab Guide')) {
     return norm.replace(/^Vocab Guide/i, '词汇导学');

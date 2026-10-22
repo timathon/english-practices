@@ -213,6 +213,23 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
   }
 
   const formatUnitDisplay = (unitName: string) => {
+    if (tb === 'A10') {
+      const u = unitName.toLowerCase();
+      if (u === 'dc-0' || u === 'dc 0') return '零级词汇 (DC 0)';
+      if (u === 'dc-1a' || u === 'dc 1a') return '一级A (DC 1A)';
+      if (u === 'dc-1b' || u === 'dc 1b') return '一级B (DC 1B)';
+      if (u === 'dc-1c' || u === 'dc 1c') return '一级C (DC 1C)';
+      if (u === 'dc-1d' || u === 'dc 1d') return '一级D (DC 1D)';
+      if (u === 'dc-1e' || u === 'dc 1e') return '一级E (DC 1E)';
+      if (u === 'dc-2' || u === 'dc 2') return '二级词汇 (DC 2)';
+      if (u === 'dc-3' || u === 'dc 3') return '三级词汇 (DC 3)';
+      if (u === 'dc-4' || u === 'dc 4') return '四级词汇 (DC 4)';
+      if (u === 'dc-z' || u === 'dc z') return '词根词缀 (DC Z)';
+      if (u === 'uz') return '真题模考 (UZ)';
+      if (u === 'yb') return '阅读表达 (YB)';
+      if (u === 'yp') return '语篇完形 (YP)';
+    }
+
     const escapedTb = tb.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const prefixReg = new RegExp(`^${escapedTb}\\b`, 'i')
     if (prefixReg.test(unitName)) {
@@ -641,6 +658,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 const t = type.toLowerCase();
                 if (t.includes('vocab-guide')) return 1;
                 if (t.includes('vocab-master')) return 2;
+                if (t.includes('vocab-magician')) return 2.5;
                 if (t.includes('spelling-hero')) return 3;
                 if (t.includes('phonics-ninja') || t.includes('phonics')) return 4;
                 return 5;
@@ -789,6 +807,7 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                 const t = typeStr.toLowerCase();
                 if (t.includes('vocab-guide')) return '📚';
                 if (t.includes('vocab-master')) return '🔥';
+                if (t.includes('vocab-magician')) return '🪄';
                 if (t.includes('vocab')) return '📚';
                 if (t.includes('spelling')) return '✏️';
                 if (t.includes('phonics-ninja') || t.includes('phonics')) return '🥷';

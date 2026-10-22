@@ -317,6 +317,7 @@ async function seed() {
             const knownTypes = [
                 'vocab-guide',
                 'vocab-master',
+                'vocab-magician',
                 'spelling-hero',
                 'phonics-ninja',
                 'sentence-architect',

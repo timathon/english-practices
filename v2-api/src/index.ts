@@ -685,6 +685,16 @@ app.get('/api/practices', async (c) => {
                       lightContent = {
                           spelling_words: new Array(wordCount).fill({})
                       };
+                  } else if (type.includes('vocab-magician')) {
+                      const groups = content.groups || [];
+                      lightContent = {
+                          type: content.type,
+                          total_words: content.total_words,
+                          groups: groups.map((g: any) => ({
+                              category_name: g.category_name,
+                              item_count: g.items?.length || 0
+                          }))
+                      };
                   }
               }
               
