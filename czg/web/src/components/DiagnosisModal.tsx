@@ -27,6 +27,7 @@ export const DiagnosisModal: React.FC<DiagnosisModalProps> = ({
   const [inputAnswer, setInputAnswer] = useState("");
   const [isAnswered, setIsAnswered] = useState(false);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
+  const [pendingSession, setPendingSession] = useState<DiagSession | null>(null);
 
   // Sync state whenever a new session is launched from a section
   React.useEffect(() => {
@@ -35,13 +36,14 @@ export const DiagnosisModal: React.FC<DiagnosisModalProps> = ({
     setInputAnswer("");
     setIsAnswered(false);
     setFeedback(null);
+    setPendingSession(null);
   }, [initialSession]);
 
   if (!isOpen) return null;
 
   const currentItem = nextQuestionItem(graph, session);
 
-  if (!currentItem) {
+  if (!currentItem && !isAnswered) {
     const summary = summarizeSession(graph, session);
     return (
       <div className="modal-overlay">
@@ -92,6 +94,8 @@ export const DiagnosisModal: React.FC<DiagnosisModalProps> = ({
     );
   }
 
+  if (!currentItem) return null;
+
   const { topicId, question, attempt } = currentItem;
   const topic = topicsById[topicId];
 
@@ -105,11 +109,16 @@ export const DiagnosisModal: React.FC<DiagnosisModalProps> = ({
     setFeedback(verdict);
     setIsAnswered(true);
 
+    // Compute updated session but defer applying it until user clicks "Next"
     const updated = recordAnswer(graph, session, topicId, question.id, verdict, ans);
-    setSession(updated);
+    setPendingSession(updated);
   };
 
   const handleNext = () => {
+    if (pendingSession) {
+      setSession(pendingSession);
+      setPendingSession(null);
+    }
     setSelectedChoice(null);
     setInputAnswer("");
     setIsAnswered(false);
@@ -211,7 +220,7 @@ export const DiagnosisModal: React.FC<DiagnosisModalProps> = ({
         {/* Footer Actions */}
         <div className="diag-footer">
           <span className="progress-info">
-            已测评 {session.answers.length} / 上限 {session.limit} 题
+            已测评 {pendingSession ? pendingSession.answers.length : session.answers.length} / 上限 {session.limit} 题
           </span>
 
           {!isAnswered ? (
