@@ -9,6 +9,7 @@ import { VocabFlashcardModal } from './VocabFlashcardModal'
 import { VocabDictationModal } from './VocabDictationModal'
 import { VocabRecallModal } from './VocabRecallModal'
 import { VocabStoryPromptModal } from './VocabStoryPromptModal'
+import { VocabMindmapModal } from './VocabMindmapModal'
 
 function formatMeaning(item: any): string {
     if (!item || !item.meaning) return ''
@@ -63,6 +64,7 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [showStoryPromptModal, setShowStoryPromptModal] = useState(false)
     const [showDictationModal, setShowDictationModal] = useState(false)
     const [showRecallModal, setShowRecallModal] = useState(false)
+    const [showMindmapModal, setShowMindmapModal] = useState(false)
     const [traceList, setTraceList] = useState<any[] | null>(null)
     const [weights, setWeights] = useState<Record<string, number>>({})
 
@@ -439,6 +441,9 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                             <button className="vg-story-prompt-btn" onClick={() => setShowStoryPromptModal(true)} title="AI Story Prompt">🤖</button>
                                             <button className="vg-dictation-btn" onClick={() => setShowDictationModal(true)} title="Start Dictation">✍️</button>
                                             <button className="vg-recall-btn" onClick={() => setShowRecallModal(true)} title="Start Rapid Thinking Practice">💡</button>
+                                            {data?.unit_vocabulary_mindmap && (
+                                                <button className="vg-mindmap-btn" onClick={() => setShowMindmapModal(true)} title="Open Unit Vocabulary Mindmap">🌳</button>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="vg-stats-play-row">
@@ -477,6 +482,11 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                                 <button id="print-btn" onClick={handlePrint} className="vg-control-btn">
                                     <span>Print 🖨️</span>
                                 </button>
+                                {data?.unit_vocabulary_mindmap && (
+                                    <button onClick={() => setShowMindmapModal(true)} className="vg-control-btn" style={{ background: '#059669' }} title="Vocabulary Mindmap">
+                                        <span>Mindmap 🌳</span>
+                                    </button>
+                                )}
                                 <button id="print-c2e-btn" onClick={handlePrintC2E} className="vg-control-btn" title="Print Chinese to English Dictation Sheet">
                                     <span>Print C2E 📝</span>
                                 </button>
@@ -745,6 +755,17 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
                         setShowRecallModal(false)
                         setWeights(loadWeights())
                     }}
+                />
+            )}
+
+            {showMindmapModal && data?.unit_vocabulary_mindmap && (
+                <VocabMindmapModal
+                    tree={data.unit_vocabulary_mindmap}
+                    title={`${data.title || 'Unit Vocabulary'} Mindmap`}
+                    level={data.level}
+                    textbook={textbook}
+                    isCf={isCf}
+                    onClose={() => setShowMindmapModal(false)}
                 />
             )}
 

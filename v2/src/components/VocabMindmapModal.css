@@ -1,0 +1,491 @@
+/* =========================================================
+   Radial Organic Plant / Flowering Mindmap Styling
+   ========================================================= */
+
+.vmm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  animation: vmm-fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes vmm-fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.vmm-container {
+  width: 98vw;
+  max-width: 1560px;
+  height: 94vh;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header */
+.vmm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 28px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  gap: 16px;
+  flex-wrap: wrap;
+  z-index: 10;
+}
+
+.vmm-header-titles {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vmm-icon {
+  font-size: 2rem;
+  animation: vmm-float 3s ease-in-out infinite alternate;
+}
+
+@keyframes vmm-float {
+  from { transform: translateY(0) rotate(0deg); }
+  to { transform: translateY(-3px) rotate(6deg); }
+}
+
+.vmm-header-titles h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e293b, #4338ca);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vmm-sub {
+  font-size: 0.82rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.vmm-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vmm-btn {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.vmm-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.vmm-btn.lang-btn {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.vmm-btn.lang-btn:hover {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border-color: #60a5fa;
+}
+
+.vmm-btn.close-btn {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #dc2626;
+  font-size: 1.1rem;
+  padding: 4px 12px;
+}
+
+.vmm-btn.close-btn:hover {
+  background: #fecaca;
+  color: #b91c1c;
+}
+
+/* Zoom Pill */
+.vmm-zoom-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 2px 4px;
+  gap: 4px;
+}
+
+.vmm-btn-icon {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 0.95rem;
+  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vmm-btn-icon:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  transform: scale(1.08);
+}
+
+.vmm-zoom-level {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+  min-width: 42px;
+  text-align: center;
+  user-select: none;
+}
+
+/* =========================================================
+   Infinite Organic Canvas Stage
+   ========================================================= */
+
+.vmm-canvas-stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  /* Organic soft ambient mesh backdrop */
+  background:
+    radial-gradient(circle at 50% 50%, rgba(240, 249, 255, 0.85) 0%, rgba(248, 250, 252, 0.95) 100%),
+    radial-gradient(circle at 15% 20%, rgba(254, 243, 199, 0.4) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(254, 226, 226, 0.35) 0%, transparent 45%);
+}
+
+.vmm-canvas-stage.dragging {
+  cursor: grabbing;
+}
+
+.vmm-canvas-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.vmm-canvas-transform {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vmm-canvas-stage.dragging .vmm-canvas-transform {
+  transition: none;
+}
+
+/* SVG Vines Layer */
+.vmm-vines-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 1;
+}
+
+.vmm-organic-vine {
+  transition: stroke 0.3s ease, stroke-width 0.2s ease;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+/* Nodes Layer */
+.vmm-nodes-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 2;
+}
+
+.vmm-radial-node-anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================================
+   Capsule Node Aesthetics
+   ========================================================= */
+
+.vmm-node-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--node-bg, #ffffff);
+  border: 2px solid var(--node-border, #cbd5e1);
+  border-radius: 20px;
+  padding: 8px 16px;
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Directional wing alignment: clean straight columns facing the center root */
+.vmm-radial-node-anchor.side-right .vmm-node-capsule {
+  transform: translate(0, -50%);
+}
+.vmm-radial-node-anchor.side-right .vmm-node-capsule:hover {
+  transform: translate(0, -50%) scale(1.08) translateY(-2px);
+}
+
+.vmm-radial-node-anchor.side-left .vmm-node-capsule {
+  transform: translate(-100%, -50%);
+}
+.vmm-radial-node-anchor.side-left .vmm-node-capsule:hover {
+  transform: translate(-100%, -50%) scale(1.08) translateY(-2px);
+}
+
+.vmm-radial-node-anchor.depth-0 .vmm-node-capsule {
+  transform: translate(-50%, -50%);
+}
+.vmm-radial-node-anchor.depth-0 .vmm-node-capsule:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.vmm-node-capsule:hover {
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.15);
+  border-color: var(--vine-color, #4f46e5);
+}
+
+/* Root Node: Luminous Central Core Sun / Flower */
+.vmm-node-capsule.is-root {
+  background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6366f1 100%);
+  color: #ffffff;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  border-radius: 36px;
+  padding: 16px 30px;
+  box-shadow:
+    0 12px 30px -4px rgba(67, 56, 202, 0.5),
+    0 0 0 6px rgba(99, 102, 241, 0.25);
+  animation: vmm-core-glow 4s infinite alternate ease-in-out;
+}
+
+@keyframes vmm-core-glow {
+  from {
+    box-shadow:
+      0 12px 30px -4px rgba(67, 56, 202, 0.5),
+      0 0 0 6px rgba(99, 102, 241, 0.2);
+  }
+  to {
+    box-shadow:
+      0 16px 38px -4px rgba(67, 56, 202, 0.65),
+      0 0 0 12px rgba(99, 102, 241, 0.35);
+  }
+}
+
+.vmm-node-capsule.is-root:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.vmm-node-capsule.is-root .vmm-en-text {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.vmm-node-capsule.is-root .vmm-cn-text {
+  font-size: 0.9rem;
+  color: #c7d2fe;
+  font-weight: 500;
+}
+
+/* Depth 1: Major Radial Branch Petals */
+.vmm-node-capsule.depth-1 {
+  background: var(--node-bg, #f8fafc);
+  border: 2.5px solid var(--vine-color, #6366f1);
+  border-radius: 22px;
+  padding: 10px 18px;
+  box-shadow: 0 6px 18px -3px rgba(0, 0, 0, 0.1);
+}
+
+.vmm-node-capsule.depth-1 .vmm-en-text {
+  color: var(--node-text, #1e293b);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.vmm-node-capsule.depth-1 .vmm-cn-text {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 0.82rem;
+}
+
+/* Depth 2 & 3: Floating Word Buds */
+.vmm-node-capsule.depth-2,
+.vmm-node-capsule.depth-3 {
+  background: #ffffff;
+  border: 1.8px solid var(--node-border, #cbd5e1);
+  border-radius: 16px;
+  padding: 6px 13px;
+}
+
+.vmm-node-capsule.depth-2 .vmm-en-text,
+.vmm-node-capsule.depth-3 .vmm-en-text {
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.vmm-node-capsule.depth-2 .vmm-cn-text,
+.vmm-node-capsule.depth-3 .vmm-cn-text {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+/* Active Node Halo */
+.vmm-node-capsule.is-active {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.3) !important;
+}
+
+/* Audio Playing Animation */
+.vmm-node-capsule.is-playing {
+  border-color: #10b981 !important;
+  background: #ecfdf5 !important;
+  animation: vmm-audio-pulse 0.7s infinite alternate ease-in-out;
+}
+
+@keyframes vmm-audio-pulse {
+  from { transform: translate(-50%, -50%) scale(1); }
+  to { transform: translate(-50%, -50%) scale(1.12); }
+}
+
+/* Text and Icons */
+.vmm-capsule-emoji {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.vmm-capsule-text-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.vmm-cn-only {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Audio Button */
+.vmm-capsule-audio-btn {
+  background: rgba(241, 245, 249, 0.8);
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  padding: 2px 5px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.15s ease;
+}
+
+.vmm-capsule-audio-btn:hover {
+  background: var(--vine-color, #38bdf8);
+  border-color: var(--vine-color, #38bdf8);
+  color: #ffffff;
+  transform: scale(1.15);
+}
+
+/* Fold / Blossom Petal Badge */
+.vmm-fold-badge {
+  background: var(--vine-color, #6366f1);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vmm-fold-badge:hover {
+  transform: scale(1.25);
+}
+
+.vmm-fold-badge.collapsed {
+  background: #f59e0b;
+  animation: vmm-bounce 1.5s infinite;
+}
+
+@keyframes vmm-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
