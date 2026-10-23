@@ -100,6 +100,13 @@ This document defines the rules for extracting and converting textbook data into
     - Multi-syllable: Exact syllable breakdown (e.g., `an-i-mal`).
     - **Note:** Consonant digraphs (e.g., 'th', 'sh') between a vowel and a silent 'e' still follow the **相对开音节 (VCe)** pattern (e.g., 'clothes'). Avoid misclassifying these as Vowel Teams. Ensure precise classification based on spelling rules rather than heuristic phonetic impressions.
   - `memorization_hook`: Creative mnemonics in Chinese.
+- **Vocabulary Mindmap (`unit_vocabulary_mindmap`):**
+  - Group all unit vocabulary into an intuitive hierarchical semantic mindmap tree (rendered by `VocabMindmapModal`).
+  - **Node Schema:** Every node must have `id` (unique alphanumeric string), `text` (English label), `cn` (Chinese translation), `emoji` (single mnemonic emoji), and optional `children` (array of child nodes).
+  - **Root Node (`depth = 0`)**: `id: "root"`, `text`: Unit theme/title (e.g. `"My School"`), `cn`: Chinese title (`"我的学校"`), `emoji`: representative emoji (`"🏫"`).
+  - **1st-Level Branches (`depth = 1`)**: 4 to 6 thematic petals dividing vocabulary into logical semantic domains/scenes (e.g. `"Campus Buildings & Places"`, `"Inside the Classroom"`, `"Spatial Locations"`, `"School Activities"`, `"Descriptions & Traits"`, `"Others / Misc"`).
+  - **2nd-Level Buds (`depth = 2`)**: The vocabulary items and phrases belonging to each theme (`text`, `cn`, `emoji`, unique `id`).
+  - **3rd-Level Sub-words (`depth = 3`)**: When a vocabulary item naturally contains components, collocations, or closely related sub-items, nest them under the depth-2 item (e.g. `reading corner` -> `bookcase`; `sports field` -> `field`; `floating school` -> `rainy season`, `sunlight`, `fresh air`).
 - **Format:** Strict JSON following this template:
 ```json
 {
@@ -116,7 +123,33 @@ This document defines the rules for extracting and converting textbook data into
       "context_sentence": "Yaming saw...",
       "memorization_hook": "联想记忆: ..."
     }
-  ]
+  ],
+  "unit_vocabulary_mindmap": {
+    "id": "root",
+    "text": "My School",
+    "cn": "我的学校",
+    "emoji": "🏫",
+    "children": [
+      {
+        "id": "places",
+        "text": "Campus Buildings & Places",
+        "cn": "校园建筑与场所",
+        "emoji": "🏢",
+        "children": [
+          { "id": "p_building", "text": "building", "cn": "建筑物;房子", "emoji": "🏢" },
+          {
+            "id": "p_sports",
+            "text": "sports field",
+            "cn": "运动场",
+            "emoji": "🏃",
+            "children": [
+              { "id": "p_field", "text": "field", "cn": "场地;田地", "emoji": "⛳" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
 }
 ```
 

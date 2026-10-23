@@ -30,7 +30,7 @@ RULES:
 - source_file: "{source_file}"
 - Extract EVERY vocabulary item explicitly listed in "Vocabulary 1" and "Vocabulary 2" bulleted word lists.
 - Additionally include up to 10 extra important words/phrases from dialogues and texts. Skip proper nouns.
-- For each item:
+- For each item in "unit_vocabulary":
   - "word": English word or phrase exactly as it appears
   - "meaning": Chinese translation with part-of-speech label (e.g. "n. 教室", "v. 分享", "phr. 一起合作")
   - "page_number": printed page number where word FIRST appears (from "--- PRINTED PAGE X ---" markers)
@@ -39,6 +39,13 @@ RULES:
   - "comparison": "word vs distractor" string for visually/phonetically similar words
   - "syllable_type": for single-syllable words use one of: 闭音节, 开音节, 相对开音节, 元音字母组合音节, r控制音节, 辅音+le音节. For multi-syllable words use syllable breakdown (e.g. "pen-cil"). For phrases use "phrase".
   - "memorization_hook": creative Chinese mnemonic
+- "unit_vocabulary_mindmap":
+  - Hierarchical mindmap tree organizing ALL unit vocabulary into intuitive semantic/thematic clusters (rendered by VocabMindmapModal).
+  - Root (depth 0): id="root", text=Unit English Theme/Title, cn=Chinese Title, emoji=single representative emoji, children=[...].
+  - 1st-level branches (depth 1): 4-6 thematic petals (e.g. scene/domain clusters) with id, text, cn, emoji, children=[...].
+  - 2nd-level buds (depth 2): target vocabulary words/phrases under each theme with id, text, cn, emoji.
+  - 3rd-level sub-words (depth 3, when applicable): components, collocations, or closely related sub-items (e.g. "reading corner" -> "bookcase", "floating school" -> "rainy season", "sunlight", "fresh air").
+  - Every node must have: "id" (unique alphanumeric string), "text" (English), "cn" (Chinese translation), "emoji" (single mnemonic emoji).
 
 Output ONLY valid JSON, no markdown fences, no commentary.
 
@@ -57,7 +64,29 @@ JSON structure:
       "context_sentence": "...",
       "memorization_hook": "..."
     }}
-  ]
+  ],
+  "unit_vocabulary_mindmap": {{
+    "id": "root",
+    "text": "...",
+    "cn": "...",
+    "emoji": "...",
+    "children": [
+      {{
+        "id": "...",
+        "text": "...",
+        "cn": "...",
+        "emoji": "...",
+        "children": [
+          {{
+            "id": "...",
+            "text": "...",
+            "cn": "...",
+            "emoji": "..."
+          }}
+        ]
+      }}
+    ]
+  }}
 }}
 
 SOURCE MARKDOWN:
@@ -143,7 +172,7 @@ def main():
                 raise e
             time.sleep(2 ** attempt)
 
-    import re
+    import re, uuid
     # Clean inline Chinese parenthetical notes from context_sentence and ensure IPA format
     for item in parsed.get("unit_vocabulary", []):
         if "context_sentence" in item and isinstance(item["context_sentence"], str):
@@ -156,6 +185,30 @@ def main():
                 ipa = f"{ipa}/"
             item["ipa"] = ipa
 
+    # Validate and sanitize unit_vocabulary_mindmap
+    vmm = parsed.get("unit_vocabulary_mindmap")
+    if isinstance(vmm, dict):
+        if vmm.get("id") != "root":
+            vmm["id"] = "root"
+        if not vmm.get("emoji"):
+            vmm["emoji"] = "🌳"
+        
+        seen_ids = {"root"}
+        def sanitize_node(node, depth=1):
+            if not isinstance(node, dict):
+                return
+            nid = node.get("id")
+            if not nid or nid in seen_ids:
+                node["id"] = f"m_{uuid.uuid4().hex[:6]}"
+            seen_ids.add(node["id"])
+            if not node.get("emoji"):
+                node["emoji"] = "✨" if depth > 1 else "🌿"
+            for child in node.get("children", []):
+                sanitize_node(child, depth + 1)
+
+        for branch in vmm.get("children", []):
+            sanitize_node(branch, 1)
+
     stem = md_path.stem  # e.g. "b-pu1-u1"
     out_path = md_path.parent / f"{stem}-vocab-guide.json"
     parsed["generated_by"] = model_name
@@ -163,7 +216,8 @@ def main():
         json.dump(parsed, f, ensure_ascii=False, indent=2)
 
     count = len(parsed.get("unit_vocabulary", []))
-    print(f"Done! {count} vocab items -> {out_path}", file=sys.stderr)
+    branch_count = len(vmm.get("children", [])) if isinstance(vmm, dict) else 0
+    print(f"Done! {count} vocab items, {branch_count} mindmap branches -> {out_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":

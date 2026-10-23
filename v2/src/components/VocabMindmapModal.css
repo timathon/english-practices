@@ -206,21 +206,73 @@
 
 .vmm-canvas-hint {
   position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.88);
+  bottom: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid #e2e8f0;
   color: #64748b;
   font-size: 0.82rem;
   font-weight: 600;
-  padding: 6px 18px;
-  border-radius: 9999px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  pointer-events: auto;
+  cursor: pointer;
   z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  overflow: hidden;
+  line-height: 1;
+  transform-origin: left bottom;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vmm-canvas-hint.expanded {
+  padding: 6px 18px;
+  gap: 8px;
+  border-radius: 9999px;
+  max-width: 520px;
+}
+
+.vmm-canvas-hint.shrunk {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.15rem;
+}
+
+.vmm-canvas-hint:hover {
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  transform: scale(1.08);
+}
+
+.vmm-hint-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vmm-canvas-hint.shrunk .vmm-hint-text {
+  max-width: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.vmm-canvas-hint.expanded .vmm-hint-text {
+  max-width: 450px;
+  opacity: 1;
+  white-space: nowrap;
+  transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
 }
 
 .vmm-canvas-transform {
@@ -241,18 +293,21 @@
 /* SVG Vines Layer */
 .vmm-vines-layer {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
+  top: -4000px;
+  left: -4000px;
+  width: 8000px;
+  height: 8000px;
   pointer-events: none;
-  overflow: visible;
   z-index: 1;
 }
 
 .vmm-organic-vine {
-  transition: stroke 0.3s ease, stroke-width 0.2s ease;
+  transition: stroke 0.3s ease, stroke-width 0.2s ease, opacity 0.3s ease;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+.vmm-organic-vine.depth-1 {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
 }
 
 /* Nodes Layer */
@@ -271,9 +326,8 @@
   left: 0;
   width: 0;
   height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* =========================================================
@@ -281,6 +335,10 @@
    ========================================================= */
 
 .vmm-node-capsule {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -292,32 +350,13 @@
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
+  pointer-events: auto;
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Directional wing alignment: clean straight columns facing the center root */
-.vmm-radial-node-anchor.side-right .vmm-node-capsule {
-  transform: translate(0, -50%);
-}
-.vmm-radial-node-anchor.side-right .vmm-node-capsule:hover {
-  transform: translate(0, -50%) scale(1.08) translateY(-2px);
-}
-
-.vmm-radial-node-anchor.side-left .vmm-node-capsule {
-  transform: translate(-100%, -50%);
-}
-.vmm-radial-node-anchor.side-left .vmm-node-capsule:hover {
-  transform: translate(-100%, -50%) scale(1.08) translateY(-2px);
-}
-
-.vmm-radial-node-anchor.depth-0 .vmm-node-capsule {
-  transform: translate(-50%, -50%);
-}
-.vmm-radial-node-anchor.depth-0 .vmm-node-capsule:hover {
-  transform: translate(-50%, -50%) scale(1.06);
-}
-
+/* Radial flower: every node is centred on its point */
 .vmm-node-capsule:hover {
+  transform: translate(-50%, -50%) scale(1.06);
   box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.15);
   border-color: var(--vine-color, #4f46e5);
 }

@@ -51,6 +51,54 @@ def audit_vocab_guide(vg, filename):
                 "description": "Page number is missing or empty."
             })
 
+    vmm = vg.get("unit_vocabulary_mindmap")
+    if vmm:
+        if not isinstance(vmm, dict) or vmm.get("id") != "root":
+            issues.append({
+                "json_file": filename,
+                "rule_section": "1. Vocab Guide Extraction (VGE)",
+                "item_id": "unit_vocabulary_mindmap",
+                "issue_type": "Invalid Root ID",
+                "description": f"Root node id is '{vmm.get('id') if isinstance(vmm, dict) else 'non-dict'}', expected 'root'."
+            })
+        if isinstance(vmm, dict):
+            seen_ids = set()
+            def audit_node(node, depth):
+                if not isinstance(node, dict):
+                    return
+                nid = node.get("id")
+                if not nid:
+                    issues.append({
+                        "json_file": filename,
+                        "rule_section": "1. Vocab Guide Extraction (VGE)",
+                        "item_id": node.get("text", "unknown"),
+                        "issue_type": "Missing Node ID",
+                        "description": f"Mindmap node at depth {depth} is missing 'id'."
+                    })
+                elif nid in seen_ids:
+                    issues.append({
+                        "json_file": filename,
+                        "rule_section": "1. Vocab Guide Extraction (VGE)",
+                        "item_id": nid,
+                        "issue_type": "Duplicate Mindmap ID",
+                        "description": f"Mindmap node id '{nid}' is duplicated."
+                    })
+                else:
+                    seen_ids.add(nid)
+                
+                if not node.get("text"):
+                    issues.append({
+                        "json_file": filename,
+                        "rule_section": "1. Vocab Guide Extraction (VGE)",
+                        "item_id": nid or "unknown",
+                        "issue_type": "Missing Text",
+                        "description": f"Mindmap node at depth {depth} is missing 'text'."
+                    })
+                for child in node.get("children", []):
+                    audit_node(child, depth + 1)
+            
+            audit_node(vmm, 0)
+
     return issues
 
 def audit_vocab_master(vm, vg, filename):

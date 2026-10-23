@@ -29,7 +29,7 @@ interface LayoutItem {
   node: Node
   depth: number
   branchIndex: number
-  side: 'left' | 'right' | 'center'
+  side: 'center'
   x: number
   y: number
   parentX: number
@@ -57,6 +57,29 @@ export function VocabMindmapModal({
   const [isDragging, setIsDragging] = useState<boolean>(false)
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+
+  // Canvas Hint auto-shrink after 5s, clicking emoji re-expands for 5s
+  const [isHintExpanded, setIsHintExpanded] = useState<boolean>(true)
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    hintTimerRef.current = setTimeout(() => {
+      setIsHintExpanded(false)
+    }, 5000)
+
+    return () => {
+      if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
+    }
+  }, [])
+
+  const handleHintClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
+    setIsHintExpanded(true)
+    hintTimerRef.current = setTimeout(() => {
+      setIsHintExpanded(false)
+    }, 5000)
+  }
 
   const currentAudioRef = useRef<HTMLAudioElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -209,155 +232,179 @@ export function VocabMindmapModal({
   }
 
   // -------------------------------------------------------------
-  // Bilateral Tree Layout Algorithm (XMind / Whimsical Style)
-  // Evenly divides main branches into Left Wing and Right Wing.
-  // Computes precise bounding heights to prevent any overlap.
+  // Radial Flower Layout
+  // Root = flower center, depth-1 branches = petals evenly spread on a ring.
+  // An open branch becomes a sub-flower: its children ring around it
+  // (leaving a gap facing the root), and the branch is pushed outward
+  // so neighbouring sub-flowers do not overlap.
   // -------------------------------------------------------------
   const layout = useMemo(() => {
     const items: LayoutItem[] = []
     const branches = tree.children || []
 
-    // Root at (0, 0)
     items.push({
-      id: tree.id,
-      node: tree,
-      depth: 0,
-      branchIndex: -1,
-      side: 'center',
-      x: 0,
-      y: 0,
-      parentX: 0,
-      parentY: 0,
-      isCollapsed: false,
-      hasChildren: branches.length > 0,
+      id: tree.id, node: tree, depth: 0, branchIndex: -1, side: 'center',
+      x: 0, y: 0, parentX: 0, parentY: 0, isCollapsed: false, hasChildren: branches.length > 0,
     })
-
     if (branches.length === 0) return items
 
-    // Split branches: Left Wing and Right Wing
-    // e.g. 6 branches -> right: [0, 1, 2], left: [3, 4, 5]
-    const half = Math.ceil(branches.length / 2)
-    const rightBranches = branches.slice(0, half)
-    const leftBranches = branches.slice(half)
+    const N = branches.length
+    const CARD_W = 160, CARD_H = 48, BRANCH_W = 230 // approx unscaled card boxes
+    const GAP = 25 // min gap between neighbouring flower elements
 
-    const ROW_HEIGHT = 84 // Ample vertical height per row so cards never overlap
-    const COL_GAP = 300   // Clean horizontal clearance between levels
+    type Local = { node: Node; depth: number; x: number; y: number; px: number; py: number; w: number }
+    const isOpen = (n: Node) => !collapsedNodes.has(n.id) && Boolean(n.children?.length)
+    const overlaps = (a: Local, b: Local) =>
+      Math.abs(a.x - b.x) < (a.w + b.w) / 2 + 8 && Math.abs(a.y - b.y) < CARD_H + 4
 
-    // Helper: calculate total leaf slots a node occupies
-    const getLeafSpan = (node: Node): number => {
-      if (collapsedNodes.has(node.id) || !node.children || node.children.length === 0) {
-        return 1
-      }
-      return node.children.reduce((acc, c) => acc + getLeafSpan(c), 0)
-    }
-
-    // Layout a single wing (left or right)
-    const layoutWing = (wingBranches: Node[], side: 'left' | 'right', branchOffset: number) => {
-      const dir = side === 'right' ? 1 : -1
-
-      // 1. Calculate total height of this entire wing
-      const wingSpans = wingBranches.map(b => getLeafSpan(b))
-      const totalWingSpan = wingSpans.reduce((a, b) => a + b, 0)
-      let currentY = - (totalWingSpan * ROW_HEIGHT) / 2
-
-      wingBranches.forEach((bNode, bLocalIdx) => {
-        const bIdx = branchOffset + bLocalIdx
-        const bSpan = wingSpans[bLocalIdx]
-        const bCenterY = currentY + (bSpan * ROW_HEIGHT) / 2
-        const bX = dir * COL_GAP
-        const isBCollapsed = collapsedNodes.has(bNode.id)
-        const bHasChildren = Boolean(bNode.children && bNode.children.length > 0)
-
-        items.push({
-          id: bNode.id,
-          node: bNode,
-          depth: 1,
-          branchIndex: bIdx,
-          side,
-          x: bX,
-          y: bCenterY,
-          parentX: 0,
-          parentY: 0,
-          isCollapsed: isBCollapsed,
-          hasChildren: bHasChildren,
-        })
-
-        if (!isBCollapsed && bHasChildren) {
-          // Layout depth 2 (words) branching outward from the primary branch
-          const childCount = bNode.children!.length
-          const arcSpread = Math.min(childCount * 55, 380)
-          const startArcY = bCenterY - arcSpread / 2
-
-          bNode.children!.forEach((cNode, cIdx) => {
-            const cCenterY = childCount === 1 ? bCenterY : startArcY + (cIdx / (childCount - 1)) * arcSpread
-            // Fan out horizontally in an outward arc
-            const progress = (cIdx / Math.max(childCount - 1, 1)) - 0.5 // -0.5 to 0.5
-            const arcOffsetX = dir * (240 + Math.abs(progress) * 40)
-            const cX = bX + arcOffsetX
-            const isCCollapsed = collapsedNodes.has(cNode.id)
-            const cHasChildren = Boolean(cNode.children && cNode.children.length > 0)
-
-            items.push({
-              id: cNode.id,
-              node: cNode,
-              depth: 2,
-              branchIndex: bIdx,
-              side,
-              x: cX,
-              y: cCenterY,
-              parentX: bX,
-              parentY: bCenterY,
-              isCollapsed: isCCollapsed,
-              hasChildren: cHasChildren,
-            })
-
-            if (!isCCollapsed && cHasChildren) {
-              // Layout depth 3 (sub-words)
-              const subCount = cNode.children!.length
-              const subSpread = Math.min(subCount * 50, 180)
-              const subStartY = cCenterY - subSpread / 2
-
-              cNode.children!.forEach((sNode, sIdx) => {
-                const sCenterY = subCount === 1 ? cCenterY : subStartY + (sIdx / (subCount - 1)) * subSpread
-                const sX = cX + dir * 180
-
-                items.push({
-                  id: sNode.id,
-                  node: sNode,
-                  depth: 3,
-                  branchIndex: bIdx,
-                  side,
-                  x: sX,
-                  y: sCenterY,
-                  parentX: cX,
-                  parentY: cCenterY,
-                  isCollapsed: false,
-                  hasChildren: false,
-                })
-              })
-            }
-          })
+    // Build a sub-flower around (0,0): children on an ellipse (cards are wide),
+    // sized compactly to prevent cards within the sub-flower from overlapping.
+    const buildFlower = (b: Node, angle: number): { locals: Local[]; R: number } => {
+      if (!isOpen(b)) {
+        return {
+          locals: [{ node: b, depth: 1, x: 0, y: 0, px: 0, py: 0, w: BRANCH_W }],
+          R: BRANCH_W / 2,
         }
+      }
+      const kids = b.children!
+      const count = kids.length
+      const baseR = Math.max(130, ((count + 1) * 82) / (2 * Math.PI))
+      let locals: Local[] = []
 
-        currentY += bSpan * ROW_HEIGHT
-      })
+      for (let s = 1.0; s < 3.0; s += 0.05) {
+        const rx = baseR * s * 1.2
+        const ry = baseR * s * 0.85
+        locals = [{ node: b, depth: 1, x: 0, y: 0, px: 0, py: 0, w: BRANCH_W }]
+        kids.forEach((c, i) => {
+          // n+1 evenly spaced slots; the slot facing the root stays empty for the stem
+          const a = angle + Math.PI + ((i + 1) * 2 * Math.PI) / (kids.length + 1)
+          const cx = Math.cos(a) * rx, cy = Math.sin(a) * ry
+          locals.push({ node: c, depth: 2, x: cx, y: cy, px: 0, py: 0, w: CARD_W })
+          if (isOpen(c)) {
+            const subs = c.children!
+            const subCount = subs.length
+            const side = Math.cos(a) >= 0 ? 1 : -1
+            const colGap = 190 // horizontal distance to column
+            const rowGap = 62  // vertical distance between stacked cards
+
+            subs.forEach((sNode, si) => {
+              if (subCount === 1) {
+                // Single child (e.g. sports field -> field, reading corner -> bookcase)
+                const sx = cx + Math.cos(a) * 140
+                const sy = cy + Math.sin(a) * 140
+                locals.push({ node: sNode, depth: 3, x: sx, y: sy, px: cx, py: cy, w: CARD_W })
+              } else {
+                // Multiple children (e.g. floating school -> rainy season, sunlight, fresh air)
+                // Clean vertical column offset outward with 62px line spacing so they never overlap
+                const sx = cx + side * colGap
+                const sy = cy + (si - (subCount - 1) / 2) * rowGap
+                locals.push({ node: sNode, depth: 3, x: sx, y: sy, px: cx, py: cy, w: CARD_W })
+              }
+            })
+          }
+        })
+        const clash = locals.some((p, i) => locals.some((q, j) => j > i && overlaps(p, q)))
+        if (!clash) break
+      }
+      const R = Math.max(...locals.map((l) => Math.hypot(Math.abs(l.x) + l.w / 2, Math.abs(l.y) + CARD_H / 2)))
+      return { locals, R }
     }
 
-    // Execute bilateral layout
-    layoutWing(rightBranches, 'right', 0)
-    layoutWing(leftBranches, 'left', half)
+    const nominalAngles = branches.map((_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / N)
+    const flowers = branches.map((b, i) => buildFlower(b, nominalAngles[i]))
+
+    const angles = [...nominalAngles]
+    // Base distance: collapsed branches stay close to root (220px); open branches extend comfortably (340 - 520px)
+    const dist = flowers.map((f, i) => {
+      if (!isOpen(branches[i])) return 220
+      return Math.max(340, Math.min(520, f.R * 0.88 + 80))
+    })
+    const centre = (i: number) => [Math.cos(angles[i]) * dist[i], Math.sin(angles[i]) * dist[i]]
+
+    // Magnetic Repulsion (Same Pole): sub-flowers and collapsed petals repel each other
+    // so they naturally adjust both radially and angularly based on their environment
+    for (let iter = 0; iter < 100; iter++) {
+      let anyClash = false
+      for (let i = 0; i < N; i++) {
+        for (let j = i + 1; j < N; j++) {
+          const [bx_i, by_i] = centre(i)
+          const [bx_j, by_j] = centre(j)
+          if (Math.hypot(bx_i - bx_j, by_i - by_j) > flowers[i].R + flowers[j].R + GAP) continue
+
+          let clashCount = 0
+          flowers[i].locals.forEach((li) => {
+            const ax = bx_i + li.x, ay = by_i + li.y
+            flowers[j].locals.forEach((lj) => {
+              const bx = bx_j + lj.x, by = by_j + lj.y
+              const targetDx = (li.w + lj.w) / 2 + 18
+              const targetDy = CARD_H + 12
+              if (Math.abs(ax - bx) < targetDx && Math.abs(ay - by) < targetDy) {
+                clashCount++
+              }
+            })
+          })
+
+          if (clashCount > 0) {
+            anyClash = true
+            // 1. Radial magnetic push: expand outward
+            dist[i] += 12
+            dist[j] += 12
+
+            // 2. Angular magnetic push: adjacent petals part along the ring
+            let angleDiff = nominalAngles[j] - nominalAngles[i]
+            while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI
+            while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI
+
+            const angularStep = 0.02 // ~1.15° per step
+            if (angleDiff > 0) {
+              angles[i] -= angularStep
+              angles[j] += angularStep
+            } else {
+              angles[i] += angularStep
+              angles[j] -= angularStep
+            }
+          }
+        }
+      }
+      if (!anyClash) break
+    }
+
+    branches.forEach((bNode, bIdx) => {
+      const [bX, bY] = centre(bIdx)
+      items.push({
+        id: bNode.id, node: bNode, depth: 1, branchIndex: bIdx, side: 'center',
+        x: bX, y: bY, parentX: 0, parentY: 0,
+        isCollapsed: collapsedNodes.has(bNode.id), hasChildren: Boolean(bNode.children?.length),
+      })
+      flowers[bIdx].locals.forEach((l) => {
+        if (l.depth === 1) return
+        items.push({
+          id: l.node.id, node: l.node, depth: l.depth, branchIndex: bIdx, side: 'center',
+          x: bX + l.x, y: bY + l.y, parentX: bX + l.px, parentY: bY + l.py,
+          isCollapsed: collapsedNodes.has(l.node.id), hasChildren: Boolean(l.node.children?.length),
+        })
+      })
+    })
 
     return items
   }, [tree, collapsedNodes])
 
-  // Generate Smooth S-Curve (Bezier) between parent and child in horizontal layout
-  const makeCubicCurve = (x1: number, y1: number, x2: number, y2: number) => {
+  // Graceful organic stem between parent and child
+  const makeStemCurve = (x1: number, y1: number, x2: number, y2: number, depth: number) => {
     const dx = x2 - x1
-    const cp1x = x1 + dx * 0.55
-    const cp1y = y1
-    const cp2x = x1 + dx * 0.45
-    const cp2y = y2
-    return `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`
+    const dy = y2 - y1
+    if (depth === 1) {
+      // Gentle, elegant floral stem from root to 1st-level petal
+      // A subtle 4% organic bow keeps the stem supple and natural while staying
+      // strictly within its own sector so it never crosses neighboring petals
+      const mx = (x1 + x2) / 2 - dy * 0.04
+      const my = (y1 + y2) / 2 + dx * 0.04
+      return `M ${x1} ${y1} Q ${mx} ${my}, ${x2} ${y2}`
+    }
+    // Sub-flower stem from branch to child words
+    const mx = (x1 + x2) / 2 - dy * 0.05
+    const my = (y1 + y2) / 2 + dx * 0.05
+    return `M ${x1} ${y1} Q ${mx} ${my}, ${x2} ${y2}`
   }
 
   return (
@@ -369,7 +416,7 @@ export function VocabMindmapModal({
             <span className="vmm-icon">🌳</span>
             <div>
               <h2>{title}</h2>
-              {level && <span className="vmm-sub">{level} · 双向发散脑图</span>}
+              {level && <span className="vmm-sub">{level} · 花朵脑图</span>}
             </div>
           </div>
 
@@ -411,7 +458,16 @@ export function VocabMindmapModal({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          <div className="vmm-canvas-hint">💡 左右双向自然展开 · 鼠标拖动画布自由平移 · 滚轮缩放</div>
+          <button
+            type="button"
+            className={`vmm-canvas-hint ${isHintExpanded ? 'expanded' : 'shrunk'}`}
+            onClick={handleHintClick}
+            onPointerDown={(e) => e.stopPropagation()}
+            title={isHintExpanded ? '' : '显示操作提示'}
+          >
+            <span className="vmm-hint-icon">💡</span>
+            <span className="vmm-hint-text">点击花瓣展开子花朵 · 鼠标拖动画布自由平移 · 滚轮缩放</span>
+          </button>
 
           <div
             className="vmm-canvas-transform"
@@ -420,17 +476,17 @@ export function VocabMindmapModal({
             }}
           >
             {/* SVG Connecting Vines */}
-            <svg className="vmm-vines-layer">
+            <svg
+              className="vmm-vines-layer"
+              viewBox="-4000 -4000 8000 8000"
+              width="8000"
+              height="8000"
+            >
               {layout.map((item) => {
                 if (item.depth === 0) return null
                 const theme = BRANCH_PALETTES[item.branchIndex % BRANCH_PALETTES.length]
-                // Start from the edge of the root pill (depth 1) or parent
-                const startX = item.depth === 1 ? (item.side === 'right' ? 75 : -75) : item.parentX
-                const startY = item.parentY
-                const endX = item.x
-                const endY = item.y
-                const pathD = makeCubicCurve(startX, startY, endX, endY)
-                const strokeWidth = item.depth === 1 ? 3 : 2
+                const pathD = makeStemCurve(item.parentX, item.parentY, item.x, item.y, item.depth)
+                const strokeWidth = item.depth === 1 ? 3.5 : item.depth === 2 ? 2.2 : 1.6
 
                 return (
                   <path
@@ -440,8 +496,8 @@ export function VocabMindmapModal({
                     stroke={theme.vine}
                     strokeWidth={strokeWidth}
                     strokeLinecap="round"
-                    className="vmm-organic-vine"
-                    opacity={item.depth === 1 ? 0.9 : 0.7}
+                    className={`vmm-organic-vine depth-${item.depth}`}
+                    opacity={item.depth === 1 ? 0.95 : 0.75}
                   />
                 )
               })}
