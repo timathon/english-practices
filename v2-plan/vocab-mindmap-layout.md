@@ -64,6 +64,9 @@ Root: `My School` (`🏫`) with 6 major branch petals (`N = 6`):
   - **Angular parting ($\Delta \theta$)**: petals part sideways along the circle ring.
   - **Radial push ($\Delta r$)**: branches gently push outward away from the root.
   This prevents any sub-flower card from covering adjacent collapsed petals while keeping the overall layout as tight and compact as possible.
+- **Dynamic Width & Overlap Detection**: Card widths are dynamically estimated based on English and Chinese text lengths (`estimateNodeWidth`, 160–270px) so wide definitions (such as `own` with `"adj. & pron. 自己的；本人的"`) trigger proportional ellipse scaling in `buildFlower` and prevent overlapping sibling cards.
+- **Active Node Elevation (`z-index`)**:
+  - When any node is clicked (`isActive`), its anchor and capsule are elevated to `z-index: 40`, scaled to `scale(1.08)`, and given a prominent halo shadow (`box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.35)`). This guarantees that clicking on a covered or adjacent card (such as `[own]` near `[take care of]`) immediately floats it directly to the topmost visual layer above all surrounding cards. Hover also elevates cards to `z-index: 30`.
 - **Anchoring & Centering**: 
   - The anchor element (`.vmm-radial-node-anchor`) has `position: absolute; top: 0; left: 0; width: 0; height: 0; pointer-events: none;`. It must **NOT** have flexbox centering (`display: flex; align-items: center; justify-content: center`), because flexbox in a 0×0 container already centers the child at `(0, 0)`, and adding `transform: translate(-50%, -50%)` would double-shift the node up and left, causing lines to attach to the bottom-right corner.
   - The capsule (`.vmm-node-capsule`) uses `position: absolute; top: 0; left: 0; transform: translate(-50%, -50%);`. This guarantees that its visual center `(W/2, H/2)` sits with mathematical precision at `(item.x, item.y)` so that all connecting SVG vines attach to the exact center of every node.

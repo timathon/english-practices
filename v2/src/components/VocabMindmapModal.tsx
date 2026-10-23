@@ -249,13 +249,22 @@ export function VocabMindmapModal({
     if (branches.length === 0) return items
 
     const N = branches.length
-    const CARD_W = 160, CARD_H = 48, BRANCH_W = 230 // approx unscaled card boxes
+    const CARD_H = 48, BRANCH_W = 230 // approx unscaled card boxes
     const GAP = 25 // min gap between neighbouring flower elements
 
     type Local = { node: Node; depth: number; x: number; y: number; px: number; py: number; w: number }
     const isOpen = (n: Node) => !collapsedNodes.has(n.id) && Boolean(n.children?.length)
+
+    const estimateNodeWidth = (n: Node, depth: number) => {
+      if (depth === 1) return BRANCH_W
+      const enLen = n.text?.length || 0
+      const cnLen = n.cn?.length || 0
+      const textPx = Math.max(enLen * 8.5, cnLen * 12.5)
+      return Math.max(160, Math.min(270, Math.round(72 + textPx)))
+    }
+
     const overlaps = (a: Local, b: Local) =>
-      Math.abs(a.x - b.x) < (a.w + b.w) / 2 + 8 && Math.abs(a.y - b.y) < CARD_H + 4
+      Math.abs(a.x - b.x) < (a.w + b.w) / 2 + 12 && Math.abs(a.y - b.y) < CARD_H + 6
 
     // Build a sub-flower around (0,0): children on an ellipse (cards are wide),
     // sized compactly to prevent cards within the sub-flower from overlapping.
@@ -271,7 +280,7 @@ export function VocabMindmapModal({
       const baseR = Math.max(130, ((count + 1) * 82) / (2 * Math.PI))
       let locals: Local[] = []
 
-      for (let s = 1.0; s < 3.0; s += 0.05) {
+      for (let s = 1.0; s < 3.2; s += 0.05) {
         const rx = baseR * s * 1.2
         const ry = baseR * s * 0.85
         locals = [{ node: b, depth: 1, x: 0, y: 0, px: 0, py: 0, w: BRANCH_W }]
@@ -279,7 +288,8 @@ export function VocabMindmapModal({
           // n+1 evenly spaced slots; the slot facing the root stays empty for the stem
           const a = angle + Math.PI + ((i + 1) * 2 * Math.PI) / (kids.length + 1)
           const cx = Math.cos(a) * rx, cy = Math.sin(a) * ry
-          locals.push({ node: c, depth: 2, x: cx, y: cy, px: 0, py: 0, w: CARD_W })
+          const cardW = estimateNodeWidth(c, 2)
+          locals.push({ node: c, depth: 2, x: cx, y: cy, px: 0, py: 0, w: cardW })
           if (isOpen(c)) {
             const subs = c.children!
             const subCount = subs.length
@@ -292,13 +302,15 @@ export function VocabMindmapModal({
                 // Single child (e.g. sports field -> field, reading corner -> bookcase)
                 const sx = cx + Math.cos(a) * 140
                 const sy = cy + Math.sin(a) * 140
-                locals.push({ node: sNode, depth: 3, x: sx, y: sy, px: cx, py: cy, w: CARD_W })
+                const subW = estimateNodeWidth(sNode, 3)
+                locals.push({ node: sNode, depth: 3, x: sx, y: sy, px: cx, py: cy, w: subW })
               } else {
                 // Multiple children (e.g. floating school -> rainy season, sunlight, fresh air)
                 // Clean vertical column offset outward with 62px line spacing so they never overlap
                 const sx = cx + side * colGap
                 const sy = cy + (si - (subCount - 1) / 2) * rowGap
-                locals.push({ node: sNode, depth: 3, x: sx, y: sy, px: cx, py: cy, w: CARD_W })
+                const subW = estimateNodeWidth(sNode, 3)
+                locals.push({ node: sNode, depth: 3, x: sx, y: sy, px: cx, py: cy, w: subW })
               }
             })
           }
@@ -453,6 +465,7 @@ export function VocabMindmapModal({
         <div
           ref={containerRef}
           className={`vmm-canvas-stage ${isDragging ? 'dragging' : ''}`}
+          onClick={() => setActiveNodeId(null)}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -514,9 +527,10 @@ export function VocabMindmapModal({
                 return (
                   <div
                     key={item.id}
-                    className={`vmm-radial-node-anchor depth-${item.depth} side-${item.side}`}
+                    className={`vmm-radial-node-anchor depth-${item.depth} side-${item.side} ${isActive ? 'is-active' : ''} ${isPlaying ? 'is-playing' : ''}`}
                     style={{
                       transform: `translate(${item.x}px, ${item.y}px)`,
+                      zIndex: isPlaying ? 50 : isActive ? 40 : undefined,
                     }}
                   >
                     <div
