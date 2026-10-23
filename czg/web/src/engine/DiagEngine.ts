@@ -195,10 +195,12 @@ export function recordAnswer(
   const attempts = newSession.attempts[topicId];
   if (verdict === "correct") {
     if (attempts.length === 1) {
-      // First attempt correct -> Mastered! Infer ancestors
+      // First attempt correct -> Mastered! Infer ancestors (excluding explicit session targets)
       newSession.status[topicId] = "mastered";
+      const targetSet = new Set(newSession.targets);
       graph.ancestorSet(topicId).forEach((ancId) => {
-        if (!newSession.status[ancId]) {
+        // Only infer non-target prior prerequisites; do not bypass explicit section targets
+        if (!newSession.status[ancId] && !targetSet.has(ancId)) {
           newSession.status[ancId] = "inferred";
         }
       });

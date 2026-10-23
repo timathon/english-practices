@@ -19,10 +19,12 @@ export const SectionWorkspace: React.FC<SectionWorkspaceProps> = ({
   masteryMap,
   onStartDiagnosis
 }) => {
-  // Find immediate prerequisites for this section's topics
+  // Find immediate external prerequisites for this section's topics
+  // (Filter out topics that belong to this section itself)
   const secTopicSet = new Set(section.topic_ids);
   const prereqEdges = deps.filter((d) => secTopicSet.has(d.topicId));
   const uniquePrereqs = Array.from(new Set(prereqEdges.map((d) => d.prerequisiteId)))
+    .filter((pid) => !secTopicSet.has(pid))
     .map((pid) => topicsById[pid])
     .filter(Boolean);
 
