@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type React from 'react'
 import type { Question, Section, HighlightedSentence } from './TestSheetTypes'
 import {
@@ -49,6 +50,7 @@ export function TestSheetQuestionItem({
   setHighlightedSentence
 }: TestSheetQuestionItemProps) {
   const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section, q.type)
+  const [showOptions, setShowOptions] = useState(false)
 
   const renderAudioPlayer = () => {
     if (!q.audio) return null
@@ -514,6 +516,9 @@ export function TestSheetQuestionItem({
 
     case 'multiple-choice': {
       const activeOptIdx = userAnswers[q.id] !== undefined ? Number(userAnswers[q.id]) : null
+      const isAnswered = activeOptIdx !== null
+      const isOptionsVisible = submitted || isAnswered || showOptions
+
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
           <div className="ts-question-header">
@@ -522,32 +527,44 @@ export function TestSheetQuestionItem({
             <span className="ts-question-prompt">{renderPromptText(q.prompt)}</span>
           </div>
 
-          <div className={`ts-options-container ${q.options?.length ? `ts-options-count-${q.options.length}` : ''}`}>
-            {q.options?.map((option, oIdx) => {
-              let btnClass = "ts-option-btn"
-              if (activeOptIdx === oIdx) btnClass += " selected"
-              
-              if (submitted) {
-                if (Number(q.answer) === oIdx) {
-                  btnClass += " correct-reveal"
-                } else if (activeOptIdx === oIdx) {
-                  btnClass += " wrong-reveal"
+          {!isOptionsVisible ? (
+            <div className="ts-options-collapsed" style={{ marginTop: '12px' }}>
+              <button
+                type="button"
+                className="ts-show-options-btn"
+                onClick={() => setShowOptions(true)}
+              >
+                <span>💡 先思考一下，点击显示选项 (Show Options)</span>
+              </button>
+            </div>
+          ) : (
+            <div className={`ts-options-container ${q.options?.length ? `ts-options-count-${q.options.length}` : ''}`}>
+              {q.options?.map((option, oIdx) => {
+                let btnClass = "ts-option-btn"
+                if (activeOptIdx === oIdx) btnClass += " selected"
+                
+                if (submitted) {
+                  if (Number(q.answer) === oIdx) {
+                    btnClass += " correct-reveal"
+                  } else if (activeOptIdx === oIdx) {
+                    btnClass += " wrong-reveal"
+                  }
                 }
-              }
 
-              return (
-                <button
-                  key={oIdx}
-                  className={btnClass}
-                  disabled={submitted}
-                  onClick={() => handleAnswerChange(q.id, oIdx)}
-                >
-                  <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                  <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx), false)}</span>
-                </button>
-              )
-            })}
-          </div>
+                return (
+                  <button
+                    key={oIdx}
+                    className={btnClass}
+                    disabled={submitted}
+                    onClick={() => handleAnswerChange(q.id, oIdx)}
+                  >
+                    <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
+                    <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx), false)}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           {submitted && (
             <div className="ts-feedback-detail">
@@ -599,28 +616,47 @@ export function TestSheetQuestionItem({
       const availableBlocks = parseWordBlocks(q.prompt)
       const selectedIndices = selectedBlocksMap[q.id] || []
       const userVal = String(userAnswers[q.id] || '')
+      const isTranslationMode = section.original_type === 'translation'
+      const isBlocksVisible = !isTranslationMode || submitted || !!userVal || showOptions
 
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
             <span className="ts-question-prompt">
-              <span style={{ fontSize: '0.85em', color: '#64748b', fontWeight: 500, marginRight: '8px' }}>
-                (Click words to form sentence)
-              </span>
+              {isTranslationMode && q.translation ? (
+                <span style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1e293b' }}>
+                  {q.translation}
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.85em', color: '#64748b', fontWeight: 500, marginRight: '8px' }}>
+                  (Click words to form sentence)
+                </span>
+              )}
             </span>
           </div>
 
-          {/* Available Word Blocks / Scrambled Pool */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px', marginBottom: '14px' }}>
-            {availableBlocks.map((block, bIdx) => {
-              const isUsed = selectedIndices.includes(bIdx)
-              return (
-                <button
-                  key={bIdx}
-                  disabled={submitted || isUsed}
-                  className="ts-option-btn"
-                  style={{
+          {!isBlocksVisible ? (
+            <div className="ts-options-collapsed" style={{ marginTop: '12px', marginBottom: '8px' }}>
+              <button
+                type="button"
+                className="ts-show-options-btn"
+                onClick={() => setShowOptions(true)}
+              >
+                <span>💡 先想一想英文句子，点击显示单词卡片 (Show Words)</span>
+              </button>
+            </div>
+          ) : (
+            /* Available Word Blocks / Scrambled Pool */
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px', marginBottom: '14px' }}>
+              {availableBlocks.map((block, bIdx) => {
+                const isUsed = selectedIndices.includes(bIdx)
+                return (
+                  <button
+                    key={bIdx}
+                    disabled={submitted || isUsed}
+                    className="ts-option-btn"
+                    style={{
                     padding: '6px 14px',
                     fontSize: '0.95rem',
                     fontWeight: 600,
@@ -645,6 +681,7 @@ export function TestSheetQuestionItem({
               )
             })}
           </div>
+          )}
 
           {/* Assembled Sentence Display */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '10px', minHeight: '44px', padding: '10px 14px', borderRadius: '8px', border: '1.5px solid #cbd5e1', background: '#f8fafc' }}>

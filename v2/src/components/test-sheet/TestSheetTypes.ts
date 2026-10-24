@@ -40,6 +40,7 @@ export interface Section {
   passage?: string | string[]
   dialogue?: { speaker: string; text: string }[]
   audio?: AudioSpec
+  original_type?: string
   questions: Question[]
 }
 
