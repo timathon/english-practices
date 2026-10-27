@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, Sparkles, ChevronDown, ChevronUp, Headphones, Wand2, Scissors, Upload, Trash2 } from 'lucide-react';
+import { Volume2, Sparkles, ChevronDown, ChevronUp, Headphones, Wand2, Scissors, Upload, Trash2, Loader2 } from 'lucide-react';
 import { parseInputToTasks, md5, TaskItem } from './lib/parser';
 import { extractTextsFromFiles } from './lib/fileImport';
 import { detectSilences, trimAudioBuffer, pcmToAudioBuffer, AudioSilence } from './lib/audioCutter';
@@ -53,6 +53,7 @@ export default function App() {
   const [, setCurrentBatchIdx] = useState(0);
   const [, setTotalBatches] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
+  const [activeTtsStatus, setActiveTtsStatus] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [, setActiveAudioUrl] = useState<string | null>(null);
   const [editingOverrideIndex, setEditingOverrideIndex] = useState<number | null>(null);
@@ -556,12 +557,24 @@ export default function App() {
             controller.abort(new Error("TTS request timed out after 180s"));
           }, timeoutMs);
 
+          const attemptStart = Date.now();
+          let waitTimer: any = null;
+
           try {
             if (attempt > 0) {
               addLog(`🔁 Retrying batch ${batchLabel} (Attempt ${attempt + 1}/${maxRetries + 1})...`);
             } else {
               addLog(`⏳ Sending batch ${batchLabel} request to Gemini TTS endpoint...`);
             }
+
+            setActiveTtsStatus(`Batch ${batchLabel}: 0s elapsed...`);
+
+            // Ticking elapsed timer while waiting for Gemini TTS response
+            waitTimer = setInterval(() => {
+              const seconds = Math.floor((Date.now() - attemptStart) / 1000);
+              const remaining = Math.max(0, 180 - seconds);
+              setActiveTtsStatus(`Batch ${batchLabel}: ${seconds}s elapsed (timeout in ${remaining}s)`);
+            }, 1000);
 
             const ttsRes = await fetch(`${API_BASE}/api/tts`, {
               method: 'POST',
@@ -579,18 +592,26 @@ export default function App() {
               signal: controller.signal,
             });
 
+            clearInterval(waitTimer);
             clearTimeout(timeoutId);
+            setActiveTtsStatus(null);
+
+            const clientElapsedMs = Date.now() - attemptStart;
 
             if (!ttsRes.ok) {
               const errData = await ttsRes.json().catch(() => ({}));
               const msg = errData.details || errData.error || `HTTP ${ttsRes.status}`;
-              throw new Error(`Gemini rejected batch ${batchLabel}: ${msg}`);
+              throw new Error(`Gemini rejected batch ${batchLabel}: ${msg} (${(clientElapsedMs / 1000).toFixed(1)}s)`);
             }
 
             const ttsData = await ttsRes.json();
+            // Ensure precise elapsed duration from client-side measurement
+            ttsData.elapsedMs = ttsData.elapsedMs || clientElapsedMs;
             return ttsData;
           } catch (err: any) {
+            if (waitTimer) clearInterval(waitTimer);
             clearTimeout(timeoutId);
+            setActiveTtsStatus(null);
 
             if (stopRequestedRef.current) {
               throw new Error('Terminated by user');
@@ -604,13 +625,13 @@ export default function App() {
               const countdownSec = 30;
               for (let c = countdownSec; c > 0; c--) {
                 if (stopRequestedRef.current) {
+                  setActiveTtsStatus(null);
                   throw new Error('Terminated by user');
                 }
-                if (c % 10 === 0 || c === 5) {
-                  addLog(`⏳ Batch ${batchLabel} retrying in ${c}s...`);
-                }
+                setActiveTtsStatus(`Batch ${batchLabel} retry in ${c}s...`);
                 await new Promise(r => setTimeout(r, 1000));
               }
+              setActiveTtsStatus(null);
               continue;
             }
 
@@ -769,6 +790,7 @@ export default function App() {
       addLog('ℹ️ Unchecked current batch and all remaining unprocessed items due to failure.');
     } finally {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      setActiveTtsStatus(null);
       setIsRunning(false);
     }
   };
@@ -1162,7 +1184,30 @@ export default function App() {
           {/* Activity Console */}
           <div style={{ background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <h3 style={{ fontSize: '0.85rem', fontWeight: '700', margin: 0, color: 'var(--text-secondary)' }}>Activity Log</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '0.85rem', fontWeight: '700', margin: 0, color: 'var(--text-secondary)' }}>Activity Log</h3>
+                {activeTtsStatus && (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      padding: '0.15rem 0.5rem',
+                      fontSize: '0.72rem',
+                      fontWeight: '600',
+                      borderRadius: '12px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: '#f59e0b',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      fontFamily: 'var(--font-mono)',
+                      animation: 'pulse 1.5s infinite ease-in-out'
+                    }}
+                  >
+                    <Loader2 size={11} className="spin" />
+                    {activeTtsStatus}
+                  </span>
+                )}
+              </div>
               {logs.length > 0 && (
                 <button
                   onClick={() => setLogs([])}

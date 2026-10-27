@@ -144,6 +144,7 @@ export default {
           mimeType: candidate.mimeType || "audio/wav",
           data: candidate.data, // Base64 audio PCM/WAV data
           modelUsed: model,
+          elapsedMs: elapsed,
         }), {
           headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
         });
