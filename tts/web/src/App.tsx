@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RefreshCw, Upload, CheckCircle2, AlertTriangle, KeyRound, Sparkles, Volume2, Settings2, Trash2, Square, Clock, ChevronDown, ChevronUp, Scissors, Headphones, Edit3, Check, X, Wand2, Sliders, Database, FileText, FolderUp, FileUp } from 'lucide-react';
-import { parseInputToTasks, extractTextsFromParsedJson, md5, TaskItem } from './lib/parser';
+import { Volume2, Sparkles, ChevronDown, ChevronUp, Headphones, Wand2, Scissors, Upload, Trash2 } from 'lucide-react';
+import { parseInputToTasks, md5, TaskItem } from './lib/parser';
+import { extractTextsFromFiles } from './lib/fileImport';
 import { detectSilences, trimAudioBuffer, pcmToAudioBuffer, AudioSilence } from './lib/audioCutter';
 import { audioBufferToMp3Blob } from './lib/mp3Encoder';
 import { WaveformViewer } from './components/WaveformViewer';
 import { getAllHistory, saveHistory, deleteHistory, getSetting, setSetting, migrateFromLocalStorage, HistoryRecord } from './lib/db';
-
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? '' 
-  : 'https://ttsapi.vibequizzing.com';
+import { API_BASE, checkR2AudioExists, PUBLIC_R2_BASE } from './lib/ttsApi';
+import { AuthScreen } from './components/AuthScreen';
+import { ProgressModal, ProgressModalData } from './components/ProgressModal';
+import { ConfigPanel } from './components/ConfigPanel';
+import { TaskQueueTable } from './components/TaskQueueTable';
 
 export default function App() {
   const [passcode, setPasscode] = useState('');
@@ -39,17 +41,20 @@ export default function App() {
   const [isCutting, setIsCutting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Modal progress state for cutting and uploading
+  const [progressModal, setProgressModal] = useState<ProgressModalData | null>(null);
+
   // Active audio buffer from Gemini generation
   const [rawAudioBuffer, setRawAudioBuffer] = useState<AudioBuffer | null>(null);
   const [rawAudioSilences, setRawAudioSilences] = useState<AudioSilence[]>([]);
   const [activePlayRange, setActivePlayRange] = useState<{ start: number; end: number } | null>(null);
   const [lastEditedIndex, setLastEditedIndex] = useState<number | null>(null);
 
-  const [currentBatchIdx, setCurrentBatchIdx] = useState(0);
-  const [totalBatches, setTotalBatches] = useState(0);
+  const [, setCurrentBatchIdx] = useState(0);
+  const [, setTotalBatches] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
-  const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
+  const [, setActiveAudioUrl] = useState<string | null>(null);
   const [editingOverrideIndex, setEditingOverrideIndex] = useState<number | null>(null);
   const [editingOverrideVal, setEditingOverrideVal] = useState<string>('');
 
@@ -101,7 +106,6 @@ export default function App() {
     if (!input.trim() || count === 0) return;
     const title = input.trim().split('\n')[0].slice(0, 30);
     
-    // Extract any existing tts overrides, timestamps, and selection state
     const overrides: Record<string, string> = {};
     const timestamps: Record<string, { start: number; end: number }> = {};
     const selectedMap: Record<string, boolean> = {};
@@ -143,7 +147,6 @@ export default function App() {
       setRawInput(found.rawInput);
       const parsed = parseInputToTasks(found.rawInput, found.book);
       
-      // Restore tts overrides, timestamps, and selections if present
       parsed.forEach(t => {
         if (found.ttsOverrides?.[t.hash]) {
           t.ttsOverrideText = found.ttsOverrides[t.hash];
@@ -215,7 +218,6 @@ export default function App() {
     });
     setTasks(updated);
 
-    // Save updated overrides to active history item in IndexedDB
     if (selectedHistoryId) {
       const found = historyList.find(h => h.id === selectedHistoryId);
       if (found) {
@@ -244,7 +246,6 @@ export default function App() {
     addLog('Removed list from IndexedDB.');
   };
 
-  // Auth verify
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -280,111 +281,16 @@ export default function App() {
     addLog('✨ Started a fresh new task. Book Key cleared.');
   };
 
-  function detectBookKeyFromPath(pathOrName: string): string {
-    const clean = pathOrName.trim().replace(/\\/g, '/');
-    const segments = clean.split('/').filter(Boolean);
-
-    for (const seg of segments) {
-      // 1. Check folder name like "A6A" or "a6a-u3" -> extract "a6a"
-      const unitMatch = seg.match(/^([a-zA-Z0-9]+)-u\d+/i);
-      if (unitMatch && unitMatch[1]) {
-        return unitMatch[1].toLowerCase();
-      }
-
-      // 2. Check compound book keys like "raz-b" from "raz-b-u1" or "raz-b"
-      const razMatch = seg.match(/^(raz-[a-zA-Z0-9]+)/i);
-      if (razMatch && razMatch[1]) {
-        return razMatch[1].toLowerCase();
-      }
-
-      // 3. Check standalone textbook folder names like "A6A", "SA1", "A3B", "PU1"
-      if (/^[a-zA-Z]{1,3}\d{1,2}[a-zA-Z]?$/i.test(seg)) {
-        return seg.toLowerCase();
-      }
-    }
-
-    // 4. Check filename prefix (e.g. "a6a-u3-vocab-guide.json" -> "a6a", "sa1-u0-sentence-architect.json" -> "sa1")
-    const filename = segments[segments.length - 1] || clean;
-    const fileUnitMatch = filename.match(/^([a-zA-Z0-9]+)(?:-[a-zA-Z0-9]+)?-u\d+/i);
-    if (fileUnitMatch && fileUnitMatch[1]) {
-      return fileUnitMatch[1].toLowerCase();
-    }
-
-    // General prefix before first hyphen (e.g., a6a-u3 -> a6a, sa1-u1 -> sa1)
-    const generalPrefix = filename.match(/^([a-zA-Z0-9]+)-/);
-    if (generalPrefix && generalPrefix[1]) {
-      return generalPrefix[1].toLowerCase();
-    }
-
-    return '';
-  }
-
   const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    let detectedBook = '';
-    const fileList = Array.from(files);
+    addLog(`📂 Reading and extracting audio texts...`);
+    const { detectedBook, sentences: finalSentences, validFileCount } = await extractTextsFromFiles(files, addLog);
 
-    // Filter relevant files (.json, .txt, .md) and ignore non-audio files (recall-map, writing-map, grammar-wizard)
-    const validFiles = fileList.filter(f => {
-      const name = f.name.toLowerCase();
-      if (name.includes('-recall-map') || name.includes('-grammar-wizard') || name.endsWith('tongjia.cjs')) {
-        return false;
-      }
-      return name.endsWith('.json') || name.endsWith('.txt') || name.endsWith('.md');
-    });
-
-    if (validFiles.length === 0) {
+    if (validFileCount === 0) {
       addLog(`⚠️ No practice JSON or text files found in selection.`);
       return;
-    }
-
-    addLog(`📂 Reading and extracting audio texts from ${validFiles.length} file(s)...`);
-
-    const extractedTextsSet = new Set<string>();
-
-    for (const file of validFiles) {
-      try {
-        const text = await file.text();
-        
-        // Auto-infer book key from relative path or filename
-        if (!detectedBook) {
-          const pathToCheck = (file as any).webkitRelativePath || file.name;
-          const inferred = detectBookKeyFromPath(pathToCheck);
-          if (inferred) {
-            detectedBook = inferred;
-          }
-        }
-
-        if (file.name.endsWith('.json')) {
-          try {
-            const parsedJson = JSON.parse(text);
-            const items = extractTextsFromParsedJson(parsedJson, file.name);
-            items.forEach(t => {
-              if (t.trim()) extractedTextsSet.add(t.trim());
-            });
-          } catch (jsonErr) {
-            // Fallback plain text parse
-            text.split('\n').forEach(line => {
-              const clean = line.trim();
-              if (clean && !clean.startsWith('{') && !clean.startsWith('}')) {
-                extractedTextsSet.add(clean);
-              }
-            });
-          }
-        } else {
-          // Plain text / Markdown
-          text.split('\n').forEach(line => {
-            const clean = line.trim();
-            if (clean && !clean.startsWith('#') && !clean.startsWith('---')) {
-              extractedTextsSet.add(clean);
-            }
-          });
-        }
-      } catch (err: any) {
-        addLog(`❌ Failed to read ${file.name}: ${err.message}`);
-      }
     }
 
     const currentBook = detectedBook || bookName;
@@ -394,7 +300,6 @@ export default function App() {
       addLog(`🏷️ Auto-detected Book Key: "${detectedBook}"`);
     }
 
-    const finalSentences = Array.from(extractedTextsSet);
     const combinedText = finalSentences.join('\n');
     setRawInput(combinedText);
 
@@ -415,12 +320,12 @@ export default function App() {
     setTasks(tasksList);
     setLastEditedIndex(null);
     saveToHistory(currentBook.trim().toLowerCase(), combinedText, tasksList.length, tasksList);
-    addLog(`✨ Extracted ${tasksList.length} unique audio items from ${validFiles.length} file(s) for book "${currentBook.toLowerCase()}".`);
+    addLog(`✨ Extracted ${tasksList.length} unique audio items from ${validFileCount} file(s) for book "${currentBook.toLowerCase()}".`);
     
-    // Reset file inputs so same files can be reselected if desired
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (folderInputRef.current) folderInputRef.current.value = '';
   };
+
 
   const handleParse = () => {
     setBookError('');
@@ -449,66 +354,82 @@ export default function App() {
     addLog('🛑 Stop requested. Halting after current step...');
   };
 
-  // Update item start / end times and mark which item was edited
   const updateTaskTime = (index: number, field: 'startTime' | 'endTime', value: number) => {
     setLastEditedIndex(index);
     setTasks(prev => prev.map((t, idx) => idx === index ? { ...t, [field]: value } : t));
   };
 
-  // Listen to a specific sentence interval in the raw buffer
   const previewInterval = (start: number, end: number) => {
     if (!rawAudioBuffer) return;
     setActivePlayRange({ start, end });
   };
 
-  // Analyze Audio & Recalculate timestamps for items after the edited index (or all items)
   const analyzeAudioForward = () => {
     if (!rawAudioBuffer || tasks.length === 0) return;
 
-    // Detect / use existing silences
     const silences = rawAudioSilences.length > 0 
       ? rawAudioSilences 
       : detectSilences(rawAudioBuffer, silenceThresholdDb, 0.4);
     
     setRawAudioSilences(silences);
 
-    const fromIndex = lastEditedIndex !== null && lastEditedIndex >= 0 && lastEditedIndex < tasks.length - 1 
+    const fromIndex = lastEditedIndex !== null && lastEditedIndex >= 0 && lastEditedIndex < tasks.length 
       ? lastEditedIndex 
       : 0;
 
-    const startFromTime = (fromIndex === 0 && lastEditedIndex === null) 
-      ? 0 
-      : (tasks[fromIndex].endTime ?? tasks[fromIndex].startTime ?? 0);
+    const targetBatch = tasks[fromIndex]?.batchIndex;
 
-    // Filter silence gaps that occur AFTER the starting anchor time
+    // Find batch boundary: first and last item indices with this batchIndex
+    let batchStartIndex = 0;
+    let batchEndIndex = tasks.length - 1;
+
+    if (targetBatch !== undefined) {
+      for (let i = 0; i < tasks.length; i++) {
+        if (tasks[i].batchIndex === targetBatch) {
+          batchStartIndex = i;
+          break;
+        }
+      }
+      for (let i = tasks.length - 1; i >= 0; i--) {
+        if (tasks[i].batchIndex === targetBatch) {
+          batchEndIndex = i;
+          break;
+        }
+      }
+    }
+
+    const startFromTime = (fromIndex === batchStartIndex && lastEditedIndex === null) 
+      ? (tasks[batchStartIndex]?.startTime ?? 0)
+      : (tasks[fromIndex]?.endTime ?? tasks[fromIndex]?.startTime ?? 0);
+
+    const batchUpperBound = tasks[batchEndIndex]?.endTime ?? rawAudioBuffer.duration;
+
     const subsequentSilences = silences
-      .filter(s => s.start >= startFromTime - 0.05)
+      .filter(s => s.start >= startFromTime - 0.05 && s.end <= batchUpperBound + 0.1)
       .map(s => ({ ...s, duration: s.end - s.start }))
       .sort((a, b) => a.start - b.start);
 
-    const remainingTasksCount = tasks.length - (fromIndex === 0 && lastEditedIndex === null ? 0 : fromIndex + 1);
+    const startIndexToUpdate = (fromIndex === batchStartIndex && lastEditedIndex === null) ? batchStartIndex : fromIndex + 1;
+    const itemsToUpdateCount = Math.max(0, batchEndIndex - startIndexToUpdate + 1);
 
-    addLog(`🔍 Analyzing audio from item #${fromIndex + 1} (${startFromTime.toFixed(2)}s). Found ${subsequentSilences.length} silence gaps for ${remainingTasksCount} remaining item(s)...`);
+    addLog(`🔍 Analyzing audio for Batch ${targetBatch !== undefined ? targetBatch : 'All'} (items #${startIndexToUpdate + 1}..#${batchEndIndex + 1}, ${startFromTime.toFixed(2)}s..${batchUpperBound.toFixed(2)}s). Found ${subsequentSilences.length} gap(s) for ${itemsToUpdateCount} item(s)...`);
 
     let currentAnchor = startFromTime;
     const updated = [...tasks];
-
-    const startIndexToUpdate = (fromIndex === 0 && lastEditedIndex === null) ? 0 : fromIndex + 1;
     let sIdx = 0;
 
-    for (let i = startIndexToUpdate; i < updated.length; i++) {
-      // Find next viable silence gap after currentAnchor + minimum spoken duration (e.g. 0.3s)
+    for (let i = startIndexToUpdate; i <= batchEndIndex; i++) {
       while (sIdx < subsequentSilences.length && subsequentSilences[sIdx].start < currentAnchor + 0.25) {
         sIdx++;
       }
 
       let nextEnd: number;
-      if (sIdx < subsequentSilences.length && i < updated.length - 1) {
+      if (sIdx < subsequentSilences.length && i < batchEndIndex) {
         const s = subsequentSilences[sIdx];
         nextEnd = (s.start + s.end) / 2;
         sIdx++;
       } else {
-        nextEnd = (i === updated.length - 1) ? rawAudioBuffer.duration : Math.min(rawAudioBuffer.duration, currentAnchor + 5);
+        nextEnd = (i === batchEndIndex) ? batchUpperBound : Math.min(batchUpperBound, currentAnchor + 5);
       }
 
       updated[i] = {
@@ -520,47 +441,17 @@ export default function App() {
     }
 
     setTasks(updated);
-    addLog(`✅ Audio analysis completed. Realigned items #${startIndexToUpdate + 1} to #${tasks.length}.`);
-  };
-
-  // Helper function to partition tasks into batches
-  const partitionTasks = (taskList: TaskItem[]): TaskItem[][] => {
-    if (taskList.length === 0) return [];
-    if (batchMode === 'count') {
-      const chunks: TaskItem[][] = [];
-      const size = Math.max(1, batchSize);
-      for (let i = 0; i < taskList.length; i += size) {
-        chunks.push(taskList.slice(i, i + size));
-      }
-      return chunks;
-    }
-
-    // By text size (chars)
-    const chunks: TaskItem[][] = [];
-    let currentChunk: TaskItem[] = [];
-    let currentLength = 0;
-    const maxChars = Math.max(50, batchCharLimit);
-
-    for (const item of taskList) {
-      const itemLen = item.text.length + 15; // text length plus separator estimate
-      if (currentChunk.length > 0 && currentLength + itemLen > maxChars) {
-        chunks.push(currentChunk);
-        currentChunk = [item];
-        currentLength = itemLen;
-      } else {
-        currentChunk.push(item);
-        currentLength += itemLen;
-      }
-    }
-    if (currentChunk.length > 0) {
-      chunks.push(currentChunk);
-    }
-    return chunks;
+    addLog(`✅ Audio analysis completed for Batch ${targetBatch !== undefined ? targetBatch : 'All'}. Items #${startIndexToUpdate + 1} to #${batchEndIndex + 1} realigned.`);
   };
 
   // Step 1: Request TTS Audio & Calculate Initial Cut Boundaries
   const requestTtsOnly = async () => {
-    if (tasks.length === 0) return;
+    const targetTasks = tasks.filter(t => t.selected !== false);
+    if (targetTasks.length === 0) {
+      addLog('⚠️ No items selected for TTS generation. Please select at least one item.');
+      return;
+    }
+
     setIsRunning(true);
     stopRequestedRef.current = false;
     setElapsedSec(0);
@@ -570,10 +461,6 @@ export default function App() {
     timerIntervalRef.current = setInterval(() => {
       setElapsedSec(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
-
-    const batches = partitionTasks(tasks);
-    setTotalBatches(batches.length);
-    addLog(`Starting TTS generation: ${tasks.length} items across ${batches.length} batch(es) [Partition: ${batchMode === 'chars' ? `${batchCharLimit} chars max` : `${batchSize} items`}]...`);
 
     if (keyType === 'custom' && customApiKey) {
       setSetting('tts_custom_api_key', customApiKey);
@@ -586,18 +473,170 @@ export default function App() {
     let accumulatedBuffer: AudioBuffer | null = null;
     let accumulatedSilences: AudioSilence[] = [];
     let accumulatedTasks: TaskItem[] = [];
+    const completedHashes = new Set<string>();
+
+    const effectiveBook = bookName.trim().toLowerCase();
+    const maxChars = Math.max(50, batchCharLimit);
 
     try {
-      for (let bIdx = 0; bIdx < batches.length; bIdx++) {
+      addLog(`🔍 Starting R2 existence checks & TTS generation for ${targetTasks.length} selected item(s)...`);
+
+      let taskIndex = 0;
+      let batchNumber = 0;
+
+      const buildNextBatch = async (): Promise<TaskItem[]> => {
+        const batch: TaskItem[] = [];
+        let batchChars = 0;
+        const R2_PARALLEL_LIMIT = 10;
+
+        while (taskIndex < targetTasks.length) {
+          if (stopRequestedRef.current) break;
+
+          const windowItems = targetTasks.slice(taskIndex, taskIndex + R2_PARALLEL_LIMIT);
+          const results = await Promise.all(
+            windowItems.map(async (item) => {
+              const { exists, url } = await checkR2AudioExists(effectiveBook, item.hash);
+              return { item, exists, url };
+            })
+          );
+
+          let batchFull = false;
+          for (let i = 0; i < results.length; i++) {
+            if (stopRequestedRef.current) break;
+
+            const { item, exists, url } = results[i];
+            const currentItemIdx = taskIndex + 1;
+            taskIndex++;
+
+            if (exists) {
+              addLog(`⚡ R2 Cache Hit: [${currentItemIdx}/${targetTasks.length}] "${item.text.slice(0, 30)}" already in R2.`);
+              const confirmedItem: TaskItem = {
+                ...item,
+                status: 'done',
+                audioUrl: url,
+                selected: false,
+              };
+              accumulatedTasks.push(confirmedItem);
+              completedHashes.add(item.hash);
+              setTasks(prev => prev.map(t => t.hash === item.hash ? confirmedItem : t));
+              continue;
+            }
+
+            const itemLen = (item.ttsOverrideText || item.text).length + 15;
+            if (batch.length > 0 && batchChars + itemLen > maxChars) {
+              taskIndex--;
+              batchFull = true;
+              break;
+            }
+
+            batch.push(item);
+            batchChars += itemLen;
+          }
+
+          if (batchFull) {
+            break;
+          }
+        }
+
+        return batch;
+      };
+
+      const callGeminiTtsWithRetry = async (combinedPrompt: string, batchLabel: string): Promise<any> => {
+        const maxRetries = 2; // 2 retries = 3 attempts total
+        let attempt = 0;
+
+        while (attempt <= maxRetries) {
+          if (stopRequestedRef.current) {
+            throw new Error('Terminated by user');
+          }
+
+          const controller = new AbortController();
+          const timeoutMs = 180000;
+          const timeoutId = setTimeout(() => {
+            controller.abort(new Error("TTS request timed out after 180s"));
+          }, timeoutMs);
+
+          try {
+            if (attempt > 0) {
+              addLog(`🔁 Retrying batch ${batchLabel} (Attempt ${attempt + 1}/${maxRetries + 1})...`);
+            } else {
+              addLog(`⏳ Sending batch ${batchLabel} request to Gemini TTS endpoint...`);
+            }
+
+            const ttsRes = await fetch(`${API_BASE}/api/tts`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Passcode': passcode,
+              },
+              body: JSON.stringify({
+                prompt: combinedPrompt,
+                model: model,
+                voiceName: voiceName,
+                keyType: keyType,
+                customApiKey: keyType === 'custom' ? customApiKey : undefined,
+              }),
+              signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!ttsRes.ok) {
+              const errData = await ttsRes.json().catch(() => ({}));
+              const msg = errData.details || errData.error || `HTTP ${ttsRes.status}`;
+              throw new Error(`Gemini rejected batch ${batchLabel}: ${msg}`);
+            }
+
+            const ttsData = await ttsRes.json();
+            return ttsData;
+          } catch (err: any) {
+            clearTimeout(timeoutId);
+
+            if (stopRequestedRef.current) {
+              throw new Error('Terminated by user');
+            }
+
+            if (attempt < maxRetries) {
+              attempt++;
+              addLog(`⚠️ Batch ${batchLabel} failed: ${err.message}. Retrying in 30s (${attempt}/${maxRetries})...`);
+
+              // 30-second countdown, interruptible by stopRequestedRef
+              const countdownSec = 30;
+              for (let c = countdownSec; c > 0; c--) {
+                if (stopRequestedRef.current) {
+                  throw new Error('Terminated by user');
+                }
+                if (c % 10 === 0 || c === 5) {
+                  addLog(`⏳ Batch ${batchLabel} retrying in ${c}s...`);
+                }
+                await new Promise(r => setTimeout(r, 1000));
+              }
+              continue;
+            }
+
+            throw err;
+          }
+        }
+      };
+
+      while (taskIndex < targetTasks.length) {
         if (stopRequestedRef.current) {
           addLog('🛑 Process terminated by user.');
           break;
         }
 
-        setCurrentBatchIdx(bIdx + 1);
-        const chunk = batches[bIdx];
-        const chunkChars = chunk.reduce((sum, c) => sum + c.text.length, 0);
-        addLog(`Processing batch ${bIdx + 1}/${batches.length} (${chunk.length} items, ~${chunkChars} chars)...`);
+        // 1. Build next batch of items (checks R2 for items; skips those in R2)
+        const currentBatch: TaskItem[] = await buildNextBatch();
+
+        if (currentBatch.length === 0) {
+          if (taskIndex >= tasks.length) break;
+          continue;
+        }
+
+        batchNumber++;
+        setCurrentBatchIdx(batchNumber);
+        const chunkChars = currentBatch.reduce((sum, c) => sum + (c.ttsOverrideText || c.text).length, 0);
+        addLog(`Processing TTS batch ${batchNumber} (${currentBatch.length} items, ~${chunkChars} chars)...`);
 
         let combinedPrompt = '';
         if (is31) {
@@ -605,9 +644,9 @@ export default function App() {
             "Read the provided sentences one by one. Insert a silent 3-second gap between every single sentence. Do not blend the sentences together. Do not shorten the silence. Treat each line break as a hard stop.\n",
             `${WARMUP} ...`
           ];
-          for (let i = 0; i < chunk.length; i++) {
-            const spokenText = chunk[i].ttsOverrideText || chunk[i].text;
-            if (i === chunk.length - 1) {
+          for (let i = 0; i < currentBatch.length; i++) {
+            const spokenText = currentBatch[i].ttsOverrideText || currentBatch[i].text;
+            if (i === currentBatch.length - 1) {
               parts.push(`... ${spokenText}`);
             } else {
               parts.push(`... ${spokenText} ...`);
@@ -615,42 +654,22 @@ export default function App() {
           }
           combinedPrompt = parts.join('\n[long pause: hold silence for 3 seconds]\n');
         } else {
-          combinedPrompt = [WARMUP, ...chunk.map(c => c.ttsOverrideText || c.text)].join(' \n\n. . . . . . . . . .\n\n ');
+          combinedPrompt = [WARMUP, ...currentBatch.map(c => c.ttsOverrideText || c.text)].join(' \n\n. . . . . . . . . .\n\n ');
         }
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(new Error("TTS request timed out after 180s")), 180000);
+        // Mark current batch items as generating in the table
+        setTasks(prev => prev.map(t => {
+          if (currentBatch.some(c => c.hash === t.hash)) {
+            return { ...t, status: 'generating', batchIndex: batchNumber };
+          }
+          return t;
+        }));
 
-        addLog(`⏳ Sending batch ${bIdx + 1} request to Gemini TTS endpoint...`);
-        const ttsRes = await fetch(`${API_BASE}/api/tts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Passcode': passcode,
-          },
-          body: JSON.stringify({
-            prompt: combinedPrompt,
-            model: model,
-            voiceName: voiceName,
-            keyType: keyType,
-            customApiKey: keyType === 'custom' ? customApiKey : undefined,
-          }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!ttsRes.ok) {
-          const errData = await ttsRes.json().catch(() => ({}));
-          const msg = errData.details || errData.error || `HTTP ${ttsRes.status}`;
-          throw new Error(`Gemini rejected batch ${bIdx + 1}: ${msg}`);
-        }
-
-        const ttsData = await ttsRes.json();
+        // Wait for Gemini TTS to return before doing any further R2 checks
+        const ttsData = await callGeminiTtsWithRetry(combinedPrompt, `${batchNumber}`);
         const base64Audio = ttsData.data;
-        addLog(`📡 Batch ${bIdx + 1} response OK in ${(ttsData.elapsedMs ? ttsData.elapsedMs / 1000 : 0).toFixed(1)}s`);
+        addLog(`📡 Batch ${batchNumber} response OK in ${(ttsData.elapsedMs ? ttsData.elapsedMs / 1000 : 0).toFixed(1)}s`);
 
-        // Decode PCM to AudioBuffer
         const binaryStr = atob(base64Audio);
         const bytes = new Uint8Array(binaryStr.length);
         for (let i = 0; i < binaryStr.length; i++) {
@@ -668,15 +687,14 @@ export default function App() {
           }
         }
 
-        // Detect Silences for this batch chunk
         const chunkSilences = detectSilences(chunkBuffer, silenceThresholdDb, 0.4);
         const candidateSilences = chunkSilences.filter(s => s.start > 0.1);
 
         let warmupSkipped = false;
-        let expectedPauses = chunk.length;
-        if (candidateSilences.length === chunk.length - 1) {
+        let expectedPauses = currentBatch.length;
+        if (candidateSilences.length === currentBatch.length - 1) {
           warmupSkipped = true;
-          expectedPauses = chunk.length - 1;
+          expectedPauses = currentBatch.length - 1;
         }
 
         let sortedSilences = candidateSilences
@@ -692,24 +710,26 @@ export default function App() {
           currentCutStart = (sortedSilences[0].start + sortedSilences[0].end) / 2;
         }
 
-        const updatedChunkTasks = chunk.map((item, i) => {
+        const updatedChunkTasks = currentBatch.map((item, i) => {
           const silenceIndex = warmupSkipped ? i : i + 1;
           const s = sortedSilences[silenceIndex];
-          const cutEnd = s ? (s.start + s.end) / 2 : (i === chunk.length - 1 ? chunkBuffer.duration : currentCutStart + 15);
+          const cutEnd = s ? (s.start + s.end) / 2 : (i === currentBatch.length - 1 ? chunkBuffer.duration : currentCutStart + 15);
           const taskWithTime: TaskItem = {
             ...item,
             status: 'pending',
+            batchIndex: batchNumber,
             startTime: parseFloat((bufferOffset + currentCutStart).toFixed(2)),
             endTime: parseFloat((bufferOffset + cutEnd).toFixed(2)),
           };
           currentCutStart = cutEnd;
+          completedHashes.add(item.hash);
           return taskWithTime;
         });
 
         accumulatedTasks = [...accumulatedTasks, ...updatedChunkTasks];
-        setTasks(accumulatedTasks);
+        const taskMap = new Map(accumulatedTasks.map(t => [t.hash, t]));
+        setTasks(prev => prev.map(t => taskMap.get(t.hash) || t));
 
-        // Concatenate AudioBuffers if multiple batches
         if (!accumulatedBuffer) {
           accumulatedBuffer = chunkBuffer;
           accumulatedSilences = chunkSilences;
@@ -731,10 +751,22 @@ export default function App() {
         setRawAudioSilences(accumulatedSilences);
       }
 
-      setIsConfigFolded(true); // Automatically fold configuration to highlight waveform & table!
-      addLog(`✅ All ${batches.length} batch(es) received (${accumulatedBuffer?.duration.toFixed(1)}s total). Adjust timestamps or cut audio below.`);
+      setTotalBatches(batchNumber);
+      if (accumulatedBuffer) {
+        setIsConfigFolded(true);
+        addLog(`✅ TTS generation completed: ${batchNumber} batch(es) received (${accumulatedBuffer.duration.toFixed(1)}s total).`);
+      } else {
+        addLog(`✅ All items already existed in Cloudflare R2! No new audio needed.`);
+      }
     } catch (err: any) {
       addLog(`❌ TTS Error: ${err.message}`);
+      setTasks(prev => prev.map(t => {
+        if (!completedHashes.has(t.hash)) {
+          return { ...t, selected: false };
+        }
+        return t;
+      }));
+      addLog('ℹ️ Unchecked current batch and all remaining unprocessed items due to failure.');
     } finally {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       setIsRunning(false);
@@ -744,15 +776,45 @@ export default function App() {
   // Step 2: Cut Audio based on current timestamps
   const cutAudioSlices = async () => {
     if (!rawAudioBuffer || tasks.length === 0) return;
+    const selectedTasks = tasks.filter(t => t.selected !== false);
+    if (selectedTasks.length === 0) {
+      addLog('⚠️ No items selected for cutting. Check at least one item.');
+      return;
+    }
+
     setIsCutting(true);
-    addLog(`✂️ Cutting ${tasks.length} items using adjusted timestamps...`);
+    setProgressModal({
+      open: true,
+      type: 'cutting',
+      current: 0,
+      total: selectedTasks.length,
+      currentText: selectedTasks[0]?.text || '',
+    });
+    addLog(`✂️ Cutting ${selectedTasks.length} selected item(s) (of ${tasks.length} total) using adjusted timestamps...`);
 
     const audioCtx = getAudioCtx();
     const sampleRate = rawAudioBuffer.sampleRate;
 
     const newTasks = [...tasks];
+    let cutCount = 0;
+
     for (let i = 0; i < newTasks.length; i++) {
       const item = newTasks[i];
+      if (item.selected === false) {
+        continue;
+      }
+
+      cutCount++;
+      setProgressModal({
+        open: true,
+        type: 'cutting',
+        current: cutCount,
+        total: selectedTasks.length,
+        currentText: item.text,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       const startTime = item.startTime ?? 0;
       const endTime = item.endTime ?? rawAudioBuffer.duration;
 
@@ -765,9 +827,7 @@ export default function App() {
         sliceBuffer.copyToChannel(rawAudioBuffer.getChannelData(ch).subarray(startSample, endSample), ch);
       }
 
-      // Trim silence with small padding
       const trimmed = trimAudioBuffer(audioCtx, sliceBuffer, -32, 0.08);
-      // Encode to MP3
       const mp3Blob = audioBufferToMp3Blob(trimmed, 128);
       const localUrl = URL.createObjectURL(mp3Blob);
 
@@ -781,7 +841,8 @@ export default function App() {
 
     setTasks(newTasks);
     setIsCutting(false);
-    addLog(`🎉 All ${tasks.length} items cut to MP3. Ready for preview or Cloudflare R2 Upload.`);
+    setProgressModal(null);
+    addLog(`🎉 Cut ${selectedTasks.length} selected item(s) to MP3. Ready for preview or Cloudflare R2 Upload.`);
   };
 
   // Step 3: Upload Checked Cut MP3s to Cloudflare R2
@@ -793,18 +854,36 @@ export default function App() {
     }
 
     setIsUploading(true);
+    setProgressModal({
+      open: true,
+      type: 'uploading',
+      current: 0,
+      total: selectedTasks.length,
+      currentText: selectedTasks[0]?.text || '',
+    });
     addLog(`🚀 Uploading ${selectedTasks.length} selected MP3 file(s) (of ${tasks.length} total) to Cloudflare R2...`);
+
+    let uploadedCount = 0;
 
     for (let i = 0; i < tasks.length; i++) {
       const item = tasks[i];
       if (item.selected === false) {
-        // Skip unselected item
         continue;
       }
 
+      uploadedCount++;
+      setProgressModal({
+        open: true,
+        type: 'uploading',
+        current: uploadedCount,
+        total: selectedTasks.length,
+        currentText: item.text,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       if (!item.audioBlob) {
         addLog(`⚠️ Item #${i + 1} (${item.text}) has no cut audio. Cutting now...`);
-        // Fallback cut
         const audioCtx = getAudioCtx();
         if (rawAudioBuffer) {
           const sampleRate = rawAudioBuffer.sampleRate;
@@ -837,51 +916,38 @@ export default function App() {
 
           if (upRes.ok) {
             const upData = await upRes.json();
-            setTasks(prev => prev.map(t => t.hash === item.hash ? { ...t, status: 'done', audioUrl: upData.url } : t));
+            const fullUrl = upData.url || `${PUBLIC_R2_BASE}/${r2Key}`;
+            setTasks(prev => prev.map(t => t.hash === item.hash ? { ...t, status: 'done', audioUrl: fullUrl } : t));
+            addLog(`✅ [${uploadedCount}/${selectedTasks.length}] Uploaded: ${fullUrl}`);
           } else {
+            const errData = await upRes.json().catch(() => ({}));
             setTasks(prev => prev.map(t => t.hash === item.hash ? { ...t, status: 'error', error: 'Upload failed' } : t));
+            addLog(`❌ [${uploadedCount}/${selectedTasks.length}] Upload failed for ${r2Key}: ${errData.error || upRes.statusText}`);
           }
         } catch (e: any) {
           setTasks(prev => prev.map(t => t.hash === item.hash ? { ...t, status: 'error', error: e.message } : t));
+          addLog(`❌ [${uploadedCount}/${selectedTasks.length}] Upload error for ${r2Key}: ${e.message}`);
         }
       }
     }
 
     setIsUploading(false);
+    setProgressModal(null);
     addLog(`✨ Cloudflare R2 Upload Completed for selected items!`);
   };
 
   if (!isAuthed) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at top, #1e293b, #0b0f19)' }}>
-        <form onSubmit={handleLogin} style={{ background: 'var(--bg-card)', padding: '2.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', width: '100%', maxWidth: '400px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}>
-          <div style={{ display: 'inline-flex', padding: '1rem', background: 'rgba(59,130,246,0.1)', borderRadius: '50%', marginBottom: '1.5rem', color: 'var(--accent-primary)' }}>
-            <KeyRound size={36} />
-          </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>TTS Studio Access</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Enter passcode to unlock remote TTS pipeline</p>
-          
-          <input
-            type="password"
-            placeholder="Enter passcode"
-            value={passcode}
-            onChange={e => setPasscode(e.target.value)}
-            style={{ width: '100%', marginBottom: '1rem', textAlign: 'center', letterSpacing: '0.3em', fontSize: '1.2rem', padding: '0.75rem' }}
-            required
-          />
-
-          {authError && <div style={{ color: 'var(--accent-rose)', fontSize: '0.85rem', marginBottom: '1rem' }}>{authError}</div>}
-
-          <button
-            type="submit"
-            style={{ width: '100%', padding: '0.75rem', background: 'var(--accent-primary)', color: '#fff', borderRadius: 'var(--radius-sm)', fontWeight: '600' }}
-          >
-            Unlock Studio
-          </button>
-        </form>
-      </div>
+      <AuthScreen
+        passcode={passcode}
+        setPasscode={setPasscode}
+        authError={authError}
+        handleLogin={handleLogin}
+      />
     );
   }
+
+  const selectedCount = tasks.filter(t => t.selected !== false).length;
 
   return (
     <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -938,289 +1004,47 @@ export default function App() {
 
       {/* Main Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: isConfigFolded ? '1fr' : '420px 1fr', gap: '1.5rem', transition: 'grid-template-columns 0.3s ease' }}>
-        {/* Left Control Panel (Collapsible) */}
-        {!isConfigFolded && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--bg-card)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Settings2 size={18} color="var(--accent-primary)" />
-                <h2 style={{ fontSize: '1rem', fontWeight: '700' }}>Configuration</h2>
-              </div>
-              <button onClick={() => setIsConfigFolded(true)} style={{ color: 'var(--text-muted)' }}>
-                <ChevronUp size={16} />
-              </button>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Category / Book Key <span style={{ color: 'var(--accent-rose)', fontWeight: 'bold' }}>*</span>
-                </label>
-                {bookError && <span style={{ fontSize: '0.75rem', color: 'var(--accent-rose)' }}>{bookError}</span>}
-              </div>
-              <input
-                type="text"
-                value={bookName}
-                onChange={e => {
-                  setBookName(e.target.value.toLowerCase().trim());
-                  if (e.target.value.trim()) setBookError('');
-                }}
-                placeholder="Required e.g. a4a, sa1, raz-b"
-                style={{
-                  width: '100%',
-                  borderColor: bookError ? 'var(--accent-rose)' : 'var(--border)'
-                }}
-                required
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Gemini API Key</label>
-                <select value={keyType} onChange={e => setKeyType(e.target.value as any)} style={{ width: '100%' }}>
-                  <option value="paid">Paid Key (GOOGLE_API_KEY)</option>
-                  <option value="free">Free Key (GOOGLE_API_KEY_FREE)</option>
-                  <option value="custom">Custom Input Key</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Voice Name</label>
-                <select value={voiceName} onChange={e => setVoiceName(e.target.value)} style={{ width: '100%' }}>
-                  <option value="Kore">Kore (Standard)</option>
-                  <option value="Achernar">Achernar (Clear)</option>
-                  <option value="Puck">Puck (Energetic)</option>
-                  <option value="Fenrir">Fenrir (Deep)</option>
-                </select>
-              </div>
-            </div>
-
-            {keyType === 'custom' && (
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Custom Gemini API Key</label>
-                <input
-                  type="password"
-                  value={customApiKey}
-                  onChange={e => setCustomApiKey(e.target.value)}
-                  placeholder="AIzaSy..."
-                  style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}
-                />
-              </div>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Batch Partition Mode</label>
-                <select value={batchMode} onChange={e => setBatchMode(e.target.value as any)} style={{ width: '100%' }}>
-                  <option value="chars">By Text Size (Chars)</option>
-                  <option value="count">By Item Count</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>
-                  {batchMode === 'chars' ? 'Max Chars / Batch' : 'Items / Batch'}
-                </label>
-                {batchMode === 'chars' ? (
-                  <input
-                    type="number"
-                    min={50}
-                    max={2000}
-                    step={50}
-                    value={batchCharLimit}
-                    onChange={e => setBatchCharLimit(parseInt(e.target.value) || 300)}
-                    placeholder="e.g. 300 chars"
-                    style={{ width: '100%' }}
-                  />
-                ) : (
-                  <input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={batchSize}
-                    onChange={e => setBatchSize(parseInt(e.target.value) || 10)}
-                    style={{ width: '100%' }}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>TTS Model</label>
-                <select value={model} onChange={e => setModel(e.target.value as any)} style={{ width: '100%' }}>
-                  <option value="gemini-2.5-flash-preview-tts">Gemini 2.5 Flash</option>
-                  <option value="gemini-3.1-flash-tts-preview">Gemini 3.1 Flash</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>Silence Cut (dB)</label>
-                <input type="number" min={-50} max={-15} value={silenceThresholdDb} onChange={e => setSilenceThresholdDb(parseInt(e.target.value) || -30)} style={{ width: '100%' }} />
-              </div>
-            </div>
-
-            {historyList.length > 0 && (
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Saved History Lists ({historyList.length})</label>
-                  {selectedHistoryId && (
-                    <button
-                      onClick={(e) => deleteHistoryItem(selectedHistoryId, e)}
-                      style={{ fontSize: '0.75rem', color: 'var(--accent-rose)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
-                    >
-                      <Trash2 size={12} /> Remove
-                    </button>
-                  )}
-                </div>
-                <select
-                  value={selectedHistoryId}
-                  onChange={e => loadHistoryItem(e.target.value)}
-                  style={{ width: '100%', fontSize: '0.8rem' }}
-                >
-                  <option value="">-- Select a previous list to rerun --</option>
-                  {historyList.map(h => (
-                    <option key={h.id} value={h.id}>
-                      {h.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Input Source or Files</label>
-                
-                {/* File / Folder Select Buttons */}
-                <div style={{ display: 'flex', gap: '0.4rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Select one or more JSON / Text / Markdown files"
-                    style={{
-                      padding: '0.25rem 0.5rem',
-                      background: 'rgba(59,130,246,0.12)',
-                      border: '1px solid rgba(59,130,246,0.3)',
-                      borderRadius: '4px',
-                      color: 'var(--accent-primary)',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <FileUp size={13} /> Select File(s)
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => folderInputRef.current?.click()}
-                    title="Select a folder containing unit JSON or text files"
-                    style={{
-                      padding: '0.25rem 0.5rem',
-                      background: 'rgba(168,85,247,0.12)',
-                      border: '1px solid rgba(168,85,247,0.3)',
-                      borderRadius: '4px',
-                      color: '#c084fc',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <FolderUp size={13} /> Select Folder
-                  </button>
-                </div>
-              </div>
-
-              {/* Hidden file inputs */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".json,.txt,.md,application/json,text/plain,text/markdown"
-                style={{ display: 'none' }}
-                onChange={handleFilesSelected}
-              />
-              <input
-                ref={folderInputRef}
-                type="file"
-                multiple
-                // @ts-ignore - webkitdirectory is standard in Chromium / modern browsers
-                webkitdirectory=""
-                directory=""
-                style={{ display: 'none' }}
-                onChange={handleFilesSelected}
-              />
-
-              <textarea
-                rows={6}
-                value={rawInput}
-                onChange={e => setRawInput(e.target.value)}
-                placeholder="Paste *-vocab-guide.json content or line-by-line sentences here..."
-                style={{ width: '100%', fontSize: '0.85rem', fontFamily: 'var(--font-mono)' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                onClick={handleParse}
-                style={{ flex: 1, padding: '0.6rem', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)', fontWeight: '600' }}
-              >
-                Parse Items
-              </button>
-              <button
-                onClick={() => { setTasks([]); setRawInput(''); setRawAudioBuffer(null); }}
-                style={{ padding: '0.6rem', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: 'var(--radius-sm)', color: 'var(--accent-rose)' }}
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-              <button
-                onClick={requestTtsOnly}
-                disabled={isRunning || tasks.length === 0}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  background: isRunning ? 'var(--accent-emerald)' : 'var(--accent-primary)',
-                  color: '#fff',
-                  borderRadius: 'var(--radius-sm)',
-                  fontWeight: '700',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  opacity: tasks.length === 0 ? 0.5 : 1
-                }}
-              >
-                {isRunning ? <RefreshCw className="spin" size={18} /> : <Sparkles size={18} />}
-                {isRunning ? `Generating (${elapsedSec}s)...` : `Generate TTS Audio (${tasks.length} Items)`}
-              </button>
-
-              {isRunning && (
-                <button
-                  onClick={stopProcessing}
-                  style={{
-                    padding: '0.75rem 1rem',
-                    background: 'var(--accent-rose)',
-                    color: '#fff',
-                    borderRadius: 'var(--radius-sm)',
-                    fontWeight: '700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                  }}
-                >
-                  <Square size={16} fill="#fff" /> Stop
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Left Control Panel */}
+        <ConfigPanel
+          isFolded={isConfigFolded}
+          onToggleFold={() => setIsConfigFolded(true)}
+          bookName={bookName}
+          setBookName={setBookName}
+          bookError={bookError}
+          setBookError={setBookError}
+          keyType={keyType}
+          setKeyType={setKeyType}
+          voiceName={voiceName}
+          setVoiceName={setVoiceName}
+          customApiKey={customApiKey}
+          setCustomApiKey={setCustomApiKey}
+          batchMode={batchMode}
+          setBatchMode={setBatchMode}
+          batchCharLimit={batchCharLimit}
+          setBatchCharLimit={setBatchCharLimit}
+          batchSize={batchSize}
+          setBatchSize={setBatchSize}
+          model={model}
+          setModel={setModel}
+          silenceThresholdDb={silenceThresholdDb}
+          setSilenceThresholdDb={setSilenceThresholdDb}
+          historyList={historyList}
+          selectedHistoryId={selectedHistoryId}
+          loadHistoryItem={loadHistoryItem}
+          deleteHistoryItem={deleteHistoryItem}
+          fileInputRef={fileInputRef}
+          folderInputRef={folderInputRef}
+          handleFilesSelected={handleFilesSelected}
+          rawInput={rawInput}
+          setRawInput={setRawInput}
+          handleParse={handleParse}
+          handleClearAll={() => { setTasks([]); setRawInput(''); setRawAudioBuffer(null); }}
+          tasksCount={tasks.filter(t => t.selected !== false).length}
+          isRunning={isRunning}
+          elapsedSec={elapsedSec}
+          requestTtsOnly={requestTtsOnly}
+          stopProcessing={stopProcessing}
+        />
 
         {/* Right Task, Waveform & Cutter Viewer */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -1257,7 +1081,7 @@ export default function App() {
 
                   <button
                     onClick={cutAudioSlices}
-                    disabled={isCutting}
+                    disabled={isCutting || selectedCount === 0}
                     style={{
                       padding: '0.5rem 1rem',
                       background: 'var(--accent-amber)',
@@ -1267,16 +1091,20 @@ export default function App() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.4rem',
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      opacity: (isCutting || selectedCount === 0) ? 0.6 : 1,
+                      cursor: (isCutting || selectedCount === 0) ? 'not-allowed' : 'pointer'
                     }}
                   >
                     <Scissors size={16} />
-                    {isCutting ? 'Cutting...' : 'Cut Audio Slices'}
+                    {isCutting 
+                      ? 'Cutting...' 
+                      : `Cut Audio (${selectedCount})`}
                   </button>
 
                   <button
                     onClick={uploadToR2}
-                    disabled={isUploading || tasks.filter(t => t.selected !== false).length === 0}
+                    disabled={isUploading || selectedCount === 0}
                     style={{
                       padding: '0.5rem 1rem',
                       background: 'var(--accent-emerald)',
@@ -1287,14 +1115,14 @@ export default function App() {
                       alignItems: 'center',
                       gap: '0.4rem',
                       fontSize: '0.85rem',
-                      opacity: (isUploading || tasks.filter(t => t.selected !== false).length === 0) ? 0.6 : 1,
-                      cursor: (isUploading || tasks.filter(t => t.selected !== false).length === 0) ? 'not-allowed' : 'pointer'
+                      opacity: (isUploading || selectedCount === 0) ? 0.6 : 1,
+                      cursor: (isUploading || selectedCount === 0) ? 'not-allowed' : 'pointer'
                     }}
                   >
                     <Upload size={16} />
                     {isUploading 
                       ? 'Uploading to R2...' 
-                      : `Upload (${tasks.filter(t => t.selected !== false).length}) to R2`}
+                      : `Upload (${selectedCount}) to R2`}
                   </button>
                 </div>
               </div>
@@ -1313,279 +1141,65 @@ export default function App() {
             </div>
           )}
 
-          {/* Task Status Table with Editable Starting/Ending Times */}
-          <div style={{ background: 'var(--bg-card)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div>
-                <h2 style={{ fontSize: '1rem', fontWeight: '700' }}>Sentence Slices Queue ({tasks.length} items)</h2>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Listen to each cut range, adjust starting and ending seconds, then click "Cut Audio Slices" & "Upload to R2".
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Selected: <strong style={{ color: 'var(--text-primary)' }}>{tasks.filter(t => t.selected !== false).length}</strong> / {tasks.length} • Uploaded: <strong style={{ color: 'var(--accent-emerald)' }}>{tasks.filter(t => t.status === 'done').length}</strong>
-                </span>
-                {!rawAudioBuffer && tasks.length > 0 && (
-                  <button
-                    onClick={requestTtsOnly}
-                    disabled={isRunning}
-                    style={{ padding: '0.4rem 0.8rem', background: 'var(--accent-primary)', color: '#fff', borderRadius: 'var(--radius-sm)', fontWeight: '600', fontSize: '0.8rem' }}
-                  >
-                    {isRunning ? 'Generating...' : '1. Generate Audio'}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div style={{ flex: 1, maxHeight: '420px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                <thead style={{ background: 'var(--bg-input)', position: 'sticky', top: 0, zIndex: 10 }}>
-                  <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '0.5rem 0.5rem', width: '36px', textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={tasks.length > 0 && tasks.every(t => t.selected !== false)}
-                        onChange={e => toggleAllSelection(e.target.checked)}
-                        title="Select / Deselect all items for upload"
-                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
-                      />
-                    </th>
-                    <th style={{ padding: '0.5rem 0.5rem', width: '36px' }}>#</th>
-                    <th style={{ padding: '0.5rem 0.75rem' }}>Text</th>
-                    <th style={{ padding: '0.5rem 0.75rem', width: '130px', whiteSpace: 'nowrap' }}>Start Time (s)</th>
-                    <th style={{ padding: '0.5rem 0.75rem', width: '130px', whiteSpace: 'nowrap' }}>End Time (s)</th>
-                    <th style={{ padding: '0.5rem 0.75rem', width: '80px', textAlign: 'center', whiteSpace: 'nowrap' }}>Preview</th>
-                    <th style={{ padding: '0.5rem 0.75rem', width: '90px', whiteSpace: 'nowrap' }}>Status</th>
-                    <th style={{ padding: '0.5rem 0.75rem', width: '60px', textAlign: 'center', whiteSpace: 'nowrap' }}>MP3</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tasks.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
-                        No tasks loaded. Paste vocabulary JSON or text on the left and click "Parse Items".
-                      </td>
-                    </tr>
-                  ) : (
-                    tasks.map((task, idx) => (
-                      <tr
-                        key={task.hash}
-                        style={{
-                          borderBottom: '1px solid rgba(255,255,255,0.05)',
-                          background: task.selected === false ? 'rgba(0,0,0,0.2)' : 'transparent',
-                          opacity: task.selected === false ? 0.6 : 1,
-                        }}
-                      >
-                        <td style={{ padding: '0.5rem 0.5rem', textAlign: 'center' }}>
-                          <input
-                            type="checkbox"
-                            checked={task.selected !== false}
-                            onChange={() => toggleTaskSelection(idx)}
-                            title={task.selected !== false ? "Checked: Will be uploaded to R2" : "Unchecked: Ignored from upload"}
-                            style={{ cursor: 'pointer', width: '15px', height: '15px' }}
-                          />
-                        </td>
-                        <td style={{ padding: '0.5rem 0.5rem', color: 'var(--text-muted)' }}>{idx + 1}</td>
-                        <td style={{ padding: '0.5rem 0.75rem', fontWeight: '500' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <span style={{ color: task.ttsOverrideText ? 'var(--text-secondary)' : 'var(--text-primary)' }}>
-                                {task.text}
-                              </span>
-                              
-                              {task.ttsOverrideText ? (
-                                <span
-                                  onClick={() => {
-                                    setEditingOverrideIndex(idx);
-                                    setEditingOverrideVal(task.ttsOverrideText || '');
-                                  }}
-                                  title="Custom text sent to Gemini for TTS"
-                                  style={{
-                                    padding: '0.15rem 0.5rem',
-                                    borderRadius: '4px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    background: 'rgba(168, 85, 247, 0.18)',
-                                    color: '#c084fc',
-                                    border: '1px solid rgba(168, 85, 247, 0.4)',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.25rem'
-                                  }}
-                                >
-                                  TTS: "{task.ttsOverrideText}" <Edit3 size={11} />
-                                </span>
-                              ) : (
-                                <button
-                                  onClick={() => {
-                                    setEditingOverrideIndex(idx);
-                                    setEditingOverrideVal(task.text);
-                                  }}
-                                  title="Click to customize pronunciation text for TTS"
-                                  style={{
-                                    padding: '0.15rem 0.4rem',
-                                    background: 'transparent',
-                                    border: '1px dashed rgba(255,255,255,0.2)',
-                                    borderRadius: '4px',
-                                    color: 'var(--text-muted)',
-                                    fontSize: '0.7rem',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.2rem'
-                                  }}
-                                >
-                                  <Edit3 size={11} /> Set TTS text
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Inline Edit Form */}
-                            {editingOverrideIndex === idx && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.35rem' }}>
-                                <input
-                                  type="text"
-                                  autoFocus
-                                  value={editingOverrideVal}
-                                  onChange={e => setEditingOverrideVal(e.target.value)}
-                                  placeholder="Text for Gemini TTS..."
-                                  style={{
-                                    padding: '0.25rem 0.5rem',
-                                    fontSize: '0.8rem',
-                                    background: '#1e1b4b',
-                                    border: '1px solid #818cf8',
-                                    borderRadius: '4px',
-                                    color: '#fff',
-                                    width: '240px'
-                                  }}
-                                  onKeyDown={e => {
-                                    if (e.key === 'Enter') {
-                                      updateTaskTtsOverride(idx, editingOverrideVal);
-                                      setEditingOverrideIndex(null);
-                                    } else if (e.key === 'Escape') {
-                                      setEditingOverrideIndex(null);
-                                    }
-                                  }}
-                                />
-                                <button
-                                  onClick={() => {
-                                    updateTaskTtsOverride(idx, editingOverrideVal);
-                                    setEditingOverrideIndex(null);
-                                  }}
-                                  title="Save TTS Text"
-                                  style={{ padding: '0.25rem 0.45rem', background: 'var(--accent-primary)', color: '#fff', borderRadius: '4px' }}
-                                >
-                                  <Check size={13} />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    updateTaskTtsOverride(idx, '');
-                                    setEditingOverrideIndex(null);
-                                  }}
-                                  title="Clear Override"
-                                  style={{ padding: '0.25rem 0.45rem', background: 'rgba(244,63,94,0.15)', color: 'var(--accent-rose)', borderRadius: '4px' }}
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                                <button
-                                  onClick={() => setEditingOverrideIndex(null)}
-                                  title="Cancel"
-                                  style={{ padding: '0.25rem 0.45rem', background: 'var(--bg-input)', color: 'var(--text-muted)', borderRadius: '4px' }}
-                                >
-                                  <X size={13} />
-                                </button>
-                              </div>
-                            )}
-
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                              MD5 (Original): {task.hash}
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: '0.4rem 0.75rem', width: '130px' }}>
-                          <input
-                            type="number"
-                            step="0.05"
-                            min="0"
-                            value={task.startTime ?? 0}
-                            onChange={e => updateTaskTime(idx, 'startTime', parseFloat(e.target.value) || 0)}
-                            style={{ width: '100px', padding: '0.3rem 0.5rem', fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}
-                          />
-                        </td>
-                        <td style={{ padding: '0.4rem 0.75rem', width: '130px' }}>
-                          <input
-                            type="number"
-                            step="0.05"
-                            min="0"
-                            value={task.endTime ?? 0}
-                            onChange={e => updateTaskTime(idx, 'endTime', parseFloat(e.target.value) || 0)}
-                            style={{ width: '100px', padding: '0.3rem 0.5rem', fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}
-                          />
-                        </td>
-                        <td style={{ padding: '0.4rem 0.75rem', textAlign: 'center' }}>
-                          {rawAudioBuffer ? (
-                            <button
-                              onClick={() => previewInterval(task.startTime ?? 0, task.endTime ?? rawAudioBuffer.duration)}
-                              title="Listen to this slice interval"
-                              style={{
-                                padding: '0.3rem 0.6rem',
-                                background: 'rgba(59,130,246,0.15)',
-                                color: 'var(--accent-primary)',
-                                borderRadius: '4px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.2rem',
-                                fontSize: '0.75rem',
-                                fontWeight: '600'
-                              }}
-                            >
-                              <Play size={12} /> Play
-                            </button>
-                          ) : (
-                            <span style={{ color: 'var(--text-muted)' }}>-</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '0.5rem 0.75rem' }}>
-                          <span style={{
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            background: task.status === 'done' ? 'rgba(16,185,129,0.15)' : task.status === 'error' ? 'rgba(244,63,94,0.15)' : 'rgba(59,130,246,0.15)',
-                            color: task.status === 'done' ? 'var(--accent-emerald)' : task.status === 'error' ? 'var(--accent-rose)' : 'var(--accent-primary)',
-                          }}>
-                            {task.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
-                          {task.audioUrl ? (
-                            <button onClick={() => playAudio(task.audioUrl!)} title="Play cut MP3" style={{ color: 'var(--accent-emerald)' }}>
-                              <Play size={16} />
-                            </button>
-                          ) : (
-                            <span style={{ color: 'var(--text-muted)' }}>-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* Task Status Table */}
+          <TaskQueueTable
+            tasks={tasks}
+            rawAudioBuffer={rawAudioBuffer}
+            toggleAllSelection={toggleAllSelection}
+            toggleTaskSelection={toggleTaskSelection}
+            updateTaskTime={updateTaskTime}
+            updateTaskTtsOverride={updateTaskTtsOverride}
+            previewInterval={previewInterval}
+            playAudio={playAudio}
+            editingOverrideIndex={editingOverrideIndex}
+            setEditingOverrideIndex={setEditingOverrideIndex}
+            editingOverrideVal={editingOverrideVal}
+            setEditingOverrideVal={setEditingOverrideVal}
+            requestTtsOnly={requestTtsOnly}
+            isRunning={isRunning}
+          />
 
           {/* Activity Console */}
           <div style={{ background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '0.85rem', fontWeight: '700', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Activity Log</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h3 style={{ fontSize: '0.85rem', fontWeight: '700', margin: 0, color: 'var(--text-secondary)' }}>Activity Log</h3>
+              {logs.length > 0 && (
+                <button
+                  onClick={() => setLogs([])}
+                  title="Clear all logs"
+                  style={{
+                    padding: '0.2rem 0.5rem',
+                    background: 'rgba(244, 63, 94, 0.1)',
+                    border: '1px solid rgba(244, 63, 94, 0.25)',
+                    borderRadius: '4px',
+                    color: 'var(--accent-rose)',
+                    fontSize: '0.72rem',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Trash2 size={11} /> Clear
+                </button>
+              )}
+            </div>
             <div style={{ height: '120px', overflowY: 'auto', background: 'var(--bg-main)', padding: '0.5rem', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {logs.map((log, i) => <div key={i}>{log}</div>)}
+              {logs.length === 0 ? (
+                <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', padding: '0.5rem 0' }}>No activity logs yet.</div>
+              ) : (
+                logs.map((log, i) => <div key={i}>{log}</div>)
+              )}
             </div>
           </div>
         </div>
       </div>
 
       <audio ref={audioPlayerRef} style={{ display: 'none' }} />
+
+      {/* Progress Modal */}
+      {progressModal && <ProgressModal modal={progressModal} />}
     </div>
   );
 }

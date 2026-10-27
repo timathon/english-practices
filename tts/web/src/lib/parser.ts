@@ -192,6 +192,7 @@ export interface TaskItem {
   startTime?: number;
   endTime?: number;
   ttsOverrideText?: string;
+  batchIndex?: number;
   error?: string;
 }
 
