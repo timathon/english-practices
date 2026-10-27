@@ -295,7 +295,7 @@ Check each question specifically for:
    - Evaluate whether the context sentence ALONE allows a student to uniquely pick the correct target word among the options.
    - Example of AMBIGUOUS context: Prompt "Is Julie ____ than you ?" with options ["slimmer", "taller", "shorter", "thinner", "heavier", "smaller"]. Without a hint like (提示: 苗条的), ANY of these options is logically valid. MUST flag as issue "Missing Hint in Ambiguous Cloze" and provide `suggested_prompt` appending `(提示: [Chinese meaning])` (e.g., "Is Julie ____ than you ? (提示: 苗条的)")!
    - Example of UNAMBIGUOUS context: Prompt "The average annual rainfall here is about 800 ____." with options ["mm", "kg", "g", "km", "L", "m"]. The specific context ("annual rainfall") uniquely determines "mm". Do NOT flag questions like this!
-   - Rule: If prompt lacks `(提示: ...)` AND the context alone could logically support 2+ options as valid answers, flag it with issue "Missing Hint in Ambiguous Cloze"!
+   - IMPORTANT Rule: If prompt already ends with or includes `(提示: ...)`, it ALREADY HAS A HINT! Do NOT flag questions that already have a hint! Only flag if the prompt lacks `(提示: ...)` AND the context alone could logically support 2+ options as valid answers!
 4. Distractor Quality: Are any options absurdly obvious, irrelevant non-sequiturs, or obvious giveaways?
 5. Trap Quality: Do distractors offer plausible visual, phonetic, or semantic traps?
 
@@ -326,6 +326,20 @@ Output ONLY raw JSON array, no markdown wrappers. If all questions are good, ret
             raw_text = raw_text.strip()
 
             parsed_issues = json.loads(raw_text)
+            if isinstance(parsed_issues, list) and len(parsed_issues) > 0:
+                # Pre-map questions by id to check existing prompt
+                q_by_id = {q.get("id"): q for q in batch}
+                valid_issues = []
+                for item in parsed_issues:
+                    issue_name = item.get("issue", "")
+                    qid = item.get("id")
+                    if "Missing Hint" in issue_name and qid in q_by_id:
+                        cur_prompt = q_by_id[qid].get("prompt", "")
+                        if "提示" in cur_prompt:
+                            continue
+                    valid_issues.append(item)
+                parsed_issues = valid_issues
+
             if isinstance(parsed_issues, list) and len(parsed_issues) > 0:
                 print(f" ⚠️ {len(parsed_issues)} issue(s) found")
                 for item in parsed_issues:

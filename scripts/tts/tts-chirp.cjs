@@ -441,9 +441,9 @@ async function runTtsSynthesis({ targetPath, explicitVoice = null, batchSize = 5
 
     // 2. Check R2 if still not found
     if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && !forceRegenerate && indicesToSynthesize.length > 0) {
-        console.log(`☁️ Checking R2 bucket [${BUCKET_NAME}] for existing MP3 files in batches of 5...`);
+        console.log(`☁️ Checking R2 bucket [${BUCKET_NAME}] for existing MP3 files in batches of 10...`);
         const r2ExistingIndices = new Set();
-        const R2_BATCH = 5;
+        const R2_BATCH = 10;
         let checkedCount = 0;
         const totalToCheck = indicesToSynthesize.length;
 

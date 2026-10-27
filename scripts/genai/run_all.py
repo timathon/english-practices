@@ -27,6 +27,7 @@ SCRIPTS = [
     ("gen_7_wm.py", "-writing-map.json", "wt_md"),
     ("gen_8_gw.py", "-grammar-wizard.json", "md"),
     ("gen_9_pd.py", "-passage-decoder-s.json", "md"),
+    ("gen_13_gg.py", "-grammar-guard.json", "md"),
     ("gen_10_test.py", "-test.json", "test_md"),
 ]
 
