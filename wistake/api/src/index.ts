@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, Context } from "hono";
 import { cors } from "hono/cors";
 import { hashPassword, verifyPassword, createToken, verifyToken, TokenPayload } from "./auth";
 import { parseQuickPaste } from "./parser";
@@ -15,6 +15,8 @@ type Bindings = {
 type Variables = {
   user?: TokenPayload;
 };
+
+type AppContext = Context<{ Bindings: Bindings; Variables: Variables }>;
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -84,7 +86,7 @@ app.post("/api/auth/register", (c) => {
   return c.json({ error: "开放注册已关闭，请联系管理员开通账号。" }, 403);
 });
 
-app.post("/api/auth/login", async (c) => {
+const handleLogin = async (c: AppContext) => {
   const body = await c.req.json();
   const { username, password } = body;
   if (!username || !password) {
@@ -128,7 +130,10 @@ app.post("/api/auth/login", async (c) => {
       stage: user.stage || (user.grade > 6 ? "junior" : "primary")
     }
   });
-});
+};
+
+app.post("/api/auth/login", handleLogin);
+app.post("/api/login", handleLogin);
 
 app.get("/api/auth/me", authMiddleware, async (c) => {
   const tokenUser = c.get("user") as TokenPayload;

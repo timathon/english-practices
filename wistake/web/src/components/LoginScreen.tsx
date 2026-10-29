@@ -18,7 +18,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     setLoginError("");
     setIsLoggingIn(true);
     try {
-      const res = await apiRequest("/api/login", {
+      const res = await apiRequest("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ username: usernameInput, password: passwordInput })
       });
