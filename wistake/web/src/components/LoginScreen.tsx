@@ -37,7 +37,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", color: "#10b981", marginBottom: "0.75rem" }}>
             <BrainCircuit size={28} />
-            <h2 style={{ fontSize: "1.75rem", fontWeight: 800 }}>Wistake</h2>
+            <h2 style={{ fontSize: "1.75rem", fontWeight: 800 }}>Wistake 维思客</h2>
           </div>
           <div style={{ fontSize: "1.1rem", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "2rem" }}>
             <span className="explode-container">

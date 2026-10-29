@@ -281,9 +281,12 @@ export default function App() {
       <header style={{ borderBottom: "1px solid var(--border-color)", background: "rgba(11, 15, 25, 0.8)", backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 50, padding: "0.75rem 1rem" }}>
         <div className="app-header-container">
           <div className="app-header-left">
-            <div style={{ display: "inline-flex", alignItems: "baseline", letterSpacing: "-0.02em" }}>
-              <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "#10b981", lineHeight: 1 }}>W</span>
-              <span style={{ fontSize: "1.2rem", fontWeight: 700, lineHeight: 1 }}>istake</span>
+            <div style={{ display: "inline-flex", alignItems: "baseline", gap: "0.4rem", letterSpacing: "-0.02em" }}>
+              <div style={{ display: "inline-flex", alignItems: "baseline" }}>
+                <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "#10b981", lineHeight: 1 }}>W</span>
+                <span style={{ fontSize: "1.2rem", fontWeight: 700, lineHeight: 1 }}>istake</span>
+              </div>
+              <span style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "0.02em" }}>维思客</span>
             </div>
 
             {/* Navigation tabs */}
