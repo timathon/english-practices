@@ -6,7 +6,10 @@ import {
   X,
   Copy,
   Layers,
-  Check
+  Check,
+  Trash2,
+  RotateCcw,
+  ClipboardCheck
 } from "lucide-react";
 import { SiblingQuestion, AnalysisResult, QuotaInfo, cleanQuestionStemAndOptions } from "../types";
 
@@ -92,6 +95,48 @@ export const QuickPasteTab: React.FC<QuickPasteTabProps> = ({
   const [practiceAnswers, setPracticeAnswers] = useState<Record<number, string>>({});
   const [practiceFeedbacks, setPracticeFeedbacks] = useState<Record<number, { isCorrect: boolean; msg: string }>>({});
 
+  // History state for Undo operations (after Clear or Paste)
+  const [lastClearedText, setLastClearedText] = useState<string | null>(null);
+  const [isPastingFromClipboard, setIsPastingFromClipboard] = useState(false);
+
+  const handleClear = () => {
+    if (!pasteText) return;
+    setLastClearedText(pasteText);
+    setPasteText("");
+  };
+
+  const handleUndo = () => {
+    if (lastClearedText !== null) {
+      setPasteText(lastClearedText);
+      setLastClearedText(null);
+    }
+  };
+
+  const handleDirectPaste = async () => {
+    try {
+      setIsPastingFromClipboard(true);
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const clipText = await navigator.clipboard.readText();
+        if (clipText) {
+          if (pasteText && pasteText !== clipText) {
+            setLastClearedText(pasteText); // enable undoing to previous text
+            setPasteText(pasteText + "\n\n" + clipText);
+          } else {
+            setPasteText(clipText);
+          }
+          return;
+        }
+      }
+    } catch {
+      // Browsers may block clipboard read without explicit user permission
+      // Fallback: prompt or focus textarea
+      const el = document.getElementById("quick-paste-textarea");
+      if (el) el.focus();
+    } finally {
+      setIsPastingFromClipboard(false);
+    }
+  };
+
   const handleCopyExample = () => {
     navigator.clipboard.writeText(EXAMPLE_PASTE_TEXT);
     setCopiedExample(true);
@@ -140,15 +185,90 @@ export const QuickPasteTab: React.FC<QuickPasteTabProps> = ({
             <ClipboardPaste size={18} color="#3b82f6" />
             错题快速粘贴 (Quick Paste)
           </h3>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", display: "none" }} className="desktop-hint">
               支持直接把题目和“学生错答”粘入
             </span>
+
+            {/* One-click Paste from Clipboard */}
+            <button
+              type="button"
+              onClick={handleDirectPaste}
+              disabled={isPastingFromClipboard}
+              style={{
+                padding: "0.3rem 0.65rem",
+                fontSize: "0.78rem",
+                fontWeight: 600,
+                borderRadius: "6px",
+                background: "rgba(16, 185, 129, 0.15)",
+                color: "#34d399",
+                border: "1px solid rgba(16, 185, 129, 0.35)",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.3rem"
+              }}
+              title="从系统剪贴板一键读取并粘贴进文本框"
+            >
+              <ClipboardCheck size={14} />
+              <span>{isPastingFromClipboard ? "粘贴中..." : "一键粘贴"}</span>
+            </button>
+
+            {/* Clear content button */}
+            {pasteText && (
+              <button
+                type="button"
+                onClick={handleClear}
+                style={{
+                  padding: "0.3rem 0.65rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  background: "rgba(239, 68, 68, 0.12)",
+                  color: "#f87171",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.3rem"
+                }}
+                title="清空文本框内容（支持撤销）"
+              >
+                <Trash2 size={13} />
+                <span>清空</span>
+              </button>
+            )}
+
+            {/* Undo button */}
+            {lastClearedText !== null && (
+              <button
+                type="button"
+                onClick={handleUndo}
+                style={{
+                  padding: "0.3rem 0.65rem",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  background: "rgba(245, 158, 11, 0.15)",
+                  color: "#fbbf24",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.3rem"
+                }}
+                title="撤销刚才的清空或覆盖操作"
+              >
+                <RotateCcw size={13} />
+                <span>撤销恢复</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setShowExampleModal(true)}
               style={{
-                padding: "0.25rem 0.65rem",
+                padding: "0.3rem 0.65rem",
                 fontSize: "0.78rem",
                 fontWeight: 600,
                 borderRadius: "6px",
@@ -156,9 +276,9 @@ export const QuickPasteTab: React.FC<QuickPasteTabProps> = ({
                 color: "#60a5fa",
                 border: "1px solid rgba(59, 130, 246, 0.35)",
                 cursor: "pointer",
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: "0.35rem"
+                gap: "0.3rem"
               }}
               title="查看支持的错题粘贴格式示例"
             >
@@ -169,7 +289,7 @@ export const QuickPasteTab: React.FC<QuickPasteTabProps> = ({
               type="button"
               onClick={() => setShowOcrPromptModal(true)}
               style={{
-                padding: "0.25rem 0.65rem",
+                padding: "0.3rem 0.65rem",
                 fontSize: "0.78rem",
                 fontWeight: 600,
                 borderRadius: "6px",
@@ -177,24 +297,56 @@ export const QuickPasteTab: React.FC<QuickPasteTabProps> = ({
                 color: "#c084fc",
                 border: "1px solid rgba(168, 85, 247, 0.35)",
                 cursor: "pointer",
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: "0.35rem"
+                gap: "0.3rem"
               }}
               title="拍照发给 AI 助手时使用的专属识别提示词"
             >
-              <span>💬 提示词示例 (Prompt)</span>
+              <span>💬 提示词</span>
             </button>
           </div>
         </div>
 
-        <textarea
-          value={pasteText}
-          onChange={(e) => setPasteText(e.target.value)}
-          rows={7}
-          style={{ width: "100%", resize: "vertical", fontFamily: "monospace", fontSize: "0.95rem", lineHeight: 1.6 }}
-          placeholder="在此粘贴题目与错答（如：学生错答: 19）..."
-        />
+        <div style={{ position: "relative" }}>
+          <textarea
+            id="quick-paste-textarea"
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            rows={7}
+            style={{
+              width: "100%",
+              resize: "vertical",
+              fontFamily: "monospace",
+              fontSize: "1rem", /* Prevents iOS Safari 100% zoom-in on focus */
+              lineHeight: 1.6,
+              minHeight: "150px",
+              paddingBottom: "1.75rem",
+              WebkitUserSelect: "text",
+              userSelect: "text",
+              touchAction: "manipulation"
+            }}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck="false"
+            placeholder="长按此区域粘贴，或点击右上角「一键粘贴」..."
+          />
+          {pasteText && (
+            <div style={{
+              position: "absolute",
+              right: "0.6rem",
+              bottom: "0.6rem",
+              fontSize: "0.75rem",
+              color: "var(--text-muted)",
+              background: "rgba(15, 23, 42, 0.8)",
+              padding: "0.1rem 0.4rem",
+              borderRadius: "4px",
+              pointerEvents: "none"
+            }}>
+              {pasteText.length} 字
+            </div>
+          )}
+        </div>
 
         {/* Modal: Paste Format Example (rendered directly into document.body via Portal) */}
         {showExampleModal && createPortal(
