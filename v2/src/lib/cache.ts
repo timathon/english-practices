@@ -62,6 +62,24 @@ export const cache = {
       localStorage.setItem(RECORDS_CACHE_KEY, JSON.stringify(recordsCache));
     } catch (e) {}
   },
+  replaceTempRecord: (tempId: string, newRecord: Partial<PracticeRecord> & { id: string }) => {
+    if (!recordsCache) recordsCache = [];
+    const tempIdx = recordsCache.findIndex(r => r.id === tempId);
+    const realIdx = recordsCache.findIndex(r => r.id === newRecord.id);
+    if (tempIdx !== -1 && realIdx !== -1 && tempIdx !== realIdx) {
+      recordsCache[realIdx] = { ...recordsCache[tempIdx], ...recordsCache[realIdx], ...newRecord } as PracticeRecord;
+      recordsCache.splice(tempIdx, 1);
+    } else if (tempIdx !== -1) {
+      recordsCache[tempIdx] = { ...recordsCache[tempIdx], ...newRecord } as PracticeRecord;
+    } else if (realIdx !== -1) {
+      recordsCache[realIdx] = { ...recordsCache[realIdx], ...newRecord } as PracticeRecord;
+    } else {
+      recordsCache.unshift(newRecord as PracticeRecord);
+    }
+    try {
+      localStorage.setItem(RECORDS_CACHE_KEY, JSON.stringify(recordsCache));
+    } catch (e) {}
+  },
   getPendingSyncs: (): PendingRecordSync[] => {
     try {
       const item = localStorage.getItem(PENDING_SYNCS_KEY);

@@ -297,9 +297,17 @@ export function Dashboard({ showChinese = false }: { showChinese?: boolean }) {
         });
       }
     };
+    const handleSyncCompleted = () => {
+      const updated = cache.getRecords();
+      if (updated) {
+        setRecords(updated.filter((r: any) => r?.unit && !r.unit.startsWith('game-')));
+      }
+    };
     window.addEventListener('ep-trigger-sync', handleTriggerSync);
+    window.addEventListener('ep-sync-completed', handleSyncCompleted);
     return () => {
       window.removeEventListener('ep-trigger-sync', handleTriggerSync);
+      window.removeEventListener('ep-sync-completed', handleSyncCompleted);
     };
   }, [userId]);
 

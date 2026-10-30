@@ -1,6 +1,7 @@
 import { createAuthClient } from "better-auth/react"
 import { usernameClient, multiSessionClient } from "better-auth/client/plugins"
 import { testdriveRecords } from "./testdriveRecords"
+import { syncQueue } from "./syncQueue"
 
 const getBaseURL = () => {
     if (import.meta.env.VITE_API_URL) {
@@ -23,7 +24,8 @@ export const API_URL = getBaseURL();
 const MAX_LOGGED_IN_USERS = 3;
 
 // Store a reference to the browser's original fetch
-const originalFetch = window.fetch;
+const originalFetch = window.fetch.bind(window);
+syncQueue.init(originalFetch, API_URL);
 
 // Custom fetch implementation containing the interceptor logic
 const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -112,7 +114,7 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
         newInit.headers = headers;
     }
 
-    const response = await originalFetch(input, newInit);
+    const response = await syncQueue.interceptFetch(input, newInit, originalFetch);
 
     // Intercept 401 revoked session due to device limit or 403 testdrive limit
     if (response.status === 401 || response.status === 403) {

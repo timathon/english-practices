@@ -15,7 +15,6 @@ if (typeof window !== 'undefined') {
 const SignIn = lazy(() => import('./SignIn').then(m => ({ default: m.SignIn })))
 const Dashboard = lazy(() => import('./Dashboard').then(m => ({ default: m.Dashboard })))
 const ManageUsers = lazy(() => import('./ManageUsers').then(m => ({ default: m.ManageUsers })))
-const DbBenchmarkPage = lazy(() => import('./DbBenchmarkPage').then(m => ({ default: m.DbBenchmarkPage })))
 const UsageGuide = lazy(() => import('./UsageGuide').then(m => ({ default: m.UsageGuide })))
 import { PracticeShell } from './components/PracticeShell'
 import { PetFloatingCompanion } from './components/PetFloatingCompanion'
@@ -23,6 +22,8 @@ import { useSession, signOut, authClient, API_URL } from './lib/auth'
 import { petService } from './lib/petService'
 const SwitchUser = lazy(() => import('./SwitchUser').then(m => ({ default: m.SwitchUser })))
 import { IrregularVerbsModal } from './components/IrregularVerbsModal'
+import { SyncTasksModal } from './components/SyncTasksModal'
+import { syncQueue } from './lib/syncQueue'
 const SchulteGame = lazy(() => import('./components/SchulteGame').then(m => ({ default: m.SchulteGame })))
 // Memory card matching game
 const CardMatchGame = lazy(() => import('./components/CardMatchGame').then(m => ({ default: m.CardMatchGame })))
@@ -59,8 +60,17 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
   const isTestdrive = session?.user?.role === 'testdrive';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isIrregularVerbsOpen, setIsIrregularVerbsOpen] = useState(false);
+  const [isSyncTasksOpen, setIsSyncTasksOpen] = useState(false);
+  const [pendingSyncCount, setPendingSyncCount] = useState(() => syncQueue.getVisibleTasks().length);
   const [versionTapCount, setVersionTapCount] = useState(0);
   const versionTapTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setPendingSyncCount(syncQueue.getVisibleTasks().length);
+    return syncQueue.subscribe(() => {
+      setPendingSyncCount(syncQueue.getVisibleTasks().length);
+    });
+  }, []);
 
   const handleVersionTap = () => {
     if (versionTapTimerRef.current) {
@@ -195,6 +205,32 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
         <svg className="nav-btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ zIndex: 1, position: 'relative' }}>
           <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
         </svg>
+        {pendingSyncCount > 0 && (
+          <span
+            title={`${pendingSyncCount} pending sync task(s)`}
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              minWidth: 18,
+              height: 18,
+              padding: '0 5px',
+              borderRadius: 999,
+              background: '#f59e0b',
+              color: '#fff',
+              fontSize: '0.68rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+              zIndex: 2,
+              boxSizing: 'border-box'
+            }}
+          >
+            {pendingSyncCount}
+          </span>
+        )}
       </button>
 
       {isTestdrive && session?.user?.username !== 'test0' && session?.user?.testdriveWindowStart && (
@@ -243,6 +279,23 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
                 className="nav-item"
                 onClick={() => {
                   setIsMenuOpen(false);
+                  setIsSyncTasksOpen(true);
+                }}
+                style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer', justifyContent: 'space-between' }}
+              >
+                <span>☁️ Sync Tasks (同步任务)</span>
+                {pendingSyncCount > 0 ? (
+                  <span style={{ background: '#f59e0b', color: '#fff', fontSize: '0.72rem', fontWeight: 700, padding: '1px 7px', borderRadius: 999 }}>
+                    {pendingSyncCount}
+                  </span>
+                ) : (
+                  <span style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: 700 }}>✓</span>
+                )}
+              </button>
+              <button
+                className="nav-item"
+                onClick={() => {
+                  setIsMenuOpen(false);
                   forceRefreshBypassCache();
                 }}
                 style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
@@ -259,6 +312,23 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
                 className="nav-item"
                 onClick={() => {
                   setIsMenuOpen(false);
+                  setIsSyncTasksOpen(true);
+                }}
+                style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer', justifyContent: 'space-between' }}
+              >
+                <span>☁️ Sync Tasks (同步任务)</span>
+                {pendingSyncCount > 0 ? (
+                  <span style={{ background: '#f59e0b', color: '#fff', fontSize: '0.72rem', fontWeight: 700, padding: '1px 7px', borderRadius: 999 }}>
+                    {pendingSyncCount}
+                  </span>
+                ) : (
+                  <span style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: 700 }}>✓</span>
+                )}
+              </button>
+              <button
+                className="nav-item"
+                onClick={() => {
+                  setIsMenuOpen(false);
                   forceRefreshBypassCache();
                 }}
                 style={{ background: 'none', border: 'none', width: '100%', fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer' }}
@@ -266,10 +336,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
                 🔄 Refresh Page (刷新)
               </button>
               {(session.user as any).role === 'admin' && (
-                <>
-                  <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
-                  <Link className="nav-item" onClick={() => setIsMenuOpen(false)} to="/admin/db-benchmark" style={{ color: '#8b5cf6', fontWeight: 600 }}>⚡ DB Benchmark</Link>
-                </>
+                <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
               )}
               <div className="nav-divider"></div>
               <div className="nav-section-title" style={{ padding: '4px 14px', fontSize: '0.75rem', fontWeight: 'bold', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reference (参考)</div>
@@ -349,6 +416,9 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
       )}
       {isIrregularVerbsOpen && (
         <IrregularVerbsModal onClose={() => setIsIrregularVerbsOpen(false)} />
+      )}
+      {isSyncTasksOpen && (
+        <SyncTasksModal onClose={() => setIsSyncTasksOpen(false)} />
       )}
     </div>
   );
@@ -548,10 +618,6 @@ const router = createBrowserRouter([
       {
         path: "/admin/manage-users",
         element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>
-      },
-      {
-        path: "/admin/db-benchmark",
-        element: <DbBenchmarkPage />
       }
     ]
   }

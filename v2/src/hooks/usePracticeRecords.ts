@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { cache } from '../lib/cache'
 import { API_URL } from '../lib/auth'
+import { syncQueue } from '../lib/syncQueue'
 
 interface UsePracticeRecordsProps {
     practiceId: string;
@@ -11,50 +12,8 @@ export function usePracticeRecords({ practiceId }: UsePracticeRecordsProps) {
     const [activeRecordId, setActiveRecordId] = useState<string | null>(null)
     const recordIdPromiseRef = useRef<Promise<string> | null>(null)
 
-
-
     const processPendingSyncs = useCallback(async () => {
-        const pendingList = cache.getPendingSyncs();
-        if (!pendingList || pendingList.length === 0) return;
-
-        for (const item of pendingList) {
-            try {
-                if (item.recordId) {
-                    const res = await fetch(`${API_URL}/api/records/${item.recordId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            unit: item.unit,
-                            score: item.score,
-                            unfinished: item.unfinished
-                        })
-                    });
-                    if (res.ok) {
-                        cache.removePendingSync(item.recordId);
-                    }
-                } else {
-                    const res = await fetch(`${API_URL}/api/records`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            unit: item.unit,
-                            score: item.score,
-                            unfinished: item.unfinished
-                        })
-                    });
-                    const j = await res.json();
-                    if (j.success && j.id) {
-                        cache.removePendingSync(item.tempId);
-                        cache.updateRecord({ id: j.id, unit: item.unit, score: item.score, unfinished: item.unfinished });
-                    }
-                }
-            } catch (e) {
-                // Network still failing, keep in pending sync queue
-                break;
-            }
-        }
+        await syncQueue.processQueue(false);
     }, []);
 
     const loadRecords = useCallback(async () => {
@@ -88,19 +47,6 @@ export function usePracticeRecords({ practiceId }: UsePracticeRecordsProps) {
         const unitName = `${practiceId} (${challengeTitle})`
         const nowIso = new Date().toISOString()
 
-        // Always update local cache immediately so score is never lost UI-side
-        const currentTargetId = activeRecordId || (recordIdPromiseRef.current ? null : null);
-        const tempId = currentTargetId || `temp_${Date.now()}`;
-        cache.updateRecord({
-            id: currentTargetId || tempId,
-            unit: unitName,
-            score: scorePercent,
-            unfinished: !isFinished,
-            createdAt: nowIso,
-            updatedAt: nowIso
-        } as any);
-        setPracticeRecords([...(cache.getRecords() || [])]);
-
         try {
             if (activeRecordId) {
                 const res = await fetch(`${API_URL}/api/records/${activeRecordId}`, {
@@ -115,35 +61,35 @@ export function usePracticeRecords({ practiceId }: UsePracticeRecordsProps) {
                 })
                 const j = await res.json()
                 if (j.success) {
-                    cache.removePendingSync(activeRecordId)
-                } else {
-                    cache.addPendingSync({ tempId, recordId: activeRecordId, unit: unitName, score: scorePercent, unfinished: !isFinished, timestamp: nowIso })
+                    cache.updateRecord({
+                        id: activeRecordId,
+                        unit: unitName,
+                        score: scorePercent,
+                        unfinished: !isFinished,
+                        updatedAt: nowIso
+                    })
                 }
             } else if (recordIdPromiseRef.current) {
-                let recordId: string | null = null;
-                try {
-                    recordId = await recordIdPromiseRef.current
-                } catch (err) {}
-
-                if (recordId) {
-                    const res = await fetch(`${API_URL}/api/records/${recordId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            unit: unitName,
-                            score: scorePercent,
-                            unfinished: !isFinished
-                        })
+                const recordId = await recordIdPromiseRef.current
+                const res = await fetch(`${API_URL}/api/records/${recordId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        unit: unitName,
+                        score: scorePercent,
+                        unfinished: !isFinished
                     })
-                    const j = await res.json()
-                    if (j.success) {
-                        cache.removePendingSync(recordId)
-                    } else {
-                        cache.addPendingSync({ tempId, recordId, unit: unitName, score: scorePercent, unfinished: !isFinished, timestamp: nowIso })
-                    }
-                } else {
-                    cache.addPendingSync({ tempId, recordId: null, unit: unitName, score: scorePercent, unfinished: !isFinished, timestamp: nowIso })
+                })
+                const j = await res.json()
+                if (j.success) {
+                    cache.updateRecord({
+                        id: recordId,
+                        unit: unitName,
+                        score: scorePercent,
+                        unfinished: !isFinished,
+                        updatedAt: nowIso
+                    })
                 }
             } else {
                 const postPromise = (async () => {
@@ -168,8 +114,6 @@ export function usePracticeRecords({ practiceId }: UsePracticeRecordsProps) {
                             createdAt: nowIso,
                             updatedAt: nowIso
                         } as any)
-                        setPracticeRecords([...(cache.getRecords() || [])])
-                        cache.removePendingSync(tempId)
                         return j.id as string
                     }
                     throw new Error("Failed to create record")
@@ -178,16 +122,10 @@ export function usePracticeRecords({ practiceId }: UsePracticeRecordsProps) {
                 recordIdPromiseRef.current = postPromise
                 await postPromise
             }
+            setPracticeRecords([...(cache.getRecords() || [])])
         } catch (e) {
-            console.warn("Network issue while syncing record, queued in offline pending syncs", e)
-            cache.addPendingSync({
-                tempId,
-                recordId: activeRecordId,
-                unit: unitName,
-                score: scorePercent,
-                unfinished: !isFinished,
-                timestamp: nowIso
-            })
+            console.warn("Failed to sync record", e)
+            setPracticeRecords([...(cache.getRecords() || [])])
         }
     }, [practiceId, activeRecordId])
 
