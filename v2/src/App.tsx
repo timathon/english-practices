@@ -18,11 +18,12 @@ const ManageUsers = lazy(() => import('./ManageUsers').then(m => ({ default: m.M
 const UsageGuide = lazy(() => import('./UsageGuide').then(m => ({ default: m.UsageGuide })))
 import { PracticeShell } from './components/PracticeShell'
 import { PetFloatingCompanion } from './components/PetFloatingCompanion'
-import { useSession, signOut, authClient, API_URL } from './lib/auth'
+import { useSession, signOut, authClient } from './lib/auth'
 import { petService } from './lib/petService'
 const SwitchUser = lazy(() => import('./SwitchUser').then(m => ({ default: m.SwitchUser })))
 import { IrregularVerbsModal } from './components/IrregularVerbsModal'
 import { SyncTasksModal } from './components/SyncTasksModal'
+import { DebugModal } from './components/DebugModal'
 import { syncQueue } from './lib/syncQueue'
 const SchulteGame = lazy(() => import('./components/SchulteGame').then(m => ({ default: m.SchulteGame })))
 // Memory card matching game
@@ -61,9 +62,8 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isIrregularVerbsOpen, setIsIrregularVerbsOpen] = useState(false);
   const [isSyncTasksOpen, setIsSyncTasksOpen] = useState(false);
+  const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(() => syncQueue.getVisibleTasks().length);
-  const [versionTapCount, setVersionTapCount] = useState(0);
-  const versionTapTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setPendingSyncCount(syncQueue.getVisibleTasks().length);
@@ -71,39 +71,6 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
       setPendingSyncCount(syncQueue.getVisibleTasks().length);
     });
   }, []);
-
-  const handleVersionTap = () => {
-    if (versionTapTimerRef.current) {
-      window.clearTimeout(versionTapTimerRef.current);
-    }
-
-    const newCount = versionTapCount + 1;
-    if (newCount >= 3) {
-      setVersionTapCount(0);
-      const pass = window.prompt(showChinese ? '请输入重置代码：' : 'Enter reset passcode:');
-      if (pass) {
-        fetch(`${API_URL}/api/testdrive/reset`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ passcode: pass }),
-          credentials: 'include'
-        }).then(res => {
-          if (res.ok) {
-            window.alert(showChinese ? '计时器已重置，请刷新页面。' : 'Timer reset successful. Please refresh the page.');
-            window.location.reload();
-          } else {
-            window.alert(showChinese ? '重置失败：代码错误。' : 'Reset failed: Invalid passcode.');
-          }
-        });
-      }
-    } else {
-      setVersionTapCount(newCount);
-      versionTapTimerRef.current = window.setTimeout(() => {
-        setVersionTapCount(0);
-        versionTapTimerRef.current = null;
-      }, 2000);
-    }
-  };
 
   const [delayedClosed, setDelayedClosed] = useState(false);
   const [hasLoggedInUsers, setHasLoggedInUsers] = useState(false);
@@ -407,7 +374,10 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
           )}
           <div className="nav-divider"></div>
           <div
-            onClick={handleVersionTap}
+            onClick={() => {
+              setIsMenuOpen(false);
+              setIsDebugModalOpen(true);
+            }}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
             v261015-0125
@@ -419,6 +389,9 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
       )}
       {isSyncTasksOpen && (
         <SyncTasksModal onClose={() => setIsSyncTasksOpen(false)} />
+      )}
+      {isDebugModalOpen && (
+        <DebugModal onClose={() => setIsDebugModalOpen(false)} />
       )}
     </div>
   );
