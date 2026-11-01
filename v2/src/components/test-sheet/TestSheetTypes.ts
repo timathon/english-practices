@@ -41,6 +41,7 @@ export interface Section {
   dialogue?: { speaker: string; text: string }[]
   audio?: AudioSpec
   original_type?: string
+  hideOptionsInitially?: boolean
   questions: Question[]
 }
 

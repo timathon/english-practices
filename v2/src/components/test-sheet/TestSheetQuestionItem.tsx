@@ -359,6 +359,8 @@ export function TestSheetQuestionItem({
     case 'reading-comprehension': {
       const isMultipleChoice = q.type === 'multiple-choice' || (q.options && q.options.length > 0)
       const activeOptIdx = (isMultipleChoice && userAnswers[q.id] !== undefined) ? Number(userAnswers[q.id]) : null
+      const shouldHideOptions = !!(section.hideOptionsInitially || section.title.includes('任务型阅读'))
+      const isOptionsVisible = !shouldHideOptions || submitted || activeOptIdx !== null || showOptions
 
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
@@ -369,32 +371,44 @@ export function TestSheetQuestionItem({
           </div>
 
           {isMultipleChoice ? (
-            <div className={`ts-options-container ${q.options?.length ? `ts-options-count-${q.options.length}` : ''}`}>
-              {q.options?.map((option, oIdx) => {
-                let btnClass = "ts-option-btn"
-                if (activeOptIdx === oIdx) btnClass += " selected"
-                
-                if (submitted) {
-                  if (Number(q.answer) === oIdx) {
-                    btnClass += " correct-reveal"
-                  } else if (activeOptIdx === oIdx) {
-                    btnClass += " wrong-reveal"
+            !isOptionsVisible ? (
+              <div className="ts-options-collapsed" style={{ marginTop: '12px' }}>
+                <button
+                  type="button"
+                  className="ts-show-options-btn"
+                  onClick={() => setShowOptions(true)}
+                >
+                  <span>💡 先思考一下，点击显示选项 (Show Options)</span>
+                </button>
+              </div>
+            ) : (
+              <div className={`ts-options-container ${q.options?.length ? `ts-options-count-${q.options.length}` : ''}`}>
+                {q.options?.map((option, oIdx) => {
+                  let btnClass = "ts-option-btn"
+                  if (activeOptIdx === oIdx) btnClass += " selected"
+                  
+                  if (submitted) {
+                    if (Number(q.answer) === oIdx) {
+                      btnClass += " correct-reveal"
+                    } else if (activeOptIdx === oIdx) {
+                      btnClass += " wrong-reveal"
+                    }
                   }
-                }
 
-                return (
-                  <button
-                    key={oIdx}
-                    className={btnClass}
-                    disabled={submitted}
-                    onClick={() => handleAnswerChange(q.id, oIdx)}
-                  >
-                    <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
-                    <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx), false)}</span>
-                  </button>
-                )
-              })}
-            </div>
+                  return (
+                    <button
+                      key={oIdx}
+                      className={btnClass}
+                      disabled={submitted}
+                      onClick={() => handleAnswerChange(q.id, oIdx)}
+                    >
+                      <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
+                      <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx), false)}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )
           ) : (
             <div className="ts-short-answer-container" style={{ marginTop: '10px' }}>
               <textarea
