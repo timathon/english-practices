@@ -531,7 +531,8 @@ export function TestSheetQuestionItem({
     case 'multiple-choice': {
       const activeOptIdx = userAnswers[q.id] !== undefined ? Number(userAnswers[q.id]) : null
       const isAnswered = activeOptIdx !== null
-      const isOptionsVisible = submitted || isAnswered || showOptions
+      const shouldHideOptions = !!(section.hideOptionsInitially || section.title.includes('任务型阅读'))
+      const isOptionsVisible = !shouldHideOptions || submitted || isAnswered || showOptions
 
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
