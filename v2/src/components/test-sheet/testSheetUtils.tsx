@@ -176,7 +176,8 @@ export const splitIntoSentences = (text: string): string[] => {
 
 export const renderFormattedInlineText = (text: string): React.ReactNode => {
   if (!text) return null
-  const parts = text.split(/(\*\*.*?\*\*|`.*?`|<u>.*?<\/u>|<br\s*\/?>|\[\*VISUAL:?\s*.*?\*\])/gi)
+  const decodedText = text.replace(/&nbsp;/g, '\u00A0')
+  const parts = decodedText.split(/(\*\*.*?\*\*|`.*?`|<u>.*?<\/u>|<br\s*\/?>|\[\*VISUAL:?\s*.*?\*\])/gi)
   return (
     <>
       {parts.map((part, idx) => {
