@@ -33,7 +33,17 @@ export function PracticeShell() {
     const tnSiblingIds: string[] = (location.state as any)?.tnSiblingIds || []
 
     const decrypt = (data: any) => {
-        if (data.isEncrypted && typeof data.content === 'string') {
+        if (!data) return data
+        // Handle corrupted cache entry where backend returned `{ encrypted: true, data: ... }`
+        if (data.encrypted && data.data && !data.content) {
+            try {
+                data.content = decryptContent(data.data, OBSCURE_KEY)
+                data.isEncrypted = true
+            } catch (decErr: any) {
+                console.error('Decryption failed:', decErr)
+                throw new Error('Failed to decrypt practice content.')
+            }
+        } else if (data.isEncrypted && typeof data.content === 'string') {
             try {
                 data.content = decryptContent(data.content, OBSCURE_KEY)
             } catch (decErr: any) {

@@ -23,7 +23,7 @@ interface RecallMapShellProps {
 }
 
 export function RecallMapShell({ data, textbook, unit }: Omit<RecallMapShellProps, 'practiceId'>) {
-  const [treeData, setTreeData] = useState<Node>(() => JSON.parse(JSON.stringify(data.tree)))
+  const [treeData, setTreeData] = useState<Node>(() => data?.tree ? JSON.parse(JSON.stringify(data.tree)) : { id: 'root', text: '', emoji: '' })
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [actionSteps, setActionSteps] = useState<(() => void)[]>([])
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null)
@@ -54,6 +54,7 @@ export function RecallMapShell({ data, textbook, unit }: Omit<RecallMapShellProp
 
   // Initialize steps
   useEffect(() => {
+    if (!data?.tree) return
     const steps: (() => void)[] = []
     const tempTree = JSON.parse(JSON.stringify(data.tree))
 
@@ -125,7 +126,7 @@ export function RecallMapShell({ data, textbook, unit }: Omit<RecallMapShellProp
     }
     setAllFull(fullTree)
     setTreeData(fullTree)
-  }, [data.tree])
+  }, [data?.tree])
 
   const findNode = (root: Node, id: string): Node | null => {
     if (root.id === id) return root
@@ -139,6 +140,7 @@ export function RecallMapShell({ data, textbook, unit }: Omit<RecallMapShellProp
   }
 
   const applyStepsUpTo = (targetIndex: number) => {
+    if (!data?.tree) return
     const newTree = JSON.parse(JSON.stringify(data.tree))
     newTree.state = 'hidden' // Reset root
     
@@ -351,8 +353,8 @@ export function RecallMapShell({ data, textbook, unit }: Omit<RecallMapShellProp
         <div className="rm-header-left">
           <Link to="/dashboard" state={{ textbook, unit }} className="rm-back-btn">🏠</Link>
           <div className="rm-titles">
-            <h1>Recall Map: {data.part}</h1>
-            <p>{data.level}</p>
+            <h1>Recall Map{data?.part ? `: ${data.part}` : ''}</h1>
+            <p>{data?.level || ''}</p>
           </div>
         </div>
         <div className="rm-controls">

@@ -869,24 +869,27 @@ app.get('/api/practices/:id', async (c) => {
       if (expiry && new Date(expiry) < new Date()) {
           return c.json({ error: 'Subscription expired' }, 403)
       }
-
-      const allowed = (session.user as any).textbooks || []
-      if (!Array.isArray(allowed) || !allowed.includes(item.textbook)) {
+      if (item.textbook !== 'GENERAL' && !((session.user as any).textbooks || []).includes(item.textbook)) {
           return c.json({ error: 'Access denied to this textbook' }, 403)
       }
   }
 
+  const etag = `W/"${new Date(item.updatedAt).getTime()}"`
+  c.header('ETag', etag)
+  c.header('Cache-Control', 'no-cache')
+
+  const ifNoneMatch = c.req.header('If-None-Match')
+  if (ifNoneMatch === etag) {
+      return c.body(null, 304)
+  }
+
   const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
-  const encryptedPayload = encryptContent(content, OBSCURE_KEY);
+  const encryptedContent = encryptContent(content, OBSCURE_KEY);
 
   return c.json({
-      id: item.id,
-      textbook: item.textbook,
-      unit: item.unit,
-      type: item.type,
-      title: item.title,
-      encrypted: true,
-      data: encryptedPayload
+      ...item,
+      content: encryptedContent,
+      isEncrypted: true
   })
 })
 
