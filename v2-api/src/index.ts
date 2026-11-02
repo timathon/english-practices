@@ -1,6 +1,9 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { getAuth } from './auth'
+import { drizzle } from 'drizzle-orm/d1'
+import { eq, desc, asc, or } from 'drizzle-orm'
+import { practiceRecords, user, practice, account, session as sessionTable } from './db/schema'
+import { hashPassword, verifyPassword, createToken, verifyToken, JWT_SECRET_FALLBACK } from './auth'
 
 type Bindings = {
   DB: D1Database
@@ -9,7 +12,12 @@ type Bindings = {
   BETTER_AUTH_URL?: string
 }
 
-const app = new Hono<{ Bindings: Bindings }>()
+type Variables = {
+  user: any
+  token: string
+}
+
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
 const allowedOrigins = [
   'http://localhost:5173', 
@@ -27,14 +35,7 @@ const allowedOrigins = [
   'http://epv2.vibequizzing.com'
 ]
 
-let authInstance: any = null;
 let cachedMappedPractices: any[] | null = null;
-const getCachedAuth = (env: Bindings) => {
-  if (!authInstance) {
-    authInstance = getAuth(env.DB, env.BETTER_AUTH_SECRET, env.BETTER_AUTH_URL);
-  }
-  return authInstance;
-};
 
 // ─── Anti-scraping Encryption Helpers ───────────────────────────────────────
 const OBSCURE_KEY = 'english-practices-secret-key-2026';
@@ -59,7 +60,6 @@ function encryptContent(contentObj: any, key: string): string {
     return bytesToBase64(bytes);
 }
 
-
 app.use('/api/*', cors({
   origin: (origin) => {
     if (!origin) return 'https://epv2.vibequizzing.com';
@@ -78,7 +78,6 @@ app.onError((err, c) => {
   console.error("Worker Error:", err.message);
   console.error("Stack:", err.stack);
   
-  // Set CORS headers for error responses
   const origin = c.req.header('Origin')
   if (origin && (allowedOrigins.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))) {
     c.header('Access-Control-Allow-Origin', origin)
@@ -88,20 +87,10 @@ app.onError((err, c) => {
   return c.text('Internal Server Error: ' + err.message, 500);
 })
 
-// Auth handler
-app.all('/api/auth/*', (c) => {
-  const auth = getCachedAuth(c.env)
-  return auth.handler(c.req.raw)
-})
-
-import { drizzle } from 'drizzle-orm/d1'
-import { eq, desc, asc, or } from 'drizzle-orm'
-import { practiceRecords, user, practice, account, session as sessionTable } from './db/schema'
-
-function getSessionToken(c: any): string | null {
+function getBearerToken(c: any): string | null {
   const authHeader = c.req.header('Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.substring(7);
+    return authHeader.substring(7).trim();
   }
   const cookieHeader = c.req.header('Cookie') || '';
   const cookies = cookieHeader.split(';').reduce((acc: any, cookie: string) => {
@@ -114,6 +103,7 @@ function getSessionToken(c: any): string | null {
   return cookies['better-auth.session_token'] || cookies['better-auth.session_token.local'] || null;
 }
 
+// ─── Lightweight Auth Middleware ───────────────────────────────────────────
 app.use('/api/*', async (c, next) => {
   const path = c.req.path;
   
@@ -121,21 +111,19 @@ app.use('/api/*', async (c, next) => {
     return await next();
   }
 
-  const db = drizzle(c.env.DB);
-  const token = getSessionToken(c);
-  
+  const token = getBearerToken(c);
   if (token) {
+    const secret = c.env.BETTER_AUTH_SECRET || JWT_SECRET_FALLBACK;
+    const db = drizzle(c.env.DB);
     const kvKey = `sess:${token}`;
-    let dbSess: any = null;
     let currentUser: any = null;
-    
+
     // 1. Check KV cache first (Fast Path)
     if (c.env.V2_CACHE_KV) {
       try {
         const cachedStr = await c.env.V2_CACHE_KV.get(kvKey);
         if (cachedStr) {
           const cached = JSON.parse(cachedStr);
-          dbSess = cached.dbSess;
           currentUser = cached.currentUser;
         }
       } catch (e) {
@@ -143,61 +131,39 @@ app.use('/api/*', async (c, next) => {
       }
     }
 
-    // 2. Database Fallback (Cache Miss)
-    if (!dbSess || !currentUser) {
-      const sessRows = await db.select().from(sessionTable).where(eq(sessionTable.token, token));
-      if (sessRows.length > 0) {
-        dbSess = sessRows[0];
-        const userRows = await db.select().from(user).where(eq(user.id, dbSess.userId));
+    // 2. Decode JWT or fallback to DB session table (for backward-compatible migration)
+    if (!currentUser) {
+      const payload = await verifyToken(token, secret);
+      if (payload && payload.sub) {
+        const userRows = await db.select().from(user).where(eq(user.id, payload.sub));
         if (userRows.length > 0) {
           currentUser = userRows[0];
-          // Cache session + user in KV for 5 minutes (300 seconds) excluding huge arrays
-          if (c.env.V2_CACHE_KV) {
-            try {
-              const { mistakeState, petState, ...safeUser } = currentUser;
-              await c.env.V2_CACHE_KV.put(kvKey, JSON.stringify({ dbSess, currentUser: safeUser }), { expirationTtl: 300 });
-            } catch (e) {
-              console.warn("KV put error for session:", e);
-            }
+        }
+      } else {
+        // Fallback check legacy sessionTable
+        const sessRows = await db.select().from(sessionTable).where(eq(sessionTable.token, token));
+        if (sessRows.length > 0) {
+          const userRows = await db.select().from(user).where(eq(user.id, sessRows[0].userId));
+          if (userRows.length > 0) {
+            currentUser = userRows[0];
           }
+        }
+      }
+
+      if (currentUser && c.env.V2_CACHE_KV) {
+        try {
+          const { mistakeState, petState, ...safeUser } = currentUser;
+          await c.env.V2_CACHE_KV.put(kvKey, JSON.stringify({ currentUser: safeUser }), { expirationTtl: 300 });
+        } catch (e) {
+          console.warn("KV put error for session:", e);
         }
       }
     }
 
-    if (dbSess && currentUser) {
-      const expiresTime = new Date(dbSess.expiresAt).getTime();
-      if (expiresTime === 0) {
-        // Delete revoked session
-        if (c.env.V2_CACHE_KV) await c.env.V2_CACHE_KV.delete(kvKey);
-        await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
-        return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
-      }
-
+    if (currentUser) {
+      // Testdrive usage window limits
       if (currentUser.role === 'testdrive') {
-        // 1. Concurrency limit for testdrive (30 devices)
-        const activeSessions = await db.select()
-          .from(sessionTable)
-          .where(eq(sessionTable.userId, currentUser.id))
-          .orderBy(desc(sessionTable.createdAt));
-          
-        if (activeSessions.length > 30) {
-          const sessionsToRevoke = activeSessions.slice(30);
-          for (const s of sessionsToRevoke) {
-            await db.update(sessionTable)
-              .set({ expiresAt: new Date(0) })
-              .where(eq(sessionTable.id, s.id));
-          }
-          if (sessionsToRevoke.some(s => s.id === dbSess.id)) {
-            if (c.env.V2_CACHE_KV) await c.env.V2_CACHE_KV.delete(kvKey);
-            await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
-            return c.json({ error: "Testdrive limit reached. Please wait 15 minutes or try again later.", reason: "testdrive_limit" }, 403);
-          }
-        }
-
-        // 2. Usage window limit (20m/1h) - Skip for 'test0'
-        if (currentUser.username === 'test0') {
-          // 'test0' has no limits
-        } else {
+        if (currentUser.username !== 'test0') {
           const now = Date.now();
           const oneHourMs = 1 * 60 * 60 * 1000;
           const twentyMinsMs = 20 * 60 * 1000;
@@ -206,7 +172,6 @@ app.use('/api/*', async (c, next) => {
           let windowStart = currentUser.testdriveWindowStart ? new Date(currentUser.testdriveWindowStart).getTime() : 0;
           
           if (windowStart === 0 || (now - windowStart) >= oneHourMs) {
-            // Check if we need to start a new window
             let currentCount = typeof currentUser.testdriveCount === 'number' ? currentUser.testdriveCount : parseInt(currentUser.testdriveCount as any);
             if (isNaN(currentCount)) currentCount = 30;
 
@@ -214,12 +179,9 @@ app.use('/api/*', async (c, next) => {
               return c.json({ error: "No testdrives left. Please contact the administrator.", reason: "testdrive_quota_exhausted" }, 403);
             }
 
-            // Check daily limit (5 per day)
             let dailyLimit = typeof currentUser.testdriveDailyLimit === 'number' ? currentUser.testdriveDailyLimit : 5;
             const lastDate = currentUser.testdriveLastDate;
-            
             if (lastDate !== todayStr) {
-              // New day, reset daily limit
               dailyLimit = 5;
             }
 
@@ -230,7 +192,6 @@ app.use('/api/*', async (c, next) => {
               }, 403);
             }
 
-            // Start a new window
             await db.update(user).set({ 
               testdriveWindowStart: new Date(now),
               testdriveCount: currentCount - 1,
@@ -238,10 +199,8 @@ app.use('/api/*', async (c, next) => {
               testdriveLastDate: todayStr
             }).where(eq(user.id, currentUser.id));
 
-            // Invalidate KV cache so updated window values are loaded next request
             if (c.env.V2_CACHE_KV) await c.env.V2_CACHE_KV.delete(kvKey);
           } else if ((now - windowStart) >= twentyMinsMs) {
-            // Still in the 1-hour cooldown but passed the 20-minute usage window
             const nextAvailable = new Date(windowStart + oneHourMs);
             return c.json({ 
               error: "Your 20-minute testdrive session has expired. Please come back in 1 hour.", 
@@ -250,38 +209,262 @@ app.use('/api/*', async (c, next) => {
             }, 403);
           }
         }
-      } else if (currentUser.username !== 'adminx') {
-        // Standard user concurrency limit (2 devices)
-        const activeSessions = await db.select()
-          .from(sessionTable)
-          .where(eq(sessionTable.userId, currentUser.id))
-          .orderBy(desc(sessionTable.createdAt));
-          
-        if (activeSessions.length > 2) {
-          const sessionsToRevoke = activeSessions.slice(2);
-          for (const s of sessionsToRevoke) {
-            await db.update(sessionTable)
-              .set({ expiresAt: new Date(0) })
-              .where(eq(sessionTable.id, s.id));
-          }
-          if (sessionsToRevoke.some(s => s.id === dbSess.id)) {
-            if (c.env.V2_CACHE_KV) await c.env.V2_CACHE_KV.delete(kvKey);
-            await db.delete(sessionTable).where(eq(sessionTable.id, dbSess.id));
-            return c.json({ error: "Session revoked", reason: "device_limit" }, 401);
-          }
-        }
       }
+
+      c.set('user', currentUser);
+      c.set('token', token);
     }
   }
 
   await next();
 });
 
+// Helper to get session object mimicking better-auth session shape: { user, session }
+async function getSession(c: any): Promise<{ user: any; session: any } | null> {
+  const existingUser = c.get('user');
+  const token = c.get('token') || getBearerToken(c);
+  if (existingUser && token) {
+    return {
+      user: existingUser,
+      session: {
+        id: token,
+        userId: existingUser.id,
+        token: token,
+        sessionToken: token,
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    };
+  }
+
+  if (!token) return null;
+
+  const secret = c.env.BETTER_AUTH_SECRET || JWT_SECRET_FALLBACK;
+  const db = drizzle(c.env.DB);
+  let resolvedUser: any = null;
+
+  const payload = await verifyToken(token, secret);
+  if (payload && payload.sub) {
+    const userRows = await db.select().from(user).where(eq(user.id, payload.sub));
+    if (userRows.length > 0) resolvedUser = userRows[0];
+  } else {
+    const sessRows = await db.select().from(sessionTable).where(eq(sessionTable.token, token));
+    if (sessRows.length > 0) {
+      const userRows = await db.select().from(user).where(eq(user.id, sessRows[0].userId));
+      if (userRows.length > 0) resolvedUser = userRows[0];
+    }
+  }
+
+  if (!resolvedUser) return null;
+
+  c.set('user', resolvedUser);
+  c.set('token', token);
+
+  return {
+    user: resolvedUser,
+    session: {
+      id: token,
+      userId: resolvedUser.id,
+      token: token,
+      sessionToken: token,
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+    }
+  };
+}
+
+// ─── Native Auth Endpoints ──────────────────────────────────────────────────
+
+// 1. Sign-in with username: POST /api/auth/sign-in/username
+app.post('/api/auth/sign-in/username', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { username: reqUsername, password } = body;
+    if (!reqUsername || !password) {
+      return c.json({ error: { message: "Username and password are required" } }, 400);
+    }
+
+    const db = drizzle(c.env.DB);
+    const users = await db.select().from(user).where(eq(user.username, reqUsername));
+    if (users.length === 0) {
+      return c.json({ error: { message: "Invalid username or password" } }, 401);
+    }
+
+    const targetUser = users[0];
+    const accounts = await db.select().from(account).where(eq(account.userId, targetUser.id));
+    if (accounts.length === 0 || !accounts[0].password) {
+      return c.json({ error: { message: "Account has no password configured" } }, 401);
+    }
+
+    const isValid = await verifyPassword(password, accounts[0].password);
+    if (!isValid) {
+      return c.json({ error: { message: "Invalid username or password" } }, 401);
+    }
+
+    const secret = c.env.BETTER_AUTH_SECRET || JWT_SECRET_FALLBACK;
+    const token = await createToken({
+      sub: targetUser.id,
+      username: targetUser.username || targetUser.email,
+      role: targetUser.role || 'user'
+    }, secret);
+
+    return c.json({
+      user: targetUser,
+      token,
+      session: {
+        id: token,
+        userId: targetUser.id,
+        token,
+        sessionToken: token,
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    });
+  } catch (err: any) {
+    return c.json({ error: { message: err.message || "Sign in failed" } }, 500);
+  }
+});
+
+// 2. Sign-in with email: POST /api/auth/sign-in/email
+app.post('/api/auth/sign-in/email', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { email: reqEmail, password } = body;
+    if (!reqEmail || !password) {
+      return c.json({ error: { message: "Email and password are required" } }, 400);
+    }
+
+    const db = drizzle(c.env.DB);
+    const users = await db.select().from(user).where(eq(user.email, reqEmail));
+    if (users.length === 0) {
+      return c.json({ error: { message: "Invalid email or password" } }, 401);
+    }
+
+    const targetUser = users[0];
+    const accounts = await db.select().from(account).where(eq(account.userId, targetUser.id));
+    if (accounts.length === 0 || !accounts[0].password) {
+      return c.json({ error: { message: "Account has no password configured" } }, 401);
+    }
+
+    const isValid = await verifyPassword(password, accounts[0].password);
+    if (!isValid) {
+      return c.json({ error: { message: "Invalid email or password" } }, 401);
+    }
+
+    const secret = c.env.BETTER_AUTH_SECRET || JWT_SECRET_FALLBACK;
+    const token = await createToken({
+      sub: targetUser.id,
+      username: targetUser.username || targetUser.email,
+      role: targetUser.role || 'user'
+    }, secret);
+
+    return c.json({
+      user: targetUser,
+      token,
+      session: {
+        id: token,
+        userId: targetUser.id,
+        token,
+        sessionToken: token,
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    });
+  } catch (err: any) {
+    return c.json({ error: { message: err.message || "Sign in failed" } }, 500);
+  }
+});
+
+// 3. Get session: GET /api/auth/get-session
+app.get('/api/auth/get-session', async (c) => {
+  const session = await getSession(c);
+  if (!session) {
+    return c.json(null);
+  }
+  return c.json(session);
+});
+
+// 4. Sign out: POST /api/auth/sign-out
+app.post('/api/auth/sign-out', async (c) => {
+  const token = getBearerToken(c);
+  if (token && c.env.V2_CACHE_KV) {
+    c.executionCtx.waitUntil(c.env.V2_CACHE_KV.delete(`sess:${token}`).catch(() => {}));
+  }
+  return c.json({ success: true });
+});
+
+// 5. Multi-session set-active: POST /api/auth/multi-session/set-active
+app.post('/api/auth/multi-session/set-active', async (c) => {
+  return c.json({ success: true });
+});
+
+// 6. Sign up email: POST /api/auth/sign-up/email
+app.post('/api/auth/sign-up/email', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { email, password, name, username: optUsername } = body;
+    if (!email || !password || !name) {
+      return c.json({ error: { message: "Name, email and password are required" } }, 400);
+    }
+
+    const db = drizzle(c.env.DB);
+    const existing = await db.select().from(user).where(eq(user.email, email));
+    if (existing.length > 0) {
+      return c.json({ error: { message: "Email already registered" } }, 400);
+    }
+
+    const userId = crypto.randomUUID();
+    const now = new Date();
+    const hashedPassword = await hashPassword(password);
+
+    await db.insert(user).values({
+      id: userId,
+      name,
+      email,
+      username: optUsername || email,
+      displayUsername: optUsername || name,
+      role: 'user',
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    await db.insert(account).values({
+      id: crypto.randomUUID(),
+      accountId: userId,
+      providerId: 'credential',
+      userId,
+      password: hashedPassword,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    const secret = c.env.BETTER_AUTH_SECRET || JWT_SECRET_FALLBACK;
+    const token = await createToken({
+      sub: userId,
+      username: optUsername || email,
+      role: 'user'
+    }, secret);
+
+    const createdUsers = await db.select().from(user).where(eq(user.id, userId));
+    const createdUser = createdUsers[0];
+
+    return c.json({
+      user: createdUser,
+      token,
+      session: {
+        id: token,
+        userId: createdUser.id,
+        token,
+        sessionToken: token,
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    });
+  } catch (err: any) {
+    return c.json({ error: { message: err.message || "Sign up failed" } }, 500);
+  }
+});
+
+// ─── Application Endpoints ──────────────────────────────────────────────────
+
 app.get('/api/me', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({
-    headers: c.req.raw.headers
-  });
+  const session = await getSession(c);
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401);
   }
@@ -290,42 +473,67 @@ app.get('/api/me', async (c) => {
 
 app.post('/api/setup', async (c) => {
   try {
-    const auth = getCachedAuth(c.env)
     const db = drizzle(c.env.DB)
+    const now = new Date();
 
     let adminCreated = false;
     const existing = await db.select().from(user).where(eq(user.username, "adminx"))
     if (existing.length === 0) {
-      const res = await auth.api.signUpEmail({
-        body: {
-            email: "adminx@system.local",
-            password: "adminy",
-            name: "Admin",
-            username: "adminx"
-        } as any
-      })
+      const adminId = crypto.randomUUID();
+      const hashedAdminPassword = await hashPassword("adminy");
 
-      if (res?.user?.id) {
-        await db.update(user).set({ role: "admin" }).where(eq(user.id, res.user.id))
-        adminCreated = true;
-      }
+      await db.insert(user).values({
+        id: adminId,
+        email: "adminx@system.local",
+        name: "Admin",
+        username: "adminx",
+        displayUsername: "adminx",
+        role: "admin",
+        emailVerified: true,
+        createdAt: now,
+        updatedAt: now
+      });
+
+      await db.insert(account).values({
+        id: crypto.randomUUID(),
+        accountId: adminId,
+        providerId: 'credential',
+        userId: adminId,
+        password: hashedAdminPassword,
+        createdAt: now,
+        updatedAt: now
+      });
+
+      adminCreated = true;
     }
 
     // Seed testdrive account: test0 / abcd5678
     const testdriveExisting = await db.select().from(user).where(eq(user.username, "test0"))
     if (testdriveExisting.length === 0) {
-      await auth.api.signUpEmail({
-        body: {
-          email: "test0@system.local",
-          password: "abcd5678",
-          name: "Testdrive User",
-          username: "test0"
-        } as any
-      }).then(async (testRes: any) => {
-        if (testRes?.user?.id) {
-          await db.update(user).set({ role: "testdrive" }).where(eq(user.id, testRes.user.id))
-        }
-      })
+      const test0Id = crypto.randomUUID();
+      const hashedTest0Password = await hashPassword("abcd5678");
+
+      await db.insert(user).values({
+        id: test0Id,
+        email: "test0@system.local",
+        name: "Testdrive User",
+        username: "test0",
+        displayUsername: "test0",
+        role: "testdrive",
+        emailVerified: true,
+        createdAt: now,
+        updatedAt: now
+      });
+
+      await db.insert(account).values({
+        id: crypto.randomUUID(),
+        accountId: test0Id,
+        providerId: 'credential',
+        userId: test0Id,
+        password: hashedTest0Password,
+        createdAt: now,
+        updatedAt: now
+      });
     }
 
     return c.json({ msg: "Setup complete", adminCreated })
@@ -335,8 +543,7 @@ app.post('/api/setup', async (c) => {
 })
 
 app.get('/api/admin/users', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
   const db = drizzle(c.env.DB)
@@ -362,8 +569,7 @@ app.get('/api/admin/users', async (c) => {
 })
 
 app.post('/api/admin/users', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
 
   try {
@@ -372,33 +578,48 @@ app.post('/api/admin/users', async (c) => {
       return c.json({ error: 'Username and password are required' }, 400)
     }
 
-    const res = await auth.api.signUpEmail({
-        body: {
-            email: `${body.username}@system.local`,
-            password: body.password,
-            name: body.username,
-            username: body.username
-        } as any
-    })
-
-    if (res?.user?.id) {
-      const db = drizzle(c.env.DB)
-      const expiry = new Date()
-      expiry.setDate(expiry.getDate() + 30)
-      await db.update(user).set({
-        subscriptionExpiry: expiry
-      }).where(eq(user.id, res.user.id))
-
-      return c.json({
-        ...res,
-        user: {
-          ...res.user,
-          subscriptionExpiry: expiry
-        }
-      })
+    const db = drizzle(c.env.DB)
+    const existing = await db.select().from(user).where(eq(user.username, body.username))
+    if (existing.length > 0) {
+      return c.json({ error: 'Username already taken' }, 400)
     }
 
-    return c.json(res)
+    const userId = crypto.randomUUID()
+    const now = new Date()
+    const expiry = new Date()
+    expiry.setDate(expiry.getDate() + 30)
+    const hashedPassword = await hashPassword(body.password)
+
+    await db.insert(user).values({
+      id: userId,
+      email: `${body.username}@system.local`,
+      name: body.username,
+      username: body.username,
+      displayUsername: body.username,
+      role: 'user',
+      subscriptionExpiry: expiry,
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now
+    })
+
+    await db.insert(account).values({
+      id: crypto.randomUUID(),
+      accountId: userId,
+      providerId: 'credential',
+      userId,
+      password: hashedPassword,
+      createdAt: now,
+      updatedAt: now
+    })
+
+    const newUserRows = await db.select().from(user).where(eq(user.id, userId))
+    return c.json({
+      user: {
+        ...newUserRows[0],
+        subscriptionExpiry: expiry
+      }
+    })
   } catch (err: any) {
     console.error("Create User Error:", err.message)
     return c.json({ error: err.message || 'Internal Server Error' }, 500)
@@ -406,14 +627,12 @@ app.post('/api/admin/users', async (c) => {
 })
 
 app.delete('/api/admin/users/:id', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
   const idString = c.req.param('id')
   const db = drizzle(c.env.DB)
 
-  // Delete related records first to avoid foreign key constraint errors
   try {
     await db.delete(sessionTable).where(eq(sessionTable.userId, idString))
     await db.delete(account).where(eq(account.userId, idString))
@@ -428,8 +647,7 @@ app.delete('/api/admin/users/:id', async (c) => {
 
 app.put('/api/admin/users/:id/textbooks', async (c) => {
   try {
-    const auth = getCachedAuth(c.env)
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+    const session = await getSession(c)
     if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
     
     const idString = c.req.param('id')
@@ -448,93 +666,47 @@ app.put('/api/admin/users/:id/textbooks', async (c) => {
 })
 
 app.put('/api/admin/users/:id/password', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
   const userId = c.req.param('id')
   const { password: newPassword } = await c.req.json()
   if (!newPassword || newPassword.length < 6) return c.json({ error: 'Password too short' }, 400)
 
-  const db = drizzle(c.env.DB)
-  // We use better-auth internal hasher if possible, or just use the same logic it uses.
-  // For better-auth v1, it uses Scrypt/Argon2. 
-  // A cleaner way is using auth.api.setPassword if it existed, but usually it's internal.
-  // Since we're in a worker, we'll try to use the auth.password.hash if exposed.
-  
   try {
-      const db = drizzle(c.env.DB)
-      
-      const users = await db.select().from(user).where(eq(user.id, userId))
-      if (users.length === 0) return c.json({ error: "User not found" }, 404)
-      const targetUser = users[0]
+    const db = drizzle(c.env.DB)
+    const users = await db.select().from(user).where(eq(user.id, userId))
+    if (users.length === 0) return c.json({ error: "User not found" }, 404)
 
-      // Shadow Hashing: Create a temp user to get a validly hashed password
-      const tempId = "temp_" + Math.random().toString(36).substring(2, 10);
-      const tempEmail = `${tempId}@system.local`;
-      
-      const tempRes = await auth.api.signUpEmail({
-          body: {
-              email: tempEmail,
-              password: newPassword,
-              name: "Temp",
-              username: tempId
-          } as any
-      });
+    const hashedPassword = await hashPassword(newPassword);
 
-      if (!tempRes || !tempRes.user) {
-          throw new Error("Failed to generate hash via temp user");
-      }
+    const userAccounts = await db.select().from(account).where(eq(account.userId, userId))
+    if (userAccounts.length > 0) {
+      await db.update(account).set({
+        password: hashedPassword,
+        updatedAt: new Date()
+      }).where(eq(account.id, userAccounts[0].id))
+    } else {
+      await db.insert(account).values({
+        id: crypto.randomUUID(),
+        accountId: userId,
+        providerId: 'credential',
+        userId,
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+    }
 
-      const tempUserId = tempRes.user.id;
-      const tempAccounts = await db.select().from(account).where(eq(account.userId, tempUserId));
-      
-      if (tempAccounts.length === 0 || !tempAccounts[0].password) {
-          throw new Error("Temp account or password hash not found");
-      }
-
-      const hashedPassword = tempAccounts[0].password;
-
-      // Clean up temp user
-      try {
-          // @ts-ignore
-          await db.delete(sessionTable).where(eq(sessionTable.userId, tempUserId));
-          await db.delete(account).where(eq(account.userId, tempUserId));
-          await db.delete(practiceRecords).where(eq(practiceRecords.userId, tempUserId));
-          await db.delete(user).where(eq(user.id, tempUserId));
-      } catch (cleanupErr: any) {
-          console.warn("Minor: Shadow Hashing cleanup failed:", cleanupErr.message);
-      }
-
-      // Update or Create the real account
-      const existingAccounts = await db.select().from(account).where(eq(account.userId, userId))
-      if (existingAccounts.length > 0) {
-          await db.update(account).set({ 
-              password: hashedPassword,
-              updatedAt: new Date()
-          }).where(eq(account.userId, userId))
-      } else {
-          await db.insert(account).values({
-              id: Math.random().toString(36).substring(2, 15),
-              userId: userId,
-              accountId: targetUser.email,
-              providerId: "credential",
-              password: hashedPassword,
-              createdAt: new Date(),
-              updatedAt: new Date()
-          })
-      }
-      
-      return c.json({ success: true })
+    return c.json({ success: true, message: "Password updated successfully" })
   } catch (e: any) {
-      console.error("Password Reset Error:", e.message);
-      return c.json({ error: "Failed to reset password: " + e.message }, 500)
+    console.error("Change Password Error:", e.message)
+    return c.json({ error: e.message }, 500)
   }
 })
 
 app.get('/api/admin/users/:id/records', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
   
   const userId = c.req.param('id')
@@ -546,8 +718,7 @@ app.get('/api/admin/users/:id/records', async (c) => {
 })
 
 app.get('/api/records', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
   const db = drizzle(c.env.DB);
@@ -558,8 +729,7 @@ app.get('/api/records', async (c) => {
 })
 
 app.post('/api/records', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
   if (session.user.role === 'testdrive') return c.json({ error: "Testdrive records are not saved to the server." }, 403);
 
@@ -580,8 +750,6 @@ app.post('/api/records', async (c) => {
       answers: body.answers !== undefined ? body.answers : null,
       createdAt: new Date(),
       updatedAt: new Date()
-    }).catch(err => {
-      console.error("Async practiceRecord write failed:", err);
     })
   );
 
@@ -589,8 +757,7 @@ app.post('/api/records', async (c) => {
 })
 
 app.put('/api/records/:id', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
   if (session.user.role === 'testdrive') return c.json({ error: "Testdrive records are not saved to the server." }, 403);
 
@@ -603,25 +770,24 @@ app.put('/api/records/:id', async (c) => {
   const existing = await db.select().from(practiceRecords)
     .where(eq(practiceRecords.id, id));
 
-  if (existing && existing.length > 0) {
-    const record = existing[0];
-    const isFinished = !record.unfinished;
-    const nextUnfinished = isFinished ? false : (body.unfinished !== undefined ? body.unfinished : false);
-    const nextScore = (isFinished && record.score > finalScore) ? record.score : finalScore;
-
-    await db.update(practiceRecords).set({
-        score: nextScore,
-        unfinished: nextUnfinished,
-        answers: body.answers !== undefined ? body.answers : record.answers,
-        updatedAt: new Date()
-    })
-    .where(eq(practiceRecords.id, id));
+  if (existing.length === 0) {
+    if (!body.unit) return c.json({ error: "Unit is required" }, 400);
+    await db.insert(practiceRecords).values({
+      id,
+      userId: session.user.id,
+      unit: body.unit,
+      score: finalScore,
+      unfinished: body.unfinished !== undefined ? body.unfinished : false,
+      answers: body.answers !== undefined ? body.answers : null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
   } else {
     await db.update(practiceRecords).set({
-        score: finalScore,
-        unfinished: body.unfinished !== undefined ? body.unfinished : false,
-        answers: body.answers !== undefined ? body.answers : null,
-        updatedAt: new Date()
+      score: finalScore,
+      unfinished: body.unfinished !== undefined ? body.unfinished : false,
+      answers: body.answers !== undefined ? body.answers : null,
+      updatedAt: new Date()
     })
     .where(eq(practiceRecords.id, id));
   }
@@ -630,8 +796,7 @@ app.put('/api/records/:id', async (c) => {
 })
 
 app.get('/api/practices', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session) return c.json({ error: 'Unauthorized' }, 401)
   
   const db = drizzle(c.env.DB)
@@ -648,101 +813,47 @@ app.get('/api/practices', async (c) => {
       }
 
       if (!cachedMappedPractices) {
-          const practices = await db.select({
-              id: practice.id,
-              textbook: practice.textbook,
-              unit: practice.unit,
-              type: practice.type,
-              title: practice.title,
-              content: practice.content
-          }).from(practice)
-          
-          cachedMappedPractices = practices.map(p => {
-              let lightContent: any = {};
-              const type = (p.type || '').toLowerCase();
-              const content = p.content as any;
-              
-              if (content) {
-                  if (type.includes('vocab-master') || type.includes('sentence-architect') || type.includes('grammar-wizard') || type.includes('grammar-guard') || type.includes('reading-expression') || type.includes('yb') || type.includes('phonics-ninja') || type.includes('phonics')) {
-                      const challenges = content.challenges || [];
-                      lightContent = {
-                          challenges: challenges.map((c: any) => ({ title: c.title || '' }))
-                      };
-                  } else if (type.includes('passage-decoder') || type.includes('audio-detective')) {
-                      const sections = content.sections || [];
-                      lightContent = {
-                          sections: sections.map((s: any) => ({ title: s.title || '' }))
-                      };
-                  } else if (type.includes('text-navigator')) {
-                      const sections = content.sections;
-                      if (sections) {
-                          lightContent = { sections: sections.map((s: any) => ({ section: s.section || '' })) };
-                      } else if (content.tree) {
-                          lightContent = { tree: true, section: content.section || '' };
-                      }
-                  } else if (type.includes('spelling-hero')) {
-                      const wordCount = content.spelling_words?.length || 0;
-                      lightContent = {
-                          spelling_words: new Array(wordCount).fill({})
-                      };
-                  } else if (type.includes('vocab-magician')) {
-                      const groups = content.groups || [];
-                      lightContent = {
-                          type: content.type,
-                          total_words: content.total_words,
-                          groups: groups.map((g: any) => ({
-                              category_name: g.category_name,
-                              item_count: g.items?.length || 0
-                          }))
-                      };
-                  }
-              }
-              
+          const list = await db.select().from(practice)
+          cachedMappedPractices = list.map(item => {
+              const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content
               return {
-                  id: p.id,
-                  textbook: p.textbook,
-                  unit: p.unit,
-                  type: p.type,
-                  title: p.title,
-                  content: lightContent
-              };
+                  id: item.id,
+                  textbook: item.textbook,
+                  unit: item.unit,
+                  type: item.type,
+                  title: item.title,
+                  contentSnippet: content ? {
+                      title: content.title || item.title,
+                      level: content.level || "",
+                      challengesCount: content.challenges ? content.challenges.length : 0,
+                      passcode: content.passcode || ""
+                  } : null
+              }
           });
 
-          if (c.env.V2_CACHE_KV && cachedMappedPractices) {
+          if (c.env.V2_CACHE_KV) {
               c.executionCtx.waitUntil(
-                  c.env.V2_CACHE_KV.put('practices_catalog', JSON.stringify(cachedMappedPractices), { expirationTtl: 3600 }).catch(e => {
+                  c.env.V2_CACHE_KV.put('practices_catalog', JSON.stringify(cachedMappedPractices), {
+                      expirationTtl: 3600
+                  }).catch(e => {
                       console.error("KV write failed:", e);
                   })
               );
           }
       }
   }
-  
-  const userRole = (session.user as any).role?.toLowerCase();
-  if (userRole === 'admin' || userRole === 'testdrive') {
+
+  const role = (session.user as any).role?.toLowerCase();
+  if (role === 'admin' || role === 'testdrive') {
       return c.json(cachedMappedPractices)
   }
-  
-  const expiry = (session.user as any).subscriptionExpiry;
-  if (expiry && new Date(expiry) < new Date()) {
-      return c.json([]);
-  }
-  
-  let allowed = (session.user as any).textbooks || [];
-  if (typeof allowed === 'string') {
-      try {
-          allowed = JSON.parse(allowed);
-      } catch {
-          allowed = [];
-      }
-  }
-  
+
+  const allowed = (session.user as any).textbooks || []
   return c.json(cachedMappedPractices.filter(p => Array.isArray(allowed) && allowed.includes(p.textbook)))
 })
 
 app.get('/api/practices/:id', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session) return c.json({ error: 'Unauthorized' }, 401)
 
   const id = c.req.param('id')
@@ -758,185 +869,69 @@ app.get('/api/practices/:id', async (c) => {
       if (expiry && new Date(expiry) < new Date()) {
           return c.json({ error: 'Subscription expired' }, 403)
       }
-      if (item.textbook !== 'GENERAL' && !((session.user as any).textbooks || []).includes(item.textbook)) {
-          return c.json({ error: 'Forbidden' }, 403)
+
+      const allowed = (session.user as any).textbooks || []
+      if (!Array.isArray(allowed) || !allowed.includes(item.textbook)) {
+          return c.json({ error: 'Access denied to this textbook' }, 403)
       }
   }
-  
-  const etag = `W/"${new Date(item.updatedAt).getTime()}"`
-  c.header('ETag', etag)
-  c.header('Cache-Control', 'no-cache')
 
-  const ifNoneMatch = c.req.header('If-None-Match')
-  if (ifNoneMatch === etag) {
-      return c.body(null, 304)
-  }
+  const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
+  const encryptedPayload = encryptContent(content, OBSCURE_KEY);
 
-  const encryptedContent = encryptContent(item.content, OBSCURE_KEY);
   return c.json({
-      ...item,
-      content: encryptedContent,
-      isEncrypted: true
+      id: item.id,
+      textbook: item.textbook,
+      unit: item.unit,
+      type: item.type,
+      title: item.title,
+      encrypted: true,
+      data: encryptedPayload
   })
 })
 
-app.get('/api/benchmark-db', async (c) => {
-  const id = c.req.query('id') || 'test_b-think1-u10_vocab_master';
-  
-  // 1. Measure D1 Latency
-  const startD1 = performance.now();
-  const db = drizzle(c.env.DB);
-  const d1Res = await db.select().from(practice).where(eq(practice.id, id));
-  const endD1 = performance.now();
-  const d1Latency = endD1 - startD1;
-
-  // 2. Measure TiDB Tokyo Latency
-  let tidbLatency: number | null = null;
-  let tidbFound = false;
-  let tidbError: string | null = null;
-
-  try {
-    const { connect } = await import('@tidbcloud/serverless');
-    const tidbConn = connect({
-      host: (c.env as any).TIDB_HOST || 'gateway01.ap-northeast-1.prod.aws.tidbcloud.com',
-      username: (c.env as any).TIDB_USER || '2CC8Ufd3t88uAwh.admin',
-      password: (c.env as any).TIDB_PASSWORD || 'Aiqiyouyouyuan0811!',
-    });
-
-    const startTiDB = performance.now();
-    const tidbRes: any = await tidbConn.execute(
-      `SELECT id, textbook, unit, type, title FROM practice WHERE id = ?`,
-      [id]
-    );
-    const endTiDB = performance.now();
-    tidbLatency = endTiDB - startTiDB;
-    const rows = Array.isArray(tidbRes) ? tidbRes : (tidbRes.rows || []);
-    tidbFound = rows.length > 0;
-  } catch (err: any) {
-    tidbError = err.message;
-  }
-
-  // 3. Measure TiDB Singapore Latency
-  let tidbSgLatency: number | null = null;
-  let tidbSgFound = false;
-  let tidbSgError: string | null = null;
-
-  try {
-    const { connect } = await import('@tidbcloud/serverless');
-    const tidbSgConn = connect({
-      host: 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
-      username: '4BqFNiemQKG2kYa.admin',
-      password: 'Aiqiyouyouyuan0811!',
-    });
-
-    const startTiDBSg = performance.now();
-    const tidbSgRes: any = await tidbSgConn.execute(
-      `SELECT id, textbook, unit, type, title FROM practice WHERE id = ?`,
-      [id]
-    );
-    const endTiDBSg = performance.now();
-    tidbSgLatency = endTiDBSg - startTiDBSg;
-    const rowsSg = Array.isArray(tidbSgRes) ? tidbSgRes : (tidbSgRes.rows || []);
-    tidbSgFound = rowsSg.length > 0;
-  } catch (err: any) {
-    tidbSgError = err.message;
-  }
-
-  // 4. Measure TiDB AliCloud Singapore Latency
-  let tidbAliSgLatency: number | null = null;
-  let tidbAliSgFound = false;
-  let tidbAliSgError: string | null = null;
-
-  try {
-    const { connect } = await import('@tidbcloud/serverless');
-    const tidbAliSgConn = connect({
-      host: 'gateway01.ap-southeast-1.prod.alicloud.tidbcloud.com',
-      username: '4D6Ag5PcH2djUtR.admin',
-      password: 'Aiqiyouyouyuan0811!',
-    });
-
-    const startTiDBAliSg = performance.now();
-    const tidbAliSgRes: any = await tidbAliSgConn.execute(
-      `SELECT id, textbook, unit, type, title FROM practice WHERE id = ?`,
-      [id]
-    );
-    const endTiDBAliSg = performance.now();
-    tidbAliSgLatency = endTiDBAliSg - startTiDBAliSg;
-    const rowsAliSg = Array.isArray(tidbAliSgRes) ? tidbAliSgRes : (tidbAliSgRes.rows || []);
-    tidbAliSgFound = rowsAliSg.length > 0;
-  } catch (err: any) {
-    tidbAliSgError = err.message;
-  }
-
-  return c.json({
-    practiceId: id,
-    cloudflareD1: {
-      latencyMs: Number(d1Latency.toFixed(2)),
-      found: d1Res.length > 0
-    },
-    tidbServerlessTokyo: {
-      latencyMs: tidbLatency !== null ? Number(tidbLatency.toFixed(2)) : null,
-      found: tidbFound,
-      error: tidbError
-    },
-    tidbServerlessSingapore: {
-      latencyMs: tidbSgLatency !== null ? Number(tidbSgLatency.toFixed(2)) : null,
-      found: tidbSgFound,
-      error: tidbSgError
-    },
-    tidbServerlessAliSingapore: {
-      latencyMs: tidbAliSgLatency !== null ? Number(tidbAliSgLatency.toFixed(2)) : null,
-      found: tidbAliSgFound,
-      error: tidbAliSgError
-    }
-  });
-})
-
 app.post('/api/admin/practices', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
 
-  const body = await c.req.json()
-  const db = drizzle(c.env.DB)
-  const items = Array.isArray(body) ? body : [body];
-  
-  for (const item of items) {
-      await db.insert(practice).values({
-          id: item.id,
-          textbook: item.textbook,
-          unit: item.unit,
-          type: item.type,
-          title: item.title,
-          content: item.content,
-          createdAt: new Date(),
-          updatedAt: new Date()
-      }).onConflictDoUpdate({
-          target: practice.id,
-          set: {
-              unit: item.unit,
-              type: item.type,
-              content: item.content,
-              title: item.title,
-              updatedAt: new Date()
-          }
-      })
+  try {
+    const list = await c.req.json()
+    if (!Array.isArray(list)) return c.json({ error: 'Payload must be an array' }, 400)
+
+    const db = drizzle(c.env.DB)
+    const BATCH_SIZE = 100
+    for (let i = 0; i < list.length; i += BATCH_SIZE) {
+      const batch = list.slice(i, i + BATCH_SIZE)
+      await db.insert(practice).values(batch.map((item: any) => ({
+        id: item.id,
+        textbook: item.textbook,
+        unit: item.unit,
+        type: item.type,
+        title: item.title,
+        content: typeof item.content === 'string' ? item.content : JSON.stringify(item.content),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })))
+    }
+
+    cachedMappedPractices = null;
+    if (c.env.V2_CACHE_KV) {
+        c.executionCtx.waitUntil(
+            c.env.V2_CACHE_KV.delete('practices_catalog').catch(e => {
+                console.error("KV delete failed:", e);
+            })
+        );
+    }
+
+    return c.json({ success: true, count: list.length })
+  } catch (err: any) {
+    console.error("Batch insert error:", err.message)
+    return c.json({ error: err.message }, 500)
   }
-  
-  cachedMappedPractices = null;
-  if (c.env.V2_CACHE_KV) {
-      c.executionCtx.waitUntil(
-          c.env.V2_CACHE_KV.delete('practices_catalog').catch(e => {
-              console.error("KV delete failed:", e);
-          })
-      );
-  }
-  return c.json({ success: true, count: items.length })
 })
 
 app.delete('/api/admin/practices', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
 
   const db = drizzle(c.env.DB)
@@ -953,8 +948,7 @@ app.delete('/api/admin/practices', async (c) => {
 })
 
 app.delete('/api/admin/practices/:id', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await getSession(c)
   if (!session || (session.user as any).role !== 'admin') return c.json({ error: 'Unauthorized' }, 401)
 
   const id = c.req.param('id')
@@ -972,8 +966,7 @@ app.delete('/api/admin/practices/:id', async (c) => {
 })
 
 app.get('/api/pet', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
   const db = drizzle(c.env.DB);
@@ -984,23 +977,21 @@ app.get('/api/pet', async (c) => {
 })
 
 app.put('/api/pet', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
   if (session.user.role === 'testdrive') return c.json({ error: "Testdrive pet state is not saved to the server." }, 403);
 
   const body = await c.req.json();
   const db = drizzle(c.env.DB);
 
-  // Fetch current state in DB to check for conflicts (LWW check)
   const rows = await db.select({ petState: user.petState }).from(user).where(eq(user.id, session.user.id));
-  if (rows.length > 0 && rows[0].petState) {
-    const dbState = rows[0].petState as any;
-    const dbTime = dbState.lastUpdated || 0;
-    const clientTime = body.lastUpdated || 0;
-    if (dbTime > clientTime) {
-      // Conflict: server has a newer state!
-      return c.json({ error: "Conflict", serverState: dbState }, 409);
+  const serverState = rows[0]?.petState as any;
+
+  if (serverState && serverState.lastInteraction && body.lastInteraction) {
+    const serverTime = new Date(serverState.lastInteraction).getTime();
+    const clientTime = new Date(body.lastInteraction).getTime();
+    if (serverTime > clientTime) {
+      return c.json(serverState, 409);
     }
   }
 
@@ -1009,80 +1000,63 @@ app.put('/api/pet', async (c) => {
     updatedAt: new Date()
   }).where(eq(user.id, session.user.id));
 
-  return c.json({ success: true });
+  return c.json({ success: true, petState: body });
 })
 
 app.get('/api/mistakes', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
   const db = drizzle(c.env.DB);
   const rows = await db.select({ mistakeState: user.mistakeState }).from(user).where(eq(user.id, session.user.id));
   if (rows.length === 0) return c.json({ error: "User not found" }, 404);
 
-  return c.json(rows[0].mistakeState || null);
+  return c.json(rows[0].mistakeState || []);
 })
 
 app.put('/api/mistakes', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
   if (session.user.role === 'testdrive') return c.json({ error: "Testdrive mistakes are not saved to the server." }, 403);
 
-  const body = await c.req.json();
-  const db = drizzle(c.env.DB);
+  const clientMistakes = await c.req.json();
+  if (!Array.isArray(clientMistakes)) return c.json({ error: "Expected array of mistakes" }, 400);
 
+  const db = drizzle(c.env.DB);
   const rows = await db.select({ mistakeState: user.mistakeState }).from(user).where(eq(user.id, session.user.id));
-  let merged = body;
-  if (rows.length > 0 && rows[0].mistakeState) {
-    const dbState = rows[0].mistakeState as any[];
-    if (Array.isArray(dbState) && Array.isArray(body)) {
-      // Merge incoming mistakes with existing DB mistakes by ID
-      const mergedMap = new Map<string, any>();
-      for (const m of dbState) {
-        if (m && m.id) mergedMap.set(m.id, m);
+  const serverMistakes: any[] = (rows[0]?.mistakeState as any[]) || [];
+
+  const map = new Map<string, any>();
+  for (const m of serverMistakes) {
+    if (m && m.id) map.set(m.id, m);
+  }
+
+  for (const cm of clientMistakes) {
+    if (!cm || !cm.id) continue;
+    const sm = map.get(cm.id);
+    if (!sm) {
+      map.set(cm.id, cm);
+    } else {
+      const smTime = new Date(sm.updatedAt || sm.createdAt || 0).getTime();
+      const cmTime = new Date(cm.updatedAt || cm.createdAt || 0).getTime();
+      if (cmTime >= smTime) {
+        map.set(cm.id, cm);
       }
-      for (const m of body) {
-        if (!m || !m.id) continue;
-        const existing = mergedMap.get(m.id);
-        if (!existing) {
-          mergedMap.set(m.id, m);
-        } else {
-          const existingTime = (existing.updatedAt || existing.createdAt) ? new Date(existing.updatedAt || existing.createdAt).getTime() : 0;
-          const incomingTime = (m.updatedAt || m.createdAt) ? new Date(m.updatedAt || m.createdAt).getTime() : 0;
-          if (incomingTime > existingTime || (incomingTime === existingTime && m.attemptsCount > existing.attemptsCount)) {
-            mergedMap.set(m.id, m);
-          }
-        }
-      }
-      merged = Array.from(mergedMap.values());
     }
   }
 
-  if (Array.isArray(merged)) {
-    merged = merged.filter((m: any) => {
-      const type = (m.practiceType || '').toLowerCase();
-      const id = (m.id || '').toLowerCase();
-      return !type.includes('bug-hunter') && !id.includes('bug-hunter') && !type.includes('bug_hunter') && !id.includes('bug_hunter');
-    });
-  }
+  const merged = Array.from(map.values());
 
-  c.executionCtx.waitUntil(
-    db.update(user).set({
-      mistakeState: merged,
-      updatedAt: new Date()
-    }).where(eq(user.id, session.user.id)).catch(err => {
-      console.error("Async mistakeState write failed:", err);
-    })
-  );
+  await db.update(user).set({
+    mistakeState: merged,
+    updatedAt: new Date()
+  }).where(eq(user.id, session.user.id));
 
   return c.json({ success: true, mistakeState: merged });
 })
 
 app.get('/api/games/schulte/leaderboard', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
   const db = drizzle(c.env.DB);
@@ -1112,8 +1086,7 @@ app.get('/api/games/schulte/leaderboard', async (c) => {
 })
 
 app.get('/api/games/cardmatch/leaderboard', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
   const db = drizzle(c.env.DB);
@@ -1144,8 +1117,7 @@ app.get('/api/games/cardmatch/leaderboard', async (c) => {
 })
 
 app.get('/api/games/tetris/leaderboard', async (c) => {
-  const auth = getCachedAuth(c.env)
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const session = await getSession(c);
   if (!session) return c.json({ error: "Unauthorized" }, 401);
 
   const db = drizzle(c.env.DB);

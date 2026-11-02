@@ -18,9 +18,6 @@ export default defineConfig({
             if (id.includes('@huggingface/transformers')) {
               return 'transformers';
             }
-            if (id.includes('better-auth')) {
-              return 'better-auth';
-            }
             if (id.includes('recharts')) {
               return 'recharts';
             }

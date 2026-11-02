@@ -380,7 +380,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             }}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v261102-2005
+            v261102-2042
           </div>
         </div>
       )}
@@ -620,7 +620,8 @@ function App() {
     let lastSyncTime = Date.now();
     const handleSyncTrigger = () => {
       const wNow = Date.now();
-      if (wNow - lastSyncTime > 15000) {
+      // Only throttle sync when tab becomes visible after at least 3 minutes
+      if (wNow - lastSyncTime > 180000) {
         lastSyncTime = wNow;
         petService.syncWithServer();
         window.dispatchEvent(new CustomEvent('ep-trigger-sync'));
@@ -633,11 +634,9 @@ function App() {
       }
     };
 
-    window.addEventListener('focus', handleSyncTrigger);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      window.removeEventListener('focus', handleSyncTrigger);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [session]);

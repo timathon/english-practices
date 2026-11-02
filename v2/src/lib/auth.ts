@@ -1,5 +1,4 @@
-import { createAuthClient } from "better-auth/react"
-import { usernameClient, multiSessionClient } from "better-auth/client/plugins"
+import { useState, useEffect } from "react"
 import { testdriveRecords } from "./testdriveRecords"
 import { syncQueue } from "./syncQueue"
 
@@ -7,7 +6,6 @@ const getBaseURL = () => {
     if (import.meta.env.VITE_API_URL) {
         return import.meta.env.VITE_API_URL;
     }
-    // Dynamically match local hostnames (127.0.0.1 vs localhost) to avoid cross-site cookie restrictions
     const hostname = window.location.hostname;
     if (hostname === "epv2.vibequizzing.com" || hostname.endsWith(".pages.dev")) {
         return "https://epapi.vibequizzing.com";
@@ -50,14 +48,12 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
                 const stored = localStorage.getItem('test0_pet_state');
                 let petState = stored ? JSON.parse(stored) : null;
                 
-                // Ensure critical fields exist to prevent frontend crashes
                 if (!petState) petState = {};
                 if (!petState.achievements) petState.achievements = [];
                 if (!petState.unlockedToys) petState.unlockedToys = [];
                 if (!petState.level) petState.level = 1;
                 if (!petState.exp) petState.exp = 0;
                 
-                // The server returns the petState object directly
                 return new Response(JSON.stringify(petState), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }
             if (method === 'PUT') {
@@ -97,7 +93,7 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
                              url.includes('/api/auth/signup') || 
                              url.includes('/api/auth/sign-up') || 
                              url.includes('/api/setup');
-    
+
     let newInit = init || {};
     if (activeToken && url && (url.startsWith(API_URL) || url.includes('/api/')) && !isSignInOrSignUp) {
         let headers: Headers;
@@ -155,8 +151,6 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
                 if (token && data?.user) {
                     const user = data.user;
                     
-                    // Only auto-set active token on explicit sign-in/sign-up,
-                    // or passive session checks outside of the sign-in page.
                     if (isSignInAction || (isSessionCheck && !window.location.pathname.endsWith('/signin'))) {
                         localStorage.setItem('active_session_token', token);
                     }
@@ -167,7 +161,6 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
                     } catch (e) {}
                     if (!Array.isArray(loggedInUsers)) loggedInUsers = [];
                     
-                    // Filter out duplicate entries for the same user
                     loggedInUsers = loggedInUsers.filter((u: any) => u.userId !== user.id);
                     loggedInUsers.push({
                         userId: user.id,
@@ -177,7 +170,6 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
                         token: token
                     });
 
-                    // Enforce max users: keep only the most recent entries
                     if (loggedInUsers.length > MAX_LOGGED_IN_USERS) {
                         loggedInUsers = loggedInUsers.slice(-MAX_LOGGED_IN_USERS);
                     }
@@ -195,37 +187,240 @@ const customFetchImpl = async (input: RequestInfo | URL, init?: RequestInit): Pr
 // Override window.fetch globally for regular component API requests
 window.fetch = customFetchImpl;
 
-// ── Auth client ──
-export const authClient = createAuthClient({
-    baseURL: API_URL,
-    fetchOptions: {
-        customFetchImpl: customFetchImpl
-    },
-    user: {
-        additionalFields: {
-            role: {
-                type: "string",
-                defaultValue: "user"
-            },
-            textbooks: {
-                type: "string[]",
-                defaultValue: []
-            },
-            testdriveWindowStart: {
-                type: "string",
-                required: false
-            },
-            testdriveCount: {
-                type: "number",
-                required: false,
-                defaultValue: 30
+// ─── Lightweight State & Client Implementation ──────────────────────────────
+interface SessionState {
+    data: {
+        user: any;
+        session: any;
+    } | null;
+    isPending: boolean;
+    error: any;
+}
+
+let globalSession: SessionState = {
+    data: null,
+    isPending: true,
+    error: null
+};
+
+const listeners = new Set<(state: SessionState) => void>();
+
+function notifyListeners() {
+    for (const listener of listeners) {
+        listener({ ...globalSession });
+    }
+}
+
+let sessionFetchPromise: Promise<any> | null = null;
+
+async function fetchSessionDirect(): Promise<{ user: any; session: any } | null> {
+    const token = localStorage.getItem('active_session_token');
+    if (!token) {
+        globalSession = { data: null, isPending: false, error: null };
+        notifyListeners();
+        return null;
+    }
+
+    try {
+        const res = await originalFetch(`${API_URL}/api/auth/get-session`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.user) {
+                globalSession = {
+                    data: {
+                        user: data.user,
+                        session: data.session || { token, userId: data.user.id }
+                    },
+                    isPending: false,
+                    error: null
+                };
+                notifyListeners();
+                return globalSession.data;
             }
         }
-    },
-    plugins: [
-        usernameClient(),
-        multiSessionClient()
-    ]
-})
+    } catch (e) {
+        console.warn('[auth] getSession network error:', e);
+    }
 
-export const { useSession, signIn, signOut, signUp } = authClient
+    globalSession = { data: null, isPending: false, error: null };
+    notifyListeners();
+    return null;
+}
+
+export function useSession() {
+    const [state, setState] = useState<SessionState>(globalSession);
+
+    useEffect(() => {
+        listeners.add(setState);
+
+        // Fetch once if still pending and not currently fetching
+        if (globalSession.isPending && !sessionFetchPromise) {
+            sessionFetchPromise = fetchSessionDirect().finally(() => {
+                sessionFetchPromise = null;
+            });
+        } else if (!globalSession.isPending) {
+            setState({ ...globalSession });
+        }
+
+        return () => {
+            listeners.delete(setState);
+        };
+    }, []);
+
+    return state;
+}
+
+export const authClient = {
+    async getSession() {
+        if (globalSession.data) {
+            return { data: globalSession.data };
+        }
+        if (sessionFetchPromise) {
+            const data = await sessionFetchPromise;
+            return { data };
+        }
+        const data = await fetchSessionDirect();
+        return { data };
+    },
+    multiSession: {
+        async setActive({ sessionToken }: { sessionToken: string }) {
+            localStorage.setItem('active_session_token', sessionToken);
+            globalSession = { data: null, isPending: true, error: null };
+            notifyListeners();
+            await fetchSessionDirect();
+            return { success: true };
+        }
+    }
+};
+
+export const signIn = {
+    async username({ username, password, fetchOptions }: { username: string; password: string; fetchOptions?: any }) {
+        try {
+            const res = await customFetchImpl(`${API_URL}/api/auth/sign-in/username`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                const errMsg = data?.error?.message || data?.error || 'Sign in failed';
+                if (fetchOptions?.onError) {
+                    fetchOptions.onError({ error: { message: errMsg } });
+                }
+                return { error: { message: errMsg } };
+            }
+
+            globalSession = {
+                data: {
+                    user: data.user,
+                    session: data.session || { token: data.token, userId: data.user.id }
+                },
+                isPending: false,
+                error: null
+            };
+            notifyListeners();
+
+            if (fetchOptions?.onSuccess) {
+                fetchOptions.onSuccess(data);
+            }
+            return { data };
+        } catch (e: any) {
+            if (fetchOptions?.onError) {
+                fetchOptions.onError({ error: { message: e.message } });
+            }
+            return { error: { message: e.message } };
+        }
+    },
+    async email({ email, password, fetchOptions }: { email: string; password: string; fetchOptions?: any }) {
+        try {
+            const res = await customFetchImpl(`${API_URL}/api/auth/sign-in/email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                const errMsg = data?.error?.message || data?.error || 'Sign in failed';
+                if (fetchOptions?.onError) {
+                    fetchOptions.onError({ error: { message: errMsg } });
+                }
+                return { error: { message: errMsg } };
+            }
+
+            globalSession = {
+                data: {
+                    user: data.user,
+                    session: data.session || { token: data.token, userId: data.user.id }
+                },
+                isPending: false,
+                error: null
+            };
+            notifyListeners();
+
+            if (fetchOptions?.onSuccess) {
+                fetchOptions.onSuccess(data);
+            }
+            return { data };
+        } catch (e: any) {
+            if (fetchOptions?.onError) {
+                fetchOptions.onError({ error: { message: e.message } });
+            }
+            return { error: { message: e.message } };
+        }
+    }
+};
+
+export async function signOut() {
+    try {
+        await customFetchImpl(`${API_URL}/api/auth/sign-out`, { method: 'POST' });
+    } catch (e) {
+        console.warn('Sign out call failed:', e);
+    }
+    localStorage.removeItem('active_session_token');
+    globalSession = { data: null, isPending: false, error: null };
+    notifyListeners();
+}
+
+export const signUp = {
+    async email({ name, email, password, fetchOptions }: { name: string; email: string; password: string; fetchOptions?: any }) {
+        try {
+            const res = await customFetchImpl(`${API_URL}/api/auth/sign-up/email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                const errMsg = data?.error?.message || data?.error || 'Sign up failed';
+                if (fetchOptions?.onError) {
+                    fetchOptions.onError({ error: { message: errMsg } });
+                }
+                return { error: { message: errMsg } };
+            }
+
+            globalSession = {
+                data: {
+                    user: data.user,
+                    session: data.session || { token: data.token, userId: data.user.id }
+                },
+                isPending: false,
+                error: null
+            };
+            notifyListeners();
+
+            if (fetchOptions?.onSuccess) {
+                fetchOptions.onSuccess(data);
+            }
+            return { data };
+        } catch (e: any) {
+            if (fetchOptions?.onError) {
+                fetchOptions.onError({ error: { message: e.message } });
+            }
+            return { error: { message: e.message } };
+        }
+    }
+};
