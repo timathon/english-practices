@@ -1,6 +1,41 @@
 import { createBrowserRouter, RouterProvider, Navigate, Link, Outlet, useRouteError, ScrollRestoration } from 'react-router-dom'
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 
+function SimpleProgressBar() {
+  const [progress, setProgress] = useState(15);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) return prev;
+        const inc = Math.max(1, Math.round((95 - prev) / 6));
+        return Math.min(92, prev + inc);
+      });
+    }, 120);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div style={{ padding: '24px 20px', maxWidth: 280, color: 'var(--text, #333)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 8, fontWeight: 500 }}>
+        <span>Loading...</span>
+        <span>{progress}%</span>
+      </div>
+      <div style={{ width: '100%', height: 4, background: 'rgba(128, 128, 128, 0.2)', borderRadius: 2, overflow: 'hidden' }}>
+        <div
+          style={{
+            width: `${progress}%`,
+            height: '100%',
+            background: 'var(--accent, #6366f1)',
+            borderRadius: 2,
+            transition: 'width 0.15s ease-out'
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function forceRefreshBypassCache() {
   const url = new URL(window.location.href);
   url.searchParams.set('t', Date.now().toString());
@@ -413,7 +448,7 @@ function RootLayout() {
       <Navigation session={session} showChinese={showChinese} onCycleComplete={() => setShowChinese((prev: boolean) => !prev)} />
       {session && <PetFloatingCompanion />}
       <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
-        <Suspense fallback={<div style={{ padding: 20 }}>Loading...</div>}>
+        <Suspense fallback={<SimpleProgressBar />}>
           <Outlet />
         </Suspense>
       </main>
@@ -641,7 +676,7 @@ function App() {
     };
   }, [session]);
 
-  if (isPending) return <div style={{ padding: 20 }}>Loading...</div>
+  if (isPending) return <SimpleProgressBar />
 
   return (
     <LanguageContext.Provider value={{ showChinese, setShowChinese }}>
