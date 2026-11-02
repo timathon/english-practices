@@ -3,6 +3,7 @@ import type React from 'react'
 import type { Question, Section, HighlightedSentence } from './TestSheetTypes'
 import {
   isAnswerCorrect,
+  resolveOptionIndex,
   renderPromptText,
   cleanOptionText,
   formatOptionWithLetter,
@@ -49,7 +50,7 @@ export function TestSheetQuestionItem({
   highlightedSentence,
   setHighlightedSentence
 }: TestSheetQuestionItemProps) {
-  const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section, q.type)
+  const isUserCorrect = isAnswerCorrect(userAnswers[q.id], q.answer, section, q.type, q.options)
   const [showOptions, setShowOptions] = useState(false)
 
   const renderAudioPlayer = () => {
@@ -358,7 +359,7 @@ export function TestSheetQuestionItem({
 
     case 'reading-comprehension': {
       const isMultipleChoice = q.type === 'multiple-choice' || (q.options && q.options.length > 0)
-      const activeOptIdx = (isMultipleChoice && userAnswers[q.id] !== undefined) ? Number(userAnswers[q.id]) : null
+      const activeOptIdx = isMultipleChoice ? resolveOptionIndex(userAnswers[q.id], q.options) : null
       const shouldHideOptions = !!(section.hideOptionsInitially || section.title.includes('任务型阅读'))
       const isOptionsVisible = !shouldHideOptions || submitted || activeOptIdx !== null || showOptions
 
@@ -388,7 +389,8 @@ export function TestSheetQuestionItem({
                   if (activeOptIdx === oIdx) btnClass += " selected"
                   
                   if (submitted) {
-                    if (Number(q.answer) === oIdx) {
+                    const isCorrectOpt = Number(q.answer) === oIdx || resolveOptionIndex(q.answer, q.options) === oIdx
+                    if (isCorrectOpt) {
                       btnClass += " correct-reveal"
                     } else if (activeOptIdx === oIdx) {
                       btnClass += " wrong-reveal"
@@ -400,7 +402,7 @@ export function TestSheetQuestionItem({
                       key={oIdx}
                       className={btnClass}
                       disabled={submitted}
-                      onClick={() => handleAnswerChange(q.id, oIdx)}
+                      onClick={() => handleAnswerChange(q.id, option)}
                     >
                       <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
                       <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx), false)}</span>
@@ -529,7 +531,7 @@ export function TestSheetQuestionItem({
     }
 
     case 'multiple-choice': {
-      const activeOptIdx = userAnswers[q.id] !== undefined ? Number(userAnswers[q.id]) : null
+      const activeOptIdx = resolveOptionIndex(userAnswers[q.id], q.options)
       const isAnswered = activeOptIdx !== null
       const shouldHideOptions = !!(section.hideOptionsInitially || section.title.includes('任务型阅读'))
       const isOptionsVisible = !shouldHideOptions || submitted || isAnswered || showOptions
@@ -559,7 +561,8 @@ export function TestSheetQuestionItem({
                 if (activeOptIdx === oIdx) btnClass += " selected"
                 
                 if (submitted) {
-                  if (Number(q.answer) === oIdx) {
+                  const isCorrectOpt = Number(q.answer) === oIdx || resolveOptionIndex(q.answer, q.options) === oIdx
+                  if (isCorrectOpt) {
                     btnClass += " correct-reveal"
                   } else if (activeOptIdx === oIdx) {
                     btnClass += " wrong-reveal"
@@ -571,7 +574,7 @@ export function TestSheetQuestionItem({
                     key={oIdx}
                     className={btnClass}
                     disabled={submitted}
-                    onClick={() => handleAnswerChange(q.id, oIdx)}
+                    onClick={() => handleAnswerChange(q.id, option)}
                   >
                     <span className="ts-option-letter">{String.fromCharCode(65 + oIdx)}.</span>
                     <span className="ts-option-text">{renderPromptText(cleanOptionText(option, oIdx), false)}</span>

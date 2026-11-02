@@ -380,7 +380,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             }}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v261101-2347
+            v261102-2005
           </div>
         </div>
       )}

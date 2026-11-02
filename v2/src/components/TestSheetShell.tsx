@@ -531,7 +531,7 @@ export function TestSheetShell({
         if (q.isExample) return
         totalQuestions++
         const userAns = userAnswers[q.id]
-        if (isAnswerCorrect(userAns, q.answer, section, q.type)) {
+        if (isAnswerCorrect(userAns, q.answer, section, q.type, q.options)) {
           correctCount++
         }
       })
@@ -637,7 +637,7 @@ export function TestSheetShell({
               const hasError = submitted && Array.isArray(sec.questions) && sec.questions.some(q => {
                 if (q.isExample) return false
                 const userAns = userAnswers[q.id]
-                return !isAnswerCorrect(userAns, q.answer, sec, q.type)
+                return !isAnswerCorrect(userAns, q.answer, sec, q.type, q.options)
               })
 
               return (

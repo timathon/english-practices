@@ -238,7 +238,40 @@ export const renderPromptText = (text?: string, stripLeadingNum: boolean = true)
 }
 
 
-export const isAnswerCorrect = (userAns: any, correctAns: any, sectionTypeOrSection?: string | any, qType?: string): boolean => {
+export const resolveOptionIndex = (rawAns: any, options?: string[]): number | null => {
+  if (rawAns === undefined || rawAns === null || rawAns === '' || !options || !Array.isArray(options) || options.length === 0) {
+    return null
+  }
+
+  // 1. Try exact or cleaned string match against options list
+  const sAns = String(rawAns).trim().toLowerCase()
+  const cleanedAns = sAns.replace(/^[a-z]\s*[\.\u3001]\s*/i, '').trim()
+
+  for (let i = 0; i < options.length; i++) {
+    const sOpt = String(options[i] || '').trim().toLowerCase()
+    if (sOpt === sAns) return i
+    const cleanedOpt = sOpt.replace(/^[a-z]\s*[\.\u3001]\s*/i, '').trim()
+    if (cleanedOpt === cleanedAns) return i
+  }
+
+  // 2. Fallback to numeric index (for legacy attempts where index was recorded)
+  if (!isNaN(Number(rawAns))) {
+    const num = Number(rawAns)
+    if (num >= 0 && num < options.length) {
+      return num
+    }
+  }
+
+  return null
+}
+
+export const isAnswerCorrect = (
+  userAns: any,
+  correctAns: any,
+  sectionTypeOrSection?: string | any,
+  qType?: string,
+  questionOptions?: string[]
+): boolean => {
   if (userAns === undefined || userAns === null || userAns === '' || correctAns === undefined || correctAns === null || correctAns === '') {
     return false
   }
@@ -249,9 +282,26 @@ export const isAnswerCorrect = (userAns: any, correctAns: any, sectionTypeOrSect
   const sectionObj = typeof sectionTypeOrSection === 'object' && sectionTypeOrSection !== null
     ? sectionTypeOrSection
     : null
-  const wordbank = sectionObj?.wordbank || sectionObj?.options
+  const wordbank = sectionObj?.wordbank || sectionObj?.options || questionOptions
 
   if (sectionType === 'multiple-choice' || sectionType === 'cloze-passage' || (sectionType === 'reading-comprehension' && qType === 'multiple-choice')) {
+    // If questionOptions is provided, compare user answer with target option text
+    if (questionOptions && Array.isArray(questionOptions) && questionOptions.length > 0) {
+      const correctIdx = !isNaN(Number(correctAns)) ? Number(correctAns) : resolveOptionIndex(correctAns, questionOptions)
+      const correctText = correctIdx !== null && correctIdx >= 0 && correctIdx < questionOptions.length
+        ? questionOptions[correctIdx]
+        : String(correctAns)
+
+      const userIdx = resolveOptionIndex(userAns, questionOptions)
+      if (userIdx !== null && correctIdx !== null) {
+        return userIdx === correctIdx
+      }
+
+      const uClean = String(userAns).trim().toLowerCase().replace(/^[a-z]\s*[\.\u3001]\s*/i, '').trim()
+      const cClean = correctText.trim().toLowerCase().replace(/^[a-z]\s*[\.\u3001]\s*/i, '').trim()
+      if (uClean === cClean) return true
+    }
+
     if (!isNaN(Number(userAns)) && !isNaN(Number(correctAns))) {
       return Number(userAns) === Number(correctAns)
     }
