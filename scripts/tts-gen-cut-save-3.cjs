@@ -140,7 +140,7 @@ def get_tts():
                     "speech_config": types.SpeechConfig(
                         voice_config=types.VoiceConfig(
                             prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                                voice_name="Achernar" if "3.1" in model_name else "${voiceName}"
+                                voice_name="Gacrux" if "3.1" in model_name else "${voiceName}"
                             )
                         )
                     )

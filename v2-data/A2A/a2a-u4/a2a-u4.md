@@ -1,244 +1,224 @@
-> ## **Target Filename Code:** A2A-U3
-> **Total PDF Pages:** 9
-> **Currently Processing:** Pages 1 to 9
+> ## **Target Filename Code:** A2A-U4
+> **Total PDF Pages:** 10
+> **Currently Processing:** Pages 1 to 10
 
-### --- PRINTED PAGE 14 ---
+### --- PRINTED PAGE 21 ---
 
-[*LAYOUT: Header section introducing the unit title, target vocabulary, and chant.*]
-
-# Unit 3 Weather
+# Unit 4 Seasons
 
 ## Let's start!
 
 ### 1 Listen, point and say.
 
-[*VISUAL: An outdoor illustration depicting four different weather conditions in one landscape. Numbered icons with corresponding weather scenes:*]
+[*VISUAL: Four small circular illustrations depicting the four seasons: fresh flowers and leaves for spring, lush green trees under a sun for summer, golden trees shedding leaves for autumn, and snow-covered trees and a snowman for winter.*]
 
-- snowy [*VISUAL: A snowman on a snowy hill, snowflakes falling.*]
-- windy [*VISUAL: Trees bending and leaves blowing in a strong breeze.*]
-- rainy [*VISUAL: Rain falling into puddles, someone holding an umbrella.*]
-- sunny [*VISUAL: A bright, smiling yellow sun in a clear blue sky.*]
+- spring
+- summer
+- autumn
+- winter
 
-### 2 Listen and chant.
+### 2 Listen and sing.
 
-> What's the weather like?  
-> It's windy, windy. Whoo!  
-> It's snowy, snowy. Brr!  
-> It's rainy, rainy. Splash!  
-> It's sunny, sunny. Hooray!
+[*VISUAL: An illustration of children singing and dancing outdoor across seasonal backgrounds.*]
 
----
+> Spring, summer, autumn, winter.  
+> Four seasons of the year!  
+> It's spring.  
+> It's summer.  
+> It's autumn.  
+> It's winter.  
+> Four seasons of the year!
 
-### --- PRINTED PAGE 15 ---
-
-[*LAYOUT: Story section showing May planting seeds and waiting for the right weather.*]
+### --- PRINTED PAGE 22 ---
 
 ## Let's read!
 
 ### 1 Listen and read.
 
-[*VISUAL: Frame 1 – Dad shows May a small potted plant on the balcony under a bright sun.*]  
-**Dad:** May, look!  
-**May:** What's the weather like?  
-**Dad:** It's sunny.
+[*LAYOUT: A four-panel comic strip showing four children enjoying different activities through the four seasons.*]
 
-[*VISUAL: Frame 2 – The plant's leaves are drooping dryly in the sun. Dad waters it with a watering can.*]  
-**May:** Oh, no!  
-**May:** Thank you, Dad!
+**Panel 1**  
+[*VISUAL: A boy standing in a flower garden with blooming flowers and butterflies fluttering around.*]  
+**Boy:** "It's spring. I like spring."  
+**Girl:** "Red, yellow, green... Lots of colours!"
 
-[*VISUAL: Frame 3 – Strong wind blows across the balcony; May holds the wobbling pot with concern.*]  
-**Narrator:** She is sad.  
-**May:** What's the weather like?  
-**Dad:** It's windy.  
-**May:** Oh, no!
+**Panel 2**  
+[*VISUAL: Children playing outside under a bright summer sun by the water.*]  
+**Child:** "It's summer. I like summer."  
+**Child:** "Let's play!"
 
-[*VISUAL: Frame 4 – Dad comforts May as she looks worriedly at the fragile sprout.*]  
-**Dad:** Don't worry, May. Let's wait for rainy days.
+**Panel 3**  
+[*VISUAL: Children collecting fallen red and yellow autumn leaves on the ground.*]  
+**Child:** "It's autumn. I like autumn."  
+**Child:** "Let's make some pictures!"
 
-[*VISUAL: Frame 5 – Clouds appear and fresh rain falls; May and her dad celebrate on the balcony.*]  
-**Caption:** Days later.  
-**May:** It's rainy! Hooray!
+**Panel 4**  
+[*VISUAL: Children playing in the snow, rolling a big snowball and skiing.*]  
+**Child:** "It's winter. I like winter."  
+**Child:** "Go!"
 
----
+### --- PRINTED PAGE 23 ---
 
-### --- PRINTED PAGE 16 ---
+### 2 Look, say and number the pictures.
 
-[*LAYOUT: Story comprehension questions and performance prompt.*]
+[*VISUAL: Four numbered circular boxes accompanied by season-themed illustrations: a snowman in winter, blooming cherry blossoms in spring, ice cream under a hot summer sun, and colorful falling leaves in autumn.*]
 
-### 2 Look, listen and circle.
+- It's...
+- It's...
+- It's...
+- It's...
 
-[*VISUAL: Three numbered scenes from the story paired with circle-the-word options:*]
+### 3 Talk about the seasons you like.
 
-1. [*VISUAL: May looking up at the bright sun outside.*]  
-   It's <u>sunny</u> / <u>rainy</u>.
+[*VISUAL: Two children talking together. One holds up a picture of a sunny summer beach, and the other holds up a picture of a winter snowman.*]
 
-2. [*VISUAL: May holding her hat while the wind blows hard.*]  
-   It's <u>rainy</u> / <u>windy</u>.
+- **Girl:** "I like summer."
+- **Boy:** "I like winter."
 
-3. [*VISUAL: Rain falling while May smiles and raises her hands.*]  
-   It's <u>sunny</u> / <u>rainy</u>!
-
-### 3 Act out the story.
-
-[*VISUAL: Two students acting out the roles of May and her dad using expressive gestures.*]
-
----
-
-### --- PRINTED PAGE 17 ---
-
-[*LAYOUT: Board game track and phonics practice.*]
+### --- PRINTED PAGE 24 ---
 
 ## Let's have fun!
 
-### Game
+### Game: Look and guess.
 
-**Play the game.**
+[*VISUAL: A student stands in front of the classroom acting out being warm in springtime or admiring flowers while blindfolded or guessing, and another student gives clues.*]
 
-[*VISUAL: A board game winding from "Start" to "Finish" featuring circular tiles showing various weather scenes (sunny, windy, rainy, snowy). Two students are rolling dice and speaking.*]
+**Student:** "It's spring."
 
-**Student 1:** What's the weather like?  
-**Student 2:** It's windy.
+---
 
 ## Fun with ABCs
 
 ### 1 Listen, point and say.
 
-[*VISUAL: Letter cards displaying letters Ee and Ff with corresponding vocabulary illustrations.*]
+[*LAYOUT: Letter presentation cards with uppercase and lowercase letters beside corresponding vocabulary illustrations.*]
 
-* **Ee** egg [*VISUAL: A brown hen's egg.*]
-* **Ff** fish [*VISUAL: A blue swimming fish.*]
+- **Gg**  
+  [*VISUAL: A young girl smiling.*]  
+  **girl**
+
+- **Hh**  
+  [*VISUAL: A stylish wide-brimmed summer hat.*]  
+  **hat**
 
 ### 2 Listen and chant.
 
-> I have an egg, e, e, egg.  
-> I have a fish, f, f, fish.
+[*VISUAL: Cartoon illustrations showing a girl wearing a decorative hat with phonetic focus.*]
 
----
+> Look at that girl, g, g, girl.  
+> Look at that hat, h, h, hat.
 
-### --- PRINTED PAGE 18 ---
-
-[*LAYOUT: Collaborative project making a weather poster of Chinese cities.*]
+### --- PRINTED PAGE 25 ---
 
 ## Let's do it!
 
-### Make a poster about weather around China.
+### Make a season window.
 
-**1 Choose five cities in China.**  
-[*VISUAL: City name tags to pick from:*]
-* Beijing
-* Shanghai
-* Guangzhou
-* Chengdu
-* Chongqing
-* Sanya
-* Dalian
-* others
+[*LAYOUT: Step-by-step craft tutorial across four numbered instructional panels.*]
 
-**2 Check the weather in the cities.**
+1. **Draw a window.**  
+   [*VISUAL: A hand drawing the outline of a window frame on colored paper.*]
 
-**3 Make your poster.**
+2. **Cut the window.**  
+   [*VISUAL: A pair of scissors carefully cutting open the four window panes.*]
 
-**4 Show your poster in class.**  
-[*VISUAL: A student presents a hand-made poster showing weather icons drawn for Chengdu, Dalian, Beijing, Guangzhou, and Shanghai.*]  
-**Presenter:** In Beijing, it's sunny...
+3. **Draw four seasons and the weather.**  
+   [*VISUAL: The student drawing four different seasonal landscapes with varying weather conditions behind the window panes.*]
 
----
+4. **Play.**  
+   [*VISUAL: A boy and a girl showing each other their season windows and discussing what is visible inside.*]  
+   - **Boy:** "It's spring. It's sunny."
 
-### --- PRINTED PAGE 19 ---
-
-[*LAYOUT: Cross-cultural exploratory activity on weather clothing.*]
+### --- PRINTED PAGE 26 ---
 
 ## Let's explore!
 
-### Watch the video. Look and match.
+### Find out the seasons. Watch the video and check.
 
-[*VISUAL: Four children dressed for different weather conditions (Taotao, Duoduo, Emma, Toby) in the top row; four weather scenes numbered 1 to 4 in the bottom row:*]
+[*VISUAL: Four diverse scenic photographs of global landscapes representing the four seasons: a field of vibrant springtime tulips, a lush green summer forest stream, an autumn woodland path covered with orange foliage, and a snowy winter mountain lodge.*]
 
-* **Taotao** [*VISUAL: Wearing a warm winter down coat, woolen hat, and scarf.*]
-* **Duoduo** [*VISUAL: Wearing a yellow raincoat and holding an umbrella.*]
-* **Emma** [*VISUAL: Wearing a light T-shirt, sunhat, and sunglasses.*]
-* **Toby** [*VISUAL: Wearing a windbreaker with wind blowing leaves.*]
+1. It's...
+2. It's...
+3. It's...
+4. It's...
 
-1. [*VISUAL: Snow-covered landscape with falling snow.*]
-2. [*VISUAL: Rainy city street with puddles.*]
-3. [*VISUAL: Bright sunny beach with blue skies.*]
-4. [*VISUAL: Windy park with swirling autumn leaves.*]
+### --- PRINTED PAGE 50 ---
 
----
-
-### --- PRINTED PAGE 48 ---
-
-[*LAYOUT: Supplementary workbook cutout and listening tasks.*]
-
-# Unit 3 Weather
+# Unit 4 Seasons
 
 ### 1 Cut out the pictures on page 71. Put them in the right place and say.
 
-[*VISUAL: Four empty rectangular frames labeled with weather words:*]
+[*LAYOUT: A large divided practice template with four quadrants labelled for each season.*]
 
-* sunny
-* rainy
-* snowy
-* windy
+- **spring**
+- **autumn**
+- **summer**
+- **winter**
+
+---
 
 ### 2 Listen and number the pictures.
 
-[*VISUAL: Four picture boxes labeled a, b, c, d to be numbered based on the listening track:*]
+[*VISUAL: Four square activity boxes depicting children engaged in various seasonal scenes, each with a small circular numbering blank in the corner.*]
 
-* a. [*VISUAL: Children playing in the snow and making a snowman.*] (________)
-* b. [*VISUAL: Children walking in heavy rain with umbrellas and boots.*] (________)
-* c. [*VISUAL: Children playing outside under a bright warm sun.*] (________)
-* d. [*VISUAL: Children flying a kite in a strong breeze.*] (________)
+1. ________
+2. ________
+3. ________
+4. ________
 
----
+### --- PRINTED PAGE 51 ---
 
-### --- PRINTED PAGE 49 ---
+### 3 Match, colour and say.
 
-[*LAYOUT: Workbook guessing game and sound imitation activity.*]
+[*LAYOUT: Two parallel columns. Column 1 contains four numbered outline drawings of seasonal activities (building a snowman, flying a kite in spring, swimming in summer, playing with fallen leaves in autumn). Column 2 contains bullet points with the season names.*]
 
-### 3 Look at the pictures. Guess and say the weather.
+1. [*VISUAL: Children playing in the snow / winter scene*]  
+2. [*VISUAL: Children flying a kite in green grass / spring scene*]  
+3. [*VISUAL: Children swimming and having ice cream / summer scene*]  
+4. [*VISUAL: Children raking fallen leaves / autumn scene*]  
 
-[*VISUAL: Four small rectangular cropped illustrations showing partial weather clues (e.g., wind bending grass, raindrops splashing, bright sunbeams, falling snow). A student speaks.*]
+- **winter**
+- **spring**
+- **summer**
+- **autumn**
 
-**Student:** It's...
-
-### 4 Play the game.
-
-[*VISUAL: A boy making wind sounds while his classmate guesses the weather.*]
-
-**Boy:** Whoosh, whoosh...  
-**Girl:** It's windy.
-
-**My progress:** [*VISUAL: Three self-assessment rating stars and checkboxes.*]
+**Example speech bubble:** "It's spring."
 
 ---
 
-### --- PRINTED PAGE 65 & CUTOUT SECTION ---
+### 4 Draw and say.
 
-[*LAYOUT: Unit 3 vocabulary list and Activity 1 cutout pieces printed on the lower section of the page.*]
+[*VISUAL: A blank drawing frame for students to create their own seasonal artwork.*]
 
-# Unit 3 Words and expressions
-
-* **weather** 天气
-* **windy** 风大的；多风的
-* **snowy** 多雪的，积雪的
-* **rainy** 多雨的
-* **sunny** 阳光充足的
-* **worry** 担心
-* **wait** 等，等候
-* **later** 之后
-* **egg** 蛋
-* **other** 另外的
-* **in** 在（容器、地点或地区）里
+- **Child 1:** "It's spring. I like spring."
+- **Child 2:** "It's ________. I like ________."
 
 ---
 
-# Unit 3 Activity 1
+[*LAYOUT: Self-assessment section at the bottom of the page.*]  
+**My progress:** [ *VISUAL: Rating stars / checkboxes* ]
 
-Cut out the pictures. Then glue them on page 48.
+### --- APPENDIX: PDF PAGE 9 ---
 
-[*VISUAL: Four circular photo cutouts depicting weather scenes to be cut and glued onto page 48:*]
-1. [*VISUAL: Bright golden sunshine over a green meadow.*]
-2. [*VISUAL: Heavy rain falling on green grass and puddles.*]
-3. [*VISUAL: Deep white snow blanket over pine trees and mountains.*]
-4. [*VISUAL: Palm trees and vegetation bent under strong gusty wind.*]
+# Unit 4 Words and expressions
+
+| Word / Expression | Chinese Meaning |
+| :--- | :--- |
+| **spring** | 春天，春季 |
+| **summer** | 夏天，夏季 |
+| **autumn** | 秋天，秋季 |
+| **winter** | 冬天，冬季 |
+| **season** | 季节 |
+| **year** | 年 |
+| **lot** | 大量，许多 |
+| **make** | 制作 |
+| **some** | 一些，若干 |
+| **hat** | 帽子 |
+
+### --- PRINTED PAGE 73 ---
+
+# Unit 4 Activity 1
+
+Cut out the pictures. Then glue them on page 50.
+
+[*VISUAL: Four cut-out illustration cards showing typical seasonal scenes: kite flying amongst cherry blossoms for spring, eating watermelon under the sun for summer, harvesting apples among fallen leaves for autumn, and making a snowman in a snowy village for winter.*]

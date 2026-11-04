@@ -905,16 +905,29 @@ app.post('/api/admin/practices', async (c) => {
     const BATCH_SIZE = 100
     for (let i = 0; i < list.length; i += BATCH_SIZE) {
       const batch = list.slice(i, i + BATCH_SIZE)
-      await db.insert(practice).values(batch.map((item: any) => ({
-        id: item.id,
-        textbook: item.textbook,
-        unit: item.unit,
-        type: item.type,
-        title: item.title,
-        content: typeof item.content === 'string' ? item.content : JSON.stringify(item.content),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })))
+      for (const item of batch) {
+        const contentStr = typeof item.content === 'string' ? item.content : JSON.stringify(item.content)
+        await db.insert(practice).values({
+          id: item.id,
+          textbook: item.textbook,
+          unit: item.unit,
+          type: item.type,
+          title: item.title,
+          content: contentStr,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }).onConflictDoUpdate({
+          target: practice.id,
+          set: {
+            title: item.title,
+            textbook: item.textbook,
+            unit: item.unit,
+            type: item.type,
+            content: contentStr,
+            updatedAt: new Date()
+          }
+        })
+      }
     }
 
     cachedMappedPractices = null;

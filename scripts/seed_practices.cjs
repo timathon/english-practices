@@ -169,12 +169,17 @@ async function seed() {
         return;
     }
     
-    let cookies = authRes.headers.get('set-cookie');
-    if (!cookies) {
-         // Some versions of standard fetch might return cookies differently
-         console.warn("No Set-Cookie header found. The upload may fail if auth is required.");
-         cookies = "";
+    const authData = await authRes.json();
+    const token = authData.token || (authData.session && authData.session.token) || null;
+    let cookies = authRes.headers.get('set-cookie') || '';
+    if (!token && !cookies) {
+         console.warn("No token or Set-Cookie header found. The upload may fail if auth is required.");
     }
+
+    const authHeaders = {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...(cookies ? { 'Cookie': cookies } : {})
+    };
     
     const deletedFiles = getDeletedJsonFiles();
     const deletedIds = deletedFiles.map(pathToId);
@@ -185,7 +190,7 @@ async function seed() {
             const deleteRes = await myFetch(`${API_URL}/api/admin/practices/${encodeURIComponent(id)}`, {
                 method: 'DELETE',
                 headers: { 
-                    'Cookie': cookies 
+                    ...authHeaders 
                 }
             });
             if (deleteRes.ok) {
@@ -403,7 +408,7 @@ async function seed() {
         const clearRes = await myFetch(`${API_URL}/api/admin/practices`, {
             method: 'DELETE',
             headers: { 
-                'Cookie': cookies 
+                ...authHeaders 
             }
         });
         if (!clearRes.ok) {
@@ -423,7 +428,7 @@ async function seed() {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Cookie': cookies 
+                ...authHeaders 
             },
             body: JSON.stringify(chunk)
         });

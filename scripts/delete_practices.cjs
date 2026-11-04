@@ -125,7 +125,13 @@ async function deleteFromEndpoint(apiUrl, ids) {
             return;
         }
         
+        const authData = await authRes.json();
+        const token = authData.token || (authData.session && authData.session.token) || null;
         const cookies = authRes.headers['set-cookie'] || "";
+        const authHeaders = {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            ...(cookies ? { 'Cookie': cookies } : {})
+        };
         console.log("Authenticated.");
 
         for (const id of ids) {
@@ -133,7 +139,7 @@ async function deleteFromEndpoint(apiUrl, ids) {
             const deleteRes = await myFetch(`${apiUrl}/api/admin/practices/${encodeURIComponent(id)}`, {
                 method: 'DELETE',
                 headers: { 
-                    'Cookie': cookies 
+                    ...authHeaders 
                 }
             });
             
