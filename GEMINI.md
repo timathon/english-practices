@@ -578,52 +578,88 @@ This document defines the rules for extracting and converting textbook data into
 
 ## 11. Reading & Expression (YB / RE)
 **Source:** Reading and Expression Markdown (e.g., `v2-data/A10/a10-yb/a10-yb-1.md`).
-**Target:** `*-reading-expression.json` (Save in the same folder as source)
+**Target:** `a10-yb-*.json` (e.g., `v2-data/A10/a10-yb/a10-yb-1.json`, save in the same folder as source)
 
+- **Zero-Exploration Rule:** Do NOT inspect `ReadingExpressionShell.tsx` or other `*-reading-expression.json` files before generating. Everything required by the frontend runtime is specified below.
 - **Pedagogical Workflow (4-Step Guided Flow in Frontend):**
-  1. **找关键词 (Step 1):** Identify core question prompt keywords/entities.
-  2. **定位关键句 (Step 2):** Tap the exact source sentence in the passage pane.
-  3. **人称转换判断 (Step 3):** Decide if first-person to third-person pronoun transformation is required.
-  4. **连词成句 (Step 4):** Click discrete word chips to assemble the standard answer with ending punctuation.
+  1. **找关键词 (Step 1):** Auto-generated from `prompt` by stripping wh- lead-ins (`What did`, `Where is`, `How many`, etc.). Keep `prompt` as a clean grammatical English question.
+  2. **定位关键句 (Step 2):** User taps the sentence at `target_sentence_index` (0-based index in `passage.flat()`).
+  3. **人称转换判断 (Step 3):** Frontend auto-evaluates `true` when `question_type === "pronoun_transform"` OR when the sentence at `target_sentence_index` contains first-person pronouns (`I/me/my/mine/we/us/our/ours`) AND `standard_answer` contains third-person pronouns (`he/him/his/she/her/hers/they/them/their`).
+  4. **连词成句 (Step 4):** Frontend splits `standard_answer.replace(/[.!?]$/, '').trim().split(/\s+/)` into word chips, appends the ending punctuation (`.` or `?`) as a separate chip, and pulls 3 distractor tokens from `word_blocks` (tokens not in the answer). Internal commas stay attached to their word (e.g., `"Yes,"`, `"No,"`).
 
 - **Question Composition Rules (Strictly Enforced):**
-  - **4 Questions per Challenge:** Exactly **3 细节理解题 (detail comprehension)** + **1 开放性问答题 (open-ended question)**.
-  - **Why Questions Must Start With "Because":** When answering questions starting with *"Why..."* (reason questions), the standard answer, word blocks, and multiple-choice options MUST start with **"Because"** (e.g., *"Because Micheal does well in both personal development and schoolwork."*), even if the answer key in the source markdown omits "Because".
+  - **4 Questions per Challenge:** Exactly **3 细节理解题 (detail comprehension)** (`q_index` 1–3) + **1 开放性问答题 (open-ended question)** (`q_index: 4`, `question_type: "open_ended"`).
+  - **Source Question Filtering (5–6 questions → 4):** If a passage in the source markdown has 5 or 6 questions, select the 3 clearest text-locatable detail/reason questions for `q_index` 1–3 and 1 open-ended/evaluation question for `q_index: 4` (if none exists in the source, adapt the last question into a concise `"What do you think of ...?"` or `"What can we learn from ...?"` open-ended question).
+  - **Why Questions Must Start With "Because":** When answering questions starting with *"Why..."* (reason questions), `standard_answer`, `word_blocks`, and the correct item in `options` MUST start with **"Because"** (e.g., *"Because Micheal does well in both personal development and schoolwork."*), even if the answer key in the source markdown omits "Because".
   - **No Translation Tasks:** Translation is no longer tested in the exam format. If source markdown contains a translation question (e.g., *"请将画线句翻译成中文"*), it MUST be replaced with a high-quality detail comprehension question based on the passage text.
   - **Mistake Book Exclusion:** Errors in reading-expression (YB) must **NOT** be recorded into the mistake book (`mistakeService`). Exercises are designed as guided learning steps rather than standalone single-word mistake notebook entries.
 
 - **Passage Paragraph Separation Rule (Strictly Enforced):**
-  - `passage` MUST be structured as a 2D array of strings: `string[][]`.
+  - `passage` and `passage_cn` MUST be structured as 2D arrays of strings: `string[][]`, with identical paragraph counts and sentence counts per paragraph (`passage[i].length === passage_cn[i].length`).
   - Each sub-array represents one paragraph of sentence strings: `[["Paragraph 1 Sentence 1.", "Paragraph 1 Sentence 2."], ["Paragraph 2 Sentence 1."]]`.
   - In frontend [`ReadingExpressionShell.tsx`](file:///home/timathon/codes/smartedu/english-practices/v2/src/components/ReadingExpressionShell.tsx), each sub-array renders as `<p className="yb-passage-paragraph">` with visual paragraph margins and indentation (`text-indent: 2em`).
-  - **Sentence Indexing Fidelity:** The flattened sequence of sentences across paragraphs must maintain a consistent 0-based global index matching `target_sentence_index`.
+  - **Sentence Indexing Fidelity:** The flattened sequence of sentences across paragraphs (`passage.flat()`) must maintain a consistent 0-based global index matching `target_sentence_index`.
   - **Quotation Marks & Vocabulary Glosses Preservation:**
     - Double quotes (`"..."`) and dialogue quotes from the source markdown MUST be strictly preserved in the JSON sentence strings (e.g. `["\"I tried out table tennis after classes ended, and the Chinese students played like professionals,\" he said."]`), properly escaped as `\"`. Do not drop or strip quotation marks.
     - Parenthesized Chinese vocabulary translations / glosses from the source markdown (e.g. `douzhi, a fermented(发酵的) bean juice`, `chili peppers(辣椒)`, `damp(潮湿的) weather`) MUST be kept in the passage JSON for student reading support.
     - The TTS synthesis tool ([`scripts/tts/tts-chirp.cjs`](file:///home/timathon/codes/smartedu/english-practices/scripts/tts/tts-chirp.cjs)) and frontend audio hash calculation automatically strip these parenthesized Chinese glosses (`/\s*[(（][\u4e00-\u9fa5\s/、]+[)）]/g`) before speech generation.
 
-- **Challenge & Question Schema:**
-  - `challenges`: Array of challenge objects.
-    - `id`: e.g. `"c1"`, `"c2"`.
-    - `title`: e.g. `"Passage 1: Hunan Dishes and Culture"`.
-    - `icon`: Relevant emoji icon (e.g. `"🌶️"`, `"🎵"`). In challenge card selection, a text-type badge (e.g. `"说"` for 说明文, `"记"` for 记叙文) is automatically displayed.
-    - `article_type`: Chinese text type (e.g. `"说明文"`, `"记叙文"`, `"议论文"`).
-    - `summary`: Concise Chinese summary of the text.
-    - `passage`: `string[][]` (array of paragraph sentence arrays).
-    - `passage_cn`: `string[][]` (array of paragraph sentence arrays containing sentence-by-sentence Chinese translations).
-    - `questions`: Array of exactly 4 question objects:
-      - `id`: Unique ID (e.g. `"yb_c1_q1"`).
-      - `q_index`: Integer 1 to 4.
-      - `question_type`: `"detail_locate"`, `"reason"`, `"pronoun_transform"`, or `"open_ended"`.
-      - `prompt`: English prompt text.
-      - `prompt_cn`: Chinese translation of the prompt.
-      - `target_sentence_index`: 0-based global index in the flattened passage where the evidence resides.
-      - `thinking`: `{ "keywords": [...], "method": "根据关键信息定位 / 转换人称", "rule": "..." }`.
-      - `standard_answer`: Verbatim or official standard answer.
-      - `word_blocks`: Correct answer tokens plus 3-5 distractor noise words.
-      - `options`: Exactly 4 multiple-choice options (1 correct + 3 high-quality traps).
-      - `answer`: 0-indexed integer (0-3) of the correct option (shuffled across questions).
-      - `explanation`: Detailed Chinese explanation with citation.
+- **Complete JSON Template & Schema:**
+```json
+{
+  "level": "Grade 10 - 中考阅读与表达",
+  "title": "阅读与表达·专项突破 2",
+  "practiceType": "reading-expression",
+  "storageSuffix": "_a10_yb_2",
+  "challenges": [
+    {
+      "id": "c1",
+      "title": "Passage 1: Hunan Dishes and Culture",
+      "icon": "🌶️",
+      "article_type": "说明文",
+      "summary": "本文是一篇说明文。主要介绍了……",
+      "passage": [
+        ["Sentence 0.", "Sentence 1."],
+        ["Sentence 2."]
+      ],
+      "passage_cn": [
+        ["第0句中文翻译。", "第1句中文翻译。"],
+        ["第2句中文翻译。"]
+      ],
+      "questions": [
+        {
+          "id": "yb_c1_q1",
+          "q_index": 1,
+          "question_type": "detail_locate",
+          "prompt": "How long is the history of Hunan dishes?",
+          "prompt_cn": "湘菜的历史有多久？",
+          "target_sentence_index": 2,
+          "thinking": {
+            "keywords": ["history", "Hunan dishes"],
+            "method": "根据关键信息定位法",
+            "rule": "在第二段定位到关键信息作答。"
+          },
+          "standard_answer": "More than two thousand years.",
+          "word_blocks": ["More", "than", "two", "thousand", "years", "ago", "about", "hundred"],
+          "options": [
+            "About one thousand years.",
+            "More than two thousand years.",
+            "Since the late 1580s.",
+            "Less than a thousand years."
+          ],
+          "answer": 1,
+          "explanation": "根据第二段第一句可知，湘菜的历史有两千多年了。"
+        }
+      ]
+    }
+  ]
+}
+```
+  - **Field Constraints:**
+    - `question_type`: `"detail_locate"`, `"reason"`, `"pronoun_transform"`, or `"open_ended"` (`q_index: 4` is always `"open_ended"`).
+    - `standard_answer`: Concise, grammatically complete sentence/phrase ending with `.` (Keep internal commas attached to words, e.g., `"Yes, it is."`).
+    - `word_blocks`: All whitespace-split tokens of `standard_answer` (excluding trailing `.`) plus **at least 3 distractor noise words** not present in `standard_answer`.
+    - `options`: Exactly 4 unique strings; `options[answer]` MUST strictly equal `standard_answer`. Shuffle `answer` (`0`–`3`) across questions.
 
 
 

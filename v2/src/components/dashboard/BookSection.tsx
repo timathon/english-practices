@@ -980,6 +980,14 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                     }
                                     return 'Writing Map';
                                   }
+                                  const matchYb = p.type.match(/^(?:a10-)?yb(?:-(\d+))?(?:-reading-expression)?$/i) || p.type.match(/^reading-expression(?:-(\d+))?$/i);
+                                  if (matchYb) {
+                                    return matchYb[1] ? `Reading & Expression ${matchYb[1]}` : 'Reading & Expression';
+                                  }
+                                  const matchYp = p.type.match(/^(?:a10-)?yp-(\d+)$/i) || p.type.match(/^passage-cloze(?:-(\d+))?$/i);
+                                  if (matchYp) {
+                                    return matchYp[1] ? `Grammar Fill ${matchYp[1]}` : 'Grammar Fill';
+                                  }
                                   return formatType(p.type);
                                 })()} 
                                 showChinese={showChinese} 

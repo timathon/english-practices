@@ -32,8 +32,17 @@ export const translatePracticeName = (name: string): string => {
   if (norm.startsWith('Passage Decoder')) {
     return norm.replace(/^Passage Decoder/i, '课文翻译');
   }
-  if (norm.startsWith('Reading Expression') || norm.startsWith('Reading and Expression')) {
-    return norm.replace(/^(Reading Expression|Reading and Expression)/i, '阅读与表达');
+  if (/^(?:A10\s+)?Yb\b/i.test(norm)) {
+    return norm.replace(/^(?:A10\s+)?Yb(?:\s+Reading\s+Expression)?/i, '阅读与表达');
+  }
+  if (/^(?:A10\s+)?Yp\b/i.test(norm) && !/index/i.test(norm)) {
+    return norm.replace(/^(?:A10\s+)?Yp/i, '语篇填空');
+  }
+  if (norm.startsWith('Reading & Expression') || norm.startsWith('Reading Expression') || norm.startsWith('Reading and Expression')) {
+    return norm.replace(/^(Reading\s*&\s*Expression|Reading Expression|Reading and Expression)/i, '阅读与表达');
+  }
+  if (norm.startsWith('Grammar Fill')) {
+    return norm.replace(/^Grammar Fill/i, '语篇填空');
   }
   if (norm.startsWith('Audio Detective')) {
     return norm.replace(/^Audio Detective/i, '听力侦探');
