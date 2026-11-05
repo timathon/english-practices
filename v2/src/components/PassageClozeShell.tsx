@@ -290,6 +290,9 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
             return
         }
 
+        // Check if this question was already answered in regular mode
+        const existingAnswer = !isRedemp && nextQ ? answersLog[nextQ.originalIndex] : null
+
         // Shuffle options and recalculate correct answer index each time question is presented
         if (nextQ && Array.isArray(nextQ.options) && nextQ.options.length > 0) {
             const originalCorrect = nextQ.options[nextQ.answer];
@@ -311,11 +314,24 @@ export function PassageClozeShell({ data, practiceId, unit, textbook }: any) {
 
         setQ(nextQ)
         setIsRedemption(isRedemp)
-        setSelectedOption(null)
-        setShowOptions(false)
-        setLocked(false)
-        timerExpiredRef.current = false
-        countdownTimer.pause()
+
+        if (existingAnswer && nextQ) {
+            // Restore previous answered state and show explanation directly
+            const selectedIdx = existingAnswer.answeredText !== undefined
+                ? nextQ.options.indexOf(existingAnswer.answeredText)
+                : existingAnswer.answeredOption
+            setSelectedOption(selectedIdx !== -1 ? selectedIdx : null)
+            setShowOptions(true)
+            setLocked(true)
+            timerExpiredRef.current = false
+            countdownTimer.pause()
+        } else {
+            setSelectedOption(null)
+            setShowOptions(false)
+            setLocked(false)
+            timerExpiredRef.current = false
+            countdownTimer.pause()
+        }
     }
 
     const playSfx = async (type: 'correct' | 'wrong') => {
