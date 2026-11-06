@@ -816,12 +816,52 @@ app.get('/api/practices', async (c) => {
           const list = await db.select().from(practice)
           cachedMappedPractices = list.map(item => {
               const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content
+              let lightContent: any = {}
+              const type = (item.type || '').toLowerCase()
+
+              if (content) {
+                  if (type.includes('vocab-master') || type.includes('sentence-architect') || type.includes('grammar-wizard') || type.includes('grammar-guard') || type.includes('reading-expression') || type.includes('yb') || type.includes('phonics-ninja') || type.includes('phonics')) {
+                      const challenges = content.challenges || []
+                      lightContent = {
+                          challenges: challenges.map((c: any) => ({ title: c.title || '' }))
+                      }
+                  } else if (type.includes('passage-decoder') || type.includes('audio-detective') || type.includes('cloze')) {
+                      const sections = content.sections || []
+                      lightContent = {
+                          sections: sections.map((s: any) => ({ title: s.title || '' }))
+                      }
+                  } else if (type.includes('text-navigator')) {
+                      const sections = content.sections
+                      if (sections) {
+                          lightContent = { sections: sections.map((s: any) => ({ section: s.section || '' })) }
+                      } else if (content.tree) {
+                          lightContent = { tree: true, section: content.section || '' }
+                      }
+                  } else if (type.includes('spelling-hero')) {
+                      const wordCount = content.spelling_words?.length || 0
+                      lightContent = {
+                          spelling_words: new Array(wordCount).fill({})
+                      }
+                  } else if (type.includes('vocab-magician')) {
+                      const groups = content.groups || []
+                      lightContent = {
+                          type: content.type,
+                          total_words: content.total_words,
+                          groups: groups.map((g: any) => ({
+                              category_name: g.category_name,
+                              item_count: g.items?.length || 0
+                          }))
+                      }
+                  }
+              }
+
               return {
                   id: item.id,
                   textbook: item.textbook,
                   unit: item.unit,
                   type: item.type,
                   title: item.title,
+                  content: lightContent,
                   contentSnippet: content ? {
                       title: content.title || item.title,
                       level: content.level || "",
