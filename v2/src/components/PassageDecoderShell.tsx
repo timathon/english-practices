@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useBlocker } from 'react-router-dom'
 import './PassageDecoderShell.css'
 import { DailyLockModal } from './DailyLockModal'
@@ -21,6 +21,17 @@ const PUBLIC_URL_BASE = "https://pub-eb040e4eac0d4c10a0afdebfe07b2fd0.r2.dev";
 
 const isWorkbook = (id?: string) => !!id && (id.endsWith('-w') || id.includes('-w-') || id.includes('-passage-decoder-w'));
 const isStudentBook = (id?: string) => !!id && (id.endsWith('-s') || id.includes('-s-') || id.includes('-passage-decoder-s'));
+
+const SPEAKER_PALETTE = [
+    '#4f46e5', // Indigo (e.g. Speaker 1)
+    '#d97706', // Warm Amber (e.g. Speaker 2)
+    '#059669', // Emerald Green (e.g. Speaker 3)
+    '#e11d48', // Rose Red (e.g. Speaker 4)
+    '#7c3aed', // Purple (e.g. Speaker 5)
+    '#0891b2', // Teal / Cyan (e.g. Speaker 6)
+    '#ca8a04', // Dark Gold (e.g. Speaker 7)
+    '#2563eb'  // Royal Blue (e.g. Speaker 8)
+];
 
 const getAudioUrl = (sentence: string, book: string, isCf?: boolean) => {
     const hash = md5(sentence);
@@ -547,6 +558,19 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
 
     const primaryColor = data.primaryColor || '#4f46e5'
     const primaryDarkColor = data.primaryColorDark || '#3730a3'
+
+    const speakerColorMap = useMemo(() => {
+        const map: Record<string, string> = {};
+        let colorIdx = 0;
+        const sentences = activeSection?.sentences || queue;
+        for (const s of sentences) {
+            if (s.speaker && !(s.speaker in map)) {
+                map[s.speaker] = SPEAKER_PALETTE[colorIdx % SPEAKER_PALETTE.length];
+                colorIdx++;
+            }
+        }
+        return map;
+    }, [activeSection, queue]);
 
     const handleSectionSelect = (sec: any) => {
         const stats = getStats(sec.title);
@@ -1111,7 +1135,12 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                 </span>
                                             )}
                                             {block.speaker && (
-                                                <strong className="pd-speaker-prefix">{block.speaker}: </strong>
+                                                <strong 
+                                                    className="pd-speaker-prefix"
+                                                    style={speakerColorMap[block.speaker] ? { color: speakerColorMap[block.speaker] } : undefined}
+                                                >
+                                                    {block.speaker}:{' '}
+                                                </strong>
                                             )}
                                             {block.sentences.map((sentence: any) => {
                                                 const isCurrent = isRedemption
