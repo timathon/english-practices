@@ -19,6 +19,8 @@ import { ChallengeCardGrid } from './shell/ChallengeCardGrid'
 import { ShellHistoryModal } from './shell/ShellHistoryModal'
 import { CompleteScreenActions } from './shell/CompleteScreenActions'
 import { QuestionReviewList, getEncouragementMessage, type QuestionResultItem } from './shell/QuestionReviewList'
+import { VocabHookSelector } from './VocabHookSelector'
+import { fetchVocabHooks } from '../lib/vocabHookService'
 
 const renderHighlightedSentence = (sentence: string, word: string) => {
     if (!sentence || !word) return sentence;
@@ -38,6 +40,23 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
    const isCf = data?.tts?.by === 'melotts'
    const { data: session } = useSession()
    const userId = session?.user?.id
+   const isLoggedIn = !!session?.user
+
+   // Prefetch community hooks for words in this challenge/practice
+   useEffect(() => {
+       if (!isLoggedIn || !data) return;
+       const words: string[] = [];
+       if (data.challenges) {
+           data.challenges.forEach((c: any) => {
+               c.questions?.forEach((q: any) => {
+                   if (q.word) words.push(q.word);
+               });
+           });
+       }
+       if (words.length > 0) {
+           fetchVocabHooks(words);
+       }
+   }, [isLoggedIn, data]);
 
    const { playAudio, playSfx } = usePracticeAudio(textbook, () => isCf)
    
@@ -500,7 +519,10 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
        }
    }
 
+     const isEditingHintRef = useRef<boolean>(false)
+
      const closeHintModal = () => {
+         if (isEditingHintRef.current) return
          setIsClosing(true)
          setTimeout(() => {
              setShowHintModal(false)
@@ -512,21 +534,38 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
          }, 200)
      }
 
-     const handleShowHint = () => {
-         setHintUsed(true)
-         setShowHintModal(true)
-         setHintTimeLeft(5)
-         
+     const startHintCountdown = (initialSeconds: number = 5) => {
          if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
-         
-         let secondsLeft = 5
+         setHintTimeLeft(initialSeconds)
+         let secondsLeft = initialSeconds
          hintIntervalRef.current = window.setInterval(() => {
+             if (isEditingHintRef.current) return
              secondsLeft -= 1
              setHintTimeLeft(secondsLeft)
              if (secondsLeft <= 0) {
                  closeHintModal()
              }
          }, 1000)
+     }
+
+     const handleShowHint = () => {
+         setHintUsed(true)
+         setShowHintModal(true)
+         isEditingHintRef.current = false
+         startHintCountdown(5)
+     }
+
+     const handlePauseHintCountdown = () => {
+         isEditingHintRef.current = true
+         if (hintIntervalRef.current) {
+             clearInterval(hintIntervalRef.current)
+             hintIntervalRef.current = null
+         }
+     }
+
+     const handleResumeHintCountdown = () => {
+         isEditingHintRef.current = false
+         startHintCountdown(5)
      }
 
      useEffect(() => {
@@ -864,8 +903,15 @@ export function VocabMasterShell({ data, practiceId, unit, textbook }: any) {
                                   </span>
                                   <button className="vm-close-btn" style={{ margin: 0, width: 'auto', fontSize: '1.2rem' }} onClick={closeHintModal}>✕</button>
                               </div>
-                              <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word' }}>
-                                  {q.hint}
+                              <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word', textAlign: 'left' }}>
+                                  <VocabHookSelector
+                                      word={q.word}
+                                      defaultHook={q.hint || ''}
+                                      isLoggedIn={isLoggedIn}
+                                      inlineDisplay={true}
+                                      onOpenModal={handlePauseHintCountdown}
+                                      onCloseModal={handleResumeHintCountdown}
+                                  />
                               </div>
                            </div>
                        </div>

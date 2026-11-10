@@ -78,3 +78,14 @@ export const practice = sqliteTable("practice", {
     createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
     updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull()
 });
+
+export const vocabHooks = sqliteTable("vocab_hooks", {
+    id: text("id").primaryKey(),
+    word: text("word").notNull(),
+    content: text("content").notNull(),
+    userId: text("userId").notNull().references(() => user.id),
+    status: text("status").default("pending").notNull(), // 'pending' | 'approved' | 'rejected'
+    createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull()
+});
+

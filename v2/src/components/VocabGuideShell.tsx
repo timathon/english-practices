@@ -10,6 +10,9 @@ import { VocabDictationModal } from './VocabDictationModal'
 import { VocabRecallModal } from './VocabRecallModal'
 import { VocabStoryPromptModal } from './VocabStoryPromptModal'
 import { VocabMindmapModal } from './VocabMindmapModal'
+import { VocabHookSelector } from './VocabHookSelector'
+import { fetchVocabHooks } from '../lib/vocabHookService'
+import { authClient } from '../lib/auth'
 
 function formatMeaning(item: any): string {
     if (!item || !item.meaning) return ''
@@ -67,6 +70,13 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
     const [showMindmapModal, setShowMindmapModal] = useState(false)
     const [traceList, setTraceList] = useState<any[] | null>(null)
     const [weights, setWeights] = useState<Record<string, number>>({})
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+    useEffect(() => {
+        authClient.getSession().then(s => {
+            setIsLoggedIn(!!s?.data?.user)
+        })
+    }, [])
 
     const shellRef = useRef<HTMLDivElement>(null)
     const unitKey = `ep-vg-hidden-${practiceId}`
@@ -130,6 +140,10 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
 
         const initialVocab = data.unit_vocabulary.map((v: any, i: number) => ({ ...v, originalIndex: i }))
         setVocab(initialVocab)
+
+        // Batch prefetch community hooks for all words in this unit
+        const wordList = initialVocab.map((v: any) => v.word).filter(Boolean)
+        fetchVocabHooks(wordList)
 
         initialVocab.forEach((item: any) => {
             if (item.context_sentence && textbook) {
@@ -636,7 +650,12 @@ export function VocabGuideShell({ data, practiceId, textbook, unit }: any) {
 
                                             <div className="vg-hook">
                                                 <span className="vg-hook-label">🧠 核心记忆法:</span>
-                                                {item.memorization_hook || item.hint}
+                                                <VocabHookSelector 
+                                                    word={item.word} 
+                                                    defaultHook={item.memorization_hook || item.hint || ''} 
+                                                    isLoggedIn={isLoggedIn}
+                                                    inlineDisplay={true}
+                                                />
                                             </div>
                                         </div>
                                     )

@@ -3,6 +3,9 @@ import { audioCache } from '../lib/audioCache'
 import { getAudioUrl, shuffle } from '../lib/practiceAudio'
 import { AnimatedWordSVG } from './VocabTraceModal'
 import './VocabMasterShell.css'
+import { VocabHookSelector } from './VocabHookSelector'
+import { fetchVocabHooks } from '../lib/vocabHookService'
+import { authClient } from '../lib/auth'
 
 interface VocabRecallModalProps {
     vocab: any[]
@@ -37,7 +40,20 @@ export function VocabRecallModal({
     const [weights, setWeights] = useState<Record<string, number>>({})
     const [showSentenceCn, setShowSentenceCn] = useState(false)
     const [highlightContext, setHighlightContext] = useState(false)
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
     const sentenceCnTimerRef = useRef<any>(null)
+
+    useEffect(() => {
+        authClient.getSession().then(s => {
+            setIsLoggedIn(!!s?.data?.user)
+        })
+    }, [])
+
+    useEffect(() => {
+        if (!vocab || vocab.length === 0) return
+        const words = vocab.map((v: any) => v.word).filter(Boolean)
+        fetchVocabHooks(words)
+    }, [vocab])
     const highlightTimerRef = useRef<any>(null)
 
     const weightsKey = `ep-vg-weights-${practiceId || textbook || 'default'}`
@@ -63,8 +79,10 @@ export function VocabRecallModal({
     const weightAnimTimerRef = useRef<any>(null)
     const hintIntervalRef = useRef<any>(null)
     const audioRef = useRef<HTMLAudioElement | null>(null)
+    const isEditingHintRef = useRef<boolean>(false)
 
     const forceResetHint = useCallback(() => {
+        isEditingHintRef.current = false
         setShowHintModal(false)
         setIsClosing(false)
         if (hintIntervalRef.current) {
@@ -74,6 +92,7 @@ export function VocabRecallModal({
     }, [])
 
     const closeHintModal = useCallback(() => {
+        if (isEditingHintRef.current) return
         setShowHintModal(prev => {
             if (!prev) return false
             setIsClosing(true)
@@ -89,15 +108,12 @@ export function VocabRecallModal({
         })
     }, [])
 
-    const handleShowHint = useCallback(() => {
-        setIsClosing(false)
-        setShowHintModal(true)
-        setHintTimeLeft(5)
-
+    const startHintCountdown = useCallback((initialSeconds: number = 5) => {
         if (hintIntervalRef.current) clearInterval(hintIntervalRef.current)
-
-        let secondsLeft = 5
+        setHintTimeLeft(initialSeconds)
+        let secondsLeft = initialSeconds
         hintIntervalRef.current = setInterval(() => {
+            if (isEditingHintRef.current) return
             secondsLeft -= 1
             setHintTimeLeft(secondsLeft)
             if (secondsLeft <= 0) {
@@ -105,6 +121,27 @@ export function VocabRecallModal({
             }
         }, 1000)
     }, [closeHintModal])
+
+    const handleShowHint = useCallback(() => {
+        setIsClosing(false)
+        setShowHintModal(true)
+        isEditingHintRef.current = false
+        startHintCountdown(5)
+    }, [startHintCountdown])
+
+    const handlePauseHintCountdown = useCallback(() => {
+        isEditingHintRef.current = true
+        if (hintIntervalRef.current) {
+            clearInterval(hintIntervalRef.current)
+            hintIntervalRef.current = null
+        }
+    }, [])
+
+    const handleResumeHintCountdown = useCallback(() => {
+        isEditingHintRef.current = false
+        // Restart countdown with fresh 5 seconds after user finishes editing/selecting
+        startHintCountdown(5)
+    }, [startHintCountdown])
 
     const initDeck = useCallback(() => {
         const loadedWeights = loadWeights()
@@ -500,8 +537,15 @@ export function VocabRecallModal({
                                 </span>
                                 <button className="vm-close-btn" style={{ margin: 0, width: 'auto', fontSize: '1.2rem' }} onClick={closeHintModal}>✕</button>
                             </div>
-                            <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word' }}>
-                                {currentItem?.memorization_hook || currentItem?.hint || '暂无提示'}
+                            <div style={{ fontSize: '1.05rem', color: '#333', lineHeight: '1.4', wordBreak: 'break-word', textAlign: 'left' }}>
+                                <VocabHookSelector
+                                    word={currentItem?.word}
+                                    defaultHook={currentItem?.memorization_hook || currentItem?.hint || ''}
+                                    isLoggedIn={isLoggedIn}
+                                    inlineDisplay={true}
+                                    onOpenModal={handlePauseHintCountdown}
+                                    onCloseModal={handleResumeHintCountdown}
+                                />
                             </div>
                         </div>
                     </div>

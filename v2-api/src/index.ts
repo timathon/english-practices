@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq, desc, asc, or } from 'drizzle-orm'
-import { practiceRecords, user, practice, account, session as sessionTable } from './db/schema'
+import { eq, desc, asc, or, and, inArray } from 'drizzle-orm'
+import { practiceRecords, user, practice, account, session as sessionTable, vocabHooks } from './db/schema'
 import { hashPassword, verifyPassword, createToken, verifyToken, JWT_SECRET_FALLBACK } from './auth'
 
 type Bindings = {
@@ -1196,5 +1196,171 @@ app.get('/api/games/tetris/leaderboard', async (c) => {
 
   return c.json(records);
 })
+
+// ─── Memorization Hooks Endpoints ──────────────────────────────────────────
+
+// GET /api/vocab-hooks?words=word1,word2 or ?word=word1
+app.get('/api/vocab-hooks', async (c) => {
+  try {
+    const session = await getSession(c);
+    if (!session) return c.json({ error: "Unauthorized. Login required." }, 401);
+
+    const wordsParam = c.req.query('words') || c.req.query('word') || '';
+    if (!wordsParam.trim()) {
+      return c.json([]);
+    }
+
+    const rawWords = wordsParam.split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
+    if (rawWords.length === 0) {
+      return c.json([]);
+    }
+
+    // Deduplicate and limit to 100 words per request
+    const words = Array.from(new Set(rawWords)).slice(0, 100);
+    const db = drizzle(c.env.DB);
+    const currentUserId = session.user.id;
+    const isAdmin = (session.user as any).role === 'admin';
+
+    let rows;
+    if (isAdmin) {
+      // Admins can see all hooks for these words
+      rows = await db.select({
+        id: vocabHooks.id,
+        word: vocabHooks.word,
+        content: vocabHooks.content,
+        userId: vocabHooks.userId,
+        status: vocabHooks.status,
+        createdAt: vocabHooks.createdAt,
+      })
+      .from(vocabHooks)
+      .where(inArray(vocabHooks.word, words))
+      .orderBy(desc(vocabHooks.createdAt));
+    } else {
+      // Regular users: see approved hooks, OR their own pending/rejected hooks
+      rows = await db.select({
+        id: vocabHooks.id,
+        word: vocabHooks.word,
+        content: vocabHooks.content,
+        userId: vocabHooks.userId,
+        status: vocabHooks.status,
+        createdAt: vocabHooks.createdAt,
+      })
+      .from(vocabHooks)
+      .where(
+        and(
+          inArray(vocabHooks.word, words),
+          or(
+            eq(vocabHooks.status, 'approved'),
+            eq(vocabHooks.userId, currentUserId)
+          )
+        )
+      )
+      .orderBy(desc(vocabHooks.createdAt));
+    }
+
+    return c.json(rows);
+  } catch (err: any) {
+    console.error("Error in /api/vocab-hooks:", err);
+    return c.json({ error: err.message || "Internal server error" }, 500);
+  }
+});
+
+// POST /api/vocab-hooks - submit a new memorization hook
+app.post('/api/vocab-hooks', async (c) => {
+  const session = await getSession(c);
+  if (!session) return c.json({ error: "Unauthorized. Login required." }, 401);
+
+  try {
+    const body = await c.req.json();
+    const word = (body.word || '').trim().toLowerCase();
+    const content = (body.content || '').trim();
+
+    if (!word || word.length > 50) {
+      return c.json({ error: "Invalid word" }, 400);
+    }
+    if (!content || content.length < 2 || content.length > 150) {
+      return c.json({ error: "Content must be between 2 and 150 characters" }, 400);
+    }
+
+    const isAdmin = (session.user as any).role === 'admin';
+    const db = drizzle(c.env.DB);
+    const newId = crypto.randomUUID();
+    const now = new Date();
+
+    const newHook = {
+      id: newId,
+      word,
+      content,
+      userId: session.user.id,
+      // Admin submissions are approved immediately; others require moderation
+      status: isAdmin ? 'approved' : 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db.insert(vocabHooks).values(newHook);
+
+    return c.json({ success: true, hook: newHook });
+  } catch (e: any) {
+    return c.json({ error: e.message || "Failed to create hook" }, 500);
+  }
+});
+
+// Admin Review Endpoints
+app.get('/api/admin/vocab-hooks', async (c) => {
+  const session = await getSession(c);
+  if (!session || (session.user as any).role !== 'admin') {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const statusParam = c.req.query('status') || 'pending';
+  const db = drizzle(c.env.DB);
+
+  let query = db.select({
+    id: vocabHooks.id,
+    word: vocabHooks.word,
+    content: vocabHooks.content,
+    userId: vocabHooks.userId,
+    status: vocabHooks.status,
+    createdAt: vocabHooks.createdAt,
+    updatedAt: vocabHooks.updatedAt,
+  }).from(vocabHooks);
+
+  if (statusParam !== 'all') {
+    query = query.where(eq(vocabHooks.status, statusParam)) as any;
+  }
+
+  const results = await (query as any).orderBy(desc(vocabHooks.createdAt)).limit(100);
+  return c.json(results);
+});
+
+app.post('/api/admin/vocab-hooks/:id/review', async (c) => {
+  const session = await getSession(c);
+  if (!session || (session.user as any).role !== 'admin') {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  const action = body.action; // 'approve' | 'reject' | 'delete'
+
+  const db = drizzle(c.env.DB);
+
+  if (action === 'delete') {
+    await db.delete(vocabHooks).where(eq(vocabHooks.id, id));
+    return c.json({ success: true, action: 'deleted' });
+  }
+
+  if (action === 'approve' || action === 'reject') {
+    const targetStatus = action === 'approve' ? 'approved' : 'rejected';
+    await db.update(vocabHooks).set({
+      status: targetStatus,
+      updatedAt: new Date(),
+    }).where(eq(vocabHooks.id, id));
+    return c.json({ success: true, status: targetStatus });
+  }
+
+  return c.json({ error: "Invalid review action" }, 400);
+});
 
 export default app

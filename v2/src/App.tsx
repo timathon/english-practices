@@ -50,6 +50,7 @@ if (typeof window !== 'undefined') {
 const SignIn = lazy(() => import('./SignIn').then(m => ({ default: m.SignIn })))
 const Dashboard = lazy(() => import('./Dashboard').then(m => ({ default: m.Dashboard })))
 const ManageUsers = lazy(() => import('./ManageUsers').then(m => ({ default: m.ManageUsers })))
+const ManageHooks = lazy(() => import('./components/ManageHooks').then(m => ({ default: m.ManageHooks })))
 const UsageGuide = lazy(() => import('./UsageGuide').then(m => ({ default: m.UsageGuide })))
 import { PracticeShell } from './components/PracticeShell'
 import { PetFloatingCompanion } from './components/PetFloatingCompanion'
@@ -94,7 +95,9 @@ function TestdriveTimer({ startTime }: { startTime: string }) {
 
 function Navigation({ session, showChinese, onCycleComplete }: { session: any; showChinese: boolean; onCycleComplete?: () => void }) {
   const isTestdrive = session?.user?.role === 'testdrive';
+  const isAdmin = (session?.user as any)?.role === 'admin';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [isIrregularVerbsOpen, setIsIrregularVerbsOpen] = useState(false);
   const [isSyncTasksOpen, setIsSyncTasksOpen] = useState(false);
   const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
@@ -110,7 +113,24 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
   const [delayedClosed, setDelayedClosed] = useState(false);
   const [hasLoggedInUsers, setHasLoggedInUsers] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const adminMenuRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
+        setIsAdminMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -145,24 +165,6 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [isMenuOpen]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    }
-
-    if (isMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
   }, [isMenuOpen]);
 
   const displayCount = (() => {
@@ -337,9 +339,6 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
               >
                 🔄 Refresh Page (刷新)
               </button>
-              {(session.user as any).role === 'admin' && (
-                <Link className="nav-item danger" onClick={() => setIsMenuOpen(false)} to="/admin/manage-users">Manage Users</Link>
-              )}
               <div className="nav-divider"></div>
               <div className="nav-section-title" style={{ padding: '4px 14px', fontSize: '0.75rem', fontWeight: 'bold', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reference (参考)</div>
               <button
@@ -427,6 +426,44 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
       )}
       {isDebugModalOpen && (
         <DebugModal onClose={() => setIsDebugModalOpen(false)} />
+      )}
+
+      {isAdmin && (
+        <div ref={adminMenuRef} className="nav-admin-container">
+          <button
+            className={`nav-admin-btn${isAdminMenuOpen ? ' active' : ''}`}
+            onClick={() => setIsAdminMenuOpen(!isAdminMenuOpen)}
+            aria-label="Admin Menu"
+            title="Admin Management"
+          >
+            <span>🛡️</span>
+            <span>Admin</span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>▾</span>
+          </button>
+          {isAdminMenuOpen && (
+            <div className="nav-admin-menu">
+              <div className="nav-section-title" style={{ padding: '4px 12px', fontSize: '0.72rem', fontWeight: 'bold', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Admin Tools (管理后台)
+              </div>
+              <Link 
+                className="nav-item" 
+                onClick={() => setIsAdminMenuOpen(false)} 
+                to="/admin/manage-hooks"
+                style={{ color: '#1d4ed8' }}
+              >
+                🧠 Manage Hooks (巧记审核)
+              </Link>
+              <Link 
+                className="nav-item" 
+                onClick={() => setIsAdminMenuOpen(false)} 
+                to="/admin/manage-users"
+                style={{ color: '#b91c1c' }}
+              >
+                👥 Manage Users (用户管理)
+              </Link>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -626,6 +663,10 @@ const router = createBrowserRouter([
       {
         path: "/admin/manage-users",
         element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageUsers /></div>
+      },
+      {
+        path: "/admin/manage-hooks",
+        element: <div style={{ padding: 20, maxWidth: 1200, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}><ManageHooks /></div>
       }
     ]
   }
