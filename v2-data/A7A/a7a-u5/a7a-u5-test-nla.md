@@ -37,7 +37,7 @@ IV. 用合适的冠词 (a, an, the) 填空或不填 (/)
 5. Mary is in China now but she can't speak ________ Chinese.
 
 V. 按要求完成句子，每空一词
-1. I want to join the ping-pong club. (对画线部分提问)
+1. I want to join <u>the ping-pong club</u>. (对画线部分提问)
 ________ ________ ________ you want to join?
 2. Can you play Chinese chess? (作肯定回答和否定回答)
 ________, I ________. / ________, I ________.
@@ -46,7 +46,7 @@ ________, I ________. / ________, I ________.
 
 3. Bob can draw pictures. (改为一般疑问句)
 ________ Bob ________ ________?
-4. I can play the piano. (对画线部分提问)
+4. I can play <u>the piano</u>. (对画线部分提问)
 ________ ________ you play?
 
 【能力提升综合拓展】

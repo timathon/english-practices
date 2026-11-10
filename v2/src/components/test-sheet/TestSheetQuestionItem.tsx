@@ -489,6 +489,8 @@ export function TestSheetQuestionItem({
         }
       }
 
+      const dropdownOptions = (q.options && q.options.length > 0) ? q.options : (section.options && section.options.length > 0 ? section.options : null)
+
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
           <div className="ts-question-header">
@@ -501,14 +503,30 @@ export function TestSheetQuestionItem({
                   <span key={pIdx}>
                     {renderPromptText(part)}
                     {pIdx < parts.length - 1 && (
-                      <input
-                        type="text"
-                        className="ts-blank-input"
-                        value={val}
-                        disabled={submitted}
-                        onChange={(e) => handleBlankChange(pIdx, e.target.value)}
-                        placeholder="type here..."
-                      />
+                      dropdownOptions ? (
+                        <select
+                          className="ts-wordbank-select"
+                          value={val}
+                          disabled={submitted}
+                          onChange={(e) => handleBlankChange(pIdx, e.target.value)}
+                        >
+                          <option value="">-- Choose --</option>
+                          {dropdownOptions.map((opt, optIdx) => (
+                            <option key={optIdx} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          className="ts-blank-input"
+                          value={val}
+                          disabled={submitted}
+                          onChange={(e) => handleBlankChange(pIdx, e.target.value)}
+                          placeholder="type here..."
+                        />
+                      )
                     )}
                   </span>
                 )

@@ -188,6 +188,7 @@ export function TestSheetShell({
   const [selectedBlocksMap, setSelectedBlocksMap] = useState<Record<string, number[]>>({})
   const [replayCounts, setReplayCounts] = useState<Record<string, number>>({})
   const [submitted, setSubmitted] = useState(!!initialSubmitted)
+  const [checkedSections, setCheckedSections] = useState<Record<string, boolean>>({})
 
   const [playingAudioInfo, setPlayingAudioInfo] = useState<{ key: string; stopAudio: () => void } | null>(null)
   const [pendingSectionIdx, setPendingSectionIdx] = useState<number | null>(null)
@@ -485,6 +486,7 @@ export function TestSheetShell({
   // Handle value change
   const handleAnswerChange = (qId: string, value: string | number | boolean, section?: Section) => {
     if (submitted) return
+    if (section && checkedSections[section.id]) return
     setUserAnswers(prev => {
       const next = { ...prev, [qId]: value }
       if (
@@ -568,6 +570,7 @@ export function TestSheetShell({
     setSelectedBlocksMap({})
     setReplayCounts({})
     setSubmitted(false)
+    setCheckedSections({})
     setScore(0)
     setGainedXp(0)
     setGainedLove(0)
@@ -581,6 +584,7 @@ export function TestSheetShell({
   }
 
   const activeSection = testData.sections[activeSectionIdx]
+  const isCurrentSectionEvaluated = submitted || (activeSection ? !!checkedSections[activeSection.id] : false)
 
   return (
     <div className="ts-shell-container">
@@ -634,16 +638,18 @@ export function TestSheetShell({
             onMouseMove={handleTabsMouseMove}
           >
             {testData.sections.map((sec, idx) => {
-              const hasError = submitted && Array.isArray(sec.questions) && sec.questions.some(q => {
+              const isSectionEvaluated = submitted || !!checkedSections[sec.id]
+              const hasError = isSectionEvaluated && Array.isArray(sec.questions) && sec.questions.some(q => {
                 if (q.isExample) return false
                 const userAns = userAnswers[q.id]
                 return !isAnswerCorrect(userAns, q.answer, sec, q.type, q.options)
               })
+              const isSectionChecked = !submitted && !!checkedSections[sec.id]
 
               return (
                 <button
                   key={sec.id}
-                  className={`ts-section-tab ${activeSectionIdx === idx ? 'active' : ''} ${hasError ? 'has-error' : ''}`}
+                  className={`ts-section-tab ${activeSectionIdx === idx ? 'active' : ''} ${hasError ? 'has-error' : ''} ${isSectionChecked && !hasError ? 'is-checked-correct' : ''}`}
                   onClick={() => handleSectionChange(idx)}
                 >
                   <span className="ts-tab-num">{idx + 1}/{testData.sections.length}</span>
@@ -710,7 +716,7 @@ export function TestSheetShell({
                         audio={activeSection.audio}
                         audioKey={`sec_${activeSection.id}`}
                         textbook={textbook}
-                        submitted={submitted}
+                        submitted={isCurrentSectionEvaluated}
                         replayCounts={replayCounts}
                         onPlayIncrement={handlePlayIncrement}
                         onPlayingStateChange={handleAudioPlayingChange}
@@ -718,7 +724,7 @@ export function TestSheetShell({
                       />
                     </div>
                   )}
-                  {submitted && activeSection.audio?.text && (
+                  {isCurrentSectionEvaluated && activeSection.audio?.text && (
                     <div
                       className="ts-reading-comprehension-passage"
                       style={{
@@ -758,7 +764,7 @@ export function TestSheetShell({
                             text={turn.text}
                             section={activeSection}
                             userAnswers={userAnswers}
-                            submitted={submitted}
+                            submitted={isCurrentSectionEvaluated}
                             handleAnswerChange={handleAnswerChange}
                           />
                         </span>
@@ -778,7 +784,7 @@ export function TestSheetShell({
                       text={activeSection.passage}
                       section={activeSection}
                       userAnswers={userAnswers}
-                      submitted={submitted}
+                      submitted={isCurrentSectionEvaluated}
                       handleAnswerChange={handleAnswerChange}
                     />
                   </div>
@@ -802,7 +808,7 @@ export function TestSheetShell({
                 <div className="ts-questions-list">
                   {activeSection.questions.map((q, qIdx) => {
                     const allInline = activeSection.questions.every(item => item.blankIndex !== undefined)
-                    if ((activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank' || activeSection.type === 'dialogue-completion' || allInline) && !submitted) {
+                    if ((activeSection.type === 'cloze-passage' || activeSection.type === 'cloze-passage-wordbank' || activeSection.type === 'dialogue-completion' || allInline) && !isCurrentSectionEvaluated) {
                       return null
                     }
                     return (
@@ -811,7 +817,7 @@ export function TestSheetShell({
                         q={q}
                         section={activeSection}
                         index={qIdx}
-                        submitted={submitted}
+                        submitted={isCurrentSectionEvaluated}
                         userAnswers={userAnswers}
                         selectedBlocksMap={selectedBlocksMap}
                         setSelectedBlocksMap={setSelectedBlocksMap}
@@ -831,19 +837,20 @@ export function TestSheetShell({
             )}
 
             {/* Bottom actions */}
-            <div className="ts-footer-actions" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+            <div className="ts-footer-actions" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
               {!submitted ? (
-                activeSectionIdx < testData.sections.length - 1 ? (
-                  <>
-                    {activeSectionIdx > 0 && (
-                      <button
-                        className="ts-submit-btn ts-prev-btn"
-                        onClick={() => handleSectionChange(activeSectionIdx - 1)}
-                        style={{ maxWidth: '80px' }}
-                      >
-                        &lt;
-                      </button>
-                    )}
+                <>
+                  {activeSectionIdx > 0 && (
+                    <button
+                      className="ts-submit-btn ts-prev-btn"
+                      onClick={() => handleSectionChange(activeSectionIdx - 1)}
+                      style={{ maxWidth: '80px', margin: 0 }}
+                    >
+                      &lt;
+                    </button>
+                  )}
+
+                  {activeSectionIdx < testData.sections.length - 1 ? (
                     <button
                       className="ts-submit-btn ts-next-btn"
                       onClick={() => handleSectionChange(activeSectionIdx + 1)}
@@ -851,18 +858,7 @@ export function TestSheetShell({
                     >
                       Next Section
                     </button>
-                  </>
-                ) : (
-                  <>
-                    {activeSectionIdx > 0 && (
-                      <button
-                        className="ts-submit-btn ts-prev-btn"
-                        onClick={() => handleSectionChange(activeSectionIdx - 1)}
-                        style={{ maxWidth: '80px' }}
-                      >
-                        &lt;
-                      </button>
-                    )}
+                  ) : (
                     <button
                       className="ts-submit-btn"
                       onClick={() => setShowConfirmSubmitModal(true)}
@@ -870,8 +866,30 @@ export function TestSheetShell({
                     >
                       Submit Test
                     </button>
-                  </>
-                )
+                  )}
+
+                  {isAdmin && activeSection && (
+                    <button
+                      type="button"
+                      className="ts-submit-btn ts-check-section-btn"
+                      onClick={() => setCheckedSections(prev => ({ ...prev, [activeSection.id]: true }))}
+                      disabled={!!checkedSections[activeSection.id]}
+                      style={{
+                        margin: 0,
+                        width: 'auto',
+                        padding: '8px 16px',
+                        fontSize: '0.88rem',
+                        fontWeight: 600,
+                        borderRadius: '12px',
+                        background: checkedSections[activeSection.id] ? '#94a3b8' : '#6366f1',
+                        boxShadow: checkedSections[activeSection.id] ? 'none' : '0 2px 4px -1px rgba(99, 102, 241, 0.25)',
+                        cursor: checkedSections[activeSection.id] ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {checkedSections[activeSection.id] ? '✓ Section Checked' : 'Check Section'}
+                    </button>
+                  )}
+                </>
               ) : (
                 <div className="ts-results-dashboard">
                   <h3>🎉 Test Graded!</h3>
