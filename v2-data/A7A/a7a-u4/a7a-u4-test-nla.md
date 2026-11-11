@@ -11,20 +11,20 @@ My Favourite Subject
 基础巩固达标闯关
 
 #### I. 语音练习，将下列单词按画线部分的发音归类
-f<u>a</u>vourite, s<u>u</u>bject, sc<u>i</u>ence, m<u>u</u>sic, m<u>a</u>th, Ch<u>i</u>nese, ge<u>o</u>graphy, wh<u>y</u>, bec<u>au</u>se
+favour<u>i</u>te, subj<u>e</u>ct, sc<u>i</u>ence, mus<u>i</u>c, m<u>a</u>th, Ch<u>i</u>nese, ge<u>o</u>graphy, wh<u>y</u>, bec<u>au</u>se
 
 1. /æ/ ________
 2. /ɔː/ ________
-3. /ɪ/ ________
+3. /ɪ/ ________ ________ ________
 4. /ɒ/ ________
-5. /aɪ/ ________
+5. /aɪ/ ________ ________ ________
 
 #### II. 用所给词的适当形式填空
 1. It's ________ (interest) to listen to music.
 2. I think it is ________ (bore), so I don't like it.
 3. Biology and math are our favourite ________ (subject).
 4. I love science best, because it's ________ (use).
-5. I am a ________ (China), so I am good at ________ (China).
+5. I am ________ (China), so I am good at ________ (China).
 6. Do you believe a cat has nine ________ (life)?
 7. These questions are difficult, but he can answer them ________ (easy).
 8. Work makes me ________ (tire).

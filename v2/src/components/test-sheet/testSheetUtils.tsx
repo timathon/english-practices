@@ -284,7 +284,7 @@ export const isAnswerCorrect = (
     : null
   const wordbank = sectionObj?.wordbank || sectionObj?.options || questionOptions
 
-  if (sectionType === 'multiple-choice' || sectionType === 'cloze-passage' || (sectionType === 'reading-comprehension' && qType === 'multiple-choice')) {
+  if (sectionType === 'multiple-choice' || sectionType === 'cloze-passage' || (sectionType === 'reading-comprehension' && qType === 'multiple-choice') || qType === 'multiple-choice') {
     // If questionOptions is provided, compare user answer with target option text
     if (questionOptions && Array.isArray(questionOptions) && questionOptions.length > 0) {
       const correctIdx = !isNaN(Number(correctAns)) ? Number(correctAns) : resolveOptionIndex(correctAns, questionOptions)
@@ -327,9 +327,9 @@ export const isAnswerCorrect = (
     const ans = String(correctAns).trim().toLowerCase()
     const uAnsRaw = String(userAns).trim().toLowerCase()
     
-    // Normalize multi-blank delimiters ('|||' or spaces) into clean space-separated tokens
-    const uTokens = uAnsRaw.split(/\|\|\||\s+/).filter(Boolean)
-    const cTokens = ans.split(/\s+/).filter(Boolean)
+    // Normalize multi-blank delimiters ('|||', semicolons, or spaces) into clean tokens
+    const uTokens = uAnsRaw.split(/\|\|\||[;\s]+/).map(t => t.trim().replace(/^[;,]+|[;,]+$/g, '')).filter(Boolean)
+    const cTokens = ans.split(/\|\|\||[;\s]+/).map(t => t.trim().replace(/^[;,]+|[;,]+$/g, '')).filter(Boolean)
 
     if (uTokens.length === cTokens.length && uTokens.length > 1) {
       return uTokens.every((uTok, idx) => {
@@ -339,7 +339,8 @@ export const isAnswerCorrect = (
     }
 
     const uAns = uTokens.join(' ')
-    return uAns === ans || (ans.length > 1 && uAns === ans.substring(1))
+    const cAns = cTokens.join(' ')
+    return uAns === cAns || (cAns.length > 1 && uAns === cAns.substring(1))
   }
 
   if (sectionType === 'put-words-in-order') {
@@ -375,6 +376,21 @@ export const isAnswerCorrect = (
   const cStr = String(correctAns).trim().toLowerCase()
 
   if (uStr === cStr) return true
+
+  // HTML-agnostic comparison (e.g. m<u>a</u>th vs math or m<u>a</u>th)
+  const stripHtml = (s: string) => s.replace(/<[^>]+>/g, '').trim().toLowerCase()
+  if (stripHtml(uStr) === stripHtml(cStr)) return true
+
+  // Support multiple blanks in wordbank comparison (order-independent set matching)
+  if (sectionType === 'fill-in-the-blank-wordbank' && (uStr.includes('|||') || cStr.includes('|||') || cStr.includes(' '))) {
+    const uTokens = uStr.split(/\|\|\||\s+/).map(stripHtml).filter(Boolean)
+    const cTokens = cStr.split(/\|\|\||\s+/).map(stripHtml).filter(Boolean)
+    if (uTokens.length === cTokens.length && uTokens.length > 1) {
+      const uSorted = [...uTokens].sort()
+      const cSorted = [...cTokens].sort()
+      if (uSorted.every((t, i) => t === cSorted[i])) return true
+    }
+  }
 
   const extractLetter = (s: string) => {
     const trimmed = s.trim().toLowerCase()

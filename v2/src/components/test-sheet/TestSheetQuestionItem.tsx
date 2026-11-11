@@ -101,59 +101,100 @@ export function TestSheetQuestionItem({
     )
   }
 
-  switch (section.type) {
+  const effectiveSectionType = (q.type === 'multiple-choice' || (q.options && q.options.length > 0 && section.type !== 'reading-comprehension' && section.type !== 'cloze-passage' && section.type !== 'cloze-passage-wordbank' && section.type !== 'dialogue-completion'))
+    ? 'multiple-choice'
+    : section.type
+
+  switch (effectiveSectionType) {
     case 'fill-in-the-blank-wordbank': {
       const promptText = q.prompt || ''
       const parts = promptText.split(/_{2,}/)
+      const currentAnsRaw = String(userAnswers[q.id] || '')
+      const currentAnswersList = currentAnsRaw.includes('|||')
+        ? currentAnsRaw.split('|||')
+        : (parts.length - 1 > 1 ? currentAnsRaw.split(' ') : [currentAnsRaw])
+
+      const handleBlankChange = (blankIdx: number, val: string) => {
+        if (parts.length - 1 === 1) {
+          handleAnswerChange(q.id, val, section)
+        } else {
+          const nextList = []
+          for (let b = 0; b < parts.length - 1; b++) {
+            nextList.push(b === blankIdx ? val : (currentAnswersList[b] || ''))
+          }
+          handleAnswerChange(q.id, nextList.join('|||'), section)
+        }
+      }
+
+      const isWordSelectedElsewhere = (word: string, currentBlankIdx: number) => {
+        // Check other questions
+        const inOtherQ = section.questions.some(otherQ => {
+          if (otherQ.id === q.id) return false
+          const ans = userAnswers[otherQ.id]
+          if (ans === undefined || ans === null || ans === '') return false
+          const tokens = String(ans).includes('|||') ? String(ans).split('|||') : [String(ans)]
+          return tokens.some(t => t.trim().toLowerCase() === word.trim().toLowerCase())
+        })
+        if (inOtherQ) return true
+        // Check other blanks in the same question
+        for (let b = 0; b < currentAnswersList.length; b++) {
+          if (b !== currentBlankIdx && (currentAnswersList[b] || '').trim().toLowerCase() === word.trim().toLowerCase()) {
+            return true
+          }
+        }
+        return false
+      }
+
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
           <div className="ts-question-header">
             <span className="ts-question-num">{index + 1}.</span>
             <span className="ts-question-prompt">
-              {parts.map((part, pIdx) => (
-                <span key={pIdx}>
-                  {renderPromptText(part)}
-                  {pIdx < parts.length - 1 && (
-                    <select
-                      className="ts-wordbank-select"
-                      value={(userAnswers[q.id] !== undefined ? String(userAnswers[q.id]) : '') as any}
-                      disabled={submitted}
-                      onChange={(e) => handleAnswerChange(q.id, e.target.value, section)}
-                    >
-                      <option value="">-- Choose --</option>
-                      {section.wordbank?.map(word => {
-                        const exampleQ = section.questions.find(otherQ => otherQ.isExample && String(otherQ.answer) === String(word))
-                        const usingQIdx = section.questions.findIndex(otherQ => !otherQ.isExample && userAnswers[otherQ.id] === word)
+              {parts.map((part, pIdx) => {
+                const val = currentAnswersList[pIdx] || ''
+                return (
+                  <span key={pIdx}>
+                    {renderPromptText(part)}
+                    {pIdx < parts.length - 1 && (
+                      <select
+                        className="ts-wordbank-select"
+                        value={val}
+                        disabled={submitted}
+                        onChange={(e) => handleBlankChange(pIdx, e.target.value)}
+                      >
+                        <option value="">-- Choose --</option>
+                        {section.wordbank?.map(word => {
+                          const exampleQ = section.questions.find(otherQ => otherQ.isExample && String(otherQ.answer) === String(word))
+                          const isUsed = isWordSelectedElsewhere(word, pIdx)
 
-                        let showSuffix = false
-                        let suffix = ''
-                        let isOptDisabled = false
+                          let suffix = ''
+                          let isOptDisabled = false
 
-                        if (exampleQ && !q.isExample) {
-                          const exIdx = section.questions.findIndex(otherQ => otherQ.id === exampleQ.id)
-                          showSuffix = true
-                          suffix = ` 🔹(${exIdx + 1} 例)`
-                          isOptDisabled = true
-                        } else if (usingQIdx !== -1 && section.questions[usingQIdx].id !== q.id) {
-                          showSuffix = true
-                          suffix = ` 🔹(${usingQIdx + 1})`
-                        }
+                          if (exampleQ && !q.isExample) {
+                            const exIdx = section.questions.findIndex(otherQ => otherQ.id === exampleQ.id)
+                            suffix = ` 🔹(${exIdx + 1} 例)`
+                            isOptDisabled = true
+                          } else if (isUsed) {
+                            isOptDisabled = true
+                            suffix = ' 🔹(已选)'
+                          }
 
-                        return (
-                          <option
-                            key={word}
-                            value={word}
-                            disabled={isOptDisabled}
-                            style={showSuffix ? { color: isOptDisabled ? '#94a3b8' : '#2563eb', fontWeight: 'bold' } : undefined}
-                          >
-                            {word}{suffix}
-                          </option>
-                        )
-                      })}
-                    </select>
-                  )}
-                </span>
-              ))}
+                          return (
+                            <option
+                              key={word}
+                              value={word}
+                              disabled={isOptDisabled}
+                              style={isOptDisabled ? { color: '#94a3b8' } : undefined}
+                            >
+                              {word.replace(/<[^>]+>/g, '')}{suffix}
+                            </option>
+                          )
+                        })}
+                      </select>
+                    )}
+                  </span>
+                )
+              })}
             </span>
           </div>
 
@@ -163,7 +204,7 @@ export function TestSheetQuestionItem({
                 <p className="ts-correct-ans-reveal">Correct answer: <strong className="ts-reveal-word">
                   {typeof q.answer === 'number' && section.wordbank && section.wordbank[q.answer]
                     ? section.wordbank[q.answer]
-                    : String(q.answer)}
+                    : String(q.answer).split('|||').join(', ')}
                 </strong></p>
               )}
               {q.translation && <p className="ts-translation">🇨🇳 {q.translation}</p>}
@@ -443,12 +484,15 @@ export function TestSheetQuestionItem({
     case 'dialogue-completion': {
       const isClozeIndex = section.type === 'cloze-passage'
       const correctDisplay = isClozeIndex
-        ? (q.options?.[Number(q.answer)] || '')
+        ? (typeof q.answer === 'number' && q.options?.[Number(q.answer)] !== undefined ? q.options[Number(q.answer)] : String(q.answer))
         : String(q.answer)
 
-      const userDisplay = isClozeIndex
-        ? (userAnswers[q.id] !== undefined && userAnswers[q.id] !== '' ? q.options?.[Number(userAnswers[q.id])] : '--')
-        : (userAnswers[q.id] || '--')
+      const rawUserAns = userAnswers[q.id]
+      const userDisplay = (rawUserAns !== undefined && rawUserAns !== null && rawUserAns !== '')
+        ? (isClozeIndex && !isNaN(Number(rawUserAns)) && q.options?.[Number(rawUserAns)] !== undefined
+            ? q.options[Number(rawUserAns)]
+            : String(rawUserAns))
+        : '--'
 
       return (
         <div key={q.id} className={`ts-question-card ${isUserCorrect ? 'correct' : 'wrong'}`}>
@@ -491,6 +535,16 @@ export function TestSheetQuestionItem({
 
       const dropdownOptions = (q.options && q.options.length > 0) ? q.options : (section.options && section.options.length > 0 ? section.options : null)
 
+      const isSubBlankCorrect = (blankIdx: number, val: string) => {
+        if (!submitted) return null
+        const ans = String(q.answer).trim().toLowerCase()
+        const cTokens = ans.split(/\|\|\||[;\s]+/).map(t => t.trim().replace(/^[;,]+|[;,]+$/g, '')).filter(Boolean)
+        const targetToken = cTokens[blankIdx]
+        if (!targetToken) return isUserCorrect
+        const cleanVal = val.trim().toLowerCase()
+        return cleanVal === targetToken || (targetToken.length > 1 && cleanVal === targetToken.substring(1))
+      }
+
       return (
         <div key={q.id} className={`ts-question-card ${submitted ? (isUserCorrect ? 'correct' : 'wrong') : ''}`}>
           <div className="ts-question-header">
@@ -499,13 +553,17 @@ export function TestSheetQuestionItem({
             <span className="ts-question-prompt">
               {parts.map((part, pIdx) => {
                 const val = currentAnswersList[pIdx] || ''
+                const blankCorrect = isSubBlankCorrect(pIdx, val)
+                const blankStatusClass = submitted
+                  ? (blankCorrect ? ' correct' : ' wrong')
+                  : ''
                 return (
                   <span key={pIdx}>
                     {renderPromptText(part)}
                     {pIdx < parts.length - 1 && (
                       dropdownOptions ? (
                         <select
-                          className="ts-wordbank-select"
+                          className={`ts-wordbank-select${blankStatusClass}`}
                           value={val}
                           disabled={submitted}
                           onChange={(e) => handleBlankChange(pIdx, e.target.value)}
@@ -520,7 +578,7 @@ export function TestSheetQuestionItem({
                       ) : (
                         <input
                           type="text"
-                          className="ts-blank-input"
+                          className={`ts-blank-input${blankStatusClass}`}
                           value={val}
                           disabled={submitted}
                           onChange={(e) => handleBlankChange(pIdx, e.target.value)}

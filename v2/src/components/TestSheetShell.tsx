@@ -18,7 +18,8 @@ import {
   isAnswerCorrect,
   resolveTestAudioUrl,
   renderPromptText,
-  parseWordBlocks
+  parseWordBlocks,
+  formatOptionWithLetter
 } from './test-sheet/testSheetUtils'
 import { StartModal, ConfirmSubmitModal, ConfirmStopAudioModal } from './test-sheet/TestSheetModals'
 import { TestSheetQuestionItem } from './test-sheet/TestSheetQuestionItem'
@@ -751,7 +752,31 @@ export function TestSheetShell({
                   )}
                 </div>
 
-
+                {/* Wordbank or Matching options pool at top of active section */}
+                {(activeSection.type === 'fill-in-the-blank-wordbank' ||
+                  activeSection.type === 'definition-matching' ||
+                  activeSection.type === 'matching') && (activeSection.wordbank || activeSection.options) && (
+                  <div className="ts-wordbank-pool">
+                    {(activeSection.wordbank || activeSection.options)?.map((item, itemIdx) => {
+                      const isUsed = activeSection.questions.some(q => {
+                        const ans = userAnswers[q.id]
+                        if (ans === undefined || ans === null || ans === '') return false
+                        if (typeof ans === 'number' && ans === itemIdx) return true
+                        const ansStr = String(ans)
+                        const tokens = ansStr.includes('|||') ? ansStr.split('|||') : [ansStr]
+                        return tokens.some(t => t.trim().toLowerCase() === String(item).trim().toLowerCase())
+                      })
+                      const displayContent = activeSection.type === 'fill-in-the-blank-wordbank'
+                        ? item
+                        : formatOptionWithLetter(item, itemIdx)
+                      return (
+                        <span key={itemIdx} className={`ts-wordbank-chip ${isUsed ? 'used' : ''}`}>
+                          {renderPromptText(displayContent)}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
 
                 {/* Render Dialogue Completion Inline Text */}
                 {activeSection.type === 'dialogue-completion' && activeSection.dialogue && (
