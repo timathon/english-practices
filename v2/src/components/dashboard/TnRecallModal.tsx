@@ -42,7 +42,7 @@ function getCountdownSeconds(text: string): number {
 }
 
 function pickHintWords(text: string): string[] {
-  const all = text.match(/[A-Za-z]+/g) || []
+  const all: string[] = text.match(/[A-Za-z]+/g) ?? []
   const long = all.filter(w => w.length >= 4)
   const pool = Array.from(new Set(long.length > 0 ? long : all))
   if (pool.length === 0) return []
@@ -293,7 +293,7 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
                 background: showIgnored ? 'rgba(245, 158, 11, 0.18)' : 'transparent',
                 border: '1px solid var(--border, #334155)',
                 borderRadius: '8px',
-                color: showIgnored ? '#fbbf24' : 'var(--text-muted, #94a3b8)',
+                color: showIgnored ? '#d97706' : 'var(--text-muted, #64748b)',
                 fontSize: '0.8rem',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -371,8 +371,8 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
                 padding: '12px 14px',
                 borderRadius: '10px',
                 border: '1px solid rgba(59, 130, 246, 0.45)',
-                backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                color: '#93c5fd',
+                backgroundColor: 'rgba(59, 130, 246, 0.14)',
+                color: '#2563eb',
                 fontWeight: 700,
                 fontSize: '0.95rem',
                 cursor: 'pointer',
@@ -414,7 +414,7 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
                       borderRadius: '8px',
                       border: '1px solid rgba(16, 185, 129, 0.4)',
                       backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                      color: '#34d399',
+                      color: '#059669',
                       fontWeight: 600,
                       fontSize: '0.8rem',
                       cursor: 'pointer',
@@ -434,8 +434,8 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
               Session Summary
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '20px', fontSize: '0.95rem' }}>
-              <span style={{ color: '#34d399', fontWeight: 600 }}>Easy: {easyCount}</span>
-              <span style={{ color: '#f87171', fontWeight: 600 }}>Difficult: {difficultSentences.length}</span>
+              <span style={{ color: '#059669', fontWeight: 600 }}>Easy: {easyCount}</span>
+              <span style={{ color: '#dc2626', fontWeight: 600 }}>Difficult: {difficultSentences.length}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
               {difficultSentences.length > 0 && (
@@ -458,7 +458,7 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
                     borderRadius: '10px',
                     border: '1px solid rgba(239, 68, 68, 0.4)',
                     backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                    color: '#f87171',
+                    color: '#dc2626',
                     fontWeight: 600,
                     cursor: 'pointer',
                   }}
@@ -502,7 +502,7 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
                 Diff: {currentDiff}{isRating === -1 ? ' (-1)' : isRating === 1 ? ' (+1)' : ''}
               </span>
               {!revealed && (
-                <span style={{ fontWeight: 700, color: timeLeft <= 2 ? '#f87171' : '#60a5fa' }}>
+                <span style={{ fontWeight: 700, color: timeLeft <= 2 ? '#dc2626' : '#2563eb' }}>
                   ⏱ {timeLeft}s
                 </span>
               )}
@@ -537,22 +537,22 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
               </div>
 
               {!revealed && showHint && hintWords.length > 0 && (
-                <div style={{ marginTop: '12px', fontSize: '1rem', color: '#fbbf24', fontWeight: 600, letterSpacing: '0.5px' }}>
+                <div style={{ marginTop: '12px', fontSize: '1rem', color: '#d97706', fontWeight: 600, letterSpacing: '0.5px' }}>
                   💡 {hintWords.join('   ')}
                 </div>
               )}
 
               {revealed && (
                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border, #334155)' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#93c5fd', marginBottom: '10px', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#2563eb', marginBottom: '10px', lineHeight: 1.5 }}>
                     {hintWords.length > 0
                       ? current.text.split(/(\b[A-Za-z]+\b)/g).map((part, idx) =>
                           hintWords.some(hw => hw.toLowerCase() === part.toLowerCase()) ? (
                             <span
                               key={idx}
                               style={{
-                                backgroundColor: 'rgba(250, 204, 21, 0.25)',
-                                color: '#fde047',
+                                backgroundColor: 'rgba(250, 204, 21, 0.35)',
+                                color: '#b45309',
                                 padding: '0 3px',
                                 borderRadius: '4px',
                               }}
@@ -600,7 +600,7 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
                     borderRadius: '10px',
                     border: '1px solid rgba(245, 158, 11, 0.4)',
                     backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                    color: '#fbbf24',
+                    color: '#d97706',
                     fontWeight: 600,
                     fontSize: '0.95rem',
                     cursor: showHint ? 'default' : 'pointer',
@@ -656,7 +656,7 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
                     borderRadius: '10px',
                     border: '1px solid rgba(16, 185, 129, 0.4)',
                     backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                    color: '#34d399',
+                    color: '#059669',
                     fontWeight: 700,
                     fontSize: '1rem',
                     cursor: isRating !== null ? 'not-allowed' : 'pointer',
@@ -674,7 +674,7 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
                     borderRadius: '10px',
                     border: '1px solid rgba(239, 68, 68, 0.4)',
                     backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                    color: '#f87171',
+                    color: '#dc2626',
                     fontWeight: 700,
                     fontSize: '1rem',
                     cursor: isRating !== null ? 'not-allowed' : 'pointer',
