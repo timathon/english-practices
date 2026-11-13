@@ -992,6 +992,7 @@ module.exports = {
   - **Supported Categories:**
     - `verb_be`: Fill-in-the-blank practice testing `am`, `is`, `are`, `be` / `was`, `were`. Icon `"🛡️"`. Audio is played automatically upon check.
     - `yes_no_question`: Converting textbook statement sentences into Yes/No general questions (testing auxiliaries `Can`, `Do`, `Does`, `Is`, `Are` and person shifts, e.g. `I` $\to$ `you`). Icon `"❓"`. In `GrammarGuardShell`, after user clicks check, show the full authentic source sentence (often multiple sentences) and Chinese translation from Text Navigator (`tn_id`), without auto-playing audio or showing the speaker button.
+    - `wh_questions`: Special question (特殊疑问句) practice asking students to choose the right Wh-question (`Where`, `How`, `How many`, `How far`, `What`, `What animal`, `Which color`, `Who`, `When`, etc.) for an underlined part of a textbook sentence. Icon `"❓"`.
 - **Top-Level Metadata:**
   - `level`: e.g. `"Grade 4 Semester 1 - Unit 1"`.
   - `title`: Always `"Grammar Guard"`.
@@ -1004,8 +1005,8 @@ module.exports = {
   - Each challenge must have:
     - `id`: Unique challenge ID (`"c1"`, `"c2"`, `"c3"`, `"c4"`).
     - `title`: E.g., `"Verb Be: Basics 1"`, `"Yes/No Questions: Basics 1"`.
-    - `category`: `"verb_be"` or `"yes_no_question"`.
-    - `icon`: Relevant emoji icon (`"🛡️"` for `verb_be`, `"❓"` for `yes_no_question`).
+    - `category`: `"verb_be"`, `"yes_no_question"`, or `"wh_questions"`.
+    - `icon`: Relevant emoji icon (`"🛡️"` for `verb_be`, `"❓"` for `yes_no_question` and `wh_questions`).
     - `questions`: Array of 10 question objects.
 - **Question Schema & Textbook Linkage:**
   - `id`: Unique alphanumeric ID across the entire file (e.g., `"gga4au1q01"` to `"gga4au1q40"`). **CRITICAL:** Every question MUST have a strictly unique ID to prevent React duplicate key errors.
@@ -1016,6 +1017,8 @@ module.exports = {
       - Standard prompt: `"将陈述句转换为一般疑问句：\n[Statement sentence]"`.
       - **Person Shift Marking:** If the transformation requires changing pronouns between first person (`I` / `we` / `my` / `our`) and second person (`you` / `your`), append `（注意人称变换）` to the prompt title:
         `"将陈述句转换为一般疑问句（注意人称变换）：\n[Statement sentence]"`
+    - For `wh_questions`:
+      - Standard prompt: `"就划线部分提问：\n[Statement sentence with target part wrapped in 【...】]"`. (e.g. `"就划线部分提问：\nWe can go 【to different places】."`)
   - **Sentence Selection Quality for `yes_no_question`:**
     - Choose authentic statement sentences that transform into **natural, idiomatic English questions**.
     - **Avoid statements that produce awkward or unnatural questions:** For example, avoid statements with negative adverbs like *"It never snows!"* where mechanical inversion yields unnatural English like *"Does it never snow?"*. Choose alternative declarative statements from the unit (e.g. affirmative statements with clear auxiliaries, be-verbs, or action verbs).

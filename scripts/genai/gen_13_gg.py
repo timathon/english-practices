@@ -192,7 +192,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Generate grammar-guard JSON via Gemini API.")
     parser.add_argument("md_file", help="Path to unit markdown file (e.g. v2-data/A4A/a4a-u4/a4a-u4.md)")
-    parser.add_argument("--category", choices=["verb_be", "yes_no_question", "all"], default="all",
+    parser.add_argument("--category", choices=["verb_be", "yes_no_question", "wh_questions", "all"], default="all",
                         help="Grammar category: 'verb_be', 'yes_no_question', or 'all' (default: all)")
     parser.add_argument("--level", default="", help='Level label, e.g. "Grade 4 Semester 1 - Unit 4"')
     args = parser.parse_args()
@@ -233,7 +233,7 @@ def main():
         except Exception:
             existing_data = {}
 
-    target_categories = ["verb_be", "yes_no_question"] if args.category == "all" else [args.category]
+    target_categories = ["verb_be", "yes_no_question", "wh_questions"] if args.category == "all" else [args.category]
     challenges_map = {}
 
     # Index any pre-existing challenges by category
@@ -242,9 +242,50 @@ def main():
         if cat not in target_categories:
             challenges_map.setdefault(cat, []).append(c)
 
+    PROMPT_TEMPLATE_WH_QUESTIONS = """\
+You are an expert English curriculum designer and assessment specialist.
+Generate a Grammar Guard JSON for the given textbook unit.
+
+IMPORTANT CORE DIRECTIVE:
+Grammar Guard is strictly about basic/foundational grammar. This category tests WH-QUESTIONS (特殊疑问句: Where, How, How many, How far, What, What animal, Which color, Who, When, etc.).
+
+RULES & SPECIFICATION:
+1. Challenge & Question Count:
+   - Exactly 1 Challenge:
+     - c5: title "Wh-Questions: Basics", category "wh_questions", icon "❓"
+   - Exactly 10 questions in the challenge.
+
+2. Sentence Selection & Linking (`tn_id`):
+   - Pick 10 authentic declarative sentences from the provided TEXT NAVIGATOR SENTENCES list below.
+   - For each question, `tn_id` MUST be the exact `tn_id` of the matching sentence from the list.
+   - Wrap the target underlined part in `【...】`, e.g.: `"就划线部分提问：\\nWe can go 【to different places】."`
+
+3. Question Fields:
+   - `id`: Unique alphanumeric ID in the format `gg{stem_clean}q41` to `gg{stem_clean}q50`.
+   - `tn_id`: The exact `tn_id` from the provided list.
+   - `prompt`: `"就划线部分提问：\\n[Sentence with target part wrapped in 【...】]"`
+   - `options`: Exactly 4 Wh-question options (1 correct + 3 plausible distractors with wrong Wh-words or wrong auxiliaries), shuffled.
+   - `answer`: 0-indexed integer (0-3) indicating the correct option in `options`.
+   - `explanation`: Clear grammatical explanation in Chinese.
+   - `hint`: Concise Chinese hint.
+
+TEXT NAVIGATOR SENTENCES:
+{tn_sentences_json}
+
+UNIT MARKDOWN (for context):
+{source_markdown}
+
+Return ONLY valid JSON with a top-level `"challenges"` array.
+"""
+
     import time
     for cat in target_categories:
-        template = PROMPT_TEMPLATE_VERB_BE if cat == "verb_be" else PROMPT_TEMPLATE_YES_NO
+        if cat == "verb_be":
+            template = PROMPT_TEMPLATE_VERB_BE
+        elif cat == "yes_no_question":
+            template = PROMPT_TEMPLATE_YES_NO
+        else:
+            template = PROMPT_TEMPLATE_WH_QUESTIONS
         prompt = template.format(
             level=level,
             storage_suffix=storage_suffix,
@@ -307,9 +348,24 @@ def main():
                 q["id"] = f"gg{stem_clean}q{20 + q_idx + idx * 10 + 1:02d}"
             ordered_challenges.append(c)
 
+    if "wh_questions" in challenges_map:
+        offset = len(ordered_challenges)
+        for idx, c in enumerate(challenges_map["wh_questions"]):
+            if "title" not in c and len(c) >= 1:
+                for k, v in list(c.items()):
+                    if isinstance(v, dict) and "questions" in v:
+                        c = v
+                        break
+            c["id"] = f"c{offset + idx + 1}"
+            c["category"] = "wh_questions"
+            c["icon"] = "❓"
+            for q_idx, q in enumerate(c.get("questions", [])):
+                q["id"] = f"gg{stem_clean}q{40 + q_idx + idx * 10 + 1:02d}"
+            ordered_challenges.append(c)
+
     # Any other pre-existing categories
     for cat, clist in challenges_map.items():
-        if cat not in ["verb_be", "yes_no_question"]:
+        if cat not in ["verb_be", "yes_no_question", "wh_questions"]:
             ordered_challenges.extend(clist)
 
     final_data = {
