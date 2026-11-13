@@ -8,6 +8,7 @@ import {
   saveLastUnit
 } from '../../lib/dashboardUtils'
 import { FadingPracticeName } from './DashboardShared'
+import { TnRecallModal, type TnRecallSection, type TnRecallSentence } from './TnRecallModal'
 import { TestSheetShell } from '../TestSheetShell'
 import { VocabFlashcardModal } from '../VocabFlashcardModal'
 import { VocabDictationModal } from '../VocabDictationModal'
@@ -48,6 +49,88 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
   const [loadingVg, setLoadingVg] = useState(false)
 
   // Vocab Guide Modals State
+  const [tnRecallModal, setTnRecallModal] = useState<{ title: string; sentences: TnRecallSentence[]; sections?: TnRecallSection[]; book?: string; isCf?: boolean } | null>(null)
+
+  const handleOpenTnRecall = async (p: any) => {
+    const collected: TnRecallSentence[] = []
+    const sectionsList: TnRecallSection[] = []
+    const seen = new Set<string>()
+    const collectFromTree = (tree: any, secTitle: string) => {
+      const secSentences: TnRecallSentence[] = []
+      let prevText: string | undefined
+      const walk = (node: any) => {
+        if (!node) return
+        if (node.text && node.cn) {
+          const item: TnRecallSentence = {
+            id: node.id || node.text,
+            text: node.text,
+            cn: node.cn,
+            hasChildren: Boolean(Array.isArray(node.children) && node.children.length > 0),
+            prevText,
+            keywords: node.keywords,
+            highlight: node.highlight,
+          }
+          prevText = node.text
+          secSentences.push(item)
+          if (!seen.has(node.text)) {
+            seen.add(node.text)
+            collected.push(item)
+          }
+        }
+        if (Array.isArray(node.children)) node.children.forEach(walk)
+      }
+      walk(tree)
+      if (secSentences.length > 0) {
+        sectionsList.push({ title: secTitle, sentences: secSentences })
+      }
+    }
+
+    if (Array.isArray(p.content?.sections) && p.content.sections.some((s: any) => s?.tree?.id)) {
+      p.content.sections.forEach((s: any, idx: number) => collectFromTree(s.tree, s.section || `Section ${idx + 1}`))
+    } else if (p.content?.tree?.id) {
+      collectFromTree(p.content.tree, p.content.section || p.title || 'Section 1')
+    }
+
+    if (collected.length === 0) {
+      const ids: string[] = [p.id, ...(Array.isArray(p._tnSiblingIds) ? p._tnSiblingIds : [])].filter(Boolean)
+      for (const id of ids) {
+        let content: any = null
+        const cached = practiceCache.getSync(id) || await practiceCache.get(id)
+        if (cached && cached.content) {
+          content = (cached.isEncrypted && typeof cached.content === 'string')
+            ? decryptContent(cached.content, OBSCURE_KEY)
+            : cached.content
+        } else {
+          try {
+            const res = await fetch(`${API_URL}/api/practices/${id}`, { credentials: 'include' })
+            if (res.ok) {
+              const json = await res.json()
+              content = (json.isEncrypted && typeof json.content === 'string')
+                ? decryptContent(json.content, OBSCURE_KEY)
+                : json.content
+            }
+          } catch {
+            // ignore fetch errors
+          }
+        }
+        if (content?.tree) collectFromTree(content.tree, content.section || `Section ${sectionsList.length + 1}`)
+        if (Array.isArray(content?.sections)) {
+          content.sections.forEach((s: any, idx: number) => collectFromTree(s.tree, s.section || `Section ${idx + 1}`))
+        }
+      }
+    }
+
+    if (collected.length > 0) {
+      setTnRecallModal({
+        title: `${p.unit ? `${p.unit.toUpperCase()} · ` : ''}Sentence Recall`,
+        sentences: collected,
+        sections: sectionsList.length > 1 ? sectionsList : undefined,
+        book: p.textbook,
+        isCf: Boolean(p.isCf),
+      })
+    }
+  }
+
   const [activeVgModal, setActiveVgModal] = useState<{
     type: 'flashcards' | 'dictation' | 'recall' | 'story-prompt'
     practice: any
@@ -1052,6 +1135,20 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
                                 </button>
                               </div>
                             )}
+                            {isTN && (
+                              <button
+                                className="tn-recall-btn no-shake"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleOpenTnRecall(p);
+                                }}
+                                title="Start Sentence Recall Practice"
+                                style={{ padding: '1px 7px', fontSize: '0.75rem', height: '22px' }}
+                              >
+                                💡
+                              </button>
+                            )}
                             {(isVM || isSH || isPN || isSA || isGW || isGG || isYB || isPD || isAD || isTN) && total > 0 && (
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', opacity: 0.9 }}
@@ -1352,6 +1449,15 @@ export function BookSection({ tb, units, records, initialUnit, initialPage, show
         onClose={() => setActiveVgModal(null)}
       />
     )}
+      <TnRecallModal
+        isOpen={Boolean(tnRecallModal)}
+        title={tnRecallModal?.title || ''}
+        sentences={tnRecallModal?.sentences || []}
+        sections={tnRecallModal?.sections}
+        book={tnRecallModal?.book}
+        isCf={tnRecallModal?.isCf}
+        onClose={() => setTnRecallModal(null)}
+      />
     </section>
   )
 }

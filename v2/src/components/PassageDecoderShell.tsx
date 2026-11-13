@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useBlocker } from 'react-router-dom'
 import './PassageDecoderShell.css'
+import { getDifficultyBadgeStyle, getSentenceDifficulty } from '../lib/tnDifficulty'
 import { DailyLockModal } from './DailyLockModal'
 import { ShellHeader } from './shell/ShellHeader'
 import { InvisibleModeCheckbox } from './shell/InvisibleModeCheckbox'
@@ -1164,6 +1165,30 @@ export function PassageDecoderShell({ data, practiceId, unit, textbook }: any) {
                                                         title={isPast ? (isRevealedCn ? "5秒后恢复英文" : "点击查看中文释义 (5秒后恢复)") : undefined}
                                                     >
                                                         {isRevealedCn && cnText ? cnText : renderSentenceText(sentence, isCurrent)}{' '}
+                                                        {(() => {
+                                                            const cleanEn = (sentence.audioText || sentence.en || '').replace(/<[^>]*>/g, '').replace(/[*_#`~]/g, '').trim();
+                                                            const diff = getSentenceDifficulty(cleanEn);
+                                                            const style = getDifficultyBadgeStyle(diff);
+                                                            return (
+                                                                <span
+                                                                    title={`Difficulty: ${diff}/5`}
+                                                                    style={{
+                                                                        display: 'inline-block',
+                                                                        marginRight: '4px',
+                                                                        padding: '0 5px',
+                                                                        borderRadius: '999px',
+                                                                        fontSize: '0.72rem',
+                                                                        fontWeight: 700,
+                                                                        border: `1px solid ${style.borderColor}`,
+                                                                        backgroundColor: style.backgroundColor,
+                                                                        color: style.color,
+                                                                        verticalAlign: 'middle',
+                                                                    }}
+                                                                >
+                                                                    {diff}
+                                                                </span>
+                                                            );
+                                                        })()}
                                                         {isCurrent && (isStudentBook(practiceId) || isWorkbook(practiceId)) && (
                                                             <button
                                                                 className="pd-sentence-play-btn"

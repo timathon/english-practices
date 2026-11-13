@@ -1,6 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from 'react'
 import type { Node, SpeakerColorTheme } from './MindMapTypes'
 import { escapeRegExp } from './mindMapUtils'
+import { getDifficultyBadgeStyle, getSentenceDifficulty } from '../../lib/tnDifficulty'
 
 interface MindMapNodeViewProps {
   node: Node
@@ -154,6 +155,28 @@ export function MindMapNodeView({
               {isGiven && <span className="mm-given-badge">已给出</span>}
               {displayedText}
             </span>
+            {node.cn && (() => {
+              const diff = getSentenceDifficulty(node.text)
+              const style = getDifficultyBadgeStyle(diff)
+              return (
+                <span
+                  title={`Difficulty: ${diff}/5`}
+                  style={{
+                    marginLeft: '6px',
+                    padding: '1px 6px',
+                    borderRadius: '999px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    border: `1px solid ${style.borderColor}`,
+                    backgroundColor: style.backgroundColor,
+                    color: style.color,
+                    flexShrink: 0,
+                  }}
+                >
+                  {diff}
+                </span>
+              )
+            })()}
           </>
         )}
 
