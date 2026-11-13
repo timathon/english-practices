@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Navigate, Link, Outlet, useRouteError, ScrollRestoration } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate, Link, Outlet, useRouteError, ScrollRestoration, useLocation } from 'react-router-dom'
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 
 function SimpleProgressBar() {
@@ -95,6 +95,7 @@ function TestdriveTimer({ startTime }: { startTime: string }) {
 
 function Navigation({ session, showChinese, onCycleComplete }: { session: any; showChinese: boolean; onCycleComplete?: () => void }) {
   const isTestdrive = session?.user?.role === 'testdrive';
+  const location = useLocation();
   const isAdmin = (session?.user as any)?.role === 'admin';
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
@@ -428,7 +429,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
         <DebugModal onClose={() => setIsDebugModalOpen(false)} />
       )}
 
-      {isAdmin && (
+      {isAdmin && location.pathname.startsWith('/dashboard') && (
         <div ref={adminMenuRef} className="nav-admin-container">
           <button
             className={`nav-admin-btn${isAdminMenuOpen ? ' active' : ''}`}

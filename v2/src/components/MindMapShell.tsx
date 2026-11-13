@@ -675,6 +675,14 @@ export function MindMapShell({ data, textbook, unit, practiceId, isWritingMap, h
   const handleNodeClick = (node: Node, allChildrenFull: boolean) => {
     setActiveNodeId(node.id)
 
+    if (isPlayingAll) {
+      const idx = playAllQueue.findIndex(n => n.id === node.id)
+      if (idx !== -1) {
+        setCurrentPlayIndex(idx)
+        return
+      }
+    }
+
     if (isCnMode) {
       if (node.state === 'full' || node.state === 'keywords') {
         showEnglishTemporarily(node.id)

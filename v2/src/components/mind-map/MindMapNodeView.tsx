@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useLayoutEffect, useRef, useState } from 'react'
 import type { Node, SpeakerColorTheme } from './MindMapTypes'
 import { escapeRegExp } from './mindMapUtils'
 
@@ -41,6 +41,17 @@ export function MindMapNodeView({
   onToggleTooltip,
   onShowQuestionModal,
 }: MindMapNodeViewProps): React.ReactElement | null {
+  const isActionsActive = activeActionsNodeId === node.id
+  const nodeBoxRef = useRef<HTMLDivElement>(null)
+  const [placeActionsBelow, setPlaceActionsBelow] = useState(false)
+
+  useLayoutEffect(() => {
+    if (!isActionsActive || !nodeBoxRef.current) return
+    const rect = nodeBoxRef.current.getBoundingClientRect()
+    const containerTop = nodeBoxRef.current.closest('.mm-container')?.getBoundingClientRect().top ?? 0
+    setPlaceActionsBelow(rect.top < Math.max(containerTop, 100) + 60)
+  }, [isActionsActive])
+
   const state = node.state || 'hidden'
   if (state === 'hidden') return null
   if (showAllMode > 0 && depth > maxDepthVisible) return null
@@ -102,13 +113,13 @@ export function MindMapNodeView({
     )
   }
 
-  const isActionsActive = activeActionsNodeId === node.id
   const isPlaying = playingNodeId === node.id
   const isGiven = !!node.is_given
 
   return (
     <div className="mm-node-wrapper" key={node.id}>
       <div 
+        ref={nodeBoxRef}
         id={isPlaying ? `playing-${node.id}` : `node-${node.id}`}
         className={`mm-node-box ${state} level-${depth} ${allChildrenFull ? 'collapsible' : ''} ${activeNodeId === node.id ? 'active' : ''} ${isPlaying ? 'playing' : ''} ${(isActionsActive && !isCnMode) ? 'actions-active' : ''} ${isGiven ? 'is-given' : ''}`}
         onClick={(e) => {
@@ -152,7 +163,10 @@ export function MindMapNodeView({
 
         {/* Action Overlay */}
         {state === 'full' && isActionsActive && !isCnMode && (
-          <div className="mm-node-actions" onClick={(e) => e.stopPropagation()}>
+          <div
+            className={`mm-node-actions${placeActionsBelow ? ' place-below' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             {enableAudio && (
               <button 
                 className="mm-action-btn" 
