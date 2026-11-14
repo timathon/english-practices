@@ -92,7 +92,13 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
 
   useEffect(() => {
     if (!isOpen || !selectedSentences || selectedSentences.length === 0) return
-    const active = selectedSentences.filter(s => !isSentenceIgnored(s.text))
+    const seen = new Set<string>()
+    const active = selectedSentences.filter(s => {
+      const key = s.text.trim()
+      if (isSentenceIgnored(s.text) || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
     const sorted = [...active].sort((a, b) => {
       const diffB = getSentenceDifficulty(b.text)
       const diffA = getSentenceDifficulty(a.text)
