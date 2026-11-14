@@ -72,6 +72,11 @@ When editing existing codebases:
 ## 10. Background Task Timer Rule
 * **Always Schedule Check Timers for Background Tasks:** Whenever running commands or operations that execute asynchronously in the background as a task, you MUST always schedule a timer (`schedule` tool) with a reasonable interval (e.g. `DurationSeconds=10` to `60` or conditioned on the task) to check on its status and ensure prompt follow-up without hanging or forgetting running background jobs.
 
+## 11. V2 Version Badge
+* **File:** `v2/src/App.tsx`
+* Whenever making a git commit that includes changes to files under `v2/` or `v2-api/` (excluding auto-generated files like `v2/public/textbooks.json`), **update the version badge** at the bottom of the `Navigation` component (`nav-menu`) to the current local date and time (`vYYMMDD-HHMM`, e.g., `v261114-1828`) before committing.
+* If only data JSON files under `v2-data/` are modified, there is no need to update the version badge, rebuild, or redeploy the client app.
+
 ---
 
 
