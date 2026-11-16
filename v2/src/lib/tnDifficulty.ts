@@ -39,7 +39,9 @@ export function updateSentenceDifficulty(text: string, delta: -1 | 1): number {
   if (!key) return DEFAULT_SENTENCE_DIFFICULTY
   const map = loadAll()
   const current = typeof map[key] === 'number' ? map[key] : DEFAULT_SENTENCE_DIFFICULTY
-  const next = Math.min(MAX_SENTENCE_DIFFICULTY, Math.max(MIN_SENTENCE_DIFFICULTY, current + delta))
+  const next = delta > 0 && current < 3
+    ? 3
+    : Math.min(MAX_SENTENCE_DIFFICULTY, Math.max(MIN_SENTENCE_DIFFICULTY, current + delta))
   map[key] = next
   saveAll(map)
   return next

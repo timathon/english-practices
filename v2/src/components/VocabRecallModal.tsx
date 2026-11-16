@@ -322,7 +322,7 @@ export function VocabRecallModal({
         const currentItem = deck[currentIndex]
         if (currentItem) {
             const currentW = getWordWeight(currentItem.word)
-            const newW = Math.max(1, currentW + delta)
+            const newW = delta > 0 && currentW < 3 ? 3 : Math.max(1, currentW + delta)
             const wordKey = currentItem.word.trim().toLowerCase()
             const newWeights = { ...weights, [wordKey]: newW }
 
@@ -332,10 +332,13 @@ export function VocabRecallModal({
             } catch (e) {
                 console.error('Failed to save weights:', e)
             }
-        }
 
-        setIsRateLocked(true)
-        setWeightDeltaAnim(delta)
+            setIsRateLocked(true)
+            setWeightDeltaAnim(delta > 0 && currentW < 3 ? 3 - currentW : delta)
+        } else {
+            setIsRateLocked(true)
+            setWeightDeltaAnim(delta)
+        }
 
         if (weightAnimTimerRef.current) clearTimeout(weightAnimTimerRef.current)
         weightAnimTimerRef.current = setTimeout(() => {

@@ -362,7 +362,7 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
                 }}
               >
                 <span>{sec.title}</span>
-                <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{sec.sentences.length}</span>
+                <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{sec.sentences.filter(s => !isSentenceIgnored(s.text)).length}</span>
               </button>
             ))}
             <button
@@ -385,7 +385,7 @@ export function TnRecallModal({ isOpen, title, sentences, sections, book, isCf, 
               }}
             >
               <span>All Sections</span>
-              <span style={{ fontSize: '0.8rem', opacity: 0.85 }}>{sentences.length}</span>
+              <span style={{ fontSize: '0.8rem', opacity: 0.85 }}>{sentences.filter(s => !isSentenceIgnored(s.text)).length}</span>
             </button>
           </div>
         ) : showIgnored ? (

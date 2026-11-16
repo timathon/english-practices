@@ -415,7 +415,7 @@ function Navigation({ session, showChinese, onCycleComplete }: { session: any; s
             }}
             style={{ textAlign: 'center', padding: '8px 14px 4px 14px', fontSize: '0.75rem', color: '#444', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            v261114-1828
+            v261116-1750
           </div>
         </div>
       )}
